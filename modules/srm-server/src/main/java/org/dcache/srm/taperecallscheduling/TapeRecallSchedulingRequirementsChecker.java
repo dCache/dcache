@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -41,78 +42,140 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     private static final long TIME_SAFETY_MARGIN = 10;
     private static final long MIN_RELATIVE_TAPE_RECALL_PERCENTAGE = 95; // of _used_ space
 
+    private final ReentrantReadWriteLock configLock = new ReentrantReadWriteLock();
+
     // scheduling parameters
-    private volatile int maxActiveTapes = 1;
-    private volatile int minTapeRecallPercentage = 80;
-    private volatile long minNumberOfRequestsForTapeSelection = NO_VALUE;
-    private volatile long minJobWaitingTime = MINUTES.toMillis(2);
-    private volatile long maxJobWaitingTime = HOURS.toMillis(1);
-    private volatile long tapeinfolessJobWaitingTime = MINUTES.toMillis(10);
+    private int maxActiveTapes = 1;
+    private int minTapeRecallPercentage = 80;
+    private long minNumberOfRequestsForTapeSelection = NO_VALUE;
+    private long minJobWaitingTime = MINUTES.toMillis(2);
+    private long maxJobWaitingTime = HOURS.toMillis(1);
+    private long tapeinfolessJobWaitingTime = MINUTES.toMillis(10);
 
     public void setMaxActiveTapes(int tapeCount) {
         checkArgument(tapeCount > 0, "There need to be more than 0 max. active tapes");
-        maxActiveTapes = tapeCount;
+        configLock.writeLock().lock();
+        try {
+            maxActiveTapes = tapeCount;
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public void setMinJobWaitingTime(Duration time) {
         checkArgument(time.toMillis() >= 0, "The min. job waiting time needs to be 0 or larger");
-        minJobWaitingTime = time.toMillis();
+        configLock.writeLock().lock();
+        try {
+            minJobWaitingTime = time.toMillis();
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public void setMaxJobWaitingTime(Duration time) {
         checkArgument(time.toMillis() >= 0, "The max. job waiting time needs to be 0 or larger");
-        this.maxJobWaitingTime = time.toMillis();
+        configLock.writeLock().lock();
+        try {
+            this.maxJobWaitingTime = time.toMillis();
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public void setMinNumberOfRequestsForTapeSelection(long number) {
         checkArgument(number >= 0 || number == -1, "The min. number of requests for tape selection needs to be positive or -1");
-        minNumberOfRequestsForTapeSelection = number == -1 ? NO_VALUE : number;
+        configLock.writeLock().lock();
+        try {
+            minNumberOfRequestsForTapeSelection = number == -1 ? NO_VALUE : number;
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public void setMinTapeRecallPercentage(int percentage) {
         checkArgument(percentage >= 0 && percentage <= 100, "The minimum tape recall percentage needs to be between 0 and 100");
-        minTapeRecallPercentage = percentage;
+        configLock.writeLock().lock();
+        try {
+            minTapeRecallPercentage = percentage;
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public void setTapeinfolessJobWaitingTime(Duration time) {
-        this.tapeinfolessJobWaitingTime = time.toMillis() < 0 ? NO_VALUE : time.toMillis();
+        configLock.writeLock().lock();
+        try {
+            this.tapeinfolessJobWaitingTime = time.toMillis() < 0 ? NO_VALUE : time.toMillis();
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     public int maxActiveTapes() {
-        return maxActiveTapes;
+        configLock.readLock().lock();
+        try {
+            return maxActiveTapes;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public int minTapeRecallPercentage() {
-        return minTapeRecallPercentage;
+        configLock.readLock().lock();
+        try {
+            return minTapeRecallPercentage;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public long minNumberOfRequestsForTapeSelection() {
-        return minNumberOfRequestsForTapeSelection;
+        configLock.readLock().lock();
+        try {
+            return minNumberOfRequestsForTapeSelection;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public long minJobWaitingTime() {
-        return minJobWaitingTime;
+        configLock.readLock().lock();
+        try {
+            return minJobWaitingTime;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public long maxJobWaitingTime() {
-        return maxJobWaitingTime;
+        configLock.readLock().lock();
+        try {
+            return maxJobWaitingTime;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public long tapeinfolessJobWaitingTime() {
-        return tapeinfolessJobWaitingTime;
+        configLock.readLock().lock();
+        try {
+            return tapeinfolessJobWaitingTime;
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 
     public int getRemainingTapeSlots(int taken) {
-        int remaining = maxActiveTapes - taken;
+        int remaining = maxActiveTapes() - taken;
         return remaining < 0 ? 0 : remaining;
     }
 
     public boolean isDefinedMinRequestCount() {
-        return minNumberOfRequestsForTapeSelection != NO_VALUE;
+        return minNumberOfRequestsForTapeSelection() != NO_VALUE;
     }
 
     public boolean isRequestCountSufficient(long count) {
-        return count >= minNumberOfRequestsForTapeSelection;
+        return count >= minNumberOfRequestsForTapeSelection();
     }
 
     /**
@@ -125,7 +188,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
             return false;
         }
         long ageOfOldestJobArrival = System.currentTimeMillis() - tape.getOldestJobArrival();
-        long correctedMaxAge = maxJobWaitingTime + TIME_SAFETY_MARGIN;
+        long correctedMaxAge = maxJobWaitingTime() + TIME_SAFETY_MARGIN;
         return ageOfOldestJobArrival >= correctedMaxAge;
     }
 
@@ -134,7 +197,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      * @param tape the scheduling info for the tape in question
      */
     public boolean isNewestTapeJobOldEnough(SchedulingInfoTape tape) {
-        long minWaitingTime = minJobWaitingTime;
+        long minWaitingTime = minJobWaitingTime();
         if (tape.getNewestJobArrival() == NO_VALUE) {
             return false;
         } else if (minWaitingTime == NO_VALUE) {
@@ -156,7 +219,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      * @return Whether the recall volume is sufficient
      */
     public boolean isTapeRecallVolumeSufficient(SchedulingInfoTape tape, long recallVolume) {
-        int percentage = this.minTapeRecallPercentage;
+        int percentage = minTapeRecallPercentage();
         if (!tape.hasTapeInfo()) {
             return percentage == 0;
         }
@@ -191,12 +254,12 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
 
     public boolean isJobExpired(SchedulingItemJob job) {
         long age = System.currentTimeMillis() - job.getCreationTime();
-        long correctedMaxAge = maxJobWaitingTime + TIME_SAFETY_MARGIN;
+        long correctedMaxAge = maxJobWaitingTime() + TIME_SAFETY_MARGIN;
         return age > correctedMaxAge;
     }
 
     public boolean isTapeinfolessJobExpired(SchedulingItemJob job) {
-        long waitingTime = tapeinfolessJobWaitingTime;
+        long waitingTime = tapeinfolessJobWaitingTime();
         if (waitingTime == NO_VALUE) {
             return isJobExpired(job);
         }
@@ -225,20 +288,25 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
         @Override
         public String call() {
             StringBuilder sb = new StringBuilder();
-            if (active!= null) {
-                setMaxActiveTapes(active);
-                sb.append("maxiumm active tapes set to ").append(active).append("\n");
+            try {
+                if (active != null) {
+                    setMaxActiveTapes(active);
+                    sb.append("maximum active tapes set to ").append(active).append("\n");
+                }
+                if (volume != null) {
+                    setMinTapeRecallPercentage(volume);
+                    sb.append("minimum recall percentage set to ").append(volume).append("\n");
+                }
+                if (requests != null) {
+                    setMinNumberOfRequestsForTapeSelection(requests);
+                    sb.append("minimum number of requests per tape ");
+                    sb.append(requests == NO_VALUE ? "disabled" : " set to " + requests).append("\n");
+                }
+            } catch (IllegalArgumentException e) {
+                sb.append("Failure: ").append(e.getMessage());
+            } finally {
+                return sb.toString();
             }
-            if (volume != null) {
-                setMinTapeRecallPercentage(volume);
-                sb.append("minimum recall percentage set to ").append(volume).append("\n");
-            }
-            if (requests != null) {
-                setMinNumberOfRequestsForTapeSelection(requests);
-                sb.append("minimum number of requests per tape ");
-                sb.append(requests == NO_VALUE ? "disabled" : " set to " + requests).append("\n");
-            }
-            return sb.toString();
         }
     }
 
@@ -260,31 +328,41 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
         @Override
         public String call() {
             StringBuilder sb = new StringBuilder();
-            if (min != null) {
-                setMinJobWaitingTime(Duration.ofMinutes(min));
-                sb.append("min job waiting time set to ").append(min).append(" minutes\n");
+            try {
+                if (min != null) {
+                    setMinJobWaitingTime(Duration.ofMinutes(min));
+                    sb.append("minimum job waiting time set to ").append(min).append(" minutes\n");
+                }
+                if (max != null) {
+                    setMaxJobWaitingTime(Duration.ofMinutes(max));
+                    sb.append("maximum job waiting time set to ").append(max).append(" minutes\n");
+                }
+                if (tapeinfoless != null) {
+                    setTapeinfolessJobWaitingTime(Duration.ofMinutes(tapeinfoless));
+                    sb.append("tapeinfoless job waiting time set to ").append(tapeinfoless).append(" minutes\n");
+                }
+            } catch (IllegalArgumentException e) {
+                sb.append("Failure: ").append(e.getMessage());
+            } finally {
+                return sb.toString();
             }
-            if (max != null) {
-                setMaxJobWaitingTime(Duration.ofMinutes(max));
-                sb.append("max job waiting time set to ").append(max).append(" minutes\n");
-            }
-            if (tapeinfoless != null) {
-                setTapeinfolessJobWaitingTime(Duration.ofMinutes(tapeinfoless));
-                sb.append("tapeinfoless job waiting time set to ").append(tapeinfoless).append(" minutes\n");
-            }
-            return sb.toString();
         }
     }
 
     @Override
     public void getInfo(PrintWriter pw) {
-        pw.printf("Bring online scheduler parameters:\n");
-        pw.printf("    Max. active tapes (usually drive count): %s\n", maxActiveTapes);
-        pw.printf("    Min. recall volume percentage for tape selection: %s\n", minTapeRecallPercentage);
-        pw.printf("    Min. number of requests for tape selection: %s\n", minNumberOfRequestsForTapeSelection == NO_VALUE ? "-" : minNumberOfRequestsForTapeSelection);
-        pw.printf("    Min. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(minJobWaitingTime)).orElse("not set!"));
-        pw.printf("    Max. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(maxJobWaitingTime)).orElse("not set!"));
-        pw.printf("    Min. time requests without tape info stay in the queue: %s\n", tapeinfolessJobWaitingTime == NO_VALUE ? "-" :
-                TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime)).orElse("not set!"));
+        configLock.readLock().lock();
+        try {
+            pw.printf("Bring online scheduler parameters:\n");
+            pw.printf("    Max. active tapes: %s\n", maxActiveTapes);
+            pw.printf("    Min. recall volume percentage for tape selection: %s\n", minTapeRecallPercentage);
+            pw.printf("    Min. number of requests for tape selection: %s\n", minNumberOfRequestsForTapeSelection == NO_VALUE ? "-" : minNumberOfRequestsForTapeSelection);
+            pw.printf("    Min. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(minJobWaitingTime)).orElse("not set!"));
+            pw.printf("    Max. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(maxJobWaitingTime)).orElse("not set!"));
+            pw.printf("    Min. time requests without tape info stay in the queue: %s\n", tapeinfolessJobWaitingTime == NO_VALUE ? "-" :
+                    TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime)).orElse("not set!"));
+        } finally {
+            configLock.readLock().unlock();
+        }
     }
 }
