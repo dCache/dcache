@@ -601,7 +601,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         int id = -1;
         Who who = Who.fromAbbreviation(principal);
         if (who == null) {
-            // not a special pricipal
+            // not a special principal
             boolean isGroup = AceFlags.IDENTIFIER_GROUP.matches(flags);
             if (isGroup) {
                 who = Who.GROUP;
