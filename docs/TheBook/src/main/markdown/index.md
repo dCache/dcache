@@ -22,7 +22,7 @@ dCache Book
         -   [alarms service](config-alarms.md)
 
         -   [billing service](config-billing.md)
-        
+
         -   [bulk service](config-bulk.md)
 
         -   [cleaner service](config-cleaner.md)
@@ -108,6 +108,8 @@ dCache Book
         -   [Storage Descriptor / SRR](srr.md)
 
         -   [Using Kafka](kafkaproducer.md)
+
+	-   [User and Group Quota](quota.md)
 
 -   [Chapter III. Cookbook](cookbook.md)
 

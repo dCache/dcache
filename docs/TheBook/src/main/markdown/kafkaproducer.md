@@ -1,5 +1,5 @@
 
-Apache-Kafka  with to dCache, or how to push events outside of dCache.
+Apache-Kafka  with dCache, or how to push events outside of dCache.
 =======================
 
 Starting from version 4.1 we introduced a new approach to external messaging. With the introduction of Apache-Kafka  (kafka.apache.org/documentation/) as a message transport, for now in Billing, we start switching to a more modern and efficient messaging system. The goal for the Billing service is easier inclusion with systems like Elasticsearch: Instead of adding messages to a textual log and having an external component parse that log, a Kafka-aware ingester can import them directly into the remote system.
@@ -73,8 +73,3 @@ bin/kafka-server-start.sh config/server.properties
 ```console-root
 bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic billing --from-beginning
 ```
-
-
-
-
-
