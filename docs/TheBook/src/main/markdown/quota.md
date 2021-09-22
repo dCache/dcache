@@ -45,6 +45,9 @@ An admin user can interact with the quota system via the ```PnfsManager``` admin
 	set group quota [OPTIONS] <gid>  # Set group quota
 	set user quota [OPTIONS] <uid>  # Set user quota
 
+	remove group quota <gid>  # remove group quota
+	remove user quota <uid>  # remove user quota
+
 	show group quota [-gid=<string>] [-h]  # Print group quota
 	show user quota [-h] [-uid=<string>]  # Print user quota
 
