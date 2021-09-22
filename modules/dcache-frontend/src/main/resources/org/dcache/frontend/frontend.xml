@@ -575,6 +575,15 @@
 			 ${frontend.limit.events.disconnect-timeout.maximum},
 			 '${frontend.limit.events.disconnect-timeout.maximum.unit}')}" />
     </bean>
+    <bean class="org.dcache.restful.resources.srr.SrrResource" scope="request">
+        <property name="spaceReservationEnabled" value="${frontend.enable.space-reservation}"/>
+        <property name="groupMapping" value="${frontend.srr.shares}" />
+        <property name="id" value="${info-provider.se-unique-id}" />
+        <property name="name" value="${info-provider.se-name}" />
+        <property name="architecture" value="${info-provider.dcache-architecture}" />
+        <property name="quality" value="${info-provider.dcache-quality-level}" />
+        <property name="doorTag" value="${storage-descriptor.door.tag}" />
+    </bean>
 
     <beans profile="macaroons-true">
         <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">
