@@ -41,7 +41,12 @@ list(files) ::= <<
  */
 file(f) ::= <<
   <tr>
-    $if(f.isDirectory)$
+    $if(f.showGhosted)$
+    <td></td>
+    <td class="text-muted">$f.name.unencoded$</td>
+    <td></td>
+    <td></td>
+    $elseif(f.isDirectory)$
     <td class="text-muted text-center">
         <span class="glyphicon glyphicon-folder-close"></span>
     </td>
