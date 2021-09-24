@@ -1,5 +1,7 @@
 package org.dcache.acl.parser;
 
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.AceType;
 import org.junit.Test;
 
 import org.dcache.acl.ACE;
@@ -120,6 +122,12 @@ public class ACEParserTest {
     @Test(expected = IllegalArgumentException.class)
     public void testWrongSpecialPrincipal() {
         parseLinuxAce("D:g:SOMEONW@:w");
+    }
+
+    @Test
+    public void testImplicitGroupACE() {
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.parseInt("rwx"), Who.GROUP, 123);
+        assertTrue("Identifier group is not set", IDENTIFIER_GROUP.matches(ace.getFlags()));
     }
 
     public static int toAccessMask(AccessMask...masks) {
