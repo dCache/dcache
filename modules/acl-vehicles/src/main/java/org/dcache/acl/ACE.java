@@ -60,7 +60,7 @@ public class ACE implements Serializable
      */
     public ACE(AceType type, int flags, int accessMsk, Who who, int whoID) {
         _type = type;
-        _flags = flags;
+        _flags = (who == Who.GROUP || who == Who.OWNER_GROUP) ? flags | AceFlags.IDENTIFIER_GROUP.getValue() : flags;
         _accessMsk = accessMsk;
         _who = who;
         _whoID = whoID;
