@@ -74,6 +74,7 @@ import org.dcache.util.cli.ShellApplication;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.padStart;
 import static dmg.util.CommandException.checkCommand;
+import static dmg.util.CommandException.checkCommandArgument;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.dcache.util.ByteUnit.KiB;
@@ -299,6 +300,92 @@ public class Shell extends ShellApplication
                     }
                 }
             }
+        }
+    }
+
+    @FunctionalInterface
+    public interface FailableChimeraOperation {
+        void run() throws ChimeraFsException;
+    }
+
+    @Command(name = "ln", hint = "make links between files.  ",
+            description = "Create a link to <target> with the name <link name>.  "
+                    + "Create hard links by default, symbolic links with -s.  "
+                    + "By default, <link name> should not already exist.\n"
+                    + "\n"
+                    + "<target> may be an absolute or relative path.  If "
+                    + "relative then the value is resolved relative to the "
+                    + "current directory.\n"
+                    + "\n"
+                    + "When creating hard links, <target> must exist.  By "
+                    + "default, hard links are not allowed for directory "
+                    + "targets: symbolic links are preferred.  This is to avoid "
+                    + "loops in the namespace.  Exercise extreme caution if this "
+                    + "veto is overridden.\n"
+                    + "\n"
+                    + "Symbolic links can hold arbitrary text; if later "
+                    + "resolved, a relative link is interpreted in relation to "
+                    + "its parent directory.")
+    public class LnCommand implements Callable<Serializable>
+    {
+        @Argument(metaVar="target", usage="the file or directory to which the "
+                + "link points.")
+        String targetArgument;
+
+        @Argument(index=1, metaVar="link name", usage="the name of the link to"
+                + " create.")
+        File linkArgument;
+
+        @Option(name="s", usage="make symbolic links instead of hard links.")
+        boolean symbolic;
+
+        @Option(name="f", usage="remove <link name> if it exists.")
+        boolean force;
+
+        @Option(name="d", usage="allow hard link directories: use with extreme "
+                + "caution.  The command may still fail if the filesystem does "
+                + "not support directory hard links.")
+        boolean allowDirectory;
+
+        private File link;
+
+        private void optionallyForce(FailableChimeraOperation operation)
+                throws CommandException, ChimeraFsException
+        {
+            try {
+                operation.run();
+            } catch (FileExistsChimeraFsException e) {
+                checkCommandArgument(force, "%s already exists", linkArgument);
+                fs.remove(link.toString());
+                operation.run();
+            }
+        }
+
+        @Override
+        public Serializable call() throws CommandException
+        {
+            link = linkArgument.isAbsolute() ? linkArgument
+                    : new File(path + '/' + linkArgument);
+            String linkName = linkArgument.getName();
+            checkCommandArgument(!linkName.isEmpty(), "Missing target name.");
+
+            try {
+                FsInode linkParent = fs.path2inode(link.getParent());
+
+                if (symbolic) {
+                    optionallyForce(() -> fs.createLink(linkParent, linkName, targetArgument));
+                } else {
+                    FsInode target = lookup(new File(targetArgument));
+                    checkCommandArgument(!target.isDirectory() || allowDirectory,
+                            "%s is a directory", targetArgument);
+
+                    optionallyForce(() -> fs.createHLink(linkParent, target, linkName));
+                }
+            } catch (ChimeraFsException e) {
+                throw new CommandException(1, e.getMessage());
+            }
+
+            return "";
         }
     }
 

@@ -286,7 +286,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode createLink(FsInode parent, String name, String dest) throws ChimeraFsException {
-        return inTransaction(status -> createLink(parent, name, 0, 0, 0644, dest.getBytes(StandardCharsets.UTF_8)));
+        return inTransaction(status -> createLink(parent, name, 0, 0, 0777, dest.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override

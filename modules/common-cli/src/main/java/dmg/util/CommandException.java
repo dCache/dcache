@@ -48,4 +48,19 @@ public class CommandException extends Exception {
     {
         genericCheck(isOK, m -> new CommandException(m), format, arguments);
     }
+
+    /**
+     * This method is used to verify the argument or option values are correct.
+     * The command's syntax should have already been verified.
+     * @param isOK true if the value is correct
+     * @param format the template used to generate the exception's message.
+     * @param arguments any arguments needed when building the template.
+     * @throws CommandException if isOK is false.
+     * @see String#format
+     */
+    public static void checkCommandArgument(boolean isOK, String format,
+            Object...arguments) throws CommandException
+    {
+        genericCheck(isOK, m -> new CommandException(1, m), format, arguments);
+    }
 }
