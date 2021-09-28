@@ -117,8 +117,6 @@ public class ACEParser {
      * 	USER:3750:+rlx:o
      * 	EVERYONE@:-w
      *
-     * @param order
-     *            ACE's order in list
      * @param ace_spec
      *            String representation of ACE (without 'order')
      */
