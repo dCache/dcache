@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
@@ -78,7 +79,11 @@ import org.dcache.util.PrincipalSetMaker;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 import static org.dcache.auth.attributes.Activity.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -1125,6 +1130,40 @@ public class SciTokenPluginTest
         assertTrue(resultingRestriction.isRestricted(DOWNLOAD, FsPath.create("/my-file.dat")));
         assertTrue(resultingRestriction.isRestricted(MANAGE,   FsPath.create("/my-file.dat")));
         assertTrue(resultingRestriction.isRestricted(DELETE,   FsPath.create("/my-file.dat")));
+    }
+
+    @Test
+    public void shouldIncludeExemptionPricipal() throws Exception
+    {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000")
+                .withProperty("gplazma.scitoken.dcache-supports-exempt-principal", "true"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("scope", "openid offline_access storage.read:/ storage.modify:/ wlcg")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItem(instanceOf(ExemptFromNamespaceChecks.class)));
+    }
+
+    @Test
+    public void shouldSuppressExemptionPricipal() throws Exception
+    {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000")
+                .withProperty("gplazma.scitoken.dcache-supports-exempt-principal", "false"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("scope", "openid offline_access storage.read:/ storage.modify:/ wlcg")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, not(hasItem(instanceOf(ExemptFromNamespaceChecks.class))));
     }
 
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException
