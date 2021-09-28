@@ -53,10 +53,6 @@ public class ACEParser {
         }
 
         String[] split = ace_spec.split(SEPARATOR);
-        if ( split == null ) {
-            throw new IllegalArgumentException("ace_spec can't be splitted.");
-        }
-
         int len = split.length;
         if ( len < ACE_MIN || len > ACE_MAX ) {
             throw new IllegalArgumentException("Count tags invalid.");
@@ -138,10 +134,6 @@ public class ACEParser {
         }
 
         String[] split = ace_spec.split(SEPARATOR);
-        if ( split == null ) {
-            throw new IllegalArgumentException("ace_spec can't be splitted.");
-        }
-
         int len = split.length;
         if ( len < ACE_MIN_ADM || len > ACE_MAX_ADM ) {
             throw new IllegalArgumentException("Count tags invalid.");
@@ -225,10 +217,6 @@ public class ACEParser {
         }
 
         String[] split = aces_spec.split(SPACE_SEPARATOR);
-        if ( split == null ) {
-            throw new IllegalArgumentException("aces_spec can't be splitted.");
-        }
-
         int len = split.length;
         if ( len < ACES_MIN ) {
             throw new IllegalArgumentException("Count ACEs invalid.");
