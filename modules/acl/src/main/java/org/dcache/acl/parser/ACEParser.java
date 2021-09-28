@@ -14,8 +14,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class ACEParser {
 
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
-
     private static final String SPACE_SEPARATOR = " ";
 
     private static final String SEPARATOR = ":";
