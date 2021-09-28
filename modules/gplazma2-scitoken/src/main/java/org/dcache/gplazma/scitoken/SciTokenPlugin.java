@@ -67,6 +67,7 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
     private final Set<String> audienceTargets;
 
     private int tokenHistory = 0;
+    private boolean exemptPrincipalSupported;
 
     public SciTokenPlugin(Properties properties) {
         this(properties, HttpClients.createDefault());
@@ -84,6 +85,10 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
 
         String targets = properties.getProperty("gplazma.scitoken.audience-targets");
         audienceTargets = ImmutableSet.copyOf(Splitter.on(' ').trimResults().split(targets));
+
+        // Remove this configuration property once dCache 8.0 is released.
+        String supportExempt = properties.getProperty("gplazma.scitoken.dcache-supports-exempt-principal");
+        exemptPrincipalSupported = Boolean.parseBoolean(supportExempt);
     }
 
     private boolean isIssuer(Object key) {
@@ -151,7 +156,9 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
             Restriction r = buildRestriction(issuer.getPrefix(), scopes);
             LOGGER.debug("Authenticated user with restriction: {}", r);
             restrictions.add(r);
-            identifiedPrincipals.add(new ExemptFromNamespaceChecks());
+            if (exemptPrincipalSupported) {
+                identifiedPrincipals.add(new ExemptFromNamespaceChecks());
+            }
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
         }
