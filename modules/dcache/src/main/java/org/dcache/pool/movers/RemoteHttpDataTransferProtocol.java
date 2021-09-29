@@ -68,7 +68,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static diskCacheV111.util.ThirdPartyTransferFailedCacheException.checkThirdPartyTransferSuccessful;
 import static dmg.util.Exceptions.getMessageWithCauses;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.util.ByteUnit.GiB;
@@ -409,7 +408,12 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         try {
-            InetAddress addr = requireNonNull(inetConn.getRemoteAddress());
+            InetAddress addr = inetConn.getRemoteAddress();
+            if (addr == null) {
+                _log.debug("HttpInetConnection is not connected.");
+                return Optional.empty();
+            }
+
             int port = inetConn.getRemotePort();
             InetSocketAddress sockAddr = new InetSocketAddress(addr, port);
             return Optional.of(sockAddr);
