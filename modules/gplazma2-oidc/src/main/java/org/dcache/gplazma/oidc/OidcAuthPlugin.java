@@ -465,6 +465,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
                 addGroups(userInfo, principals);
+                addWlcgGroups(userInfo, principals);
                 addLoAs(userInfo, principals);
                 addEntitlements(userInfo, principals);
                 return principals;
@@ -535,6 +536,46 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             for (JsonNode group : userInfo.get("groups")) {
                 principals.add(new OpenIdGroupPrincipal(group.asText()));
             }
+        }
+    }
+
+    /**
+     * Parse group-membership information, as described in
+     * "WLCG Common JWT Profiles" v1.0.  For details, see:
+     * https://zenodo.org/record/3460258#.YVGMLyXRaV4
+     *
+     * Here is an example:
+     * <pre>
+     * "wlcg.groups": [
+     *     "/dteam/VO-Admin",
+     *     "/dteam",
+     *     "/dteam/itcms"
+     * ],
+     * </pre>
+     * @param userInfo The JSON node describing the user.
+     * @param principals The set of principals into which any group information
+     * is to be added.
+     */
+    private void addWlcgGroups(JsonNode userInfo, Set<Principal> principals)
+    {
+        if (!userInfo.has("wlcg.groups")) {
+            return;
+        }
+
+        JsonNode groups = userInfo.get("wlcg.groups");
+        if (!groups.isArray()) {
+            LOG.debug("Ignoring malformed \"wlcg.groups\": not an array");
+            return;
+        }
+
+        for (JsonNode group : groups) {
+            if (!group.isTextual()) {
+                LOG.debug("Ignoring malformed \"wlcg.groups\" value: {}", group);
+                continue;
+            }
+            var groupName = group.asText();
+            var principal = new OpenIdGroupPrincipal(groupName);
+            principals.add(principal);
         }
     }
 
