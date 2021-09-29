@@ -131,12 +131,10 @@ public class DcacheFileResource
             // an internal error exception, although this shouldn't matter as
             // the client has already disconnected.
             throw new WebDavException("Failed to send entity: client closed connection", e, this);
-        } catch (PermissionDeniedCacheException e) {
-            throw WebDavExceptions.permissionDenied(this);
         } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
-            throw new WebDavException(e.getMessage(), e, this);
+            throw WebDavException.of(e, this);
         } catch (InterruptedException e) {
             throw new WebDavException("Transfer was interrupted", e, this);
         } catch (URISyntaxException e) {
@@ -193,9 +191,9 @@ public class DcacheFileResource
                         dispositionFor(request.getParams().get(PARAM_ACTION)));
             }
             return null;
-        } catch (PermissionDeniedCacheException e) {
-            throw WebDavExceptions.permissionDenied(e.getMessage(), e, this);
-        } catch (CacheException | InterruptedException e) {
+        } catch (CacheException e) {
+            throw WebDavException.of(e, this);
+        } catch (InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (URISyntaxException e) {
             throw new WebDavException("Invalid request URI: " + e.getMessage(), e, this);
