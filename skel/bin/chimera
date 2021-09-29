@@ -16,6 +16,7 @@ CLASSPATH="$classpath" quickJava -Dlog=${DCACHE_LOG:-warn} \
     "$(getProperty chimerashell.db.url)" \
     "$(getProperty chimerashell.db.user)" \
     "$(getProperty chimerashell.db.password)" \
+    "$(getProperty chimerashell.db.password.file)" \
     "$(getProperty chimerashell.plugins.storage-info-extractor)" \
     "$(getProperty chimerashell.default-access-latency)" \
     "$(getProperty chimerashell.default-retention-policy)" \
