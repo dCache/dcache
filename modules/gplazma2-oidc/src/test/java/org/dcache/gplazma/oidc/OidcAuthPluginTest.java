@@ -209,6 +209,32 @@ public class OidcAuthPluginTest {
         assertThat(principals, not(hasLoA(LoA.REFEDS_IAP_LOCAL_ENTERPRISE)));
     }
 
+    @Test
+    public void successWhenValidWlcgGroupToken() throws Exception
+    {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+
+        Set<Principal> principals =
+                whenOidcPluginCalledWith(
+                        withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                        withUserInfo(new StringBuilder()
+                                .append("{")
+                                .append("\"sub\":\"214234823942934792371\",")
+                                    // Note that backslash ('\') is a special
+                                    // character when present within either a
+                                    // JSON String and a Java String.  This
+                                    // means we must double-escape the
+                                    // backslashes in the two group names here.
+                                .append("\"wlcg.groups\": [\"\\\\cms\", \"\\\\cms\\\\uscms\"]")
+                                .append("}")
+                                .toString()),
+                        withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371", "IAM"));
+        assertThat(principals, hasGroup("\\cms"));
+        assertThat(principals, hasGroup("\\cms\\uscms"));
+    }
+
     /*-------------------------------- Helpers --------------------------------------*/
 
     private void givenHostnameConfig(String config)
