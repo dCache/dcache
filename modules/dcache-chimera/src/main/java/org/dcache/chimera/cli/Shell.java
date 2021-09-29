@@ -432,7 +432,16 @@ public class Shell extends ShellApplication
                                          dateOf(time),
                                          entry.getName());
 
-                sb.append(s).append('\n');
+                sb.append(s);
+
+                var inode = entry.getInode();
+                if (inode.isLink()) {
+                    String target = new String(inode.readlink(),
+                            StandardCharsets.UTF_8);
+                    sb.append(" -> ").append(target);
+                }
+
+                sb.append('\n');
             }
         }
 
