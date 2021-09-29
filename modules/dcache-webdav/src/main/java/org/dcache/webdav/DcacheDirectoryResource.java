@@ -10,7 +10,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import io.milton.http.Auth;
@@ -70,14 +69,6 @@ public class DcacheDirectoryResource
 
     private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY,
           Long.class);
-
-    // FIXME update poolmanager to return the actual CacheException.
-    private static final ImmutableSet<String> FULL_POOL_MESSAGE = ImmutableSet.<String>builder()
-          .add("All pools full")
-          .add("All pools are full")
-          .add("Cost limit exceeded")
-          .add("Fallback cost exceeded")
-          .build();
 
     public DcacheDirectoryResource(DcacheResourceFactory factory,
           FsPath path, FileAttributes attributes) {
@@ -143,20 +134,12 @@ public class DcacheDirectoryResource
             //     RFC 2616.
             //
             throw new WebDavException("Problem with transferred data: " + e.getMessage(), e, this);
-        } catch (PermissionDeniedCacheException e) {
-            throw WebDavExceptions.permissionDenied(this);
         } catch (FileExistsCacheException e) {
             throw new ConflictException(this);
         } catch (NotFileCacheException e) { // Attempt to replace directory with file
             throw new MethodNotAllowedException("Resource exists as collection", e, null);
-        } catch (MissingResourceCacheException e) {
-            if (FULL_POOL_MESSAGE.contains(e.getMessage())) {
-                throw new InsufficientStorageException(e.getMessage(), e, this);
-            } else {
-                throw new WebDavException(e.getMessage(), e, this);
-            }
         } catch (CacheException e) {
-            throw new WebDavException(e.getMessage(), e, this);
+            throw WebDavException.of(e, this);
         } catch (InterruptedException e) {
             throw new WebDavException("Transfer was interrupted", e, this);
         } catch (URISyntaxException e) {
