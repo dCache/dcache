@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 import static io.milton.http.Response.Status.*;
@@ -96,9 +95,11 @@ public class DcacheSimpleResponseHandler extends AbstractWrappingResponseHandler
     {
         response.setStatus(status);
         response.setContentTypeHeader(MediaType.PLAIN_TEXT_UTF_8.toString());
-        OutputStream out = response.getOutputStream();
+        byte[] messageBytes = (message + "\n").getBytes(StandardCharsets.UTF_8);
+        response.setContentLengthHeader((long)messageBytes.length);
+
         try {
-            out.write((message + "\n").getBytes(StandardCharsets.UTF_8));
+            response.getOutputStream().write(messageBytes);
         } catch (IOException e) {
             LOGGER.warn("Failed to write error response {}: {}", message, e.toString());
         }
