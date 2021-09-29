@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.Pgpass;
 
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
@@ -85,30 +86,32 @@ public class Shell extends ShellApplication
     private String path = "/";
     private FsInode pwd;
 
-
-
-
     public static void main(String[] arguments) throws Throwable {
-        if (arguments.length < 6) {
-            System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass> " +
+        if (arguments.length < 7) {
+            System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass> <dbPassFile> " +
                     "<storageInfoExtractor> <accessLatency> <retentionPolicy>");
             System.exit(4);
         }
-
         Args args = new Args(arguments);
-        args.shift(6);
+        args.shift(7);
 
-        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5])) {
+        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6])) {
             shell.start(args);
         }
     }
 
-    public Shell(String url, String user, String password, String extractor, String accessLatency, String retentionPolicy) throws Exception
+    public Shell(String url, String user, String password, String file, String extractor, String accessLatency, String retentionPolicy) throws Exception
     {
-
+        if (password.isEmpty() && !file.isEmpty()) {
+            if(new File(file).exists()) {
+                password = Pgpass.getPassword(file, url, user, password);
+            } else {
+                System.err.println("chimera.db.password.file path is wrong");
+                System.exit(4);
+            }
+        }
         fs = FsFactory.createFileSystem(url, user, password);
         pwd = fs.path2inode(path);
-
 
         Class<? extends ChimeraStorageInfoExtractable> storageInfoExtractor =
                 Class.forName(extractor).asSubclass(ChimeraStorageInfoExtractable.class);
