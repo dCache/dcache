@@ -184,7 +184,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      * @return whether the tape's oldest jost is expired
      */
     public boolean isOldestTapeJobExpired(SchedulingInfoTape tape) {
-        if (tape.getOldestJobArrival() == NO_VALUE) {
+        if (tape == null || tape.getOldestJobArrival() == NO_VALUE) {
             return false;
         }
         long ageOfOldestJobArrival = System.currentTimeMillis() - tape.getOldestJobArrival();
@@ -198,7 +198,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      */
     public boolean isNewestTapeJobOldEnough(SchedulingInfoTape tape) {
         long minWaitingTime = minJobWaitingTime();
-        if (tape.getNewestJobArrival() == NO_VALUE) {
+        if (tape == null || tape.getNewestJobArrival() == NO_VALUE) {
             return false;
         } else if (minWaitingTime == NO_VALUE) {
             return true;
@@ -220,7 +220,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      */
     public boolean isTapeRecallVolumeSufficient(SchedulingInfoTape tape, long recallVolume) {
         int percentage = minTapeRecallPercentage();
-        if (!tape.hasTapeInfo()) {
+        if (tape == null || !tape.hasTapeInfo()) {
             return percentage == 0;
         }
 
@@ -240,6 +240,9 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     public int compareOldestTapeRequestAge(SchedulingInfoTape first, SchedulingInfoTape second) {
+        if (first == null || second == null) {
+            return 0;
+        }
         long oldestArrival = first.getOldestJobArrival();
         long otherArrival = second.getOldestJobArrival();
         if (oldestArrival == NO_VALUE && otherArrival == NO_VALUE) {
