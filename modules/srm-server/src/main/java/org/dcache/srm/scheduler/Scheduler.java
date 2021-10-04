@@ -394,13 +394,13 @@ public class Scheduler <T extends Job> implements JobStateChangeAware
                             hasBeenNotified = false;
                         }
                     } catch (SRMInvalidRequestException e) {
-                        LOGGER.error("Sheduler(id={}) detected an SRM error: {}", getId(), e.toString());
+                        LOGGER.error("Scheduler(id={}) detected an SRM error: {}", getId(), e.toString());
                     } catch (RuntimeException e) {
-                        LOGGER.error("Sheduler(id=" + getId() + ") detected a bug", e);
+                        LOGGER.error("Scheduler(id=" + getId() + ") detected a bug", e);
                     }
                 }
             } catch (InterruptedException e) {
-                LOGGER.error("Sheduler(id=" + getId() +
+                LOGGER.error("Scheduler(id=" + getId() +
                         ") terminating update thread, since it caught an InterruptedException",
                         e);
             }
