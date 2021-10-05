@@ -19,20 +19,15 @@
 package diskCacheV111.namespace;
 
 import com.google.common.collect.Range;
-
-import javax.security.auth.Subject;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-
-
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -42,192 +37,167 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * An implementation of NameSpaceProvider that forwards all requests
- * to some other NameSpaceProvider.
+ * An implementation of NameSpaceProvider that forwards all requests to some other
+ * NameSpaceProvider.
  */
-public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider
-{
+public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider {
+
     protected abstract NameSpaceProvider delegate();
 
     @Override
     public FileAttributes createFile(Subject subject, String path,
-            FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
-            throws CacheException
-    {
+          FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
+          throws CacheException {
         return delegate().createFile(subject, path, assignAttributes,
-                requestAttributes);
+              requestAttributes);
     }
 
     @Override
     public PnfsId createDirectory(Subject subject, String path,
-            FileAttributes attributes) throws CacheException
-    {
+          FileAttributes attributes) throws CacheException {
         return delegate().createDirectory(subject, path, attributes);
     }
 
     @Override
     public PnfsId createSymLink(Subject subject, String path, String dest,
-            FileAttributes attributes) throws CacheException
-    {
+          FileAttributes attributes) throws CacheException {
         return delegate().createSymLink(subject, path, dest, attributes);
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId pnfsId, Set<FileAttribute> attr) throws CacheException
-    {
+          PnfsId pnfsId, Set<FileAttribute> attr) throws CacheException {
         return delegate().deleteEntry(subject, allowed, pnfsId, attr);
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            String path, Set<FileAttribute> attr) throws CacheException
-    {
+          String path, Set<FileAttribute> attr) throws CacheException {
         return delegate().deleteEntry(subject, allowed, path, attr);
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId pnfsId, String path, Set<FileAttribute> attr)
-            throws CacheException
-    {
+          PnfsId pnfsId, String path, Set<FileAttribute> attr)
+          throws CacheException {
         return delegate().deleteEntry(subject, allowed, pnfsId, path, attr);
     }
 
     @Override
     public void rename(Subject subject, PnfsId pnfsId, String sourcePath,
-            String destinationPath, boolean overwrite) throws CacheException
-    {
+          String destinationPath, boolean overwrite) throws CacheException {
         delegate().rename(subject, pnfsId, sourcePath, destinationPath, overwrite);
     }
 
     @Override
     public String pnfsidToPath(Subject subject, PnfsId pnfsId)
-            throws CacheException
-    {
+          throws CacheException {
         return delegate().pnfsidToPath(subject, pnfsId);
     }
 
     @Override
     public PnfsId pathToPnfsid(Subject subject, String path,
-            boolean followLinks) throws CacheException
-    {
+          boolean followLinks) throws CacheException {
         return delegate().pathToPnfsid(subject, path, followLinks);
     }
 
     @Override
     public Collection<Link> find(Subject subject, PnfsId pnfsId)
-            throws CacheException
-    {
+          throws CacheException {
         return delegate().find(subject, pnfsId);
     }
 
     @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId,
-            String attribute) throws CacheException
-    {
+          String attribute) throws CacheException {
         delegate().removeFileAttribute(subject, pnfsId, attribute);
     }
 
     @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId,
-            ChecksumType type) throws CacheException
-    {
+          ChecksumType type) throws CacheException {
         delegate().removeChecksum(subject, pnfsId, type);
     }
 
     @Override
     public void addCacheLocation(Subject subject, PnfsId pnfsId,
-            String cacheLocation) throws CacheException
-    {
+          String cacheLocation) throws CacheException {
         delegate().addCacheLocation(subject, pnfsId, cacheLocation);
     }
 
     @Override
     public List<String> getCacheLocation(Subject subject, PnfsId pnfsId)
-            throws CacheException
-    {
+          throws CacheException {
         return delegate().getCacheLocation(subject, pnfsId);
     }
 
     @Override
     public void clearCacheLocation(Subject subject, PnfsId pnfsId,
-            String cacheLocation, boolean removeIfLast) throws CacheException
-    {
+          String cacheLocation, boolean removeIfLast) throws CacheException {
         delegate().clearCacheLocation(subject, pnfsId, cacheLocation, removeIfLast);
     }
 
     @Override
     public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
-            Set<FileAttribute> attr) throws CacheException
-    {
+          Set<FileAttribute> attr) throws CacheException {
         return delegate().getFileAttributes(subject, pnfsId, attr);
     }
 
     @Override
     public FileAttributes setFileAttributes(Subject subject, PnfsId pnfsId,
-            FileAttributes attr, Set<FileAttribute> fetch) throws CacheException
-    {
+          FileAttributes attr, Set<FileAttribute> fetch) throws CacheException {
         return delegate().setFileAttributes(subject, pnfsId, attr, fetch);
     }
 
     @Override
     public void list(Subject subject, String path, Glob glob, Range<Integer> range,
-            Set<FileAttribute> attrs, ListHandler handler) throws CacheException
-    {
+          Set<FileAttribute> attrs, ListHandler handler) throws CacheException {
         delegate().list(subject, path, glob, range, attrs, handler);
     }
 
     @Override
     public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
-            Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
-            Set<CreateOption> options) throws CacheException
-    {
+          Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
+          Set<CreateOption> options) throws CacheException {
         return delegate().createUploadPath(subject, path, rootPath, size, al,
-                rp, spaceToken, options);
+              rp, spaceToken, options);
     }
 
     @Override
     public FileAttributes commitUpload(Subject subject, FsPath uploadPath,
-            FsPath path, Set<CreateOption> options, Set<FileAttribute> fetch)
-            throws CacheException
-    {
+          FsPath path, Set<CreateOption> options, Set<FileAttribute> fetch)
+          throws CacheException {
         return delegate().commitUpload(subject, uploadPath, path, options, fetch);
     }
 
     @Override
     public Collection<FileAttributes> cancelUpload(Subject subject,
-            FsPath uploadPath, FsPath path, Set<FileAttribute> attr,
-            String explanation) throws CacheException
-    {
+          FsPath uploadPath, FsPath path, Set<FileAttribute> attr,
+          String explanation) throws CacheException {
         return delegate().cancelUpload(subject, uploadPath, path, attr, explanation);
     }
 
     @Override
     public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
-            throws CacheException
-    {
+          throws CacheException {
         return delegate().readExtendedAttribute(subject, path, name);
     }
 
     @Override
     public void writeExtendedAttribute(Subject subject, FsPath path, String name,
-            byte[] value, SetExtendedAttributeMode mode) throws CacheException
-    {
+          byte[] value, SetExtendedAttributeMode mode) throws CacheException {
         delegate().writeExtendedAttribute(subject, path, name, value, mode);
     }
 
     @Override
     public Set<String> listExtendedAttributes(Subject subject, FsPath path)
-            throws CacheException
-    {
+          throws CacheException {
         return delegate().listExtendedAttributes(subject, path);
     }
 
     @Override
     public void removeExtendedAttribute(Subject subject, FsPath path, String name)
-            throws CacheException
-    {
+          throws CacheException {
         delegate().removeExtendedAttribute(subject, path, name);
     }
 
@@ -237,8 +207,7 @@ public abstract class ForwardingNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public void removeLabel(Subject subject, FsPath path, String name) throws CacheException
-    {
+    public void removeLabel(Subject subject, FsPath path, String name) throws CacheException {
         delegate().removeLabel(subject, path, name);
 
     }

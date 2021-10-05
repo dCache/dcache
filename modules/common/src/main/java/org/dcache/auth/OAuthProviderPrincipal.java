@@ -18,45 +18,40 @@
  */
 package org.dcache.auth;
 
-import java.security.Principal;
-
 import static java.util.Objects.requireNonNull;
 
+import java.security.Principal;
+
 /**
- * A Principal that describes which OP asserted the users identity.  The value
- * is the short-hand name for the OP.
+ * A Principal that describes which OP asserted the users identity.  The value is the short-hand
+ * name for the OP.
  */
-public class OAuthProviderPrincipal implements Principal
-{
+public class OAuthProviderPrincipal implements Principal {
+
     private final String name;
 
-    public OAuthProviderPrincipal(String name)
-    {
+    public OAuthProviderPrincipal(String name) {
         this.name = requireNonNull(name);
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         return other instanceof OAuthProviderPrincipal
-                && ((OAuthProviderPrincipal)other).name.equals(name);
+              && ((OAuthProviderPrincipal) other).name.equals(name);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return name.hashCode();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "OP[" + name + "]";
     }
 }

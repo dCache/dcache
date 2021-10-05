@@ -17,27 +17,24 @@
  */
 package org.dcache.util.configuration;
 
+import java.io.LineNumberReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.LineNumberReader;
-
 /**
- * This class provides the default behaviour if no problem
- * consumer is registered: warnings are logged and errors
- * result in an IllegalArgumentException being thrown.
+ * This class provides the default behaviour if no problem consumer is registered: warnings are
+ * logged and errors result in an IllegalArgumentException being thrown.
  */
-public class DefaultProblemConsumer implements ProblemConsumer
-{
+public class DefaultProblemConsumer implements ProblemConsumer {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(DefaultProblemConsumer.class);
+          LoggerFactory.getLogger(DefaultProblemConsumer.class);
 
     private String _filename;
     private LineNumberReader _reader;
 
-    protected String addContextTo(String message)
-    {
-        if( _filename == null || _reader == null) {
+    protected String addContextTo(String message) {
+        if (_filename == null || _reader == null) {
             return message;
         }
 
@@ -45,32 +42,27 @@ public class DefaultProblemConsumer implements ProblemConsumer
     }
 
     @Override
-    public void error(String message)
-    {
+    public void error(String message) {
         throw new IllegalArgumentException(addContextTo(message));
     }
 
     @Override
-    public void warning(String message)
-    {
+    public void warning(String message) {
         LOGGER.warn(addContextTo(message));
     }
 
     @Override
-    public void info(String message)
-    {
+    public void info(String message) {
         LOGGER.info(addContextTo(message));
     }
 
     @Override
-    public void setFilename(String name)
-    {
+    public void setFilename(String name) {
         _filename = name;
     }
 
     @Override
-    public void setLineNumberReader(LineNumberReader reader)
-    {
+    public void setLineNumberReader(LineNumberReader reader) {
         _reader = reader;
     }
 }

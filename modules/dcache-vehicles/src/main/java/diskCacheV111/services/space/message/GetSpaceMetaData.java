@@ -13,10 +13,10 @@ import diskCacheV111.services.space.Space;
 import diskCacheV111.vehicles.Message;
 
 /**
- *
  * @author timur
  */
-public class GetSpaceMetaData extends Message{
+public class GetSpaceMetaData extends Message {
+
     private static final long serialVersionUID = -7198244480807795469L;
     private final String[] spaceTokens;
     private Space[] spaces;

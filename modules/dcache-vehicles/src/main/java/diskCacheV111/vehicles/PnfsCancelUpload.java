@@ -17,28 +17,24 @@
  */
 package diskCacheV111.vehicles;
 
-import javax.security.auth.Subject;
-
-import java.util.Collection;
-import java.util.Set;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.FsPath;
-
+import java.util.Collection;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Revoke a temporary upload path.
- *
- * This message operates on a temporary upload path generated with
- * PnfsCreateUploadPath. The temporary upload path will be deleted
- * and the path will no longer be available for writing.
+ * <p>
+ * This message operates on a temporary upload path generated with PnfsCreateUploadPath. The
+ * temporary upload path will be deleted and the path will no longer be available for writing.
  */
-public class PnfsCancelUpload extends PnfsMessage
-{
+public class PnfsCancelUpload extends PnfsMessage {
+
     private static final long serialVersionUID = 1198546600602532976L;
 
     private final String uploadPath;
@@ -47,8 +43,7 @@ public class PnfsCancelUpload extends PnfsMessage
     private Collection<FileAttributes> deletedFiles;
 
     public PnfsCancelUpload(Subject subject, Restriction restriction,
-            FsPath uploadPath, FsPath path, Set<FileAttribute> requested, String explanation)
-    {
+          FsPath uploadPath, FsPath path, Set<FileAttribute> requested, String explanation) {
         setSubject(subject);
         setRestriction(restriction);
         setPnfsPath(path.toString());
@@ -58,33 +53,27 @@ public class PnfsCancelUpload extends PnfsMessage
         this.requested = requireNonNull(requested);
     }
 
-    public FsPath getPath()
-    {
+    public FsPath getPath() {
         return FsPath.create(getPnfsPath());
     }
 
-    public FsPath getUploadPath()
-    {
+    public FsPath getUploadPath() {
         return FsPath.create(uploadPath);
     }
 
-    public String getExplanation()
-    {
+    public String getExplanation() {
         return explanation;
     }
 
-    public Set<FileAttribute> getRequestedAttributes()
-    {
+    public Set<FileAttribute> getRequestedAttributes() {
         return requested;
     }
 
-    public void setDeletedFiles(Collection<FileAttributes> files)
-    {
+    public void setDeletedFiles(Collection<FileAttributes> files) {
         deletedFiles = requireNonNull(files);
     }
 
-    public Collection<FileAttributes> getDeletedFiles()
-    {
+    public Collection<FileAttributes> getDeletedFiles() {
         return deletedFiles;
     }
 }

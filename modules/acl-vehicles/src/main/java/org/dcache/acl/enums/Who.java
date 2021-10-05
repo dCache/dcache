@@ -82,25 +82,26 @@ public enum Who {
     }
 
     public static Who fromAbbreviation(String abbreviation) throws IllegalArgumentException {
-        if ( abbreviation == null || abbreviation.length() == 0 ) {
-            throw new IllegalArgumentException("Who abbreviation is " + (abbreviation == null ? "NULL" : "Empty"));
+        if (abbreviation == null || abbreviation.length() == 0) {
+            throw new IllegalArgumentException(
+                  "Who abbreviation is " + (abbreviation == null ? "NULL" : "Empty"));
         }
 
-        if ( USER.equalsIgnoreCase(abbreviation) ) {
+        if (USER.equalsIgnoreCase(abbreviation)) {
             return USER;
-        } else if ( GROUP.equalsIgnoreCase(abbreviation) ) {
+        } else if (GROUP.equalsIgnoreCase(abbreviation)) {
             return GROUP;
-        } else if ( OWNER.equalsIgnoreCase(abbreviation) ) {
+        } else if (OWNER.equalsIgnoreCase(abbreviation)) {
             return OWNER;
-        } else if ( OWNER_GROUP.equalsIgnoreCase(abbreviation) ) {
+        } else if (OWNER_GROUP.equalsIgnoreCase(abbreviation)) {
             return OWNER_GROUP;
-        } else if ( EVERYONE.equalsIgnoreCase(abbreviation) ) {
+        } else if (EVERYONE.equalsIgnoreCase(abbreviation)) {
             return EVERYONE;
-        } else if ( ANONYMOUS.equalsIgnoreCase(abbreviation) ) {
+        } else if (ANONYMOUS.equalsIgnoreCase(abbreviation)) {
             return ANONYMOUS;
-        } else if ( AUTHENTICATED.equalsIgnoreCase(abbreviation) ) {
+        } else if (AUTHENTICATED.equalsIgnoreCase(abbreviation)) {
             return AUTHENTICATED;
-        } else if ( abbreviation.endsWith("@") ) {
+        } else if (abbreviation.endsWith("@")) {
             throw new IllegalArgumentException("Invalid who abbreviation: " + abbreviation);
         }
 

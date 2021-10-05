@@ -1,13 +1,13 @@
 package org.dcache.gplazma.plugins;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
@@ -26,9 +26,9 @@ import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.junit.Before;
+import org.junit.Test;
 
 
 public class GplazmaMultiMapFileTest {
@@ -39,8 +39,7 @@ public class GplazmaMultiMapFileTest {
     private List<String> warnings;
 
     @Before
-    public void setup() throws Exception
-    {
+    public void setup() throws Exception {
         FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix());
         config = fileSystem.getPath("/etc/dcache/multimap.conf");
         Files.createDirectories(config.getParent());
@@ -434,8 +433,7 @@ public class GplazmaMultiMapFileTest {
 
     /*----------------------- Helpers -----------------------------*/
 
-    private void givenConfig(String mapping) throws Exception
-    {
+    private void givenConfig(String mapping) throws Exception {
         if (Files.exists(config)) {
             Thread.sleep(1); // Ensure file's mtime value is different.
             Files.write(config, mapping.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
@@ -445,17 +443,15 @@ public class GplazmaMultiMapFileTest {
         }
     }
 
-    private void givenConfigHasBeenRead() throws Exception
-    {
+    private void givenConfigHasBeenRead() throws Exception {
         mapFile.mapping();
     }
 
-    private void whenMapping(Principal principal) throws Exception
-    {
+    private void whenMapping(Principal principal) throws Exception {
         mappedPrincipals = mapFile.mapping().entrySet().stream()
-                .filter(e -> e.getKey().matches(principal))
-                .map(e -> e.getValue())
-                .findFirst()
-                .orElse(Collections.emptySet());
+              .filter(e -> e.getKey().matches(principal))
+              .map(e -> e.getValue())
+              .findFirst()
+              .orElse(Collections.emptySet());
     }
 }

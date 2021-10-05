@@ -23,14 +23,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that a particular field supports glob expansion through some
- * GlobExpander class.  The annotated field must be an array and must also be
- * an @Argument.
+ * Indicates that a particular field supports glob expansion through some GlobExpander class.  The
+ * annotated field must be an array and must also be an @Argument.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface ExpandWith
-{
+public @interface ExpandWith {
+
     /**
      * @return Class to instantiate that will expand glob arguments.
      */

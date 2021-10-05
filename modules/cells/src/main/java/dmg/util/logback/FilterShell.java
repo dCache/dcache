@@ -1,37 +1,32 @@
 package dmg.util.logback;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Formatter;
-
-import org.dcache.util.Args;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import java.util.Collection;
+import java.util.Formatter;
+import org.dcache.util.Args;
+import org.slf4j.LoggerFactory;
+
 /**
- * Provides basic cell shell commands to inspect and manipulate log
- * filter thresholds.
+ * Provides basic cell shell commands to inspect and manipulate log filter thresholds.
  */
-public class FilterShell
-{
+public class FilterShell {
+
     private final FilterThresholdSet _thresholds;
     private final LoggerContext _context =
-        (LoggerContext) LoggerFactory.getILoggerFactory();
+          (LoggerContext) LoggerFactory.getILoggerFactory();
 
-    public FilterShell(FilterThresholdSet thresholds)
-    {
+    public FilterShell(FilterThresholdSet thresholds) {
         requireNonNull(thresholds);
         _thresholds = thresholds;
     }
 
-    private boolean isExistingLogger(LoggerName name)
-    {
-        for (Logger logger: getLoggers()) {
+    private boolean isExistingLogger(LoggerName name) {
+        for (Logger logger : getLoggers()) {
             if (name.isNameOfLogger(logger)) {
                 return true;
             }
@@ -39,18 +34,17 @@ public class FilterShell
         return false;
     }
 
-    private Collection<Logger> getLoggers()
-    {
+    private Collection<Logger> getLoggers() {
         return _context.getLoggerList();
     }
 
     public static final String hh_log_ls =
-        "[-a] [<appender>] [<logger>]";
+          "[-a] [<appender>] [<logger>]";
     public static final String fh_log_ls =
-        "Lists current log thresholds. Inherited thresholds are marked\n" +
-        "with an asterix.";
-    public String ac_log_ls_$_0_2(Args args)
-    {
+          "Lists current log thresholds. Inherited thresholds are marked\n" +
+                "with an asterix.";
+
+    public String ac_log_ls_$_0_2(Args args) {
         boolean all = args.hasOption("a");
         String appender = args.argv(0);
         String logger = args.argv(1);
@@ -65,24 +59,21 @@ public class FilterShell
         return out.toString();
     }
 
-    private void ls(Formatter out, boolean all)
-    {
-        for (String appender: _thresholds.getAppenders()) {
+    private void ls(Formatter out, boolean all) {
+        for (String appender : _thresholds.getAppenders()) {
             lsAppender(out, all, appender);
         }
     }
 
-    private void lsAppender(Formatter out, boolean all, String appender)
-    {
+    private void lsAppender(Formatter out, boolean all, String appender) {
         out.format("%s:\n", appender);
-        for (Logger logger: getLoggers()) {
+        for (Logger logger : getLoggers()) {
             lsLogger(out, all, LoggerName.getInstance(logger), appender);
         }
     }
 
     private void lsLogger(Formatter out, boolean all,
-                          LoggerName logger, String appender)
-    {
+          LoggerName logger, String appender) {
         Level level = _thresholds.get(logger, appender);
         if (level != null) {
             out.format("  %s=%s\n", logger, level);
@@ -97,11 +88,11 @@ public class FilterShell
     }
 
     public static final String hh_log_set =
-        "<appender> [<logger>] OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
+          "<appender> [<logger>] OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
     public static final String fh_log_set =
-        "Sets the log level of <appender>.";
-    public String ac_log_set_$_2_3(Args args)
-    {
+          "Sets the log level of <appender>.";
+
+    public String ac_log_set_$_2_3(Args args) {
         String appender = args.argv(0);
         LoggerName logger;
         String threshold;
@@ -123,19 +114,19 @@ public class FilterShell
     }
 
     public static final String hh_log_reset =
-        "[-a] <appender> [<logger>]";
+          "[-a] <appender> [<logger>]";
     public static final String fh_log_reset =
-        "Resets the log level of <appender>. The log level for <appender>\n" +
-        "will be inherited from the parent cell.";
-    public String ac_log_reset_$_1_2(Args args)
-    {
+          "Resets the log level of <appender>. The log level for <appender>\n" +
+                "will be inherited from the parent cell.";
+
+    public String ac_log_reset_$_1_2(Args args) {
         String appender = args.argv(0);
         if (args.argc() == 2) {
             _thresholds.remove(LoggerName.getInstance(args.argv(1)), appender);
         } else if (!args.hasOption("a")) {
             _thresholds.remove(LoggerName.ROOT, appender);
         } else {
-            for (Logger logger: getLoggers()) {
+            for (Logger logger : getLoggers()) {
                 _thresholds.remove(LoggerName.getInstance(logger), appender);
             }
         }

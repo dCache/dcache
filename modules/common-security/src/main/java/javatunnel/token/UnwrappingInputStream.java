@@ -17,27 +17,24 @@
  */
 package javatunnel.token;
 
-import org.dcache.dss.DssContext;
-
 import java.io.IOException;
 import java.io.InputStream;
+import org.dcache.dss.DssContext;
 
-public class UnwrappingInputStream extends InputStream
-{
+public class UnwrappingInputStream extends InputStream {
+
     private final TokenReader in;
     private final DssContext context;
     private byte[] buffer;
     private int pos;
 
-    public UnwrappingInputStream(TokenReader in, DssContext context)
-    {
+    public UnwrappingInputStream(TokenReader in, DssContext context) {
         this.in = in;
         this.context = context;
     }
 
     @Override
-    public int read() throws IOException
-    {
+    public int read() throws IOException {
         if (buffer == null || pos >= buffer.length) {
             byte[] token = in.readToken();
             if (token == null) {
@@ -50,8 +47,7 @@ public class UnwrappingInputStream extends InputStream
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         in.close();
     }
 }

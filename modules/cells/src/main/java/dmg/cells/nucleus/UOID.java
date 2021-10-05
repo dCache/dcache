@@ -12,7 +12,6 @@ import javax.annotation.concurrent.Immutable;
  *
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
- *
  */
 @Immutable
 public final class UOID implements Serializable, Cloneable {
@@ -32,8 +31,7 @@ public final class UOID implements Serializable, Cloneable {
         _counter = uuid.getLeastSignificantBits();
     }
 
-    UOID(long counter, long time)
-    {
+    UOID(long counter, long time) {
         _counter = counter;
         _time = time;
     }
@@ -51,7 +49,7 @@ public final class UOID implements Serializable, Cloneable {
 
     @Override
     public boolean equals(Object x) {
-        if( x == this ) {
+        if (x == this) {
             return true;
         }
         if (!(x instanceof UOID)) {
@@ -68,22 +66,20 @@ public final class UOID implements Serializable, Cloneable {
 
     /**
      * Writes UOID to a data output stream.
-     *
+     * <p>
      * This is the raw encoding used by tunnels since release 3.0.
      */
-    public void writeTo(DataOutput out) throws IOException
-    {
+    public void writeTo(DataOutput out) throws IOException {
         out.writeLong(_counter);
         out.writeLong(_time);
     }
 
     /**
      * Reads UOID from a data input stream.
-     *
+     * <p>
      * This is the raw encoding used by tunnels since release 3.0.
      */
-    public static UOID createFrom(DataInput in) throws IOException
-    {
+    public static UOID createFrom(DataInput in) throws IOException {
         return new UOID(in.readLong(), in.readLong());
     }
 }

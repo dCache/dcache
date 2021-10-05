@@ -17,28 +17,24 @@
 package org.dcache.chimera;
 
 /**
- * A Link represents the location of some target inode within a filesystem.
- * The parent is always a directory and listing that directory will yield
- * the targeted inode with the given name.
+ * A Link represents the location of some target inode within a filesystem. The parent is always a
+ * directory and listing that directory will yield the targeted inode with the given name.
  */
-public class Link
-{
+public class Link {
+
     private final FsInode parent;
     private final String name;
 
-    public Link(FsInode parent, String name)
-    {
+    public Link(FsInode parent, String name) {
         this.parent = parent;
         this.name = name;
     }
 
-    public FsInode getParent()
-    {
+    public FsInode getParent() {
         return parent;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 }

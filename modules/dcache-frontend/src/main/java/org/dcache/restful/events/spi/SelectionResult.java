@@ -18,80 +18,69 @@
  */
 package org.dcache.restful.events.spi;
 
-import javax.validation.constraints.NotNull;
-
 import static java.util.Objects.requireNonNull;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * This class describes the result of a selection request.
  */
-public class SelectionResult
-{
+public class SelectionResult {
+
     private final SelectedEventStream ses;
     private final SelectionStatus status;
     private final String message;
 
-    public static SelectionResult badSelector(@NotNull String template, Object...args)
-    {
+    public static SelectionResult badSelector(@NotNull String template, Object... args) {
         return new SelectionResult(null, SelectionStatus.BAD_SELECTOR,
-                String.format(template, args));
+              String.format(template, args));
     }
 
-    public static SelectionResult created(@NotNull SelectedEventStream ses)
-    {
+    public static SelectionResult created(@NotNull SelectedEventStream ses) {
         return new SelectionResult(ses, SelectionStatus.CREATED, null);
     }
 
-    public static SelectionResult merged(@NotNull SelectedEventStream ses)
-    {
+    public static SelectionResult merged(@NotNull SelectedEventStream ses) {
         return new SelectionResult(ses, SelectionStatus.MERGED, null);
     }
 
-    public static SelectionResult permissionDenied(@NotNull String template, Object...args)
-    {
+    public static SelectionResult permissionDenied(@NotNull String template, Object... args) {
         return new SelectionResult(null, SelectionStatus.PERMISSION_DENIED,
-                String.format(template, args));
+              String.format(template, args));
     }
 
-    public static SelectionResult resourceNotFound(@NotNull String template, Object...args)
-    {
+    public static SelectionResult resourceNotFound(@NotNull String template, Object... args) {
         return new SelectionResult(null, SelectionStatus.RESOURCE_NOT_FOUND,
-                String.format(template, args));
+              String.format(template, args));
     }
 
-    public static SelectionResult conditionFailed(@NotNull String template, Object...args)
-    {
+    public static SelectionResult conditionFailed(@NotNull String template, Object... args) {
         return new SelectionResult(null, SelectionStatus.CONDITION_FAILED,
-                String.format(template, args));
+              String.format(template, args));
     }
 
-    public static SelectionResult internalError(@NotNull String template, Object...args)
-    {
+    public static SelectionResult internalError(@NotNull String template, Object... args) {
         return new SelectionResult(null, SelectionStatus.INTERNAL_ERROR,
-                String.format(template, args));
+              String.format(template, args));
     }
 
     private SelectionResult(SelectedEventStream ses, SelectionStatus status,
-            String message)
-    {
+          String message) {
         this.ses = ses;
         this.status = requireNonNull(status);
         this.message = message;
     }
 
-    public SelectedEventStream getSelectedEventStream()
-    {
+    public SelectedEventStream getSelectedEventStream() {
         return ses;
     }
 
     @NotNull
-    public SelectionStatus getStatus()
-    {
+    public SelectionStatus getStatus() {
         return status;
     }
 
-    public String getMessage()
-    {
+    public String getMessage() {
         return message;
     }
 }

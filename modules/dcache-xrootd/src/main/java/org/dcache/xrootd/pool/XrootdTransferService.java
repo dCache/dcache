@@ -17,6 +17,13 @@
  */
 package org.dcache.xrootd.pool;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.CLIENT_TLS;
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -74,103 +81,94 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.CLIENT_TLS;
-import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
-
 /**
  * xrootd transfer service.
- *
- * The transfer service uses a Netty server. The Netty server is started dynamically
- * as soon as any xrootd movers have been executed. The server shuts down once the
- * last xrootd movers terminates.
- *
- * Xrootd movers are registered with the Netty server using a UUID. The UUID is
- * relayed to the door which includes it in the xrootd redirect sent to the client.
- * The redirected client will include the UUID when connecting to the pool and
- * serves as an one-time authorization token and as a means of binding the client
- * request to the correct mover.
- *
- * A transfer is considered to have succeeded if at least one file was opened and
- * all opened files were closed again.
- *
+ * <p>
+ * The transfer service uses a Netty server. The Netty server is started dynamically as soon as any
+ * xrootd movers have been executed. The server shuts down once the last xrootd movers terminates.
+ * <p>
+ * Xrootd movers are registered with the Netty server using a UUID. The UUID is relayed to the door
+ * which includes it in the xrootd redirect sent to the client. The redirected client will include
+ * the UUID when connecting to the pool and serves as an one-time authorization token and as a means
+ * of binding the client request to the correct mover.
+ * <p>
+ * A transfer is considered to have succeeded if at least one file was opened and all opened files
+ * were closed again.
+ * <p>
  * Open issues:
- *
- * * Write calls blocked on space allocation may starve read
- *   calls. This is because both are served by the same thread
- *   pool. This should be changed such that separate thread pools are
- *   used (may fix later).
- *
- * * Write messages are currently processed as one big message. If the
- *   client chooses to upload a huge file as a single write message,
- *   then the pool will run out of memory. We can fix this by breaking
- *   a write message into many small blocks. The old mover suffers
- *   from the same problem (may fix later).
- *
- * * At least for vector read, the behaviour when reading beyond the
- *   end of the file is wrong.
- *
- * Additions:  third-party client support for dCache as destination.
- *   Responsible for the management of the loop thread group used by
- *   third-party embedded clients.
+ * <p>
+ * * Write calls blocked on space allocation may starve read calls. This is because both are served
+ * by the same thread pool. This should be changed such that separate thread pools are used (may fix
+ * later).
+ * <p>
+ * * Write messages are currently processed as one big message. If the client chooses to upload a
+ * huge file as a single write message, then the pool will run out of memory. We can fix this by
+ * breaking a write message into many small blocks. The old mover suffers from the same problem (may
+ * fix later).
+ * <p>
+ * * At least for vector read, the behaviour when reading beyond the end of the file is wrong.
+ * <p>
+ * Additions:  third-party client support for dCache as destination. Responsible for the management
+ * of the loop thread group used by third-party embedded clients.
  */
 public class XrootdTransferService extends NettyTransferService<XrootdProtocolInfo>
-                implements CellCommandListener
-{
+      implements CellCommandListener {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(XrootdTransferService.class);
+          LoggerFactory.getLogger(XrootdTransferService.class);
 
     @Command(name = "xrootd set server response timeout",
-                    hint = "time in seconds a server has to reply "
-                                    + "to the third-party client",
-                    description = "Sets the timeout on the third-party client.  "
-                                    + "The default mirrors the aggressive "
-                                    + "behavior of the SLAC xrootd "
-                                    + "server; see the property ")
+          hint = "time in seconds a server has to reply "
+                + "to the third-party client",
+          description = "Sets the timeout on the third-party client.  "
+                + "The default mirrors the aggressive "
+                + "behavior of the SLAC xrootd "
+                + "server; see the property ")
     class TimeoutCommand implements Callable<String> {
-            @Argument(usage = "Timeout.")
-            Long timeout = 2L;
 
-            @Option(name = "unit",
-                    usage = "Time unit for the timeout.")
-            TimeUnit unit;
+        @Argument(usage = "Timeout.")
+        Long timeout = 2L;
 
-            @Override
-            public String call() throws Exception {
-                tpcServerResponseTimeout = timeout;
-                if (unit != null) {
-                    tpcServerResponseTimeoutUnit = unit;
-                }
-                return "Timeout now set to " + getTpcServerResponseTimeoutInSeconds()
-                                + " seconds; this affects only future transfers, "
-                                + "not those currently running.";
+        @Option(name = "unit",
+              usage = "Time unit for the timeout.")
+        TimeUnit unit;
+
+        @Override
+        public String call() throws Exception {
+            tpcServerResponseTimeout = timeout;
+            if (unit != null) {
+                tpcServerResponseTimeoutUnit = unit;
             }
+            return "Timeout now set to " + getTpcServerResponseTimeoutInSeconds()
+                  + " seconds; this affects only future transfers, "
+                  + "not those currently running.";
+        }
     }
 
-    private int                         maxFrameSize;
+    private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
     private List<ChannelHandlerFactory> accessLogPlugins;
     private List<ChannelHandlerFactory> tpcClientPlugins;
     private List<ChannelHandlerFactory> sslHandlerFactories;
-    private Map<String, String>         queryConfig;
-    private NioEventLoopGroup           thirdPartyClientGroup;
-    private ScheduledExecutorService    thirdPartyShutdownExecutor;
+    private Map<String, String> queryConfig;
+    private NioEventLoopGroup thirdPartyClientGroup;
+    private ScheduledExecutorService thirdPartyShutdownExecutor;
 
-    private SigningPolicy               signingPolicy;
-    private ServerProtocolFlags         serverProtocolFlags;
-    private long                        tpcServerResponseTimeout;
-    private TimeUnit                    tpcServerResponseTimeoutUnit;
-    private Map<String, Timer>          reconnectTimers;
-    private long                        readReconnectTimeout;
-    private TimeUnit                    readReconnectTimeoutUnit;
-    private int                         tpcClientChunkSize;
+    private SigningPolicy signingPolicy;
+    private ServerProtocolFlags serverProtocolFlags;
+    private long tpcServerResponseTimeout;
+    private TimeUnit tpcServerResponseTimeoutUnit;
+    private Map<String, Timer> reconnectTimers;
+    private long readReconnectTimeout;
+    private TimeUnit readReconnectTimeoutUnit;
+    private int tpcClientChunkSize;
 
-    /** Communication stub for talking to namespace, if necessary. */
+    /**
+     * Communication stub for talking to namespace, if necessary.
+     */
     private CellStub pnfsStub;
 
-    public XrootdTransferService()
-    {
+    public XrootdTransferService() {
         super("xrootd");
     }
 
@@ -178,13 +176,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         return tpcServerResponseTimeoutUnit.toSeconds(tpcServerResponseTimeout);
     }
 
-    public NioEventLoopGroup getThirdPartyClientGroup()
-    {
+    public NioEventLoopGroup getThirdPartyClientGroup() {
         return thirdPartyClientGroup;
     }
 
-    public ScheduledExecutorService getThirdPartyShutdownExecutor()
-    {
+    public ScheduledExecutorService getThirdPartyShutdownExecutor() {
         return thirdPartyShutdownExecutor;
     }
 
@@ -192,25 +188,23 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public synchronized void start() {
         super.start();
         ThreadFactory factory = new ThreadFactoryBuilder()
-                        .setNameFormat("xrootd-tpc-client-%d")
-                        .build();
+              .setNameFormat("xrootd-tpc-client-%d")
+              .build();
         thirdPartyClientGroup = new NioEventLoopGroup(0, new CDCThreadFactory(factory));
         reconnectTimers = new HashMap<>();
     }
 
     @Required
-    public void setAccessLogPlugins(List<ChannelHandlerFactory> plugins)
-    {
+    public void setAccessLogPlugins(List<ChannelHandlerFactory> plugins) {
         this.accessLogPlugins = plugins;
     }
 
     /**
      * Stop the timer, presumably because the client has reconnected.
      *
-     * @param uuid  of the mover (channel)
+     * @param uuid of the mover (channel)
      */
-    public synchronized void cancelReconnectTimeoutForMover(UUID uuid)
-    {
+    public synchronized void cancelReconnectTimeoutForMover(UUID uuid) {
         Timer timer = reconnectTimers.remove(uuid.toString());
         if (timer != null) {
             timer.cancel();
@@ -219,17 +213,15 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     /**
-     *  Because IO stall during a read may trigger the xrootd client
-     *  to attempt, after a timeout, to reconnect by opening another socket,
-     *  we would like not to reject it on the basis of a missing mover.  Thus in the
-     *  case that the file descriptor maps to a READ mover channel, we leave the
-     *  mover in the map held by the transfer service and we start a timer.
-     *  If the client fails to reconnect before expiration, the channel is released.
+     * Because IO stall during a read may trigger the xrootd client to attempt, after a timeout, to
+     * reconnect by opening another socket, we would like not to reject it on the basis of a missing
+     * mover.  Thus in the case that the file descriptor maps to a READ mover channel, we leave the
+     * mover in the map held by the transfer service and we start a timer. If the client fails to
+     * reconnect before expiration, the channel is released.
      *
-     *  @param descriptor referencing the mover (channel)
+     * @param descriptor referencing the mover (channel)
      */
-    public synchronized void scheduleReconnectTimerForMover(FileDescriptor descriptor)
-    {
+    public synchronized void scheduleReconnectTimerForMover(FileDescriptor descriptor) {
         NettyMoverChannel channel = descriptor.getChannel();
         UUID key = channel.getMoverUuid();
         cancelReconnectTimeoutForMover(key);
@@ -242,137 +234,118 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                     removeReadReconnectTimer(key);
                     timer.cancel();
                     LOGGER.debug("reconnect timer expired for {}; " +
-                        "channel was released and timer cancelled.",
-                        key);
+                                "channel was released and timer cancelled.",
+                          key);
                 }
             };
             reconnectTimers.put(key.toString(), timer);
             timer.schedule(task, readReconnectTimeoutUnit.toMillis(readReconnectTimeout));
         } else {
             LOGGER.debug("setReconnectTimeoutForMover for {}; " +
-                "mover no longer accessible; skipping.",
-                key);
+                        "mover no longer accessible; skipping.",
+                  key);
         }
     }
 
-    public void setPnfsStub(CellStub pnfsStub)
-    {
+    public void setPnfsStub(CellStub pnfsStub) {
         this.pnfsStub = requireNonNull(pnfsStub);
     }
 
     @Required
-    public void setReadReconnectTimeout(long readReconnectTimeout)
-    {
+    public void setReadReconnectTimeout(long readReconnectTimeout) {
         this.readReconnectTimeout = readReconnectTimeout;
     }
 
     @Required
-    public void setReadReconnectTimeoutUnit(TimeUnit readReconnectTimeoutUnit)
-    {
+    public void setReadReconnectTimeoutUnit(TimeUnit readReconnectTimeoutUnit) {
         this.readReconnectTimeoutUnit = readReconnectTimeoutUnit;
     }
 
     @Required
-    public void setPlugins(List<ChannelHandlerFactory> plugins)
-    {
+    public void setPlugins(List<ChannelHandlerFactory> plugins) {
         this.plugins = plugins;
     }
 
-    public List<ChannelHandlerFactory> getPlugins()
-    {
+    public List<ChannelHandlerFactory> getPlugins() {
         return plugins;
     }
 
     @Required
-    public void setSigningPolicy(SigningPolicy signingPolicy)
-    {
+    public void setSigningPolicy(SigningPolicy signingPolicy) {
         this.signingPolicy = signingPolicy;
     }
 
     @Required
-    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags)
-    {
+    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags) {
         this.serverProtocolFlags = serverProtocolFlags;
     }
 
     @Required
-    public void setSslHandlerFactories(List<ChannelHandlerFactory> sslHandlerFactories)
-    {
+    public void setSslHandlerFactories(List<ChannelHandlerFactory> sslHandlerFactories) {
         this.sslHandlerFactories = sslHandlerFactories;
     }
 
     @Resource
-    public void setTpcServerResponseTimeout(long timeout)
-    {
+    public void setTpcServerResponseTimeout(long timeout) {
         this.tpcServerResponseTimeout = timeout;
     }
 
     @Resource
-    public void setTpcServerResponseTimeoutUnit(TimeUnit unit)
-    {
+    public void setTpcServerResponseTimeoutUnit(TimeUnit unit) {
         this.tpcServerResponseTimeoutUnit = unit;
     }
 
     @Required
     public void setThirdPartyShutdownExecutor(
-                    ScheduledExecutorService thirdPartyShutdownExecutor)
-    {
+          ScheduledExecutorService thirdPartyShutdownExecutor) {
         this.thirdPartyShutdownExecutor = thirdPartyShutdownExecutor;
     }
 
     @Required
-    public void setTpcClientPlugins(List<ChannelHandlerFactory> tpcClientPlugins)
-    {
+    public void setTpcClientPlugins(List<ChannelHandlerFactory> tpcClientPlugins) {
         this.tpcClientPlugins = tpcClientPlugins;
     }
 
-    public List<ChannelHandlerFactory> getTpcClientPlugins()
-    {
+    public List<ChannelHandlerFactory> getTpcClientPlugins() {
         return tpcClientPlugins;
     }
 
     @Required
-    public void setMaxFrameSize(int maxFrameSize)
-    {
+    public void setMaxFrameSize(int maxFrameSize) {
         this.maxFrameSize = maxFrameSize;
     }
 
-    public int getMaxFrameSize()
-    {
+    public int getMaxFrameSize() {
         return maxFrameSize;
     }
 
     @Required
-    public void setTpcClientChunkSize(int tpcClientChunkSize)
-    {
+    public void setTpcClientChunkSize(int tpcClientChunkSize) {
         this.tpcClientChunkSize = tpcClientChunkSize;
     }
 
-    public int getTpcClientChunkSize()
-    {
+    public int getTpcClientChunkSize() {
         return tpcClientChunkSize;
     }
 
-    public Map<String, String> getQueryConfig()
-    {
+    public Map<String, String> getQueryConfig() {
         return queryConfig;
     }
 
     @Required
-    public void setQueryConfig(Map<String, String> queryConfig)
-    {
+    public void setQueryConfig(Map<String, String> queryConfig) {
         this.queryConfig = queryConfig;
     }
 
     /**
-     *  Overridden here to support persist-on-successful-close.
-     *
-     *  The upload handling needs to precede the actual mover channel close, because
-     *  the request handler waits on the closeFuture there.
+     * Overridden here to support persist-on-successful-close.
+     * <p>
+     * The upload handling needs to precede the actual mover channel close, because the request
+     * handler waits on the closeFuture there.
      */
     @Override
-    protected void closeMoverChannel(NettyMover<XrootdProtocolInfo> mover, Optional<Throwable> error)
-    {
+    protected void closeMoverChannel(NettyMover<XrootdProtocolInfo> mover,
+          Optional<Throwable> error) {
         if (!Objects.equals(mover.getTransferPath(), mover.getBillingPath())) {
             if (error.isEmpty()) {
                 try {
@@ -398,8 +371,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     @Override
-    protected UUID createUuid(XrootdProtocolInfo protocolInfo)
-    {
+    protected UUID createUuid(XrootdProtocolInfo protocolInfo) {
         return protocolInfo.getUUID();
     }
 
@@ -408,26 +380,26 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      */
     @Override
     protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
-            throws SocketException, CacheException
-    {
+          throws SocketException, CacheException {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();
-        InetAddress localIP = NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());
+        InetAddress localIP = NetworkUtils.getLocalAddress(
+              protocolInfo.getSocketAddress().getAddress());
         CellPath cellpath = protocolInfo.getXrootdDoorCellPath();
         XrootdDoorAdressInfoMessage doorMsg =
-                new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(), new InetSocketAddress(localIP, port));
+              new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(),
+                    new InetSocketAddress(localIP, port));
         doorStub.notify(cellpath, doorMsg);
         LOGGER.debug("sending redirect {} to Xrootd-door {}", localIP, cellpath);
     }
 
     @Override
-    protected void initChannel(Channel ch) throws Exception
-    {
+    protected void initChannel(Channel ch) throws Exception {
         super.initChannel(ch);
 
         ChannelPipeline pipeline = ch.pipeline();
 
         pipeline.addLast("handshake",
-                         new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
+              new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
         pipeline.addLast("decoder", new XrootdDecoder());
         if (LOGGER.isDebugEnabled()) {
@@ -439,21 +411,21 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
          *  the logging to be captured on the arriving requests.
          */
         Optional<ChannelHandlerFactory> accessLogHandlerFactory =
-                        accessLogPlugins.stream().findFirst();
+              accessLogPlugins.stream().findFirst();
         if (accessLogHandlerFactory.isPresent()) {
             ChannelHandlerFactory factory = accessLogHandlerFactory.get();
             pipeline.addLast("plugin:" + factory.getName(),
-                             factory.createHandler());
+                  factory.createHandler());
         }
 
-        for (ChannelHandlerFactory plugin: plugins) {
+        for (ChannelHandlerFactory plugin : plugins) {
             pipeline.addLast("plugin:" + plugin.getName(),
-                             plugin.createHandler());
+                  plugin.createHandler());
         }
         pipeline.addLast("timeout", new IdleStateHandler(0,
-                                                         0,
-                                                         clientIdleTimeout,
-                                                         clientIdleTimeoutUnit));
+              0,
+              clientIdleTimeout,
+              clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
 
         /*
@@ -465,38 +437,36 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
          */
         TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(serverProtocolFlags);
         SSLHandlerFactory factory
-                        = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
-                                                              sslHandlerFactories);
+              = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
+              sslHandlerFactories);
         tlsSessionInfo.setServerSslHandlerFactory(factory);
         factory = SSLHandlerFactory.getHandlerFactory(CLIENT_TLS, sslHandlerFactories);
         tlsSessionInfo.setClientSslHandlerFactory(factory);
 
         XrootdPoolRequestHandler handler
-                        = new XrootdPoolRequestHandler(this,
-                                                       maxFrameSize,
-                                                       queryConfig);
+              = new XrootdPoolRequestHandler(this,
+              maxFrameSize,
+              queryConfig);
         handler.setSigningPolicy(signingPolicy);
         handler.setTlsSessionInfo(tlsSessionInfo);
         pipeline.addLast("transfer", handler);
     }
 
     @Override
-    protected void initialiseShutdown()
-    {
+    protected void initialiseShutdown() {
         super.initialiseShutdown();
         shutdownGracefully(thirdPartyClientGroup);
     }
 
     private void handleUploadAbort(NettyMover<XrootdProtocolInfo> mover, Throwable cause)
-        throws CacheException
-    {
+          throws CacheException {
         try {
             PnfsCancelUpload msg = new PnfsCancelUpload(mover.getSubject(),
-                mover.getProtocolInfo().getRestriction(),
-                FsPath.create(mover.getTransferPath()),
-                FsPath.create(mover.getBillingPath()),
-                EnumSet.noneOf(FileAttribute.class),
-                "upload aborted: " + Exceptions.meaningfulMessage(cause));
+                  mover.getProtocolInfo().getRestriction(),
+                  FsPath.create(mover.getTransferPath()),
+                  FsPath.create(mover.getBillingPath()),
+                  EnumSet.noneOf(FileAttribute.class),
+                  "upload aborted: " + Exceptions.meaningfulMessage(cause));
             pnfsStub.sendAndWait(msg);
         } catch (InterruptedException ex) {
             throw new CacheException("Operation interrupted", ex);
@@ -505,8 +475,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         }
     }
 
-    private void handleUploadDone(NettyMover<XrootdProtocolInfo> mover) throws CacheException
-    {
+    private void handleUploadDone(NettyMover<XrootdProtocolInfo> mover) throws CacheException {
         try {
             EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
             if (mover.getProtocolInfo().isOverwriteAllowed()) {
@@ -514,11 +483,11 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
             }
 
             PnfsCommitUpload msg = new PnfsCommitUpload(mover.getSubject(),
-                mover.getProtocolInfo().getRestriction(),
-                FsPath.create(mover.getTransferPath()),
-                FsPath.create(mover.getBillingPath()),
-                options,
-                EnumSet.of(PNFSID, SIZE, STORAGEINFO));
+                  mover.getProtocolInfo().getRestriction(),
+                  FsPath.create(mover.getTransferPath()),
+                  FsPath.create(mover.getBillingPath()),
+                  options,
+                  EnumSet.of(PNFSID, SIZE, STORAGEINFO));
             pnfsStub.sendAndWait(msg);
         } catch (InterruptedException ex) {
             throw new CacheException("Operation interrupted", ex);
@@ -527,8 +496,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
         }
     }
 
-    private synchronized void removeReadReconnectTimer(UUID key)
-    {
+    private synchronized void removeReadReconnectTimer(UUID key) {
         reconnectTimers.remove(key.toString());
     }
 }

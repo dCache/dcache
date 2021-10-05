@@ -1,11 +1,12 @@
 package dmg.cells.nucleus;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.math.IntMath;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,13 +23,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-
 import org.dcache.util.ColumnWriter;
 
-import static java.util.stream.Collectors.toList;
+public class CellRoutingTable implements Serializable {
 
-public class CellRoutingTable implements Serializable
-{
     private static final long serialVersionUID = -1456280129622980563L;
 
     private final ListMultimap<String, CellRoute> _queue = ArrayListMultimap.create();
@@ -39,119 +37,118 @@ public class CellRoutingTable implements Serializable
     private final List<CellRoute> _default = new ArrayList<>();
 
     public void add(CellRoute route)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         String dest;
         switch (route.getRouteType()) {
-        case CellRoute.EXACT:
-        case CellRoute.ALIAS:
-            dest = route.getCellName() + '@' + route.getDomainName();
-            synchronized (_exact) {
-                if (!_exact.put(dest, route)) {
-                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+            case CellRoute.EXACT:
+            case CellRoute.ALIAS:
+                dest = route.getCellName() + '@' + route.getDomainName();
+                synchronized (_exact) {
+                    if (!_exact.put(dest, route)) {
+                        throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.QUEUE:
-            dest = route.getCellName();
-            synchronized (_queue) {
-                if (_queue.containsEntry(dest, route)) {
-                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                break;
+            case CellRoute.QUEUE:
+                dest = route.getCellName();
+                synchronized (_queue) {
+                    if (_queue.containsEntry(dest, route)) {
+                        throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                    }
+                    _queue.put(dest, route);
                 }
-                _queue.put(dest, route);
-            }
-            break;
-        case CellRoute.TOPIC:
-            dest = route.getCellName();
-            synchronized (_topic) {
-                if (!_topic.computeIfAbsent(dest, key -> new CopyOnWriteArraySet()).add(route)) {
-                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                break;
+            case CellRoute.TOPIC:
+                dest = route.getCellName();
+                synchronized (_topic) {
+                    if (!_topic.computeIfAbsent(dest, key -> new CopyOnWriteArraySet())
+                          .add(route)) {
+                        throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.DOMAIN:
-            dest = route.getDomainName();
-            synchronized (_domain) {
-                if (!_domain.put(dest, route)) {
-                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                break;
+            case CellRoute.DOMAIN:
+                dest = route.getDomainName();
+                synchronized (_domain) {
+                    if (!_domain.put(dest, route)) {
+                        throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.DEFAULT:
-            synchronized (_default) {
-                if (!_default.contains(route)) {
-                    _default.add(route);
+                break;
+            case CellRoute.DEFAULT:
+                synchronized (_default) {
+                    if (!_default.contains(route)) {
+                        _default.add(route);
+                    }
                 }
-            }
-            break;
-        case CellRoute.DUMPSTER:
-            if (!_dumpster.compareAndSet(null, route)) {
-                throw new IllegalArgumentException("Duplicated route entry for dumpster");
-            }
-            break;
+                break;
+            case CellRoute.DUMPSTER:
+                if (!_dumpster.compareAndSet(null, route)) {
+                    throw new IllegalArgumentException("Duplicated route entry for dumpster");
+                }
+                break;
         }
     }
 
     public void delete(CellRoute route)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         String dest;
         switch (route.getRouteType()) {
-        case CellRoute.EXACT:
-        case CellRoute.ALIAS:
-            dest = route.getCellName() + '@' + route.getDomainName();
-            synchronized (_exact) {
-                if (!_exact.remove(dest, route)) {
-                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+            case CellRoute.EXACT:
+            case CellRoute.ALIAS:
+                dest = route.getCellName() + '@' + route.getDomainName();
+                synchronized (_exact) {
+                    if (!_exact.remove(dest, route)) {
+                        throw new IllegalArgumentException("Route entry not found for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.QUEUE:
-            dest = route.getCellName();
-            synchronized (_queue) {
-                if (!_queue.remove(dest, route)) {
-                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                break;
+            case CellRoute.QUEUE:
+                dest = route.getCellName();
+                synchronized (_queue) {
+                    if (!_queue.remove(dest, route)) {
+                        throw new IllegalArgumentException("Route entry not found for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.TOPIC:
-            dest = route.getCellName();
-            synchronized (_topic) {
-                Set<CellRoute> routes = _topic.get(dest);
-                if (!routes.remove(route)) {
-                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                break;
+            case CellRoute.TOPIC:
+                dest = route.getCellName();
+                synchronized (_topic) {
+                    Set<CellRoute> routes = _topic.get(dest);
+                    if (!routes.remove(route)) {
+                        throw new IllegalArgumentException("Route entry not found for : " + dest);
+                    }
+                    if (routes.isEmpty()) {
+                        _topic.remove(dest);
+                    }
                 }
-                if (routes.isEmpty()) {
-                    _topic.remove(dest);
+                break;
+            case CellRoute.DOMAIN:
+                dest = route.getDomainName();
+                synchronized (_domain) {
+                    if (!_domain.remove(dest, route)) {
+                        throw new IllegalArgumentException("Route entry not found for : " + dest);
+                    }
                 }
-            }
-            break;
-        case CellRoute.DOMAIN:
-            dest = route.getDomainName();
-            synchronized (_domain) {
-                if (!_domain.remove(dest, route)) {
-                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                break;
+            case CellRoute.DEFAULT:
+                synchronized (_default) {
+                    if (!_default.remove(route)) {
+                        throw new IllegalArgumentException("Route entry not found for default");
+                    }
                 }
-            }
-            break;
-        case CellRoute.DEFAULT:
-            synchronized (_default) {
-                if (!_default.remove(route)) {
-                    throw new IllegalArgumentException("Route entry not found for default");
+                break;
+            case CellRoute.DUMPSTER:
+                CellRoute currentDumpster = _dumpster.get();
+                if (!Objects.equals(currentDumpster, route) || !_dumpster.compareAndSet(
+                      currentDumpster, null)) {
+                    throw new IllegalArgumentException("Route entry not found dumpster");
                 }
-            }
-            break;
-        case CellRoute.DUMPSTER:
-            CellRoute currentDumpster = _dumpster.get();
-            if (!Objects.equals(currentDumpster, route) || !_dumpster.compareAndSet(currentDumpster, null)) {
-                throw new IllegalArgumentException("Route entry not found dumpster");
-            }
-            break;
+                break;
         }
     }
 
-    public Collection<CellRoute> delete(CellAddressCore target)
-    {
+    public Collection<CellRoute> delete(CellAddressCore target) {
         Collection<CellRoute> deleted = new ArrayList<>();
 
         synchronized (_exact) {
@@ -172,7 +169,8 @@ public class CellRoutingTable implements Serializable
             while (iterator.hasNext()) {
                 Set<CellRoute> routes = iterator.next();
                 List<CellRoute> toRemove =
-                        routes.stream().filter(route -> route.getTarget().equals(target)).collect(toList());
+                      routes.stream().filter(route -> route.getTarget().equals(target))
+                            .collect(toList());
                 routes.removeAll(toRemove);
                 if (routes.isEmpty()) {
                     iterator.remove();
@@ -186,8 +184,8 @@ public class CellRoutingTable implements Serializable
         return deleted;
     }
 
-    private void delete(Collection<CellRoute> values, CellAddressCore addr, Collection<CellRoute> deleted)
-    {
+    private void delete(Collection<CellRoute> values, CellAddressCore addr,
+          Collection<CellRoute> deleted) {
         Iterator<CellRoute> iterator = values.iterator();
         while (iterator.hasNext()) {
             CellRoute route = iterator.next();
@@ -198,8 +196,7 @@ public class CellRoutingTable implements Serializable
         }
     }
 
-    public CellRoute find(CellAddressCore addr, Optional<String> zone, boolean allowRemote)
-    {
+    public CellRoute find(CellAddressCore addr, Optional<String> zone, boolean allowRemote) {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();
         Optional<CellRoute> route;
@@ -219,15 +216,17 @@ public class CellRoutingTable implements Serializable
                 Random random = ThreadLocalRandom.current();
                 if (!allowRemote) {
                     CellRoute[] localRoutes =
-                            routes.stream().filter(r -> !r.getTarget().isDomainAddress()).toArray(CellRoute[]::new);
-                    return (localRoutes.length > 0) ? localRoutes[random.nextInt(localRoutes.length)] : null;
+                          routes.stream().filter(r -> !r.getTarget().isDomainAddress())
+                                .toArray(CellRoute[]::new);
+                    return (localRoutes.length > 0) ? localRoutes[random.nextInt(
+                          localRoutes.length)] : null;
                 } else if (!routes.isEmpty()) {
 
                     if (zone.isPresent()) {
                         CellRoute[] localRoutes = routes
-                                .stream()
-                                .filter(r -> r.getZone().equals(zone))
-                                .toArray(CellRoute[]::new);
+                              .stream()
+                              .filter(r -> r.getZone().equals(zone))
+                              .toArray(CellRoute[]::new);
 
                         if (localRoutes.length > 0) {
                             return localRoutes[random.nextInt(localRoutes.length)];
@@ -252,9 +251,9 @@ public class CellRoutingTable implements Serializable
 
             if (zone.isPresent()) {
                 Optional<CellRoute> defaultZonedRoute = _default
-                        .stream()
-                        .filter(r -> r.getZone().equals(zone))
-                        .findAny();
+                      .stream()
+                      .filter(r -> r.getZone().equals(zone))
+                      .findAny();
 
                 if (defaultZonedRoute.isPresent()) {
                     return defaultZonedRoute.get();
@@ -265,8 +264,7 @@ public class CellRoutingTable implements Serializable
         }
     }
 
-    public Set<CellRoute> findTopicRoutes(CellAddressCore addr)
-    {
+    public Set<CellRoute> findTopicRoutes(CellAddressCore addr) {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();
         if (!domainName.equals("local")) {
@@ -279,20 +277,19 @@ public class CellRoutingTable implements Serializable
         return (routes != null) ? routes : Collections.emptySet();
     }
 
-    public String toString()
-    {
+    public String toString() {
         ColumnWriter writer = new ColumnWriter()
-                .header("CELL").left("cell").space()
-                .header("DOMAIN").left("domain").space()
-                .header("GATEWAY").left("gateway").space()
-                .header("TYPE").left("type");
+              .header("CELL").left("cell").space()
+              .header("DOMAIN").left("domain").space()
+              .header("GATEWAY").left("gateway").space()
+              .header("TYPE").left("type");
 
         Consumer<CellRoute> append =
-                route -> writer.row()
-                        .value("cell", route.getCellName())
-                        .value("domain", route.getDomainName())
-                        .value("gateway", route.getTarget())
-                        .value("type", route.getRouteTypeName());
+              route -> writer.row()
+                    .value("cell", route.getCellName())
+                    .value("domain", route.getDomainName())
+                    .value("gateway", route.getTarget())
+                    .value("type", route.getRouteTypeName());
 
         synchronized (_topic) {
             _topic.values().forEach(routes -> routes.forEach(append));
@@ -316,8 +313,7 @@ public class CellRoutingTable implements Serializable
         return writer.toString();
     }
 
-    public CellRoute[] getRoutingList()
-    {
+    public CellRoute[] getRoutingList() {
         List<CellRoute> routes = new ArrayList<>();
         synchronized (_topic) {
             _topic.values().forEach(routes::addAll);
@@ -341,8 +337,7 @@ public class CellRoutingTable implements Serializable
         return routes.toArray(CellRoute[]::new);
     }
 
-    public boolean hasDefaultRoute()
-    {
+    public boolean hasDefaultRoute() {
         synchronized (_default) {
             return !_default.isEmpty();
         }

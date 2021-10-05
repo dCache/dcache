@@ -5,6 +5,7 @@ import java.util.List;
 
 /**
  * Interface for text lines providing sources.
+ *
  * @author karsten
  */
 interface LineSource {

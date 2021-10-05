@@ -23,59 +23,51 @@ import java.util.Map;
 import org.dcache.poolmanager.Partition;
 
 /**
- * Build a Partition object using the builder pattern.  Unfortunately,
- * since RequestContainerV5 accesses field members from Partition directly
- * this class returns a real object rather than a mock object.
+ * Build a Partition object using the builder pattern.  Unfortunately, since RequestContainerV5
+ * accesses field members from Partition directly this class returns a real object rather than a
+ * mock object.
  */
 public class PartitionBuilder {
-  private Map<String,String> arguments = new HashMap<>();
 
-  public static PartitionBuilder aPartition()
-  {
-    return new PartitionBuilder();
-  }
+    private Map<String, String> arguments = new HashMap<>();
 
-  private PartitionBuilder()
-  {
-  }
+    public static PartitionBuilder aPartition() {
+        return new PartitionBuilder();
+    }
 
-  public PartitionBuilder withStageAllowed(boolean enabled)
-  {
-    arguments.put("stage-allowed", asArgument(enabled));
-    return this;
-  }
+    private PartitionBuilder() {
+    }
 
-  public PartitionBuilder withP2pAllowed(boolean enabled)
-  {
-    arguments.put("p2p-allowed", asArgument(enabled));
-    return this;
-  }
+    public PartitionBuilder withStageAllowed(boolean enabled) {
+        arguments.put("stage-allowed", asArgument(enabled));
+        return this;
+    }
 
-  public PartitionBuilder withP2pOnCost(boolean enabled)
-  {
-    arguments.put("p2p-oncost", asArgument(enabled));
-    return this;
-  }
+    public PartitionBuilder withP2pAllowed(boolean enabled) {
+        arguments.put("p2p-allowed", asArgument(enabled));
+        return this;
+    }
 
-  public PartitionBuilder withP2pForTransfer(boolean enabled)
-  {
-    arguments.put("p2p-fortransfer", asArgument(enabled));
-    return this;
-  }
+    public PartitionBuilder withP2pOnCost(boolean enabled) {
+        arguments.put("p2p-oncost", asArgument(enabled));
+        return this;
+    }
 
-  public PartitionBuilder withStageOnCost(boolean enabled)
-  {
-    arguments.put("stage-oncost", asArgument(enabled));
-    return this;
-  }
+    public PartitionBuilder withP2pForTransfer(boolean enabled) {
+        arguments.put("p2p-fortransfer", asArgument(enabled));
+        return this;
+    }
 
-  public Partition build()
-  {
-    return new SimplePartition(arguments);
-  }
+    public PartitionBuilder withStageOnCost(boolean enabled) {
+        arguments.put("stage-oncost", asArgument(enabled));
+        return this;
+    }
 
-  private String asArgument(boolean enabled)
-  {
-    return enabled ? "yes": "no";
-  }
+    public Partition build() {
+        return new SimplePartition(arguments);
+    }
+
+    private String asArgument(boolean enabled) {
+        return enabled ? "yes" : "no";
+    }
 }

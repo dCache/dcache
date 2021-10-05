@@ -22,9 +22,10 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import java.io.IOException;
 
 /**
- * A generic interface that describes methods through which the
- * RequestContainerV5 test object receives triggers.
+ * A generic interface that describes methods through which the RequestContainerV5 test object
+ * receives triggers.
  */
 public interface Deliverable<R extends CellMessageReceiver> {
-  void deliverTo(R receiver) throws IOException, InterruptedException;
+
+    void deliverTo(R receiver) throws IOException, InterruptedException;
 }

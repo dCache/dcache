@@ -73,55 +73,51 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import java.io.IOException;
-
 import org.dcache.util.SqlGlob;
 
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 
 public interface RequestCredentialStorage {
+
     RequestCredential getRequestCredential(Long requestCredentialId);
+
     void saveRequestCredential(RequestCredential requestCredential);
 
     /**
-     * Return the credential with the longest remaining lifetime that
-     * matches the given name and fqan exactly.  If role is null then only
-     * credentials that have no primary FQAN match.
+     * Return the credential with the longest remaining lifetime that matches the given name and
+     * fqan exactly.  If role is null then only credentials that have no primary FQAN match.
      */
     RequestCredential getRequestCredential(String name, String role);
 
     /**
-     * Return the credential with the longest remaining lifetime that
-     * matches the given name.  The returned credential may have any primary
-     * FQAN or have no primary FQAN at all.  If there is no match then null is
-     * returned.
+     * Return the credential with the longest remaining lifetime that matches the given name.  The
+     * returned credential may have any primary FQAN or have no primary FQAN at all.  If there is no
+     * match then null is returned.
      */
     RequestCredential getRequestCredential(String name);
 
     /**
-     * Search for the credential with the longest remaining lifetime that matches
-     * the name and role Globs.  If role is null then only a credential with
-     * no primary FQAN is returned.  If role is specified then only a credential
-     * with a matching primary FQAN is returned.
+     * Search for the credential with the longest remaining lifetime that matches the name and role
+     * Globs.  If role is null then only a credential with no primary FQAN is returned.  If role is
+     * specified then only a credential with a matching primary FQAN is returned.
      */
     RequestCredential searchRequestCredential(SqlGlob name, SqlGlob role);
 
     /**
-     * Check where there is any stored credential for this user.  If role is
-     * non-null then the role must match.  If role is null then any stored
-     * credential for this user will match.
+     * Check where there is any stored credential for this user.  If role is non-null then the role
+     * must match.  If role is null then any stored credential for this user will match.
      */
     boolean hasRequestCredential(String credentialName, String role)
-            throws IOException;
+          throws IOException;
 
     /**
-     * Delete all delegated credentials that match the credential name and
-     * role.  If role is null then only the credential name is used as a
-     * predicate.  Returns true if one or more credentials were deleted.
+     * Delete all delegated credentials that match the credential name and role.  If role is null
+     * then only the credential name is used as a predicate.  Returns true if one or more
+     * credentials were deleted.
      */
     boolean deleteRequestCredential(String credentialName, String role)
-            throws IOException;
+          throws IOException;
 }

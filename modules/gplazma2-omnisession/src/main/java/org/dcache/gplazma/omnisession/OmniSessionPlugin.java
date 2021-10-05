@@ -17,9 +17,10 @@
  */
 package org.dcache.gplazma.omnisession;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-
 import java.nio.file.FileSystems;
 import java.security.Principal;
 import java.util.List;
@@ -28,37 +29,30 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- * A generic session plugin that supports configuring simple session
- * information.
+ * A generic session plugin that supports configuring simple session information.
  */
-public class OmniSessionPlugin implements GPlazmaSessionPlugin
-{
+public class OmniSessionPlugin implements GPlazmaSessionPlugin {
+
     private static final String OMNISESSION_FILE = "gplazma.omnisession.file";
 
     private final Supplier<Optional<Configuration>> file;
 
-    public OmniSessionPlugin(Properties properties)
-    {
+    public OmniSessionPlugin(Properties properties) {
         this(configFileFrom(properties));
     }
 
-    private static String requiredProperty(Properties properties, String name)
-    {
+    private static String requiredProperty(Properties properties, String name) {
         String value = properties.getProperty(name);
         checkArgument(!Strings.isNullOrEmpty(value), "Undefined property: " + name);
         return value;
     }
 
-    private static ParsableFile<Configuration> configFileFrom(Properties properties)
-    {
+    private static ParsableFile<Configuration> configFileFrom(Properties properties) {
         var pathValue = requiredProperty(properties, OMNISESSION_FILE);
         var path = FileSystems.getDefault().getPath(pathValue);
         var parser = new LineByLineParser<Configuration>(ConfigurationParser::new);
@@ -66,25 +60,24 @@ public class OmniSessionPlugin implements GPlazmaSessionPlugin
     }
 
     @VisibleForTesting
-    OmniSessionPlugin(Supplier<Optional<Configuration>> file)
-    {
+    OmniSessionPlugin(Supplier<Optional<Configuration>> file) {
         this.file = file;
     }
 
     @Override
     public void session(Set<Principal> principals, Set<Object> sessionAttributes)
-            throws AuthenticationException
-    {
-        Configuration config = file.get().orElseThrow(() -> new AuthenticationException("bad config file"));
+          throws AuthenticationException {
+        Configuration config = file.get()
+              .orElseThrow(() -> new AuthenticationException("bad config file"));
 
         List<LoginAttribute> attributes = config.attributesFor(principals);
 
         Set<Class> existingSessionAttributes = sessionAttributes.stream()
-                .map(Object::getClass)
-                .collect(Collectors.toSet());
+              .map(Object::getClass)
+              .collect(Collectors.toSet());
 
         attributes.stream()
-                .filter(a -> !existingSessionAttributes.contains(a.getClass()))
-                .forEach(sessionAttributes::add);
+              .filter(a -> !existingSessionAttributes.contains(a.getClass()))
+              .forEach(sessionAttributes::add);
     }
 }

@@ -20,9 +20,9 @@ public class Cached {
 
 
     public String stringValue() {
-        if(_isSet) {
+        if (_isSet) {
             return "cached";
-        }else{
+        } else {
             return "";
         }
     }

@@ -63,18 +63,24 @@ import org.dcache.quota.data.QuotaRequest;
 import org.dcache.quota.data.QuotaType;
 
 public class PnfsManagerSetQuotaMessage extends PnfsManagerQuotaMessage {
-  private static final long serialVersionUID = -5686643338124120747L;
 
-  private final QuotaRequest request;
-  private final boolean isNew;
+    private static final long serialVersionUID = -5686643338124120747L;
 
-  public PnfsManagerSetQuotaMessage(int uid, QuotaType type, QuotaRequest request, boolean isNew) {
-    super(uid, type);
-    this.request = request;
-    this.isNew = isNew;
-  }
+    private final QuotaRequest request;
+    private final boolean isNew;
 
-  public QuotaRequest getRequest() { return request; }
+    public PnfsManagerSetQuotaMessage(int uid, QuotaType type, QuotaRequest request,
+          boolean isNew) {
+        super(uid, type);
+        this.request = request;
+        this.isNew = isNew;
+    }
 
-  public boolean isNew() { return isNew; }
+    public QuotaRequest getRequest() {
+        return request;
+    }
+
+    public boolean isNew() {
+        return isNew;
+    }
 }

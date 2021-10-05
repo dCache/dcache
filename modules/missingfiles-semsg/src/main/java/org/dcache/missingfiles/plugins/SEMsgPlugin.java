@@ -1,9 +1,6 @@
 package org.dcache.missingfiles.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
+import static com.google.common.collect.Lists.newArrayList;
 
 import java.io.IOException;
 import java.util.List;
@@ -11,23 +8,23 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
-import org.dcache.util.configuration.ConfigurationProperties;
 import org.dcache.util.FireAndForgetTask;
-
-import static com.google.common.collect.Lists.newArrayList;
+import org.dcache.util.configuration.ConfigurationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Missing-files plugin for sending notification that access was attempted to
- * a file.  We use an external program, SEMsg_SendNotAvailable to send the actual
- * messages.  This plugin collects the messages and sends them in batches.
+ * Missing-files plugin for sending notification that access was attempted to a file.  We use an
+ * external program, SEMsg_SendNotAvailable to send the actual messages.  This plugin collects the
+ * messages and sends them in batches.
  */
-public class SEMsgPlugin implements Plugin
-{
+public class SEMsgPlugin implements Plugin {
+
     private static final Logger _log =
-            LoggerFactory.getLogger(SEMsgPlugin.class);
+          LoggerFactory.getLogger(SEMsgPlugin.class);
 
     private Executor _executor = Executors.newSingleThreadExecutor();
 
@@ -45,8 +42,7 @@ public class SEMsgPlugin implements Plugin
     private String _certificatePath;
     private String _privateKeyPath;
 
-    public SEMsgPlugin(ConfigurationProperties properties)
-    {
+    public SEMsgPlugin(ConfigurationProperties properties) {
         _topic = getRequiredProperty(properties, PROPERTY_TOPIC);
         _endpoint = getRequiredProperty(properties, PROPERTY_ENDPOINT);
         _command = getRequiredProperty(properties, PROPERTY_COMMAND);
@@ -54,11 +50,10 @@ public class SEMsgPlugin implements Plugin
         _privateKeyPath = getRequiredProperty(properties, PROPERTY_PRIVATE_KEY);
     }
 
-    private static String getRequiredProperty(ConfigurationProperties properties, String key)
-    {
+    private static String getRequiredProperty(ConfigurationProperties properties, String key) {
         String value = properties.getValue(key);
 
-        if(value == null) {
+        if (value == null) {
             throw new IllegalArgumentException("missing property: " + key);
         }
 
@@ -68,21 +63,19 @@ public class SEMsgPlugin implements Plugin
 
     @Override
     public Future<Result> accept(final Subject subject,
-            final String requestPath, final String internalPath)
-    {
+          final String requestPath, final String internalPath) {
         _executor.execute(new FireAndForgetTask(() -> sendMessage(subject, requestPath)));
 
         return DEFER;
     }
 
 
-    private void sendMessage(Subject subject, String path)
-    {
+    private void sendMessage(Subject subject, String path) {
         String authDn = buildAuthDnFor(subject);
         try {
             int rc = runCommand(authDn, path);
 
-            if(rc != 0) {
+            if (rc != 0) {
                 _log.error("call to command failed: rc={}", rc);
             }
         } catch (InterruptedException e) {
@@ -92,16 +85,14 @@ public class SEMsgPlugin implements Plugin
         }
     }
 
-    private String buildAuthDnFor(Subject subject)
-    {
+    private String buildAuthDnFor(Subject subject) {
         StringBuilder sb = new StringBuilder();
 
-
         String dn = Subjects.getDn(subject);
-        if(dn != null) {
+        if (dn != null) {
             sb.append(dn);
 
-            for(FQAN fqan : Subjects.getFqans(subject)) {
+            for (FQAN fqan : Subjects.getFqans(subject)) {
                 sb.append(',').append(fqan);
             }
         } else {
@@ -112,16 +103,15 @@ public class SEMsgPlugin implements Plugin
     }
 
 
-    private int runCommand(String authDn, String path) throws IOException, InterruptedException
-    {
+    private int runCommand(String authDn, String path) throws IOException, InterruptedException {
         List<String> args = newArrayList(_command, _endpoint, authDn,
-                "-t", _topic, path);
+              "-t", _topic, path);
 
         ProcessBuilder builder = new ProcessBuilder(args);
 
         _log.debug("Command: {}", builder.command());
 
-        Map<String,String> envar = builder.environment();
+        Map<String, String> envar = builder.environment();
         envar.put("X509_USER_CERT", _certificatePath);
         envar.put("X509_USER_KEY", _privateKeyPath);
 

@@ -17,13 +17,11 @@
  */
 package org.dcache.xrootd;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
 
+import io.netty.channel.ChannelHandlerContext;
 import java.util.Optional;
 import java.util.Set;
-
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
 import org.dcache.xrootd.core.XrootdException;
@@ -36,26 +34,27 @@ import org.dcache.xrootd.protocol.messages.SetRequest;
 import org.dcache.xrootd.protocol.messages.SetResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.ChecksumInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
+public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler {
 
-public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractXrootdRequestHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          AbstractXrootdRequestHandler.class);
 
     @Override
-    protected XrootdResponse<LocateRequest> doOnLocate(ChannelHandlerContext ctx, LocateRequest msg) throws XrootdException
-    {
+    protected XrootdResponse<LocateRequest> doOnLocate(ChannelHandlerContext ctx, LocateRequest msg)
+          throws XrootdException {
         /* To avoid duplicate name space lookups, we always just return ourselves no matter
          * whether the file exists or not.
          */
         return new LocateResponse(msg, new LocateResponse.InfoElement(
-                getDestinationAddress(), LocateResponse.Node.SERVER, LocateResponse.Access.READ));
+              getDestinationAddress(), LocateResponse.Node.SERVER, LocateResponse.Access.READ));
     }
 
     @Override
-    protected XrootdResponse<SetRequest> doOnSet(ChannelHandlerContext ctx, SetRequest request) throws XrootdException
-    {
+    protected XrootdResponse<SetRequest> doOnSet(ChannelHandlerContext ctx, SetRequest request)
+          throws XrootdException {
         /* The xrootd spec states that we should include 80 characters in our log.
          */
         final String APPID_PREFIX = "appid ";
@@ -64,15 +63,14 @@ public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler
         String data = request.getData();
         if (data.startsWith(APPID_PREFIX)) {
             LOGGER.info(data.substring(APPID_PREFIX_LENGTH,
-                                       Math.min(APPID_PREFIX_LENGTH + APPID_MSG_LENGTH, data.length())));
+                  Math.min(APPID_PREFIX_LENGTH + APPID_MSG_LENGTH, data.length())));
         }
         return new SetResponse(request, "");
     }
 
     protected QueryResponse selectChecksum(ChecksumInfo info,
-                                           Set<Checksum> checksums,
-                                           QueryRequest msg) throws XrootdException
-    {
+          Set<Checksum> checksums,
+          QueryRequest msg) throws XrootdException {
         if (!checksums.isEmpty()) {
             /**
              * xrdcp expects lower case names for checksum algorithms
@@ -82,28 +80,28 @@ public class AbstractXrootdRequestHandler extends XrootdProtocolRequestHandler
             Optional<String> type = info.getType();
             if (type.isPresent()) {
                 Optional<Checksum> result = checksums.stream()
-                                                     .filter((c) -> type.get()
-                                                                        .equalsIgnoreCase(c.getType()
-                                                                                           .getName()))
-                                                     .findFirst();
+                      .filter((c) -> type.get()
+                            .equalsIgnoreCase(c.getType()
+                                  .getName()))
+                      .findFirst();
                 if (result.isPresent()) {
                     Checksum checksum = result.get();
-                    return new QueryResponse(msg,checksum.getType()
-                                                              .getName()
-                                                              .toLowerCase()
-                                                + " " + checksum.getValue());
+                    return new QueryResponse(msg, checksum.getType()
+                          .getName()
+                          .toLowerCase()
+                          + " " + checksum.getValue());
                 }
                 throw new XrootdException(kXR_Unsupported, "Checksum exists, "
-                                + "but not of the requested type.");
+                      + "but not of the requested type.");
             }
 
             Checksum checksum = Checksums.preferredOrder().min(checksums);
-            return new QueryResponse(msg,checksum.getType()
-                                                      .getName()
-                                                      .toLowerCase()
-                                            + " " + checksum.getValue());
+            return new QueryResponse(msg, checksum.getType()
+                  .getName()
+                  .toLowerCase()
+                  + " " + checksum.getValue());
         }
         throw new XrootdException(kXR_Unsupported, "No checksum available "
-                        + "for this file.");
+              + "for this file.");
     }
 }

@@ -20,14 +20,12 @@ package dmg.cells.nucleus;
 import org.dcache.util.Args;
 
 /**
- * The class that implements this interface needs to know with which arguments
- * a cell was created.
+ * The class that implements this interface needs to know with which arguments a cell was created.
  */
-public interface CellArgsAware
-{
+public interface CellArgsAware {
+
     /**
-     * Injects the cell command line arguments provided when the cell was
-     * created.
+     * Injects the cell command line arguments provided when the cell was created.
      */
     void setCellArgs(Args args);
 }

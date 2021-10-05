@@ -18,36 +18,34 @@
  */
 package org.dcache.mock;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import dmg.cells.nucleus.CellMessageReceiver;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- * Deliver a message a fixed number times.  An iterator index (1-indexed) is
- * passed to the message builder function to allow it to build distinct
- * messages over the customisation.
+ * Deliver a message a fixed number times.  An iterator index (1-indexed) is passed to the message
+ * builder function to allow it to build distinct messages over the customisation.
  */
-public class FixedTimes<R extends CellMessageReceiver> implements DeliveryRepeater<R>{
-  private final int count;
+public class FixedTimes<R extends CellMessageReceiver> implements DeliveryRepeater<R> {
 
-  public FixedTimes(int count)
-  {
-    checkArgument(count > 0);
-    this.count = count;
-  }
+    private final int count;
 
-  @Override
-  public void repeatDeliveryTo(IntFunction<Deliverable<R>> messageBuilder, R container)
-  {
-    for (int i = 1; i <= count; i++) {
-      try {
-        var message = messageBuilder.apply(i);
-        message.deliverTo(container);
-      } catch (IOException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
+    public FixedTimes(int count) {
+        checkArgument(count > 0);
+        this.count = count;
     }
-  }
+
+    @Override
+    public void repeatDeliveryTo(IntFunction<Deliverable<R>> messageBuilder, R container) {
+        for (int i = 1; i <= count; i++) {
+            try {
+                var message = messageBuilder.apply(i);
+                message.deliverTo(container);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

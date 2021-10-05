@@ -20,39 +20,34 @@ package org.dcache.auth.attributes;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-
+import diskCacheV111.util.FsPath;
 import java.io.IOException;
 
-import diskCacheV111.util.FsPath;
-
 /**
- * A Restriction that allows a user to perform only activity on paths with a
- * particular prefix.
+ * A Restriction that allows a user to perform only activity on paths with a particular prefix.
  */
-public class PrefixRestriction implements Restriction
-{
+public class PrefixRestriction implements Restriction {
+
     private static final long serialVersionUID = 7073397935939729478L;
 
     private ImmutableSet<FsPath> prefixes;
 
-    public PrefixRestriction(FsPath... prefixes)
-    {
+    public PrefixRestriction(FsPath... prefixes) {
         this.prefixes = ImmutableSet.copyOf(prefixes);
     }
 
-    public ImmutableSet<FsPath> getPrefixes()
-    {
+    public ImmutableSet<FsPath> getPrefixes() {
         return prefixes;
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath path)
-    {
+    public boolean isRestricted(Activity activity, FsPath path) {
         for (FsPath prefix : prefixes) {
             if (path.hasPrefix(prefix)) {
                 return false;
             }
-            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA || activity == Activity.LIST)) {
+            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA
+                  || activity == Activity.LIST)) {
                 return false;
             }
         }
@@ -60,37 +55,32 @@ public class PrefixRestriction implements Restriction
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child)
-    {
+    public boolean isRestricted(Activity activity, FsPath directory, String child) {
         return isRestricted(activity, directory.child(child));
     }
 
     @Override
-    public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
-    {
+    public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
         return prefixes.stream().anyMatch(p -> p.hasPrefix(parent) && !p.equals(parent));
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return PrefixRestriction.class.hashCode() ^ prefixes.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
-        return other instanceof PrefixRestriction && ((PrefixRestriction) other).prefixes.equals(prefixes);
+    public boolean equals(Object other) {
+        return other instanceof PrefixRestriction && ((PrefixRestriction) other).prefixes.equals(
+              prefixes);
     }
 
     @Override
-    public boolean isSubsumedBy(Restriction other)
-    {
+    public boolean isSubsumedBy(Restriction other) {
         return other instanceof PrefixRestriction && ((PrefixRestriction) other).subsumes(this);
     }
 
-    private boolean subsumes(PrefixRestriction restriction)
-    {
+    private boolean subsumes(PrefixRestriction restriction) {
         for (FsPath prefix : prefixes) {
             if (restriction.isRestricted(prefix)) {
                 return false;
@@ -99,8 +89,7 @@ public class PrefixRestriction implements Restriction
         return true;
     }
 
-    private boolean isRestricted(FsPath path)
-    {
+    private boolean isRestricted(FsPath path) {
         for (FsPath prefix : prefixes) {
             if (path.hasPrefix(prefix)) {
                 return false;
@@ -110,8 +99,7 @@ public class PrefixRestriction implements Restriction
     }
 
     private void readObject(java.io.ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         int countPrefixes = stream.readInt();
         ImmutableSet.Builder<FsPath> builder = ImmutableSet.builder();
         for (int i = 0; i < countPrefixes; i++) {
@@ -121,8 +109,7 @@ public class PrefixRestriction implements Restriction
     }
 
     private void writeObject(java.io.ObjectOutputStream stream)
-            throws IOException
-    {
+          throws IOException {
         stream.writeInt(prefixes.size());
         for (FsPath prefix : prefixes) {
             stream.writeObject(prefix.toString());
@@ -130,8 +117,7 @@ public class PrefixRestriction implements Restriction
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder("PrefixRestrict[");
 
         if (prefixes.size() == 1) {

@@ -1,14 +1,10 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
 import com.google.common.base.Joiner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
@@ -16,21 +12,23 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
- * The PoolgroupSpaceWatcher Class implements StateWatcher.  It is responsible for maintaining
- * the space information of poolgroups.  It is triggered whenever pool space information or
- * a pool's membership of a poolgroup changes.
+ * The PoolgroupSpaceWatcher Class implements StateWatcher.  It is responsible for maintaining the
+ * space information of poolgroups.  It is triggered whenever pool space information or a pool's
+ * membership of a poolgroup changes.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolgroupSpaceWatcher extends AbstractStateWatcher
-{
+public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolgroupSpaceWatcher.class);
-    private static final String PREDICATE_PATHS[] = { "pools.*.space.*",
-            "poolgroups.*",
-            "poolgroups.*.pools.*"};
+    private static final String PREDICATE_PATHS[] = {"pools.*.space.*",
+          "poolgroups.*",
+          "poolgroups.*.pools.*"};
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
     private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath("pools");
 
@@ -42,8 +40,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
 
     @Override
     public void trigger(StateUpdate update, StateExhibitor currentState,
-            StateExhibitor futureState)
-    {
+          StateExhibitor futureState) {
         super.trigger(update, currentState, futureState);
 
         Set<String> recalcPoolgroup = new HashSet<>();
@@ -51,10 +48,12 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
 
         LOGGER.trace("Gathering state:");
         LOGGER.trace("  building current poolgroup membership.");
-        Map <String,Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails(currentState, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
+        Map<String, Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails(currentState,
+              POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
         LOGGER.trace("  building future poolgroup membership.");
-        Map <String,Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails(futureState, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
+        Map<String, Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails(futureState,
+              POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
         LOGGER.trace("  establishing current pool space mapping.");
         Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails(currentState);
@@ -63,10 +62,12 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
         Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails(futureState);
 
         LOGGER.trace("Looking for changes in poolgroup membership.");
-        updateTodoBasedOnMembership(recalcPoolgroup, currentPoolgroupMembership, futurePoolgroupMembership);
+        updateTodoBasedOnMembership(recalcPoolgroup, currentPoolgroupMembership,
+              futurePoolgroupMembership);
 
         LOGGER.trace("Looking for changes in pool space information.");
-        updateTodoBasedOnPoolSpace(recalcPoolgroup, futurePoolgroupMembership, poolSpaceInfoPre, poolSpaceInfoPost);
+        updateTodoBasedOnPoolSpace(recalcPoolgroup, futurePoolgroupMembership, poolSpaceInfoPre,
+              poolSpaceInfoPost);
 
         if (recalcPoolgroup.size() == 0) {
             LOGGER.trace("No poolgroups need updating");
@@ -78,21 +79,22 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
 
             StatePath thisPgPath = POOLGROUPS_PATH.newChild(thisPoolgroup);
 
-            buildNewMetrics(update, thisPgPath.newChild("space"), futurePoolgroupMembership.get(thisPoolgroup), poolSpaceInfoPost);
+            buildNewMetrics(update, thisPgPath.newChild("space"),
+                  futurePoolgroupMembership.get(thisPoolgroup), poolSpaceInfoPost);
         }
     }
 
 
     /**
      * Create new metrics that update information about the named poolgroup.
-     * @param update the StateUpdate to which the new metric values will be appended.
-     * @param path the StatePath under which the space information will be added.
-     * @param pools the Set of pools this poolgroup has within its membership.
+     *
+     * @param update         the StateUpdate to which the new metric values will be appended.
+     * @param path           the StatePath under which the space information will be added.
+     * @param pools          the Set of pools this poolgroup has within its membership.
      * @param poolsSpaceInfo the mapping between pools and their SpaceInfo.
      */
     private void buildNewMetrics(StateUpdate update, StatePath path, Set<String> pools,
-            Map<String, SpaceInfo> poolsSpaceInfo)
-    {
+          Map<String, SpaceInfo> poolsSpaceInfo) {
         SpaceInfo pgSpaceInfo = new SpaceInfo();
 
         // Create an Ephemeral StateComposite for our data.
@@ -113,8 +115,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
         LOGGER.trace("  new info: {}", pgSpaceInfo);
     }
 
-    private String describePoolgroup(Set<String> poolgroup)
-    {
+    private String describePoolgroup(Set<String> poolgroup) {
         if (poolgroup == null) {
             return "<unknown>";
         } else if (poolgroup.isEmpty()) {
@@ -128,13 +129,13 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
     /**
      * Add poolgroups to the to-be-recalculated Set if the pool membership of a poolgroup has
      * changed, or the poolgroup is new.
+     *
      * @param recalcPoolgroup
      * @param transition
      */
     private void updateTodoBasedOnMembership(Set<String> recalcPoolgroup,
-            Map <String,Set<String>> currentPoolgroupMembership,
-            Map <String,Set<String>> futurePoolgroupMembership)
-    {
+          Map<String, Set<String>> currentPoolgroupMembership,
+          Map<String, Set<String>> futurePoolgroupMembership) {
         // Scan (future) poolgroup membership..
         for (Map.Entry<String, Set<String>> pgEntry : futurePoolgroupMembership.entrySet()) {
             String thisPoolgroup = pgEntry.getKey();
@@ -144,13 +145,14 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
             Set<String> thisPoolgroupCurrentPoolset = currentPoolgroupMembership.get(thisPoolgroup);
 
             // If poolgroup is new or membership isn't the same as it was...
-            if ((thisPoolgroupCurrentPoolset == null) || !thisPoolgroupCurrentPoolset.equals(thisPoolgroupFuturePoolset)) {
+            if ((thisPoolgroupCurrentPoolset == null) || !thisPoolgroupCurrentPoolset.equals(
+                  thisPoolgroupFuturePoolset)) {
                 recalcPoolgroup.add(thisPoolgroup);
 
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("    poolgroup {} is new or has altered membership {} -> {}",
-                            thisPoolgroup, describePoolgroup(thisPoolgroupCurrentPoolset),
-                            describePoolgroup(thisPoolgroupFuturePoolset));
+                          thisPoolgroup, describePoolgroup(thisPoolgroupCurrentPoolset),
+                          describePoolgroup(thisPoolgroupFuturePoolset));
                 }
             }
         }
@@ -159,13 +161,13 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
 
     /**
      * Look for changes in the pool size.  Update any poolgroup this pool is a member of.
+     *
      * @param recalcPoolgroup
      * @param transition
      */
     private void updateTodoBasedOnPoolSpace(Set<String> recalcPoolgroup,
-            Map <String,Set<String>> futurePoolgroupMembership,
-            Map<String, SpaceInfo> currentPoolSpaceInfo, Map<String, SpaceInfo> futurePoolSpaceInfo)
-    {
+          Map<String, Set<String>> futurePoolgroupMembership,
+          Map<String, SpaceInfo> currentPoolSpaceInfo, Map<String, SpaceInfo> futurePoolSpaceInfo) {
         Set<String> changedPools = new HashSet<>();
 
         // 1. Build list of pools that have changed:
@@ -201,7 +203,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
         }
 
         // 3.  Build the (future) reverse map: pool to Set of Poolgroups.
-        Map<String,Set<String>> poolToPoolgroups = new HashMap<>();
+        Map<String, Set<String>> poolToPoolgroups = new HashMap<>();
 
         for (Map.Entry<String, Set<String>> pgPoolEntry : futurePoolgroupMembership.entrySet()) {
             String thisPoolgroup = pgPoolEntry.getKey();
@@ -230,7 +232,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher
                 recalcPoolgroup.add(poolgroup);
                 if (changedPools.isEmpty()) {
                     LOGGER.trace("  poolgroup {} is marked as to be recalculated.",
-                            poolgroup);
+                          poolgroup);
                     return;
                 }
             }

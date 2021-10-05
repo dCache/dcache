@@ -1,17 +1,18 @@
 package org.dcache.acl.parser;
 
-import org.junit.Test;
+import static org.dcache.acl.enums.AccessMask.APPEND_DATA;
+import static org.dcache.acl.enums.AccessMask.READ_DATA;
+import static org.dcache.acl.enums.AccessMask.WRITE_DATA;
+import static org.dcache.acl.enums.AceFlags.IDENTIFIER_GROUP;
+import static org.dcache.acl.enums.AceType.ACCESS_ALLOWED_ACE_TYPE;
+import static org.dcache.acl.enums.AceType.ACCESS_DENIED_ACE_TYPE;
+import static org.dcache.acl.parser.ACEParser.parseLinuxAce;
+import static org.junit.Assert.assertEquals;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.Who;
-
-import static org.dcache.acl.enums.AceType.*;
-import static org.dcache.acl.enums.AceFlags.*;
-import static org.dcache.acl.enums.AccessMask.*;
-import static org.dcache.acl.parser.ACEParser.*;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class ACEParserTest {
 
@@ -72,7 +73,8 @@ public class ACEParserTest {
     @Test
     public void testParseAlloOnGroup() {
         int mask = toAccessMask(APPEND_DATA, READ_DATA, WRITE_DATA);
-        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123);
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP,
+              123);
         ACE parsed = parseLinuxAce("A:g:123:rwa");
 
         assertEquals(ace, parsed);
@@ -81,7 +83,8 @@ public class ACEParserTest {
     @Test
     public void testParseDenyOnGroup() {
         int mask = toAccessMask(WRITE_DATA);
-        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123);
+        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP,
+              123);
         ACE parsed = parseLinuxAce("D:g:123:w");
 
         assertEquals(ace, parsed);
@@ -122,9 +125,9 @@ public class ACEParserTest {
         parseLinuxAce("D:g:SOMEONW@:w");
     }
 
-    public static int toAccessMask(AccessMask...masks) {
+    public static int toAccessMask(AccessMask... masks) {
         int mask = 0;
-        for(AccessMask am: masks) {
+        for (AccessMask am : masks) {
             mask |= am.getValue();
         }
         return mask;

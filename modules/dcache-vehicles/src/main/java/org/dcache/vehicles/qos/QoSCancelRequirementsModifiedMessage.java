@@ -63,13 +63,14 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
 public class QoSCancelRequirementsModifiedMessage extends Message {
-  private final PnfsId pnfsId;
 
-  public QoSCancelRequirementsModifiedMessage(PnfsId pnfsId) {
-    this.pnfsId = pnfsId;
-  }
+    private final PnfsId pnfsId;
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public QoSCancelRequirementsModifiedMessage(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 }

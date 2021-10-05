@@ -59,27 +59,28 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.io.File;
+import java.io.IOException;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class FileOperationMapTest extends TestBase {
-    PnfsId         pnfsId;
+
+    PnfsId pnfsId;
     FileAttributes attributes;
-    FileOperation  operation;
+    FileOperation operation;
     File checkpoint = new File("checkpoint");
 
     @Before
@@ -95,13 +96,14 @@ public final class FileOperationMapTest extends TestBase {
         wireFileOperationMap();
         wireFileOperationHandler();
         initializeCounters();
-        fileOperationMap.initialize(() -> {});
+        fileOperationMap.initialize(() -> {
+        });
         fileOperationMap.setCopyThreads(1);
     }
 
     @Test
     public void shouldMakeCopiesForFileWithUnmappedStorageUnit()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsIdWithUnmappedStorageUnit();
         afterOperationAdded(1);
         whenScanIsRun();
@@ -110,7 +112,7 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldMakeCopiesForFileWithStorageUnitMatchingPattern()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsIdWithStorageUnitMatchingPattern();
         afterOperationAdded(1);
         whenScanIsRun();
@@ -119,7 +121,7 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldBehaveLikeCancelAllWhenOperationIsVoided()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(3);
         whenScanIsRun();
@@ -130,12 +132,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotRemoveEntryWhenUpdateFailsOnLastTryButOtherSourceExists()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenAPnfsIdUpdateFromScan();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenOperationFailsWithRetriableError();
         whenScanIsRun();
         whenOperationFailsWithRetriableError();
@@ -148,12 +150,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotRemoveEntryWhenUpdateFailsWithRetriableError()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenOperationFailsWithRetriableError();
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
@@ -161,59 +163,59 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotRemoveEntryWhenUpdateSuccessfulButMoreWork()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(2);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenOperationSucceedsFor(operation.getPnfsId());
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
         assertEquals(1, fileOperationMap.getOperation(
-                        operation.getPnfsId()).getOpCount());
+              operation.getPnfsId()).getOpCount());
     }
 
     @Test
     public void shouldNotRemoveEntryWhenUpdateSuccessfulButNewRequestArrived()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenOperationSucceedsFor(operation.getPnfsId());
         givenAnotherLocationForPnfsId();
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
         assertEquals(1, fileOperationMap.getOperation(
-                        operation.getPnfsId()).getOpCount());
+              operation.getPnfsId()).getOpCount());
     }
 
     @Test
     public void shouldNotRemoveWhenCancelledOperationHasMoreWork()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(3);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenRunningOperationIsCancelled();
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
         assertEquals(2, fileOperationMap.getOperation(
-                        operation.getPnfsId()).getOpCount());
+              operation.getPnfsId()).getOpCount());
     }
 
     @Test
     public void shouldNotReorderOperationWhenFailsButMoreTries()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(2);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenOperationFailsWithRetriableError();
         givenASecondPnfsId();
@@ -224,12 +226,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldRemoveEntryWhenUpdateFailsOnLastTryOfRetriableError()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenOperationFailsWithRetriableError();
         whenScanIsRun();
@@ -248,12 +250,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldRemoveEntryWhenUpdateFailsWithFatalError()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenOperationFailsWithFatalError();
         whenScanIsRun();
@@ -262,12 +264,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldRemoveEntryWhenUpdateSuccessfulAndNoMoreWork()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
         whenScanIsRun();
@@ -276,12 +278,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldRemoveWhenEntireOperationIsCancelled()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(3);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenEntireOperationIsCancelled();
         whenScanIsRun();
@@ -290,12 +292,12 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldReorderOperationWhenCompletesButMoreWork()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(2);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
         givenASecondPnfsId();
@@ -307,22 +309,22 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldResetEntryWhenUpdateFailsWithNewLocationError()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(
-                        attributes.getLocations().iterator().next(),
-                        "resilient_pool-12");
+              attributes.getLocations().iterator().next(),
+              "resilient_pool-12");
         whenOperationFailsWithNewLocationError();
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
         assertEquals(0, fileOperationMap.getOperation(
-                        operation.getPnfsId()).getRetried());
+              operation.getPnfsId()).getRetried());
     }
 
     @Test
     public void shouldSaveAndRestoreCheckpointedOperation()
-                    throws CacheException, IOException {
+          throws CacheException, IOException {
         givenANewPnfsId();
         afterOperationAdded(3);
         whenSaveIsCalled();
@@ -332,11 +334,11 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotFailWhenPostProcessDiscoversRemovedPool()
-                    throws Exception {
+          throws Exception {
         givenANewPnfsId();
         afterOperationAdded(1);
         String source = attributes.getLocations().iterator().next();
-        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterSourceAndTargetAreUpdatedTo(source, "resilient_pool-12");
         afterPoolIsRemoved(source);
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
@@ -349,11 +351,11 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotFailWhenPostProcessDiscoversRemovedPoolGroup()
-        throws Exception {
+          throws Exception {
         givenANewPnfsId();
         afterOperationAdded(1);
         String source = attributes.getLocations().iterator().next();
-        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterSourceAndTargetAreUpdatedTo(source, "resilient_pool-12");
         afterOperationGroupIsRemoved();
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
@@ -366,11 +368,11 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotFailWhenPostProcessDiscoversRemovedStorageUnit()
-        throws Exception {
+          throws Exception {
         givenANewPnfsId();
         afterOperationAdded(1);
         afterSourceAndTargetAreUpdatedTo(attributes.getLocations().iterator().next(),
-                                  "resilient_pool-12");
+              "resilient_pool-12");
         afterOperationStorageUnitIsRemoved();
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
@@ -383,11 +385,11 @@ public final class FileOperationMapTest extends TestBase {
 
     @Test
     public void shouldNotFailWhenOperationIsCancelledBecauseOfPoolRemoval()
-        throws Exception {
+          throws Exception {
         givenANewPnfsId();
         afterOperationAdded(1);
         String source = attributes.getLocations().iterator().next();
-        afterSourceAndTargetAreUpdatedTo(source,"resilient_pool-12");
+        afterSourceAndTargetAreUpdatedTo(source, "resilient_pool-12");
         afterPoolIsRemoved(source);
         whenScanIsRun();
         whenRunningOperationIsCancelled();
@@ -412,12 +414,12 @@ public final class FileOperationMapTest extends TestBase {
         Integer gindex = poolInfoMap.getResilientPoolGroup(pindex);
         Integer sindex = poolInfoMap.getStorageUnitIndex(attributes);
         FileUpdate update = new FileUpdate(pnfsId, pool,
-                                           MessageType.ADD_CACHE_LOCATION, pindex, gindex, sindex,
-                                           attributes);
+              MessageType.ADD_CACHE_LOCATION, pindex, gindex, sindex,
+              attributes);
         update.setCount(count);
         fileOperationMap.register(update);
         operation = new FileOperation(
-                        fileOperationMap.getOperation(attributes.getPnfsId()));
+              fileOperationMap.getOperation(attributes.getPnfsId()));
     }
 
     private void afterPoolIsRemoved(String pool) throws Exception {
@@ -435,9 +437,9 @@ public final class FileOperationMapTest extends TestBase {
     }
 
     private void afterSourceAndTargetAreUpdatedTo(String source,
-                    String target) {
+          String target) {
         fileOperationMap.updateOperation(attributes.getPnfsId(), source,
-                                         target);
+              target);
     }
 
     private void assertThatOperationIsNotRunning(PnfsId pnfsId) {
@@ -493,20 +495,20 @@ public final class FileOperationMapTest extends TestBase {
 
     private void whenOperationFailsWithFatalError() {
         fileOperationMap.updateOperation(operation.getPnfsId(),
-                                         new CacheException(CacheException.DEFAULT_ERROR_CODE,
-                                        FORCED_FAILURE.toString()));
+              new CacheException(CacheException.DEFAULT_ERROR_CODE,
+                    FORCED_FAILURE.toString()));
     }
 
     private void whenOperationFailsWithNewLocationError() {
         fileOperationMap.updateOperation(operation.getPnfsId(),
-                                         new CacheException(CacheException.FILE_NOT_FOUND,
-                                        FORCED_FAILURE.toString()));
+              new CacheException(CacheException.FILE_NOT_FOUND,
+                    FORCED_FAILURE.toString()));
     }
 
     private void whenOperationFailsWithRetriableError() {
         fileOperationMap.updateOperation(operation.getPnfsId(),
-                                         new CacheException(CacheException.HSM_DELAY_ERROR,
-                                        FORCED_FAILURE.toString()));
+              new CacheException(CacheException.HSM_DELAY_ERROR,
+                    FORCED_FAILURE.toString()));
     }
 
     private void whenOperationIsVoided() {

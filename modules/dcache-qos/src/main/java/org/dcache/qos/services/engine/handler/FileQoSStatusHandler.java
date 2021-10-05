@@ -59,6 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.handler;
 
+import static org.dcache.qos.data.QoSAction.VOID;
+import static org.dcache.qos.data.QoSMessageType.ADD_CACHE_LOCATION;
+import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.qos.data.QoSMessageType.CORRUPT_FILE;
+import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
+import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED_CANCELED;
+import static org.dcache.qos.services.engine.util.QoSEngineCounters.QOS_ACTION_COMPLETED;
+
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
@@ -80,157 +88,162 @@ import org.dcache.vehicles.qos.QoSTransitionCompletedMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.qos.data.QoSAction.VOID;
-import static org.dcache.qos.data.QoSMessageType.ADD_CACHE_LOCATION;
-import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
-import static org.dcache.qos.data.QoSMessageType.CORRUPT_FILE;
-import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
-import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED_CANCELED;
-import static org.dcache.qos.services.engine.util.QoSEngineCounters.QOS_ACTION_COMPLETED;
-
 /**
- *   Implementation of the gateway to requirements dispatching.  For now, this is
- *   a simple pass-through to the listeners providing the file requirements and
- *   forwarding notifications to the verification service.
+ * Implementation of the gateway to requirements dispatching.  For now, this is a simple
+ * pass-through to the listeners providing the file requirements and forwarding notifications to the
+ * verification service.
  */
 public final class FileQoSStatusHandler implements CellInfoProvider, QoSActionCompletedListener {
-  private static final Logger LOGGER = LoggerFactory.getLogger(FileQoSStatusHandler.class);
 
-  private QoSRequirementsListener requirementsListener;
-  private QoSVerificationListener verificationListener;
-  private CellStub qosTransitionTopic;
-  private ExecutorService executor;
-  private QoSEngineCounters counters;
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileQoSStatusHandler.class);
 
-  @Override
-  public void getInfo(PrintWriter pw) {
-    StringBuilder builder = new StringBuilder();
-    counters.appendRunning(builder);
-    counters.appendCounts(builder);
-    pw.print(builder.toString());
-  }
+    private QoSRequirementsListener requirementsListener;
+    private QoSVerificationListener verificationListener;
+    private CellStub qosTransitionTopic;
+    private ExecutorService executor;
+    private QoSEngineCounters counters;
 
-  public void handleAddCacheLocation(PnfsId pnfsId, String pool) {
-    counters.increment(ADD_CACHE_LOCATION.name());
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleAddCacheLocation calling fileQoSStatusChanged for {} on {}.", pnfsId, pool);
-        fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, ADD_CACHE_LOCATION));
-      } catch (QoSException e) {
-        LOGGER.error("handleAddCacheLocation failed for {} on {}: {}.", pnfsId, pool, e.toString());
-      }
-    });
-  }
+    @Override
+    public void getInfo(PrintWriter pw) {
+        StringBuilder builder = new StringBuilder();
+        counters.appendRunning(builder);
+        counters.appendCounts(builder);
+        pw.print(builder.toString());
+    }
 
-  public void handleBrokenFile(PnfsId pnfsId, String pool) {
-    counters.increment(CORRUPT_FILE.name());
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleBrokenFile calling fileQoSStatusChanged for {} on {}.", pnfsId, pool);
-        fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, CORRUPT_FILE));
-      } catch (QoSException e) {
-        LOGGER.error("handleBrokenFile failed for {} on {}: {}.", pnfsId, pool, e.toString());
-      }
-    });
-  }
+    public void handleAddCacheLocation(PnfsId pnfsId, String pool) {
+        counters.increment(ADD_CACHE_LOCATION.name());
+        executor.execute(() -> {
+            try {
+                LOGGER.debug("handleAddCacheLocation calling fileQoSStatusChanged for {} on {}.",
+                      pnfsId, pool);
+                fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, ADD_CACHE_LOCATION));
+            } catch (QoSException e) {
+                LOGGER.error("handleAddCacheLocation failed for {} on {}: {}.", pnfsId, pool,
+                      e.toString());
+            }
+        });
+    }
 
-  public void handleClearCacheLocation(PnfsId pnfsId, String pool) {
-    counters.increment(CLEAR_CACHE_LOCATION.name());
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleClearCacheLocation calling fileQoSStatusChanged for {} on {}.", pnfsId, pool);
-        fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, CLEAR_CACHE_LOCATION));
-      } catch (QoSException e) {
-        /*
-         *  The file was very likely deleted.  Log this only for informational purposes.
-         */
-        LOGGER.debug("handleClearCacheLocation for {} on {}: {}.", pnfsId, pool, e.toString());
-      }
-    });
-  }
+    public void handleBrokenFile(PnfsId pnfsId, String pool) {
+        counters.increment(CORRUPT_FILE.name());
+        executor.execute(() -> {
+            try {
+                LOGGER.debug("handleBrokenFile calling fileQoSStatusChanged for {} on {}.", pnfsId,
+                      pool);
+                fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, CORRUPT_FILE));
+            } catch (QoSException e) {
+                LOGGER.error("handleBrokenFile failed for {} on {}: {}.", pnfsId, pool,
+                      e.toString());
+            }
+        });
+    }
 
-  public void handleQoSModification(FileQoSRequirements requirements) {
-    counters.increment(QOS_MODIFIED.name());
-    PnfsId pnfsId = requirements.getPnfsId();
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleQoSModification calling fileQoSRequirementsModified for {}.", pnfsId);
-        requirementsListener.fileQoSRequirementsModified(requirements);
-        LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
-            pnfsId, QOS_MODIFIED);
-        fileQoSStatusChanged(new FileQoSUpdate(pnfsId, null, QOS_MODIFIED));
-      } catch (QoSException e) {
-        LOGGER.error("Failed to handle QoS requirements for {}: {}.", requirements.getPnfsId(),
-                                                                      e.toString());
-        handleActionCompleted(pnfsId, VOID, e.toString());
-      }
-    });
-  }
+    public void handleClearCacheLocation(PnfsId pnfsId, String pool) {
+        counters.increment(CLEAR_CACHE_LOCATION.name());
+        executor.execute(() -> {
+            try {
+                LOGGER.debug("handleClearCacheLocation calling fileQoSStatusChanged for {} on {}.",
+                      pnfsId, pool);
+                fileQoSStatusChanged(new FileQoSUpdate(pnfsId, pool, CLEAR_CACHE_LOCATION));
+            } catch (QoSException e) {
+                /*
+                 *  The file was very likely deleted.  Log this only for informational purposes.
+                 */
+                LOGGER.debug("handleClearCacheLocation for {} on {}: {}.", pnfsId, pool,
+                      e.toString());
+            }
+        });
+    }
 
-  public void handleQoSModificationCancelled(PnfsId pnfsId) {
-    counters.increment(QOS_MODIFIED_CANCELED.name());
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleQoSModificationCancelled notifying verification listener to cancel {}.",
-            pnfsId);
-        verificationListener.fileQoSVerificationCancelled(pnfsId);
-      } catch (QoSException e) {
-        LOGGER.error("Failed to handle QoS requirements for {}: {}.", pnfsId, e.toString());
-      }
-    });
-  }
+    public void handleQoSModification(FileQoSRequirements requirements) {
+        counters.increment(QOS_MODIFIED.name());
+        PnfsId pnfsId = requirements.getPnfsId();
+        executor.execute(() -> {
+            try {
+                LOGGER.debug("handleQoSModification calling fileQoSRequirementsModified for {}.",
+                      pnfsId);
+                requirementsListener.fileQoSRequirementsModified(requirements);
+                LOGGER.debug("handleQoSModification calling fileQoSStatusChanged for {}, {}.",
+                      pnfsId, QOS_MODIFIED);
+                fileQoSStatusChanged(new FileQoSUpdate(pnfsId, null, QOS_MODIFIED));
+            } catch (QoSException e) {
+                LOGGER.error("Failed to handle QoS requirements for {}: {}.",
+                      requirements.getPnfsId(),
+                      e.toString());
+                handleActionCompleted(pnfsId, VOID, e.toString());
+            }
+        });
+    }
 
-  public void handleRequirementsRequestReply(MessageReply<QoSRequirementsRequestMessage> reply,
-                                             QoSRequirementsRequestMessage message) {
-    executor.execute(()-> {
-      try {
-        LOGGER.debug("handleRequirementsRequestReply calling fileQoSRequirementsRequested for {}.",
-            message.getUpdate());
-        message.setRequirements(requirementsListener.fileQoSRequirementsRequested(message.getUpdate()));
-        reply.reply(message);
-      } catch (QoSException e) {
-        reply.fail(message, e);
-      } catch (Exception e) {
-        reply.fail(message, e);
-      }
-    });
-  }
+    public void handleQoSModificationCancelled(PnfsId pnfsId) {
+        counters.increment(QOS_MODIFIED_CANCELED.name());
+        executor.execute(() -> {
+            try {
+                LOGGER.debug(
+                      "handleQoSModificationCancelled notifying verification listener to cancel {}.",
+                      pnfsId);
+                verificationListener.fileQoSVerificationCancelled(pnfsId);
+            } catch (QoSException e) {
+                LOGGER.error("Failed to handle QoS requirements for {}: {}.", pnfsId, e.toString());
+            }
+        });
+    }
 
-  public void handleActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
-    fileQoSActionCompleted(pnfsId, action, error);
-  }
+    public void handleRequirementsRequestReply(MessageReply<QoSRequirementsRequestMessage> reply,
+          QoSRequirementsRequestMessage message) {
+        executor.execute(() -> {
+            try {
+                LOGGER.debug(
+                      "handleRequirementsRequestReply calling fileQoSRequirementsRequested for {}.",
+                      message.getUpdate());
+                message.setRequirements(
+                      requirementsListener.fileQoSRequirementsRequested(message.getUpdate()));
+                reply.reply(message);
+            } catch (QoSException e) {
+                reply.fail(message, e);
+            } catch (Exception e) {
+                reply.fail(message, e);
+            }
+        });
+    }
 
-  public void setQoSEngineCounters(QoSEngineCounters counters) {
-    this.counters = counters;
-  }
+    public void handleActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
+        fileQoSActionCompleted(pnfsId, action, error);
+    }
 
-  public void setQosTransitionTopic(CellStub qosTransitionTopic) {
-    this.qosTransitionTopic = qosTransitionTopic;
-  }
+    public void setQoSEngineCounters(QoSEngineCounters counters) {
+        this.counters = counters;
+    }
 
-  public void setExecutor(ExecutorService executor) {
-    this.executor = executor;
-  }
+    public void setQosTransitionTopic(CellStub qosTransitionTopic) {
+        this.qosTransitionTopic = qosTransitionTopic;
+    }
 
-  public void setRequirementsListener(QoSRequirementsListener requirementsListener) {
-    this.requirementsListener = requirementsListener;
-  }
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
 
-  public void setVerificationListener(QoSVerificationListener verificationListener) {
-    this.verificationListener = verificationListener;
-  }
+    public void setRequirementsListener(QoSRequirementsListener requirementsListener) {
+        this.requirementsListener = requirementsListener;
+    }
 
-  @Override
-  public void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
-    counters.increment(QOS_ACTION_COMPLETED);
-    qosTransitionTopic.notify(new QoSTransitionCompletedMessage(pnfsId, action, error));
-  }
+    public void setVerificationListener(QoSVerificationListener verificationListener) {
+        this.verificationListener = verificationListener;
+    }
 
-  private void fileQoSStatusChanged(FileQoSUpdate update) throws QoSException {
-    FileQoSRequirements requirements = requirementsListener.fileQoSRequirementsRequested(update);
-    QoSVerificationRequest request = new QoSVerificationRequest();
-    request.setUpdate(update);
-    request.setRequirements(requirements);
-    verificationListener.fileQoSVerificationRequested(request);
-  }
+    @Override
+    public void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
+        counters.increment(QOS_ACTION_COMPLETED);
+        qosTransitionTopic.notify(new QoSTransitionCompletedMessage(pnfsId, action, error));
+    }
+
+    private void fileQoSStatusChanged(FileQoSUpdate update) throws QoSException {
+        FileQoSRequirements requirements = requirementsListener.fileQoSRequirementsRequested(
+              update);
+        QoSVerificationRequest request = new QoSVerificationRequest();
+        request.setUpdate(update);
+        request.setRequirements(requirements);
+        verificationListener.fileQoSVerificationRequested(request);
+    }
 }

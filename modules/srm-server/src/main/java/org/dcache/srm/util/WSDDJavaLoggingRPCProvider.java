@@ -7,16 +7,14 @@ import org.apache.axis.deployment.wsdd.WSDDService;
 
 
 /**
- * Factory class for producing LoggingRPCProvider instances.  This class must
- * be included in the
- *
- *     META-INF/services/org.apache.axis.deployment.wsdd.Provider
- *
- * file within a jar file to allow Axis to discover it.  The line is the
- * fully qualified class name.
+ * Factory class for producing LoggingRPCProvider instances.  This class must be included in the
+ * <p>
+ * META-INF/services/org.apache.axis.deployment.wsdd.Provider
+ * <p>
+ * file within a jar file to allow Axis to discover it.  The line is the fully qualified class
+ * name.
  */
-public class WSDDJavaLoggingRPCProvider extends WSDDProvider
-{
+public class WSDDJavaLoggingRPCProvider extends WSDDProvider {
 
     /*
      * The name to use in the 'provider' attribute of the 'service' element in
@@ -36,12 +34,11 @@ public class WSDDJavaLoggingRPCProvider extends WSDDProvider
 
 
     /**
-     *  Create new instance of our provider.
+     * Create new instance of our provider.
      */
     @Override
     public Handler newProviderInstance(WSDDService service,
-            EngineConfiguration registry) throws Exception
-    {
+          EngineConfiguration registry) throws Exception {
         return new LoggingRPCProvider();
     }
 }

@@ -19,38 +19,35 @@
 
 package org.dcache.vehicles;
 
-import org.junit.Test;
-
-import java.util.Set;
-
-import org.dcache.util.FileAttributesBuilder;
-
 import static org.dcache.namespace.FileAttribute.LABELS;
 import static org.dcache.util.FileAttributesBuilder.fileAttributes;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class FileLabelsTest
-{
+import java.util.Set;
+import org.dcache.util.FileAttributesBuilder;
+import org.junit.Test;
+
+public class FileLabelsTest {
+
     FileAttributes fileAttributes;
 
     @Test
-    public void shouldNotHaveLabelsInitially()
-    {
+    public void shouldNotHaveLabelsInitially() {
         given(fileAttributes());
         assertFalse(fileAttributes.hasLabel("cat"));
         assertFalse(fileAttributes.isDefined(LABELS));
     }
 
     @Test
-    public void shouldAllowFetchingLabelsInitially()
-    {
+    public void shouldAllowFetchingLabelsInitially() {
         given(fileAttributes());
         fileAttributes.getLabels();
     }
 
     @Test
-    public void shouldAcceptLabels()
-    {
+    public void shouldAcceptLabels() {
         given(fileAttributes().withLabel("dog"));
         assertTrue(fileAttributes.isDefined(LABELS));
         assertTrue(fileAttributes.hasLabel("dog"));
@@ -59,15 +56,13 @@ public class FileLabelsTest
 
 
     @Test
-    public void checkSetLabels()
-    {
+    public void checkSetLabels() {
         Set<String> labels = Set.of("dog", "cat", "yellow");
         given(fileAttributes().withLabels(labels));
         assertEquals(labels, fileAttributes.getLabels());
     }
 
-    private void given(FileAttributesBuilder builder)
-    {
+    private void given(FileAttributesBuilder builder) {
         fileAttributes = builder.build();
     }
 }

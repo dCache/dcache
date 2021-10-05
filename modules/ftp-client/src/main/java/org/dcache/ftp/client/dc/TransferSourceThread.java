@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,27 +15,22 @@
  */
 package org.dcache.ftp.client.dc;
 
+import java.io.IOException;
 import org.dcache.ftp.client.Buffer;
 import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-
-import java.io.IOException;
-
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements outgoing transfer.
- * While the transfer is in progress, replies are sent to the
- * local control channel. Also any failure messages go there
- * in the form of a negative reply.
+ * Implements outgoing transfer. While the transfer is in progress, replies are sent to the local
+ * control channel. Also any failure messages go there in the form of a negative reply.
  **/
-public class TransferSourceThread extends TransferThread
-{
+public class TransferSourceThread extends TransferThread {
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(TransferSourceThread.class);
+          LoggerFactory.getLogger(TransferSourceThread.class);
 
     protected DataChannelWriter writer;
     protected final DataSource source;
@@ -44,12 +39,11 @@ public class TransferSourceThread extends TransferThread
     protected SocketBox socketBox = null;
 
     public TransferSourceThread(AbstractDataChannel dataChannel,
-                                SocketBox socketBox,
-                                DataSource source,
-                                BasicServerControlChannel localControlChannel,
-                                TransferContext context)
-            throws Exception
-    {
+          SocketBox socketBox,
+          DataSource source,
+          BasicServerControlChannel localControlChannel,
+          TransferContext context)
+          throws Exception {
         this.socketBox = socketBox;
         this.source = source;
         this.localControlChannel = localControlChannel;
@@ -60,8 +54,7 @@ public class TransferSourceThread extends TransferThread
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         Buffer buf;
         long transferred = 0;
         boolean error = false;
@@ -77,15 +70,15 @@ public class TransferSourceThread extends TransferThread
                 }
 
                 logger.debug("finished sending data; sent {} bytes",
-                             transferred);
+                      transferred);
 
             } catch (Exception e) {
                 // this happens also if thread gets interrupted
                 error = true;
                 FTPServerFacade.exceptionToControlChannel(
-                        e,
-                        "exception during TransferSourceThread",
-                        localControlChannel);
+                      e,
+                      "exception during TransferSourceThread",
+                      localControlChannel);
             }
 
             Object quitToken = shutdown();
@@ -100,8 +93,7 @@ public class TransferSourceThread extends TransferThread
         }
     }
 
-    protected void startup()
-    {
+    protected void startup() {
         //send initial reply only if nothing has yet been sent
         synchronized (localControlChannel) {
             if (localControlChannel.getReplyCount() == 0) {
@@ -112,8 +104,7 @@ public class TransferSourceThread extends TransferThread
     }
 
     // called after the transfer completes, before 226
-    protected Object shutdown() throws IOException
-    {
+    protected Object shutdown() throws IOException {
         logger.debug("shutdown");
 
         // close the socket

@@ -24,20 +24,21 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import java.io.IOException;
 import java.io.Serializable;
 
-public abstract class EnvelopeAndMessageDeliverable<R extends CellMessageReceiver> implements Deliverable<R> {
-  protected CellAddressCore sourceAddress;
+public abstract class EnvelopeAndMessageDeliverable<R extends CellMessageReceiver> implements
+      Deliverable<R> {
 
-  protected abstract CellMessage buildEnvelope();
+    protected CellAddressCore sourceAddress;
 
-  @Override
-  public void deliverTo(R receiver) throws IOException, InterruptedException
-  {
-    CellMessage envelope = buildEnvelope();
-    envelope.nextDestination();
-    Serializable request = envelope.getMessageObject();
-    doDeliverTo(receiver, envelope, request);
-  }
+    protected abstract CellMessage buildEnvelope();
 
-  protected abstract void doDeliverTo(R receiver, CellMessage envelope, Serializable request)
-      throws IOException, InterruptedException;
+    @Override
+    public void deliverTo(R receiver) throws IOException, InterruptedException {
+        CellMessage envelope = buildEnvelope();
+        envelope.nextDestination();
+        Serializable request = envelope.getMessageObject();
+        doDeliverTo(receiver, envelope, request);
+    }
+
+    protected abstract void doDeliverTo(R receiver, CellMessage envelope, Serializable request)
+          throws IOException, InterruptedException;
 }

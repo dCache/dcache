@@ -18,70 +18,64 @@
  */
 package org.dcache.ftp.door;
 
+import diskCacheV111.util.ConfigurationException;
+import diskCacheV111.util.FsPath;
+import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SslContext;
-
-import javax.net.ssl.SSLEngine;
-
 import java.io.File;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.ConfigurationException;
-import diskCacheV111.util.FsPath;
-
-import dmg.cells.nucleus.CDC;
-
+import javax.net.ssl.SSLEngine;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.Option;
 
-public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
-{
-    @Option(name="service-key", required=true)
+public class TlsFtpInterpreterFactory extends FtpInterpreterFactory {
+
+    @Option(name = "service-key", required = true)
     protected File service_key;
 
-    @Option(name="service-cert", required=true)
+    @Option(name = "service-cert", required = true)
     protected File service_cert;
 
-    @Option(name="service-trusted-certs", required=true)
+    @Option(name = "service-trusted-certs", required = true)
     protected File service_trusted_certs;
 
-    @Option(name="cipher-flags", required=true)
+    @Option(name = "cipher-flags", required = true)
     protected String cipherFlags;
 
-    @Option(name="namespace-mode", required=true)
+    @Option(name = "namespace-mode", required = true)
     protected NamespaceCheckingMode namespaceMode;
 
-    @Option(name="crl-mode", required=true)
+    @Option(name = "crl-mode", required = true)
     protected CrlCheckingMode crlMode;
 
-    @Option(name="ocsp-mode", required=true)
+    @Option(name = "ocsp-mode", required = true)
     protected OCSPCheckingMode ocspMode;
 
-    @Option(name="key-cache-lifetime", required=true)
+    @Option(name = "key-cache-lifetime", required = true)
     private long keyCacheLifetime;
 
-    @Option(name="key-cache-lifetime-unit", required=true)
+    @Option(name = "key-cache-lifetime-unit", required = true)
     private TimeUnit keyCacheLifetimeUnit;
 
-    @Option(name="username-password-enabled", required=true)
+    @Option(name = "username-password-enabled", required = true)
     private boolean allowUsernamePassword;
 
-    @Option(name="anonymous-enabled", required=true)
+    @Option(name = "anonymous-enabled", required = true)
     private boolean anonymousEnabled;
 
-    @Option(name="anonymous-user", required=true)
+    @Option(name = "anonymous-user", required = true)
     private String anonymousUser;
 
-    @Option(name="anonymous-email-required", required=true)
+    @Option(name = "anonymous-email-required", required = true)
     private boolean requireAnonEmailPassword;
 
-    @Option(name="anonymous-root", required=true)
+    @Option(name = "anonymous-root", required = true)
     private FsPath anonymousRoot;
 
     private Optional<String> anonUser;
@@ -89,8 +83,7 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
     private SslContext sslContext;
 
     @Override
-    public void configure(Args args) throws ConfigurationException
-    {
+    public void configure(Args args) throws ConfigurationException {
         super.configure(args);
         try {
             sslContext = buildContext();
@@ -99,13 +92,12 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
         }
 
         anonUser = anonymousEnabled
-                ? Optional.of(anonymousUser)
-                : Optional.empty();
+              ? Optional.of(anonymousUser)
+              : Optional.empty();
     }
 
     @Override
-    protected AbstractFtpDoorV1 createInterpreter()
-    {
+    protected AbstractFtpDoorV1 createInterpreter() {
         SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
         engine.setNeedClientAuth(false);
 
@@ -118,22 +110,21 @@ public class TlsFtpInterpreterFactory extends FtpInterpreterFactory
         engine.setWantClientAuth(false);
 
         return new TlsFtpDoor(engine, allowUsernamePassword, anonUser,
-                anonymousRoot, requireAnonEmailPassword);
+              anonymousRoot, requireAnonEmailPassword);
     }
 
-    protected SslContext buildContext() throws Exception
-    {
+    protected SslContext buildContext() throws Exception {
         return CanlContextFactory.custom()
-                .withCertificatePath(service_cert.toPath())
-                .withKeyPath(service_key.toPath())
-                .withCertificateAuthorityPath(service_trusted_certs.toPath())
-                .withCrlCheckingMode(crlMode)
-                .withOcspCheckingMode(ocspMode)
-                .withNamespaceMode(namespaceMode)
-                .withLazy(false)
-                .withLoggingContext(new CDC()::restore)
-                .buildWithCaching(SslContext.class)
-                .call();
+              .withCertificatePath(service_cert.toPath())
+              .withKeyPath(service_key.toPath())
+              .withCertificateAuthorityPath(service_trusted_certs.toPath())
+              .withCrlCheckingMode(crlMode)
+              .withOcspCheckingMode(ocspMode)
+              .withNamespaceMode(namespaceMode)
+              .withLazy(false)
+              .withLoggingContext(new CDC()::restore)
+              .buildWithCaching(SslContext.class)
+              .call();
     }
 
 }

@@ -59,9 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -71,7 +68,6 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.BaseEntry;
 import org.dcache.services.billing.db.data.DcacheReadsHourly;
@@ -80,28 +76,31 @@ import org.dcache.services.billing.db.data.DcacheWritesHourly;
 import org.dcache.services.billing.db.data.HSMReadsHourly;
 import org.dcache.services.billing.db.data.HSMWritesHourly;
 import org.dcache.services.billing.db.data.HitsHourly;
+import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.db.data.MissesHourly;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.PoolHitsHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Stores hourly billing data in memory in a circular buffer (linked deque)
- *    holding 24 bins.</p>
+ * holding 24 bins.</p>
  *
  * <p>Uses the DAO objects representing database views defined for hourly data
- *    to initialize the buffer, but thereafter all updates and fetches
- *    are directly to and from the buffer.</p>
+ * to initialize the buffer, but thereafter all updates and fetches are directly to and from the
+ * buffer.</p>
  *
  * <p>Implemented in the interest of shortening latency on histogram fetches
- *    (for plotting).</p>
+ * (for plotting).</p>
  */
 public final class HourlyAggregateDataHandler {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(HourlyAggregateDataHandler.class);
+          = LoggerFactory.getLogger(HourlyAggregateDataHandler.class);
 
     private static final long HOUR_IN_MILLIS = TimeUnit.HOURS.toMillis(1);
 
@@ -109,6 +108,7 @@ public final class HourlyAggregateDataHandler {
      * <p>Data object held by the circular buffer.</p>
      */
     static final class HourlyAggregateData {
+
         final Date timestamp;
 
         long bytesRead;
@@ -211,7 +211,7 @@ public final class HourlyAggregateDataHandler {
 
         synchronized IHistogramData getPoolHits() {
             PoolHitsHourly entry = new PoolHitsHourly();
-            entry.setCount(cacheHits+cacheMisses);
+            entry.setCount(cacheHits + cacheMisses);
             entry.setDate(timestamp);
             entry.setCached(cacheHits);
             entry.setNotcached(cacheMisses);
@@ -220,51 +220,51 @@ public final class HourlyAggregateDataHandler {
 
         public String toString() {
             long mintime = minConnectionTime == Long.MAX_VALUE ? 0L
-                            : minConnectionTime;
+                  : minConnectionTime;
 
             return "HourlyAggregateData"
-                            + "(" + timestamp + ")"
-                            + "(rd b " + bytesRead + ")"
-                            + "(rd t " + readCount + ")"
-                            + "(wr b" + bytesWritten + ")"
-                            + "(wr t" + writeCount + ")"
-                            + "(p2p b" + bytesP2p + ")"
-                            + "(p2p t" + p2pCount + ")"
-                            + "(st b " + bytesStored + ")"
-                            + "(st t " + storeCount + ")"
-                            + "(rst b" + bytesRestored + ")"
-                            + "(rst t " + restoreCount + ")"
-                            + "(max t " + maxConnectionTime + ")"
-                            + "(min t " + mintime + ")"
-                            + "(avg t " + avgConnectionTime + ")"
-                            + "(tot t " + moverCount + ")"
-                            + "(hits " + cacheHits + ")"
-                            + "(misses " + cacheMisses + ")";
+                  + "(" + timestamp + ")"
+                  + "(rd b " + bytesRead + ")"
+                  + "(rd t " + readCount + ")"
+                  + "(wr b" + bytesWritten + ")"
+                  + "(wr t" + writeCount + ")"
+                  + "(p2p b" + bytesP2p + ")"
+                  + "(p2p t" + p2pCount + ")"
+                  + "(st b " + bytesStored + ")"
+                  + "(st t " + storeCount + ")"
+                  + "(rst b" + bytesRestored + ")"
+                  + "(rst t " + restoreCount + ")"
+                  + "(max t " + maxConnectionTime + ")"
+                  + "(min t " + mintime + ")"
+                  + "(avg t " + avgConnectionTime + ")"
+                  + "(tot t " + moverCount + ")"
+                  + "(hits " + cacheHits + ")"
+                  + "(misses " + cacheMisses + ")";
         }
 
         synchronized void update(IHistogramData data) {
             if (data instanceof MoverData) {
-                update((MoverData)data);
+                update((MoverData) data);
             } else if (data instanceof StorageData) {
-                update((StorageData)data);
+                update((StorageData) data);
             } else if (data instanceof PoolHitData) {
-                update((PoolHitData)data);
+                update((PoolHitData) data);
             } else if (data instanceof DcacheReadsHourly) {
-                update((DcacheReadsHourly)data);
+                update((DcacheReadsHourly) data);
             } else if (data instanceof DcacheWritesHourly) {
-                update((DcacheWritesHourly)data);
+                update((DcacheWritesHourly) data);
             } else if (data instanceof DcacheTimeHourly) {
-                update((DcacheTimeHourly)data);
+                update((DcacheTimeHourly) data);
             } else if (data instanceof PoolToPoolTransfersHourly) {
-                update((PoolToPoolTransfersHourly)data);
+                update((PoolToPoolTransfersHourly) data);
             } else if (data instanceof HSMReadsHourly) {
-                update((HSMReadsHourly)data);
+                update((HSMReadsHourly) data);
             } else if (data instanceof HSMWritesHourly) {
-                update((HSMWritesHourly)data);
+                update((HSMWritesHourly) data);
             } else if (data instanceof HitsHourly) {
-                update((HitsHourly)data);
+                update((HitsHourly) data);
             } else if (data instanceof MissesHourly) {
-                update((MissesHourly)data);
+                update((MissesHourly) data);
             }
         }
 
@@ -328,9 +328,9 @@ public final class HourlyAggregateDataHandler {
             maxConnectionTime = Math.max(maxConnectionTime, t);
             minConnectionTime = Math.min(minConnectionTime, t);
 
-            double currentTotal = moverCount*avgConnectionTime;
+            double currentTotal = moverCount * avgConnectionTime;
             ++moverCount;
-            avgConnectionTime = (currentTotal + (double)t)/moverCount;
+            avgConnectionTime = (currentTotal + (double) t) / moverCount;
         }
 
         private void update(StorageData data) {
@@ -388,8 +388,8 @@ public final class HourlyAggregateDataHandler {
 
     /**
      * <p>Finds the proper time bin and updates the pertinent aggregate
-     *    fields.  If the timestamp is prior to that of the earliest bin,
-     *    or later than the upper bound, the data is dropped.</p>
+     * fields.  If the timestamp is prior to that of the earliest bin, or later than the upper
+     * bound, the data is dropped.</p>
      */
     public void update(IHistogramData newData) {
         Date timestamp = newData.timestamp();
@@ -413,25 +413,25 @@ public final class HourlyAggregateDataHandler {
         Collection<IHistogramData> data = Collections.emptyList();
         if (type.equals(DcacheReadsHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyReads)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(DcacheWritesHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyWrites)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(PoolToPoolTransfersHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyP2ps)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(DcacheTimeHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyConnectionTime)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(HSMReadsHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyRestores)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(HSMWritesHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyStores)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         } else if (type.equals(PoolHitsHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getPoolHits)
-                                 .collect(Collectors.toList());
+                  .collect(Collectors.toList());
         }
 
         LOGGER.trace("get request, returning {}.", data);
@@ -447,13 +447,13 @@ public final class HourlyAggregateDataHandler {
 
         long earliest = deque.peekFirst().timestamp.getTime();
         long latest = deque.peekLast().timestamp.getTime()
-                        + TimeUnit.HOURS.toMillis(1);
+              + TimeUnit.HOURS.toMillis(1);
 
         /*
          * If the (live) data is outside the current 24-hour window, we just
          * throw it away.  This is rather unlikely to occur.
          */
-        if (timestamp < earliest || timestamp >= latest ) {
+        if (timestamp < earliest || timestamp >= latest) {
             return null;
         }
 

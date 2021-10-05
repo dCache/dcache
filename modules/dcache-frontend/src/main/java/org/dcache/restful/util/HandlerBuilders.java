@@ -18,10 +18,7 @@
  */
 package org.dcache.restful.util;
 
-import javax.servlet.http.HttpServletRequest;
-
 import diskCacheV111.util.PnfsHandler;
-
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -29,18 +26,16 @@ import org.dcache.cells.CellStub;
 /**
  * Utility class for building classes that facilitate interacting with dCache.
  */
-public class HandlerBuilders
-{
-    public static PnfsHandler pnfsHandler(CellStub pnfsManager)
-    {
+public class HandlerBuilders {
+
+    public static PnfsHandler pnfsHandler(CellStub pnfsManager) {
         PnfsHandler handler = new PnfsHandler(pnfsManager);
         handler.setSubject(RequestUser.getSubject());
         handler.setRestriction(RequestUser.getRestriction());
         return handler;
     }
 
-    public static PnfsHandler roleAwarePnfsHandler(CellStub pnfsManager)
-    {
+    public static PnfsHandler roleAwarePnfsHandler(CellStub pnfsManager) {
         PnfsHandler handler = pnfsHandler(pnfsManager);
 
         if (RequestUser.isAdmin()) {

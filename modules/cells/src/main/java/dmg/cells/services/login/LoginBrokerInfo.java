@@ -1,9 +1,11 @@
 package dmg.cells.services.login;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Joiner;
-
-import javax.annotation.Nonnull;
-
+import diskCacheV111.util.FsPath;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -16,29 +18,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-
-import diskCacheV111.util.FsPath;
-
+import javax.annotation.Nonnull;
 import org.dcache.util.NetworkUtils.InetAddressScope;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Immutable object to capture information about a door.
- *
- * By convention, network addresses in LoginBrokerInfo should have been
- * resolved, that is, the host name should be cached within the InetAddress
- * object. This should preferably be the FQDN. The exception to this
- * rule is when the IP addresses doesn't have a corresponding name.
+ * <p>
+ * By convention, network addresses in LoginBrokerInfo should have been resolved, that is, the host
+ * name should be cached within the InetAddress object. This should preferably be the FQDN. The
+ * exception to this rule is when the IP addresses doesn't have a corresponding name.
  */
-public class LoginBrokerInfo implements Serializable
-{
+public class LoginBrokerInfo implements Serializable {
+
     private static final long serialVersionUID = 4077557054990432737L;
 
-    public enum Capability
-    {
+    public enum Capability {
         READ, WRITE
     }
 
@@ -61,19 +55,18 @@ public class LoginBrokerInfo implements Serializable
     private transient Collection<FsPath> _writeFsPaths;
 
     public LoginBrokerInfo(String cellName,
-                           String domainName,
-                           String protocolFamily,
-                           String protocolVersion,
-                           String protocolEngine,
-                           String root,
-                           Collection<String> readPaths,
-                           Collection<String> writePaths,
-                           Collection<String> tags,
-                           List<InetAddress> addresses,
-                           int port,
-                           double load,
-                           long updateTime)
-    {
+          String domainName,
+          String protocolFamily,
+          String protocolVersion,
+          String protocolEngine,
+          String root,
+          Collection<String> readPaths,
+          Collection<String> writePaths,
+          Collection<String> tags,
+          List<InetAddress> addresses,
+          int port,
+          double load,
+          long updateTime) {
         checkArgument(!addresses.isEmpty());
         _cellName = requireNonNull(cellName);
         _domainName = requireNonNull(domainName);
@@ -95,13 +88,12 @@ public class LoginBrokerInfo implements Serializable
         _writeFsPaths = _writePaths.stream().map(FsPath::create).collect(toList());
     }
 
-    public boolean supports(InetAddressScope scope)
-    {
-        return _addresses.stream().anyMatch(a -> InetAddressScope.of(a).ordinal() >= scope.ordinal());
+    public boolean supports(InetAddressScope scope) {
+        return _addresses.stream()
+              .anyMatch(a -> InetAddressScope.of(a).ordinal() >= scope.ordinal());
     }
 
-    public boolean supports(ProtocolFamily family)
-    {
+    public boolean supports(ProtocolFamily family) {
         if (family == StandardProtocolFamily.INET) {
             return _addresses.stream().anyMatch(a -> a instanceof Inet4Address);
         } else if (family == StandardProtocolFamily.INET6) {
@@ -111,125 +103,105 @@ public class LoginBrokerInfo implements Serializable
     }
 
     @Nonnull
-    public List<InetAddress> getAddresses()
-    {
+    public List<InetAddress> getAddresses() {
         return Collections.unmodifiableList(_addresses);
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return _port;
     }
 
     @Nonnull
-    public String getCellName()
-    {
+    public String getCellName() {
         return _cellName;
     }
 
     @Nonnull
-    public String getDomainName()
-    {
+    public String getDomainName() {
         return _domainName;
     }
 
     @Nonnull
-    public String getProtocolFamily()
-    {
+    public String getProtocolFamily() {
         return _protocolFamily;
     }
 
     @Nonnull
-    public String getProtocolVersion()
-    {
+    public String getProtocolVersion() {
         return _protocolVersion;
     }
 
     @Nonnull
-    public String getProtocolEngine()
-    {
+    public String getProtocolEngine() {
         return _protocolEngine;
     }
 
-    public String getRoot()
-    {
+    public String getRoot() {
         return _root;
     }
 
-    public FsPath getRoot(FsPath userRoot)
-    {
+    public FsPath getRoot(FsPath userRoot) {
         return (_rootFsPath == null) ? userRoot : _rootFsPath;
     }
 
-    public String relativize(FsPath userRoot, FsPath path)
-    {
+    public String relativize(FsPath userRoot, FsPath path) {
         return path.stripPrefix(getRoot(userRoot));
     }
 
-    public boolean canWrite(FsPath userRoot, FsPath path)
-    {
+    public boolean canWrite(FsPath userRoot, FsPath path) {
         return path.hasPrefix(getRoot(userRoot)) &&
-               _writeFsPaths.stream().anyMatch(path::hasPrefix);
+              _writeFsPaths.stream().anyMatch(path::hasPrefix);
     }
 
-    public boolean canRead(FsPath userRoot, FsPath path)
-    {
+    public boolean canRead(FsPath userRoot, FsPath path) {
         return path.hasPrefix(getRoot(userRoot)) &&
-               _readFsPaths.stream().anyMatch(path::hasPrefix);
+              _readFsPaths.stream().anyMatch(path::hasPrefix);
     }
 
-    public Collection<String> getTags()
-    {
+    public Collection<String> getTags() {
         return Collections.unmodifiableCollection(_tags);
     }
 
-    public Collection<String> getReadPaths()
-    {
+    public Collection<String> getReadPaths() {
         return Collections.unmodifiableCollection(_readPaths);
     }
 
-    public Collection<String> getWritePaths()
-    {
+    public Collection<String> getWritePaths() {
         return Collections.unmodifiableCollection(_writePaths);
     }
 
-    public void ifCapableOf(Capability capability, Consumer<LoginBrokerInfo> action)
-    {
+    public void ifCapableOf(Capability capability, Consumer<LoginBrokerInfo> action) {
         Collection<String> paths;
         switch (capability) {
-        case READ:
-            paths = _readPaths;
-            break;
-        case WRITE:
-            paths = _writePaths;
-            break;
-        default:
-            paths = Collections.emptyList();
-            break;
+            case READ:
+                paths = _readPaths;
+                break;
+            case WRITE:
+                paths = _writePaths;
+                break;
+            default:
+                paths = Collections.emptyList();
+                break;
         }
         if (!paths.isEmpty()) {
             action.accept(this);
         }
     }
 
-    public double getLoad()
-    {
+    public double getLoad() {
         return _load;
     }
 
-    public long getUpdateTime()
-    {
+    public long getUpdateTime() {
         return _update;
     }
 
     @Nonnull
-    public String getIdentifier()
-    {
+    public String getIdentifier() {
         return _cellName + '@' + _domainName;
     }
 
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(_cellName).append('@').append(_domainName).append(';');
         int pos = _protocolEngine.lastIndexOf('.');
@@ -239,7 +211,7 @@ public class LoginBrokerInfo implements Serializable
             sb.append(_protocolEngine.substring(pos + 1)).append(';');
         }
         sb.append('{').append(_protocolFamily).append(',').
-                append(_protocolVersion).append("};");
+              append(_protocolVersion).append("};");
 
         sb.append('[');
         Joiner.on(",").appendTo(sb, _addresses);
@@ -252,8 +224,7 @@ public class LoginBrokerInfo implements Serializable
     }
 
     private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
         if (_root != null) {
             _rootFsPath = FsPath.create(_root);

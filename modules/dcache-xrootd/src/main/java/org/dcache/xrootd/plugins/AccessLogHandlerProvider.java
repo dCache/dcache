@@ -19,13 +19,13 @@ package org.dcache.xrootd.plugins;
 
 import java.util.Properties;
 
-public class AccessLogHandlerProvider implements ChannelHandlerProvider
-{
+public class AccessLogHandlerProvider implements ChannelHandlerProvider {
+
     public static final String NAME = "access-log";
 
     @Override
-    public ChannelHandlerFactory createFactory(String plugin, Properties properties) throws Exception
-    {
+    public ChannelHandlerFactory createFactory(String plugin, Properties properties)
+          throws Exception {
         if (!plugin.equals(NAME)) {
             return null;
         } else if (Boolean.parseBoolean(properties.getProperty("xrootd.enable.proxy-protocol"))) {

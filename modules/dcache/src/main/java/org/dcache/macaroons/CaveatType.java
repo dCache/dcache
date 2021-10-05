@@ -17,18 +17,17 @@
  */
 package org.dcache.macaroons;
 
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
-
 /**
- * Macaroons have zero or more caveats.  Each caveat either restricts the
- * macaroon somehow or provides contextual information.
+ * Macaroons have zero or more caveats.  Each caveat either restricts the macaroon somehow or
+ * provides contextual information.
  */
-public enum CaveatType
-{
+public enum CaveatType {
     HOME("home"),
     ROOT("root"),
     PATH("path"),
@@ -39,7 +38,7 @@ public enum CaveatType
     MAX_UPLOAD("max-upload"),
     ISSUE_ID("iid");
 
-    public static final Map<String,CaveatType> labels = new HashMap<>();
+    public static final Map<String, CaveatType> labels = new HashMap<>();
 
     private final String _label;
 
@@ -47,20 +46,17 @@ public enum CaveatType
         Arrays.stream(CaveatType.values()).forEach(c -> labels.put(c.getLabel(), c));
     }
 
-    public static CaveatType identify(String label) throws InvalidCaveatException
-    {
+    public static CaveatType identify(String label) throws InvalidCaveatException {
         CaveatType type = labels.get(label);
         checkCaveat(type != null, "Unknown caveat %s", label);
         return type;
     }
 
-    CaveatType(String label)
-    {
+    CaveatType(String label) {
         _label = label;
     }
 
-    public String getLabel()
-    {
+    public String getLabel() {
         return _label;
     }
 }

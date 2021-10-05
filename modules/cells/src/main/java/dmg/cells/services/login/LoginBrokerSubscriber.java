@@ -17,25 +17,17 @@
  */
 package dmg.cells.services.login;
 
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.Collections2.transform;
+import static dmg.cells.services.login.LoginBrokerInfo.Capability.READ;
+import static dmg.cells.services.login.LoginBrokerInfo.Capability.WRITE;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
@@ -51,40 +43,48 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
-import static com.google.common.collect.Collections2.*;
-import static dmg.cells.services.login.LoginBrokerInfo.Capability.READ;
-import static dmg.cells.services.login.LoginBrokerInfo.Capability.WRITE;
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.Collections.unmodifiableMap;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Subscriber of LoginBrokerInfo updates.
- *
- * Maintains a list of available doors. A door is removed from the list when
- * an update hasn't been received for 2.5 times the update time of that door.
- * This allows one missed update before the door is removed.
+ * <p>
+ * Maintains a list of available doors. A door is removed from the list when an update hasn't been
+ * received for 2.5 times the update time of that door. This allows one missed update before the
+ * door is removed.
  */
 public class LoginBrokerSubscriber
-        implements CellCommandListener, CellMessageReceiver, LoginBrokerSource, CellMessageSender, CellEventListener, CellLifeCycleAware
-{
+      implements CellCommandListener, CellMessageReceiver, LoginBrokerSource, CellMessageSender,
+      CellEventListener, CellLifeCycleAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LoginBrokerSubscriber.class);
 
     public static final double EXPIRATION_FACTOR = 2.5;
 
     /**
-     * Map from door names to LoginBrokerInfo of that door. Expired entries are removed
-     * lazily when retrieving the list or updating other entries.
+     * Map from door names to LoginBrokerInfo of that door. Expired entries are removed lazily when
+     * retrieving the list or updating other entries.
      */
     private final ConcurrentMap<String, Entry> doorsByIdentity = new ConcurrentHashMap<>();
 
     /**
-     * Queue of entries in expiration order. There is O(log n) time overhead for every entry due
-     * to maintaining this queue. Entries are not removed until expired even if an updated entry
-     * has been inserted. Removing old entries upon update would be O(n) time, so we treat a
-     * typical 2.5 time increase in memory for lower time complexity.
+     * Queue of entries in expiration order. There is O(log n) time overhead for every entry due to
+     * maintaining this queue. Entries are not removed until expired even if an updated entry has
+     * been inserted. Removing old entries upon update would be O(n) time, so we treat a typical 2.5
+     * time increase in memory for lower time complexity.
      */
     private final DelayQueue<Entry> queue = new DelayQueue<>();
 
@@ -92,7 +92,8 @@ public class LoginBrokerSubscriber
      * Immutable view of unexpired LoginBrokerInfos.
      */
     private final Collection<LoginBrokerInfo> unmodifiableView =
-            unmodifiableCollection(transform(filter(doorsByIdentity.values(), Entry::isValid), Entry::getLoginBrokerInfo));
+          unmodifiableCollection(transform(filter(doorsByIdentity.values(), Entry::isValid),
+                Entry::getLoginBrokerInfo));
 
     /**
      * Read doors grouped by protocol.
@@ -128,28 +129,24 @@ public class LoginBrokerSubscriber
     /**
      * Updates are requested from this topic.
      */
-    public void setTopic(String topic)
-    {
+    public void setTopic(String topic) {
         this.topic = new CellAddressCore(topic);
     }
 
     /**
      * Doors are filtered by these tags.
      */
-    public void setTags(String... tags)
-    {
+    public void setTags(String... tags) {
         this.tags = asList(tags);
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         this.cellEndpoint = endpoint;
     }
 
     @Override
-    public void routeAdded(CellEvent ce)
-    {
+    public void routeAdded(CellEvent ce) {
         CellRoute route = (CellRoute) ce.getSource();
         if (route.getRouteType() == CellRoute.TOPIC || route.getRouteType() == CellRoute.DEFAULT) {
             synchronized (this) {
@@ -161,21 +158,18 @@ public class LoginBrokerSubscriber
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         if (topic != null) {
             requestUpdate();
         }
     }
 
-    public void messageArrived(LoginBrokerInfo info)
-    {
+    public void messageArrived(LoginBrokerInfo info) {
         expire();
         add(new Entry(info));
     }
 
-    public void messageArrived(NoRouteToCellException e)
-    {
+    public void messageArrived(NoRouteToCellException e) {
         if (e.getDestinationPath().getDestinationAddress().equals(topic)) {
             synchronized (this) {
                 isInitializing = true;
@@ -183,14 +177,12 @@ public class LoginBrokerSubscriber
         }
     }
 
-    private synchronized void requestUpdate()
-    {
+    private synchronized void requestUpdate() {
         isInitializing = false;
         cellEndpoint.sendMessage(new CellMessage(topic, new LoginBrokerInfoRequest()));
     }
 
-    private void add(Entry entry)
-    {
+    private void add(Entry entry) {
         if (tags.isEmpty() || !Collections.disjoint(tags, entry.getLoginBrokerInfo().getTags())) {
 
             /* The order here is important!  The LoginBrokerInfo object must be
@@ -211,8 +203,7 @@ public class LoginBrokerSubscriber
         }
     }
 
-    private void remove(Entry entry)
-    {
+    private void remove(Entry entry) {
         LoginBrokerInfo info = entry.getLoginBrokerInfo();
         if (doorsByIdentity.remove(info.getIdentifier(), entry)) {
             removeByProtocol(info);
@@ -227,54 +218,46 @@ public class LoginBrokerSubscriber
         }
     }
 
-    private void addByProtocol(LoginBrokerInfo info)
-    {
+    private void addByProtocol(LoginBrokerInfo info) {
         info.ifCapableOf(READ, readDoors::add);
         info.ifCapableOf(WRITE, writeDoors::add);
     }
 
-    private void removeByProtocol(LoginBrokerInfo info)
-    {
+    private void removeByProtocol(LoginBrokerInfo info) {
         info.ifCapableOf(READ, readDoors::remove);
         info.ifCapableOf(WRITE, writeDoors::remove);
     }
 
-    private void ensureRemovedByProtocol(LoginBrokerInfo info)
-    {
+    private void ensureRemovedByProtocol(LoginBrokerInfo info) {
         info.ifCapableOf(READ, readDoors::ensureRemoved);
         info.ifCapableOf(WRITE, writeDoors::ensureRemoved);
     }
 
     @Override
-    public Collection<LoginBrokerInfo> doors()
-    {
+    public Collection<LoginBrokerInfo> doors() {
         expire();
         return unmodifiableView;
     }
 
     @Override
-    public Map<String, Collection<LoginBrokerInfo>> readDoorsByProtocol()
-    {
+    public Map<String, Collection<LoginBrokerInfo>> readDoorsByProtocol() {
         expire();
         return readDoors.getUnmodifiable();
     }
 
     @Override
-    public Map<String, Collection<LoginBrokerInfo>> writeDoorsByProtocol()
-    {
+    public Map<String, Collection<LoginBrokerInfo>> writeDoorsByProtocol() {
         expire();
         return writeDoors.getUnmodifiable();
     }
 
     @Override
-    public boolean anyMatch(Predicate<? super LoginBrokerInfo> predicate)
-    {
+    public boolean anyMatch(Predicate<? super LoginBrokerInfo> predicate) {
         expire();
         return doorsByIdentity.values().stream().map(Entry::getLoginBrokerInfo).anyMatch(predicate);
     }
 
-    private void expire()
-    {
+    private void expire() {
         Entry entry;
         while ((entry = queue.poll()) != null) {
             remove(entry);
@@ -282,8 +265,8 @@ public class LoginBrokerSubscriber
     }
 
     @Command(name = "lb ls", hint = "list collected login broker information")
-    class ListCommand implements Callable<String>
-    {
+    class ListCommand implements Callable<String> {
+
         @Option(name = "protocol", usage = "Filter by protocol.")
         String[] protocols;
 
@@ -291,8 +274,7 @@ public class LoginBrokerSubscriber
         boolean showTime;
 
         @Override
-        public String call()
-        {
+        public String call() {
             Set<String> protocolSet = (protocols != null) ? new HashSet<>(asList(protocols)) : null;
             StringBuilder sb = new StringBuilder();
             for (Entry entry : doorsByIdentity.values()) {
@@ -311,128 +293,114 @@ public class LoginBrokerSubscriber
     }
 
     @Command(name = "lb update", hint = "refresh login broker information",
-            description = "Semi-blocking command to trigger an update of login brokering " +
-                          "information for connected doors. The command blocks until the " +
-                          "first reply is received or no doors could be found. Remaining " +
-                          "updates are received in the background.")
-    class UpdateCommand extends DelayedReply implements Callable<DelayedReply>
-    {
+          description = "Semi-blocking command to trigger an update of login brokering " +
+                "information for connected doors. The command blocks until the " +
+                "first reply is received or no doors could be found. Remaining " +
+                "updates are received in the background.")
+    class UpdateCommand extends DelayedReply implements Callable<DelayedReply> {
+
         @Override
-        public DelayedReply call()
-        {
+        public DelayedReply call() {
             return this;
         }
 
         @Override
-        public void deliver(CellEndpoint endpoint, CellMessage envelope)
-        {
+        public void deliver(CellEndpoint endpoint, CellMessage envelope) {
             super.deliver(endpoint, envelope);
             cellEndpoint.sendMessage(new CellMessage(topic, new LoginBrokerInfoRequest()),
-                                     new CellMessageAnswerable()
-                                     {
-                                         @Override
-                                         public void answerArrived(CellMessage request, CellMessage answer)
-                                         {
-                                             if (!(answer.getMessageObject() instanceof LoginBrokerInfo)) {
-                                                 reply("Invalid reply received: " + answer.getMessageObject());
-                                             } else {
-                                                 LoginBrokerInfo info = (LoginBrokerInfo) answer.getMessageObject();
-                                                 add(new Entry(info));
-                                                 reply("Update from " + info.getIdentifier() + " received. Remaining updates are processed in the background.");
-                                             }
-                                         }
+                  new CellMessageAnswerable() {
+                      @Override
+                      public void answerArrived(CellMessage request, CellMessage answer) {
+                          if (!(answer.getMessageObject() instanceof LoginBrokerInfo)) {
+                              reply("Invalid reply received: " + answer.getMessageObject());
+                          } else {
+                              LoginBrokerInfo info = (LoginBrokerInfo) answer.getMessageObject();
+                              add(new Entry(info));
+                              reply("Update from " + info.getIdentifier()
+                                    + " received. Remaining updates are processed in the background.");
+                          }
+                      }
 
-                                         @Override
-                                         public void exceptionArrived(CellMessage request,
-                                                                      Exception exception)
-                                         {
-                                             reply("Update failed: " + exception.getMessage());
-                                         }
+                      @Override
+                      public void exceptionArrived(CellMessage request,
+                            Exception exception) {
+                          reply("Update failed: " + exception.getMessage());
+                      }
 
-                                         @Override
-                                         public void answerTimedOut(CellMessage request)
-                                         {
-                                             reply("Update timed out.");
-                                         }
-                                     }, MoreExecutors.directExecutor(), envelope.getAdjustedTtl());
+                      @Override
+                      public void answerTimedOut(CellMessage request) {
+                          reply("Update timed out.");
+                      }
+                  }, MoreExecutors.directExecutor(), envelope.getAdjustedTtl());
         }
     }
 
     /**
-     * Grouping of doors by protocol. The number of protocols is low enough that we
-     * do not bother removing any entries from the map.
+     * Grouping of doors by protocol. The number of protocols is low enough that we do not bother
+     * removing any entries from the map.
      */
-    private static class ByProtocolMap
-    {
-        private final ConcurrentMap<String, Set<LoginBrokerInfo>> doors =
-                new ConcurrentHashMap<>();
-        private final Map<String, Collection<LoginBrokerInfo>> unmodifiableView =
-                unmodifiableMap(Maps.transformValues(
-                        Maps.filterValues(doors, (Set<LoginBrokerInfo> set) -> !set.isEmpty()),
-                        Collections::unmodifiableCollection));
+    private static class ByProtocolMap {
 
-        public void add(LoginBrokerInfo info)
-        {
+        private final ConcurrentMap<String, Set<LoginBrokerInfo>> doors =
+              new ConcurrentHashMap<>();
+        private final Map<String, Collection<LoginBrokerInfo>> unmodifiableView =
+              unmodifiableMap(Maps.transformValues(
+                    Maps.filterValues(doors, (Set<LoginBrokerInfo> set) -> !set.isEmpty()),
+                    Collections::unmodifiableCollection));
+
+        public void add(LoginBrokerInfo info) {
             get(info.getProtocolFamily()).add(info);
         }
 
-        public boolean remove(LoginBrokerInfo info)
-        {
+        public boolean remove(LoginBrokerInfo info) {
             return get(info.getProtocolFamily()).remove(info);
         }
 
         /**
-         * We expect that the LoginBrokerInfo is absent, but we wish to ensure
-         * that it is missing.
+         * We expect that the LoginBrokerInfo is absent, but we wish to ensure that it is missing.
          */
-        public void ensureRemoved(LoginBrokerInfo info)
-        {
+        public void ensureRemoved(LoginBrokerInfo info) {
             if (remove(info)) {
                 LOGGER.warn("Removing phantom door {}", info);
             }
         }
 
-        public Set<LoginBrokerInfo> get(String protocol)
-        {
-            return doors.computeIfAbsent(protocol, key -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+        public Set<LoginBrokerInfo> get(String protocol) {
+            return doors.computeIfAbsent(protocol,
+                  key -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
         }
 
-        public Map<String, Collection<LoginBrokerInfo>> getUnmodifiable()
-        {
+        public Map<String, Collection<LoginBrokerInfo>> getUnmodifiable() {
             return unmodifiableView;
         }
     }
 
-    private static class Entry implements Delayed
-    {
+    private static class Entry implements Delayed {
+
         private final long expirationTime;
         private final LoginBrokerInfo info;
 
-        public Entry(LoginBrokerInfo info)
-        {
-            this.expirationTime = System.currentTimeMillis() + (long) (EXPIRATION_FACTOR * info.getUpdateTime());
+        public Entry(LoginBrokerInfo info) {
+            this.expirationTime =
+                  System.currentTimeMillis() + (long) (EXPIRATION_FACTOR * info.getUpdateTime());
             this.info = info;
         }
 
-        public LoginBrokerInfo getLoginBrokerInfo()
-        {
+        public LoginBrokerInfo getLoginBrokerInfo() {
             return info;
         }
 
-        public boolean isValid()
-        {
+        public boolean isValid() {
             return expirationTime > System.currentTimeMillis();
         }
 
         @Override
-        public long getDelay(TimeUnit unit)
-        {
+        public long getDelay(TimeUnit unit) {
             return unit.convert(expirationTime - System.currentTimeMillis(), MILLISECONDS);
         }
 
         @Override
-        public int compareTo(Delayed o)
-        {
+        public int compareTo(Delayed o) {
             return Long.compare(expirationTime, ((Entry) o).expirationTime);
         }
     }

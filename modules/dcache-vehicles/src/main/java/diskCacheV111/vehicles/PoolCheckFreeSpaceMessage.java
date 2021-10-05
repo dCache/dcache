@@ -9,16 +9,16 @@ public class PoolCheckFreeSpaceMessage extends PoolMessage {
 
     private static final long serialVersionUID = 2269590062279181028L;
 
-    public PoolCheckFreeSpaceMessage(String poolName){
-	super(poolName);
-	setReplyRequired(true);
+    public PoolCheckFreeSpaceMessage(String poolName) {
+        super(poolName);
+        setReplyRequired(true);
     }
 
-    public void setFreeSpace(long freeSpace){
-	_freeSpace = freeSpace;
+    public void setFreeSpace(long freeSpace) {
+        _freeSpace = freeSpace;
     }
 
-    public long getFreeSpace(){
-	return _freeSpace;
+    public long getFreeSpace() {
+        return _freeSpace;
     }
 }

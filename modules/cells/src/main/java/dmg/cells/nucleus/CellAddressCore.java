@@ -1,14 +1,12 @@
 package dmg.cells.nucleus;
 
-import com.google.common.collect.ComparisonChain;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ComparisonChain;
 import java.io.Serializable;
 import java.util.Objects;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- *
  * Is the core of the CellDomain addressing scheme. The
  * <code>CellAddressCore</code> specifies the name of the cell and the name of
  * the domain the cell exists in.<br>
@@ -16,9 +14,7 @@ import static java.util.Objects.requireNonNull;
  * that fact. </strong>
  *
  * @author Patrick Fuhrmann
- * @version 0.1,02/15/1998
- *
- *
+ * @version 0.1, 02/15/1998
  */
 
 /*
@@ -32,10 +28,9 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     private final String _cell;
 
     /**
-     * Creates a CellAddressCore by scanning the argument string. The syntax can
-     * be only one of the following :<br>
-     * {@literal cellName} or {@literal cellName@domainName}. If the {@literal domainName} 
-     * is omitted, the keyword 'local' is used instead. The specified <code>addr</code>
+     * Creates a CellAddressCore by scanning the argument string. The syntax can be only one of the
+     * following :<br> {@literal cellName} or {@literal cellName@domainName}. If the {@literal
+     * domainName} is omitted, the keyword 'local' is used instead. The specified <code>addr</code>
      * is not checked for existence.
      *
      * @param addr the string representation of cell address.
@@ -103,21 +98,18 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     }
 
     @Override
-    public int compareTo(CellAddressCore other)
-    {
+    public int compareTo(CellAddressCore other) {
         return ComparisonChain.start()
-                .compare(_cell, other._cell)
-                .compare(_domain, other._domain)
-                .result();
+              .compare(_cell, other._cell)
+              .compare(_domain, other._domain)
+              .result();
     }
 
-    public boolean isDomainAddress()
-    {
+    public boolean isDomainAddress() {
         return _cell.equals("*");
     }
 
-    public boolean isLocalAddress()
-    {
+    public boolean isLocalAddress() {
         return _domain.equals("local");
     }
 
@@ -125,8 +117,7 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
      * unqualified cell addresses. After the next golden release, this class can be
      * adjusted to use null rather than 'local' and reversing the role of readResolve.
      */
-    public Object readResolve()
-    {
+    public Object readResolve() {
         return (_domain == null) ? new CellAddressCore(_cell, null) : this;
     }
 }

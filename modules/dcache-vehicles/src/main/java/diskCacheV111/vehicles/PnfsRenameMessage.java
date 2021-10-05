@@ -4,12 +4,12 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.PnfsId;
-
 import static java.util.Objects.requireNonNull;
 
-public class PnfsRenameMessage extends PnfsMessage
-{
+import diskCacheV111.util.PnfsId;
+
+public class PnfsRenameMessage extends PnfsMessage {
+
     private static final long serialVersionUID = 4595311595112609899L;
 
     private final String _newName;
@@ -30,8 +30,7 @@ public class PnfsRenameMessage extends PnfsMessage
         setReplyRequired(true);
     }
 
-    public PnfsRenameMessage(String path, String newName, boolean overwrite)
-    {
+    public PnfsRenameMessage(String path, String newName, boolean overwrite) {
         this(null, path, newName, overwrite);
     }
 

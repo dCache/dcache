@@ -1,11 +1,35 @@
 package diskCacheV111.admin;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import jline.console.completer.Completer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.SpreadAndWait;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PnfsFlagMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
+import diskCacheV111.vehicles.PoolModifyModeMessage;
+import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
+import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.SerializationException;
+import dmg.util.AclException;
+import dmg.util.AuthorizedString;
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandSyntaxException;
+import dmg.util.CommandThrowableException;
 import java.io.CharArrayWriter;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -20,58 +44,26 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SpreadAndWait;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.Pool2PoolTransferMsg;
-import diskCacheV111.vehicles.PoolLinkInfo;
-import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
-import diskCacheV111.vehicles.PoolMgrGetPoolLinks;
-import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
-import diskCacheV111.vehicles.PoolModifyModeMessage;
-import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.SerializationException;
-import dmg.util.AclException;
-import dmg.util.AuthorizedString;
-import dmg.util.CommandException;
-import dmg.util.CommandExitException;
-import dmg.util.CommandInterpreter;
-import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
-
+import jline.console.completer.Completer;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Christian Bernardt, Patrick Fuhrmann
  * @version 0.2, 10 December 2010
  */
 public class LegacyAdminShell
-        extends CommandInterpreter
-        implements Completer
-{
+      extends CommandInterpreter
+      implements Completer {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(LegacyAdminShell.class);
+          LoggerFactory.getLogger(LegacyAdminShell.class);
 
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
@@ -85,25 +77,23 @@ public class LegacyAdminShell
     private final String _authUser;
     private long _timeout = TimeUnit.SECONDS.toMillis(10);
     private boolean _fullException;
-    private final String      _instance ;
+    private final String _instance;
     private Position _currentPosition = new Position();
-    private final boolean     _debug    = false ;
+    private final boolean _debug = false;
     private Completer _completer;
 
-    private static class Position
-    {
+    private static class Position {
+
         private CellPath remote;
         private String remoteName;
         private boolean hyperMode;
         private List<String> hyperPath = new ArrayList<>();
         private String moduleName;
 
-        private Position()
-        {
+        private Position() {
         }
 
-        private Position(Position position)
-        {
+        private Position(Position position) {
             remote = position.remote;
             remoteName = position.remoteName;
             hyperMode = position.hyperMode;
@@ -111,15 +101,13 @@ public class LegacyAdminShell
             moduleName = position.moduleName;
         }
 
-        private Position(String removeCell)
-        {
+        private Position(String removeCell) {
             hyperMode = false;
             remoteName = removeCell;
             remote = remoteName == null ? null : new CellPath(remoteName);
         }
 
-        private void clearHyperMode()
-        {
+        private void clearHyperMode() {
             hyperMode = false;
             remoteName = null;
             remote = null;
@@ -127,16 +115,14 @@ public class LegacyAdminShell
             moduleName = null;
         }
 
-        private void gotoLocal()
-        {
+        private void gotoLocal() {
             remoteName = null;
             remote = null;
             hyperPath = new ArrayList<>();
             moduleName = null;
         }
 
-        private String getPrefix()
-        {
+        private String getPrefix() {
             if ((hyperPath == null) || (hyperPath.size() < 3)) {
                 return "";
             }
@@ -147,8 +133,7 @@ public class LegacyAdminShell
             return sb.toString();
         }
 
-        private void finish()
-        {
+        private void finish() {
             if (!hyperMode) {
                 return;
             }
@@ -167,21 +152,19 @@ public class LegacyAdminShell
             } else if (cellName == null) {
 
                 remoteName = domainName.equals("*") ?
-                             "topo" : "System@" + domainName;
+                      "topo" : "System@" + domainName;
 
             } else {
                 remoteName = domainName.equals("*") ?
-                             cellName : cellName + "@" + domainName;
+                      cellName : cellName + "@" + domainName;
 
             }
-
 
             remote = remoteName == null ? null : new CellPath(remoteName);
 
         }
 
-        private void mergePath(Path path)
-        {
+        private void mergePath(Path path) {
             hyperMode = true;
             String[] pathString = path.getPath();
 
@@ -192,18 +175,18 @@ public class LegacyAdminShell
 
                 for (String pathElement : pathString) {
                     switch (pathElement) {
-                    case ".":
-                        break;
-                    case "..":
-                        int currentSize = hyperPath.size();
-                        if (currentSize == 0) {
-                            continue;
-                        }
-                        hyperPath.remove(currentSize - 1);
-                        break;
-                    default:
-                        hyperPath.add(pathElement);
-                        break;
+                        case ".":
+                            break;
+                        case "..":
+                            int currentSize = hyperPath.size();
+                            if (currentSize == 0) {
+                                continue;
+                            }
+                            hyperPath.remove(currentSize - 1);
+                            break;
+                        default:
+                            hyperPath.add(pathElement);
+                            break;
                     }
                 }
             }
@@ -213,8 +196,7 @@ public class LegacyAdminShell
         }
     }
 
-    private class Path
-    {
+    private class Path {
 
         private final String _pathString;
         private boolean _isAbsolutePath;
@@ -223,8 +205,7 @@ public class LegacyAdminShell
 
         private final String[] _path;
 
-        private Path(String pathString)
-        {
+        private Path(String pathString) {
             _pathString = pathString;
             if (_pathString.indexOf('@') > -1) {
                 _isDomain = true;
@@ -247,35 +228,29 @@ public class LegacyAdminShell
             }
         }
 
-        private boolean isAbsolutePath()
-        {
+        private boolean isAbsolutePath() {
             return _isAbsolutePath;
         }
 
-        private boolean isDomain()
-        {
+        private boolean isDomain() {
             return _isDomain;
         }
 
-        private boolean isPath()
-        {
+        private boolean isPath() {
             return _isPath;
         }
 
-        private String[] getPath()
-        {
+        private String[] getPath() {
             return _path;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return _pathString;
         }
     }
 
-    public LegacyAdminShell(String user, CellEndpoint cellEndpoint, String prompt)
-    {
+    public LegacyAdminShell(String user, CellEndpoint cellEndpoint, String prompt) {
         cellEndPoint = cellEndpoint;
         _user = user;
         _authUser = user;
@@ -290,14 +265,12 @@ public class LegacyAdminShell
         addCommandListener(new HelpCommands());
     }
 
-    protected String getUser()
-    {
+    protected String getUser() {
         return _user;
     }
 
     public void checkPermission(String aclName)
-            throws AclException
-    {
+          throws AclException {
 
         Object[] request = new Object[5];
         request[0] = "request";
@@ -321,39 +294,42 @@ public class LegacyAdminShell
             throw new AclException(getUser(), aclName);
         }
     }
-    public String getHello(){
-        return "\n    dCache Admin (VII) (user="+getUser()+")\n\n" ;
+
+    public String getHello() {
+        return "\n    dCache Admin (VII) (user=" + getUser() + ")\n\n";
     }
-    public String getPrompt(){
-        if( _currentPosition.hyperMode ){
-            StringBuilder sb = new StringBuilder() ;
+
+    public String getPrompt() {
+        if (_currentPosition.hyperMode) {
+            StringBuilder sb = new StringBuilder();
 
             sb.append("(").append(getUser()).append(") ");
-            if( _debug ){
-                String remote = _currentPosition.remoteName == null ? "local" : _currentPosition.remoteName;
+            if (_debug) {
+                String remote =
+                      _currentPosition.remoteName == null ? "local" : _currentPosition.remoteName;
                 sb.append("[").append(remote).append("] ");
             }
-            sb.append(_instance == null ? "/" : ( "/" + _instance  ) ) ;
+            sb.append(_instance == null ? "/" : ("/" + _instance));
             for (Object pathElement : _currentPosition.hyperPath) {
                 sb.append("/").append(pathElement.toString());
             }
             sb.append(" > ");
             return sb.toString();
-        }else{
-            return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
-                    getUser()+" > " ;
+        } else {
+            return (_instance == null ? "" : ("[" + _instance + "] ")) +
+                  (_currentPosition.remote == null ? "(local) "
+                        : ("(" + _currentPosition.remoteName + ") ")) +
+                  getUser() + " > ";
         }
     }
-    public Object ac_logoff(Args args) throws CommandException
-    {
+
+    public Object ac_logoff(Args args) throws CommandException {
         throw new CommandExitException("Done", 0);
     }
 
     public static final String hh_su = "<userName>";
 
-    public String ac_su_$_1(Args args) throws Exception
-    {
+    public String ac_su_$_1(Args args) throws Exception {
         String user = args.argv(0);
         if (user.equals(_authUser)) {
             _user = _authUser;
@@ -372,8 +348,7 @@ public class LegacyAdminShell
 
     public static final String hh_set_exception = "message|detail";
 
-    public String ac_set_exception_$_0_1(Args args) throws CommandException
-    {
+    public String ac_set_exception_$_0_1(Args args) throws CommandException {
         if (args.argc() > 0) {
             if (args.argv(0).equals("message")) {
                 _fullException = false;
@@ -381,7 +356,7 @@ public class LegacyAdminShell
                 _fullException = true;
             } else {
                 throw new
-                        CommandSyntaxException("set exception message|detail");
+                      CommandSyntaxException("set exception message|detail");
             }
         }
         return "Exception = " + (_fullException ? "detail" : "message");
@@ -389,13 +364,12 @@ public class LegacyAdminShell
 
     public static final String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
 
-    public String ac_set_timeout_$_0_1(Args args)
-    {
+    public String ac_set_timeout_$_0_1(Args args) {
         if (args.argc() > 0) {
             long timeout = Integer.parseInt(args.argv(0)) * 1000L;
             if (timeout < 1000L) {
                 throw new
-                        IllegalArgumentException("<timeout> >= 1");
+                      IllegalArgumentException("<timeout> >= 1");
             }
             _timeout = timeout;
         }
@@ -405,35 +379,32 @@ public class LegacyAdminShell
 
     public static final String hh_set_sticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]";
 
-    public Object ac_set_sticky_$_1(Args args) throws Exception
-    {
+    public Object ac_set_sticky_$_1(Args args) throws Exception {
         return setSticky(
-                args.argv(0),
-                args.getOpt("target"),
-                true,
-                !args.hasOption("silent") ? new StringBuffer() : null);
+              args.argv(0),
+              args.getOpt("target"),
+              true,
+              !args.hasOption("silent") ? new StringBuffer() : null);
     }
 
     public static final String hh_set_unsticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]";
 
-    public Object ac_set_unsticky_$_1(Args args) throws Exception
-    {
+    public Object ac_set_unsticky_$_1(Args args) throws Exception {
         return setSticky(
-                args.argv(0),
-                args.getOpt("target"),
-                false,
-                !args.hasOption("silent") ? new StringBuffer() : null);
+              args.argv(0),
+              args.getOpt("target"),
+              false,
+              !args.hasOption("silent") ? new StringBuffer() : null);
     }
 
     public static final String hh_uncache = "<pnfsId>|<globalPath> [-target=<target>] [-silent]";
 
-    public Object ac_uncache_$_1(Args args) throws Exception
-    {
+    public Object ac_uncache_$_1(Args args) throws Exception {
         try {
             return uncache(
-                    args.argv(0),
-                    args.getOpt("target"),
-                    !args.hasOption("silent") ? new StringBuffer() : null);
+                  args.argv(0),
+                  args.getOpt("target"),
+                  !args.hasOption("silent") ? new StringBuffer() : null);
         } catch (Exception ee) {
             ee.printStackTrace();
             throw ee;
@@ -442,15 +413,16 @@ public class LegacyAdminShell
 
 
     public static final String fh_repinfoof =
-            "repinfoof <pnfsId> | <globalPath> # lists info the status of a file by pnfsid or by path.\n" +
-            "The information includes pools on which the file has been stored (info provided by \"cacheinfoof\" in the PnfsManager cell)\n" +
-            "and the repository info of the file (info provided by \"rep ls\" in the pool cell).\n";
+          "repinfoof <pnfsId> | <globalPath> # lists info the status of a file by pnfsid or by path.\n"
+                +
+                "The information includes pools on which the file has been stored (info provided by \"cacheinfoof\" in the PnfsManager cell)\n"
+                +
+                "and the repository info of the file (info provided by \"rep ls\" in the pool cell).\n";
 
     public static final String hh_repinfoof = "<pnfsId> | <globalPath>";
 
     public String ac_repinfoof_$_1(Args args)
-            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
-    {
+          throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException {
         StringBuilder sb = new StringBuilder();
         String fileIdentifier = args.argv(0);
 
@@ -472,8 +444,7 @@ public class LegacyAdminShell
     }
 
     private FileAttributes getFileLocations(String fileIdentifier)
-            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
-    {
+          throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException {
         Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
         PnfsGetFileAttributes msg;
 
@@ -484,7 +455,8 @@ public class LegacyAdminShell
             msg = new PnfsGetFileAttributes(fileIdentifier, request);
         }
 
-        PnfsGetFileAttributes replyFileLocations = (PnfsGetFileAttributes) sendObject("PnfsManager", msg);
+        PnfsGetFileAttributes replyFileLocations = (PnfsGetFileAttributes) sendObject("PnfsManager",
+              msg);
 
         if (replyFileLocations == null) {
             throw new CacheException("Request to the PnfsManager timed out");
@@ -497,10 +469,10 @@ public class LegacyAdminShell
         return replyFileLocations.getFileAttributes();
     }
 
-    private Map<CellPath, String> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId)
-    {
+    private Map<CellPath, String> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId) {
 
-        SpreadAndWait<String> spreader = new SpreadAndWait<>(new CellStub(cellEndPoint, null, _timeout));
+        SpreadAndWait<String> spreader = new SpreadAndWait<>(
+              new CellStub(cellEndPoint, null, _timeout));
 
         for (String poolName : fileAttributes.getLocations()) {
             spreader.send(new CellPath(poolName), String.class, "rep ls " + pnfsId);
@@ -509,19 +481,19 @@ public class LegacyAdminShell
         try {
             spreader.waitForReplies();
         } catch (InterruptedException ex) {
-            LOGGER.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
+            LOGGER.info("InterruptedException while waiting for a reply from pools {}",
+                  ex.toString());
         }
 
         return spreader.getReplies();
     }
 
     private String setSticky(
-            String destination,
-            String target,
-            boolean mode,
-            StringBuffer sb)
-            throws Exception
-    {
+          String destination,
+          String target,
+          boolean mode,
+          StringBuffer sb)
+          throws Exception {
 
         if (Strings.isNullOrEmpty(target)) {
             target = "*";
@@ -534,12 +506,12 @@ public class LegacyAdminShell
         PnfsId pnfsId = reply.getPnfsId();
 
         PnfsGetCacheLocationsMessage pnfsMessage =
-                new PnfsGetCacheLocationsMessage(pnfsId);
+              new PnfsGetCacheLocationsMessage(pnfsId);
 
         pnfsMessage = (PnfsGetCacheLocationsMessage) sendObject("PnfsManager", pnfsMessage);
         if (pnfsMessage.getReturnCode() != 0) {
             throw new
-                    FileNotFoundException(destination);
+                  FileNotFoundException(destination);
         }
 
         List<String> list = pnfsMessage.getCacheLocations();
@@ -579,7 +551,7 @@ public class LegacyAdminShell
                     int rc = sticky.getReturnCode();
                     if (rc != 0) {
                         sb.append("[").append(rc).append("] ").
-                                append(sticky.getErrorObject().toString());
+                              append(sticky.getErrorObject().toString());
                     } else {
                         sb.append("ok");
                     }
@@ -598,8 +570,7 @@ public class LegacyAdminShell
     }
 
     private String uncache(String destination, String target, StringBuffer sb)
-            throws Exception
-    {
+          throws Exception {
 
         if ((target == null) || (target.isEmpty())) {
             target = "*";
@@ -611,7 +582,7 @@ public class LegacyAdminShell
         if (destination.startsWith("/pnfs")) {
 
             PnfsGetFileAttributes map = new PnfsGetFileAttributes(destination,
-                    EnumSet.of(FileAttribute.PNFSID));
+                  EnumSet.of(FileAttribute.PNFSID));
             map.setFollowSymlink(false);
 
             map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
@@ -633,13 +604,13 @@ public class LegacyAdminShell
         checkPermission("pool.*.uncache");
 
         PnfsGetCacheLocationsMessage pnfsMessage =
-                new PnfsGetCacheLocationsMessage(pnfsId);
+              new PnfsGetCacheLocationsMessage(pnfsId);
 
         pnfsMessage = (PnfsGetCacheLocationsMessage) sendObject("PnfsManager", pnfsMessage);
 
         if (pnfsMessage.getReturnCode() != 0) {
             throw new
-                    FileNotFoundException(destination);
+                  FileNotFoundException(destination);
         }
 
         List<String> locations = pnfsMessage.getCacheLocations();
@@ -683,11 +654,11 @@ public class LegacyAdminShell
                             Object o = ((Object[]) obj)[0];
                             if (o != null) {
                                 sb.append("[").append(rc).append("] Failed ").
-                                        append(o.toString());
+                                      append(o.toString());
                             }
                         } else if (obj != null) {
                             sb.append("[").append(rc).append("] Failed ").
-                                    append(obj.toString());
+                                  append(obj.toString());
                         }
 
                     } else {
@@ -708,57 +679,52 @@ public class LegacyAdminShell
         return sb == null ? "" : sb.toString();
     }
 
-    private static class PnfsFlagReply
-    {
+    private static class PnfsFlagReply {
+
         private final PnfsId _pnfsId;
         private final PnfsFlagMessage _message;
 
-        public PnfsFlagReply(PnfsId pnfsId, PnfsFlagMessage message)
-        {
+        public PnfsFlagReply(PnfsId pnfsId, PnfsFlagMessage message) {
             _pnfsId = pnfsId;
             _message = message;
         }
 
-        public PnfsId getPnfsId()
-        {
+        public PnfsId getPnfsId() {
             return _pnfsId;
         }
 
-        public PnfsFlagMessage getPnfsFlagMessage()
-        {
+        public PnfsFlagMessage getPnfsFlagMessage() {
             return _message;
         }
     }
 
     public static final String hh_flags_set = "<pnfsId>|<globalPath> <key> <value>";
 
-    public Object ac_flags_set_$_3(Args args) throws Exception
-    {
+    public Object ac_flags_set_$_3(Args args) throws Exception {
 
         String destination = args.argv(0);
         String key = args.argv(1);
         String value = args.argv(2);
 
         PnfsFlagMessage result =
-                setPnfsFlag(destination, key, value, true).getPnfsFlagMessage();
+              setPnfsFlag(destination, key, value, true).getPnfsFlagMessage();
 
         return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString();
 
     }
 
     private PnfsFlagReply setPnfsFlag(
-            String destination,
-            String key,
-            String value,
-            boolean mode)
-            throws Exception
-    {
+          String destination,
+          String key,
+          String value,
+          boolean mode)
+          throws Exception {
 
         PnfsId pnfsId;
         if (destination.startsWith("/pnfs")) {
 
             PnfsGetFileAttributes map = new PnfsGetFileAttributes(destination,
-                    EnumSet.of(FileAttribute.PNFSID));
+                  EnumSet.of(FileAttribute.PNFSID));
             map.setFollowSymlink(false);
 
             map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
@@ -779,9 +745,8 @@ public class LegacyAdminShell
 
         checkPermission("pnfs.*.update");
 
-
         PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key,
-                                                  mode ? PnfsFlagMessage.FlagOperation.SET : PnfsFlagMessage.FlagOperation.REMOVE);
+              mode ? PnfsFlagMessage.FlagOperation.SET : PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue(value);
 
         PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
@@ -799,13 +764,12 @@ public class LegacyAdminShell
 
     public static final String hh_flags_remove = "<pnfsId> <key>";
 
-    public Object ac_flags_remove_$_2(Args args) throws Exception
-    {
+    public Object ac_flags_remove_$_2(Args args) throws Exception {
         PnfsId pnfsId;
         if (args.argv(0).startsWith("/pnfs")) {
 
             PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
-                    EnumSet.of(FileAttribute.PNFSID));
+                  EnumSet.of(FileAttribute.PNFSID));
             map.setFollowSymlink(false);
 
             map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
@@ -830,8 +794,8 @@ public class LegacyAdminShell
 
         checkPermission("pnfs.*.update");
 
-
-        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key, PnfsFlagMessage.FlagOperation.REMOVE);
+        PnfsFlagMessage pfm = new PnfsFlagMessage(pnfsId, key,
+              PnfsFlagMessage.FlagOperation.REMOVE);
 
         PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
         if (result.getReturnCode() != 0) {
@@ -847,8 +811,8 @@ public class LegacyAdminShell
 
     public static final String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]";
 
-    public String ac_p2p_$_1_3(Args args) throws CacheException, InterruptedException, NoRouteToCellException
-    {
+    public String ac_p2p_$_1_3(Args args)
+          throws CacheException, InterruptedException, NoRouteToCellException {
 
         if (args.argc() >= 3) {
             String source = args.argv(1);
@@ -856,11 +820,10 @@ public class LegacyAdminShell
             PnfsId pnfsId = new PnfsId(args.argv(0));
 
             Pool2PoolTransferMsg p2p = new Pool2PoolTransferMsg(source, dest,
-                    FileAttributes.ofPnfsId(pnfsId));
-
+                  FileAttributes.ofPnfsId(pnfsId));
 
             cellEndPoint.sendMessage(
-                    new CellMessage(new CellPath(dest), p2p)
+                  new CellMessage(new CellPath(dest), p2p)
             );
 
             return "P2p of " + pnfsId + " initiated from " + source + " to " + dest;
@@ -869,41 +832,41 @@ public class LegacyAdminShell
             String ip = args.getOpt("ip");
 
             PnfsGetFileAttributes fileAttributesMsg =
-                    new PnfsGetFileAttributes(pnfsId, PoolMgrReplicateFileMsg.getRequiredAttributes());
+                  new PnfsGetFileAttributes(pnfsId,
+                        PoolMgrReplicateFileMsg.getRequiredAttributes());
 
             fileAttributesMsg = _pnfsManager.sendAndWait(fileAttributesMsg);
 
             DCapProtocolInfo pinfo =
-                    new DCapProtocolInfo("DCap", 0, 0, new InetSocketAddress("localhost", 0));
-
+                  new DCapProtocolInfo("DCap", 0, 0, new InetSocketAddress("localhost", 0));
 
             String timeoutString = args.getOpt("timeout");
             long timeout = timeoutString != null ?
-                           Long.parseLong(timeoutString) * 1000L :
-                           60000L;
+                  Long.parseLong(timeoutString) * 1000L :
+                  60000L;
 
             PoolMgrReplicateFileMsg select =
-                    new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(), pinfo);
+                  new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(), pinfo);
             select = _poolManager.sendAndWait(select, timeout);
             return "p2p -> " + select.getPool().getName();
         }
     }
 
     public String fh_modify_poolmode =
-            " a) modify poolmode enable <poolname>[,<poolname>...]\n" +
-            " b) modify poolmode [OPTIONS] disable <poolname>[,<poolname>...] [<code> [<message>]]\n" +
-            "      OPTIONS :\n" +
-            "        -fetch    #  disallows fetch (transfer to client)\n" +
-            "        -stage    #  disallows staging (from HSM)\n" +
-            "        -store    #  disallows store (transfer from client)\n" +
-            "        -p2p-client\n" +
-            "        -rdonly   #  := store,stage,p2p-client\n" +
-            "        -strict   #  := disallows everything\n";
+          " a) modify poolmode enable <poolname>[,<poolname>...]\n" +
+                " b) modify poolmode [OPTIONS] disable <poolname>[,<poolname>...] [<code> [<message>]]\n"
+                +
+                "      OPTIONS :\n" +
+                "        -fetch    #  disallows fetch (transfer to client)\n" +
+                "        -stage    #  disallows staging (from HSM)\n" +
+                "        -store    #  disallows store (transfer from client)\n" +
+                "        -p2p-client\n" +
+                "        -rdonly   #  := store,stage,p2p-client\n" +
+                "        -strict   #  := disallows everything\n";
     public static final String hh_modify_poolmode =
-            "enable|disable <poolname>[,<poolname>...] [<code> [<message>]] [-strict|-stage|-rdonly|-fetch|-store]";
+          "enable|disable <poolname>[,<poolname>...] [<code> [<message>]] [-strict|-stage|-rdonly|-fetch|-store]";
 
-    public String ac_modify_poolmode_$_2_4(Args args) throws Exception
-    {
+    public String ac_modify_poolmode_$_2_4(Args args) throws Exception {
 
         checkPermission("*.*.*");
 
@@ -915,40 +878,40 @@ public class LegacyAdminShell
         PoolV2Mode mode = new PoolV2Mode();
 
         switch (enable) {
-        case "disable":
+            case "disable":
 
-            int modeBits = PoolV2Mode.DISABLED;
-            if (args.hasOption("strict")) {
-                modeBits |= PoolV2Mode.DISABLED_STRICT;
-            }
-            if (args.hasOption("stage")) {
-                modeBits |= PoolV2Mode.DISABLED_STAGE;
-            }
-            if (args.hasOption("fetch")) {
-                modeBits |= PoolV2Mode.DISABLED_FETCH;
-            }
-            if (args.hasOption("store")) {
-                modeBits |= PoolV2Mode.DISABLED_STORE;
-            }
-            if (args.hasOption("p2p-client")) {
-                modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-            }
-            if (args.hasOption("p2p-server")) {
-                modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-            }
-            if (args.hasOption("rdonly")) {
-                modeBits |= PoolV2Mode.DISABLED_RDONLY;
-            }
+                int modeBits = PoolV2Mode.DISABLED;
+                if (args.hasOption("strict")) {
+                    modeBits |= PoolV2Mode.DISABLED_STRICT;
+                }
+                if (args.hasOption("stage")) {
+                    modeBits |= PoolV2Mode.DISABLED_STAGE;
+                }
+                if (args.hasOption("fetch")) {
+                    modeBits |= PoolV2Mode.DISABLED_FETCH;
+                }
+                if (args.hasOption("store")) {
+                    modeBits |= PoolV2Mode.DISABLED_STORE;
+                }
+                if (args.hasOption("p2p-client")) {
+                    modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
+                }
+                if (args.hasOption("p2p-server")) {
+                    modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
+                }
+                if (args.hasOption("rdonly")) {
+                    modeBits |= PoolV2Mode.DISABLED_RDONLY;
+                }
 
-            mode.setMode(modeBits);
+                mode.setMode(modeBits);
 
-            break;
-        case "enable":
+                break;
+            case "enable":
 
-            break;
-        default:
-            throw new
-                    CommandSyntaxException("Invalid keyword : " + enable);
+                break;
+            default:
+                throw new
+                      CommandSyntaxException("Invalid keyword : " + enable);
         }
 
         StringTokenizer st = new StringTokenizer(poolList, ",");
@@ -978,8 +941,7 @@ public class LegacyAdminShell
 
     public static final String hh_set_deletable = "<pnfsId> # DEBUG for advisory delete (srm)";
 
-    public String ac_set_deletable_$_1(Args args) throws Exception
-    {
+    public String ac_set_deletable_$_1(Args args) throws Exception {
 
         checkPermission("*.*.*");
 
@@ -993,7 +955,7 @@ public class LegacyAdminShell
             pfm = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
         } catch (Exception ee) {
             sb.append("Attempt to set 'd' flag reported an Exception : ")
-                    .append(ee);
+                  .append(ee);
             sb.append("\n");
             sb.append("Operation aborted\n");
             return sb.toString();
@@ -1010,14 +972,14 @@ public class LegacyAdminShell
             locations = (PnfsGetCacheLocationsMessage) sendObject("PnfsManager", locations);
         } catch (Exception ee) {
             sb.append("Attempt to get cache locations reported an Exception : ")
-                    .append(ee);
+                  .append(ee);
             sb.append("\n");
             sb.append("Operation aborted\n");
             return sb.toString();
         }
         if (locations.getReturnCode() != 0) {
             sb.append("Problem in getting cache location(s) : ")
-                    .append(locations.getErrorObject());
+                  .append(locations.getErrorObject());
             return sb.toString();
         }
         List<String> assumedLocations = locations.getCacheLocations();
@@ -1026,29 +988,29 @@ public class LegacyAdminShell
         for (Object assumedLocation : assumedLocations) {
             String poolName = assumedLocation.toString();
             PoolModifyPersistencyMessage p =
-                    new PoolModifyPersistencyMessage(poolName, pnfsId, false);
+                  new PoolModifyPersistencyMessage(poolName, pnfsId, false);
 
             try {
                 p = (PoolModifyPersistencyMessage) sendObject(poolName, p);
             } catch (Exception ee) {
                 sb.append("Attempt to contact ").
-                        append(poolName).
-                        append(" reported an Exception : ").
-                        append(ee.toString()).
-                        append("\n").
-                        append("  Operation continues\n");
+                      append(poolName).
+                      append(" reported an Exception : ").
+                      append(ee.toString()).
+                      append("\n").
+                      append("  Operation continues\n");
                 continue;
             }
             if (locations.getReturnCode() != 0) {
                 sb.append("Set 'cached' reply from ").
-                        append(poolName).
-                        append(" : ").
-                        append(p.getErrorObject()).
-                        append("\n");
+                      append(poolName).
+                      append(" : ").
+                      append(p.getErrorObject()).
+                      append("\n");
             } else {
                 sb.append("Set 'cached' OK for ").
-                        append(poolName).
-                        append("\n");
+                      append(poolName).
+                      append("\n");
             }
         }
         return sb.toString();
@@ -1057,13 +1019,12 @@ public class LegacyAdminShell
 
     public static final String hh_flags_ls = "<pnfsId> <key>";
 
-    public Object ac_flags_ls_$_2(Args args) throws Exception
-    {
+    public Object ac_flags_ls_$_2(Args args) throws Exception {
         PnfsId pnfsId;
         if (args.argv(0).startsWith("/pnfs")) {
 
             PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
-                    EnumSet.of(FileAttribute.PNFSID));
+                  EnumSet.of(FileAttribute.PNFSID));
             map.setFollowSymlink(false);
 
             map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
@@ -1090,22 +1051,21 @@ public class LegacyAdminShell
         PnfsFlagMessage result = (PnfsFlagMessage) sendObject("PnfsManager", pfm);
 
         return result.getReturnCode() == 0 ?
-               (key + " -> " + result.getValue()) :
-               result.getErrorObject().toString();
+              (key + " -> " + result.getValue()) :
+              result.getErrorObject().toString();
     }
 
     public static final String hh_pnfs_map = "<globalPath>";
 
-    public String ac_pnfs_map_$_1(Args args) throws Exception
-    {
+    public String ac_pnfs_map_$_1(Args args) throws Exception {
 
         if (!args.argv(0).startsWith("/pnfs")) {
             throw new
-                    IllegalArgumentException("not a global dCache path (/pnfs...)");
+                  IllegalArgumentException("not a global dCache path (/pnfs...)");
         }
 
         PnfsGetFileAttributes map = new PnfsGetFileAttributes(args.argv(0),
-                EnumSet.of(FileAttribute.PNFSID));
+              EnumSet.of(FileAttribute.PNFSID));
         map.setFollowSymlink(false);
 
         map = (PnfsGetFileAttributes) sendObject("PnfsManager", map);
@@ -1134,29 +1094,32 @@ public class LegacyAdminShell
     //   /<domain>|*/<cells>/<module>  see above
     //
     public static final String fh_cd =
-            "  SYNTAX I :\n" +
-            "     cd <cellPath>\n" +
-            "          <cellPath> : <cellName>[@<domainName>]\n" +
-            "     The cd command will send all subsequent commands to the specified cell.\n" +
-            "     Use '..' to get back to local mode\n" +
-            "" +
-            "  SYNTAX II : \n" +
-            "     cd <cellDirectoryPath>\n" +
-            "           <cellDirecotryPath> : /<domainName>[/<cellName>[/<moduleName[...]]]" +
-            "     The cd command will send all subsequent commands to the specified cell resp. module.\n" +
-            "     Use the standard unix directory syntax to navigate though the cell/domain realm.\n" +
-            "     Simple '..' will bring you back to 'SYNTAX I'\n" +
-            "       Special paths : " +
-            "            /*/<cellName>     : use the * directory for wellknown cells.\n" +
-            "            /local            : use the local directory for the local domain\n" +
-            "            /<domain>         : if no cell is given, the system cell is selected\n" +
-            "                                except for the /* director where the topo cell is\n" +
-            "                                chosen, if available\n" +
-            "\n";
+          "  SYNTAX I :\n" +
+                "     cd <cellPath>\n" +
+                "          <cellPath> : <cellName>[@<domainName>]\n" +
+                "     The cd command will send all subsequent commands to the specified cell.\n" +
+                "     Use '..' to get back to local mode\n" +
+                "" +
+                "  SYNTAX II : \n" +
+                "     cd <cellDirectoryPath>\n" +
+                "           <cellDirecotryPath> : /<domainName>[/<cellName>[/<moduleName[...]]]" +
+                "     The cd command will send all subsequent commands to the specified cell resp. module.\n"
+                +
+                "     Use the standard unix directory syntax to navigate though the cell/domain realm.\n"
+                +
+                "     Simple '..' will bring you back to 'SYNTAX I'\n" +
+                "       Special paths : " +
+                "            /*/<cellName>     : use the * directory for wellknown cells.\n" +
+                "            /local            : use the local directory for the local domain\n" +
+                "            /<domain>         : if no cell is given, the system cell is selected\n"
+                +
+                "                                except for the /* director where the topo cell is\n"
+                +
+                "                                chosen, if available\n" +
+                "\n";
     public static final String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
 
-    public String ac_cd_$_1(Args args) throws Exception
-    {
+    public String ac_cd_$_1(Args args) throws Exception {
 
         String remoteCell = args.argv(0);
         Path path = new Path(remoteCell);
@@ -1189,7 +1152,7 @@ public class LegacyAdminShell
                 // so we wouldn't know what to do.
                 //
                 throw new
-                        IllegalArgumentException("Need absolute path to switch to directory mode");
+                      IllegalArgumentException("Need absolute path to switch to directory mode");
             }
 
         } else {
@@ -1212,8 +1175,7 @@ public class LegacyAdminShell
         return "";
     }
 
-    private void checkCdPermission(String remoteName) throws AclException
-    {
+    private void checkCdPermission(String remoteName) throws AclException {
         int pos = remoteName.indexOf('-');
         String prefix = null;
         if (pos > 0) {
@@ -1237,10 +1199,10 @@ public class LegacyAdminShell
         }
     }
 
-    private void checkCellExists(CellPath remoteCell)
-    {
+    private void checkCellExists(CellPath remoteCell) {
         try {
-            _cellStub.sendAndWait(remoteCell, ADMIN_COMMAND_NOOP, Object.class, CD_PROBE_MESSAGE_TIMEOUT_MS);
+            _cellStub.sendAndWait(remoteCell, ADMIN_COMMAND_NOOP, Object.class,
+                  CD_PROBE_MESSAGE_TIMEOUT_MS);
         } catch (NoRouteToCellException e) {
             throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
         } catch (CacheException e) {
@@ -1252,8 +1214,7 @@ public class LegacyAdminShell
     }
 
     @Override
-    public int complete(String buffer, int cursor, List<CharSequence> candidates)
-    {
+    public int complete(String buffer, int cursor, List<CharSequence> candidates) {
         try {
             if (_completer == null) {
                 Object help = executeCommand("help");
@@ -1269,8 +1230,8 @@ public class LegacyAdminShell
         }
     }
 
-    public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
-    {
+    public Object executeCommand(String str)
+          throws CommandException, InterruptedException, NoRouteToCellException {
         LOGGER.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
@@ -1310,8 +1271,7 @@ public class LegacyAdminShell
         }
     }
 
-    private Object localCommand(Args args) throws CommandException
-    {
+    private Object localCommand(Args args) throws CommandException {
         LOGGER.info("Local command {}", args);
         Object or = command(args);
         if (or == null) {
@@ -1331,14 +1291,12 @@ public class LegacyAdminShell
     }
 
     private Object sendObject(String cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CommandException
-    {
+          throws NoRouteToCellException, InterruptedException, CommandException {
         return sendObject(new CellPath(cellPath), object);
     }
 
     private Object sendObject(CellPath cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CommandException
-    {
+          throws NoRouteToCellException, InterruptedException, CommandException {
         try {
             return _cellStub.send(cellPath, object, Object.class, _timeout).get();
         } catch (ExecutionException e) {
@@ -1354,14 +1312,13 @@ public class LegacyAdminShell
     }
 
     protected Object sendCommand(CellPath destination, String command)
-            throws InterruptedException, NoRouteToCellException, TimeoutCacheException
-    {
+          throws InterruptedException, NoRouteToCellException, TimeoutCacheException {
 
         try {
             Object obj = _cellStub.sendAndWait(destination,
-                                               new AuthorizedString(_user, command),
-                                               Object.class,
-                                               _timeout);
+                  new AuthorizedString(_user, command),
+                  Object.class,
+                  _timeout);
             if (obj instanceof Throwable && _fullException) {
                 return getStackTrace((Throwable) obj);
             }
@@ -1376,17 +1333,15 @@ public class LegacyAdminShell
         }
     }
 
-    private Object getStackTrace(Throwable obj)
-    {
+    private Object getStackTrace(Throwable obj) {
         CharArrayWriter ca = new CharArrayWriter();
         obj.printStackTrace(new PrintWriter(ca));
         return ca.toString();
     }
 
     public Object executeCommand(CellPath destination, Object str)
-            throws InterruptedException, TimeoutCacheException, NoRouteToCellException
-    {
-        LOGGER.info("Object command ({}) {}",destination, str);
+          throws InterruptedException, TimeoutCacheException, NoRouteToCellException {
+        LOGGER.info("Object command ({}) {}", destination, str);
 
         return sendCommand(destination, str.toString());
     }

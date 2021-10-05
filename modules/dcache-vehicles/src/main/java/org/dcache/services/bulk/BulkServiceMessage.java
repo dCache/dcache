@@ -60,20 +60,17 @@ documents or software obtained from this server.
 package org.dcache.services.bulk;
 
 import diskCacheV111.vehicles.Message;
-
 import org.dcache.auth.attributes.Restriction;
 
-public abstract class BulkServiceMessage extends Message
-{
+public abstract class BulkServiceMessage extends Message {
+
     protected final Restriction restriction;
 
-    protected BulkServiceMessage(Restriction restriction)
-    {
+    protected BulkServiceMessage(Restriction restriction) {
         this.restriction = restriction;
     }
 
-    public Restriction getRestriction()
-    {
+    public Restriction getRestriction() {
         return restriction;
     }
 }

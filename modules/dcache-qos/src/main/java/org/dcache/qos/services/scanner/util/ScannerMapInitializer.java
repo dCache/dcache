@@ -65,12 +65,13 @@ import org.dcache.qos.services.scanner.handlers.PoolOpChangeHandler;
 import org.dcache.qos.util.MapInitializer;
 
 /**
- *  Initialization sequence waits for the pool monitor, loads and initializes pool
- *  operations, then enables messages and starts the pool scanner watchdog.
+ * Initialization sequence waits for the pool monitor, loads and initializes pool operations, then
+ * enables messages and starts the pool scanner watchdog.
  */
 public final class ScannerMapInitializer extends MapInitializer {
-    private PoolOperationMap         poolOperationMap;
-    private PoolOpChangeHandler      poolOpChangeHandler;
+
+    private PoolOperationMap poolOperationMap;
+    private PoolOpChangeHandler poolOpChangeHandler;
 
     public synchronized void shutDown() {
         LOGGER.info("Shutting down pool info change watchdog.");

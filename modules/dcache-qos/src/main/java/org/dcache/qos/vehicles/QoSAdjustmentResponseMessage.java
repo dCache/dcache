@@ -63,17 +63,18 @@ import diskCacheV111.vehicles.Message;
 import java.io.Serializable;
 
 public class QoSAdjustmentResponseMessage extends Message {
-  private final QoSAdjustmentResponse response;
 
-  public QoSAdjustmentResponseMessage(QoSAdjustmentResponse response) {
-    this.response = response;
-    Serializable error = response.getError();
-    if (error != null) {
-      setFailed(-1, error);
+    private final QoSAdjustmentResponse response;
+
+    public QoSAdjustmentResponseMessage(QoSAdjustmentResponse response) {
+        this.response = response;
+        Serializable error = response.getError();
+        if (error != null) {
+            setFailed(-1, error);
+        }
     }
-  }
 
-  public QoSAdjustmentResponse getResponse() {
-    return response;
-  }
+    public QoSAdjustmentResponse getResponse() {
+        return response;
+    }
 }

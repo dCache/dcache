@@ -17,28 +17,26 @@
  */
 package org.dcache.auth.attributes;
 
-import java.io.Serializable;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.io.Serializable;
+
 /**
- * A login attribute that indicates this user may write files less than or equal
- * to some specific file size.
+ * A login attribute that indicates this user may write files less than or equal to some specific
+ * file size.
  */
-public class MaxUploadSize implements LoginAttribute, Serializable
-{
+public class MaxUploadSize implements LoginAttribute, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final long maximumSize;
 
-    public MaxUploadSize(long maximumSize)
-    {
+    public MaxUploadSize(long maximumSize) {
         checkArgument(maximumSize > 0, "max upload size must be positive");
         this.maximumSize = maximumSize;
     }
 
-    public long getMaximumSize()
-    {
+    public long getMaximumSize() {
         return maximumSize;
     }
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,18 +15,14 @@
  */
 package org.dcache.ftp.client;
 
+import java.util.StringTokenizer;
 import org.dcache.ftp.client.exception.FTPException;
 
-import java.util.StringTokenizer;
-
 /**
- * Represents the properties of a remote file
- * such as size, name, modification date and time, etc.
- * Can represent a regular file as well as a directory
- * or a soft link.
+ * Represents the properties of a remote file such as size, name, modification date and time, etc.
+ * Can represent a regular file as well as a directory or a soft link.
  */
-public class FileInfo
-{
+public class FileInfo {
 
     public static final byte UNKNOWN_TYPE = 0;
     public static final byte FILE_TYPE = 1;
@@ -47,47 +43,42 @@ public class FileInfo
     /**
      * Used internally by the FTPClient.
      */
-    public FileInfo()
-    {
+    public FileInfo() {
     }
 
     /**
-     * Parses the file information from one line of response to
-     * the FTP LIST command. Note: There is no commonly accepted
-     * standard for the format of LIST response.
-     * This parsing method only accepts
-     * the most common Unix file listing formats:
-     * System V or Berkeley (BSD) 'ls -l'
+     * Parses the file information from one line of response to the FTP LIST command. Note: There is
+     * no commonly accepted standard for the format of LIST response. This parsing method only
+     * accepts the most common Unix file listing formats: System V or Berkeley (BSD) 'ls -l'
      *
      * @param unixListReply a single line from ls -l command
      * @see #parseUnixListReply(String reply)
      */
     public FileInfo(String unixListReply)
-            throws FTPException
-    {
+          throws FTPException {
         parseUnixListReply(unixListReply);
     }
 
     /**
-     * Given a line of reply received as the result of "LIST" command,
-     * this method will set all the attributes(name,size,time,date and file type)
-     * of the named file. This method requires the reply to be in
-     * FTP server format, corresponding to either Unix System V or
-     * Berkeley (BSD) output of 'ls -l'. For example,
+     * Given a line of reply received as the result of "LIST" command, this method will set all the
+     * attributes(name,size,time,date and file type) of the named file. This method requires the
+     * reply to be in FTP server format, corresponding to either Unix System V or Berkeley (BSD)
+     * output of 'ls -l'. For example,
      * <pre>drwxr-xr-x   2      guest  other  1536  Jan 31 15:15  run.bat</pre>
      * or
      * <pre>-rw-rw-r--   1      globus    117579 Nov 29 13:24 AdGriP.pdf</pre>
-     * If the entry corresponds to a device file, only the file type
-     * will be set and the other parameters will be set to UNKNOWN.
+     * If the entry corresponds to a device file, only the file type will be set and the other
+     * parameters will be set to UNKNOWN.
      *
      * @param reply reply of FTP server for "dir" command.
      * @throws FTPException if unable to parse the reply
      */
     //protected void parseUnixListReply(String reply) 
     public void parseUnixListReply(String reply)
-            throws FTPException
-    {
-        if (reply == null) return;
+          throws FTPException {
+        if (reply == null) {
+            return;
+        }
 
         StringTokenizer tokens = new StringTokenizer(reply);
         String token, previousToken;
@@ -96,31 +87,31 @@ public class FileInfo
 
         if (numTokens < 8) {
             throw new FTPException(FTPException.UNSPECIFIED,
-                                   "Invalid number of tokens in the list reply [" +
-                                   reply + "]");
+                  "Invalid number of tokens in the list reply [" +
+                        reply + "]");
         }
 
         token = tokens.nextToken();
 
         // permissions
         switch (token.charAt(0)) {
-        case 'd':
-            setFileType(DIRECTORY_TYPE);
-            break;
-        case '-':
-            setFileType(FILE_TYPE);
-            break;
-        case 'l':
-            setFileType(SOFTLINK_TYPE);
-            break;
-        case 'c':
-        case 'b':
-            // do not try to parse device entries;
-            // they aren't important anyway
-            setFileType(DEVICE_TYPE);
-            return;
-        default:
-            setFileType(UNKNOWN_TYPE);
+            case 'd':
+                setFileType(DIRECTORY_TYPE);
+                break;
+            case '-':
+                setFileType(FILE_TYPE);
+                break;
+            case 'l':
+                setFileType(SOFTLINK_TYPE);
+                break;
+            case 'c':
+            case 'b':
+                // do not try to parse device entries;
+                // they aren't important anyway
+                setFileType(DEVICE_TYPE);
+                return;
+            default:
+                setFileType(UNKNOWN_TYPE);
         }
 
         try {
@@ -131,9 +122,8 @@ public class FileInfo
             }
         } catch (IndexOutOfBoundsException e) {
             throw new FTPException(FTPException.UNSPECIFIED,
-                                   "Could not parse access permission bits");
+                  "Could not parse access permission bits");
         }
-
 
         // ??? can ignore
         tokens.nextToken();
@@ -147,11 +137,11 @@ public class FileInfo
 
         // size
         token = tokens.nextToken();
-        
+
         /*
          * if the group is missing this will try to parse the date field
          * as an integer and will fail. if so, then the previous field is the size field
-         * and the current token is part of the date. 
+         * and the current token is part of the date.
          */
         try {
             setSize(Long.parseLong(token));
@@ -163,8 +153,8 @@ public class FileInfo
                 setSize(Long.parseLong(previousToken));
             } catch (NumberFormatException ee) {
                 throw new FTPException(FTPException.UNSPECIFIED,
-                                       "Invalid size number in the ftp reply [" +
-                                       previousToken + ", " + token + "]");
+                      "Invalid size number in the ftp reply [" +
+                            previousToken + ", " + token + "]");
             }
         }
 
@@ -185,13 +175,13 @@ public class FileInfo
         if (ps == -1) {
             // this should never happen
             throw new FTPException(FTPException.UNSPECIFIED,
-                                   "Could not find date token");
+                  "Could not find date token");
         } else {
             ps = reply.indexOf(this.time, ps + month.length());
             if (ps == -1) {
                 // this should never happen
                 throw new FTPException(FTPException.UNSPECIFIED,
-                                       "Could not find time token");
+                      "Could not find time token");
             } else {
                 this.setName(reply.substring(1 + ps + this.time.length()));
             }
@@ -205,8 +195,7 @@ public class FileInfo
      *
      * @param size size of the file
      */
-    public void setSize(long size)
-    {
+    public void setSize(long size) {
         this.size = size;
     }
 
@@ -215,8 +204,7 @@ public class FileInfo
      *
      * @param name name of the file.
      */
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -225,8 +213,7 @@ public class FileInfo
      *
      * @param date date of the file.
      */
-    public void setDate(String date)
-    {
+    public void setDate(String date) {
         this.date = date;
     }
 
@@ -235,19 +222,16 @@ public class FileInfo
      *
      * @param time time of the file.
      */
-    public void setTime(String time)
-    {
+    public void setTime(String time) {
         this.time = time;
     }
 
     /**
      * Sets the file type.
      *
-     * @param type one of the file types,
-     *             e.g. FILE_TYPE, DIRECTORY_TYPE
+     * @param type one of the file types, e.g. FILE_TYPE, DIRECTORY_TYPE
      */
-    public void setFileType(byte type)
-    {
+    public void setFileType(byte type) {
         this.fileType = type;
     }
 
@@ -258,8 +242,7 @@ public class FileInfo
      *
      * @return size of the file in bytes
      */
-    public long getSize()
-    {
+    public long getSize() {
         return size;
     }
 
@@ -268,8 +251,7 @@ public class FileInfo
      *
      * @return name of the file.
      */
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
@@ -278,8 +260,7 @@ public class FileInfo
      *
      * @return date of the file.
      */
-    public String getDate()
-    {
+    public String getDate() {
         return date;
     }
 
@@ -288,41 +269,34 @@ public class FileInfo
      *
      * @return time of the file.
      */
-    public String getTime()
-    {
+    public String getTime() {
         return time;
     }
 
     /**
      * Tests if this file is a file.
      *
-     * @return true if this represents a file,
-     * otherwise, false.
+     * @return true if this represents a file, otherwise, false.
      */
-    public boolean isFile()
-    {
+    public boolean isFile() {
         return (fileType == FILE_TYPE);
     }
 
     /**
      * Tests if this file is a directory.
      *
-     * @return true if this reprensets a directory,
-     * otherwise, false.
+     * @return true if this reprensets a directory, otherwise, false.
      */
-    public boolean isDirectory()
-    {
+    public boolean isDirectory() {
         return (fileType == DIRECTORY_TYPE);
     }
 
     /**
      * Tests if this file is a softlink.
      *
-     * @return true if this reprensets a softlink,
-     * otherwise, false.
+     * @return true if this reprensets a softlink, otherwise, false.
      */
-    public boolean isSoftLink()
-    {
+    public boolean isSoftLink() {
         return (fileType == SOFTLINK_TYPE);
     }
 
@@ -330,18 +304,15 @@ public class FileInfo
      * Tests if this file is a device.
      */
 
-    public boolean isDevice()
-    {
+    public boolean isDevice() {
         return (fileType == DEVICE_TYPE);
     }
 
-    public int getMode()
-    {
+    public int getMode() {
         return mode;
     }
 
-    public String getModeAsString()
-    {
+    public String getModeAsString() {
         StringBuilder modeStr = new StringBuilder();
         for (int j = 2; j >= 0; j--) {
             int oct = 0;
@@ -355,55 +326,45 @@ public class FileInfo
         return modeStr.toString();
     }
 
-    public boolean userCanRead()
-    {
+    public boolean userCanRead() {
         return ((mode & (1 << 8)) != 0);
     }
 
-    public boolean userCanWrite()
-    {
+    public boolean userCanWrite() {
         return ((mode & (1 << 7)) != 0);
     }
 
-    public boolean userCanExecute()
-    {
+    public boolean userCanExecute() {
         return ((mode & (1 << 6)) != 0);
     }
 
-    public boolean groupCanRead()
-    {
+    public boolean groupCanRead() {
         return ((mode & (1 << 5)) != 0);
     }
 
-    public boolean groupCanWrite()
-    {
+    public boolean groupCanWrite() {
         return ((mode & (1 << 4)) != 0);
     }
 
-    public boolean groupCanExecute()
-    {
+    public boolean groupCanExecute() {
         return ((mode & (1 << 3)) != 0);
     }
 
-    public boolean allCanRead()
-    {
+    public boolean allCanRead() {
         return ((mode & (1 << 2)) != 0);
     }
 
-    public boolean allCanWrite()
-    {
+    public boolean allCanWrite() {
         return ((mode & (1 << 1)) != 0);
     }
 
-    public boolean allCanExecute()
-    {
+    public boolean allCanExecute() {
         return ((mode & (1 << 0)) != 0);
     }
 
     // --------------------------------
 
-    public String toString()
-    {
+    public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("FileInfo: ");
         buf.append(getName()).append(" ");
@@ -412,17 +373,17 @@ public class FileInfo
         buf.append(getTime()).append(" ");
 
         switch (fileType) {
-        case DIRECTORY_TYPE:
-            buf.append("directory");
-            break;
-        case FILE_TYPE:
-            buf.append("file");
-            break;
-        case SOFTLINK_TYPE:
-            buf.append("softlink");
-            break;
-        default:
-            buf.append("unknown type");
+            case DIRECTORY_TYPE:
+                buf.append("directory");
+                break;
+            case FILE_TYPE:
+                buf.append("file");
+                break;
+            case SOFTLINK_TYPE:
+                buf.append("softlink");
+                break;
+            default:
+                buf.append("unknown type");
         }
         buf.append(" ").append(getModeAsString());
 

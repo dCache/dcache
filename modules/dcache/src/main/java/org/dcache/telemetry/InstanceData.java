@@ -8,24 +8,27 @@ import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.NoRouteToCellException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.OptionalDouble;
+import java.util.OptionalLong;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Version;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.time.Instant;
-import java.util.*;
-
 /**
- * This class contains information about the dCache-instance. These are the storage, version, an ID and a location.
- * Location and ID are read from the .properties-file, storage and version are collected from dCache itself. This
- * class is used by SendData.
+ * This class contains information about the dCache-instance. These are the storage, version, an ID
+ * and a location. Location and ID are read from the .properties-file, storage and version are
+ * collected from dCache itself. This class is used by SendData.
  */
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class InstanceData implements CellLifeCycleAware {
+
     private CellStub poolManagerStub;
 
     private String siteName;
@@ -43,7 +46,7 @@ public class InstanceData implements CellLifeCycleAware {
 
     @Required
     public void setSiteName(String siteName) {
-        if(!siteName.equals("")) {
+        if (!siteName.equals("")) {
             this.siteName = siteName;
         } else {
             throw new IllegalArgumentException("Please provide a siteName.");
@@ -57,11 +60,12 @@ public class InstanceData implements CellLifeCycleAware {
                 //Long +- 180
                 this.longitude = OptionalDouble.of(Double.parseDouble(longitude));
             } catch (NumberFormatException nfe) {
-                throw new IllegalArgumentException("The given value for longitude is in wrong format. Double expected.");
+                throw new IllegalArgumentException(
+                      "The given value for longitude is in wrong format. Double expected.");
             }
             if (this.longitude.getAsDouble() < -180 || this.longitude.getAsDouble() > 180) {
                 throw new IllegalArgumentException("Longitude must be between -180 and 180. "
-                        + this.longitude.getAsDouble() + " does not match this range.");
+                      + this.longitude.getAsDouble() + " does not match this range.");
             }
         } else {
             this.longitude = OptionalDouble.empty();
@@ -71,16 +75,17 @@ public class InstanceData implements CellLifeCycleAware {
     @Required
     public void setLatitude(String latitude) {
 
-        if(!latitude.equals("")) {
+        if (!latitude.equals("")) {
             try {
                 //Lat +- 90
                 this.latitude = OptionalDouble.of(Double.parseDouble(latitude));
             } catch (NumberFormatException nfe) {
-                throw new IllegalArgumentException("The given value for latitude is in wrong format. Double expected.");
+                throw new IllegalArgumentException(
+                      "The given value for latitude is in wrong format. Double expected.");
             }
             if (this.latitude.getAsDouble() < -90 || this.latitude.getAsDouble() > 90) {
                 throw new IllegalArgumentException("Latitude must be between -90 and 90. "
-                        + this.latitude.getAsDouble() + " does not match this range.");
+                      + this.latitude.getAsDouble() + " does not match this range.");
             }
         } else {
             this.latitude = OptionalDouble.empty();
@@ -103,17 +108,19 @@ public class InstanceData implements CellLifeCycleAware {
         OptionalLong space = OptionalLong.empty();
         try {
             monitor = poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor(), 20000,
-                    CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL).getPoolMonitor();
+                  CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL).getPoolMonitor();
             CostModule costModule = monitor.getCostModule();
             Collection<PoolCostInfo> costInfos = costModule.getPoolCostInfos();
 
             space = OptionalLong.of(costModule.getPoolCostInfos().stream()
-                    .map(PoolCostInfo::getSpaceInfo)
-                    .mapToLong(PoolCostInfo.PoolSpaceInfo::getTotalSpace)
-                    .sum());
+                  .map(PoolCostInfo::getSpaceInfo)
+                  .mapToLong(PoolCostInfo.PoolSpaceInfo::getTotalSpace)
+                  .sum());
 
         } catch (CacheException | InterruptedException | NoRouteToCellException e) {
-            LOGGER.error("Could not get storage information; set storage to -1.0. This was caused by: ", e);
+            LOGGER.error(
+                  "Could not get storage information; set storage to -1.0. This was caused by: ",
+                  e);
         }
 
         return space;
@@ -123,7 +130,7 @@ public class InstanceData implements CellLifeCycleAware {
         this.storage = loadStorage();
     }
 
-    public Long getTimestamp () {
+    public Long getTimestamp() {
         return Instant.now().toEpochMilli();
     }
 

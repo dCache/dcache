@@ -18,27 +18,23 @@
  */
 package org.dcache.chimera.namespace;
 
+import dmg.cells.nucleus.CellPath;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import dmg.cells.nucleus.CellPath;
-import org.dcache.cells.CellStub;
-
 /**
- *
  * Abstract base class representing common properties for DiskCleaner and HsmCleaner.
- *
  */
 public abstract class AbstractCleaner implements LeaderLatchListener {
 
@@ -54,8 +50,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     private DataSource _dataSource;
 
     /**
-     * Set PoolInformationBase from which the request tracker learns
-     * about available pools.
+     * Set PoolInformationBase from which the request tracker learns about available pools.
      */
     protected PoolInformationBase _pools;
     protected JdbcTemplate _db;
@@ -64,8 +59,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     protected TimeUnit _refreshIntervalUnit;
 
     /**
-     * Time period that cleaner have to wait before deleted file is
-     * removed by cleaner.
+     * Time period that cleaner have to wait before deleted file is removed by cleaner.
      */
     protected Duration _gracePeriod;
 
@@ -95,9 +89,9 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
     @Required
     public void setReportRemove(String[] reportRemove) {
         _deleteNotificationTargets = Arrays.stream(reportRemove)
-                .filter(t -> !t.isEmpty())
-                .map(CellPath::new)
-                .toArray(CellPath[]::new);
+              .filter(t -> !t.isEmpty())
+              .map(CellPath::new)
+              .toArray(CellPath[]::new);
     }
 
     @Required
@@ -119,18 +113,18 @@ public abstract class AbstractCleaner implements LeaderLatchListener {
 
     private void scheduleCleanerTask() {
         _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
-            try {
-                AbstractCleaner.this.runDelete();
-            } catch (InterruptedException e) {
-                LOGGER.info("Cleaner was interrupted");
-            } catch (DataAccessException e) {
-                LOGGER.error("Database failure: {}", e.getMessage());
-            } catch (IllegalStateException e) {
-                LOGGER.error("Illegal state: {}", e.getMessage());
-            }
+                  try {
+                      AbstractCleaner.this.runDelete();
+                  } catch (InterruptedException e) {
+                      LOGGER.info("Cleaner was interrupted");
+                  } catch (DataAccessException e) {
+                      LOGGER.error("Database failure: {}", e.getMessage());
+                  } catch (IllegalStateException e) {
+                      LOGGER.error("Illegal state: {}", e.getMessage());
+                  }
 
-        }, _refreshInterval, _refreshInterval,
-        _refreshIntervalUnit);
+              }, _refreshInterval, _refreshInterval,
+              _refreshIntervalUnit);
     }
 
     private void cancelCleanerTask() {

@@ -59,6 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.data;
 
+import static org.dcache.qos.services.scanner.data.PoolScanOperation.State.WAITING;
+import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.FINISHED;
+import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.STARTED;
+
 import diskCacheV111.util.CacheException;
 import org.dcache.qos.data.FileQoSUpdate;
 import org.dcache.qos.data.PoolQoSStatus;
@@ -67,18 +71,15 @@ import org.dcache.qos.util.ExceptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.qos.services.scanner.data.PoolScanOperation.State.WAITING;
-import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.FINISHED;
-import static org.dcache.qos.services.scanner.data.ScanOperation.ScanLabel.STARTED;
-
 /**
- *  Object stored in the pool operation map.
+ * Object stored in the pool operation map.
  */
 public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
-    private static final Logger LOGGER    = LoggerFactory.getLogger(PoolScanOperation.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolScanOperation.class);
 
     private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
-                    + "(updated: %s)(%s: %s)(prev %s)(curr %s)(%s) %s";
+          + "(updated: %s)(%s: %s)(prev %s)(curr %s)(%s) %s";
 
     enum State {
         IDLE,       /* NEXT OPERATION READY TO RUN               */
@@ -97,14 +98,14 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
 
     final long initializationGracePeriod;
 
-    boolean                 forceScan;  /* Overrides non-handling of restarts */
-    String                  group;      /* Only set when the psuAction != NONE */
-    String                  unit;       /* Set when unit has changed, or scan
+    boolean forceScan;  /* Overrides non-handling of restarts */
+    String group;      /* Only set when the psuAction != NONE */
+    String unit;       /* Set when unit has changed, or scan
                                            is periodic or initiated by command */
-    State                   state;
-    PoolQoSStatus           lastStatus;
-    PoolQoSStatus           currStatus;
-    CacheException          exception;
+    State state;
+    PoolQoSStatus lastStatus;
+    PoolQoSStatus currStatus;
+    CacheException exception;
 
     private long children;
 
@@ -127,15 +128,15 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
     public String toString() {
         scanLabel = state == State.RUNNING || state == WAITING ? STARTED : FINISHED;
         return String.format(TO_STRING,
-                             completed,
-                             children == 0 && completed > 0 ? "?" : children,
-                             getFormattedPercentDone(),
-                             FileQoSUpdate.getFormattedDateFromMillis(lastUpdate),
-                             scanLabel.label(),
-                             FileQoSUpdate.getFormattedDateFromMillis(lastScan),
-                             lastStatus, currStatus, state,
-                             exception == null ? getFailedMessage() :
-                                             new ExceptionMessage(exception));
+              completed,
+              children == 0 && completed > 0 ? "?" : children,
+              getFormattedPercentDone(),
+              FileQoSUpdate.getFormattedDateFromMillis(lastUpdate),
+              scanLabel.label(),
+              FileQoSUpdate.getFormattedDateFromMillis(lastScan),
+              lastStatus, currStatus, state,
+              exception == null ? getFailedMessage() :
+                    new ExceptionMessage(exception));
     }
 
     public synchronized boolean isExcluded() {
@@ -143,8 +144,8 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
     }
 
     /**
-     *  Provides a transition table for determining what to do when
-     *  a successive status change notification is received.
+     * Provides a transition table for determining what to do when a successive status change
+     * notification is received.
      */
     synchronized NextAction getNextAction(PoolQoSStatus incoming) {
         if (state == State.EXCLUDED) {
@@ -155,7 +156,7 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
         lastStatus = currStatus;
         currStatus = incoming;
 
-        switch(lastStatus) {
+        switch (lastStatus) {
             case DOWN:
                 switch (currStatus) {
                     case READ_ONLY:
@@ -207,8 +208,8 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
 
     protected synchronized void incrementCompleted(boolean failed) {
         LOGGER.trace("entering incrementCompleted, state {}, failed {}, "
-                                     + "children {}, completed = {}.",
-                     state, failed, children, completed );
+                    + "children {}, completed = {}.",
+              state, failed, children, completed);
         if (state == State.RUNNING) {
             ++completed;
             if (failed) {
@@ -217,14 +218,14 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
             lastUpdate = System.currentTimeMillis();
         }
         LOGGER.trace("leaving incrementCompleted, state {}, failed {}, "
-                                     + "children {}, completed = {}.",
-                     state, failed, children, completed );
+                    + "children {}, completed = {}.",
+              state, failed, children, completed);
     }
 
     protected synchronized boolean isComplete() {
         boolean isComplete = children > 0 && children == completed;
         LOGGER.trace("isComplete {}, children {}, completed = {}.",
-                     isComplete, children, completed );
+              isComplete, children, completed);
         return isComplete;
     }
 
@@ -232,7 +233,9 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
         return failed;
     }
 
-    synchronized long getCompleted() { return completed; }
+    synchronized long getCompleted() {
+        return completed;
+    }
 
     synchronized void resetChildren() {
         children = 0L;
@@ -255,10 +258,10 @@ public final class PoolScanOperation extends ScanOperation<PoolScanTask> {
 
     protected String getFormattedPercentDone() {
         String percent = children == 0 ?
-                        "?" :
-                        (children == completed ? "100" :
-                        String.format("%.1f", 100 * (double) completed
-                                        / (double) children));
+              "?" :
+              (children == completed ? "100" :
+                    String.format("%.1f", 100 * (double) completed
+                          / (double) children));
         if ("100.0".equals(percent)) {
             return "99.9";
         }

@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
-import java.util.Map;
-
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
+import java.util.Map;
 
 /**
  * Superclass of all billing actions which are timestamped.
@@ -69,6 +68,7 @@ import diskCacheV111.vehicles.PnfsFileInfoMessage;
  * @author arossi
  */
 public abstract class PnfsConnectInfo extends PnfsBaseInfo {
+
     private static final long serialVersionUID = -5452865314115299122L;
 
     public static final String CONNECTION_TIME = "connectionTime";

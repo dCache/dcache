@@ -75,19 +75,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Parent class to handlers which need to run diffs and updates based on pool monitor
- *  (pool selection unit) data.
- *  <p>
- *  Receives pool monitor updates on the pool monitor topic.
+ * Parent class to handlers which need to run diffs and updates based on pool monitor (pool
+ * selection unit) data.
+ * <p>
+ * Receives pool monitor updates on the pool monitor topic.
  */
 public abstract class PoolMonitorChangeHandler<D, I extends MapInitializer>
-        implements CellMessageReceiver {
+      implements CellMessageReceiver {
+
     protected static final Logger LOGGER = LoggerFactory.getLogger(PoolMonitorChangeHandler.class);
     protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
     private static final String SYNC_ALARM = "Last pool monitor refresh was at %s, elapsed time is "
-                                                + "greater than %s %s; resilience is "
-                                                + "out of sync with pool monitor.";
+          + "greater than %s %s; resilience is "
+          + "out of sync with pool monitor.";
 
     protected I initializer;
     protected ExecutorService updateService;
@@ -116,9 +117,9 @@ public abstract class PoolMonitorChangeHandler<D, I extends MapInitializer>
 
     public void messageArrived(SerializablePoolMonitor monitor) {
         ACTIVITY_LOGGER.info("{}: Received pool monitor update; enabled {}, "
-                                             + "initialized {}",
-                             this.getClass().getSimpleName(),
-                             enabled, initializer.isInitialized());
+                    + "initialized {}",
+              this.getClass().getSimpleName(),
+              enabled, initializer.isInitialized());
 
         if (!enabled) {
             return;
@@ -161,9 +162,9 @@ public abstract class PoolMonitorChangeHandler<D, I extends MapInitializer>
         }
 
         refreshFuture = refreshService.scheduleAtFixedRate(this::checkLastRefresh,
-                                                            refreshTimeout,
-                                                            refreshTimeout,
-                                                            refreshTimeoutUnit);
+              refreshTimeout,
+              refreshTimeout,
+              refreshTimeoutUnit);
         lastRefresh = System.currentTimeMillis();
     }
 
@@ -175,9 +176,9 @@ public abstract class PoolMonitorChangeHandler<D, I extends MapInitializer>
     }
 
     /**
-     *  Invoked in response to the reception of a {@link SerializablePoolMonitor} message.
+     * Invoked in response to the reception of a {@link SerializablePoolMonitor} message.
      *
-     *  @param newPoolMonitor the updated PoolMonitor
+     * @param newPoolMonitor the updated PoolMonitor
      */
     public abstract D reloadAndScan(PoolMonitor newPoolMonitor);
 
@@ -194,14 +195,15 @@ public abstract class PoolMonitorChangeHandler<D, I extends MapInitializer>
     }
 
     private void checkLastRefresh() {
-        if (System.currentTimeMillis() - lastRefresh > refreshTimeoutUnit.toMillis(refreshTimeout)) {
+        if (System.currentTimeMillis() - lastRefresh > refreshTimeoutUnit.toMillis(
+              refreshTimeout)) {
             String initError = String.format(SYNC_ALARM,
-                                             new Date(lastRefresh),
-                                             refreshTimeout,
-                                             refreshTimeoutUnit);
+                  new Date(lastRefresh),
+                  refreshTimeout,
+                  refreshTimeoutUnit);
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.RESILIENCE_PM_SYNC_FAILURE,
-                                            "resilience", String.valueOf(lastRefresh)),
-                         initError);
+                        "resilience", String.valueOf(lastRefresh)),
+                  initError);
         }
     }
 }

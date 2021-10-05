@@ -19,9 +19,11 @@
 package org.dcache.srm.taperecallscheduling;
 
 /**
- * Bring online job scheduling item for tracking a job's meta-information relevant for job scheduling
+ * Bring online job scheduling item for tracking a job's meta-information relevant for job
+ * scheduling
  */
 public class SchedulingItemJob {
+
     private static final long NO_VALUE = -1;
 
     private final long jobid;

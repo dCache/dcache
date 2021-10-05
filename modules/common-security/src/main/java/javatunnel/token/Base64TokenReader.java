@@ -18,24 +18,21 @@
 package javatunnel.token;
 
 import com.google.common.io.BaseEncoding;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class Base64TokenReader implements TokenReader
-{
+public class Base64TokenReader implements TokenReader {
+
     private final BufferedReader in;
 
-    public Base64TokenReader(InputStream in)
-    {
+    public Base64TokenReader(InputStream in) {
         this.in = new BufferedReader(new InputStreamReader(in));
     }
 
     @Override
-    public byte[] readToken() throws IOException
-    {
+    public byte[] readToken() throws IOException {
         String s = in.readLine();
         if (s == null) {
             return null;
@@ -47,8 +44,7 @@ public class Base64TokenReader implements TokenReader
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         in.close();
     }
 }

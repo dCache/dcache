@@ -59,29 +59,28 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Used in the representation of active transfer data, shared
  * between core dCache and webadmin modules.</p>
  */
 public final class UserInfo implements Serializable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(UserInfo.class);
 
     private static final long serialVersionUID = -5488751243616078036L;
 
     private String username;
-    private Long   uid;
-    private Long   gid;
-    private FQAN   primaryFqan;
+    private Long uid;
+    private Long gid;
+    private FQAN primaryFqan;
 
     public UserInfo() {
     }
@@ -117,7 +116,7 @@ public final class UserInfo implements Serializable {
             } catch (IllegalArgumentException e) {
                 uid = null;
                 LOGGER.warn("Error when fetching UID from {}: {}.",
-                            subject, e.toString());
+                      subject, e.toString());
             }
         }
 
@@ -128,7 +127,7 @@ public final class UserInfo implements Serializable {
         } catch (IllegalArgumentException e) {
             gid = null;
             LOGGER.warn("Error when fetching GID from {}: {}.",
-                        subject, e.toString());
+                  subject, e.toString());
         }
 
         try {
@@ -136,7 +135,7 @@ public final class UserInfo implements Serializable {
         } catch (IllegalArgumentException e) {
             primaryFqan = null;
             LOGGER.warn("Error when fetching primary FQAN from {}: {}.",
-                        subject, e.toString());
+                  subject, e.toString());
         }
     }
 

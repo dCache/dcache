@@ -67,22 +67,24 @@ import org.dcache.quota.data.QuotaInfo;
 import org.dcache.quota.data.QuotaType;
 
 public class PnfsManagerGetQuotaMessage extends PnfsManagerQuotaMessage {
-  private static final long serialVersionUID = 67377025821456497L;
 
-  private static final Comparator<QuotaInfo> COMPARATOR
-      = (Comparator<QuotaInfo> & Serializable) (q1,q2) -> Integer.compare(q1.getId(), q2.getId());
+    private static final long serialVersionUID = 67377025821456497L;
 
-  private final Set<QuotaInfo> quotaInfos = new TreeSet<>(COMPARATOR);
+    private static final Comparator<QuotaInfo> COMPARATOR
+          = (Comparator<QuotaInfo> & Serializable) (q1, q2) -> Integer.compare(q1.getId(),
+          q2.getId());
 
-  public PnfsManagerGetQuotaMessage(QuotaType type) {
-    super(type);
-  }
+    private final Set<QuotaInfo> quotaInfos = new TreeSet<>(COMPARATOR);
 
-  public PnfsManagerGetQuotaMessage(Integer uid, QuotaType type) {
-    super(uid, type);
-  }
+    public PnfsManagerGetQuotaMessage(QuotaType type) {
+        super(type);
+    }
 
-  public Set<QuotaInfo> getQuotaInfos() {
-    return quotaInfos;
-  }
+    public PnfsManagerGetQuotaMessage(Integer uid, QuotaType type) {
+        super(uid, type);
+    }
+
+    public Set<QuotaInfo> getQuotaInfos() {
+        return quotaInfos;
+    }
 }

@@ -60,10 +60,10 @@ documents or software obtained from this server.
 package org.dcache.qos.data;
 
 /**
- *  State of the adjustment task.
- *  <p/>
- *  Shared externally for the purposes of notification.
+ * State of the adjustment task.
+ * <p/>
+ * Shared externally for the purposes of notification.
  */
 public enum QoSAdjustmentStatus {
-  COMPLETED, FAILED, CANCELLED, WAITING
+    COMPLETED, FAILED, CANCELLED, WAITING
 }

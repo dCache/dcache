@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,19 +15,15 @@
  */
 package org.dcache.ftp.client;
 
+import java.util.StringTokenizer;
 import org.dcache.ftp.client.exception.PerfMarkerException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.StringTokenizer;
-
 /**
- * Represents GridFTP performance marker.
- * Use getter methods to access its parameters.
+ * Represents GridFTP performance marker. Use getter methods to access its parameters.
  **/
-public class PerfMarker implements Marker
-{
+public class PerfMarker implements Marker {
 
     private static final Logger logger = LoggerFactory.getLogger(PerfMarker.class);
 
@@ -51,8 +47,7 @@ public class PerfMarker implements Marker
      * @param msg an FTP reply message containing the perf marker (not the reply itself!)
      **/
     public PerfMarker(String msg)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         StringTokenizer tokens = new StringTokenizer(msg, nl);
         if (!tokens.nextToken().trim().equals("Perf Marker")) {
             badMsg("should start with Perf Marker'", msg);
@@ -66,7 +61,7 @@ public class PerfMarker implements Marker
 
             //line = "name : value"
             StringTokenizer line = new StringTokenizer(tokens.nextToken(),
-                                                       ":");
+                  ":");
             if (!line.hasMoreTokens()) {
                 badMsg("one of lines empty", msg);
             }
@@ -94,38 +89,38 @@ public class PerfMarker implements Marker
             String value = line.nextToken().trim();
 
             switch (name) {
-            case "Timestamp":
-                try {
-                    timeStamp = Double.parseDouble(value);
-                    hasTimeStamp = true;
-                } catch (NumberFormatException e) {
-                    badMsg("Not double value:" + value, msg);
-                }
-                break;
-            case "Stripe Index":
-                try {
-                    stripeIndex = Long.parseLong(value);
-                    hasStripeIndex = true;
-                } catch (NumberFormatException e) {
-                    badMsg("Not long value:" + value, msg);
-                }
-                break;
-            case "Stripe Bytes Transferred":
-                try {
-                    stripeBytesTransferred = Long.parseLong(value);
-                    hasStripeBytesTransferred = true;
-                } catch (NumberFormatException e) {
-                    badMsg("Not long value:" + value, msg);
-                }
-                break;
-            case "Total Stripe Count":
-                try {
-                    totalStripeCount = Long.parseLong(value);
-                    hasTotalStripeCount = true;
-                } catch (NumberFormatException e) {
-                    badMsg("Not long value:" + value, msg);
-                }
-                break;
+                case "Timestamp":
+                    try {
+                        timeStamp = Double.parseDouble(value);
+                        hasTimeStamp = true;
+                    } catch (NumberFormatException e) {
+                        badMsg("Not double value:" + value, msg);
+                    }
+                    break;
+                case "Stripe Index":
+                    try {
+                        stripeIndex = Long.parseLong(value);
+                        hasStripeIndex = true;
+                    } catch (NumberFormatException e) {
+                        badMsg("Not long value:" + value, msg);
+                    }
+                    break;
+                case "Stripe Bytes Transferred":
+                    try {
+                        stripeBytesTransferred = Long.parseLong(value);
+                        hasStripeBytesTransferred = true;
+                    } catch (NumberFormatException e) {
+                        badMsg("Not long value:" + value, msg);
+                    }
+                    break;
+                case "Total Stripe Count":
+                    try {
+                        totalStripeCount = Long.parseLong(value);
+                        hasTotalStripeCount = true;
+                    } catch (NumberFormatException e) {
+                        badMsg("Not long value:" + value, msg);
+                    }
+                    break;
             }
 
         }//traverse lines
@@ -136,59 +131,51 @@ public class PerfMarker implements Marker
         }
     }//PerfMarker
 
-    private void badMsg(String why, String msg)
-    {
+    private void badMsg(String why, String msg) {
         throw new IllegalArgumentException(
-                "argument is not FTP 112 reply message ("
-                + why + ": ->" + msg + "<-");
+              "argument is not FTP 112 reply message ("
+                    + why + ": ->" + msg + "<-");
     }
 
-    public boolean hasStripeIndex()
-    {
+    public boolean hasStripeIndex() {
         return hasStripeIndex;
     }
 
-    public boolean hasStripeBytesTransferred()
-    {
+    public boolean hasStripeBytesTransferred() {
         return hasStripeBytesTransferred;
     }
 
-    public boolean hasTotalStripeCount()
-    {
+    public boolean hasTotalStripeCount() {
         return hasTotalStripeCount;
     }
 
-    public double getTimeStamp()
-    {
+    public double getTimeStamp() {
         return timeStamp;
     }
 
     public long getStripeIndex()
-            throws PerfMarkerException
-    {
+          throws PerfMarkerException {
         if (!hasStripeIndex) {
             throw new PerfMarkerException(
-                    PerfMarkerException.NO_SUCH_PARAMETER);
+                  PerfMarkerException.NO_SUCH_PARAMETER);
         }
         return stripeIndex;
     }
 
     public long getStripeBytesTransferred()
-            throws PerfMarkerException
-    {
+          throws PerfMarkerException {
         if (!hasStripeBytesTransferred) {
             throw new PerfMarkerException(
-                    PerfMarkerException.NO_SUCH_PARAMETER);
+                  PerfMarkerException.NO_SUCH_PARAMETER);
         }
         return stripeBytesTransferred;
     }
 
     public long getTotalStripeCount()
-            throws PerfMarkerException
-    {
+          throws PerfMarkerException {
         if (!hasTotalStripeCount) {
             throw new PerfMarkerException(
-                    PerfMarkerException.NO_SUCH_PARAMETER);
+                  PerfMarkerException.NO_SUCH_PARAMETER);
         }
         return totalStripeCount;
     }

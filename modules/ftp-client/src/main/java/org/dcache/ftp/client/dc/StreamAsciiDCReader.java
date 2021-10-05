@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,13 @@
 package org.dcache.ftp.client.dc;
 
 import java.io.IOException;
-
 import org.dcache.ftp.client.Buffer;
 
-public class StreamAsciiDCReader extends StreamImageDCReader
-{
+public class StreamAsciiDCReader extends StreamImageDCReader {
 
     protected final AsciiTranslator translator;
 
-    public StreamAsciiDCReader()
-    {
+    public StreamAsciiDCReader() {
         // only check for \r\n separators - others are ignored
         // output tokens with system specific line separators
         translator = new AsciiTranslator(true, false);
@@ -33,8 +30,7 @@ public class StreamAsciiDCReader extends StreamImageDCReader
 
     @Override
     public Buffer read()
-            throws IOException
-    {
+          throws IOException {
         Buffer buf = super.read();
         if (buf == null) {
             return null;

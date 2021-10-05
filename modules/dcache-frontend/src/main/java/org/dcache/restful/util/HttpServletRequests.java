@@ -18,11 +18,9 @@
  */
 package org.dcache.restful.util;
 
+import java.util.Set;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
-
-import java.util.Set;
-
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
@@ -33,35 +31,30 @@ import org.dcache.http.AuthenticationHandler;
 /**
  * Utility class for methods that operate on an HttpServletRequest object.
  */
-public class HttpServletRequests
-{
-    private HttpServletRequests()
-    {
+public class HttpServletRequests {
+
+    private HttpServletRequests() {
         // Prevent instantiation.
     }
 
-    public static Restriction getRestriction(HttpServletRequest request)
-    {
-        return (Restriction) request.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
+    public static Restriction getRestriction(HttpServletRequest request) {
+        return (Restriction) request.getAttribute(
+              AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
-    public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request)
-    {
+    public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request) {
         return AuthenticationHandler.getLoginAttributes(request);
     }
 
-    public static boolean isAdmin(HttpServletRequest request)
-    {
+    public static boolean isAdmin(HttpServletRequest request) {
         return LoginAttributes.hasAdminRole(getLoginAttributes(request));
     }
 
-    public static Subject roleAwareSubject(HttpServletRequest request)
-    {
+    public static Subject roleAwareSubject(HttpServletRequest request) {
         return isAdmin(request) ? Subjects.ROOT : RequestUser.getSubject();
     }
 
-    public static Restriction roleAwareRestriction(HttpServletRequest request)
-    {
+    public static Restriction roleAwareRestriction(HttpServletRequest request) {
         return isAdmin(request) ? Restrictions.none() : getRestriction(request);
     }
 }

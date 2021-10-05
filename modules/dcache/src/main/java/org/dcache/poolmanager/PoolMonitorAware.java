@@ -60,5 +60,6 @@ documents or software obtained from this server.
 package org.dcache.poolmanager;
 
 public interface PoolMonitorAware {
-  void setPoolMonitor(PoolMonitor poolMonitor);
+
+    void setPoolMonitor(PoolMonitor poolMonitor);
 }

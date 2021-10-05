@@ -60,13 +60,13 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-
-import static java.util.Objects.requireNonNull;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Runs when XML database is used.  Checks that storage file exists.
@@ -74,13 +74,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author arossi
  */
 public class LogEntryXMLInitializer {
+
     private static final String EMPTY_XML_STORE =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entries></entries>\n";
+          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entries></entries>\n";
 
     /**
-     * Checks for the existence of the file and creates it if not. Note that
-     * existing files are not validated against any schema, explicit or
-     * implicit. If the parent does not exist, an exception will be thrown.
+     * Checks for the existence of the file and creates it if not. Note that existing files are not
+     * validated against any schema, explicit or implicit. If the parent does not exist, an
+     * exception will be thrown.
+     *
      * @throws IOException
      */
     public LogEntryXMLInitializer(String xmlPath) throws IOException {

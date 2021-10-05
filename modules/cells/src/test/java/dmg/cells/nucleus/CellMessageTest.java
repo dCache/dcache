@@ -1,21 +1,20 @@
 package dmg.cells.nucleus;
 
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.Serializable;
+import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+public class CellMessageTest {
 
-public class CellMessageTest
-{
     @Test
-    public void shouldDeserializeSerializedMessage_FST() throws Exception
-    {
+    public void shouldDeserializeSerializedMessage_FST() throws Exception {
         CellMessage message = new CellMessage(new CellPath("foo", "bar"), "payload");
         CellMessage encoded = message.encodeWith(SerializationHandler.Serializer.FST);
 
@@ -38,8 +37,7 @@ public class CellMessageTest
     }
 
     @Test
-    public void shouldDeserializeSerializedMessage_RepackedToJos() throws Exception
-    {
+    public void shouldDeserializeSerializedMessage_RepackedToJos() throws Exception {
         CellMessage message = new CellMessage(new CellPath("foo", "bar"), "payload");
         CellMessage encoded = message.encodeWith(SerializationHandler.Serializer.FST);
         encoded.ensureEncodedWith(SerializationHandler.Serializer.JOS);
@@ -63,8 +61,7 @@ public class CellMessageTest
     }
 
     @Test(expected = IllegalStateException.class)
-    public void shouldFailToSerializedUnencodedMessages() throws Exception
-    {
+    public void shouldFailToSerializedUnencodedMessages() throws Exception {
         CellMessage message = new CellMessage(new CellPath("foo", "bar"), "payload");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         DataOutputStream outStream = new DataOutputStream(out);

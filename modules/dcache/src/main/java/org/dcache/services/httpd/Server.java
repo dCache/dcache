@@ -17,25 +17,22 @@
  */
 package org.dcache.services.httpd;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+public class Server extends org.eclipse.jetty.server.Server {
 
-public class Server extends org.eclipse.jetty.server.Server
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
-    public Server(ThreadPool pool)
-    {
+    public Server(ThreadPool pool) {
         super(pool);
     }
 
     @PostConstruct
-    public void startServer() throws Exception
-    {
+    public void startServer() throws Exception {
         /* Since the handlers used by httpd call back to the bean factory for initialization,
          * we have to call this during the post construct phase rather than the afterStart
          * phase.
@@ -44,8 +41,7 @@ public class Server extends org.eclipse.jetty.server.Server
     }
 
     @PreDestroy
-    public void stopServer()
-    {
+    public void stopServer() {
         try {
             stop();
         } catch (Exception e) {

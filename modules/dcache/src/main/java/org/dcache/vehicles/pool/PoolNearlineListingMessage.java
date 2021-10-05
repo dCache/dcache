@@ -61,36 +61,36 @@ package org.dcache.vehicles.pool;
 
 import com.google.common.base.Strings;
 import java.util.function.Predicate;
-
 import org.dcache.pool.nearline.json.NearlineData;
 
 /**
  * <p>Request for listings corresponding to st ls.</p>
  */
 public abstract class PoolNearlineListingMessage extends PoolActivityListingMessage<NearlineData> {
+
     protected PoolNearlineListingMessage(int offset,
-                                         int limit,
-                                         String pnfsid,
-                                         String state,
-                                         String storageClass,
-                                         String sort) {
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) {
         super(offset, limit, pnfsid, state, storageClass, sort);
     }
 
     @Override
     public Predicate<NearlineData> filter() {
         Predicate<NearlineData> matchesPnfsid =
-                        (data) -> pnfsid == null
-                                        || Strings.nullToEmpty(String.valueOf(data.getPnfsId()))
-                                                  .contains(pnfsid);
+              (data) -> pnfsid == null
+                    || Strings.nullToEmpty(String.valueOf(data.getPnfsId()))
+                    .contains(pnfsid);
         Predicate<NearlineData> matchesState =
-                        (data) -> state == null
-                                        || Strings.nullToEmpty(data.getState())
-                                                  .contains(state);
+              (data) -> state == null
+                    || Strings.nullToEmpty(data.getState())
+                    .contains(state);
         Predicate<NearlineData> matchesClass =
-                        (data) -> storageClass == null
-                                        || Strings.nullToEmpty(data.getStorageClass())
-                                                  .contains(storageClass);
+              (data) -> storageClass == null
+                    || Strings.nullToEmpty(data.getStorageClass())
+                    .contains(storageClass);
 
         return matchesPnfsid.and(matchesState).and(matchesClass);
     }

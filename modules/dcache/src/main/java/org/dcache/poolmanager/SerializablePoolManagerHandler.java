@@ -29,8 +29,8 @@ import java.io.Serializable;
  *
  * @see PoolManagerHandlerSubscriber
  */
-public interface SerializablePoolManagerHandler extends PoolManagerHandler, Serializable
-{
+public interface SerializablePoolManagerHandler extends PoolManagerHandler, Serializable {
+
     /**
      * Returns a version identifier used when requested updated instances of the handler.
      */
@@ -39,8 +39,8 @@ public interface SerializablePoolManagerHandler extends PoolManagerHandler, Seri
     /**
      * A compact and unique description of the state of a pool manager handler.
      */
-    interface Version extends Serializable
-    {
+    interface Version extends Serializable {
+
         @Override
         boolean equals(Object object);
     }

@@ -59,74 +59,66 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.Future;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.services.bulk.BulkJobExecutionException;
 import org.dcache.services.bulk.handlers.BulkJobCompletionHandler;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  The basic bulk job definition.
- *
- *  This class should not be extended directly to add new types
- *  of activity (use the SingleTargetJob instead).  It is public
- *  only because it needs to be visible to other internal packages.
+ * The basic bulk job definition.
+ * <p>
+ * This class should not be extended directly to add new types of activity (use the SingleTargetJob
+ * instead).  It is public only because it needs to be visible to other internal packages.
  */
-public abstract class BulkJob implements Runnable, Comparable<BulkJob>
-{
+public abstract class BulkJob implements Runnable, Comparable<BulkJob> {
+
     protected static final Logger LOGGER = LoggerFactory.getLogger(BulkJob.class);
 
     private static final String INVALID_STATE_TRANSITION =
-                        "%s: invalid bulk job state transition %s to %s; "
-                                        + "please report this to dcache.org.";
+          "%s: invalid bulk job state transition %s to %s; "
+                + "please report this to dcache.org.";
 
-    public enum State
-    {
+    public enum State {
         CREATED, INITIALIZED, STARTED, WAITING, CANCELLED, COMPLETED, FAILED
     }
 
     protected final BulkJobKey key;
     protected final BulkJobKey parentKey;
-    protected final String     activity;
+    protected final String activity;
 
     /**
-     *  The 'target' specified by the bulk request.  This usually a path,
-     *  either a directory or a regular file.
+     * The 'target' specified by the bulk request.  This usually a path, either a directory or a
+     * regular file.
      */
-    protected String         target;
+    protected String target;
 
     protected FileAttributes attributes;
-    protected Subject        subject;
-    protected Restriction    restriction;
-    protected State          state = State.CREATED;
-    protected Throwable      errorObject;
+    protected Subject subject;
+    protected Restriction restriction;
+    protected State state = State.CREATED;
+    protected Throwable errorObject;
 
     protected BulkJobCompletionHandler completionHandler;
-    protected Future                   future;
+    protected Future future;
 
-    private   long           startTime;
-    private   boolean        valid;
+    private long startTime;
+    private boolean valid;
 
-    protected BulkJob(BulkJobKey key, BulkJobKey parentKey, String activity)
-    {
+    protected BulkJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
         this.key = key;
         this.parentKey = parentKey;
         this.activity = activity;
         this.valid = true;
     }
 
-    public synchronized boolean cancel()
-    {
-        switch (state)
-        {
+    public synchronized boolean cancel() {
+        switch (state) {
             case CREATED:
             case INITIALIZED:
             case STARTED:
@@ -138,7 +130,7 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
 
                 if (errorObject == null) {
                     errorObject = new BulkJobExecutionException(key.toString()
-                                                                + ":" + state);
+                          + ":" + state);
                 }
 
                 doOnCancellation();
@@ -152,8 +144,7 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
     }
 
     @Override
-    public int compareTo(BulkJob other)
-    {
+    public int compareTo(BulkJob other) {
         if (other == null) {
             return -1;
         }
@@ -161,81 +152,66 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
         return key.toString().compareTo(other.getKey().toString());
     }
 
-    public String getActivity()
-    {
+    public String getActivity() {
         return activity;
     }
 
-    public BulkJobCompletionHandler getCompletionHandler()
-    {
+    public BulkJobCompletionHandler getCompletionHandler() {
         return completionHandler;
     }
 
-    public Throwable getErrorObject()
-    {
+    public Throwable getErrorObject() {
         return errorObject;
     }
 
-    public BulkJobKey getKey()
-    {
+    public BulkJobKey getKey() {
         return key;
     }
 
-    public BulkJobKey getParentKey()
-    {
+    public BulkJobKey getParentKey() {
         return parentKey;
     }
 
-    public Restriction getRestriction()
-    {
+    public Restriction getRestriction() {
         return restriction;
     }
 
-    public long getStartTime()
-    {
+    public long getStartTime() {
         return startTime;
     }
 
-    public synchronized State getState()
-    {
+    public synchronized State getState() {
         return state;
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 
-    public String getTarget()
-    {
+    public String getTarget() {
         return target;
     }
 
-    public void initialize()
-    {
+    public void initialize() {
         LOGGER.trace("BulkJob, initialize() called ...");
         requireNonNull(completionHandler,
-                                   "Job completion handler "
-                                                   + "was not set!  This is a bug.");
+              "Job completion handler "
+                    + "was not set!  This is a bug.");
 
         doInitialize();
 
-        synchronized (this)
-        {
+        synchronized (this) {
             state = State.INITIALIZED;
         }
     }
 
-    public synchronized BulkJob invalidate()
-    {
+    public synchronized BulkJob invalidate() {
         valid = false;
         return this;
     }
 
-    public synchronized boolean isReady()
-    {
-        switch (state)
-        {
+    public synchronized boolean isReady() {
+        switch (state) {
             case CREATED:
                 return true;
             default:
@@ -243,10 +219,8 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
         }
     }
 
-    public synchronized boolean isTerminated()
-    {
-        switch (state)
-        {
+    public synchronized boolean isTerminated() {
+        switch (state) {
             case FAILED:
             case CANCELLED:
             case COMPLETED:
@@ -256,18 +230,15 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
         }
     }
 
-    public synchronized boolean isValid()
-    {
+    public synchronized boolean isValid() {
         return valid;
     }
 
-    public synchronized boolean isWaiting()
-    {
+    public synchronized boolean isWaiting() {
         return state == State.WAITING;
     }
 
-    public void run()
-    {
+    public void run() {
         LOGGER.trace("{}, run() called ...", key);
 
         setState(State.STARTED);
@@ -275,44 +246,36 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
         doRun();
     }
 
-    public void setAttributes(FileAttributes attributes)
-    {
+    public void setAttributes(FileAttributes attributes) {
         this.attributes = attributes;
     }
 
-    public void setCompletionHandler(BulkJobCompletionHandler completionHandler)
-    {
+    public void setCompletionHandler(BulkJobCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
-    public void setErrorObject(Throwable errorObject)
-    {
+    public void setErrorObject(Throwable errorObject) {
         this.errorObject = errorObject;
     }
 
-    public void setFuture(Future future)
-    {
+    public void setFuture(Future future) {
         this.future = future;
     }
 
-    public void setRestriction(Restriction restriction)
-    {
+    public void setRestriction(Restriction restriction) {
         this.restriction = restriction;
     }
 
-    public synchronized void setState(State state)
-    {
+    public synchronized void setState(State state) {
         requireNonNull(state);
 
-        switch (this.state)
-        {
+        switch (this.state) {
             case CANCELLED:
             case COMPLETED:
             case FAILED:
                 break;
             case WAITING:
-                switch (state)
-                {
+                switch (state) {
                     case CANCELLED:
                     case COMPLETED:
                     case FAILED:
@@ -321,15 +284,14 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
                         break;
                     default:
                         throw new IllegalStateException(
-                                        String.format(INVALID_STATE_TRANSITION,
-                                                      key.getKey(),
-                                                      this.state,
-                                                      state));
+                              String.format(INVALID_STATE_TRANSITION,
+                                    key.getKey(),
+                                    this.state,
+                                    state));
                 }
                 break;
             case STARTED:
-                switch (state)
-                {
+                switch (state) {
                     case CANCELLED:
                     case COMPLETED:
                     case FAILED:
@@ -342,15 +304,14 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
                         break;
                     default:
                         throw new IllegalStateException(
-                                        String.format(INVALID_STATE_TRANSITION,
-                                                      key.getKey(),
-                                                      this.state,
-                                                      state));
+                              String.format(INVALID_STATE_TRANSITION,
+                                    key.getKey(),
+                                    this.state,
+                                    state));
                 }
                 break;
             case INITIALIZED:
-                switch (state)
-                {
+                switch (state) {
                     case STARTED:
                         startTime = System.currentTimeMillis();
                         this.state = state;
@@ -364,10 +325,10 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
                     case WAITING:
                     default:
                         throw new IllegalStateException(
-                                        String.format(INVALID_STATE_TRANSITION,
-                                                      key.getKey(),
-                                                      this.state,
-                                                      state));
+                              String.format(INVALID_STATE_TRANSITION,
+                                    key.getKey(),
+                                    this.state,
+                                    state));
                 }
                 break;
             case CREATED:
@@ -376,13 +337,11 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
         }
     }
 
-    public void setSubject(Subject subject)
-    {
+    public void setSubject(Subject subject) {
         this.subject = subject;
     }
 
-    public void setTarget(String target)
-    {
+    public void setTarget(String target) {
         this.target = target;
     }
 
@@ -390,13 +349,11 @@ public abstract class BulkJob implements Runnable, Comparable<BulkJob>
 
     protected abstract void postCompletion();
 
-    protected void doInitialize()
-    {
+    protected void doInitialize() {
         // Optional
     }
 
-    protected void doOnCancellation()
-    {
+    protected void doOnCancellation() {
         completionHandler.jobCancelled(this);
     }
 }

@@ -16,17 +16,16 @@
  */
 package org.dcache.chimera;
 
-import org.dcache.chimera.posix.Stat;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.dcache.chimera.posix.Stat;
 
 public class FsInode_TAG extends FsInode {
 
     private final String _tag;
 
     /**
-     *
-     * @param fs pointer to 'File System'
+     * @param fs  pointer to 'File System'
      * @param ino inode number of the
      * @param tag
      */

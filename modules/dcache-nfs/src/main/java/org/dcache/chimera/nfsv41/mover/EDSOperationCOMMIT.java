@@ -23,7 +23,8 @@ public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
     }
 
     @Override
-    public void process(CompoundContext cc, nfs_resop4 result) throws ChimeraNFSException, IOException {
+    public void process(CompoundContext cc, nfs_resop4 result)
+          throws ChimeraNFSException, IOException {
 
         final COMMIT4res res = result.opcommit;
         Inode inode = cc.currentInode();

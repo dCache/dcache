@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,27 +15,22 @@
  */
 package org.dcache.ftp.client.dc;
 
+import java.io.IOException;
 import org.dcache.ftp.client.Buffer;
 import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-
-import java.io.IOException;
-
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements incoming transfer.
- * While the transfer is in progress, replies are sent to the
- * local control channel. Also any failure messages go there
- * in the form of a negative reply.
+ * Implements incoming transfer. While the transfer is in progress, replies are sent to the local
+ * control channel. Also any failure messages go there in the form of a negative reply.
  **/
-public class TransferSinkThread extends TransferThread
-{
+public class TransferSinkThread extends TransferThread {
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(TransferSinkThread.class);
+          LoggerFactory.getLogger(TransferSinkThread.class);
 
     protected DataChannelReader reader;
     protected final DataSink sink;
@@ -44,12 +39,11 @@ public class TransferSinkThread extends TransferThread
     protected final SocketBox socketBox;
 
     public TransferSinkThread(AbstractDataChannel dataChannel,
-                              SocketBox socketBox,
-                              DataSink sink,
-                              BasicServerControlChannel localControlChannel,
-                              TransferContext context)
-            throws Exception
-    {
+          SocketBox socketBox,
+          DataSink sink,
+          BasicServerControlChannel localControlChannel,
+          TransferContext context)
+          throws Exception {
         this.socketBox = socketBox;
         this.sink = sink;
         this.localControlChannel = localControlChannel;
@@ -59,8 +53,7 @@ public class TransferSinkThread extends TransferThread
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         boolean error = false;
         Object quitToken = null;
         logger.debug("TransferSinkThread executing");
@@ -73,9 +66,9 @@ public class TransferSinkThread extends TransferThread
             } catch (Exception e) {
                 error = true;
                 FTPServerFacade.exceptionToControlChannel(
-                        e,
-                        "exception during TransferSinkThread",
-                        localControlChannel);
+                      e,
+                      "exception during TransferSinkThread",
+                      localControlChannel);
             } finally {
                 // attempt to obtain permission to close resources
                 quitToken = context.getQuitToken();
@@ -98,8 +91,7 @@ public class TransferSinkThread extends TransferThread
         }
     }
 
-    protected void startup() throws Exception
-    {
+    protected void startup() throws Exception {
         //send initial reply only if nothing has yet been sent
         synchronized (localControlChannel) {
             if (localControlChannel.getReplyCount() == 0) {
@@ -109,8 +101,7 @@ public class TransferSinkThread extends TransferThread
         }
     }
 
-    protected void copy() throws Exception
-    {
+    protected void copy() throws Exception {
         Buffer buf;
         long transferred = 0;
 
@@ -119,11 +110,10 @@ public class TransferSinkThread extends TransferThread
             sink.write(buf);
         }
         logger.debug("finished receiving data; received {} bytes",
-                     transferred);
+              transferred);
     }
 
-    protected void shutdown(Object quitToken) throws IOException
-    {
+    protected void shutdown(Object quitToken) throws IOException {
         logger.debug("shutdown");
 
         reader.close();

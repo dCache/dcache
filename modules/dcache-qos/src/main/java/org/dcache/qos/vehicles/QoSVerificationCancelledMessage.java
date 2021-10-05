@@ -64,13 +64,13 @@ import diskCacheV111.vehicles.Message;
 
 public class QoSVerificationCancelledMessage extends Message {
 
-  private final PnfsId pnfsId;
+    private final PnfsId pnfsId;
 
-  public QoSVerificationCancelledMessage(PnfsId pnfsId) {
-    this.pnfsId = pnfsId;
-  }
+    public QoSVerificationCancelledMessage(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 }

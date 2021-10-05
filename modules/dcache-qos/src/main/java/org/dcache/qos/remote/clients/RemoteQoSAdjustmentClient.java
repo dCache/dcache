@@ -68,22 +68,23 @@ import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 import org.dcache.qos.vehicles.QoSAdjustmentRequestMessage;
 
 /**
- *  Use this client when communicating with a remote adjustment service.<
+ * Use this client when communicating with a remote adjustment service.<
  */
 public final class RemoteQoSAdjustmentClient implements QoSAdjustmentListener {
-  private CellStub adjustmentService;
 
-  @Override
-  public void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) {
-      adjustmentService.send(new QoSAdjustmentRequestMessage(adjustmentRequest));
-  }
+    private CellStub adjustmentService;
 
-  @Override
-  public void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException {
-    adjustmentService.send(new QoSAdjustmentCancelledMessage(pnfsId));
-  }
+    @Override
+    public void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) {
+        adjustmentService.send(new QoSAdjustmentRequestMessage(adjustmentRequest));
+    }
 
-  public void setAdjustmentService(CellStub adjustmentService) {
-    this.adjustmentService = adjustmentService;
-  }
+    @Override
+    public void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException {
+        adjustmentService.send(new QoSAdjustmentCancelledMessage(pnfsId));
+    }
+
+    public void setAdjustmentService(CellStub adjustmentService) {
+        this.adjustmentService = adjustmentService;
+    }
 }

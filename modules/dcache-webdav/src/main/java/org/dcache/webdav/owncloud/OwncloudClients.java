@@ -17,21 +17,19 @@
  */
 package org.dcache.webdav.owncloud;
 
+import java.time.Instant;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.time.Instant;
-import java.util.Optional;
-
 /**
  * Class checking whether a request's User-agent is the OwnCloud Sync client.
  */
-public class OwncloudClients
-{
+public class OwncloudClients {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(OwncloudClients.class);
     private static final String OWNCLOUD_USERAGENT = "mirall";
 
@@ -39,8 +37,7 @@ public class OwncloudClients
     /**
      * Method checking whether a request is made by the OwnCloud Sync client.
      */
-    public static boolean isSyncClient(HttpServletRequest request)
-    {
+    public static boolean isSyncClient(HttpServletRequest request) {
         String userAgent = request.getHeader(HttpHeader.USER_AGENT.toString());
 
         return userAgent != null && userAgent.contains(OWNCLOUD_USERAGENT);
@@ -48,10 +45,10 @@ public class OwncloudClients
 
     /**
      * Provide a file's mtime, as supplied by the OwnCloud Sync client.
+     *
      * @return Optionally the client stated mtime instance.
      */
-    public static Optional<Instant> parseMTime(HttpServletRequest request)
-    {
+    public static Optional<Instant> parseMTime(HttpServletRequest request) {
         /*
          * See https://github.com/owncloud/client/blob/v2.2.3/src/libsync/propagateupload.cpp#L498
          *
@@ -73,8 +70,7 @@ public class OwncloudClients
     /**
      * Update reply to indicate that the supplied mtime was accepted.
      */
-    public static void addMTimeAccepted(HttpServletResponse response)
-    {
+    public static void addMTimeAccepted(HttpServletResponse response) {
         /*
          * See https://github.com/owncloud/client/blob/v2.2.3/src/libsync/propagateupload.cpp#L768
          *

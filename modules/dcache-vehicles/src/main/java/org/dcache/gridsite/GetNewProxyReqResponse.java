@@ -20,25 +20,22 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class GetNewProxyReqResponse implements Serializable
-{
+public class GetNewProxyReqResponse implements Serializable {
+
     private static final long serialVersionUID = 9081810451100249770L;
     private final String proxyRequest;
     private final String delegationID;
 
-    public GetNewProxyReqResponse(String proxyRequest, String delegationID)
-    {
+    public GetNewProxyReqResponse(String proxyRequest, String delegationID) {
         this.proxyRequest = proxyRequest;
         this.delegationID = delegationID;
     }
 
-    public String getProxyRequest()
-    {
+    public String getProxyRequest() {
         return proxyRequest;
     }
 
-    public String getDelegationID()
-    {
+    public String getDelegationID() {
         return delegationID;
     }
 }

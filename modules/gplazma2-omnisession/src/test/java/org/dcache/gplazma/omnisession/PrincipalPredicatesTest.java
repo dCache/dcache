@@ -17,14 +17,15 @@
  */
 package org.dcache.gplazma.omnisession;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.junit.Test;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.security.Principal;
 import java.util.function.Predicate;
-
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FQANPrincipal;
@@ -36,55 +37,46 @@ import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.omnisession.PrincipalPredicates.PredicateParserException;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+public class PrincipalPredicatesTest {
 
-public class PrincipalPredicatesTest
-{
     Predicate<Principal> predicate;
     String remaining;
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailEmptyString() throws Exception
-    {
+    public void shouldFailEmptyString() throws Exception {
         PrincipalPredicates.parseFirstPredicate("");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailSpaceString() throws Exception
-    {
+    public void shouldFailSpaceString() throws Exception {
         PrincipalPredicates.parseFirstPredicate(" ");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailTwoSpacesString() throws Exception
-    {
+    public void shouldFailTwoSpacesString() throws Exception {
         PrincipalPredicates.parseFirstPredicate("  ");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailMissingColon() throws Exception
-    {
+    public void shouldFailMissingColon() throws Exception {
         PrincipalPredicates.parseFirstPredicate("dn");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailMissingType() throws Exception
-    {
+    public void shouldFailMissingType() throws Exception {
         PrincipalPredicates.parseFirstPredicate(":foo");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldFailMissingValue() throws Exception
-    {
+    public void shouldFailMissingValue() throws Exception {
         PrincipalPredicates.parseFirstPredicate("dn:");
     }
 
     @Test
-    public void shouldParseValidUsername() throws Exception
-    {
+    public void shouldParseValidUsername() throws Exception {
         givenPredicate("username:paul");
 
         assertThat(remaining, emptyString());
@@ -96,32 +88,30 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidDn() throws Exception
-    {
+    public void shouldRejectInvalidDn() throws Exception {
         givenPredicate("dn:INVALID");
     }
 
     @Test
-    public void shouldParseValidDn() throws Exception
-    {
+    public void shouldParseValidDn() throws Exception {
         givenPredicate("dn:\"/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar\"");
 
         assertThat(remaining, emptyString());
 
-        assertTrue(predicate.test(new GlobusPrincipal("/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar")));
+        assertTrue(predicate.test(
+              new GlobusPrincipal("/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar")));
         assertFalse(predicate.test(new UserNamePrincipal("Alexander Paul Millar")));
-        assertFalse(predicate.test(new GlobusPrincipal("/C=DE/O=GermanGrid/OU=DESY/CN=Robot - grid client - Paul Millar (client software tester)")));
+        assertFalse(predicate.test(new GlobusPrincipal(
+              "/C=DE/O=GermanGrid/OU=DESY/CN=Robot - grid client - Paul Millar (client software tester)")));
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidEmail() throws Exception
-    {
+    public void shouldRejectInvalidEmail() throws Exception {
         givenPredicate("email:INVALID");
     }
 
     @Test
-    public void shouldParseValidEmail() throws Exception
-    {
+    public void shouldParseValidEmail() throws Exception {
         givenPredicate("email:paul@example.org");
 
         assertThat(remaining, emptyString());
@@ -132,20 +122,17 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidGid() throws Exception
-    {
+    public void shouldRejectInvalidGid() throws Exception {
         givenPredicate("gid:INVALID");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidQualifiedGid() throws Exception
-    {
+    public void shouldRejectInvalidQualifiedGid() throws Exception {
         givenPredicate("gid:1000,FOO");
     }
 
     @Test
-    public void shouldParseValidGid() throws Exception
-    {
+    public void shouldParseValidGid() throws Exception {
         givenPredicate("gid:1000");
 
         assertThat(remaining, emptyString());
@@ -158,8 +145,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseValidQualifiedPrimaryGid() throws Exception
-    {
+    public void shouldParseValidQualifiedPrimaryGid() throws Exception {
         givenPredicate("gid:1000,primary");
 
         assertThat(remaining, emptyString());
@@ -172,8 +158,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseValidQualifiedNonprimaryGid() throws Exception
-    {
+    public void shouldParseValidQualifiedNonprimaryGid() throws Exception {
         givenPredicate("gid:1000,nonprimary");
 
         assertThat(remaining, emptyString());
@@ -186,8 +171,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseGroupName() throws Exception
-    {
+    public void shouldParseGroupName() throws Exception {
         givenPredicate("group:hackers");
 
         assertThat(remaining, emptyString());
@@ -200,14 +184,12 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidQualifiedGroupName() throws Exception
-    {
+    public void shouldRejectInvalidQualifiedGroupName() throws Exception {
         givenPredicate("group:hackers,FOO");
     }
 
     @Test
-    public void shouldParseQualifiedPrimaryGroupName() throws Exception
-    {
+    public void shouldParseQualifiedPrimaryGroupName() throws Exception {
         givenPredicate("group:hackers,primary");
 
         assertThat(remaining, emptyString());
@@ -220,8 +202,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQualifiedNonprimaryGroupName() throws Exception
-    {
+    public void shouldParseQualifiedNonprimaryGroupName() throws Exception {
         givenPredicate("group:hackers,nonprimary");
 
         assertThat(remaining, emptyString());
@@ -234,14 +215,12 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidFqan() throws Exception
-    {
+    public void shouldRejectInvalidFqan() throws Exception {
         givenPredicate("fqan:INVALID");
     }
 
     @Test
-    public void shouldParseFqan() throws Exception
-    {
+    public void shouldParseFqan() throws Exception {
         givenPredicate("fqan:/dteam");
 
         assertThat(remaining, emptyString());
@@ -256,14 +235,12 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidQualifiedFqan() throws Exception
-    {
+    public void shouldRejectInvalidQualifiedFqan() throws Exception {
         givenPredicate("fqan:/dteam,FOO");
     }
 
     @Test
-    public void shouldParseQualifiedPrimaryFqan() throws Exception
-    {
+    public void shouldParseQualifiedPrimaryFqan() throws Exception {
         givenPredicate("fqan:/dteam,primary");
 
         assertThat(remaining, emptyString());
@@ -278,8 +255,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQualifiedNonprimaryFqan() throws Exception
-    {
+    public void shouldParseQualifiedNonprimaryFqan() throws Exception {
         givenPredicate("fqan:/dteam,nonprimary");
 
         assertThat(remaining, emptyString());
@@ -294,14 +270,12 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidKerberos() throws Exception
-    {
+    public void shouldRejectInvalidKerberos() throws Exception {
         givenPredicate("kerberos:INVALID");
     }
 
     @Test
-    public void shouldParseKerberos() throws Exception
-    {
+    public void shouldParseKerberos() throws Exception {
         givenPredicate("kerberos:paul@DESY.DE");
 
         assertThat(remaining, emptyString());
@@ -312,26 +286,22 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectOidcWithNoOP() throws Exception
-    {
+    public void shouldRejectOidcWithNoOP() throws Exception {
         givenPredicate("oidc:123456789");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectOidcWithInitialAt() throws Exception
-    {
+    public void shouldRejectOidcWithInitialAt() throws Exception {
         givenPredicate("oidc:@123456789");
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectOidcWithFinalAt() throws Exception
-    {
+    public void shouldRejectOidcWithFinalAt() throws Exception {
         givenPredicate("oidc:123456789@");
     }
 
     @Test
-    public void shouldParseOidcSub() throws Exception
-    {
+    public void shouldParseOidcSub() throws Exception {
         givenPredicate("oidc:123456789@OP");
 
         assertThat(remaining, emptyString());
@@ -343,8 +313,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseOidcSubWithAtSubClaim() throws Exception
-    {
+    public void shouldParseOidcSubWithAtSubClaim() throws Exception {
         givenPredicate("oidc:paul@example.org@OP");
 
         assertThat(remaining, emptyString());
@@ -356,8 +325,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseOidcGroup() throws Exception
-    {
+    public void shouldParseOidcGroup() throws Exception {
         givenPredicate("oidcgrp:/group");
 
         assertThat(remaining, emptyString());
@@ -369,40 +337,36 @@ public class PrincipalPredicatesTest
     }
 
     @Test(expected = PredicateParserException.class)
-    public void shouldRejectInvalidUid() throws Exception
-    {
+    public void shouldRejectInvalidUid() throws Exception {
         givenPredicate("uid:INVALID");
     }
 
     @Test
-    public void shouldParseUid() throws Exception
-    {
+    public void shouldParseUid() throws Exception {
         givenPredicate("uid:1000");
 
         assertThat(remaining, emptyString());
 
         assertTrue(predicate.test(new UidPrincipal(1000)));
-        assertFalse(predicate.test(new GidPrincipal(1000,true)));
-        assertFalse(predicate.test(new GidPrincipal(1000,false)));
+        assertFalse(predicate.test(new GidPrincipal(1000, true)));
+        assertFalse(predicate.test(new GidPrincipal(1000, false)));
         assertFalse(predicate.test(new UidPrincipal(2000)));
     }
 
     @Test
-    public void shouldParseEntitlement() throws Exception
-    {
+    public void shouldParseEntitlement() throws Exception {
         givenPredicate("entitlement:foo");
 
         assertThat(remaining, emptyString());
 
         assertTrue(predicate.test(new EntitlementPrincipal("foo")));
-        assertFalse(predicate.test(new GroupNamePrincipal("foo",true)));
-        assertFalse(predicate.test(new GroupNamePrincipal("foo",false)));
+        assertFalse(predicate.test(new GroupNamePrincipal("foo", true)));
+        assertFalse(predicate.test(new GroupNamePrincipal("foo", false)));
         assertFalse(predicate.test(new EntitlementPrincipal("bar")));
     }
 
     @Test
-    public void shouldParseSimpleValueWithTrailingSpace() throws Exception
-    {
+    public void shouldParseSimpleValueWithTrailingSpace() throws Exception {
         givenPredicate("username:paul ");
 
         assertThat(remaining, emptyString());
@@ -411,8 +375,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseSimpleValueWithTwoTrailingSpaces() throws Exception
-    {
+    public void shouldParseSimpleValueWithTwoTrailingSpaces() throws Exception {
         givenPredicate("username:paul  ");
 
         assertThat(remaining, emptyString());
@@ -421,8 +384,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseSimpleValueWithTrailingSpaceAndSingleChar() throws Exception
-    {
+    public void shouldParseSimpleValueWithTrailingSpaceAndSingleChar() throws Exception {
         givenPredicate("username:paul f");
 
         assertThat(remaining, equalTo("f"));
@@ -431,8 +393,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseSimpleValueWithTwoTrailingSpacesAndSingleChar() throws Exception
-    {
+    public void shouldParseSimpleValueWithTwoTrailingSpacesAndSingleChar() throws Exception {
         givenPredicate("username:paul  f");
 
         assertThat(remaining, equalTo("f"));
@@ -441,8 +402,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseSimpleValueWithTrailingSpaceAndValue() throws Exception
-    {
+    public void shouldParseSimpleValueWithTrailingSpaceAndValue() throws Exception {
         givenPredicate("username:paul foo");
 
         assertThat(remaining, equalTo("foo"));
@@ -451,8 +411,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseSimpleValueWithTwoTrailingSpacesAndValue() throws Exception
-    {
+    public void shouldParseSimpleValueWithTwoTrailingSpacesAndValue() throws Exception {
         givenPredicate("username:paul  foo");
 
         assertThat(remaining, equalTo("foo"));
@@ -461,8 +420,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValue() throws Exception
-    {
+    public void shouldParseQuotedValue() throws Exception {
         givenPredicate("username:\"paul\"");
 
         assertThat(remaining, emptyString());
@@ -471,8 +429,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTrailingSpace() throws Exception
-    {
+    public void shouldParseQuotedValueWithTrailingSpace() throws Exception {
         givenPredicate("username:\"paul\" ");
 
         assertThat(remaining, emptyString());
@@ -481,8 +438,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTwoTrailingSpaces() throws Exception
-    {
+    public void shouldParseQuotedValueWithTwoTrailingSpaces() throws Exception {
         givenPredicate("username:\"paul\"  ");
 
         assertThat(remaining, emptyString());
@@ -491,8 +447,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTrailingSpaceAndSingleChar() throws Exception
-    {
+    public void shouldParseQuotedValueWithTrailingSpaceAndSingleChar() throws Exception {
         givenPredicate("username:\"paul\" f");
 
         assertThat(remaining, equalTo("f"));
@@ -501,8 +456,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTwoTrailingSpacesAndSingleChar() throws Exception
-    {
+    public void shouldParseQuotedValueWithTwoTrailingSpacesAndSingleChar() throws Exception {
         givenPredicate("username:\"paul\"  f");
 
         assertThat(remaining, equalTo("f"));
@@ -511,8 +465,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTrailingSpaceAndValue() throws Exception
-    {
+    public void shouldParseQuotedValueWithTrailingSpaceAndValue() throws Exception {
         givenPredicate("username:\"paul\" foo");
 
         assertThat(remaining, equalTo("foo"));
@@ -521,8 +474,7 @@ public class PrincipalPredicatesTest
     }
 
     @Test
-    public void shouldParseQuotedValueWithTwoTrailingSpacesAndValue() throws Exception
-    {
+    public void shouldParseQuotedValueWithTwoTrailingSpacesAndValue() throws Exception {
         givenPredicate("username:\"paul\"  foo");
 
         assertThat(remaining, equalTo("foo"));
@@ -530,14 +482,12 @@ public class PrincipalPredicatesTest
         assertTrue(predicate.test(new UserNamePrincipal("paul")));
     }
 
-    @Test(expected=PredicateParserException.class)
-    public void shouldRejectQuotedValueWithMissingCloseQuote() throws Exception
-    {
+    @Test(expected = PredicateParserException.class)
+    public void shouldRejectQuotedValueWithMissingCloseQuote() throws Exception {
         PrincipalPredicates.parseFirstPredicate("username:\"paul");
     }
 
-    void givenPredicate(String arg) throws PredicateParserException
-    {
+    void givenPredicate(String arg) throws PredicateParserException {
         var result = PrincipalPredicates.parseFirstPredicate(arg);
         predicate = result.predicate();
         remaining = result.remaining();

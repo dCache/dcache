@@ -18,108 +18,93 @@
  */
 package org.dcache.services.login;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.CacheException;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Maps numerical uid or gid values to username or groupname, respectively.
- * A small cache is used to improve response time and to avoid clients
- * overloading the LoginStrategy. In effect, this class acts as a helper class
- * for LoginStrategy to simplify interactions.
+ * Maps numerical uid or gid values to username or groupname, respectively. A small cache is used to
+ * improve response time and to avoid clients overloading the LoginStrategy. In effect, this class
+ * acts as a helper class for LoginStrategy to simplify interactions.
  * <p>
- * There are two forms of IdentityResolver: with-Subject and without-Subject.
- * The without-Subject will use the cached results and the LoginStrategy to
- * resolve an identity.
+ * There are two forms of IdentityResolver: with-Subject and without-Subject. The without-Subject
+ * will use the cached results and the LoginStrategy to resolve an identity.
  */
-public class IdentityResolverFactory
-{
+public class IdentityResolverFactory {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(IdentityResolverFactory.class);
     private static final Long INVALID_ID = -1L;
 
     private final LoginStrategy loginStrategy;
 
     private final LoadingCache<Long, Optional<String>> uidToName = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(1, TimeUnit.MINUTES)
-                .build(new CacheLoader<Long, Optional<String>>()
-                    {
-                        @Override
-                        public Optional<String> load(Long uid) throws CacheException
-                        {
-                            for (Principal p : loginStrategy.reverseMap(new UidPrincipal(uid))) {
-                                if (p instanceof UserNamePrincipal) {
-                                    return Optional.of(p.getName());
-                                }
-                            }
-                            return Optional.empty();
-                        }
-                    });
+          .maximumSize(1000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<Long, Optional<String>>() {
+              @Override
+              public Optional<String> load(Long uid) throws CacheException {
+                  for (Principal p : loginStrategy.reverseMap(new UidPrincipal(uid))) {
+                      if (p instanceof UserNamePrincipal) {
+                          return Optional.of(p.getName());
+                      }
+                  }
+                  return Optional.empty();
+              }
+          });
 
     private final LoadingCache<Long, Optional<String>> gidToName = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(1, TimeUnit.MINUTES)
-                .build(new CacheLoader<Long, Optional<String>>()
-                    {
-                        @Override
-                        public Optional<String> load(Long gid) throws CacheException
-                        {
-                            for (Principal p : loginStrategy.reverseMap(new GidPrincipal(gid, false))) {
-                                if (p instanceof GroupNamePrincipal) {
-                                    return Optional.of(p.getName());
-                                }
-                            }
+          .maximumSize(1000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<Long, Optional<String>>() {
+              @Override
+              public Optional<String> load(Long gid) throws CacheException {
+                  for (Principal p : loginStrategy.reverseMap(new GidPrincipal(gid, false))) {
+                      if (p instanceof GroupNamePrincipal) {
+                          return Optional.of(p.getName());
+                      }
+                  }
 
-                            return Optional.empty();
-                        }
-                    });
+                  return Optional.empty();
+              }
+          });
 
 
-    public IdentityResolverFactory(LoginStrategy loginStrategy)
-    {
+    public IdentityResolverFactory(LoginStrategy loginStrategy) {
         this.loginStrategy = loginStrategy;
     }
 
     /**
      * Provide additional information for identity resolving.
      */
-    public IdentityResolver withSubject(Subject subject)
-    {
+    public IdentityResolver withSubject(Subject subject) {
         return new IdentityResolver(subject);
     }
 
-    public IdentityResolver withoutSubject()
-    {
+    public IdentityResolver withoutSubject() {
         return new IdentityResolver(null);
     }
 
     /**
-     * Try to discover a UserName that matches the uid based on information
-     * taken from the Subject.
+     * Try to discover a UserName that matches the uid based on information taken from the Subject.
      */
-    private static Optional<String> userNameFromSubject(Subject subject, long uid)
-    {
+    private static Optional<String> userNameFromSubject(Subject subject, long uid) {
         String name = null;
 
         if (subject != null) {
@@ -138,7 +123,7 @@ public class IdentityResolverFactory
             }
 
             if (subjectUid != INVALID_ID && subjectName != null
-                    && subjectUid == uid) {
+                  && subjectUid == uid) {
                 name = subjectName;
             }
         }
@@ -149,8 +134,7 @@ public class IdentityResolverFactory
     /**
      * Try to discover a GroupName that matches the gid from the Subject.
      */
-    private static Optional<String> groupNameFromSubject(Subject subject, long gid)
-    {
+    private static Optional<String> groupNameFromSubject(Subject subject, long gid) {
         String name = null;
 
         if (subject != null) {
@@ -166,7 +150,8 @@ public class IdentityResolverFactory
                     gidCount++;
                     GidPrincipal p = (GidPrincipal) principal;
                     if (p.isPrimaryGroup()) {
-                        checkArgument(primaryGid == INVALID_ID, "Subject has multiple primary GidPrincipal");
+                        checkArgument(primaryGid == INVALID_ID,
+                              "Subject has multiple primary GidPrincipal");
                         primaryGid = p.getGid();
                     } else {
                         nonPrimaryGid = p.getGid();
@@ -175,7 +160,8 @@ public class IdentityResolverFactory
                     nameCount++;
                     GroupNamePrincipal p = (GroupNamePrincipal) principal;
                     if (p.isPrimaryGroup()) {
-                        checkArgument(primaryName == null, "Subject has multiple primary GroupNamePrincipal");
+                        checkArgument(primaryName == null,
+                              "Subject has multiple primary GroupNamePrincipal");
                         primaryName = p.getName();
                     } else {
                         nonPrimaryName = p.getName();
@@ -195,17 +181,15 @@ public class IdentityResolverFactory
         return Optional.ofNullable(name);
     }
 
-    public class IdentityResolver
-    {
+    public class IdentityResolver {
+
         private final Subject subject;
 
-        private IdentityResolver(Subject subject)
-        {
+        private IdentityResolver(Subject subject) {
             this.subject = subject;
         }
 
-        public Optional<String> uidToName(long uid)
-        {
+        public Optional<String> uidToName(long uid) {
             Optional<String> name = userNameFromSubject(subject, uid);
 
             if (!name.isPresent()) {
@@ -215,7 +199,7 @@ public class IdentityResolverFactory
                     Throwable t = e.getCause();
                     Throwables.throwIfUnchecked(t);
                     LOGGER.warn("Failed to obtain username for uid {}: {}", uid,
-                            e.getMessage());
+                          e.getMessage());
                 } catch (UncheckedExecutionException e) {
                     Throwables.throwIfUnchecked(e.getCause());
                     throw e;
@@ -225,8 +209,7 @@ public class IdentityResolverFactory
             return name;
         }
 
-        public Optional<String> gidToName(long gid)
-        {
+        public Optional<String> gidToName(long gid) {
             Optional<String> name = groupNameFromSubject(subject, gid);
 
             if (!name.isPresent()) {
@@ -236,7 +219,7 @@ public class IdentityResolverFactory
                     Throwable t = e.getCause();
                     Throwables.throwIfUnchecked(t);
                     LOGGER.warn("Failed to obtain groupname for gid {}: {}", gid,
-                            e.getMessage());
+                          e.getMessage());
                 } catch (UncheckedExecutionException e) {
                     Throwables.throwIfUnchecked(e.getCause());
                     throw e;

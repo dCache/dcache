@@ -1,4 +1,4 @@
-package diskCacheV111.admin ;
+package diskCacheV111.admin;
 
 import java.util.List;
 import java.util.Map;
@@ -8,6 +8,6 @@ import java.util.Map;
  */
 public interface UserMetaDataProvider {
 
-    Map<String,String> getUserMetaData(String userName, String userRole, List<String> attributes)
-         throws Exception ;
+    Map<String, String> getUserMetaData(String userName, String userRole, List<String> attributes)
+          throws Exception;
 }

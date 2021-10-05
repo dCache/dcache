@@ -1,35 +1,31 @@
 package org.dcache.boot;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
+import static com.google.common.base.Throwables.getRootCause;
 
+import dmg.util.CommandException;
 import java.io.FileNotFoundException;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.util.logging.LogManager;
-
-import dmg.util.CommandException;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.configuration.DefaultProblemConsumer;
 import org.dcache.util.configuration.ProblemConsumer;
-import org.dcache.util.NetworkUtils;
-
-import static com.google.common.base.Throwables.getRootCause;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
- * Boot loader for dCache. This class contains the main method of
- * dCache. It is responsible for parsing the configuration files and
- * for boot strapping domains.
- *
+ * Boot loader for dCache. This class contains the main method of dCache. It is responsible for
+ * parsing the configuration files and for boot strapping domains.
+ * <p>
  * All methods are static. The class is never instantiated.
  */
-public class BootLoader
-{
+public class BootLoader {
+
     private static final String CMD_START = "start";
     private static final String CMD_COMPILE = "compile";
     private static final String CMD_COMPILE_OP_SHELL = "shell";
@@ -40,12 +36,10 @@ public class BootLoader
 
     private static final char OPT_SILENT = 'q';
 
-    private BootLoader()
-    {
+    private BootLoader() {
     }
 
-    private static void help()
-    {
+    private static void help() {
         System.err.println("SYNOPSIS:");
         System.err.println("  java org.dcache.util.BootLoader [-q] COMMAND [ARGS]");
         System.err.println();
@@ -60,18 +54,22 @@ public class BootLoader
         System.err.println("          Check configuration for any problems.");
         System.err.println();
         System.err.println("   " + CMD_COMPILE + " <format>");
-        System.err.println("          Compiles the layout to some particular format, determined by <format>.");
+        System.err.println(
+              "          Compiles the layout to some particular format, determined by <format>.");
         System.err.println("          Valid values of <format> are:");
-        System.err.println("                  -" + CMD_COMPILE_OP_SHELL + " POSIX shell declaration of an oracle function");
-        System.err.println("                  -" + CMD_COMPILE_OP_PYTHON + " Python declaration of an oracle function");
-        System.err.println("                  -" + CMD_COMPILE_OP_XML + " an set of XML entity definitions");
-        System.err.println("                  -" + CMD_COMPILE_OP_DEBUG + " a format providing human-readable format");
+        System.err.println("                  -" + CMD_COMPILE_OP_SHELL
+              + " POSIX shell declaration of an oracle function");
+        System.err.println("                  -" + CMD_COMPILE_OP_PYTHON
+              + " Python declaration of an oracle function");
+        System.err.println(
+              "                  -" + CMD_COMPILE_OP_XML + " an set of XML entity definitions");
+        System.err.println("                  -" + CMD_COMPILE_OP_DEBUG
+              + " a format providing human-readable format");
         System.exit(1);
     }
 
 
-    public static void main(String[] arguments)
-    {
+    public static void main(String[] arguments) {
         String command = null;
         Args args = null;
 
@@ -92,15 +90,15 @@ public class BootLoader
              * provided on the command line.
              */
             OutputStreamProblemConsumer checkConsumer =
-                new OutputStreamProblemConsumer(System.out);
+                  new OutputStreamProblemConsumer(System.out);
             ProblemConsumer problemConsumer =
-                command.equals(CMD_CHECK)
-                ? checkConsumer
-                : new DefaultProblemConsumer();
+                  command.equals(CMD_CHECK)
+                        ? checkConsumer
+                        : new DefaultProblemConsumer();
             problemConsumer =
-                args.isOneCharOption(OPT_SILENT)
-                ? new ErrorsAsWarningsProblemConsumer(problemConsumer)
-                : problemConsumer;
+                  args.isOneCharOption(OPT_SILENT)
+                        ? new ErrorsAsWarningsProblemConsumer(problemConsumer)
+                        : problemConsumer;
 
             /* The layout contains all configuration information, and
              * all domains and services of this node.
@@ -112,27 +110,27 @@ public class BootLoader
              * command line argument.
              */
             switch (command) {
-            case CMD_START:
-                if (args.argc() != 2) {
-                    throw new IllegalArgumentException("Missing argument: Domain name");
-                }
-                Domain domain = layout.getDomain(args.argv(1));
-                if (domain == null) {
-                    throw new IllegalArgumentException("No such domain: " + args
-                            .argv(1));
-                }
+                case CMD_START:
+                    if (args.argc() != 2) {
+                        throw new IllegalArgumentException("Missing argument: Domain name");
+                    }
+                    Domain domain = layout.getDomain(args.argv(1));
+                    if (domain == null) {
+                        throw new IllegalArgumentException("No such domain: " + args
+                              .argv(1));
+                    }
 
-                domain.start();
-                break;
-            case CMD_CHECK:
-                checkConsumer.printSummary();
-                System.exit(checkConsumer.getReturnCode());
-            case CMD_COMPILE:
-                LayoutPrinter printer = printerForArgs(args, layout);
-                printer.print(System.out);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid command: " + command);
+                    domain.start();
+                    break;
+                case CMD_CHECK:
+                    checkConsumer.printSummary();
+                    System.exit(checkConsumer.getReturnCode());
+                case CMD_COMPILE:
+                    LayoutPrinter printer = printerForArgs(args, layout);
+                    printer.print(System.out);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid command: " + command);
             }
         } catch (IllegalArgumentException | CommandException | URISyntaxException | FileNotFoundException e) {
             handleFatalError(e.getMessage(), args);
@@ -150,19 +148,19 @@ public class BootLoader
 
             if (message instanceof RuntimeException) {
                 logMessage = "Bug found, please report the following " +
-                        "information to support@dcache.org";
+                      "information to support@dcache.org";
             } else {
                 logMessage = "Failure at startup: {}";
             }
 
             LoggerFactory.getLogger("root")
-                .error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DOMAIN_STARTUP_FAILURE,
-                                                    NetworkUtils.getCanonicalHostName(),
-                                                    args.toString()),
+                  .error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DOMAIN_STARTUP_FAILURE,
+                              NetworkUtils.getCanonicalHostName(),
+                              args.toString()),
                         logMessage, message);
         } else {
             if (message instanceof RuntimeException) {
-                getRootCause((RuntimeException)message).printStackTrace();
+                getRootCause((RuntimeException) message).printStackTrace();
             } else {
                 System.err.println(message);
             }
@@ -171,28 +169,27 @@ public class BootLoader
         System.exit(1);
     }
 
-    private static LayoutPrinter printerForArgs(Args args, Layout layout)
-    {
+    private static LayoutPrinter printerForArgs(Args args, Layout layout) {
         boolean compileForShell = args.hasOption(CMD_COMPILE_OP_SHELL);
         boolean compileForXml = args.hasOption(CMD_COMPILE_OP_XML);
         boolean compileForDebug = args.hasOption(CMD_COMPILE_OP_DEBUG);
         boolean compileForPython = args.hasOption(CMD_COMPILE_OP_PYTHON);
 
-        if((compileForShell ? 1 : 0) +
-                (compileForPython ? 1 : 0) +
-                (compileForXml ? 1 : 0) +
-                (compileForDebug ? 1 : 0) != 1) {
+        if ((compileForShell ? 1 : 0) +
+              (compileForPython ? 1 : 0) +
+              (compileForXml ? 1 : 0) +
+              (compileForDebug ? 1 : 0) != 1) {
             throw new IllegalArgumentException("Must specify exactly one of " +
-                    "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_PYTHON +
-                    ", -" + CMD_COMPILE_OP_XML + " and -" +
-                    CMD_COMPILE_OP_DEBUG);
+                  "-" + CMD_COMPILE_OP_SHELL + ", -" + CMD_COMPILE_OP_PYTHON +
+                  ", -" + CMD_COMPILE_OP_XML + " and -" +
+                  CMD_COMPILE_OP_DEBUG);
         }
 
-        if(compileForShell) {
+        if (compileForShell) {
             return new ShellOracleLayoutPrinter(layout);
-        } else if(compileForPython) {
+        } else if (compileForPython) {
             return new PythonOracleLayoutPrinter(layout);
-        } else if(compileForXml) {
+        } else if (compileForXml) {
             return new XmlEntityLayoutPrinter(layout);
         } else {
             return new DebugLayoutPrinter(layout);
@@ -202,105 +199,97 @@ public class BootLoader
     /**
      * An ProblemConsumer adapter that maps errors to warnings.
      */
-    private static class ErrorsAsWarningsProblemConsumer implements ProblemConsumer
-    {
+    private static class ErrorsAsWarningsProblemConsumer implements ProblemConsumer {
+
         final ProblemConsumer _inner;
 
-        ErrorsAsWarningsProblemConsumer( ProblemConsumer inner) {
+        ErrorsAsWarningsProblemConsumer(ProblemConsumer inner) {
             _inner = inner;
         }
 
         @Override
-        public void setFilename( String name) {
+        public void setFilename(String name) {
             _inner.setFilename(name);
         }
 
         @Override
-        public void setLineNumberReader( LineNumberReader reader) {
+        public void setLineNumberReader(LineNumberReader reader) {
             _inner.setLineNumberReader(reader);
         }
 
         @Override
-        public void error( String message) {
+        public void error(String message) {
             _inner.warning(message);
         }
 
         @Override
-        public void warning( String message) {
+        public void warning(String message) {
             _inner.warning(message);
         }
 
         @Override
-        public void info( String message) {
+        public void info(String message) {
             _inner.info(message);
         }
     }
 
     /**
-     * Provide a ProblemConsumer that logs all messages to standard output and
-     * doesn't terminate the parsing process if an error is discovered.  It
-     * can also provide a one-line summary describing the number of warnings
-     * and errors encountered.
+     * Provide a ProblemConsumer that logs all messages to standard output and doesn't terminate the
+     * parsing process if an error is discovered.  It can also provide a one-line summary describing
+     * the number of warnings and errors encountered.
      */
-    private static class OutputStreamProblemConsumer extends DefaultProblemConsumer
-    {
+    private static class OutputStreamProblemConsumer extends DefaultProblemConsumer {
+
         private int _errors;
         private int _warnings;
         private final PrintStream _out;
 
-        public OutputStreamProblemConsumer(OutputStream out)
-        {
+        public OutputStreamProblemConsumer(OutputStream out) {
             _out = new PrintStream(out);
         }
 
         @Override
-        public void error(String message)
-        {
+        public void error(String message) {
             _out.println("[ERROR] " + addContextTo(message));
             _errors++;
         }
 
         @Override
-        public void warning(String message)
-        {
+        public void warning(String message) {
             _out.println("[WARNING] " + addContextTo(message));
             _warnings++;
         }
 
         @Override
-        public void info(String message)
-        {
+        public void info(String message) {
             _out.println("[INFO] " + addContextTo(message));
         }
 
-        public int getReturnCode()
-        {
+        public int getReturnCode() {
             if (_errors > 0) {
                 return 2;
-             } else if (_warnings > 0) {
+            } else if (_warnings > 0) {
                 return 1;
-             } else {
+            } else {
                 return 0;
-             }
+            }
         }
 
-        public void printSummary()
-        {
-            if( _warnings == 0 && _errors == 0) {
+        public void printSummary() {
+            if (_warnings == 0 && _errors == 0) {
                 System.out.println("No problems found.");
             } else {
                 System.out.println(buildProblemsMessage());
             }
         }
 
-        private String buildProblemsMessage()
-        {
+        private String buildProblemsMessage() {
             StringBuilder sb = new StringBuilder();
 
             sb.append("Found ");
             cardinalMessage(sb, _errors, "error");
 
-            if(_warnings > 0 && _errors > 0) {
+            if (_warnings > 0 && _errors > 0) {
                 sb.append(" and ");
             }
 
@@ -309,17 +298,16 @@ public class BootLoader
             return sb.toString();
         }
 
-        private void cardinalMessage(StringBuilder sb, int count, String label)
-        {
-            switch(count) {
-            case 0:
-                break;
-            case 1:
-                sb.append("1 ").append(label);
-                break;
-            default:
-                sb.append(count).append(" ").append(label).append("s");
-                break;
+        private void cardinalMessage(StringBuilder sb, int count, String label) {
+            switch (count) {
+                case 0:
+                    break;
+                case 1:
+                    sb.append("1 ").append(label);
+                    break;
+                default:
+                    sb.append(count).append(" ").append(label).append("s");
+                    break;
             }
         }
     }

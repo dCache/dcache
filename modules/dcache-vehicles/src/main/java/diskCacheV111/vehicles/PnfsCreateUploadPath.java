@@ -17,33 +17,30 @@
  */
 package diskCacheV111.vehicles;
 
-import javax.security.auth.Subject;
-
-import java.util.Collections;
-import java.util.Set;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.RetentionPolicy;
-
+import java.util.Collections;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.CreateOption;
 
 /**
  * Create a temporary path to which a file can be uploaded.
- *
- * This message enables writing a file without exposing the file before
- * the upload has completed. A temporary path is returned to which the
- * file can be written as if it had been written to the real path.
- *
- * At the end of the upload the temporary path is 'committed' to its final
- * location. The temporary upload path is also revocable.
+ * <p>
+ * This message enables writing a file without exposing the file before the upload has completed. A
+ * temporary path is returned to which the file can be written as if it had been written to the real
+ * path.
+ * <p>
+ * At the end of the upload the temporary path is 'committed' to its final location. The temporary
+ * upload path is also revocable.
  *
  * @see diskCacheV111.vehicles.PnfsCancelUpload
  * @see diskCacheV111.vehicles.PnfsCommitUpload
  */
-public class PnfsCreateUploadPath extends PnfsMessage
-{
+public class PnfsCreateUploadPath extends PnfsMessage {
+
     private static final long serialVersionUID = -5657366358578866102L;
 
     private final Long size;
@@ -54,10 +51,10 @@ public class PnfsCreateUploadPath extends PnfsMessage
     private final String rootPath;
     private String uploadPath;
 
-    public PnfsCreateUploadPath(Subject subject, Restriction restriction, FsPath path, FsPath rootPath, Long size,
-                                AccessLatency accessLatency, RetentionPolicy retentionPolicy, String spaceToken,
-                                Set<CreateOption> options)
-    {
+    public PnfsCreateUploadPath(Subject subject, Restriction restriction, FsPath path,
+          FsPath rootPath, Long size,
+          AccessLatency accessLatency, RetentionPolicy retentionPolicy, String spaceToken,
+          Set<CreateOption> options) {
         this.size = size;
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
@@ -70,48 +67,39 @@ public class PnfsCreateUploadPath extends PnfsMessage
         setReplyRequired(true);
     }
 
-    public AccessLatency getAccessLatency()
-    {
+    public AccessLatency getAccessLatency() {
         return accessLatency;
     }
 
-    public RetentionPolicy getRetentionPolicy()
-    {
+    public RetentionPolicy getRetentionPolicy() {
         return retentionPolicy;
     }
 
-    public String getSpaceToken()
-    {
+    public String getSpaceToken() {
         return spaceToken;
     }
 
-    public Long getSize()
-    {
+    public Long getSize() {
         return size;
     }
 
-    public Set<CreateOption> getOptions()
-    {
+    public Set<CreateOption> getOptions() {
         return Collections.unmodifiableSet(options);
     }
 
-    public FsPath getPath()
-    {
+    public FsPath getPath() {
         return FsPath.create(getPnfsPath());
     }
 
-    public FsPath getRootPath()
-    {
+    public FsPath getRootPath() {
         return (rootPath == null) ? FsPath.ROOT : FsPath.create(rootPath);
     }
 
-    public FsPath getUploadPath()
-    {
+    public FsPath getUploadPath() {
         return (uploadPath == null) ? null : FsPath.create(uploadPath);
     }
 
-    public void setUploadPath(FsPath uploadPath)
-    {
+    public void setUploadPath(FsPath uploadPath) {
         this.uploadPath = uploadPath.toString();
     }
 }

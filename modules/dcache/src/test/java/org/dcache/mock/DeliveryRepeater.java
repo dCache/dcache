@@ -22,9 +22,10 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.function.IntFunction;
 
 /**
- * Deliver multiple messages.  The specific messages should be built using an
- * integer index, with the first message having index 1.
+ * Deliver multiple messages.  The specific messages should be built using an integer index, with
+ * the first message having index 1.
  */
-public interface DeliveryRepeater <R extends CellMessageReceiver> {
-  void repeatDeliveryTo(IntFunction<Deliverable<R>> messageBuilder, R container);
+public interface DeliveryRepeater<R extends CellMessageReceiver> {
+
+    void repeatDeliveryTo(IntFunction<Deliverable<R>> messageBuilder, R container);
 }

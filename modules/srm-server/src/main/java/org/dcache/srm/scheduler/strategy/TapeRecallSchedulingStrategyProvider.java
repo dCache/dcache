@@ -17,15 +17,15 @@
  */
 package org.dcache.srm.scheduler.strategy;
 
+import java.util.Map;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 import org.dcache.srm.taperecallscheduling.TapeInformant;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
 
-import java.util.Map;
-
 public class TapeRecallSchedulingStrategyProvider implements SchedulingStrategyProvider {
+
     private TapeInformant tapeInformant;
     private TapeRecallSchedulingRequirementsChecker requirementsChecker;
 
@@ -39,8 +39,7 @@ public class TapeRecallSchedulingStrategyProvider implements SchedulingStrategyP
     public void setConfiguration(Map<String, String> configuration) {
     }
 
-    public void setTapeInformant(TapeInformant informant)
-    {
+    public void setTapeInformant(TapeInformant informant) {
         tapeInformant = informant;
     }
 

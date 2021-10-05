@@ -72,11 +72,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.apache.axis.types.URI;
-
 import java.io.IOException;
 import java.util.HashMap;
-
+import org.apache.axis.types.URI;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
@@ -101,22 +99,22 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class SRMGetClientV2 extends SRMClient implements Runnable
-{
+public class SRMGetClientV2 extends SRMClient implements Runnable {
+
     private final java.net.URI from[];
     private final java.net.URI to[];
-    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+    private final HashMap<String, Integer> pendingSurlsToIndex = new HashMap<>();
 
     private Copier copier;
     private String requestToken;
     private Thread hook;
 
-    /** Creates a new instance of SRMGetClient */
-    public SRMGetClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to)
-    {
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMGetClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from, to, configuration.getReport());
         this.from = from;
@@ -124,9 +122,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
-        return from [0];
+    protected java.net.URI getServerUrl() {
+        return from[0];
     }
 
     @Override
@@ -137,10 +134,10 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
             int len = from.length;
             String SURLS[] = new String[len];
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
-            for(int i = 0; i < len; ++i) {
+            for (int i = 0; i < len; ++i) {
                 SURLS[i] = from[i].toASCIIString();
                 URI uri =
-                    new URI(SURLS[i]);
+                      new URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(uri);
                 pendingSurlsToIndex.put(SURLS[i], i);
@@ -148,28 +145,31 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
-            srmPrepareToGetRequest.setUserRequestDescription(configuration.getUserRequestDescription());
+            srmPrepareToGetRequest.setUserRequestDescription(
+                  configuration.getUserRequestDescription());
             srmPrepareToGetRequest.setDesiredTotalRequestTime(
-                    (int) configuration.getRequestLifetime());
+                  (int) configuration.getRequestLifetime());
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
-                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+                  RetentionPolicy.fromString(configuration.getRetentionPolicy())
+                        .toTRetentionPolicy() : null;
             TAccessLatency al = configuration.getAccessLatency() != null ?
-                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
-            if ( (al!=null) && (rp==null)) {
-                throw new IllegalArgumentException("if access latency is specified, "+
-                "then retention policy have to be specified as well");
-            }
-            else if ( rp!=null ) {
-                srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+                  AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency()
+                  : null;
+            if ((al != null) && (rp == null)) {
+                throw new IllegalArgumentException("if access latency is specified, " +
+                      "then retention policy have to be specified as well");
+            } else if (rp != null) {
+                srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(
+                      new TRetentionPolicyInfo(rp, al));
             }
             srmPrepareToGetRequest.setArrayOfFileRequests(
-                    new ArrayOfTGetFileRequest(fileRequests));
-            TAccessPattern  ap = null;
-            if(configuration.getAccessPattern() != null ) {
+                  new ArrayOfTGetFileRequest(fileRequests));
+            TAccessPattern ap = null;
+            if (configuration.getAccessPattern() != null) {
                 ap = TAccessPattern.fromString(configuration.getAccessPattern());
             }
             TConnectionType ct = null;
-            if(configuration.getConnectionType() != null ) {
+            if (configuration.getConnectionType() != null) {
                 ct = TConnectionType.fromString(configuration.getConnectionType());
             }
             ArrayOfString protocolArray = null;
@@ -177,56 +177,61 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
                 protocolArray = new ArrayOfString(configuration.getProtocols());
             }
             ArrayOfString arrayOfClientNetworks = null;
-            if (configuration.getArrayOfClientNetworks()!=null) {
+            if (configuration.getArrayOfClientNetworks() != null) {
                 arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
             }
-            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) {
+            if (ap != null || ct != null || arrayOfClientNetworks != null
+                  || protocolArray != null) {
                 srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,
-                        ct,
-                        arrayOfClientNetworks,
-                        protocolArray));
+                      ct,
+                      arrayOfClientNetworks,
+                      protocolArray));
             }
-            configuration.getStorageSystemInfo().ifPresent(srmPrepareToGetRequest::setStorageSystemInfo);
+            configuration.getStorageSystemInfo()
+                  .ifPresent(srmPrepareToGetRequest::setStorageSystemInfo);
             say("calling srmPrepareToGet");
 
             SrmPrepareToGetResponse response = srm.srmPrepareToGet(srmPrepareToGetRequest);
             say("received response");
-            if(response == null) {
+            if (response == null) {
                 throw new IOException(" null response");
             }
             TReturnStatus status = response.getReturnStatus();
-            if(status == null) {
+            if (status == null) {
                 throw new IOException(" null return status");
             }
             TStatusCode statusCode = status.getStatusCode();
-            if(statusCode == null) {
+            if (statusCode == null) {
                 throw new IOException(" null status code");
             }
-            if(RequestStatusTool.isFailedRequestStatus(status) &&
-                    (statusCode != TStatusCode.SRM_FAILURE || response.getArrayOfFileStatuses() == null)) {
+            if (RequestStatusTool.isFailedRequestStatus(status) &&
+                  (statusCode != TStatusCode.SRM_FAILURE
+                        || response.getArrayOfFileStatuses() == null)) {
                 String explanation = status.getExplanation();
-                if (explanation != null){
-                    throw new IOException("srmPrepareToGet submission failed, unexpected or failed status : " +
-                                                  statusCode + " explanation= " + explanation);
+                if (explanation != null) {
+                    throw new IOException(
+                          "srmPrepareToGet submission failed, unexpected or failed status : " +
+                                statusCode + " explanation= " + explanation);
                 } else {
                     throw new IOException(
-                            "srmPrepareToGet submission failed, unexpected or failed status : " + statusCode);
+                          "srmPrepareToGet submission failed, unexpected or failed status : "
+                                + statusCode);
                 }
             }
             requestToken = response.getRequestToken();
-            dsay(" srm returned requestToken = "+requestToken);
-            if( response.getArrayOfFileStatuses() == null) {
+            dsay(" srm returned requestToken = " + requestToken);
+            if (response.getArrayOfFileStatuses() == null) {
                 throw new IOException("returned GetRequestFileStatuses is an empty array");
             }
             TGetRequestFileStatus[] getRequestFileStatuses =
-                response.getArrayOfFileStatuses().getStatusArray();
-            if(getRequestFileStatuses.length != len) {
-                throw new IOException("incorrect number of GetRequestFileStatuses"+
-                        "in RequestStatus expected "+len+" received "+
-                        getRequestFileStatuses.length);
+                  response.getArrayOfFileStatuses().getStatusArray();
+            if (getRequestFileStatuses.length != len) {
+                throw new IOException("incorrect number of GetRequestFileStatuses" +
+                      "in RequestStatus expected " + len + " received " +
+                      getRequestFileStatuses.length);
             }
 
-            while(!pendingSurlsToIndex.isEmpty()) {
+            while (!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
                 for (TGetRequestFileStatus getRequestFileStatus : getRequestFileStatuses) {
                     URI surl = getRequestFileStatus.getSourceSURL();
@@ -248,147 +253,150 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
                         throw new IOException(" null file status code");
                     }
                     if (RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
-                        String error = "retreval of surl " + surl_string + " failed, status = " + fileStatusCode +
-                                       " explanation=" + fileStatus.getExplanation();
+                        String error = "retreval of surl " + surl_string + " failed, status = "
+                              + fileStatusCode +
+                              " explanation=" + fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx], to[indx], error);
                         continue;
                     }
                     if (getRequestFileStatus.getTransferURL() != null) {
-                        java.net.URI globusTURL = new java.net.URI(getRequestFileStatus.getTransferURL().toString());
+                        java.net.URI globusTURL = new java.net.URI(
+                              getRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx], to[indx], "received TURL, but did not complete transfer");
+                        setReportFailed(from[indx], to[indx],
+                              "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(globusTURL,
-                                                       to[indx], srm, requestToken, logger, from[indx], true, this);
+                              to[indx], srm, requestToken, logger, from[indx], true, this);
                         copier.addCopyJob(job);
                         continue;
                     }
                     if (getRequestFileStatus.getEstimatedWaitTime() != null &&
-                        getRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                        getRequestFileStatus.getEstimatedWaitTime() >= 1) {
+                          getRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                          getRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = getRequestFileStatus
-                                .getEstimatedWaitTime();
+                              .getEstimatedWaitTime();
                     }
                 }
 
-                if(pendingSurlsToIndex.isEmpty()) {
+                if (pendingSurlsToIndex.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
                 }
                 // do not wait longer then 60 seconds
-                if(estimatedWaitInSeconds > 60) {
+                if (estimatedWaitInSeconds > 60) {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
 
-                    say("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    say("sleeping " + estimatedWaitInSeconds + " seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
-                } catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                 }
                 SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest =
-                    new SrmStatusOfGetRequestRequest();
+                      new SrmStatusOfGetRequestRequest();
                 srmStatusOfGetRequestRequest.setRequestToken(requestToken);
                 // we do not know what to expect from the server when
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
-                String [] pendingSurlStrings =
-                        pendingSurlsToIndex.keySet()
-                                .toArray(new String[pendingSurlsToIndex.size()]);
+                String[] pendingSurlStrings =
+                      pendingSurlsToIndex.keySet()
+                            .toArray(new String[pendingSurlsToIndex.size()]);
                 // if we do not have completed file requests
                 // we want to get status for all files
                 // we do not need to specify any surls
-                int expectedResponseLength= pendingSurlStrings.length;
+                int expectedResponseLength = pendingSurlStrings.length;
                 URI surlArray[] = new URI[expectedResponseLength];
 
-                for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new URI(pendingSurlStrings[i]);
+                for (int i = 0; i < expectedResponseLength; ++i) {
+                    surlArray[i] = new URI(pendingSurlStrings[i]);
                 }
 
                 srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(
-                        new ArrayOfAnyURI(surlArray));
+                      new ArrayOfAnyURI(surlArray));
                 SrmStatusOfGetRequestResponse srmStatusOfGetRequestResponse =
-                    srm.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
-                if(srmStatusOfGetRequestResponse == null) {
+                      srm.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
+                if (srmStatusOfGetRequestResponse == null) {
                     throw new IOException(" null srmStatusOfGetRequestResponse");
                 }
-                if(srmStatusOfGetRequestResponse.getArrayOfFileStatuses() == null ) {
-                    String error =  "array of RequestFileStatuses is null ";
+                if (srmStatusOfGetRequestResponse.getArrayOfFileStatuses() == null) {
+                    String error = "array of RequestFileStatuses is null ";
                     statusCode = status.getStatusCode();
-                    if(statusCode != null) {
-                        error += " status : "+ statusCode+
-                        " explanation="+status.getExplanation();
+                    if (statusCode != null) {
+                        error += " status : " + statusCode +
+                              " explanation=" + status.getExplanation();
                     }
                     esay(error);
                     throw new IOException(error);
                 }
                 getRequestFileStatuses =
-                    srmStatusOfGetRequestResponse.getArrayOfFileStatuses().getStatusArray();
+                      srmStatusOfGetRequestResponse.getArrayOfFileStatuses().getStatusArray();
 
-                if(getRequestFileStatuses == null ||
-                        getRequestFileStatuses.length !=  expectedResponseLength) {
-                    String error =  "incorrect number of RequestFileStatuses";
+                if (getRequestFileStatuses == null ||
+                      getRequestFileStatuses.length != expectedResponseLength) {
+                    String error = "incorrect number of RequestFileStatuses";
                     statusCode = status.getStatusCode();
-                    if(statusCode != null) {
-                        error += " status : "+ statusCode+
-                        " explanation="+status.getExplanation();
+                    if (statusCode != null) {
+                        error += " status : " + statusCode +
+                              " explanation=" + status.getExplanation();
                     }
                     esay(error);
                     throw new IOException(error);
                 }
 
                 status = srmStatusOfGetRequestResponse.getReturnStatus();
-                if(status == null) {
+                if (status == null) {
                     throw new IOException(" null return status");
                 }
                 statusCode = status.getStatusCode();
-                if(statusCode == null) {
+                if (statusCode == null) {
                     throw new IOException(" null status code");
                 }
-                if(RequestStatusTool.isFailedRequestStatus(status)){
-                    String error = "srmPrepareToGet update failed, status : "+ statusCode+
-                    " explanation="+status.getExplanation();
+                if (RequestStatusTool.isFailedRequestStatus(status)) {
+                    String error = "srmPrepareToGet update failed, status : " + statusCode +
+                          " explanation=" + status.getExplanation();
                     esay(error);
-                    for(int i = 0; i<expectedResponseLength;++i) {
+                    for (int i = 0; i < expectedResponseLength; ++i) {
                         TReturnStatus frstatus = getRequestFileStatuses[i].getStatus();
-                        if ( frstatus != null) {
-                            esay("GetFileRequest["+
-                                    getRequestFileStatuses[i].getSourceSURL()+
-                                    "] status="+frstatus.getStatusCode()+
-                                    " explanation="+frstatus.getExplanation()
+                        if (frstatus != null) {
+                            esay("GetFileRequest[" +
+                                  getRequestFileStatuses[i].getSourceSURL() +
+                                  "] status=" + frstatus.getStatusCode() +
+                                  " explanation=" + frstatus.getExplanation()
                             );
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                pendingSurlsToIndex.remove(getRequestFileStatuses[i].getSourceSURL().toString());
+                                pendingSurlsToIndex.remove(
+                                      getRequestFileStatuses[i].getSourceSURL().toString());
                             }
                         }
                     }
                     throw new IOException(error);
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             try {
-                if(copier != null) {
+                if (copier != null) {
                     dsay("stopping copier");
                     copier.stop();
                     abortAllPendingFiles();
                 }
-            }catch(Exception e1) {
+            } catch (Exception e1) {
                 edsay(e1.toString());
             }
             throw e;
         } finally {
-            if(copier != null) {
+            if (copier != null) {
                 copier.doneAddingJobs();
                 try {
                     copier.waitCompletion();
-                }
-                catch(Exception e1) {
+                } catch (Exception e1) {
                     edsay(e1.toString());
                 }
             }
             report.dumpReport();
-            if(!report.everythingAllRight()){
+            if (!report.everythingAllRight()) {
                 report.reportErrors(System.err);
             }
         }
@@ -401,39 +409,39 @@ public class SRMGetClientV2 extends SRMClient implements Runnable
             dsay("stopping copier");
             copier.stop();
             abortAllPendingFiles();
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.elog(e.toString());
         }
     }
 
-    private void abortAllPendingFiles() throws Exception{
-        if(pendingSurlsToIndex.isEmpty()) {
+    private void abortAllPendingFiles() throws Exception {
+        if (pendingSurlsToIndex.isEmpty()) {
             return;
         }
-        if(requestToken != null) {
+        if (requestToken != null) {
             String[] surl_strings = pendingSurlsToIndex.keySet()
-                    .toArray(new String[pendingSurlsToIndex.size()]);
+                  .toArray(new String[pendingSurlsToIndex.size()]);
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             URI surlArray[] = new URI[len];
 
-            for(int i=0;i<len;++i){
-                surlArray[i]=new URI(surl_strings[i]);
+            for (int i = 0; i < len; ++i) {
+                surlArray[i] = new URI(surl_strings[i]);
             }
             SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
             srmAbortFilesRequest.setRequestToken(requestToken);
             srmAbortFilesRequest.setArrayOfSURLs(
-                    new ArrayOfAnyURI(surlArray));
+                  new ArrayOfAnyURI(surlArray));
             SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
-            if(srmAbortFilesResponse == null) {
+            if (srmAbortFilesResponse == null) {
                 logger.elog(" srmAbortFilesResponse is null");
             } else {
                 TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
-                if(returnStatus == null) {
+                if (returnStatus == null) {
                     esay("srmAbortFiles return status is null");
                     return;
                 }
-                say("srmAbortFiles status code="+returnStatus.getStatusCode());
+                say("srmAbortFiles status code=" + returnStatus.getStatusCode());
             }
         }
     }

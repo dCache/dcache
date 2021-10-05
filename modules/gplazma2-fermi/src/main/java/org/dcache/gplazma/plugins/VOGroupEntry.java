@@ -60,13 +60,13 @@ documents or software obtained from this server.
 package org.dcache.gplazma.plugins;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.io.Serializable;
 
 /**
  * <p>Container for VO Group authorization data.</p>
  */
 public class VOGroupEntry implements Serializable {
+
     private static final long serialVersionUID = -4348326595015055203L;
 
     @SerializedName("fqan")

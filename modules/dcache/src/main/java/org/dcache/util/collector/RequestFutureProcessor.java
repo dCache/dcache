@@ -60,10 +60,8 @@ documents or software obtained from this server.
 package org.dcache.util.collector;
 
 import com.google.common.base.Throwables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.util.TimeoutCacheException;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,20 +69,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.TimeoutCacheException;
-import dmg.cells.nucleus.NoRouteToCellException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Used in conjunction with the {@link CellMessagingCollector} as message
- * post-processor.  Updates the data based on the info received,
- * then does any needed post-processing.  Post-processing occurs after
- * a barrier (when all futures have been processed and removed from the
- * future map).</p>
+ * post-processor.  Updates the data based on the info received, then does any needed
+ * post-processing.  Post-processing occurs after a barrier (when all futures have been processed
+ * and removed from the future map).</p>
  */
 public abstract class RequestFutureProcessor<T extends Serializable, D> {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(RequestFutureProcessor.class);
+          = LoggerFactory.getLogger(RequestFutureProcessor.class);
 
     protected final Map<String, ListenableFutureWrapper<D>> futureMap = new HashMap<>();
 
@@ -97,24 +95,23 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
      */
     public synchronized void cancel() {
         futureMap.values().stream()
-                 .forEach(wrapper -> wrapper.getFuture().cancel(true));
+              .forEach(wrapper -> wrapper.getFuture().cancel(true));
         futureMap.clear();
     }
 
     /**
      * <p>Main routine sets up a barrier on listener tasks so that it can
-     * run the post-process after all updates have completed.
-     * Adds listener to each future returned.</p>
+     * run the post-process after all updates have completed. Adds listener to each future
+     * returned.</p>
      *
      * @param futureMap returned from most recent collection
-     * @throws IllegalStateException if the processor is still
-     *                               running a previous pass
+     * @throws IllegalStateException if the processor is still running a previous pass
      */
     public synchronized void process(Map<String, ListenableFutureWrapper<D>> futureMap)
-                    throws IllegalStateException, IllegalArgumentException {
+          throws IllegalStateException, IllegalArgumentException {
         if (!this.futureMap.isEmpty()) {
             String error = "Cannot execute process; previous processing "
-                            + "has not completed.";
+                  + "has not completed.";
             throw new IllegalStateException(error);
         }
 
@@ -178,14 +175,14 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
                 thrownDuringExecution = e.getCause();
                 if (thrownDuringExecution instanceof NoRouteToCellException) {
                     LOGGER.trace("Endpoint currently unavailable: {}.", key);
-                } else if (thrownDuringExecution instanceof TimeoutCacheException ) {
+                } else if (thrownDuringExecution instanceof TimeoutCacheException) {
                     LOGGER.trace("Request timed out for {}.", key);
                 } else {
                     Throwable t = thrownDuringExecution.getCause();
                     LOGGER.warn("Update of data for {} failed: {} / {}.",
-                                key,
-                                thrownDuringExecution.getMessage(),
-                                t == null ? "" : t.toString());
+                          key,
+                          thrownDuringExecution.getMessage(),
+                          t == null ? "" : t.toString());
                 }
             }
 
@@ -210,7 +207,7 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
     private synchronized void remove(String key) {
         futureMap.remove(key);
         LOGGER.trace("{} removed {} from future map, {} left.",
-                     this.getClass().getSimpleName(), key, futureMap.size());
+              this.getClass().getSimpleName(), key, futureMap.size());
         notifyAll();
     }
 

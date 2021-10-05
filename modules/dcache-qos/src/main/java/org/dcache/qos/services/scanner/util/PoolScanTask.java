@@ -65,18 +65,19 @@ import org.dcache.qos.services.scanner.data.PoolScanSummary;
 import org.dcache.qos.services.scanner.handlers.PoolOpHandler;
 
 /**
- *  Executes call to scan a pool and dispatch verification requests.
+ * Executes call to scan a pool and dispatch verification requests.
  */
 public final class PoolScanTask extends ScanTask {
+
     private final PoolOpHandler handler;
     private final PoolScanSummary scan;
 
     public PoolScanTask(String pool,
-                        QoSMessageType type,
-                        String group,
-                        String storageUnit,
-                        boolean forced,
-                        PoolOpHandler handler) {
+          QoSMessageType type,
+          String group,
+          String storageUnit,
+          boolean forced,
+          PoolOpHandler handler) {
         this.handler = handler;
         scan = new PoolScanSummary(pool, type, group, storageUnit, forced);
     }

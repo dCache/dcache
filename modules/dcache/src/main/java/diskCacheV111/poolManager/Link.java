@@ -1,5 +1,9 @@
 package diskCacheV111.poolManager;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,12 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-
 class Link implements SelectionLink, Serializable {
+
     private static final long serialVersionUID = 4480385941491281821L;
     private final String _name;
     final Map<String, PoolCore> _poolList = new ConcurrentHashMap<>();
@@ -38,9 +38,9 @@ class Link implements SelectionLink, Serializable {
         Collection<SelectionPoolGroup> pGroups = new ArrayList<>();
         for (PoolCore pcore : _poolList.values()) {
             if (pcore instanceof PGroup) {
-                PGroup original = (PGroup)pcore;
+                PGroup original = (PGroup) pcore;
                 PGroup newPGroup = new PGroup(original.getName(),
-                                              original.isPrimary());
+                      original.isPrimary());
                 pGroups.add(newPGroup);
             }
         }
@@ -59,16 +59,21 @@ class Link implements SelectionLink, Serializable {
 
     @Override
     public LinkReadWritePreferences getPreferences() {
-        return new LinkReadWritePreferences(getReadPref(), getWritePref(), getCachePref(), getP2pPref());
+        return new LinkReadWritePreferences(getReadPref(), getWritePref(), getCachePref(),
+              getP2pPref());
     }
 
     @Override
     public String toString() {
-        return getName() + "  (pref=" + getReadPref() + "/" + getCachePref() + "/" + getP2pPref() + "/" + getWritePref() + ";" + (getTag() == null ? "" : getTag()) + ";" + "ugroups=" + _uGroupList.size() + ";pools=" + _poolList.size() + ")";
+        return getName() + "  (pref=" + getReadPref() + "/" + getCachePref() + "/" + getP2pPref()
+              + "/" + getWritePref() + ";" + (getTag() == null ? "" : getTag()) + ";" + "ugroups="
+              + _uGroupList.size() + ";pools=" + _poolList.size() + ")";
     }
 
     public String getAttraction() {
-        return "-readpref=" + getReadPref() + " -writepref=" + getWritePref() + " -cachepref=" + getCachePref() + " -p2ppref=" + getP2pPref() + (getTag() == null ? "" : " -section=" + getTag());
+        return "-readpref=" + getReadPref() + " -writepref=" + getWritePref() + " -cachepref="
+              + getCachePref() + " -p2ppref=" + getP2pPref() + (getTag() == null ? ""
+              : " -section=" + getTag());
     }
 
     @Override
@@ -96,48 +101,39 @@ class Link implements SelectionLink, Serializable {
         return _linkGroup;
     }
 
-    public int getReadPref()
-    {
+    public int getReadPref() {
         return _readPref;
     }
 
-    public void setReadPref(int readPref)
-    {
+    public void setReadPref(int readPref) {
         _readPref = readPref;
     }
 
-    public int getWritePref()
-    {
+    public int getWritePref() {
         return _writePref;
     }
 
-    public void setWritePref(int writePref)
-    {
+    public void setWritePref(int writePref) {
         _writePref = writePref;
     }
 
-    public int getCachePref()
-    {
+    public int getCachePref() {
         return _cachePref;
     }
 
-    public void setCachePref(int cachePref)
-    {
+    public void setCachePref(int cachePref) {
         _cachePref = cachePref;
     }
 
-    public int getP2pPref()
-    {
+    public int getP2pPref() {
         return _p2pPref;
     }
 
-    public void setP2pPref(int p2pPref)
-    {
+    public void setP2pPref(int p2pPref) {
         _p2pPref = p2pPref;
     }
 
-    public void setTag(String tag)
-    {
+    public void setTag(String tag) {
         _tag = tag;
     }
 }

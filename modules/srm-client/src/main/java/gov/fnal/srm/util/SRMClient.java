@@ -67,16 +67,17 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.srm.util.Credentials.checkValid;
+
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-
 import java.io.IOException;
 import java.net.URI;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Optional;
-
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.client.Transport;
@@ -84,15 +85,11 @@ import org.dcache.srm.client.TransportUtil;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.util.URIs;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.srm.util.Credentials.checkValid;
-
 /**
- *
- * @author  timur
+ * @author timur
  */
-public abstract class SRMClient
-{
+public abstract class SRMClient {
+
     protected final Configuration configuration;
     protected final Logger logger;
 
@@ -100,166 +97,162 @@ public abstract class SRMClient
     private Optional<X509Credential> cred;
     protected ISRM srm;
 
-    public SRMClient(Configuration configuration)
-    {
+    public SRMClient(Configuration configuration) {
         this.configuration = configuration;
         logger = configuration.getLogger();
 
         Transport transport = configuration.getTransport();
-        dsay("In SRMClient ExpectedName: "+configuration.getGss_expected_name());
-        dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+transport.toString()+")");
+        dsay("In SRMClient ExpectedName: " + configuration.getGss_expected_name());
+        dsay("SRMClient(" + TransportUtil.uriSchemaFor(transport) + "," + transport.toString()
+              + ")");
     }
 
     public final void say(String msg) {
-        logger.log(new Date().toString() +": "+msg);
+        logger.log(new Date().toString() + ": " + msg);
     }
 
     //say if debug
-    public  final void dsay(String msg) {
+    public final void dsay(String msg) {
         if (configuration.isDebug()) {
-            logger.log(new Date().toString() +": "+msg);
+            logger.log(new Date().toString() + ": " + msg);
         }
     }
 
     //error say
     public final void esay(String err) {
-        logger.elog(new Date().toString() +": "+err);
+        logger.elog(new Date().toString() + ": " + err);
     }
 
     //esay if debug
-    public  final void edsay(String err) {
+    public final void edsay(String err) {
         if (configuration.isDebug()) {
-            logger.elog(new Date().toString() +": "+err);
+            logger.elog(new Date().toString() + ": " + err);
         }
     }
 
     /**
      * Provide server URL: enforcing default port number is not necessary.
      */
-    protected URI getServerUrl()
-    {
+    protected URI getServerUrl() {
         return requireNonNull(configuration.getSrmUrl(), "Must specify SRM URL");
     }
 
-    public void connect() throws Exception
-    {
+    public void connect() throws Exception {
         java.net.URI uri = URIs.withDefaultPort(getServerUrl(), "srm",
-                configuration.getDefaultSrmPortNumber());
+              configuration.getDefaultSrmPortNumber());
 
         srm = new SRMClientV2(uri,
-                              getCredential(),
-                              getBearerToken(),
-                              configuration.getRetry_timeout(),
-                              configuration.getRetry_num(),
-                              configuration.isDelegate(),
-                              configuration.isFull_delegation(),
-                              configuration.getGss_expected_name(),
-                              configuration.getWebservice_path(),
-                              configuration.getX509_user_trusted_certificates(),
-                              configuration.getTransport());
+              getCredential(),
+              getBearerToken(),
+              configuration.getRetry_timeout(),
+              configuration.getRetry_num(),
+              configuration.isDelegate(),
+              configuration.isFull_delegation(),
+              configuration.getGss_expected_name(),
+              configuration.getWebservice_path(),
+              configuration.getX509_user_trusted_certificates(),
+              configuration.getTransport());
     }
 
     public abstract void start() throws Exception;
 
     private Optional<X509Credential> getCredential() throws IOException, KeyStoreException,
-            CertificateException
-    {
+          CertificateException {
         if (cred == null) {
             if (configuration.isUseproxy()) {
                 cred = configuration.getX509_user_proxy() == null
-                        ? Optional.<X509Credential>empty()
-                        : Optional.of(new PEMCredential(configuration.getX509_user_proxy(), new char[]{}));
+                      ? Optional.<X509Credential>empty()
+                      : Optional.of(
+                            new PEMCredential(configuration.getX509_user_proxy(), new char[]{}));
             } else {
-                cred = configuration.getX509_user_key() == null || configuration.getX509_user_cert() == null
-                        ? Optional.<X509Credential>empty()
-                        : Optional.of(new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), new char[]{}));
+                cred = configuration.getX509_user_key() == null
+                      || configuration.getX509_user_cert() == null
+                      ? Optional.<X509Credential>empty()
+                      : Optional.of(new PEMCredential(configuration.getX509_user_key(),
+                            configuration.getX509_user_cert(), new char[]{}));
             }
         }
 
         return cred;
     }
 
-    protected void checkCredentialValid() throws IOException
-    {
+    protected void checkCredentialValid() throws IOException {
         if (cred != null) {
             checkValid(cred);
         }
     }
 
-    public Optional<String> getBearerToken()
-    {
+    public Optional<String> getBearerToken() {
         return Optional.ofNullable(configuration.getBearerToken());
     }
 
-    private void setReportSuccessStatusBySource(URI url){
-        if(report == null) {
+    private void setReportSuccessStatusBySource(URI url) {
+        if (report == null) {
             return;
         }
         report.setStatusBySourceUrl(url, Report.OK_RC, null);
 
     }
 
-    private void setReportSuccessStatusByDest(URI url){
-        if(report == null) {
+    private void setReportSuccessStatusByDest(URI url) {
+        if (report == null) {
             return;
         }
         report.setStatusByDestinationUrl(url, Report.OK_RC, null);
 
     }
 
-    private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl){
-        if(srcurl == null ) {
+    private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl) {
+        if (srcurl == null) {
             setReportSuccessStatusByDest(dsturl);
             return;
         }
-        if(dsturl == null ) {
+        if (dsturl == null) {
             setReportSuccessStatusBySource(srcurl);
             return;
         }
 
-        if(report == null) {
+        if (report == null) {
             return;
         }
-
-
 
         report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.OK_RC, null);
     }
 
-    private void setReportFailedStatusBySource(URI url, String error){
-        if(report == null) {
+    private void setReportFailedStatusBySource(URI url, String error) {
+        if (report == null) {
             return;
         }
-        if(error == null) {
+        if (error == null) {
             report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
+        if (error.toLowerCase().contains("file exists")) {
             report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
+        if (error.toLowerCase().contains("permission")) {
             report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
             return;
         }
         report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusByDest(URI url, String error){
-        if(report == null) {
+    private void setReportFailedStatusByDest(URI url, String error) {
+        if (report == null) {
             return;
         }
-        if(error == null) {
+        if (error == null) {
             report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
+        if (error.toLowerCase().contains("file exists")) {
             report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
+        if (error.toLowerCase().contains("permission")) {
             report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
             return;
         }
@@ -267,57 +260,57 @@ public abstract class SRMClient
         report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusBySrcAndDest(URI srcurl, URI dsturl, String error){
-        if(srcurl == null ) {
-            setReportFailedStatusByDest(dsturl,error);
+    private void setReportFailedStatusBySrcAndDest(URI srcurl, URI dsturl, String error) {
+        if (srcurl == null) {
+            setReportFailedStatusByDest(dsturl, error);
             return;
         }
-        if(dsturl == null ) {
-            setReportFailedStatusBySource(srcurl,error);
-            return;
-        }
-
-        if(report == null) {
+        if (dsturl == null) {
+            setReportFailedStatusBySource(srcurl, error);
             return;
         }
 
+        if (report == null) {
+            return;
+        }
 
-        if(error == null) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknown error");
+        if (error == null) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.ERROR_RC,
+                  "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
+        if (error.toLowerCase().contains("file exists")) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
+        if (error.toLowerCase().contains("permission")) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.PERMISSION_RC, error);
             return;
         }
 
-        report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
+        report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.ERROR_RC, error);
     }
 
-    protected void setReportFailed(URI srcurl, URI dsturl,String error ) {
+    protected void setReportFailed(URI srcurl, URI dsturl, String error) {
         try {
-            setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
-        } catch(Exception e) {
+            setReportFailedStatusBySrcAndDest(srcurl, dsturl, error);
+        } catch (Exception e) {
             try {
                 setReportFailedStatusByDest(dsturl, error);
-            } catch(Exception e1){
-                setReportFailedStatusBySource(srcurl,error);
+            } catch (Exception e1) {
+                setReportFailedStatusBySource(srcurl, error);
             }
         }
     }
 
     protected void setReportSucceeded(URI srcurl, URI dsturl) {
         try {
-            setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
-        } catch(Exception e) {
+            setReportSuccessStatusBySrcAndDest(srcurl, dsturl);
+        } catch (Exception e) {
             try {
                 setReportSuccessStatusByDest(dsturl);
-            } catch(Exception e1){
+            } catch (Exception e1) {
                 setReportSuccessStatusBySource(srcurl);
             }
         }

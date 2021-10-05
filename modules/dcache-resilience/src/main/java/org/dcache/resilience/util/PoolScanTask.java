@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import java.util.concurrent.Future;
-
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.db.ScanSummary;
@@ -68,19 +67,20 @@ import org.dcache.resilience.handlers.PoolOperationHandler;
 
 /**
  * <p>Simple wrapper for calling the {@link PoolOperationHandler) method.
- *      The task is cancellable through its {@link Future}.</p>
+ * The task is cancellable through its {@link Future}.</p>
  */
 public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
+
     private final PoolOperationHandler handler;
     private final ScanSummary scan;
     private Future future;
 
     public PoolScanTask(String pool,
-                        MessageType type,
-                        Integer group,
-                        Integer storageUnit,
-                        boolean forced,
-                        PoolOperationHandler handler) {
+          MessageType type,
+          Integer group,
+          Integer storageUnit,
+          boolean forced,
+          PoolOperationHandler handler) {
         scan = new ScanSummary(pool, type, group, storageUnit, forced);
         this.handler = handler;
     }
@@ -105,6 +105,6 @@ public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
 
     public void submit() {
         future = handler.getScanService()
-                        .submit(createFireAndForgetTask());
+              .submit(createFireAndForgetTask());
     }
 }

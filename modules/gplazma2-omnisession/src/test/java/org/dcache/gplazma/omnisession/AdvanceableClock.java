@@ -24,22 +24,20 @@ import java.time.ZoneId;
 import java.time.temporal.TemporalUnit;
 
 /**
- * This implementation of Clock tracks some external clock, but allows for
- * an offset.  Unlike {@ref Clock#offset}, with this implementation the
- * offset may be adjusted over time, simulating the passing of time.
+ * This implementation of Clock tracks some external clock, but allows for an offset.  Unlike {@ref
+ * Clock#offset}, with this implementation the offset may be adjusted over time, simulating the
+ * passing of time.
  */
-public class AdvanceableClock extends Clock
-{
+public class AdvanceableClock extends Clock {
+
     private final Clock inner;
     private Duration offset = Duration.ZERO;
 
-    public AdvanceableClock(Clock inner)
-    {
+    public AdvanceableClock(Clock inner) {
         this.inner = inner;
     }
 
-    public AdvanceableClock(Clock inner, Duration offset)
-    {
+    public AdvanceableClock(Clock inner, Duration offset) {
         this.inner = inner;
         this.offset = offset;
     }
@@ -59,8 +57,7 @@ public class AdvanceableClock extends Clock
         return inner.instant().plus(offset);
     }
 
-    public void advance(int value, TemporalUnit unit)
-    {
+    public void advance(int value, TemporalUnit unit) {
         Duration delta = Duration.of(value, unit);
         offset = offset.plus(delta);
     }

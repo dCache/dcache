@@ -1,9 +1,9 @@
 package org.dcache.util;
 
-import com.google.common.net.InetAddresses;
-
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.net.InetAddresses.forString;
 
+import com.google.common.net.InetAddresses;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Inet4Address;
@@ -12,12 +12,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
-import static com.google.common.net.InetAddresses.forString;
-
 public class Subnet implements Serializable {
+
     private static final long serialVersionUID = 9210530422244320383L;
-    private static final Pattern MAPPED_ADDRESS = Pattern.compile("(0{1,4}:){0,12}:?:ffff(((.[0-9]{1,3}){4})|(:([0-9a-fA-F]{1,4})){2})");
-    private static final Pattern DOCUMENTATION_ADDRESS = Pattern.compile("2001:0?db8:[0-9a-fA-F:]*");
+    private static final Pattern MAPPED_ADDRESS = Pattern.compile(
+          "(0{1,4}:){0,12}:?:ffff(((.[0-9]{1,3}){4})|(:([0-9a-fA-F]{1,4})){2})");
+    private static final Pattern DOCUMENTATION_ADDRESS = Pattern.compile(
+          "2001:0?db8:[0-9a-fA-F:]*");
     private static final Pattern TOREDO_ADDRESS = Pattern.compile("2001:0{0,4}:[0-9a-fA-F:]*");
 
     private static final String ALL_SUBNET = "all";
@@ -33,8 +34,8 @@ public class Subnet implements Serializable {
     protected Subnet(InetAddress subnetAddress, int mask) {
         int hostBits = (subnetAddress instanceof Inet4Address ? 32 : 128) - mask;
         BigInteger maskedAddress = new BigInteger(subnetAddress.getAddress())
-                .shiftRight(hostBits)
-                .shiftLeft(hostBits);
+              .shiftRight(hostBits)
+              .shiftLeft(hostBits);
         InetAddress address;
         try {
             address = InetAddress.getByAddress(maskedAddress.toByteArray());
@@ -74,7 +75,7 @@ public class Subnet implements Serializable {
      * Creates an instance of a subnet from an InetAddress and a mask in CIDR notation.
      *
      * @param subnetAddress subnet base address
-     * @param mask mask in CIDR notation (number of topmost relevant bits)
+     * @param mask          mask in CIDR notation (number of topmost relevant bits)
      * @return an instance of Subnet created from address and mask
      */
     public static Subnet create(InetAddress subnetAddress, int mask) {
@@ -82,27 +83,25 @@ public class Subnet implements Serializable {
     }
 
     /**
-     * Check whether the supplied pattern will compile into a Subnet.
-     * In effect, this method returns false if Subnet#create(String) throws
-     * the IllegalArgumentException and returns true if Subnet#create(String)
-     * does not throw an exception.
+     * Check whether the supplied pattern will compile into a Subnet. In effect, this method returns
+     * false if Subnet#create(String) throws the IllegalArgumentException and returns true if
+     * Subnet#create(String) does not throw an exception.
      */
-    public static boolean isValid(String netmaskPattern)
-    {
+    public static boolean isValid(String netmaskPattern) {
         // REVISIT there is far too much overlap between this method and
         // the create(String) method.  These methods should be refactored
         // to expose the commonality.
 
         String[] parts = netmaskPattern.split("/");
-        if (!InetAddresses.isInetAddress(parts [0])) {
+        if (!InetAddresses.isInetAddress(parts[0])) {
             return false;
         }
 
-        InetAddress originalAddress = InetAddresses.forString(parts [0]);
+        InetAddress originalAddress = InetAddresses.forString(parts[0]);
 
         String originalHostAddress = originalAddress.getHostAddress();
         if (DOCUMENTATION_ADDRESS.matcher(originalHostAddress).matches() ||
-                TOREDO_ADDRESS.matcher(originalHostAddress).matches()) {
+              TOREDO_ADDRESS.matcher(originalHostAddress).matches()) {
             return false;
         }
 
@@ -112,9 +111,10 @@ public class Subnet implements Serializable {
             int maskBitLength = subnetAddress instanceof Inet4Address ? 32 : 128;
             int cidrMask = IPMatcher.convertToCidrIfIsIPv4Mask(parts[1]);
             // if a conversion from IPv6 to IPv4 actually happened
-            boolean isIpV6Mask = MAPPED_ADDRESS.matcher(parts [0]).matches() || originalAddress instanceof Inet6Address;
+            boolean isIpV6Mask = MAPPED_ADDRESS.matcher(parts[0]).matches()
+                  || originalAddress instanceof Inet6Address;
             if (isIpV6Mask && (maskBitLength == 32)) {
-                cidrMask = cidrMask==128? 32 : cidrMask & 0x1f;
+                cidrMask = cidrMask == 128 ? 32 : cidrMask & 0x1f;
             }
 
             return cidrMask <= maskBitLength;
@@ -124,24 +124,21 @@ public class Subnet implements Serializable {
 
     /**
      * Creates an instance of a subnet from its netmask notation.
-     *
-     * Examples: "123.45.0.0/24"; "1234:5678:9ABC:DEF0::/64"; 1.2.3.4/255.0.0.0
-     * IPv6 compatible addresses starting with 2002: and addresses
-     * of the form ::a.b.c.d are supported and will be converted to ipv4
-     * addresses together with their mask (i.e., the lower 4 bytes are used
-     * as mask). Mapped addresses (::ffff.a.b.c.d)
-     * are converted to ipv4 addresses and should (if at all) be passed
-     * with corresponding matching ipv4 mask. Teredo addresses (addresses
-     * starting with 2001:0000) and special documentation addresses (2001:db8)
-     * cannot be used to create instances of Subnet and will result in an
-     * IllegalArgumentException.
+     * <p>
+     * Examples: "123.45.0.0/24"; "1234:5678:9ABC:DEF0::/64"; 1.2.3.4/255.0.0.0 IPv6 compatible
+     * addresses starting with 2002: and addresses of the form ::a.b.c.d are supported and will be
+     * converted to ipv4 addresses together with their mask (i.e., the lower 4 bytes are used as
+     * mask). Mapped addresses (::ffff.a.b.c.d) are converted to ipv4 addresses and should (if at
+     * all) be passed with corresponding matching ipv4 mask. Teredo addresses (addresses starting
+     * with 2001:0000) and special documentation addresses (2001:db8) cannot be used to create
+     * instances of Subnet and will result in an IllegalArgumentException.
      *
      * @param netmaskPattern CIDR notation of the subnet
      * @return an instance of Subnet created from the netmask pattern
-
-     *
-     * param netmaskPattern CIDR notation of the subnet
-     * return an instance of Subnet created from the netmask pattern
+     * <p>
+     * <p>
+     * param netmaskPattern CIDR notation of the subnet return an instance of Subnet created from
+     * the netmask pattern
      */
     public static Subnet create(String netmaskPattern) {
         String[] netmaskParts = netmaskPattern.split("/");
@@ -153,16 +150,16 @@ public class Subnet implements Serializable {
         // special handling of mapped addresses. Needed because guava's
         // forString converts these automatically to IPv4.
         if (MAPPED_ADDRESS.matcher(hostname).matches()) {
-          isIpV6Mask = true;
+            isIpV6Mask = true;
         }
 
         String originalHostAddress = originalAddress.getHostAddress();
 
         checkArgument(!DOCUMENTATION_ADDRESS.matcher(originalHostAddress).matches(),
-                "Special documentation address '%s' cannot be used to create a Subnet", hostname);
+              "Special documentation address '%s' cannot be used to create a Subnet", hostname);
 
         checkArgument(!TOREDO_ADDRESS.matcher(originalHostAddress).matches(),
-                "Toredo address '%s' cannot be used to create a Subnet", hostname);
+              "Toredo address '%s' cannot be used to create a Subnet", hostname);
 
         InetAddress subnetAddress = IPMatcher.tryConvertToIPv4(originalAddress);
 
@@ -173,12 +170,12 @@ public class Subnet implements Serializable {
             int cidrMask = IPMatcher.convertToCidrIfIsIPv4Mask(maskbits);
             // if a conversion from IPv6 to IPv4 actually happened
             if (isIpV6Mask && (maskBitLength == 32)) {
-                cidrMask = cidrMask==128? 32 : cidrMask & 0x1f;
+                cidrMask = cidrMask == 128 ? 32 : cidrMask & 0x1f;
             }
 
             checkArgument(cidrMask <= maskBitLength,
-                    "Network mask '%s' in netmask pattern '%s' is too big for IP address '%s'",
-                    cidrMask, netmaskPattern, originalAddress);
+                  "Network mask '%s' in netmask pattern '%s' is too big for IP address '%s'",
+                  cidrMask, netmaskPattern, originalAddress);
 
             return create(subnetAddress, cidrMask);
 
@@ -204,7 +201,8 @@ public class Subnet implements Serializable {
 
     /**
      * @param hostname hostname to be checked agains the subnet
-     * @return true if hostname can be evaluated to one or more IPs that are contained in the subnet represented by this instance, otherwise false
+     * @return true if hostname can be evaluated to one or more IPs that are contained in the subnet
+     * represented by this instance, otherwise false
      * @throws UnknownHostException
      */
     public boolean containsHost(String hostname) throws UnknownHostException {
@@ -213,7 +211,8 @@ public class Subnet implements Serializable {
 
     /**
      * @param inetAddresses addresses to be checked against the subnet
-     * @return true if any of the inetAddresses is contained in the subnet represented by this instance, otherwise false
+     * @return true if any of the inetAddresses is contained in the subnet represented by this
+     * instance, otherwise false
      */
     public boolean containsAny(InetAddress[] inetAddresses) {
         for (InetAddress inetAddress : inetAddresses) {
@@ -226,10 +225,11 @@ public class Subnet implements Serializable {
 
     /**
      * @param inetAddress address to be checked against the subnet
-     * @return true if inetAddress is contained in the subnet represented by this instance, otherwise false
+     * @return true if inetAddress is contained in the subnet represented by this instance,
+     * otherwise false
      */
     public boolean contains(InetAddress inetAddress) {
-        return IPMatcher.match(inetAddress, getSubnetAddress(), getMask() );
+        return IPMatcher.match(inetAddress, getSubnetAddress(), getMask());
     }
 
     @Override
@@ -239,7 +239,8 @@ public class Subnet implements Serializable {
         }
 
         if (_subnetAddress instanceof Inet6Address) {
-            return _subnetAddress.getHostAddress().replaceFirst("(^|:)(0(:|$)){2,}", "::") + '/' + _mask;
+            return _subnetAddress.getHostAddress().replaceFirst("(^|:)(0(:|$)){2,}", "::") + '/'
+                  + _mask;
         } else {
             return _subnetAddress.getHostAddress() + '/' + _mask;
         }

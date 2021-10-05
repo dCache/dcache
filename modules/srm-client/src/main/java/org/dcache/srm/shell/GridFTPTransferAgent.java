@@ -1,31 +1,21 @@
 package org.dcache.srm.shell;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.X509Credential;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.axis.types.URI;
-
-import org.dcache.ftp.client.Buffer;
-import org.dcache.ftp.client.ChecksumAlgorithm;
-import org.dcache.ftp.client.DataChannelAuthentication;
-import org.dcache.ftp.client.DataSinkStream;
-import org.dcache.ftp.client.DataSourceStream;
-import org.dcache.ftp.client.GridFTPClient;
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.RetrieveOptions;
-import org.dcache.ftp.client.exception.ClientException;
-import org.dcache.ftp.client.exception.ServerException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,24 +30,32 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+import org.apache.axis.types.URI;
 import org.dcache.dss.ClientGsiEngineDssContextFactory;
+import org.dcache.ftp.client.Buffer;
+import org.dcache.ftp.client.ChecksumAlgorithm;
+import org.dcache.ftp.client.DataChannelAuthentication;
+import org.dcache.ftp.client.DataSinkStream;
+import org.dcache.ftp.client.DataSourceStream;
+import org.dcache.ftp.client.GridFTPClient;
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.RetrieveOptions;
+import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.URIs;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 
 /**
  * A FileTransferAgent that supports the {@literal gsiftp} protocol.
  */
-public class GridFTPTransferAgent extends AbstractFileTransferAgent implements CredentialAware
-{
+public class GridFTPTransferAgent extends AbstractFileTransferAgent implements CredentialAware {
+
     private static final int MAX_CONCURRENT_TRANSFERS = 10;
     private static final ChecksumAlgorithm ADLER32 = new ChecksumAlgorithm("ADLER32");
 
-    private final ExecutorService _executor = Executors.newFixedThreadPool(MAX_CONCURRENT_TRANSFERS);
+    private final ExecutorService _executor = Executors.newFixedThreadPool(
+          MAX_CONCURRENT_TRANSFERS);
 
     private Entity _dataInitiator = Entity.CLIENT;
     private TransferMode _transferMode = TransferMode.STREAM;
@@ -82,40 +80,35 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         IF_AVAILABLE, REQUIRE, IGNORE;
     }
 
-    private void updateCanlContextFactory()
-    {
+    private void updateCanlContextFactory() {
         _sslContextFactory = CanlContextFactory.custom()
-                .withCertificateAuthorityPath(_caPath)
-                .withCrlCheckingMode(_crlChecking)
-                .withNamespaceMode(_namespace)
-                .withOcspCheckingMode(_ocsp)
-                .withLazy(true)
-                .build();
+              .withCertificateAuthorityPath(_caPath)
+              .withCrlCheckingMode(_crlChecking)
+              .withNamespaceMode(_namespace)
+              .withOcspCheckingMode(_ocsp)
+              .withLazy(true)
+              .build();
         updateDssContextFactory();
     }
 
-    private void updateDssContextFactory()
-    {
+    private void updateDssContextFactory() {
         _dssContextFactory = new ClientGsiEngineDssContextFactory(_sslContextFactory,
-                _credential, new String[0], true, true);
+              _credential, new String[0], true, true);
     }
 
     @Override
-    public void setCredential(X509Credential credential)
-    {
+    public void setCredential(X509Credential credential) {
         _credential = credential;
     }
 
     @Override
-    public String getTransportName()
-    {
+    public String getTransportName() {
         return "gridftp";
     }
 
     @Override
-    public Map<String,String> getOptions()
-    {
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
+    public Map<String, String> getOptions() {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
 
         builder.put("data.connection-initiator", _dataInitiator.name());
         builder.put("data.mode", _transferMode.name());
@@ -129,74 +122,69 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     }
 
     @Override
-    public void setOption(String key, String value)
-    {
+    public void setOption(String key, String value) {
         switch (key) {
-        case "data.connection-initiator":
-            _dataInitiator = Entity.valueOf(value);
-            break;
+            case "data.connection-initiator":
+                _dataInitiator = Entity.valueOf(value);
+                break;
 
-        case "data.mode":
-            _transferMode = TransferMode.valueOf(value);
-            break;
+            case "data.mode":
+                _transferMode = TransferMode.valueOf(value);
+                break;
 
-        case "checksum-verification":
-            _checksumHandling = ChecksumMode.valueOf(value);
-            break;
+            case "checksum-verification":
+                _checksumHandling = ChecksumMode.valueOf(value);
+                break;
 
-        case "security.ca-path":
-            File path = new File(value);
-            checkArgument(path.isAbsolute(), "Absolute path required");
-            checkArgument(path.isDirectory(), "Path is not a directory");
-            try {
-                _caPath = path.getCanonicalPath();
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Unable to set path: " + e.getMessage());
-            }
-            updateCanlContextFactory();
-            break;
+            case "security.ca-path":
+                File path = new File(value);
+                checkArgument(path.isAbsolute(), "Absolute path required");
+                checkArgument(path.isDirectory(), "Path is not a directory");
+                try {
+                    _caPath = path.getCanonicalPath();
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("Unable to set path: " + e.getMessage());
+                }
+                updateCanlContextFactory();
+                break;
 
-        case "security.crl-checking":
-            _crlChecking = CrlCheckingMode.valueOf(value);
-            updateCanlContextFactory();
-            break;
+            case "security.crl-checking":
+                _crlChecking = CrlCheckingMode.valueOf(value);
+                updateCanlContextFactory();
+                break;
 
-        case "security.OCSP":
-            _ocsp = OCSPCheckingMode.valueOf(value);
-            updateCanlContextFactory();
-            break;
+            case "security.OCSP":
+                _ocsp = OCSPCheckingMode.valueOf(value);
+                updateCanlContextFactory();
+                break;
 
-        case "security.ca-namespace":
-            _namespace = NamespaceCheckingMode.valueOf(value);
-            updateCanlContextFactory();
-            break;
+            case "security.ca-namespace":
+                _namespace = NamespaceCheckingMode.valueOf(value);
+                updateCanlContextFactory();
+                break;
 
-        default:
-            throw new IllegalArgumentException("No such option \"" + key + "\"");
+            default:
+                throw new IllegalArgumentException("No such option \"" + key + "\"");
         }
     }
 
     @Override
-    public void start()
-    {
+    public void start() {
         updateCanlContextFactory();
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         MoreExecutors.shutdownAndAwaitTermination(_executor, 500, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public Map<String,Integer> getSupportedProtocols()
-    {
+    public Map<String, Integer> getSupportedProtocols() {
         return Collections.singletonMap("gsiftp", 100);
     }
 
     @Override
-    public FileTransfer download(URI source, File destination)
-    {
+    public FileTransfer download(URI source, File destination) {
         if (source.getScheme().equals("gsiftp")) {
             GridFTPDownload transfer = new GridFTPDownload(source, destination);
             transfer.start();
@@ -207,8 +195,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     }
 
     @Override
-    public FileTransfer upload(File source, URI destination)
-    {
+    public FileTransfer upload(File source, URI destination) {
         if (destination.getScheme().equals("gsiftp")) {
             GridFTPUpload transfer = new GridFTPUpload(source, destination);
             transfer.start();
@@ -218,8 +205,8 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         return null;
     }
 
-    private abstract class GridFTPTransfer extends AbstractFileTransfer
-    {
+    private abstract class GridFTPTransfer extends AbstractFileTransfer {
+
         private final Entity dataInitiator = GridFTPTransferAgent.this._dataInitiator;
         private final TransferMode transferMode = GridFTPTransferAgent.this._transferMode;
         private final ChecksumMode checksumHandling = GridFTPTransferAgent.this._checksumHandling;
@@ -232,20 +219,17 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         protected GridFTPClient _client;
         protected volatile String _status;
 
-        GridFTPTransfer(URI remote, File localFile)
-        {
+        GridFTPTransfer(URI remote, File localFile) {
             _remote = java.net.URI.create(remote.toString());
             _localFile = localFile;
 
-            Futures.addCallback(this, new FutureCallback<Void>(){
+            Futures.addCallback(this, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Void result)
-                {
+                public void onSuccess(Void result) {
                 }
 
                 @Override
-                public void onFailure(Throwable t)
-                {
+                public void onFailure(Throwable t) {
                     if (t instanceof CancellationException) {
                         onCancel();
                     }
@@ -254,8 +238,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 
         }
 
-        protected void onCancel()
-        {
+        protected void onCancel() {
             try {
                 if (_client != null) {
                     _client.abort();
@@ -267,59 +250,49 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         }
 
         @Override
-        public String getStatus()
-        {
+        public String getStatus() {
             return _status;
         }
 
-        protected void incrementBytesTransferred(int increment)
-        {
+        protected void incrementBytesTransferred(int increment) {
             _bytesTransferred += increment;
         }
 
-        protected long getBytesTransferred()
-        {
+        protected long getBytesTransferred() {
             return _bytesTransferred;
         }
 
-        protected ChecksumMode getChecksumHandling()
-        {
+        protected ChecksumMode getChecksumHandling() {
             return checksumHandling;
         }
 
-        protected String getRemotePath()
-        {
+        protected String getRemotePath() {
             return _remote.getPath();
         }
 
-        protected File getLocalFile()
-        {
+        protected File getLocalFile() {
             return _localFile;
         }
 
-        protected void setTargetSize(long size)
-        {
+        protected void setTargetSize(long size) {
             _size = size;
         }
 
-        protected long getTargetSize()
-        {
+        protected long getTargetSize() {
             return _size;
         }
 
-        protected String percent()
-        {
-            return NumberFormat.getPercentInstance().format(((double)_bytesTransferred)/_size);
+        protected String percent() {
+            return NumberFormat.getPercentInstance().format(((double) _bytesTransferred) / _size);
         }
 
-        protected boolean isPassive()
-        {
+        protected boolean isPassive() {
             return transferMode == TransferMode.STREAM && dataInitiator == Entity.CLIENT;
         }
 
-        protected GridFTPClient buildClient() throws IOException, ServerException, ClientException
-        {
-            GridFTPClient client = new GridFTPClient(_remote.getHost(), URIs.portWithDefault(_remote));
+        protected GridFTPClient buildClient() throws IOException, ServerException, ClientException {
+            GridFTPClient client = new GridFTPClient(_remote.getHost(),
+                  URIs.portWithDefault(_remote));
             client.setUsageInformation("srmfs", "0.0.1");
             client.authenticate(_dssContextFactory);
             client.setType(GridFTPSession.TYPE_IMAGE);
@@ -338,14 +311,14 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 
                 if (!client.isFeatureSupported("GETPUT")) {
                     switch (dataInitiator) {
-                    case CLIENT:
-                        client.setPassive();
-                        client.setLocalActive();
-                        break;
-                    case SERVER:
-                        client.setLocalPassive();
-                        client.setActive();
-                        break;
+                        case CLIENT:
+                            client.setPassive();
+                            client.setLocalActive();
+                            break;
+                        case SERVER:
+                            client.setLocalPassive();
+                            client.setActive();
+                            break;
                     }
                 }
             }
@@ -353,8 +326,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             return client;
         }
 
-        protected void start()
-        {
+        protected void start() {
             _executor.submit(() -> {
                 try {
                     _status = "Connecting to FTP server.";
@@ -384,39 +356,38 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 } finally {
                     try {
                         _client.close();
-                    } catch (IOException|ServerException e) {
+                    } catch (IOException | ServerException e) {
                         //FIXME: we ignore errors sent back when saying BYE.
                     }
                 }
             });
         }
 
-        protected HashCode getRemoteChecksum() throws IOException
-        {
+        protected HashCode getRemoteChecksum() throws IOException {
             String checksum;
 
             switch (getChecksumHandling()) {
-            case REQUIRE:
-                try {
-                    checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
-                } catch (IOException | ServerException e) {
-                    throw new IOException("Unable to fetch remote checksum: " + e.getMessage());
-                }
-                break;
+                case REQUIRE:
+                    try {
+                        checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
+                    } catch (IOException | ServerException e) {
+                        throw new IOException("Unable to fetch remote checksum: " + e.getMessage());
+                    }
+                    break;
 
-            case IGNORE:
-                return null;
-
-            case IF_AVAILABLE:
-                try {
-                    checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
-                } catch (IOException | ServerException e) {
+                case IGNORE:
                     return null;
-                }
-                break;
 
-            default:
-                throw new RuntimeException("No further options");
+                case IF_AVAILABLE:
+                    try {
+                        checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
+                    } catch (IOException | ServerException e) {
+                        return null;
+                    }
+                    break;
+
+                default:
+                    throw new RuntimeException("No further options");
             }
 
             try {
@@ -427,7 +398,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 return HashCode.fromInt(value);
             } catch (IllegalArgumentException e) {
                 throw new IOException("Badly formatted checksum \"" + checksum +
-                        "\": " + Throwables.getRootCause(e).getMessage());
+                      "\": " + Throwables.getRootCause(e).getMessage());
             }
         }
 
@@ -438,17 +409,15 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     /**
      * Represents a file being uploaded via GridFTP.
      */
-    private class GridFTPUpload extends GridFTPTransfer
-    {
-        public GridFTPUpload(File source, URI destination)
-        {
+    private class GridFTPUpload extends GridFTPTransfer {
+
+        public GridFTPUpload(File source, URI destination) {
             super(destination, source);
             setTargetSize(getLocalFile().length());
         }
 
         @Override
-        protected void doTransfer() throws IOException, ClientException, ServerException
-        {
+        protected void doTransfer() throws IOException, ClientException, ServerException {
             _status = "Preparing for upload.";
             MonitoringFileDataSource source = new MonitoringFileDataSource();
 
@@ -461,43 +430,41 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             HashCode localChecksum = source.getHash();
             HashCode remoteChecksum = getRemoteChecksum();
 
-            if (localChecksum != null && remoteChecksum != null && !remoteChecksum.equals(localChecksum)) {
+            if (localChecksum != null && remoteChecksum != null && !remoteChecksum.equals(
+                  localChecksum)) {
                 throw new IOException("checksum mismatch: " + reverseHexString(remoteChecksum)
-                        + " != " + reverseHexString(localChecksum));
+                      + " != " + reverseHexString(localChecksum));
             }
         }
 
         @Override
-        protected void incrementBytesTransferred(int count)
-        {
+        protected void incrementBytesTransferred(int count) {
             super.incrementBytesTransferred(count);
             _status = "Sent " + percent() + " of " + getTargetSize() + " bytes.";
         }
 
-        private class MonitoringFileDataSource extends DataSourceStream
-        {
+        private class MonitoringFileDataSource extends DataSourceStream {
+
             private final Hasher hasher;
             private HashCode hashcode;
 
-            MonitoringFileDataSource() throws FileNotFoundException
-            {
+            MonitoringFileDataSource() throws FileNotFoundException {
                 super(new FileInputStream(getLocalFile()));
                 switch (GridFTPUpload.this.getChecksumHandling()) {
-                case IF_AVAILABLE:
-                case REQUIRE:
-                    hasher = Hashing.adler32().newHasher();
-                    break;
-                case IGNORE:
-                    hasher = null;
-                    break;
-                default:
-                    throw new RuntimeException("Unknown ChecksumHandling");
+                    case IF_AVAILABLE:
+                    case REQUIRE:
+                        hasher = Hashing.adler32().newHasher();
+                        break;
+                    case IGNORE:
+                        hasher = null;
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown ChecksumHandling");
                 }
             }
 
             @Override
-            public Buffer read() throws IOException
-            {
+            public Buffer read() throws IOException {
                 Buffer buffer = super.read();
                 if (buffer != null) {
                     incrementBytesTransferred(buffer.getLength());
@@ -510,8 +477,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             }
 
             @Override
-            public void close() throws IOException
-            {
+            public void close() throws IOException {
                 if (hashcode != null) {
                     throw new IllegalStateException("Attempt to close already closed DataSource");
                 }
@@ -521,9 +487,9 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 super.close();
             }
 
-            public HashCode getHash()
-            {
-                checkState(hasher == null || hashcode != null, "Attempt to call getHash before close");
+            public HashCode getHash() {
+                checkState(hasher == null || hashcode != null,
+                      "Attempt to call getHash before close");
                 return hashcode;
             }
         }
@@ -532,16 +498,14 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     /**
      * Represents downloading a file via GridFTP.
      */
-    private class GridFTPDownload extends GridFTPTransfer
-    {
-        public GridFTPDownload(URI source, File destination)
-        {
+    private class GridFTPDownload extends GridFTPTransfer {
+
+        public GridFTPDownload(URI source, File destination) {
             super(source, destination);
         }
 
         @Override
-        protected void doTransfer() throws IOException, ServerException, ClientException
-        {
+        protected void doTransfer() throws IOException, ServerException, ClientException {
             _status = "Querying file size.";
             setTargetSize(_client.getSize(getRemotePath()));
 
@@ -556,44 +520,42 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             HashCode localChecksum = sink.getHash();
             HashCode remoteChecksum = getRemoteChecksum();
 
-            if (remoteChecksum != null && localChecksum != null && !remoteChecksum.equals(localChecksum)) {
+            if (remoteChecksum != null && localChecksum != null && !remoteChecksum.equals(
+                  localChecksum)) {
                 throw new IOException("checksum mismatch: " + reverseHexString(remoteChecksum)
-                        + " != " + reverseHexString(localChecksum));
+                      + " != " + reverseHexString(localChecksum));
             }
         }
 
         @Override
-        protected void incrementBytesTransferred(int count)
-        {
+        protected void incrementBytesTransferred(int count) {
             super.incrementBytesTransferred(count);
             _status = "Recieved " + percent() + " of " + getTargetSize() + " bytes.";
         }
 
-        private class MonitoringFileDataSink extends DataSinkStream
-        {
+        private class MonitoringFileDataSink extends DataSinkStream {
+
             private final Hasher hasher;
             private HashCode hashcode;
 
-            MonitoringFileDataSink() throws FileNotFoundException
-            {
+            MonitoringFileDataSink() throws FileNotFoundException {
                 super(new FileOutputStream(getLocalFile()));
 
                 switch (GridFTPDownload.this.getChecksumHandling()) {
-                case IF_AVAILABLE:
-                case REQUIRE:
-                    hasher = Hashing.adler32().newHasher();
-                    break;
-                case IGNORE:
-                    hasher = null;
-                    break;
-                default:
-                    throw new RuntimeException("Unknown ChecksumHandling");
+                    case IF_AVAILABLE:
+                    case REQUIRE:
+                        hasher = Hashing.adler32().newHasher();
+                        break;
+                    case IGNORE:
+                        hasher = null;
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown ChecksumHandling");
                 }
             }
 
             @Override
-            public void write(Buffer out) throws IOException
-            {
+            public void write(Buffer out) throws IOException {
                 if (hasher != null) {
                     hasher.putBytes(out.getBuffer(), 0, out.getLength());
                 }
@@ -602,8 +564,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             }
 
             @Override
-            public void close() throws IOException
-            {
+            public void close() throws IOException {
                 if (hashcode != null) {
                     throw new IllegalStateException("Attempt to close already closed DataSink");
                 }
@@ -613,21 +574,20 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 super.close();
             }
 
-            public HashCode getHash()
-            {
-                checkState(hasher == null || hashcode != null, "Attempt to call getHash before close");
+            public HashCode getHash() {
+                checkState(hasher == null || hashcode != null,
+                      "Attempt to call getHash before close");
                 return hashcode;
             }
         }
     }
 
-    private static String reverseHexString(HashCode hash)
-    {
+    private static String reverseHexString(HashCode hash) {
         byte[] data = hash.asBytes();
         byte[] reversed = new byte[data.length];
 
         for (int i = 0; i < data.length; i++) {
-            reversed [data.length-1-i] = data [i];
+            reversed[data.length - 1 - i] = data[i];
         }
 
         return BaseEncoding.base16().lowerCase().encode(reversed);

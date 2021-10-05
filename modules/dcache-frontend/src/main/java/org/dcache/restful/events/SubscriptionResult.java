@@ -21,33 +21,31 @@ package org.dcache.restful.events;
 import org.dcache.restful.events.spi.SelectionResult;
 import org.dcache.restful.events.spi.SelectionStatus;
 
-/** Represents the result of a client request that subscribes to events.  */
-public class SubscriptionResult
-{
+/**
+ * Represents the result of a client request that subscribes to events.
+ */
+public class SubscriptionResult {
+
     private final SelectionStatus status;
     private final String id;
     private final String message;
 
-    public SubscriptionResult(SelectionResult result)
-    {
+    public SubscriptionResult(SelectionResult result) {
         status = result.getStatus();
         id = result.getSelectedEventStream() == null
-                ? null : result.getSelectedEventStream().getId();
+              ? null : result.getSelectedEventStream().getId();
         message = result.getMessage();
     }
 
-    public SelectionStatus getStatus()
-    {
+    public SelectionStatus getStatus() {
         return status;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public String getMessage()
-    {
+    public String getMessage() {
         return message;
     }
 }

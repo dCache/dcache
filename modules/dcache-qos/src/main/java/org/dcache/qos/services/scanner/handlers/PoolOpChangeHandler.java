@@ -80,12 +80,14 @@ import org.dcache.qos.services.scanner.util.ScannerMapInitializer;
 import org.dcache.qos.util.PoolMonitorChangeHandler;
 
 /**
- *  Manages changes in pool monitor data for the pool operation map.
- *  <p/>
- *  Certain kinds of changes are processed for potential task cancellation and pool (re)scans
- *     which the changes may necessitate.
+ * Manages changes in pool monitor data for the pool operation map.
+ * <p/>
+ * Certain kinds of changes are processed for potential task cancellation and pool (re)scans which
+ * the changes may necessitate.
  */
-public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDiff, ScannerMapInitializer> {
+public final class PoolOpChangeHandler extends
+      PoolMonitorChangeHandler<PoolOpDiff, ScannerMapInitializer> {
+
     private PoolOperationMap poolOperationMap;
 
     public synchronized PoolOpDiff reloadAndScan(PoolMonitor newPoolMonitor) {
@@ -102,18 +104,18 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
         diff.getOldPools().forEach(this::cancelAndRemoveCurrentPoolOperation);
 
         LOGGER.trace("Cancelling pool operations for pools removed from groups {}.",
-                      diff.getPoolsRemovedFromPoolGroup());
+              diff.getPoolsRemovedFromPoolGroup());
         diff.getPoolsRemovedFromPoolGroup().keySet()
-            .forEach(this::cancelCurrentPoolOperation);
+              .forEach(this::cancelCurrentPoolOperation);
 
         LOGGER.trace("Removing uninitialized from other sets.");
         diff.getUninitializedPools()
-            .forEach((p) -> {
-                diff.getPoolsAddedToPoolGroup().removeAll(p);
-                diff.getPoolsRemovedFromPoolGroup().removeAll(p);
-                diff.getModeChanged().remove(p);
-                diff.getTagsChanged().remove(p);
-            });
+              .forEach((p) -> {
+                  diff.getPoolsAddedToPoolGroup().removeAll(p);
+                  diff.getPoolsRemovedFromPoolGroup().removeAll(p);
+                  diff.getModeChanged().remove(p);
+                  diff.getTagsChanged().remove(p);
+              });
 
         PoolSelectionUnit currentPsu = newPoolMonitor.getPoolSelectionUnit();
 
@@ -122,39 +124,39 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
 
         LOGGER.trace("Scanning pools added to pool groups.");
         diff.getPoolsAddedToPoolGroup().entries()
-            .forEach(g-> scanPoolAddedToPoolGroup(g, currentPsu));
+              .forEach(g -> scanPoolAddedToPoolGroup(g, currentPsu));
 
         LOGGER.trace("Scanning pools removed from pool groups.");
         diff.getPoolsRemovedFromPoolGroup().entries()
-            .forEach(e -> scanPoolRemovedFromPoolGroup(e, currentPsu));
+              .forEach(e -> scanPoolRemovedFromPoolGroup(e, currentPsu));
 
         LOGGER.trace("Scanning pool groups pointing to new units {}.",
-            diff.getNewUnits());
-        diff.getNewUnits().forEach(u->scanPoolsWithStorageUnitModified(u.getName(), currentPsu));
+              diff.getNewUnits());
+        diff.getNewUnits().forEach(u -> scanPoolsWithStorageUnitModified(u.getName(), currentPsu));
 
         LOGGER.trace("Scanning pool groups with units whose "
-                        + "constraints have changed; new constraints {}.",
-                     diff.getConstraintsChanged());
+                    + "constraints have changed; new constraints {}.",
+              diff.getConstraintsChanged());
         diff.getConstraintsChanged()
-            .forEach(u-> scanPoolsWithStorageUnitModified(u, currentPsu));
+              .forEach(u -> scanPoolsWithStorageUnitModified(u, currentPsu));
 
         LOGGER.trace("Alerting change of pool status.");
         diff.getModeChanged().entrySet()
-            .forEach(e -> poolOperationMap.handlePoolStatusChange(e.getKey(),
-                            PoolQoSStatus.valueOf(e.getValue())));
+              .forEach(e -> poolOperationMap.handlePoolStatusChange(e.getKey(),
+                    PoolQoSStatus.valueOf(e.getValue())));
 
         LOGGER.trace("Rescanning the pool groups whose marker changed.");
-        diff.getMarkerChanged().forEach(g->scanPoolsOfModifiedPoolGroup(g, currentPsu));
+        diff.getMarkerChanged().forEach(g -> scanPoolsOfModifiedPoolGroup(g, currentPsu));
 
         LOGGER.trace("Rescanning the pools with changed tags.");
         diff.getTagsChanged().keySet().stream()
-            .map(currentPsu::getPool)
-            .forEach(p -> poolOperationMap.scan(p.getName(),
-                                       null,
-                                    null,
-                                     null,
-                                                p.getPoolMode(),
-                                true));
+              .map(currentPsu::getPool)
+              .forEach(p -> poolOperationMap.scan(p.getName(),
+                    null,
+                    null,
+                    null,
+                    p.getPoolMode(),
+                    true));
 
         LOGGER.trace("Checking to see if previously uninitialized pools are now ready.");
         poolOperationMap.saveExcluded();
@@ -231,12 +233,12 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
         Collection<String> newGroups = diff.getNewGroups();
         for (String group : newGroups) {
             nextPsu.getPoolsByPoolGroup(group)
-                .stream()
-                .map(SelectionPool::getName)
-                .forEach((p) -> diff.poolsAdded.put(p, group));
+                  .stream()
+                  .map(SelectionPool::getName)
+                  .forEach((p) -> diff.poolsAdded.put(p, group));
             StorageUnitInfoExtractor.getStorageUnitsInGroup(group, nextPsu)
-                .stream()
-                .forEach((u) -> diff.unitsAdded.put(group, u.getName()));
+                  .stream()
+                  .forEach((u) -> diff.unitsAdded.put(group, u.getName()));
         }
     }
 
@@ -245,14 +247,14 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
         for (StorageUnit unit : newUnits) {
             String name = unit.getName();
             StorageUnitInfoExtractor.getPrimaryGroupsFor(name, nextPsu)
-                .forEach((g) -> diff.unitsAdded.put(g, name));
+                  .forEach((g) -> diff.unitsAdded.put(g, name));
         }
     }
 
     private void comparePoolGroupMarkers(PoolOpDiff diff,
-                                         Set<String> common,
-                                         PoolSelectionUnit currentPsu,
-                                         PoolSelectionUnit nextPsu) {
+          Set<String> common,
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         for (String group : common) {
             SelectionPoolGroup nextPoolGroup = nextPsu.getPoolGroups().get(group);
             SelectionPoolGroup currPoolGroup = currentPsu.getPoolGroups().get(group);
@@ -273,79 +275,80 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
          *  First add the info for all new pools to the diff.
          */
         diff.getNewPools().stream()
-            .forEach((p) -> {
-                diff.getModeChanged().put(p, psu.getPool(p).getPoolMode());
-            });
+              .forEach((p) -> {
+                  diff.getModeChanged().put(p, psu.getPool(p).getPoolMode());
+              });
 
         /*
          * Now check for differences with current pools that are still valid.
          */
         commonPools.stream()
-            .forEach((p) -> {
-                PoolV2Mode newMode = psu.getPool(p).getPoolMode();
-                PoolQoSStatus oldStatus = poolOperationMap.getCurrentStatus(p);
-                PoolQoSStatus newStatus = PoolQoSStatus.valueOf(newMode);
-                if (newStatus != oldStatus) {
-                    diff.getModeChanged().put(p, newMode);
-                }
-            });
+              .forEach((p) -> {
+                  PoolV2Mode newMode = psu.getPool(p).getPoolMode();
+                  PoolQoSStatus oldStatus = poolOperationMap.getCurrentStatus(p);
+                  PoolQoSStatus newStatus = PoolQoSStatus.valueOf(newMode);
+                  if (newStatus != oldStatus) {
+                      diff.getModeChanged().put(p, newMode);
+                  }
+              });
     }
 
     private void comparePoolsInPoolGroups(PoolOpDiff diff,
-                                          Set<String> common,
-                                          PoolSelectionUnit currentPsu,
-                                          PoolSelectionUnit nextPsu) {
+          Set<String> common,
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         for (String group : common) {
             Set<String> next = nextPsu.getPoolsByPoolGroup(group)
-                .stream()
-                .map(SelectionPool::getName)
-                .collect(Collectors.toSet());
+                  .stream()
+                  .map(SelectionPool::getName)
+                  .collect(Collectors.toSet());
             Set<String> curr = currentPsu.getPoolsByPoolGroup(group)
-                .stream()
-                .map(SelectionPool::getName)
-                .collect(Collectors.toSet());
+                  .stream()
+                  .map(SelectionPool::getName)
+                  .collect(Collectors.toSet());
             Sets.difference(next, curr).forEach((p) -> diff.poolsAdded.put(p, group));
             Sets.difference(curr, next).stream().filter((p) -> !diff.oldPools.contains(p))
-                .forEach((p) -> diff.poolsRmved.put(p, group));
+                  .forEach((p) -> diff.poolsRmved.put(p, group));
         }
     }
 
     private Set<String> compareStorageUnits(PoolOpDiff diff,
-                                            PoolSelectionUnit currentPsu,
-                                            PoolSelectionUnit nextPsu) {
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         Set<String> next = nextPsu.getSelectionUnits().values()
-            .stream()
-            .filter(StorageUnit.class::isInstance)
-            .map(SelectionUnit::getName)
-            .collect(Collectors.toSet());
+              .stream()
+              .filter(StorageUnit.class::isInstance)
+              .map(SelectionUnit::getName)
+              .collect(Collectors.toSet());
         Set<String> curr = currentPsu.getSelectionUnits().values()
-            .stream()
-            .filter(StorageUnit.class::isInstance)
-            .map(SelectionUnit::getName)
-            .collect(Collectors.toSet());
-        Sets.difference(next, curr).stream().map(nextPsu::getStorageUnit).forEach(diff.newUnits::add);
+              .stream()
+              .filter(StorageUnit.class::isInstance)
+              .map(SelectionUnit::getName)
+              .collect(Collectors.toSet());
+        Sets.difference(next, curr).stream().map(nextPsu::getStorageUnit)
+              .forEach(diff.newUnits::add);
         Sets.difference(curr, next).forEach(diff.oldUnits::add);
         return Sets.intersection(next, curr);
     }
 
     private void compareStorageUnitLinksAndConstraints(PoolOpDiff diff,
-                                                       Set<String> common,
-                                                       PoolSelectionUnit currentPsu,
-                                                       PoolSelectionUnit nextPsu) {
+          Set<String> common,
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         for (String unit : common) {
             StorageUnit nextUnit = nextPsu.getStorageUnit(unit);
             Set<String> next
-                = ImmutableSet.copyOf(StorageUnitInfoExtractor.getPoolGroupsFor(unit,
-                nextPsu,
-                false));
+                  = ImmutableSet.copyOf(StorageUnitInfoExtractor.getPoolGroupsFor(unit,
+                  nextPsu,
+                  false));
             StorageUnit currentUnit = currentPsu.getStorageUnit(unit);
             Set<String> curr
-                = ImmutableSet.copyOf(StorageUnitInfoExtractor.getPoolGroupsFor(unit,
-                currentPsu,
-                false));
+                  = ImmutableSet.copyOf(StorageUnitInfoExtractor.getPoolGroupsFor(unit,
+                  currentPsu,
+                  false));
             Sets.difference(next, curr).forEach(g -> diff.unitsAdded.put(g, unit));
             Sets.difference(curr, next).stream().filter(g -> !diff.oldGroups.contains(g))
-                .forEach(g -> diff.unitsRmved.put(g, unit));
+                  .forEach(g -> diff.unitsRmved.put(g, unit));
 
             Integer required = nextUnit.getRequiredCopies();
             int newRequired = required == null ? -1 : required;
@@ -353,7 +356,7 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
             int oldRequired = required == null ? -1 : required;
 
             if (newRequired != oldRequired
-                || !nextUnit.getOnlyOneCopyPer().equals(currentUnit.getOnlyOneCopyPer())) {
+                  || !nextUnit.getOnlyOneCopyPer().equals(currentUnit.getOnlyOneCopyPer())) {
                 diff.constraintsChanged.add(unit);
             }
         }
@@ -361,42 +364,42 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
 
     private void getUninitializedPools(PoolOpDiff diff, PoolSelectionUnit currentPsu) {
         currentPsu.getPools().values()
-            .stream()
-            .filter(p -> PoolQoSStatus.valueOf(p.getPoolMode())
-                == PoolQoSStatus.UNINITIALIZED)
-            .forEach(p -> diff.getUninitializedPools().add(p.getName()));
+              .stream()
+              .filter(p -> PoolQoSStatus.valueOf(p.getPoolMode())
+                    == PoolQoSStatus.UNINITIALIZED)
+              .forEach(p -> diff.getUninitializedPools().add(p.getName()));
     }
 
     private Set<String> comparePools(PoolOpDiff diff,
-                                     PoolSelectionUnit currentPsu,
-                                     PoolSelectionUnit nextPsu) {
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         Set<String> next = nextPsu.getPools().values().stream().map(SelectionPool::getName)
-            .collect(Collectors.toSet());
+              .collect(Collectors.toSet());
         Set<String> curr = currentPsu.getPools().values().stream().map(SelectionPool::getName)
-            .collect(Collectors.toSet());
+              .collect(Collectors.toSet());
         Sets.difference(next, curr).forEach(p -> diff.newPools.add(p));
         Sets.difference(curr, next).forEach(p -> diff.oldPools.add(p));
         return Sets.intersection(curr, next);
     }
 
     private Set<String> comparePoolGroups(PoolOpDiff diff,
-                                          PoolSelectionUnit currentPsu,
-                                          PoolSelectionUnit nextPsu) {
+          PoolSelectionUnit currentPsu,
+          PoolSelectionUnit nextPsu) {
         Set<String> next = nextPsu.getPoolGroups().values()
-            .stream()
-            .map(SelectionPoolGroup::getName)
-            .collect(Collectors.toSet());
+              .stream()
+              .map(SelectionPoolGroup::getName)
+              .collect(Collectors.toSet());
         Set<String> curr = currentPsu.getPoolGroups().values()
-            .stream()
-            .map(SelectionPoolGroup::getName)
-            .collect(Collectors.toSet());
+              .stream()
+              .map(SelectionPoolGroup::getName)
+              .collect(Collectors.toSet());
         Sets.difference(next, curr).forEach(diff.newGroups::add);
         Sets.difference(curr, next).forEach(diff.oldGroups::add);
         return Sets.intersection(next, curr);
     }
 
     /**
-     *  Scans the "new" pool, also making sure all files have the sticky bit.
+     * Scans the "new" pool, also making sure all files have the sticky bit.
      */
     private void scanPoolAddedToPoolGroup(Entry<String, String> entry, PoolSelectionUnit psu) {
         String pool = entry.getKey();
@@ -408,17 +411,17 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
     }
 
     /**
-     *  We allow the scanner to react to changes in the "primary" status of a pool group.
+     * We allow the scanner to react to changes in the "primary" status of a pool group.
      */
     private void scanPoolsOfModifiedPoolGroup(String poolGroupName, PoolSelectionUnit psu) {
         psu.getPoolsByPoolGroup(poolGroupName)
-            .forEach(p -> scanPool(p.getName(), null, null, p.getPoolMode()));
+              .forEach(p -> scanPool(p.getName(), null, null, p.getPoolMode()));
     }
 
     /**
-     *  NB: if we try to scan the pool as DOWN, this means we need to pass the old group id
-     *  for the pool, because we cannot synchronize the scan + adjustment tasks such as to
-     *  create a barrier so that we can remove the pool from the map after everything completes.
+     * NB: if we try to scan the pool as DOWN, this means we need to pass the old group id for the
+     * pool, because we cannot synchronize the scan + adjustment tasks such as to create a barrier
+     * so that we can remove the pool from the map after everything completes.
      */
     private void scanPoolRemovedFromPoolGroup(Entry<String, String> entry, PoolSelectionUnit psu) {
         String pool = entry.getKey();
@@ -428,8 +431,8 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
     }
 
     /**
-     *  Will skip the grace period wait, but still take into consideration whether the pool has
-     *  already been scanned because it went DOWN, or whether it is EXCLUDED.
+     * Will skip the grace period wait, but still take into consideration whether the pool has
+     * already been scanned because it went DOWN, or whether it is EXCLUDED.
      */
     private void scanPool(String pool, String addedTo, String removedFrom, PoolV2Mode mode) {
         if (poolOperationMap.isInitialized(mode)) {
@@ -438,19 +441,20 @@ public final class PoolOpChangeHandler extends PoolMonitorChangeHandler<PoolOpDi
     }
 
     /**
-     *  Will skip the grace period wait, as well as transition checks.
+     * Will skip the grace period wait, as well as transition checks.
      */
     private void scanPool(String pool, String unit, PoolV2Mode mode) {
         poolOperationMap.scan(pool, null, null, unit, mode, true);
     }
 
     private void scanPoolsInGroup(String poolGroupName, String unit, PoolSelectionUnit psu) {
-        psu.getPoolsByPoolGroup(poolGroupName).forEach(p -> scanPool(p.getName(), unit, p.getPoolMode()));
+        psu.getPoolsByPoolGroup(poolGroupName)
+              .forEach(p -> scanPool(p.getName(), unit, p.getPoolMode()));
 
     }
 
     private void scanPoolsWithStorageUnitModified(String unit, PoolSelectionUnit psu) {
-        StorageUnitInfoExtractor.getPoolGroupsFor(unit, psu,false)
-                                .forEach((group) -> scanPoolsInGroup(group, unit, psu));
+        StorageUnitInfoExtractor.getPoolGroupsFor(unit, psu, false)
+              .forEach((group) -> scanPoolsInGroup(group, unit, psu));
     }
 }

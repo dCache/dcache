@@ -1,9 +1,7 @@
 package org.dcache.pool.repository.v5;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.CDC;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -11,60 +9,53 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class StateChangeListeners
-{
+class StateChangeListeners {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(StateChangeListeners.class);
+          LoggerFactory.getLogger(StateChangeListeners.class);
 
     private final List<StateChangeListener> _listeners =
-        new CopyOnWriteArrayList<>();
+          new CopyOnWriteArrayList<>();
 
     /**
-     * Background thread for event processing. It is on purpose that
-     * this is a single thread: The point is not to process events
-     * quickly but rather to process them sequentially and
+     * Background thread for event processing. It is on purpose that this is a single thread: The
+     * point is not to process events quickly but rather to process them sequentially and
      * independently from the thread that triggered the event.
      */
     private final ExecutorService _executorService =
-        Executors.newSingleThreadExecutor();
+          Executors.newSingleThreadExecutor();
 
     private Executor _executor;
 
-    public StateChangeListeners()
-    {
+    public StateChangeListeners() {
         _executor = _executorService;
     }
 
-    public void setSynchronousNotification(boolean value)
-    {
+    public void setSynchronousNotification(boolean value) {
         _executor = value ? MoreExecutors.directExecutor() : _executorService;
     }
 
-    public void add(StateChangeListener listener)
-    {
+    public void add(StateChangeListener listener) {
         _listeners.add(listener);
     }
 
-    public void remove(StateChangeListener listener)
-    {
+    public void remove(StateChangeListener listener) {
         _listeners.remove(listener);
     }
 
-    public void stateChanged(final StateChangeEvent event)
-    {
+    public void stateChanged(final StateChangeEvent event) {
         CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
                 try (CDC oldContext = callingContext.restore()) {
-                    for (StateChangeListener listener: _listeners) {
+                    for (StateChangeListener listener : _listeners) {
                         try {
                             listener.stateChanged(event);
                         } catch (RuntimeException e) {
@@ -86,13 +77,12 @@ class StateChangeListeners
         }
     }
 
-    public void accessTimeChanged(final EntryChangeEvent event)
-    {
+    public void accessTimeChanged(final EntryChangeEvent event) {
         CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
                 try (CDC oldContext = callingContext.restore()) {
-                    for (StateChangeListener listener: _listeners) {
+                    for (StateChangeListener listener : _listeners) {
                         try {
                             listener.accessTimeChanged(event);
                         } catch (RuntimeException e) {
@@ -114,13 +104,12 @@ class StateChangeListeners
         }
     }
 
-    public void stickyChanged(final StickyChangeEvent event)
-    {
+    public void stickyChanged(final StickyChangeEvent event) {
         CDC callingContext = new CDC();
         try {
             _executor.execute(() -> {
                 try (CDC oldContext = callingContext.restore()) {
-                    for (StateChangeListener listener: _listeners) {
+                    for (StateChangeListener listener : _listeners) {
                         try {
                             listener.stickyChanged(event);
                         } catch (RuntimeException e) {
@@ -142,8 +131,7 @@ class StateChangeListeners
         }
     }
 
-    public void stop()
-    {
+    public void stop() {
         _executorService.shutdown();
         try {
             _executorService.awaitTermination(1, TimeUnit.SECONDS);

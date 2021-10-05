@@ -1,33 +1,31 @@
 package org.dcache.notification;
 
-import org.apache.kafka.common.serialization.Serializer;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
-
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.StorageInfo;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.kafka.common.serialization.Serializer;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoMessage> {
 
     private static final String[] REDUNDANT_MOVER_DATA_KEYS
-                    = {
-                        "subject",
-                        "pnfsid",
-                        "fileSize",
-                        "initiator",
-                        "billingPath",
-                        "storageInfo"
-                      };
+          = {
+          "subject",
+          "pnfsid",
+          "fileSize",
+          "initiator",
+          "billingPath",
+          "storageInfo"
+    };
 
     @Override
     public byte[] serialize(String topic, DoorRequestInfoMessage data) {
@@ -36,7 +34,8 @@ public class DoorRequestMessageSerializer implements Serializer<DoorRequestInfoM
         o.put("VERSION", "1.0");
         o.put("msgType", data.getMessageType());
         o.put("date", DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
+              .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()),
+                    ZoneId.systemDefault())));
         o.put("queuingTime", data.getTimeQueued());
         o.put("cellName", data.getCellAddress().getCellName());
         o.put("cellType", data.getCellType());

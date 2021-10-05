@@ -93,40 +93,40 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMInvalidRequestException extends SRMException {
-    
+
     private static final long serialVersionUID = 2435147283310855838L;
-    
+
     /**
      * Creates a new instance of <code>SRMAuthorizationException</code> without detail message.
      */
     public SRMInvalidRequestException() {
     }
-    
-    
+
+
     /**
-     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail message.
+     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail
+     * message.
+     *
      * @param msg the detail message.
      */
     public SRMInvalidRequestException(String msg) {
         super(msg);
     }
-        
-    
-    public SRMInvalidRequestException(String message,Throwable cause) {
-        super(message,cause);
+
+
+    public SRMInvalidRequestException(String message, Throwable cause) {
+        super(message, cause);
     }
-    
+
     public SRMInvalidRequestException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_INVALID_REQUEST;
     }
 }

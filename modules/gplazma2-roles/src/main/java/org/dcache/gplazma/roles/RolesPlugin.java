@@ -21,13 +21,11 @@ package org.dcache.gplazma.roles;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -38,11 +36,11 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
 /**
- * A plugin for processing a user's DesiredRole principals and, if authorised,
- * adding the corresponding Role.
+ * A plugin for processing a user's DesiredRole principals and, if authorised, adding the
+ * corresponding Role.
  */
-public class RolesPlugin implements GPlazmaSessionPlugin
-{
+public class RolesPlugin implements GPlazmaSessionPlugin {
+
     @VisibleForTesting
     static final String ADMIN_GID_PROPERTY_NAME = "gplazma.roles.admin-gid";
 
@@ -52,44 +50,41 @@ public class RolesPlugin implements GPlazmaSessionPlugin
     private final Long adminGid;
     private final Long observerGid;
 
-    public RolesPlugin(Properties properties)
-    {
+    public RolesPlugin(Properties properties) {
         this.adminGid = getGidForRole(properties, ADMIN_GID_PROPERTY_NAME);
         this.observerGid = getGidForRole(properties, OBSERVER_GID_PROPERTY_NAME);
     }
 
     @Override
     public void session(Set<Principal> principals, Set<Object> attributes)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         Set<Role> allowedRoles = allAuthorizedRoles(principals);
         Set<Role> desiredRoles = principals.stream()
-                .filter(DesiredRole.class::isInstance)
-                .map(DesiredRole.class::cast)
-                .map(DesiredRole::getName)
-                .map(Role::new)
-                .collect(Collectors.toSet());
+              .filter(DesiredRole.class::isInstance)
+              .map(DesiredRole.class::cast)
+              .map(DesiredRole::getName)
+              .map(Role::new)
+              .collect(Collectors.toSet());
 
         Set<Role> unauthorizedRoles = Sets.difference(desiredRoles, allowedRoles)
-                .copyInto(new HashSet<>());
+              .copyInto(new HashSet<>());
 
         if (!unauthorizedRoles.isEmpty()) {
             String description = unauthorizedRoles.size() == 1
-                    ? unauthorizedRoles.iterator().next().toString()
-                    : unauthorizedRoles.stream().map(LoginAttribute::toString)
-                            .collect(Collectors.joining(",", "[", "]"));
+                  ? unauthorizedRoles.iterator().next().toString()
+                  : unauthorizedRoles.stream().map(LoginAttribute::toString)
+                        .collect(Collectors.joining(",", "[", "]"));
             throw new AuthenticationException("unauthorized for " + description);
         }
 
         attributes.addAll(desiredRoles);
         Sets.difference(allowedRoles, desiredRoles).stream()
-                .map(Role::getRole)
-                .map(UnassertedRole::new)
-                .forEach(attributes::add);
+              .map(Role::getRole)
+              .map(UnassertedRole::new)
+              .forEach(attributes::add);
     }
 
-    private Set<Role> allAuthorizedRoles(Set<Principal> principals)
-    {
+    private Set<Role> allAuthorizedRoles(Set<Principal> principals) {
         Set<Role> roles = new HashSet<>();
 
         /*
@@ -97,24 +92,23 @@ public class RolesPlugin implements GPlazmaSessionPlugin
          *  so unfortunately we need to check them separately.
          */
         principals.stream()
-                  .filter(GidPrincipal.class::isInstance)
-                  .map(GidPrincipal.class::cast)
-                  .map(GidPrincipal::getGid)
-                  .forEach((gid) -> {
-                      if (adminGid != null && gid == adminGid.longValue()) {
-                          roles.add(LoginAttributes.adminRole());
-                      }
+              .filter(GidPrincipal.class::isInstance)
+              .map(GidPrincipal.class::cast)
+              .map(GidPrincipal::getGid)
+              .forEach((gid) -> {
+                  if (adminGid != null && gid == adminGid.longValue()) {
+                      roles.add(LoginAttributes.adminRole());
+                  }
 
-                      if (observerGid != null && gid == observerGid.longValue()) {
-                          roles.add(LoginAttributes.observerRole());
-                      }
-                  });
+                  if (observerGid != null && gid == observerGid.longValue()) {
+                      roles.add(LoginAttributes.observerRole());
+                  }
+              });
 
         return roles;
     }
 
-    private static Long getGidForRole(Properties properties, String name)
-    {
+    private static Long getGidForRole(Properties properties, String name) {
         String property = Strings.emptyToNull(properties.getProperty(name));
 
         if (property == null) {

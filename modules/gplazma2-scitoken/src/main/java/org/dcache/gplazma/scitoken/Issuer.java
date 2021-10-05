@@ -17,13 +17,13 @@
  */
 package org.dcache.gplazma.scitoken;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableSet;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.FsPath;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -41,22 +41,19 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Supplier;
-
-import diskCacheV111.util.FsPath;
-
+import org.apache.http.client.HttpClient;
 import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.JsonWebToken;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Represents a SciToken issuer, a service with associated metadata.  This
- * typically represents a VO.
+ * Represents a SciToken issuer, a service with associated metadata.  This typically represents a
+ * VO.
  */
-public class Issuer
-{
+public class Issuer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Issuer.class);
 
     private final String id;
@@ -69,14 +66,13 @@ public class Issuer
     private final JsonNode jwks;
 
 
-    private Supplier<Map<String,PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::parseJwks)
-            .whenEmptyFor(Duration.ofMinutes(1))
-            .whenNonEmptyFor(Duration.ofMinutes(10))
-            .build();
+    private Supplier<Map<String, PublicKey>> keys = MemoizeMapWithExpiry.memorize(this::parseJwks)
+          .whenEmptyFor(Duration.ofMinutes(1))
+          .whenNonEmptyFor(Duration.ofMinutes(10))
+          .build();
 
     public Issuer(HttpClient client, String id, String endpoint, FsPath prefix,
-            Set<Principal> identity, int tokenHistory)
-    {
+          Set<Principal> identity, int tokenHistory) {
         this.id = id;
         this.endpoint = checkURI(endpoint);
         this.prefix = prefix;
@@ -90,50 +86,44 @@ public class Issuer
         String configEndpoint = sb.toString();
 
         this.identity = ImmutableSet.<Principal>builder()
-                .addAll(identity)
-                .add(new OAuthProviderPrincipal(id))
-                .build();
+              .addAll(identity)
+              .add(new OAuthProviderPrincipal(id))
+              .build();
 
         this.configuration = new HttpJsonNode(client, configEndpoint,
-                Duration.ofHours(1), Duration.ofSeconds(10));
+              Duration.ofHours(1), Duration.ofSeconds(10));
         this.jwks = new HttpJsonNode(client, this::parseConfigurationForJwksUri,
-                Duration.ofSeconds(1), Duration.ofSeconds(1));
+              Duration.ofSeconds(1), Duration.ofSeconds(1));
 
         previousJtis = tokenHistory > 0 ? EvictingQueue.create(tokenHistory) : null;
     }
 
-    private String checkURI(String endpoint)
-    {
+    private String checkURI(String endpoint) {
         URI issuer = URI.create(endpoint);
         checkArgument(issuer.getScheme() != null, "Bad issuer \"%s\": missing schema", endpoint);
         checkArgument(issuer.getScheme().equals("http") || issuer.getScheme().equals("https"),
-                "Bad issuer \"%s\": schema must be either 'http' or 'https'", endpoint);
+              "Bad issuer \"%s\": schema must be either 'http' or 'https'", endpoint);
         checkArgument(issuer.getHost() != null, "Bad issuer \"%s\": missing host");
         return endpoint;
     }
 
-    public Set<Principal> getPrincipals()
-    {
+    public Set<Principal> getPrincipals() {
         return identity;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public FsPath getPrefix()
-    {
+    public FsPath getPrefix() {
         return prefix;
     }
 
-    public String getEndpoint()
-    {
+    public String getEndpoint() {
         return endpoint;
     }
 
-    private Optional<String> parseConfigurationForJwksUri()
-    {
+    private Optional<String> parseConfigurationForJwksUri() {
         JsonNode jwksNode = configuration.get("jwks_uri");
 
         if (jwksNode == null) {
@@ -156,8 +146,7 @@ public class Issuer
         return Optional.of(url);
     }
 
-    private Map<String,PublicKey> parseJwks()
-    {
+    private Map<String, PublicKey> parseJwks() {
         JsonNode keys = jwks.get("keys");
         if (keys == null) {
             LOGGER.warn("missing keys");
@@ -168,7 +157,7 @@ public class Issuer
             return Collections.emptyMap();
         }
 
-        Map<String,PublicKey> publicKeys = new HashMap<>();
+        Map<String, PublicKey> publicKeys = new HashMap<>();
         for (JsonNode key : keys) {
             try {
                 String kid = getString(key, "kid");
@@ -180,19 +169,17 @@ public class Issuer
         return publicKeys;
     }
 
-    private PublicKey buildPublicKey(JsonNode details) throws BadKeyDescriptionException
-    {
+    private PublicKey buildPublicKey(JsonNode details) throws BadKeyDescriptionException {
         String kty = getString(details, "kty");
         switch (kty) {
-        case "RSA":
-            return buildRSAPublicKey(details);
-        default:
-            throw new BadKeyDescriptionException("Unknown key type " + kty);
+            case "RSA":
+                return buildRSAPublicKey(details);
+            default:
+                throw new BadKeyDescriptionException("Unknown key type " + kty);
         }
     }
 
-    private String getString(JsonNode details, String key) throws BadKeyDescriptionException
-    {
+    private String getString(JsonNode details, String key) throws BadKeyDescriptionException {
         JsonNode target = details.get(key);
         if (target == null) {
             throw new BadKeyDescriptionException("Missing attribute " + key);
@@ -203,8 +190,7 @@ public class Issuer
         return target.asText();
     }
 
-    private PublicKey buildRSAPublicKey(JsonNode details) throws BadKeyDescriptionException
-    {
+    private PublicKey buildRSAPublicKey(JsonNode details) throws BadKeyDescriptionException {
         try {
             byte[] e = Base64.getUrlDecoder().decode(getString(details, "e"));
             byte[] n = Base64.getUrlDecoder().decode(getString(details, "n"));
@@ -215,9 +201,8 @@ public class Issuer
         }
     }
 
-    public void checkIssued(JsonWebToken token) throws AuthenticationException
-    {
-        Map<String,PublicKey> keyMap = keys.get();
+    public void checkIssued(JsonWebToken token) throws AuthenticationException {
+        Map<String, PublicKey> keyMap = keys.get();
 
         String kid = token.getKeyIdentifier();
         if (kid != null) {
@@ -226,7 +211,7 @@ public class Issuer
             checkAuthentication(token.isSignedBy(publicKey), "Invalid signature");
         } else {
             checkAuthentication(keyMap.values().stream().anyMatch(token::isSignedBy),
-                    "Invalid signature");
+                  "Invalid signature");
         }
 
         if (previousJtis != null) {

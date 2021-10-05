@@ -63,30 +63,29 @@ package org.dcache.util.histograms;
  * <p>Defines a histogram model which can be modified.</p>
  */
 public interface UpdatableHistogramModel {
+
     /**
      * <p>Add new value to  the corresponding bin's value.
-     *    This should use the timestamp if the bins are time-based.</p>
+     * This should use the timestamp if the bins are time-based.</p>
      *
-     * @param value     to be used in update.
-     *                  average the value into the bin's value,
-     *                  or replace the current value with this one.
+     * @param value     to be used in update. average the value into the bin's value, or replace the
+     *                  current value with this one.
      * @param timestamp associated with this data value.
      */
     void add(Double value, Long timestamp);
 
     /**
      * <p>Average the value into the bin's value.
-     *    This should use the timestamp if the bins are time-based.</p>
+     * This should use the timestamp if the bins are time-based.</p>
      *
-     * @param value     to be used in update.
-     *                  or replace the current value with this one.
+     * @param value     to be used in update. or replace the current value with this one.
      * @param timestamp associated with this data value.
      */
     void average(Double value, Long timestamp);
 
     /**
      * <p>Replace the current bin's value with the new one.
-     *    This should use the timestamp if the bins are time-based.</p>
+     * This should use the timestamp if the bins are time-based.</p>
      *
      * @param value     to be used in update.
      * @param timestamp associated with this data value.

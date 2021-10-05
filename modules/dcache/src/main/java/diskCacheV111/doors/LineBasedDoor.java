@@ -19,17 +19,7 @@
 
 package diskCacheV111.doors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -38,15 +28,22 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import org.dcache.cells.AbstractCell;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Door cell for line based protocols.
@@ -58,14 +55,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * is processing a line.
  */
 public class LineBasedDoor
-    extends AbstractCell implements Runnable, KeepAliveListener
-{
+      extends AbstractCell implements Runnable, KeepAliveListener {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LineBasedDoor.class);
 
     /**
-     * Door instances are created by the LoginManager. This is the
-     * stream engine passed to us from the LoginManager upon
-     * instantiation.
+     * Door instances are created by the LoginManager. This is the stream engine passed to us from
+     * the LoginManager upon instantiation.
      */
     private final StreamEngine engine;
 
@@ -84,8 +80,7 @@ public class LineBasedDoor
     private volatile boolean isStartupCompleted;
 
     public LineBasedDoor(String cellName, Args args, LineBasedInterpreterFactory factory,
-                         StreamEngine engine, ExecutorService executor, PoolManagerHandler poolManagerHandler)
-    {
+          StreamEngine engine, ExecutorService executor, PoolManagerHandler poolManagerHandler) {
         super(cellName, args, executor);
 
         this.factory = factory;
@@ -96,14 +91,14 @@ public class LineBasedDoor
 
     @Override
     protected void starting()
-        throws Exception
-    {
+          throws Exception {
         Transfer.initSession(false, true);
         super.starting();
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
-        interpreter = factory.create(this, getNucleus().getThisAddress(), engine, executor, poolManager);
+        interpreter = factory.create(this, getNucleus().getThisAddress(), engine, executor,
+              poolManager);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }
@@ -113,14 +108,12 @@ public class LineBasedDoor
     }
 
     @Override
-    protected void started()
-    {
+    protected void started() {
         executor.execute(this);
         isStartupCompleted = true;
     }
 
-    private synchronized void shutdownInputStream()
-    {
+    private synchronized void shutdownInputStream() {
         try {
             Socket socket = engine.getSocket();
             if (!socket.isClosed() && !socket.isInputShutdown()) {
@@ -128,28 +121,24 @@ public class LineBasedDoor
             }
         } catch (IOException e) {
             LOGGER.info("Failed to shut down input stream of the " +
-                    "control channel: {}", e.getMessage());
+                  "control channel: {}", e.getMessage());
         }
     }
 
     /**
      * Main loop for command processing.
-     *
-     * Commands are read from the socket and submitted to the command
-     * queue for execution. Upon termination, most of the shutdown
-     * logic is in this method, including:
-     *
-     * - Emergency shutdown of performance marker engine
-     * - Shut down of passive mode server socket
-     * - Abort and cleanup after failed transfers
-     * - Cell shutdown initiation
-     *
-     * Notice that socket and thus input and output streams are not
-     * closed here. See cleanUp() for details on this.
+     * <p>
+     * Commands are read from the socket and submitted to the command queue for execution. Upon
+     * termination, most of the shutdown logic is in this method, including:
+     * <p>
+     * - Emergency shutdown of performance marker engine - Shut down of passive mode server socket -
+     * Abort and cleanup after failed transfers - Cell shutdown initiation
+     * <p>
+     * Notice that socket and thus input and output streams are not closed here. See cleanUp() for
+     * details on this.
      */
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             SequentialExecutor executor = new SequentialExecutor(this.executor);
             try {
@@ -162,7 +151,7 @@ public class LineBasedDoor
                  * automatically freed when the socket is closed.
                  */
                 BufferedReader in =
-                    new BufferedReader(new InputStreamReader(engine.getInputStream(), UTF_8));
+                      new BufferedReader(new InputStreamReader(engine.getInputStream(), UTF_8));
 
                 String s = in.readLine();
                 while (s != null) {
@@ -178,7 +167,7 @@ public class LineBasedDoor
                     executor.awaitTermination();
                 } catch (InterruptedException e) {
                     LOGGER.error("Failed to shut down command processing: {}",
-                            e.getMessage());
+                          e.getMessage());
                 }
 
                 LOGGER.debug("End of stream encountered");
@@ -195,24 +184,21 @@ public class LineBasedDoor
         }
     }
 
-    public void messageArrived(NoRouteToCellException e)
-    {
+    public void messageArrived(NoRouteToCellException e) {
         LOGGER.warn(e.getMessage());
     }
 
     /**
      * Called by the cell infrastructure when the cell has been killed.
-     *
-     * The socket will be closed by this method. It is quite important
-     * that this does not happen earlier, as several threads use the
-     * output stream. This is the only place where we can be 100%
-     * certain, that all the other threads are done with their job.
-     *
+     * <p>
+     * The socket will be closed by this method. It is quite important that this does not happen
+     * earlier, as several threads use the output stream. This is the only place where we can be
+     * 100% certain, that all the other threads are done with their job.
+     * <p>
      * The method blocks until the worker thread has terminated.
      */
     @Override
-    public void stopped()
-    {
+    public void stopped() {
         interpreter.messagingClosed();
 
         /* Closing the input stream will cause the FTP command
@@ -246,15 +232,14 @@ public class LineBasedDoor
             engine.getSocket().close();
         } catch (IOException e) {
             LOGGER.error("Got I/O exception closing socket: {}",
-                    e.getMessage());
+                  e.getMessage());
         }
 
         super.stopped();
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("     User Host  : " + engine.getInetAddress().getHostAddress());
         if (interpreter instanceof CellInfoProvider) {
             ((CellInfoProvider) interpreter).getInfo(pw);
@@ -268,18 +253,16 @@ public class LineBasedDoor
         }
     }
 
-    private class Command implements Runnable
-    {
+    private class Command implements Runnable {
+
         private final String command;
 
-        public Command(String command)
-        {
+        public Command(String command) {
             this.command = command;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 interpreter.execute(command);
             } catch (CommandExitException e) {

@@ -61,14 +61,15 @@ package org.dcache.vehicles.pool;
 
 /**
  * <p>Request for listings corresponding to both the p2p mover (client)
- *      queue and the p2p source (server) queue.</p>
+ * queue and the p2p source (server) queue.</p>
  */
 public final class PoolP2PListingMessage extends PoolMoverListingMessage {
+
     private static final long serialVersionUID = 4186125637867588201L;
 
     public PoolP2PListingMessage(int offset, int limit, String pnfsid,
-                                 String queue, String state,
-                                 String storageClass, String sort) {
+          String queue, String state,
+          String storageClass, String sort) {
         super(offset,
               limit,
               pnfsid,

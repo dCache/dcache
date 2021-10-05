@@ -59,34 +59,30 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.pool;
 
-import org.springframework.beans.factory.annotation.Required;
-
-import java.io.Serializable;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.io.Serializable;
 import org.dcache.cells.json.CellData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.restful.services.pool.PoolInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Handles the transformation of message content from pools into a cached
- *    {@link PoolInfoWrapper}.  The data handled by this transformation are
- *    the basic diagnostic information plus the precomputed LRU histogram
- *    from the sweeper.</p>
+ * {@link PoolInfoWrapper}.  The data handled by this transformation are the basic diagnostic
+ * information plus the precomputed LRU histogram from the sweeper.</p>
  *
  * <p>Post-processing aggregates the data according to pool groups and adds
- *    these to the cache as well.</p>
+ * these to the cache as well.</p>
  */
 public final class PoolDataRequestProcessor
-                extends RequestFutureProcessor<PoolInfoWrapper, PoolDataRequestMessage> {
-    private PoolInfoServiceImpl  service;
+      extends RequestFutureProcessor<PoolInfoWrapper, PoolDataRequestMessage> {
+
+    private PoolInfoServiceImpl service;
     private PoolHistoriesHandler handler;
 
     @Required
@@ -103,10 +99,10 @@ public final class PoolDataRequestProcessor
     protected void postProcess() {
         try {
             handler.aggregateDataForPoolGroups(next,
-                                               service.getSelectionUnit());
+                  service.getSelectionUnit());
         } catch (CacheException e) {
             LOGGER.warn("Aggregation of timeseries data failed: {} / {}.",
-                        e.getMessage(), e.getCause());
+                  e.getMessage(), e.getCause());
         }
 
         service.updateJsonData(next);
@@ -114,12 +110,12 @@ public final class PoolDataRequestProcessor
 
     @Override
     protected PoolInfoWrapper process(String key,
-                                      PoolDataRequestMessage message,
-                                      long sent) {
+          PoolDataRequestMessage message,
+          long sent) {
         Serializable errorObject = message.getErrorObject();
         if (errorObject != null) {
             LOGGER.warn("Problem with retrieval of pool data for {}: {}.",
-                        key, errorObject.toString());
+                  key, errorObject.toString());
             return null;
         }
 
@@ -144,10 +140,10 @@ public final class PoolDataRequestProcessor
             handler.addHistoricalData(info);
         } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
             LOGGER.debug("Could not add historical data for {}: {}.",
-                     key, e.getMessage());
+                  key, e.getMessage());
         } catch (CacheException e) {
             LOGGER.error("Could not add historical data for {}: {}.",
-                         key, e.getMessage());
+                  key, e.getMessage());
         }
 
         return info;

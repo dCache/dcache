@@ -4,9 +4,6 @@
 
 package diskCacheV111.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -18,10 +15,11 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  Vladimir Podstavkov
+ * @author Vladimir Podstavkov
  */
 public class Pgpass {
 
@@ -37,7 +35,8 @@ public class Pgpass {
         _pwdfile = pwdfile;
     }
 
-    private String process(String line, String hostname, String port, String database, String username) {
+    private String process(String line, String hostname, String port, String database,
+          String username) {
         if (line.charAt(0) != '#') {
 //         System.out.println("process: "+line);
             String[] sa = line.split(":");
@@ -66,6 +65,7 @@ public class Pgpass {
         }
         return s;
     }
+
     private boolean parseUrl(String url) {
         // -jdbcUrl=jdbc:postgresql:database
         // -jdbcUrl=jdbc:postgresql://host/database
@@ -73,14 +73,14 @@ public class Pgpass {
         String[] r = url.split("/");
         _hostname = "localhost";
         _port = "5432";
-        if (r.length==1) {
+        if (r.length == 1) {
             String[] r1 = r[0].split(":");
-            _database = stripProperties(r1[r1.length-1]);
-        } else if (r.length==4) {
-            _database = stripProperties(r[r.length-1]);
+            _database = stripProperties(r1[r1.length - 1]);
+        } else if (r.length == 4) {
+            _database = stripProperties(r[r.length - 1]);
             String[] r1 = r[2].split(":");
             _hostname = r1[0];
-            if (r1.length==2) {
+            if (r1.length == 2) {
                 _port = r1[1];
             } else if (r1.length > 2) {
                 return false;
@@ -128,14 +128,14 @@ public class Pgpass {
     /**
      * Check the pwd file for selectable permissions. The file must be a POSIX file, at the moment.
      *
-     * @param referencePermissionInput The permissions the file should have. It's in the unix like format.
-     *                                 e.g. "rwx------" for owner read-write-execute
+     * @param referencePermissionInput The permissions the file should have. It's in the unix like
+     *                                 format. e.g. "rwx------" for owner read-write-execute
      * @return permissions right? true
      * @throws IOException
      */
     private boolean checkPgFilePermissions(String referencePermissionInput) throws IOException {
 
-        if(checkIfOsIsPosixCompliant()){
+        if (checkIfOsIsPosixCompliant()) {
             return checkPgFilePermissionsForPosix(referencePermissionInput);
 
         } else {
@@ -149,33 +149,36 @@ public class Pgpass {
      *
      * @return
      */
-    private boolean checkIfOsIsPosixCompliant(){
+    private boolean checkIfOsIsPosixCompliant() {
         return FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
     }
 
-    private String parsePgFile(String hostname, String port, String database, String username) throws IOException {
-            BufferedReader in = new BufferedReader(new FileReader(_pwdfile));
-            String line, r = null;
-            while ((line = in.readLine()) != null && r == null) {
-                r = process(line, hostname, port, database, username);
-            }
-            in.close();
-            return r;
+    private String parsePgFile(String hostname, String port, String database, String username)
+          throws IOException {
+        BufferedReader in = new BufferedReader(new FileReader(_pwdfile));
+        String line, r = null;
+        while ((line = in.readLine()) != null && r == null) {
+            r = process(line, hostname, port, database, username);
+        }
+        in.close();
+        return r;
     }
 
     /**
      * Check the pwd file for selectable permissions. Explicit for POSIX conform operating systems.
      * The file must be a POSIX file.
      *
-     * @param referencePermissionInput The permissions the file should have. It's in the unix like format.
-     *                                 e.g. "rwx------" for owner read-write-execute
+     * @param referencePermissionInput The permissions the file should have. It's in the unix like
+     *                                 format. e.g. "rwx------" for owner read-write-execute
      * @return permissions right? true
      * @throws IOException
      */
-    private boolean checkPgFilePermissionsForPosix(String referencePermissionInput) throws IOException {
+    private boolean checkPgFilePermissionsForPosix(String referencePermissionInput)
+          throws IOException {
         Path path = Paths.get(_pwdfile);
         Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(path);
-        Set<PosixFilePermission> referencePermissions = PosixFilePermissions.fromString(referencePermissionInput);
+        Set<PosixFilePermission> referencePermissions = PosixFilePermissions.fromString(
+              referencePermissionInput);
 
         boolean result = filePermissions.equals(referencePermissions);
         return result;
@@ -201,7 +204,7 @@ public class Pgpass {
     }
 
     public static String getPassword(String file,
-                                     String url, String user, String password) {
+          String url, String user, String password) {
         if (file != null && !file.trim().isEmpty()) {
             Pgpass pgpass = new Pgpass(file);
             return pgpass.getPgpass(url, user);

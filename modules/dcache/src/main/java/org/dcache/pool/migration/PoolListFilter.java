@@ -1,24 +1,21 @@
 package org.dcache.pool.migration;
 
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
 import org.dcache.util.expression.Expression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * RefreshablePoolList decorator that can filter the list of pools.
  */
-public class PoolListFilter implements RefreshablePoolList
-{
+public class PoolListFilter implements RefreshablePoolList {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(PoolListFilter.class);
+          LoggerFactory.getLogger(PoolListFilter.class);
 
     private final Collection<Pattern> _exclude;
     private final Expression _excludeWhen;
@@ -34,12 +31,11 @@ public class PoolListFilter implements RefreshablePoolList
     private ImmutableList<String> _filteredOfflinePools;
 
     public PoolListFilter(RefreshablePoolList poolList,
-                          Collection<Pattern> exclude,
-                          Expression excludeWhen,
-                          Collection<Pattern> include,
-                          Expression includeWhen,
-                          RefreshablePoolList sourceList)
-    {
+          Collection<Pattern> exclude,
+          Expression excludeWhen,
+          Collection<Pattern> include,
+          Expression includeWhen,
+          RefreshablePoolList sourceList) {
         _poolList = poolList;
         _exclude = exclude;
         _excludeWhen = excludeWhen;
@@ -49,20 +45,17 @@ public class PoolListFilter implements RefreshablePoolList
     }
 
     @Override
-    public boolean isValid()
-    {
+    public boolean isValid() {
         return _sourceList.isValid() && !_sourceList.getPools().isEmpty() && _poolList.isValid();
     }
 
     @Override
-    public void refresh()
-    {
+    public void refresh() {
         _poolList.refresh();
     }
 
     @Override
-    public ImmutableList<String> getOfflinePools()
-    {
+    public ImmutableList<String> getOfflinePools() {
         if (!isValid()) {
             return ImmutableList.of();
         }
@@ -74,8 +67,8 @@ public class PoolListFilter implements RefreshablePoolList
         ImmutableList<String> pools = _poolList.getOfflinePools();
         if (!pools.equals(_cachedOfflinePools)) {
             ImmutableList.Builder<String> filteredOfflinePools =
-                    ImmutableList.builder();
-            for (String pool: pools) {
+                  ImmutableList.builder();
+            for (String pool : pools) {
                 if (!isExcluded(source, pool) && isIncluded(source, pool)) {
                     filteredOfflinePools.add(pool);
                 }
@@ -87,9 +80,7 @@ public class PoolListFilter implements RefreshablePoolList
     }
 
     @Override
-    public synchronized
-        ImmutableList<PoolManagerPoolInformation> getPools()
-    {
+    public synchronized ImmutableList<PoolManagerPoolInformation> getPools() {
         if (!isValid()) {
             return ImmutableList.of();
         }
@@ -101,8 +92,8 @@ public class PoolListFilter implements RefreshablePoolList
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
         if (!list.equals(_cachedList)) {
             ImmutableList.Builder<PoolManagerPoolInformation> filteredList =
-                ImmutableList.builder();
-            for (PoolManagerPoolInformation pool: list) {
+                  ImmutableList.builder();
+            for (PoolManagerPoolInformation pool : list) {
                 if (!isExcluded(source, pool) && isIncluded(source, pool)) {
                     filteredList.add(pool);
                 }
@@ -113,9 +104,8 @@ public class PoolListFilter implements RefreshablePoolList
         return _filteredList;
     }
 
-    private boolean matchesAny(Collection<Pattern> patterns, String s)
-    {
-        for (Pattern pattern: patterns) {
+    private boolean matchesAny(Collection<Pattern> patterns, String s) {
+        for (Pattern pattern : patterns) {
             if (pattern.matcher(s).matches()) {
                 return true;
             }
@@ -123,48 +113,44 @@ public class PoolListFilter implements RefreshablePoolList
         return false;
     }
 
-    private boolean isExcluded(PoolManagerPoolInformation source, String pool)
-    {
+    private boolean isExcluded(PoolManagerPoolInformation source, String pool) {
         return matchesAny(_exclude, pool);
     }
 
-    private boolean isIncluded(PoolManagerPoolInformation source, String pool)
-    {
+    private boolean isIncluded(PoolManagerPoolInformation source, String pool) {
         return _include.isEmpty() || matchesAny(_include, pool);
     }
 
-    private boolean isExcluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool)
-    {
+    private boolean isExcluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool) {
         if (matchesAny(_exclude, pool.getName())) {
             return true;
         }
         return evaluate(_excludeWhen, source, pool);
     }
 
-    private boolean isIncluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool)
-    {
+    private boolean isIncluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool) {
         if (!_include.isEmpty()) {
             return matchesAny(_include, pool.getName());
         }
         return evaluate(_includeWhen, source, pool);
     }
 
-    private PoolManagerPoolInformation getSource()
-    {
+    private PoolManagerPoolInformation getSource() {
         List<PoolManagerPoolInformation> list = _sourceList.getPools();
         if (list.isEmpty()) {
             return null;
         }
         if (list.size() > 1) {
-            throw new IllegalStateException("Unexpected source pool list: Exactly one item was expected, but it contained " + list.size());
+            throw new IllegalStateException(
+                  "Unexpected source pool list: Exactly one item was expected, but it contained "
+                        + list.size());
         }
         return list.get(0);
     }
 
     private boolean evaluate(Expression expression,
-                             PoolManagerPoolInformation source,
-                             PoolManagerPoolInformation pool)
-    {
+          PoolManagerPoolInformation source,
+          PoolManagerPoolInformation pool) {
         SymbolTable symbols = new SymbolTable();
         symbols.put(MigrationModule.CONSTANT_TARGET, pool);
         symbols.put(MigrationModule.CONSTANT_SOURCE, source);
@@ -172,8 +158,7 @@ public class PoolListFilter implements RefreshablePoolList
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         List<PoolManagerPoolInformation> pools = getPools();
         if (pools.isEmpty()) {
             return "";

@@ -1,11 +1,12 @@
 package org.dcache.pinmanager;
 
+import static java.util.Objects.requireNonNull;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
-import static java.util.Objects.requireNonNull;
-
 public class PinManagerCountPinsMessage extends Message {
+
     private static final long serialVersionUID = 7314454233774958888L;
     private final PnfsId _pnfsId;
     private final String _requestId;
@@ -26,7 +27,9 @@ public class PinManagerCountPinsMessage extends Message {
         return count;
     }
 
-    public String getRequestId() { return _requestId; }
+    public String getRequestId() {
+        return _requestId;
+    }
 
     public void setCount(int count) {
         this.count = count;

@@ -17,50 +17,45 @@
  */
 package org.dcache.util;
 
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
-import static org.dcache.util.TransferRetryPolicy.*;
+import static org.dcache.util.TransferRetryPolicy.alwaysRetry;
+import static org.dcache.util.TransferRetryPolicy.maximumTries;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TransferRetryPolicyTest
-{
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectZeroTries()
-    {
+import java.util.concurrent.TimeUnit;
+import org.junit.Test;
+
+public class TransferRetryPolicyTest {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectZeroTries() {
         maximumTries(0);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectZeroTimeout()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectZeroTimeout() {
         alwaysRetry().timeoutAfter(0);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectZeroTimeoutUnit()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectZeroTimeoutUnit() {
         alwaysRetry().timeoutAfter(0, TimeUnit.SECONDS);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectZeroPauseBeforeRetrying()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectZeroPauseBeforeRetrying() {
         alwaysRetry().pauseBeforeRetrying(0);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectZeroUnitPauseBeforeRetrying()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectZeroUnitPauseBeforeRetrying() {
         alwaysRetry().pauseBeforeRetrying(0, TimeUnit.SECONDS);
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldDenyReadWhenTimeoutUninitiated()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldDenyReadWhenTimeoutUninitiated() {
         // Missing timeout
         TransferRetryPolicy partial = tryOnce();
 
@@ -68,8 +63,7 @@ public class TransferRetryPolicyTest
     }
 
     @Test
-    public void shouldBuildTryOnceDoNotTimeoutPolicy()
-    {
+    public void shouldBuildTryOnceDoNotTimeoutPolicy() {
         TransferRetryPolicy policy = tryOnce().doNotTimeout();
 
         policy.checkValid();
@@ -77,71 +71,63 @@ public class TransferRetryPolicyTest
         assertThat(policy.getTimeout(), is(equalTo(Long.MAX_VALUE)));
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void shouldDenyReadRetryPauseForTryOncePolicy()
-    {
+    @Test(expected = UnsupportedOperationException.class)
+    public void shouldDenyReadRetryPauseForTryOncePolicy() {
         TransferRetryPolicy policy = tryOnce().doNotTimeout();
 
         policy.getRetryPause();
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldDenyReadTimeoutWhenNotDefined()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldDenyReadTimeoutWhenNotDefined() {
         // Partial policy with missing timeout definition
         TransferRetryPolicy partial = alwaysRetry().pauseBeforeRetrying(1_000);
 
         partial.getTimeout();
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldBeInvalidWhenTimeoutNotDefined()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldBeInvalidWhenTimeoutNotDefined() {
         // Partial policy with missing timeout definition
         TransferRetryPolicy partial = alwaysRetry().pauseBeforeRetrying(1_000);
 
         partial.checkValid();
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldDenyReadRetryPauseWhenNotDefined()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldDenyReadRetryPauseWhenNotDefined() {
         // Partial policy with missing pause-before-retrying
         TransferRetryPolicy partial = alwaysRetry().timeoutAfter(1_000);
 
         partial.getRetryPause();
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldBeInvalidWhenRetryPauseNotDefined()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldBeInvalidWhenRetryPauseNotDefined() {
         // Partial policy with missing pause-before-retrying
         TransferRetryPolicy partial = alwaysRetry().timeoutAfter(1_000);
 
         partial.checkValid();
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void shouldNotAllowUpdateRetryPause()
-    {
+    @Test(expected = UnsupportedOperationException.class)
+    public void shouldNotAllowUpdateRetryPause() {
         TransferRetryPolicy policy = alwaysRetry().pauseBeforeRetrying(2_000).doNotTimeout();
 
         policy.pauseBeforeRetrying(1_000);
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void shouldNotAllowUpdateTimeout()
-    {
+    @Test(expected = UnsupportedOperationException.class)
+    public void shouldNotAllowUpdateTimeout() {
         TransferRetryPolicy policy = alwaysRetry().pauseBeforeRetrying(2_000).doNotTimeout();
 
         policy.timeoutAfter(1_000);
     }
 
     @Test
-    public void shouldBuildLimitedRetriesAndRetryPauseAndDoNotTimeoutPolicy()
-    {
+    public void shouldBuildLimitedRetriesAndRetryPauseAndDoNotTimeoutPolicy() {
         TransferRetryPolicy policy = maximumTries(10).pauseBeforeRetrying(1_000)
-                .doNotTimeout();
+              .doNotTimeout();
 
         policy.checkValid();
         assertThat(policy.getMaximumTries(), is(equalTo(10)));
@@ -150,10 +136,9 @@ public class TransferRetryPolicyTest
     }
 
     @Test
-    public void shouldBuildKeepRetryingAndRetryPauseAndDoNotTimeoutPolicy()
-    {
+    public void shouldBuildKeepRetryingAndRetryPauseAndDoNotTimeoutPolicy() {
         TransferRetryPolicy policy = alwaysRetry().pauseBeforeRetrying(1_000)
-                .doNotTimeout();
+              .doNotTimeout();
 
         policy.checkValid();
         assertThat(policy.getMaximumTries(), is(equalTo(Integer.MAX_VALUE)));
@@ -162,11 +147,10 @@ public class TransferRetryPolicyTest
     }
 
     @Test
-    public void shouldBuildKeepRetryingAndRetryPauseAndTimeUnitDoNotTimeoutPolicy()
-    {
+    public void shouldBuildKeepRetryingAndRetryPauseAndTimeUnitDoNotTimeoutPolicy() {
         TransferRetryPolicy policy = alwaysRetry()
-                .pauseBeforeRetrying(1, TimeUnit.SECONDS)
-                .doNotTimeout();
+              .pauseBeforeRetrying(1, TimeUnit.SECONDS)
+              .doNotTimeout();
 
         policy.checkValid();
         assertThat(policy.getMaximumTries(), is(equalTo(Integer.MAX_VALUE)));
@@ -175,10 +159,9 @@ public class TransferRetryPolicyTest
     }
 
     @Test
-    public void shouldBuildKeepRetryingAndRetryPauseAndTimeout()
-    {
+    public void shouldBuildKeepRetryingAndRetryPauseAndTimeout() {
         TransferRetryPolicy policy = alwaysRetry().pauseBeforeRetrying(1_000)
-                .timeoutAfter(2_000);
+              .timeoutAfter(2_000);
 
         policy.checkValid();
         assertThat(policy.getMaximumTries(), is(equalTo(Integer.MAX_VALUE)));
@@ -187,10 +170,9 @@ public class TransferRetryPolicyTest
     }
 
     @Test
-    public void shouldBuildKeepRetryingAndRetryPauseAndTimeoutUnit()
-    {
+    public void shouldBuildKeepRetryingAndRetryPauseAndTimeoutUnit() {
         TransferRetryPolicy policy = alwaysRetry().pauseBeforeRetrying(1_000)
-                .timeoutAfter(2, TimeUnit.SECONDS);
+              .timeoutAfter(2, TimeUnit.SECONDS);
 
         policy.checkValid();
         assertThat(policy.getMaximumTries(), is(equalTo(Integer.MAX_VALUE)));

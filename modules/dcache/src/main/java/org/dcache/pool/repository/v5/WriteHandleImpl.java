@@ -1,10 +1,24 @@
 package org.dcache.pool.repository.v5;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.isEmpty;
+import static com.google.common.collect.Iterables.unmodifiableIterable;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.LABELS;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.XATTR;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
@@ -12,21 +26,14 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.AllocatorAwareRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.checksums.ChecksumReplicaRecord;
@@ -34,79 +41,93 @@ import org.dcache.pool.repository.inotify.InotifyReplicaRecord;
 import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.*;
-import static org.dcache.namespace.FileAttribute.*;
+class WriteHandleImpl implements ReplicaDescriptor {
 
-class WriteHandleImpl implements ReplicaDescriptor
-{
-    enum HandleState
-    {
+    enum HandleState {
         OPEN, COMMITTED, CLOSED
     }
 
     private static final Logger LOGGER =
-        LoggerFactory.getLogger("logger.org.dcache.repository");
+          LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
-            .addAll(FileStore.O_RW)
-            .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
-            .add(ChecksumReplicaRecord.OpenFlags.ENABLE_CHECKSUM_CALCULATION)
-            .build();
+          .addAll(FileStore.O_RW)
+          .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
+          .add(ChecksumReplicaRecord.OpenFlags.ENABLE_CHECKSUM_CALCULATION)
+          .build();
 
     private static final Set<OpenOption> OPEN_OPTIONS_WITH_INOTIFY = ImmutableSet.<OpenOption>builder()
-            .addAll(OPEN_OPTIONS)
-            .add(InotifyReplicaRecord.OpenFlags.ENABLE_INOTIFY_MONITORING)
-            .build();
+          .addAll(OPEN_OPTIONS)
+          .add(InotifyReplicaRecord.OpenFlags.ENABLE_INOTIFY_MONITORING)
+          .build();
 
     /**
-     * Time that a new CACHED file with no sticky flags will be marked
-     * sticky.
+     * Time that a new CACHED file with no sticky flags will be marked sticky.
      */
     private static final long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
 
-    /** Callback for resilience handling.  Pool name can be accessed here */
+    /**
+     * Callback for resilience handling.  Pool name can be accessed here
+     */
     private final ReplicaRepository _repository;
 
-    /** Space allocation is delegated to this allocator. */
+    /**
+     * Space allocation is delegated to this allocator.
+     */
     private final Allocator _allocator;
 
-    /** The handler provides access to this entry. */
+    /**
+     * The handler provides access to this entry.
+     */
     private final ReplicaRecord _entry;
 
-    /** File attributes of the file being written. */
+    /**
+     * File attributes of the file being written.
+     */
     private final FileAttributes _fileAttributes;
 
-    /** Stub for talking to the PNFS manager. */
+    /**
+     * Stub for talking to the PNFS manager.
+     */
     private final PnfsHandler _pnfs;
 
-    /** Sticky flags to be applied after the transfer. */
+    /**
+     * Sticky flags to be applied after the transfer.
+     */
     private final List<StickyRecord> _stickyRecords;
 
-    /** The entry state used during transfer. */
+    /**
+     * The entry state used during transfer.
+     */
     private final ReplicaState _initialState;
 
-    /** The entry state used when the handle is committed. */
+    /**
+     * The entry state used when the handle is committed.
+     */
     private ReplicaState _targetState;
 
-    /** The state of the write handle. */
+    /**
+     * The state of the write handle.
+     */
     private HandleState _state;
 
-    /** Last access time of new replica. */
+    /**
+     * Last access time of new replica.
+     */
     private Long _atime;
 
     private boolean hasChannelBeenCreated;
 
     WriteHandleImpl(ReplicaRepository repository,
-                    Allocator allocator,
-                    PnfsHandler pnfs,
-                    ReplicaRecord entry,
-                    FileAttributes fileAttributes,
-                    ReplicaState targetState,
-                    List<StickyRecord> stickyRecords)
-    {
+          Allocator allocator,
+          PnfsHandler pnfs,
+          ReplicaRecord entry,
+          FileAttributes fileAttributes,
+          ReplicaState targetState,
+          List<StickyRecord> stickyRecords) {
         _repository = requireNonNull(repository);
         _allocator = requireNonNull(allocator);
         _pnfs = requireNonNull(pnfs);
@@ -117,20 +138,19 @@ class WriteHandleImpl implements ReplicaDescriptor
         _stickyRecords = requireNonNull(stickyRecords);
         _state = HandleState.OPEN;
 
-        checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
+        checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(
+              EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
         checkState(_initialState == ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
     }
 
-    private synchronized void setState(HandleState state)
-    {
+    private synchronized void setState(HandleState state) {
         _state = state;
     }
 
     /**
      * Whether a createChannel request is intended for direct client IO.
      */
-    private boolean isChannelForClient()
-    {
+    private boolean isChannelForClient() {
         // The createChannel method may be called multiple times; for example,
         // the onWrite behaviour within ChecksumModuleV1#enforcePostTransferPolicy.
         // We use the heuristic that the first createChannel is to accept client data
@@ -146,20 +166,19 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
 
         Set<OpenOption> options = isChannelForClient()
-                ? OPEN_OPTIONS_WITH_INOTIFY
-                : OPEN_OPTIONS;
+              ? OPEN_OPTIONS_WITH_INOTIFY
+              : OPEN_OPTIONS;
 
         RepositoryChannel channel = new AllocatorAwareRepositoryChannel(_entry.openChannel(options),
-                _repository, _fileAttributes.getPnfsId(), _allocator);
+              _repository, _fileAttributes.getPnfsId(), _allocator);
         hasChannelBeenCreated = true;
         return channel;
     }
 
-    private void registerFileAttributesInNameSpace() throws CacheException
-    {
+    private void registerFileAttributesInNameSpace() throws CacheException {
         FileAttributes attributesToUpdate = FileAttributes.ofLocation(_repository.getPoolName());
         if (_fileAttributes.isDefined(CHECKSUM)) {
-                /* PnfsManager detects conflicting checksums and will fail the update. */
+            /* PnfsManager detects conflicting checksums and will fail the update. */
             attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
         }
         if (_initialState == ReplicaState.FROM_CLIENT) {
@@ -182,20 +201,18 @@ class WriteHandleImpl implements ReplicaDescriptor
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
 
-    private void verifyFileSize(long length) throws CacheException
-    {
+    private void verifyFileSize(long length) throws CacheException {
         assert _initialState == ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(SIZE);
         if ((_initialState != ReplicaState.FROM_CLIENT ||
-             (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
-                _fileAttributes.getSize() != length) {
+              (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
+              _fileAttributes.getSize() != length) {
             throw new FileCorruptedCacheException(_fileAttributes.getSize(), length);
         }
     }
 
     @Override
     public synchronized void commit()
-        throws IllegalStateException, InterruptedException, CacheException
-    {
+          throws IllegalStateException, InterruptedException, CacheException {
         if (_state != HandleState.OPEN) {
             throw new IllegalStateException("Handle is closed");
         }
@@ -260,18 +277,16 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     /**
-     * Fails the operation. Called by close without a successful
-     * commit. The file is either removed or marked bad, depending on
-     * its state.
+     * Fails the operation. Called by close without a successful commit. The file is either removed
+     * or marked bad, depending on its state.
      */
-    private synchronized void fail()
-    {
+    private synchronized void fail() {
         String why = null;
         /* Files from tape or from another pool are deleted in case of
          * errors.
          */
         if (_initialState == ReplicaState.FROM_POOL ||
-            _initialState == ReplicaState.FROM_STORE) {
+              _initialState == ReplicaState.FROM_STORE) {
             _targetState = ReplicaState.REMOVED;
             why = "replica is " + _initialState;
         }
@@ -319,7 +334,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     why = "file no longer exists in namespace";
                 } else {
                     LOGGER.warn("Failed to register {} after failed replica creation: {}",
-                            _fileAttributes, e.getMessage());
+                          _fileAttributes, e.getMessage());
                 }
             }
         }
@@ -334,14 +349,14 @@ class WriteHandleImpl implements ReplicaDescriptor
         } else {
             PnfsId id = _entry.getPnfsId();
             LOGGER.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                                   id.toString(),
-                                                   _repository.getPoolName()),
-                      "Marking pool entry {} on {} as BROKEN",
-                      _entry.getPnfsId(),
-                      _repository.getPoolName());
+                        id.toString(),
+                        _repository.getPoolName()),
+                  "Marking pool entry {} on {} as BROKEN",
+                  _entry.getPnfsId(),
+                  _repository.getPoolName());
             try {
                 _entry.update("Transfer failed for " + _initialState + " replica",
-                        r -> r.setState(ReplicaState.BROKEN));
+                      r -> r.setState(ReplicaState.BROKEN));
             } catch (CacheException e) {
                 LOGGER.warn("Failed to mark replica as broken: {}", e.getMessage());
             }
@@ -350,20 +365,19 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     @Override
     public synchronized void close()
-        throws IllegalStateException
-    {
+          throws IllegalStateException {
         switch (_state) {
-        case CLOSED:
-            throw new IllegalStateException("Handle is closed");
+            case CLOSED:
+                throw new IllegalStateException("Handle is closed");
 
-        case OPEN:
-            fail();
-            setState(HandleState.CLOSED);
-            break;
+            case OPEN:
+                fail();
+                setState(HandleState.CLOSED);
+                break;
 
-        case COMMITTED:
-            setState(HandleState.CLOSED);
-            break;
+            case COMMITTED:
+                setState(HandleState.CLOSED);
+                break;
         }
     }
 
@@ -372,8 +386,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
     @Override
-    public synchronized URI getReplicaFile() throws IllegalStateException
-    {
+    public synchronized URI getReplicaFile() throws IllegalStateException {
         if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
         }
@@ -382,25 +395,22 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public FileAttributes getFileAttributes()  throws IllegalStateException
-    {
+    public FileAttributes getFileAttributes() throws IllegalStateException {
         return _fileAttributes;
     }
 
     @Override
-    public synchronized Iterable<Checksum> getChecksums() throws CacheException
-    {
+    public synchronized Iterable<Checksum> getChecksums() throws CacheException {
         if (!_fileAttributes.isDefined(CHECKSUM)) {
             _fileAttributes.setChecksums(_pnfs
-                    .getFileAttributes(_entry.getPnfsId(), EnumSet.of(CHECKSUM))
-                    .getChecksums());
+                  .getFileAttributes(_entry.getPnfsId(), EnumSet.of(CHECKSUM))
+                  .getChecksums());
         }
         return unmodifiableIterable(_fileAttributes.getChecksums());
     }
 
     @Override
-    public synchronized void addChecksums(Iterable<Checksum> checksums)
-    {
+    public synchronized void addChecksums(Iterable<Checksum> checksums) {
         if (!isEmpty(checksums)) {
             Iterable<Checksum> newChecksums;
             if (_fileAttributes.isDefined(CHECKSUM)) {
@@ -413,8 +423,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public void setLastAccessTime(long time)
-    {
+    public void setLastAccessTime(long time) {
         if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
         }
@@ -422,8 +431,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public long getReplicaSize()
-    {
+    public long getReplicaSize() {
         return _entry.getReplicaSize();
     }
 

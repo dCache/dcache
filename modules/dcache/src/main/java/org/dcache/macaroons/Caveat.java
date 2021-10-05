@@ -17,25 +17,23 @@
  */
 package org.dcache.macaroons;
 
-import com.google.common.base.Splitter;
-
-import java.util.List;
-
 import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
+import com.google.common.base.Splitter;
+import java.util.List;
+
 /**
- * Macaroons have zero or more caveats.  Each caveat either restricts the
- * macaroon somehow or provides contextual information.
+ * Macaroons have zero or more caveats.  Each caveat either restricts the macaroon somehow or
+ * provides contextual information.
  */
-public class Caveat
-{
+public class Caveat {
+
     public static final String SEPARATOR = ":";
 
     private final CaveatType type;
     private final String value;
 
-    public Caveat(String caveat) throws InvalidCaveatException
-    {
+    public Caveat(String caveat) throws InvalidCaveatException {
         List<String> keyvalue = Splitter.on(SEPARATOR).limit(2).splitToList(caveat);
         checkCaveat(keyvalue.size() == 2, "Missing ':'");
 
@@ -44,30 +42,25 @@ public class Caveat
         type = CaveatType.identify(label);
     }
 
-    public Caveat(CaveatType type, Object value)
-    {
+    public Caveat(CaveatType type, Object value) {
         this.type = type;
         this.value = String.valueOf(value);
     }
 
-    public CaveatType getType()
-    {
+    public CaveatType getType() {
         return type;
     }
 
-    public boolean hasType(CaveatType type)
-    {
+    public boolean hasType(CaveatType type) {
         return this.type == type;
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return type.getLabel() + SEPARATOR + value;
     }
 }

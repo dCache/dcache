@@ -22,25 +22,21 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * The presence of this principal indicates that the user is exempt from the
- * normal namespace permission rules.  The
- * {@link org.dcache.auth.attributes.Restriction} accompanying a namespace
- * request is still enforced.  Code that inserts this principal should (very
- * likely) also add restrictions, otherwise the user will have root-like
- * authority.
+ * The presence of this principal indicates that the user is exempt from the normal namespace
+ * permission rules.  The {@link org.dcache.auth.attributes.Restriction} accompanying a namespace
+ * request is still enforced.  Code that inserts this principal should (very likely) also add
+ * restrictions, otherwise the user will have root-like authority.
  */
 @AuthenticationOutput
-public class ExemptFromNamespaceChecks implements Principal, Serializable
-{
+public class ExemptFromNamespaceChecks implements Principal, Serializable {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "full"; // all namespace checks are by-passed.
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "ExemptFromNamespaceChecks";
     }
 }

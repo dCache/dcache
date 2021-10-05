@@ -1,13 +1,16 @@
 package org.dcache.util;
 
+import static com.google.common.collect.Iterables.transform;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.isoSymbol;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.hash.Hashing;
 import com.google.common.net.InetAddresses;
-import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -25,25 +28,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.google.common.collect.Iterables.transform;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.util.ByteUnit.Type.BINARY;
-import static org.dcache.util.ByteUnits.isoSymbol;
+import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author timur
  */
 public final class Strings {
 
     private static final Logger LOGGER =
-        LoggerFactory.getLogger( Strings.class);
+          LoggerFactory.getLogger(Strings.class);
 
     private static final String ANSI_ESCAPE = "\u001b[";
-    private static final String[] ZERO_LENGTH_STRING_ARRAY=new String[0];
+    private static final String[] ZERO_LENGTH_STRING_ARRAY = new String[0];
     private static final String INFINITY = "infinity";
     private static final DecimalFormat THREE_SIG_FIG_FORMAT = new DecimalFormat("0.##E0");
 
@@ -56,60 +54,57 @@ public final class Strings {
 
 
     /**
-     * Splits a string into an array of strings using white space as dividers
-     * Substring surrounded by white space and single or double quotes is
-     * treated as a single indivisible string, and white space inside such
-     * substring is not used as a divider.
-     * So the following string
+     * Splits a string into an array of strings using white space as dividers Substring surrounded
+     * by white space and single or double quotes is treated as a single indivisible string, and
+     * white space inside such substring is not used as a divider. So the following string
      * <code> arg1 arg2 "this is an argument 3" 'arg 4'</code>
      * will be split into String array
      * <code> {"arg1","arg2","this is an argument 3", "arg 4"} </code>
-     * Quotes embedded into the strings of non white spaces
-     * (i.e. <code> aaa"bbb </code> or <code> ccc"ddd eee"fff </code> )
-     * are not supported at this time and the behavior is undefined.
+     * Quotes embedded into the strings of non white spaces (i.e. <code> aaa"bbb </code> or <code>
+     * ccc"ddd eee"fff </code> ) are not supported at this time and the behavior is undefined.
+     *
      * @param argumentString
-     * @return String array, a result of argument string split,
-     * zero length array of strings if the argument string is null
+     * @return String array, a result of argument string split, zero length array of strings if the
+     * argument string is null
      */
     public static String[] splitArgumentString(String argumentString) {
-        LOGGER.debug("splitting argument string {}",argumentString);
-        if(argumentString == null) {
+        LOGGER.debug("splitting argument string {}", argumentString);
+        if (argumentString == null) {
             return ZERO_LENGTH_STRING_ARRAY;
         }
         argumentString = argumentString.trim();
         Pattern regex = Pattern.compile(
-            "\"([^\"]*)\""+    // first group matches string surronded
-                               // by double quotes
-            "|'([^']*)'"+      // second group is for strings in single
-                               // quotes
-            "|([^\\s]+)");     // last group matches everything else
-                               // without the spaces
+              "\"([^\"]*)\"" +    // first group matches string surronded
+                    // by double quotes
+                    "|'([^']*)'" +      // second group is for strings in single
+                    // quotes
+                    "|([^\\s]+)");     // last group matches everything else
+        // without the spaces
         Matcher regexMatcher = regex.matcher(argumentString);
 
         List<String> matchList = new ArrayList<>();
-        while(regexMatcher.find()) {
-         if (regexMatcher.group(1) != null) {
+        while (regexMatcher.find()) {
+            if (regexMatcher.group(1) != null) {
                 // Add double-quoted string without the quotes
-                String groupMatch=  regexMatcher.group(1);
-                LOGGER.debug("first group matched [{}]",groupMatch);
+                String groupMatch = regexMatcher.group(1);
+                LOGGER.debug("first group matched [{}]", groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(2) != null) {
                 // Add single-quoted string without the quotes
-                String groupMatch=  regexMatcher.group(2);
-                LOGGER.debug("second group matched [{}]",groupMatch);
+                String groupMatch = regexMatcher.group(2);
+                LOGGER.debug("second group matched [{}]", groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(3) != null) {
                 //everything else
-                String groupMatch=  regexMatcher.group(3);
-                LOGGER.debug("third group matched [{}]",groupMatch);
+                String groupMatch = regexMatcher.group(3);
+                LOGGER.debug("third group matched [{}]", groupMatch);
                 matchList.add(groupMatch);
             }
         }
         return matchList.toArray(String[]::new);
     }
 
-    public static int plainLength(String s)
-    {
+    public static int plainLength(String s) {
         int length = s.length();
         int plainLength = length;
         int i = s.indexOf(ANSI_ESCAPE);
@@ -130,14 +125,13 @@ public final class Strings {
     }
 
     /**
-     * Locates the last occurrence of a white space character after fromIndex and before
-     * wrapLength characters, or the first occurrence of a white space character after
-     * fromIndex if there is no white space before wrapLength characters.
-     *
+     * Locates the last occurrence of a white space character after fromIndex and before wrapLength
+     * characters, or the first occurrence of a white space character after fromIndex if there is no
+     * white space before wrapLength characters.
+     * <p>
      * ANSI escape sequences are considered to have zero width.
      */
-    private static int indexOfNextWrap(char[] chars, int fromIndex, int wrapLength)
-    {
+    private static int indexOfNextWrap(char[] chars, int fromIndex, int wrapLength) {
         int lastWrap = -1;
         int max = fromIndex + wrapLength;
         int length = chars.length;
@@ -147,7 +141,7 @@ public final class Strings {
             } else if (chars[i] == 27 && i < length && chars[i + 1] == '[') {
                 i += 2;
                 max += 2;
-                for (;i < length && (chars[i] < 64 || chars[i] > 126); i++) {
+                for (; i < length && (chars[i] < 64 || chars[i] > 126); i++) {
                     max++;
                 }
                 max++;
@@ -157,18 +151,17 @@ public final class Strings {
     }
 
     /**
-     * Wraps a text to a particular width. Leading white space is
-     * repeated in front of every wrapped line.
-     *
+     * Wraps a text to a particular width. Leading white space is repeated in front of every wrapped
+     * line.
+     * <p>
      * ANSI escape sequences are considered to have zero width.
      *
-     * @param indent String to place at the beginning of each line
-     * @param str String to wrap
+     * @param indent     String to place at the beginning of each line
+     * @param str        String to wrap
      * @param wrapLength Width to wrap to excluding indent
      * @return Wrapped string.
      */
-    public static String wrap(String indent, String str, int wrapLength)
-    {
+    public static String wrap(String indent, String str, int wrapLength) {
         int offset = 0;
         StringBuilder out = new StringBuilder(str.length());
 
@@ -187,7 +180,8 @@ public final class Strings {
             }
 
             int spaceToWrapAt;
-            while ((spaceToWrapAt = indexOfNextWrap(chars, offset, wrapLength - indent.length() - pil)) < eop) {
+            while ((spaceToWrapAt = indexOfNextWrap(chars, offset,
+                  wrapLength - indent.length() - pil)) < eop) {
                 out.append(indent);
                 out.append(chars, bop, pil);
                 out.append(chars, offset, spaceToWrapAt - offset);
@@ -200,7 +194,8 @@ public final class Strings {
                 }
             }
 
-            out.append(indent).append(chars, bop, pil).append(chars, offset, eop - offset).append('\n');
+            out.append(indent).append(chars, bop, pil).append(chars, offset, eop - offset)
+                  .append('\n');
             offset = eop + 1;
         }
 
@@ -208,8 +203,9 @@ public final class Strings {
     }
 
     /**
-     * Convert a {@link Method} to a String signature. The provided {@link Character}
-     * {@code c} used as a delimiter in the resulting string.
+     * Convert a {@link Method} to a String signature. The provided {@link Character} {@code c} used
+     * as a delimiter in the resulting string.
+     *
      * @param m method to get signature from
      * @param c delimiter to use
      * @return method's signature as a String
@@ -227,8 +223,7 @@ public final class Strings {
      * Like Integer#parseInt, but parses "infinity" to Integer.MAX_VALUE.
      */
     public static int parseInt(String s)
-            throws NumberFormatException
-    {
+          throws NumberFormatException {
         return s.equals(INFINITY) ? Integer.MAX_VALUE : Integer.parseInt(s);
     }
 
@@ -236,8 +231,7 @@ public final class Strings {
      * Like Long#parseLong, but parses "infinity" to Long.MAX_VALUE.
      */
     public static long parseLong(String s)
-            throws NumberFormatException
-    {
+          throws NumberFormatException {
         return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
     }
 
@@ -245,18 +239,16 @@ public final class Strings {
      * Parses a string to a time value, converting from milliseconds to the specified unit. Parses
      * "infinity" to Long.MAX_VALUE.
      */
-    public static long parseTime(String s, TimeUnit unit)
-    {
+    public static long parseTime(String s, TimeUnit unit) {
         return s.equals(INFINITY) ? Long.MAX_VALUE : MILLISECONDS.convert(Long.parseLong(s), unit);
     }
 
     /**
-     * Returns a string representation of the specified object or the empty string
-     * for a null argument. In contrast to Object#toString, this method recognizes
-     * array arguments and returns a suitable string form.
+     * Returns a string representation of the specified object or the empty string for a null
+     * argument. In contrast to Object#toString, this method recognizes array arguments and returns
+     * a suitable string form.
      */
-    public static String toString(Object value)
-    {
+    public static String toString(Object value) {
         if (value == null) {
             return "";
         } else if (value.getClass().isArray()) {
@@ -286,13 +278,12 @@ public final class Strings {
     }
 
     /**
-     * Returns a string representation of the specified object or the empty string
-     * for a null argument. In contrast to Object#toString, this method recognizes
-     * array arguments and returns a suitable string form. In contrast to Strings#toString,
-     * the object arrays are split over multiple lines.
+     * Returns a string representation of the specified object or the empty string for a null
+     * argument. In contrast to Object#toString, this method recognizes array arguments and returns
+     * a suitable string form. In contrast to Strings#toString, the object arrays are split over
+     * multiple lines.
      */
-    public static String toMultilineString(Object value)
-    {
+    public static String toMultilineString(Object value) {
         if (value == null) {
             return "";
         } else if (value.getClass().isArray()) {
@@ -314,15 +305,16 @@ public final class Strings {
             } else if (componentType == Short.TYPE) {
                 return Arrays.toString((short[]) value);
             } else {
-                return Joiner.on('\n').join(transform(asList((Object[]) value), (Function<Object, Object>) Strings::toString));
+                return Joiner.on('\n').join(transform(asList((Object[]) value),
+                      (Function<Object, Object>) Strings::toString));
             }
         } else {
             return value.toString();
         }
     }
 
-    public static Optional<String> combine(Optional<String> first, String seperator, Optional<String> second)
-    {
+    public static Optional<String> combine(Optional<String> first, String seperator,
+          Optional<String> second) {
         if (first.isPresent()) {
             if (second.isPresent()) {
                 return Optional.of(first.get() + seperator + second.get());
@@ -335,44 +327,41 @@ public final class Strings {
     }
 
     /**
-     * Text that is split into lines, each line has a prefix and the resulting
-     * lines are combined.  The returned String does NOT end with a new-line
-     * character.
+     * Text that is split into lines, each line has a prefix and the resulting lines are combined.
+     * The returned String does NOT end with a new-line character.
      */
-    public static String indentLines(String indent, String text)
-    {
+    public static String indentLines(String indent, String text) {
         return new BufferedReader(new StringReader(text))
-                .lines()
-                .map(s -> indent + s)
-                .collect(Collectors.joining("\n"));
+              .lines()
+              .map(s -> indent + s)
+              .collect(Collectors.joining("\n"));
     }
 
     /**
-     * Return whether the supplied string starts with an open-bracket character
-     * and ends with the corresponding close-bracket character.
+     * Return whether the supplied string starts with an open-bracket character and ends with the
+     * corresponding close-bracket character.
+     *
      * @param target
      * @return
      */
-    public static boolean isInBrackets(String target)
-    {
+    public static boolean isInBrackets(String target) {
         return target.startsWith("(") && target.endsWith(")")
-                || target.startsWith("[") && target.endsWith("]")
-                || target.startsWith("<") && target.endsWith(">")
-                || target.startsWith("{") && target.endsWith("}");
+              || target.startsWith("[") && target.endsWith("]")
+              || target.startsWith("<") && target.endsWith(">")
+              || target.startsWith("{") && target.endsWith("}");
     }
 
     /**
-     * Provide a description of the observed distribution of bandwidth
-     * measurements.  If the minimum and maximum values are the same (all
-     * measurements having the same value) or the standard deviation is exactly
-     * zero then return a description of the mean bandwidth, otherwise return
-     * a string describing the minimum, mean (value and uncertainty), standard
-     * deviation and maximum value.
+     * Provide a description of the observed distribution of bandwidth measurements.  If the minimum
+     * and maximum values are the same (all measurements having the same value) or the standard
+     * deviation is exactly zero then return a description of the mean bandwidth, otherwise return a
+     * string describing the minimum, mean (value and uncertainty), standard deviation and maximum
+     * value.
+     *
      * @param bandwidth The statistics to describe
      * @return A String describing the statistics.
      */
-    public static String describeBandwidth(StatisticalSummary bandwidth)
-    {
+    public static String describeBandwidth(StatisticalSummary bandwidth) {
         double min = bandwidth.getMin();
         double max = bandwidth.getMax();
         double sd = bandwidth.getStandardDeviation();
@@ -390,28 +379,27 @@ public final class Strings {
                 double scaledMean = units.convert(mean, ByteUnit.BYTES);
                 double scaledSem = units.convert(sem, ByteUnit.BYTES);
                 meanDescription = "(" + toThreeSigFig(scaledMean, 1024, scaledSem) + ") "
-                        + isoSymbol().of(units) + "/s";
+                      + isoSymbol().of(units) + "/s";
             }
 
             return "min. " + describeBandwidth(min)
-                    + ", mean " + meanDescription
-                    + ", SD " + describeBandwidth(sd)
-                    + ", max. " + describeBandwidth(max);
+                  + ", mean " + meanDescription
+                  + ", SD " + describeBandwidth(sd)
+                  + ", max. " + describeBandwidth(max);
         }
     }
 
     /**
-     * Provide a description of the observed distribution of capacity
-     * measurements.  If the minimum and maximum values are the same (all
-     * measurements having the same value) or the standard deviation is exactly
-     * zero then return a description of the mean capacity, otherwise return
-     * a string describing the minimum, mean (value and uncertainty), standard
-     * deviation and maximum value.
+     * Provide a description of the observed distribution of capacity measurements.  If the minimum
+     * and maximum values are the same (all measurements having the same value) or the standard
+     * deviation is exactly zero then return a description of the mean capacity, otherwise return a
+     * string describing the minimum, mean (value and uncertainty), standard deviation and maximum
+     * value.
+     *
      * @param size The statistics to describe
      * @return A String describing the statistics.
      */
-    public static String describeSize(StatisticalSummary size)
-    {
+    public static String describeSize(StatisticalSummary size) {
         long min = Math.round(size.getMin());
         long max = Math.round(size.getMax());
         if (min == max) {
@@ -426,29 +414,30 @@ public final class Strings {
                 ByteUnit units = BINARY.unitsOf(mean);
                 double scaledMean = units.convert(mean, ByteUnit.BYTES);
                 double scaledSem = units.convert(sem, ByteUnit.BYTES);
-                meanDescription = "(" + toThreeSigFig(scaledMean, 1024, scaledSem) + ") " + isoSymbol().of(units);
+                meanDescription =
+                      "(" + toThreeSigFig(scaledMean, 1024, scaledSem) + ") " + isoSymbol().of(
+                            units);
             }
 
             long sd = Math.round(size.getStandardDeviation());
             return "min. " + describeSize(min)
-                    + ", mean " + meanDescription
-                    + ", SD " + describeSize(sd)
-                    + ", max. " + describeSize(max);
+                  + ", mean " + meanDescription
+                  + ", SD " + describeSize(sd)
+                  + ", max. " + describeSize(max);
         }
     }
 
     /**
-     * Provide a description of the observed distribution of some integer
-     * measurements.  If the minimum and maximum values are the same (all
-     * measurements having the same value) or the standard deviation is exactly
-     * zero then return a description of the mean value, otherwise return
-     * a string describing the minimum, mean (value and uncertainty), standard
-     * deviation and maximum value.
+     * Provide a description of the observed distribution of some integer measurements.  If the
+     * minimum and maximum values are the same (all measurements having the same value) or the
+     * standard deviation is exactly zero then return a description of the mean value, otherwise
+     * return a string describing the minimum, mean (value and uncertainty), standard deviation and
+     * maximum value.
+     *
      * @param statistics The statistics to describe
      * @return A String describing the statistics.
      */
-    public static String describeInteger(StatisticalSummary statistics)
-    {
+    public static String describeInteger(StatisticalSummary statistics) {
         long min = Math.round(statistics.getMin());
         long max = Math.round(statistics.getMax());
 
@@ -467,64 +456,63 @@ public final class Strings {
             }
 
             return " min. " + min
-                        + ", mean " + meanDescription
-                        + ", SD " + toThreeSigFig(sd, 1000)
-                        + ", max. " + max;
+                  + ", mean " + meanDescription
+                  + ", SD " + toThreeSigFig(sd, 1000)
+                  + ", max. " + max;
         }
     }
 
     /**
-     * Provide a file/data size (in bytes) a human readable form, using binary units
-     * and ISO symbols.  For example, 10 --> "10 B",  2560 --> "2.5 KiB".
+     * Provide a file/data size (in bytes) a human readable form, using binary units and ISO
+     * symbols.  For example, 10 --> "10 B",  2560 --> "2.5 KiB".
+     *
      * @param size The size to represent.
      * @return a String describing this value.
      */
-    public static String humanReadableSize(long size)
-    {
+    public static String humanReadableSize(long size) {
         ByteUnit units = BINARY.unitsOf(size);
-        return toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024)
-                + " " + isoSymbol().of(units);
+        return toThreeSigFig(units.convert((double) size, ByteUnit.BYTES), 1024)
+              + " " + isoSymbol().of(units);
     }
 
     /**
-     * Provide a description of a file/data size (in bytes).  The output shows
-     * the exact number with units ("B").  If the value is larger than 1 KiB
-     * then the scaled value is shown in the most appropriate units.  For
-     * example 10 --> "10 B", 2560 --> "2560 B (2.5 KiB)".
+     * Provide a description of a file/data size (in bytes).  The output shows the exact number with
+     * units ("B").  If the value is larger than 1 KiB then the scaled value is shown in the most
+     * appropriate units.  For example 10 --> "10 B", 2560 --> "2560 B (2.5 KiB)".
+     *
      * @param size The size to represent.
      * @return a String describing this value.
      */
-    public static String describeSize(long size)
-    {
+    public static String describeSize(long size) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(size).append(' ').append(isoSymbol().of(ByteUnit.BYTES));
 
         ByteUnit units = BINARY.unitsOf(size);
         if (units != ByteUnit.BYTES) {
-            sb.append(" (").append(toThreeSigFig(units.convert((double)size, ByteUnit.BYTES), 1024))
-                    .append(' ').append(isoSymbol().of(units)).append(')');
+            sb.append(" (")
+                  .append(toThreeSigFig(units.convert((double) size, ByteUnit.BYTES), 1024))
+                  .append(' ').append(isoSymbol().of(units)).append(')');
         }
 
         return sb.toString();
     }
 
     /**
-     * Provide a human-readable description of a bandwidth value, using binary
-     * prefixes (2^10, 2^20, ...) and ISO symbols (KiB/s, MiB/s, ...).  A
-     * typical description is 36280729 --> "34.6 MiB/s"
+     * Provide a human-readable description of a bandwidth value, using binary prefixes (2^10, 2^20,
+     * ...) and ISO symbols (KiB/s, MiB/s, ...).  A typical description is 36280729 --> "34.6
+     * MiB/s"
+     *
      * @param value the bandwidth value, in bytes per second
      * @return a human understandable description of that bandwidth
      */
-    public static String describeBandwidth(double value)
-    {
+    public static String describeBandwidth(double value) {
         ByteUnit units = BINARY.unitsOf(value);
-        return toThreeSigFig(units.convert((double)value, ByteUnit.BYTES), 1024)
-                + " " + isoSymbol().of(units) + "/s";
+        return toThreeSigFig(units.convert((double) value, ByteUnit.BYTES), 1024)
+              + " " + isoSymbol().of(units) + "/s";
     }
 
-    public static String toThreeSigFig(double value, double max)
-    {
+    public static String toThreeSigFig(double value, double max) {
         if (value == 0) {
             return "0";
         } else if (value < 0) {
@@ -551,8 +539,7 @@ public final class Strings {
         return THREE_SIG_FIG_FORMAT.format(value);
     }
 
-    public static String toThreeSigFig(double value, double max, double uncertainty)
-    {
+    public static String toThreeSigFig(double value, double max, double uncertainty) {
         if (uncertainty == 0) {
             return toThreeSigFig(value, max);
         }
@@ -570,11 +557,11 @@ public final class Strings {
                 return String.format("%.0f", value) + " ± " + String.format("%.0f", uncertainty);
             }
         }
-        return THREE_SIG_FIG_FORMAT.format(value) + " ± " + THREE_SIG_FIG_FORMAT.format(uncertainty);
+        return THREE_SIG_FIG_FORMAT.format(value) + " ± " + THREE_SIG_FIG_FORMAT.format(
+              uncertainty);
     }
 
-    public static String describe(SocketAddress address)
-    {
+    public static String describe(SocketAddress address) {
         if (address instanceof InetSocketAddress) {
             InetSocketAddress inet = (InetSocketAddress) address;
             return InetAddresses.toUriString(inet.getAddress()) + ":" + inet.getPort();
@@ -583,19 +570,18 @@ public final class Strings {
         }
     }
 
-    public static CharSequence describe(Optional<Instant> when)
-    {
+    public static CharSequence describe(Optional<Instant> when) {
         return when.map(TimeUtils::relativeTimestamp).orElse("never");
     }
 
     /**
-     * Provide a base64 encoded hash of the supplied String.  The hash algorithm
-     * is not specified, but may be assumed to be cryptographically strong.
+     * Provide a base64 encoded hash of the supplied String.  The hash algorithm is not specified,
+     * but may be assumed to be cryptographically strong.
+     *
      * @param in the String to be hashed
      * @return A Base64 representation (without padding) of the resulting hash.
      */
-    public static String base64Hash(String in)
-    {
+    public static String base64Hash(String in) {
         byte[] hashBytes = new byte[8];
         Hashing.sha256().hashBytes(in.getBytes(UTF_8)).writeBytesTo(hashBytes, 0, hashBytes.length);
         return Base64.getEncoder().withoutPadding().encodeToString(hashBytes);

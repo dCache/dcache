@@ -11,26 +11,35 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 
 /**
- *
- * @author  patrick
+ * @author patrick
  */
-public class HsmControlGetBfDetailsMsg extends Message  {
+public class HsmControlGetBfDetailsMsg extends Message {
 
     private static final long serialVersionUID = -8423976847654758059L;
     private final StorageInfo _storageInfo;
-    private final PnfsId      _pnfsId;
-    private final String      _detail;
-    /** Creates a new instance of HsmControlGetBfDetailsMsg
-     *
+    private final PnfsId _pnfsId;
+    private final String _detail;
+
+    /**
+     * Creates a new instance of HsmControlGetBfDetailsMsg
      */
-    public HsmControlGetBfDetailsMsg( PnfsId pnfsId , StorageInfo storageInfo , String detail ) {
-       _pnfsId      = pnfsId ;
-       _storageInfo = storageInfo ;
-       _detail      = detail ;
+    public HsmControlGetBfDetailsMsg(PnfsId pnfsId, StorageInfo storageInfo, String detail) {
+        _pnfsId = pnfsId;
+        _storageInfo = storageInfo;
+        _detail = detail;
     }
-    public PnfsId getPnfsId(){ return _pnfsId ; }
-    public StorageInfo getStorageInfo(){ return _storageInfo ; }
-    public String getDetails(){ return _detail ; }
+
+    public PnfsId getPnfsId() {
+        return _pnfsId;
+    }
+
+    public StorageInfo getStorageInfo() {
+        return _storageInfo;
+    }
+
+    public String getDetails() {
+        return _detail;
+    }
 
     @Override
     public String getDiagnosticContext() {

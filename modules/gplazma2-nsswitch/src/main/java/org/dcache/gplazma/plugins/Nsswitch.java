@@ -1,17 +1,18 @@
 package org.dcache.gplazma.plugins;
 
+import static java.util.Arrays.asList;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import com.google.common.collect.Sets;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
-
 import java.security.Principal;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -21,12 +22,9 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 
-import static java.util.Arrays.asList;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-
 /**
- * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
- * Unix based systems. The actual mapping happens according to systems {@literal /etc/nsswith.conf}
+ * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for Unix based
+ * systems. The actual mapping happens according to systems {@literal /etc/nsswith.conf}
  * configuration. The following mapping takes place:
  * <pre>
  *     login name: {@link UserNamePrincipal}
@@ -80,8 +78,9 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     }
 
     /**
-     * Maps {@link UserNamePrincipal} to corresponding {@link UidPrincipal} and
-     * {@link GroupNamePrincipal} to corresponding {@link GidPrincipal}.
+     * Maps {@link UserNamePrincipal} to corresponding {@link UidPrincipal} and {@link
+     * GroupNamePrincipal} to corresponding {@link GidPrincipal}.
+     *
      * @param principal to map
      * @return mapped principal.
      * @throws NoSuchPrincipalException if user or group name does can't be mapped.
@@ -104,8 +103,9 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     }
 
     /**
-     * Maps {@link UidPrincipal} to corresponding {@link UserNamePrincipal} and
-     * {@link GidPrincipal} to corresponding {@link GroupNamePrincipal}.
+     * Maps {@link UidPrincipal} to corresponding {@link UserNamePrincipal} and {@link GidPrincipal}
+     * to corresponding {@link GroupNamePrincipal}.
+     *
      * @param principal to map
      * @return mapped principal
      * @throws NoSuchPrincipalException if uid or gid can't be mapped.
@@ -116,19 +116,20 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         if (principal instanceof UidPrincipal) {
             __password p = _libc.getpwuid((int) ((UidPrincipal) principal).getUid());
             if (p != null) {
-               return Sets.newHashSet((Principal)new UserNamePrincipal(p.name));
+                return Sets.newHashSet((Principal) new UserNamePrincipal(p.name));
             }
         } else if (principal instanceof GidPrincipal) {
             __group g = _libc.getgrgid((int) ((GidPrincipal) principal).getGid());
             if (g != null) {
-               return Sets.newHashSet((Principal)new GroupNamePrincipal(g.name));
+                return Sets.newHashSet((Principal) new GroupNamePrincipal(g.name));
             }
         }
         throw new NoSuchPrincipalException(principal);
     }
 
     @Override
-    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib)
+          throws AuthenticationException {
         attrib.add(new HomeDirectory("/"));
         attrib.add(new RootDirectory("/"));
     }

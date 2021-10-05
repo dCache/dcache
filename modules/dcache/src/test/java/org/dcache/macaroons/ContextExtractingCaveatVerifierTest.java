@@ -1,13 +1,13 @@
 package org.dcache.macaroons;
 
+import static org.junit.Assert.assertFalse;
+
 import com.github.nitram509.jmacaroons.Macaroon;
 import com.github.nitram509.jmacaroons.MacaroonsBuilder;
 import com.github.nitram509.jmacaroons.MacaroonsVerifier;
 import com.google.common.net.InetAddresses;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertFalse;
 
 public class ContextExtractingCaveatVerifierTest {
 
@@ -31,17 +31,18 @@ public class ContextExtractingCaveatVerifierTest {
         String identifier = "junit";
 
         Macaroon macaroon = new MacaroonsBuilder(location, secretKey, identifier)
-                .add_first_party_caveat(
-                        "ip:192.168.1.1/24"
-                )
-                .add_first_party_caveat(
-                        "before:2047-08-05T00:00:00.00Z"
-                )
-                .getMacaroon();
+              .add_first_party_caveat(
+                    "ip:192.168.1.1/24"
+              )
+              .add_first_party_caveat(
+                    "before:2047-08-05T00:00:00.00Z"
+              )
+              .getMacaroon();
 
         MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
 
-        ClientIPCaveatVerifier clientIPVerifier = new ClientIPCaveatVerifier(InetAddresses.forString("192.168.2.1"));
+        ClientIPCaveatVerifier clientIPVerifier = new ClientIPCaveatVerifier(
+              InetAddresses.forString("192.168.2.1"));
         verifier.satisfyGeneral(clientIPVerifier);
         verifier.satisfyGeneral(contextCaveatVerifier);
 

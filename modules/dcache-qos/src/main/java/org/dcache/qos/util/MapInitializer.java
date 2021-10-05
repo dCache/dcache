@@ -70,29 +70,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Parent class for initialization of internal maps.
- *  <p/>
- *  Initialize usually will entail an ordered sequence of steps.
- *  <p/>
- *  Waits to receive the pool monitor via notification from PoolManager;
- *  if it does not get one within the designated timeout interval, it sends an alarm.
+ * Parent class for initialization of internal maps.
+ * <p/>
+ * Initialize usually will entail an ordered sequence of steps.
+ * <p/>
+ * Waits to receive the pool monitor via notification from PoolManager; if it does not get one
+ * within the designated timeout interval, it sends an alarm.
  */
 public abstract class MapInitializer implements Runnable {
-    protected static final Logger LOGGER = LoggerFactory.getLogger( MapInitializer.class);
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(MapInitializer.class);
 
     private static final String INIT_ALARM
-                    = "Did not receive pool monitor update within %s %s; "
-                    + "service has failed to start.";
+          = "Did not receive pool monitor update within %s %s; "
+          + "service has failed to start.";
 
-    protected MessageGuard                messageGuard;
-    protected PoolMonitor                 poolMonitor;
-    protected ScheduledExecutorService    initService;
+    protected MessageGuard messageGuard;
+    protected PoolMonitor poolMonitor;
+    protected ScheduledExecutorService initService;
 
-    private Long                     initialized;
-    private boolean                  initializing;
-    private String                   initError;
-    private long                     initDelay;
-    private TimeUnit                 initDelayUnit;
+    private Long initialized;
+    private boolean initializing;
+    private String initError;
+    private long initDelay;
+    private TimeUnit initDelayUnit;
 
     public synchronized String getInitError() {
         return initError;
@@ -135,8 +136,8 @@ public abstract class MapInitializer implements Runnable {
     public synchronized Set<String> getAllPools() {
         if (poolMonitor != null) {
             return Arrays.stream(poolMonitor.getPoolSelectionUnit()
-                                            .getDefinedPools(false))
-                         .collect(Collectors.toSet());
+                        .getDefinedPools(false))
+                  .collect(Collectors.toSet());
         }
         return Collections.EMPTY_SET;
     }
@@ -150,7 +151,8 @@ public abstract class MapInitializer implements Runnable {
         LOGGER.info("Waiting for pool monitor refresh notification.");
 
         long waitForMonitor = getRefreshTimeoutUnit().toMillis(getRefreshTimeout());
-        String errorMessage = String.format(INIT_ALARM, getRefreshTimeout(), getRefreshTimeoutUnit());
+        String errorMessage = String.format(INIT_ALARM, getRefreshTimeout(),
+              getRefreshTimeoutUnit());
 
         try {
             while (poolMonitor == null) {
@@ -169,7 +171,7 @@ public abstract class MapInitializer implements Runnable {
                 }
             }
         } catch (InterruptedException e) {
-            LOGGER.trace( "Wait for pool monitor was interrupted; quitting without initializing.");
+            LOGGER.trace("Wait for pool monitor was interrupted; quitting without initializing.");
         }
     }
 

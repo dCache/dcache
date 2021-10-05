@@ -63,6 +63,7 @@ package org.dcache.util;
  * <p>For indicating the validity of the temporarily stored item.</p>
  */
 public interface InvalidatableItem {
+
     /**
      * <p>Marks internal state in such a way as to indicate item is not valid.</p>
      */

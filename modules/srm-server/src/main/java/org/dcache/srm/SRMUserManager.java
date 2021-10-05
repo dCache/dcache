@@ -1,5 +1,5 @@
 package org.dcache.srm;
 
-public interface SRMUserManager extends SRMAuthorization, SRMUserPersistenceManager
-{
+public interface SRMUserManager extends SRMAuthorization, SRMUserPersistenceManager {
+
 }

@@ -77,230 +77,235 @@ import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  Responsible for running the adjuster.
+ * Responsible for running the adjuster.
  */
 public final class QoSAdjusterTask extends ErrorAwareTask implements Cancellable {
-  private static final String TO_STRING = "%s (%s %s)(src %s, tgt %s, retried %s)";
-  private static final String TO_HISTORY_STRING = "%s (%s %s)(src %s, tgt %s, retried %s, secs %s) %s";
 
-  private final PnfsId pnfsId;
-  private final QoSAction type;
-  private final int retry;
-  private final QoSAdjusterFactory factory;
-  private final FileAttributes attributes;
-  private final PoolManagerPoolInformation targetInfo;
-  private final String source;
-  private final String poolGroup;
+    private static final String TO_STRING = "%s (%s %s)(src %s, tgt %s, retried %s)";
+    private static final String TO_HISTORY_STRING = "%s (%s %s)(src %s, tgt %s, retried %s, secs %s) %s";
 
-  private String target;
-  private QoSAdjuster adjuster;
-  private Future future;
-  private Exception exception;
+    private final PnfsId pnfsId;
+    private final QoSAction type;
+    private final int retry;
+    private final QoSAdjusterFactory factory;
+    private final FileAttributes attributes;
+    private final PoolManagerPoolInformation targetInfo;
+    private final String source;
+    private final String poolGroup;
 
-  /*
-   *  Monitoring statistics.
-   */
-  private long startTime;
-  private long endTime;
+    private String target;
+    private QoSAdjuster adjuster;
+    private Future future;
+    private Exception exception;
 
-  enum Status {
-    INITIALIZED, RUNNING, WAITING, CANCELLED, DONE
-  }
+    /*
+     *  Monitoring statistics.
+     */
+    private long startTime;
+    private long endTime;
 
-  private Status status;
-
-  public QoSAdjusterTask(QoSAdjustmentRequest request, QoSAdjusterFactory factory) {
-    this.pnfsId = request.getPnfsId();
-    this.type = request.getAction();
-    this.retry = 0;
-    this.factory = factory;
-    this.attributes = request.getAttributes();
-    this.targetInfo = request.getTargetInfo();
-    this.source = request.getSource();
-    this.target = request.getTarget();
-    this.poolGroup = request.getPoolGroup();
-    this.status = Status.INITIALIZED;
-  }
-
-  public QoSAdjusterTask(QoSAdjusterTask task, int retry) {
-    this.pnfsId = task.pnfsId;
-    this.type = task.type;;
-    this.retry = retry;
-    this.factory = task.factory;
-    this.attributes = task.attributes;
-    this.targetInfo = task.targetInfo;
-    this.source = task.source;
-    this.target = task.target;
-    this.poolGroup = task.poolGroup;
-    this.status = task.status;
-  }
-
-  @Override
-  public void run() {
-    synchronized (this) {
-      status = Status.RUNNING;
-      exception = null;
-      adjuster = factory.newBuilder().of(type).build();
-      startTime = System.currentTimeMillis();
+    enum Status {
+        INITIALIZED, RUNNING, WAITING, CANCELLED, DONE
     }
 
-    switch (type) {
-      case VOID:
-        taskTerminated(Optional.empty(), null);
-        break;
-      default:
-        if (isCancelled()) {
-          break;
+    private Status status;
+
+    public QoSAdjusterTask(QoSAdjustmentRequest request, QoSAdjusterFactory factory) {
+        this.pnfsId = request.getPnfsId();
+        this.type = request.getAction();
+        this.retry = 0;
+        this.factory = factory;
+        this.attributes = request.getAttributes();
+        this.targetInfo = request.getTargetInfo();
+        this.source = request.getSource();
+        this.target = request.getTarget();
+        this.poolGroup = request.getPoolGroup();
+        this.status = Status.INITIALIZED;
+    }
+
+    public QoSAdjusterTask(QoSAdjusterTask task, int retry) {
+        this.pnfsId = task.pnfsId;
+        this.type = task.type;
+        ;
+        this.retry = retry;
+        this.factory = task.factory;
+        this.attributes = task.attributes;
+        this.targetInfo = task.targetInfo;
+        this.source = task.source;
+        this.target = task.target;
+        this.poolGroup = task.poolGroup;
+        this.status = task.status;
+    }
+
+    @Override
+    public void run() {
+        synchronized (this) {
+            status = Status.RUNNING;
+            exception = null;
+            adjuster = factory.newBuilder().of(type).build();
+            startTime = System.currentTimeMillis();
         }
-        adjuster.adjustQoS(this);
-        break;
-    }
-  }
 
-  @Override
-  public void cancel(String explanation) {
-    cancel();
-
-    if (adjuster != null) {
-      adjuster.cancel(explanation);
-    }
-
-    if (future != null) {
-      future.cancel(true);
+        switch (type) {
+            case VOID:
+                taskTerminated(Optional.empty(), null);
+                break;
+            default:
+                if (isCancelled()) {
+                    break;
+                }
+                adjuster.adjustQoS(this);
+                break;
+        }
     }
 
-    taskTerminated(Optional.empty(),null);
-  }
+    @Override
+    public void cancel(String explanation) {
+        cancel();
 
-  public Exception getException() {
-    return exception;
-  }
+        if (adjuster != null) {
+            adjuster.cancel(explanation);
+        }
 
-  public synchronized long getStartTime() {
-    return startTime;
-  }
+        if (future != null) {
+            future.cancel(true);
+        }
 
-  public synchronized long getEndTime() {
-    return endTime;
-  }
-
-  public synchronized Status getStatus() {
-    return status;
-  }
-
-  public synchronized String getStatusName() {
-    return status.name();
-  }
-
-  public Integer getTypeValue() {
-    if (type == null) {
-      return null;
-    }
-    return type.ordinal();
-  }
-
-  public QoSAction getAction() {
-    return type;
-  }
-
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
-
-  public int getRetry() {
-    return retry;
-  }
-
-  public FileAttributes getAttributes() {
-    return attributes;
-  }
-
-  public String getSource() {
-    return source;
-  }
-
-  public String getTarget() {
-    return target;
-  }
-
-  public String getPoolGroup() {
-    return poolGroup;
-  }
-
-  public PoolManagerPoolInformation getTargetInfo() {
-    return targetInfo;
-  }
-
-  public synchronized boolean isCancelled() {
-    return status == Status.CANCELLED;
-  }
-
-  public synchronized boolean isRunning() {
-    return status == Status.RUNNING;
-  }
-
-  public synchronized boolean isWaiting() { return status == Status.WAITING; }
-
-  public synchronized boolean isDone() {
-    return status == Status.DONE || status == Status.CANCELLED;
-  }
-
-  public synchronized void poll() {
-    adjuster.poll();
-  }
-
-  public void relayMessage(PoolMigrationCopyFinishedMessage message) {
-    if (!message.getPnfsId().equals(pnfsId)) {
-      return;
+        taskTerminated(Optional.empty(), null);
     }
 
-    if (!(adjuster instanceof CopyAdjuster)) {
-      String msg = String.format( "migration copy finished message arrived for %s, but there is "
-                                    + "no corresponding migration task.", pnfsId);
-      throw new IllegalStateException(msg);
+    public Exception getException() {
+        return exception;
     }
 
-    ((CopyAdjuster) adjuster).relayMessage(message);
-  }
-
-  public synchronized void setFuture(Future future) {
-    this.future = future;
-  }
-
-  public synchronized void setToWaiting() {
-    status = Status.WAITING;
-  }
-
-  public synchronized void taskTerminated(Optional<String> target, Exception exception) {
-    if (target.isPresent()) {
-      this.target = target.get();
+    public synchronized long getStartTime() {
+        return startTime;
     }
-    if (!isDone()) {
-      status = Status.DONE;
+
+    public synchronized long getEndTime() {
+        return endTime;
     }
-    this.exception = exception;
-    endTime = System.currentTimeMillis();
-  }
 
-  public String toString() {
-    return String.format(TO_STRING,
-        startTime == 0L ? "" : FileQoSUpdate.getFormattedDateFromMillis(startTime),
-        pnfsId, type.name(),
-        source == null ? "none" : source, target == null ? "none" : target,
-        retry);
-  }
+    public synchronized Status getStatus() {
+        return status;
+    }
 
-  public String toHistoryString() {
-    return String.format(TO_HISTORY_STRING,
-        startTime == 0L ? "" : FileQoSUpdate.getFormattedDateFromMillis(startTime),
-        pnfsId, type.name(),
-        source == null ? "none" : source, target == null ? "none" : target,
-        retry,
-        TimeUnit.MILLISECONDS.toSeconds(endTime-startTime),
-        exception == null ? "" : new ExceptionMessage(exception));
-  }
+    public synchronized String getStatusName() {
+        return status.name();
+    }
 
-  private synchronized void cancel() {
-    this.status = Status.CANCELLED;
-  }
+    public Integer getTypeValue() {
+        if (type == null) {
+            return null;
+        }
+        return type.ordinal();
+    }
+
+    public QoSAction getAction() {
+        return type;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public int getRetry() {
+        return retry;
+    }
+
+    public FileAttributes getAttributes() {
+        return attributes;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public String getPoolGroup() {
+        return poolGroup;
+    }
+
+    public PoolManagerPoolInformation getTargetInfo() {
+        return targetInfo;
+    }
+
+    public synchronized boolean isCancelled() {
+        return status == Status.CANCELLED;
+    }
+
+    public synchronized boolean isRunning() {
+        return status == Status.RUNNING;
+    }
+
+    public synchronized boolean isWaiting() {
+        return status == Status.WAITING;
+    }
+
+    public synchronized boolean isDone() {
+        return status == Status.DONE || status == Status.CANCELLED;
+    }
+
+    public synchronized void poll() {
+        adjuster.poll();
+    }
+
+    public void relayMessage(PoolMigrationCopyFinishedMessage message) {
+        if (!message.getPnfsId().equals(pnfsId)) {
+            return;
+        }
+
+        if (!(adjuster instanceof CopyAdjuster)) {
+            String msg = String.format(
+                  "migration copy finished message arrived for %s, but there is "
+                        + "no corresponding migration task.", pnfsId);
+            throw new IllegalStateException(msg);
+        }
+
+        ((CopyAdjuster) adjuster).relayMessage(message);
+    }
+
+    public synchronized void setFuture(Future future) {
+        this.future = future;
+    }
+
+    public synchronized void setToWaiting() {
+        status = Status.WAITING;
+    }
+
+    public synchronized void taskTerminated(Optional<String> target, Exception exception) {
+        if (target.isPresent()) {
+            this.target = target.get();
+        }
+        if (!isDone()) {
+            status = Status.DONE;
+        }
+        this.exception = exception;
+        endTime = System.currentTimeMillis();
+    }
+
+    public String toString() {
+        return String.format(TO_STRING,
+              startTime == 0L ? "" : FileQoSUpdate.getFormattedDateFromMillis(startTime),
+              pnfsId, type.name(),
+              source == null ? "none" : source, target == null ? "none" : target,
+              retry);
+    }
+
+    public String toHistoryString() {
+        return String.format(TO_HISTORY_STRING,
+              startTime == 0L ? "" : FileQoSUpdate.getFormattedDateFromMillis(startTime),
+              pnfsId, type.name(),
+              source == null ? "none" : source, target == null ? "none" : target,
+              retry,
+              TimeUnit.MILLISECONDS.toSeconds(endTime - startTime),
+              exception == null ? "" : new ExceptionMessage(exception));
+    }
+
+    private synchronized void cancel() {
+        this.status = Status.CANCELLED;
+    }
 }

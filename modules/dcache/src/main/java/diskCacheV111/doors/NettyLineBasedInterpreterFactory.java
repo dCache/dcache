@@ -19,19 +19,15 @@
 package diskCacheV111.doors;
 
 import com.google.common.cache.LoadingCache;
-
-import java.net.InetSocketAddress;
-import java.util.Optional;
-import java.util.concurrent.Executor;
-
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.ConfigurationException;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.LineWriter;
 import dmg.util.StreamEngine;
-
+import java.net.InetSocketAddress;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
@@ -42,8 +38,8 @@ import org.dcache.util.Args;
  *
  * <p>To be used with {@link LineBasedDoor}.
  */
-public interface NettyLineBasedInterpreterFactory
-{
+public interface NettyLineBasedInterpreterFactory {
+
     /**
      * Injects the cell command line arguments.
      *
@@ -55,32 +51,33 @@ public interface NettyLineBasedInterpreterFactory
      * Creates a fully initialized interpreter.
      *
      * <p>The interpreter should communicate with dCache though the given endpoint.
-     * Replies to be sent to the client can be sent through the {@link StreamEngine}
-     * provided.
+     * Replies to be sent to the client can be sent through the {@link StreamEngine} provided.
      *
      * <p>The interpreter may use the given executor for background operations.
      *
-     * @param endpoint Cell endpoint of the line based door
-     * @param myAddress Cell address of the line based door
-     * @param writer Output writer
-     * @param remoteAddress Address of the FTP client
-     * @param proxyAddress Address the FTP client connected to
-     * @param localAddress Address of the local socket
-     * @param executor Executor for background operations
-     * @param poolManager Handler for pool manager communication
+     * @param endpoint                Cell endpoint of the line based door
+     * @param myAddress               Cell address of the line based door
+     * @param writer                  Output writer
+     * @param remoteAddress           Address of the FTP client
+     * @param proxyAddress            Address the FTP client connected to
+     * @param localAddress            Address of the local socket
+     * @param executor                Executor for background operations
+     * @param poolManager             Handler for pool manager communication
      * @param identityResolverFactory factory for creating an identity resolver
-     * @param spaceDescriptionCache cache for looking up reservations based on user and description
-     * @param spaceLookupCache cache for looking up current reservation values
+     * @param spaceDescriptionCache   cache for looking up reservations based on user and
+     *                                description
+     * @param spaceLookupCache        cache for looking up current reservation values
      * @return Fully initialized interpreter
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-                                InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
-                                LineWriter writer, Executor executor, PoolManagerHandler poolManager,
-                                IdentityResolverFactory identityResolverFactory,
-                                LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
-                                LoadingCache<String,Optional<Space>> spaceLookupCache)
-            throws Exception;
+          InetSocketAddress remoteAddress, InetSocketAddress proxyAddress,
+          InetSocketAddress localAddress,
+          LineWriter writer, Executor executor, PoolManagerHandler poolManager,
+          IdentityResolverFactory identityResolverFactory,
+          LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
+          LoadingCache<String, Optional<Space>> spaceLookupCache)
+          throws Exception;
 
     /**
      * Free allocated  resources

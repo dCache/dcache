@@ -22,8 +22,6 @@ import eu.emi.security.authn.x509.impl.CertificateUtils;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import eu.emi.security.authn.x509.proxy.ProxyCSRGenerator;
 import eu.emi.security.authn.x509.proxy.ProxyCertificateOptions;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -36,71 +34,66 @@ import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.stream.Stream;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 /**
- *  Common code for creating a delegation request and finalizing the
- *  delegated proxy credential.
+ * Common code for creating a delegation request and finalizing the delegated proxy credential.
  */
-public final class X509DelegationHelper
-{
+public final class X509DelegationHelper {
+
     public static X509Delegation newDelegation(CertPath path,
-                                               KeyPairCache keyPairs)
-                    throws NoSuchAlgorithmException, NoSuchProviderException
-    {
+          KeyPairCache keyPairs)
+          throws NoSuchAlgorithmException, NoSuchProviderException {
         X509Certificate[] certificates = path.getCertificates().toArray(X509Certificate[]::new);
         if (certificates.length == 0) {
             throw new IllegalArgumentException("Certificate path is empty.");
         }
 
         X509Certificate first = certificates[0];
-        int bits = ((RSAPublicKey)first.getPublicKey()).getModulus().bitLength();
+        int bits = ((RSAPublicKey) first.getPublicKey()).getModulus().bitLength();
         return new X509Delegation(keyPairs.getKeyPair(bits), certificates);
     }
 
     public static String createRequest(X509Certificate[] chain, KeyPair keyPair)
-                    throws GeneralSecurityException, IOException
-    {
+          throws GeneralSecurityException, IOException {
         ProxyCertificateOptions options = new ProxyCertificateOptions(chain);
         options.setPublicKey(keyPair.getPublic());
         options.setLimited(true);
         return pemEncode(ProxyCSRGenerator.generate(options,
-                                                    keyPair.getPrivate())
-                                          .getCSR());
+                    keyPair.getPrivate())
+              .getCSR());
     }
 
     public static X509Credential acceptCertificate(String encodedCertificate,
-                                                   X509Delegation delegation)
-                    throws GeneralSecurityException
-    {
+          X509Delegation delegation)
+          throws GeneralSecurityException {
         X509Certificate[] certificates = finalizeChain(encodedCertificate,
-                                                       delegation.getCertificates());
+              delegation.getCertificates());
         return new KeyAndCertCredential(delegation.getKeyPair().getPrivate(),
-                                        certificates);
+              certificates);
     }
 
     public static X509Certificate[] finalizeChain(String encodedCertificate,
-                                                  X509Certificate[] certificates)
-                    throws GeneralSecurityException
-    {
+          X509Certificate[] certificates)
+          throws GeneralSecurityException {
         X509Certificate certificate;
         try {
             certificate = CertificateUtils.loadCertificate(
-                            new ByteArrayInputStream(
-                                            encodedCertificate.getBytes(
-                                                            StandardCharsets.UTF_8)),
-                            CertificateUtils.Encoding.PEM);
+                  new ByteArrayInputStream(
+                        encodedCertificate.getBytes(
+                              StandardCharsets.UTF_8)),
+                  CertificateUtils.Encoding.PEM);
         } catch (IOException e) {
             throw new GeneralSecurityException("Supplied certificate is unacceptable: "
-                                                        + e.getMessage());
+                  + e.getMessage());
         }
 
         return Stream.concat(Stream.of(certificate),
-                             Stream.of(certificates)).toArray(
-                        X509Certificate[]::new);
+              Stream.of(certificates)).toArray(
+              X509Certificate[]::new);
     }
 
-    private static String pemEncode(Object item) throws IOException
-    {
+    private static String pemEncode(Object item) throws IOException {
         StringWriter writer = new StringWriter();
         try (JcaPEMWriter pem = new JcaPEMWriter(writer)) {
             pem.writeObject(item);
@@ -108,5 +101,6 @@ public final class X509DelegationHelper
         return writer.toString();
     }
 
-    private X509DelegationHelper() {} // static utility
+    private X509DelegationHelper() {
+    } // static utility
 }

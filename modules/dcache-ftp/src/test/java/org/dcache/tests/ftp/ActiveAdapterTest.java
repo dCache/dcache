@@ -1,17 +1,15 @@
 package org.dcache.tests.ftp;
 
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetAddress;
-
 import org.dcache.ftp.proxy.ActiveAdapter;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ActiveAdapterTest {
 
@@ -23,7 +21,7 @@ public class ActiveAdapterTest {
     }
 
     @After
-    public void  tearDown() {
+    public void tearDown() {
         activeAdapter.close();
     }
 
@@ -31,18 +29,19 @@ public class ActiveAdapterTest {
     @Test
     public void testListenPort() throws Exception {
 
-        assertTrue("Failed to create a listen port", activeAdapter.getInternalAddress().getPort() > 0 );
+        assertTrue("Failed to create a listen port",
+              activeAdapter.getInternalAddress().getPort() > 0);
 
     }
 
     @Test
     public void testIsAlive() {
 
-        assertFalse("Can't be alive while not started", activeAdapter.isAlive() );
+        assertFalse("Can't be alive while not started", activeAdapter.isAlive());
 
         activeAdapter.start();
 
-        assertTrue("Failed to start", activeAdapter.isAlive() );
+        assertTrue("Failed to start", activeAdapter.isAlive());
 
     }
 

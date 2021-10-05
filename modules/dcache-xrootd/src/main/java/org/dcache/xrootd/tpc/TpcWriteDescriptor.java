@@ -59,20 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.tpc;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyTransferService.NettyMoverChannel;
 import org.dcache.util.ChecksumType;
@@ -94,55 +95,54 @@ import org.dcache.xrootd.tpc.protocol.messages.InboundRedirectResponse;
 import org.dcache.xrootd.util.ByteBuffersProvider;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.ParseException;
-
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>An extension of the WriteDescriptor allowing for delayed response to
- *      a sync request.</p>
+ * a sync request.</p>
  *
  * <p>According to the Xrootd Third Party client protocol, the client calls
- *      sync twice on the destination file after it has called open.</p>
+ * sync twice on the destination file after it has called open.</p>
  *
  * <p>The first sync call should return after the copy has begun (i.e., the
- *      client started.)</p>
+ * client started.)</p>
  *
  * <p>The second sync call should not return until the transfer has completed.</p>
  */
 public final class TpcWriteDescriptor extends WriteDescriptor
-                implements TpcDelayedSyncWriteHandler
-{
-    private static final Logger                 LOGGER
-                    = LoggerFactory.getLogger(TpcWriteDescriptor.class);
+      implements TpcDelayedSyncWriteHandler {
 
-    private final NioEventLoopGroup           group;
-    private final ChannelHandlerContext       userResponseCtx;
+    private static final Logger LOGGER
+          = LoggerFactory.getLogger(TpcWriteDescriptor.class);
+
+    private final NioEventLoopGroup group;
+    private final ChannelHandlerContext userResponseCtx;
     private final List<ChannelHandlerFactory> authPlugins;
 
     /*
      * May be reassigned because of a redirect.
      */
     private XrootdTpcClient client;
-    private SyncRequest     syncRequest;
-    private boolean         isFirstSync;
-    private Integer         transferStatus;
-    private int             clientChunkSize;
+    private SyncRequest syncRequest;
+    private boolean isFirstSync;
+    private Integer transferStatus;
+    private int clientChunkSize;
 
     public TpcWriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel,
-                              boolean posc,
-                              ChannelHandlerContext ctx,
-                              XrootdTransferService service,
-                              String userUrn,
-                              XrootdTpcInfo info,
-                              TLSSessionInfo tlsSessionInfo)
-    {
+          boolean posc,
+          ChannelHandlerContext ctx,
+          XrootdTransferService service,
+          String userUrn,
+          XrootdTpcInfo info,
+          TLSSessionInfo tlsSessionInfo) {
         super(channel, posc);
         userResponseCtx = ctx;
         clientChunkSize = service.getTpcClientChunkSize();
         client = new XrootdTpcClient(userUrn,
-                                     info,
-                                     this,
-                                     service.getThirdPartyShutdownExecutor());
+              info,
+              this,
+              service.getThirdPartyShutdownExecutor());
         client.setTlsSessionInfo(tlsSessionInfo);
         client.setResponseTimeout(service.getTpcServerResponseTimeoutInSeconds());
         group = service.getThirdPartyClientGroup();
@@ -163,46 +163,43 @@ public final class TpcWriteDescriptor extends WriteDescriptor
          * the source IP, so we overwrite the protocol info client (unused).
          */
         getChannel().getProtocolInfo()
-                    .setSocketAddress(new InetSocketAddress(info.getSrcHost(),
-                                                            info.getSrcPort()));
+              .setSocketAddress(new InetSocketAddress(info.getSrcHost(),
+                    info.getSrcPort()));
     }
 
     @Override
-    public synchronized void fireDelayedSync(int result, String error)
-    {
+    public synchronized void fireDelayedSync(int result, String error) {
         int errno = client.getErrno();
         LOGGER.debug("fireDelayedSync (result {}), (error {}), (serverError {}); "
-                                     + "syncRequest {}, isFirstSync {}",
-                     result, error, client.getError(), syncRequest, isFirstSync);
+                    + "syncRequest {}, isFirstSync {}",
+              result, error, client.getError(), syncRequest, isFirstSync);
         transferStatus = result;
         if (syncRequest != null) {
             if (result == kXR_ok && errno == kXR_ok) {
                 userResponseCtx.writeAndFlush(new OkResponse<>(syncRequest))
-                               .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             } else if (error != null) {
                 userResponseCtx.writeAndFlush(
-                                new ErrorResponse<>(syncRequest, result, error))
-                               .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                            new ErrorResponse<>(syncRequest, result, error))
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             } else {
                 userResponseCtx.writeAndFlush(
-                                new ErrorResponse<>(syncRequest, errno , client.getError()))
-                               .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                            new ErrorResponse<>(syncRequest, errno, client.getError()))
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
         }
     }
 
-    public int getClientChunkSize()
-    {
+    public int getClientChunkSize() {
         return clientChunkSize;
     }
 
     public synchronized XrootdResponse<StatRequest> handleStat(StatRequest msg)
-                    throws XrootdException
-    {
+          throws XrootdException {
         if (client.getError() != null) {
             return new ErrorResponse<>(msg,
-                                       client.getErrno(),
-                                       client.getError());
+                  client.getErrno(),
+                  client.getError());
         }
 
         int fd = msg.getFhandle();
@@ -210,15 +207,15 @@ public final class TpcWriteDescriptor extends WriteDescriptor
         FileStatus fileStatus;
         try {
             fileStatus = new FileStatus(fd,
-                                        channel.size(),
-                                        XrootdPoolRequestHandler.DEFAULT_FILESTATUS_FLAGS,
-                                        channel.getFileAttributes()
-                                               .getModificationTime()
-                                                        / 1000);
+                  channel.size(),
+                  XrootdPoolRequestHandler.DEFAULT_FILESTATUS_FLAGS,
+                  channel.getFileAttributes()
+                        .getModificationTime()
+                        / 1000);
         } catch (IOException e) {
             String error = String.format("Failed to get channel "
-                                                         + "info for %s: %s.",
-                                         msg, e.toString());
+                        + "info for %s: %s.",
+                  msg, e.toString());
             throw new XrootdException(kXR_IOError, error);
         }
 
@@ -227,50 +224,49 @@ public final class TpcWriteDescriptor extends WriteDescriptor
 
     @Override
     public synchronized void redirect(ChannelHandlerContext ctx,
-                         InboundRedirectResponse response)
-                    throws XrootdException
-    {
+          InboundRedirectResponse response)
+          throws XrootdException {
         try {
             LOGGER.info("redirect {} called for client channel {}, stream {}.",
-                            response,
-                            client.getChannelFuture().channel().id(),
-                            client.getStreamId());
+                  response,
+                  client.getChannelFuture().channel().id(),
+                  client.getStreamId());
             XrootdTpcClient current = client;
             XrootdTpcInfo currentInfo = current.getInfo();
-            XrootdTpcInfo info = response.isReconnect() ? currentInfo:
-                            currentInfo.copyForRedirect(response);
+            XrootdTpcInfo info = response.isReconnect() ? currentInfo :
+                  currentInfo.copyForRedirect(response);
             client = new XrootdTpcClient(current.getUserUrn(),
-                                         info,
-                                         this,
-                                         current.getExecutor());
+                  info,
+                  this,
+                  current.getExecutor());
             client.setTlsSessionInfo(new TLSSessionInfo(current.getTlsSessionInfo()));
             client.configureRedirects(current);
             current.shutDown(ctx);
 
             if (!client.canRedirect()) {
                 throw new XrootdException(kXR_ServerError, "Client was redirected "
-                                + "more than the maximum number of times in the "
-                                + "past 10 minutes; quitting.");
+                      + "more than the maximum number of times in the "
+                      + "past 10 minutes; quitting.");
             }
 
             /*
              *  Done on the executor thread, else we risk deadlock because this
              *  method is usually called from the event loop thread.
              */
-            client.getExecutor().schedule(()-> {
+            client.getExecutor().schedule(() -> {
                 try {
                     client.connect(group,
-                                   authPlugins,
-                                   new TpcWriteDescriptorHandler(this));
+                          authPlugins,
+                          new TpcWriteDescriptorHandler(this));
                     LOGGER.info("redirect, created and connected new client, "
-                                                + "channel {}, stream {}.",
-                                client.getChannelFuture().channel().id(),
-                                client.getStreamId());
+                                + "channel {}, stream {}.",
+                          client.getChannelFuture().channel().id(),
+                          client.getStreamId());
                 } catch (InterruptedException e) {
                     LOGGER.warn("redirect, connection of new client, channel {}, "
-                                                + "stream {} was interrupted.",
-                                client.getChannelFuture().channel().id(),
-                                client.getStreamId());
+                                + "stream {} was interrupted.",
+                          client.getChannelFuture().channel().id(),
+                          client.getStreamId());
                 }
             }, response.getWsec(), TimeUnit.SECONDS);
         } catch (ParseException e) {
@@ -286,16 +282,15 @@ public final class TpcWriteDescriptor extends WriteDescriptor
      */
     @Override
     public synchronized XrootdResponse<SyncRequest> sync(SyncRequest syncRequest)
-                    throws IOException, InterruptedException
-    {
+          throws IOException, InterruptedException {
         if (client.getError() != null) {
             return new ErrorResponse<>(syncRequest,
-                                       client.getErrno() ,
-                                       client.getError());
+                  client.getErrno(),
+                  client.getError());
         }
 
         LOGGER.debug("Request to sync ({}) is for third-party write.",
-                     syncRequest);
+              syncRequest);
 
         if (isFirstSync) {
             /*
@@ -308,8 +303,8 @@ public final class TpcWriteDescriptor extends WriteDescriptor
              * Start the client connection.
              */
             client.connect(group,
-                           authPlugins,
-                           new TpcWriteDescriptorHandler(this));
+                  authPlugins,
+                  new TpcWriteDescriptorHandler(this));
             isFirstSync = false;
             return new OkResponse<>(syncRequest);
         }
@@ -332,13 +327,11 @@ public final class TpcWriteDescriptor extends WriteDescriptor
 
     @Override
     public void write(InboundReadResponse inboundReadResponse)
-                    throws IOException
-    {
-        write((ByteBuffersProvider)inboundReadResponse);
+          throws IOException {
+        write((ByteBuffersProvider) inboundReadResponse);
     }
 
-    public void shutDown()
-    {
+    public void shutDown() {
         if (client == null) {
             return;
         }

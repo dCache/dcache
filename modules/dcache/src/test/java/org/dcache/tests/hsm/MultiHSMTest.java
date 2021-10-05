@@ -1,184 +1,184 @@
 package org.dcache.tests.hsm;
 
-import junit.framework.TestCase;
-import org.junit.Test;
-
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-
 import diskCacheV111.util.EnstoreLocationExtractor;
 import diskCacheV111.util.HsmLocation;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.OsmLocationExtractor;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import junit.framework.TestCase;
+import org.junit.Test;
 
 public class MultiHSMTest extends TestCase {
 
 
-	/**
-	 * test for adding, storing and retrieving location URIs
-	 * @throws Exception
-	 */
-	@Test
-	public void testAddGet() throws Exception {
+    /**
+     * test for adding, storing and retrieving location URIs
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testAddGet() throws Exception {
 
-		String osmLocationMain = "osm://desy-main/?store=h1&bfid=1234";
-		String osmLocationCopy = "osm://desy-copy/?store=h1&bfid=1234";
-		String enstoreLocation = "enstore://fnal1/?store=h1&bfid=1234";
+        String osmLocationMain = "osm://desy-main/?store=h1&bfid=1234";
+        String osmLocationCopy = "osm://desy-copy/?store=h1&bfid=1234";
+        String enstoreLocation = "enstore://fnal1/?store=h1&bfid=1234";
 
-		StorageInfo storageInfo =  new GenericStorageInfo();
+        StorageInfo storageInfo = new GenericStorageInfo();
 
+        storageInfo.addLocation(new URI(osmLocationMain));
+        storageInfo.addLocation(new URI(osmLocationCopy));
+        storageInfo.addLocation(new URI(enstoreLocation));
 
-		storageInfo.addLocation( new URI(osmLocationMain));
-		storageInfo.addLocation( new URI(osmLocationCopy));
-		storageInfo.addLocation( new URI(enstoreLocation));
+        assertEquals("Not all antries stored", 3, storageInfo.locations().size());
 
-		assertEquals("Not all antries stored",3,  storageInfo.locations().size() );
+    }
 
-	}
+    /**
+     * Test that GenericStorageInfo claims it isn't stored when initially created.
+     */
+    @Test
+    public void testNotStoredInitially() throws Exception {
 
-        /**
-         * Test that GenericStorageInfo claims it isn't stored when initially
-         * created.
-         */
-	@Test
-	public void testNotStoredInitially() throws Exception {
+        StorageInfo storageInfo = new GenericStorageInfo();
 
-            StorageInfo storageInfo = new GenericStorageInfo();
+        assertFalse("StorageInfo without URL should not declare itself as stored",
+              storageInfo.isStored());
+    }
 
-            assertFalse("StorageInfo without URL should not declare itself as stored",
-                    storageInfo.isStored());
-	}
+    /**
+     * Test that GenericStorageInfo claims a file is stored after a location is added.
+     */
+    @Test
+    public void testStoreAfterAddingLocation() throws Exception {
 
-        /**
-         * Test that GenericStorageInfo claims a file is stored after a location
-         * is added.
-         */
-	@Test
-	public void testStoreAfterAddingLocation() throws Exception {
+        StorageInfo storageInfo = new GenericStorageInfo();
 
-            StorageInfo storageInfo = new GenericStorageInfo();
+        storageInfo.addLocation(new URI("osm://desy-main/?store=h1&bfid=1234"));
 
-            storageInfo.addLocation(new URI("osm://desy-main/?store=h1&bfid=1234"));
+        assertTrue("StorageInfo with URL should declare itself as stored",
+              storageInfo.isStored());
+    }
 
-            assertTrue("StorageInfo with URL should declare itself as stored",
-                    storageInfo.isStored());
-	}
+    /**
+     * test to load location extractor depending on HSM type
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testExtractor() throws Exception {
 
-	/**
-	 * test to load location extractor depending on HSM type
-	 * @throws Exception
-	 */
-	@Test
-	public void testExtractor() throws Exception {
+        String osmLocationMain = "osm://desy-main/?store=h1&bfid=1234";
+        String osmLocationCopy = "osm://desy-copy/?store=h1&bfid=1234";
+        String enstoreLocation = "enstore://fnal1/?store=h1&bfid=1234";
 
-		String osmLocationMain = "osm://desy-main/?store=h1&bfid=1234";
-		String osmLocationCopy = "osm://desy-copy/?store=h1&bfid=1234";
-		String enstoreLocation = "enstore://fnal1/?store=h1&bfid=1234";
+        StorageInfo storageInfo = new GenericStorageInfo();
 
-		StorageInfo storageInfo =  new GenericStorageInfo();
+        storageInfo.addLocation(new URI(osmLocationMain));
+        storageInfo.addLocation(new URI(osmLocationCopy));
+        storageInfo.addLocation(new URI(enstoreLocation));
 
+        for (URI location : storageInfo.locations()) {
 
-		storageInfo.addLocation( new URI(osmLocationMain));
-		storageInfo.addLocation( new URI(osmLocationCopy));
-		storageInfo.addLocation( new URI(enstoreLocation));
+            try {
+                HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
+            } catch (IllegalArgumentException iae) {
+                fail(location.toString() + " : should to be valid");
+            }
 
-		for(URI location: storageInfo.locations() ) {
+        }
 
-			try {
-				HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
-			}catch(IllegalArgumentException iae ) {
-				fail(location.toString() + " : should to be valid");
-			}
-
-		}
-
-	}
+    }
 
 
-	@Test
-	public void testBadExtractor() throws Exception {
+    @Test
+    public void testBadExtractor() throws Exception {
 
-		String badLocation     = "exception://fnal1/?store=h1&bfid=1234";
+        String badLocation = "exception://fnal1/?store=h1&bfid=1234";
 
-		StorageInfo storageInfo =  new GenericStorageInfo();
+        StorageInfo storageInfo = new GenericStorageInfo();
 
-		storageInfo.addLocation( new URI(badLocation));
+        storageInfo.addLocation(new URI(badLocation));
 
-		for(URI location: storageInfo.locations() ) {
+        for (URI location : storageInfo.locations()) {
 
-			try {
-				HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
-				fail("IllegalArgumentException shold be thrown on  unsupported hsm type");
+            try {
+                HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
+                fail("IllegalArgumentException shold be thrown on  unsupported hsm type");
 
-			}catch(IllegalArgumentException iae ) {
-				// OK
-			}
+            } catch (IllegalArgumentException iae) {
+                // OK
+            }
 
-		}
+        }
 
-	}
+    }
 
-	/**
-	 * test parsing OSM storage info. Test URI2levels and levels2URI conversion
-	 * @throws Exception
-	 */
-	@Test
-	public void testOsmLocationExtractor() throws Exception {
+    /**
+     * test parsing OSM storage info. Test URI2levels and levels2URI conversion
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testOsmLocationExtractor() throws Exception {
 
-		URI location = new URI("osm://default/?store=h1&group=rawd07&bfid=1234");
+        URI location = new URI("osm://default/?store=h1&group=rawd07&bfid=1234");
 
-		Map<Integer,String> levelData = new OsmLocationExtractor(location).toLevels();
+        Map<Integer, String> levelData = new OsmLocationExtractor(location).toLevels();
 
-		assertEquals("OSM storageInfoFormat uses only one level", 1, levelData.size() );
-		assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(1) );
+        assertEquals("OSM storageInfoFormat uses only one level", 1, levelData.size());
+        assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(1));
 
+        // reverse operation
+        URI reverseLocation = new OsmLocationExtractor(levelData).location();
 
-		// reverse operation
-		URI reverseLocation = new OsmLocationExtractor(levelData).location();
+        assertEquals("reverse opration failed : ", location, reverseLocation);
+    }
 
-		assertEquals("reverse opration failed : ", location, reverseLocation );
-	}
+    /**
+     * test parsing OSM storage info. Test URI2levels and levels2URI conversion
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testOsmLocationExtractorLevel2URI() throws Exception {
 
-	/**
-	 * test parsing OSM storage info. Test URI2levels and levels2URI conversion
-	 * @throws Exception
-	 */
-	@Test
-	public void testOsmLocationExtractorLevel2URI() throws Exception {
+        Map<Integer, String> levelData = new HashMap<>(1);
+        levelData.put(1, "h1 raw08 12345 duplicate");
 
-		Map<Integer,String> levelData = new HashMap<>(1);
-		levelData.put(1, "h1 raw08 12345 duplicate");
+        URI location = new OsmLocationExtractor(levelData).location();
 
-		URI location = new OsmLocationExtractor(levelData).location();
+        assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(1));
 
-		assertTrue("OSM storageInfoFormat uses level 1 only", levelData.containsKey(1) );
+        assertEquals("reverse opration failed : ", levelData.get(1),
+              new OsmLocationExtractor(location).toLevels().get(1));
+    }
 
-		assertEquals("reverse opration failed : ", levelData.get(1), new OsmLocationExtractor(location).toLevels().get(1) );
-	}
+    /**
+     * test parsing OSM storage info. Test URI2levels and levels2URI conversion
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEnstoreLocationExtractor() throws Exception {
 
-	/**
-	 * test parsing OSM storage info. Test URI2levels and levels2URI conversion
-	 * @throws Exception
-	 */
-	@Test
-	public void testEnstoreLocationExtractor() throws Exception {
+        URI location = new URI(
+              "enstore://enstore/?volume=VOLUME&location=LOCATION&size=SIZE&origff=FAMILY" +
+                    "&origname=NAME&mapfile=MAP&pnfsid=PNFSID&pnfsidmap=PNFSIDMAP&bfid=BFID&drive=DRIVE&crc=CRC");
 
-		URI location = new URI("enstore://enstore/?volume=VOLUME&location=LOCATION&size=SIZE&origff=FAMILY" +
-				"&origname=NAME&mapfile=MAP&pnfsid=PNFSID&pnfsidmap=PNFSIDMAP&bfid=BFID&drive=DRIVE&crc=CRC");
+        Map<Integer, String> levelData = new EnstoreLocationExtractor(location).toLevels();
 
-		Map<Integer,String> levelData = new EnstoreLocationExtractor(location).toLevels();
+        assertEquals("ENSTORE storageInfoFormat uses level 1 and 2", 2, levelData.size());
+        assertTrue("ENSTORE storageInfoFormat should contain level 1", levelData.containsKey(1));
+        assertTrue("ENSTORE storageInfoFormat should contain level 4", levelData.containsKey(4));
 
-		assertEquals("ENSTORE storageInfoFormat uses level 1 and 2", 2, levelData.size() );
-		assertTrue("ENSTORE storageInfoFormat should contain level 1", levelData.containsKey(1) );
-		assertTrue("ENSTORE storageInfoFormat should contain level 4", levelData.containsKey(4) );
+        // reverse operation
+        URI reverseLocation = new EnstoreLocationExtractor(levelData).location();
 
-		// reverse operation
-		URI reverseLocation = new EnstoreLocationExtractor(levelData).location();
-
-		assertEquals("reverse opration failed : ", location, reverseLocation );
-	}
+        assertEquals("reverse opration failed : ", location, reverseLocation);
+    }
 
 }

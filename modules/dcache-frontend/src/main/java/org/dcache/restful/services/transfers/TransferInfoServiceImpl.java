@@ -60,7 +60,11 @@ documents or software obtained from this server.
 package org.dcache.restful.services.transfers;
 
 import com.google.common.base.Strings;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.TransferInfo.MoverState;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -72,14 +76,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TransferInfo;
-import diskCacheV111.util.TransferInfo.MoverState;
-
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
 import org.dcache.restful.util.transfers.TransferCollector;
@@ -95,133 +91,134 @@ import org.dcache.util.FieldSort;
  * two public methods for obtaining cached transfer information.</p>
  *
  * <p>All synchronization is done on the object reference rather
- * than the main map and snapshot cache, in order to
- * allow the cache to be rebuilt.
+ * than the main map and snapshot cache, in order to allow the cache to be rebuilt.
  * </p>
  *
  * <p>Not final so that run() can be overridden for test purposes.</p>
  */
-public class TransferInfoServiceImpl extends CellDataCollectingService<Map<String, TransferInfo>, TransferCollector>
-                implements TransferInfoService {
+public class TransferInfoServiceImpl extends
+      CellDataCollectingService<Map<String, TransferInfo>, TransferCollector>
+      implements TransferInfoService {
+
     @Command(name = "transfers ls",
-                    hint = "List active transfers",
-                    description = "returns a list of transfer paths according "
-                                    + "to the filtering specified; "
-                                    + "default is all paths")
+          hint = "List active transfers",
+          description = "returns a list of transfer paths according "
+                + "to the filtering specified; "
+                + "default is all paths")
     class TransfersLsCommand implements Callable<String> {
 
         @Option(name = "door",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of doors (cells); "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of doors (cells); "
+                    + "default is all.")
         String[] door = {};
 
         @Option(name = "domain",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of domains; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of domains; "
+                    + "default is all.")
         String[] domain = {};
 
         @Option(name = "prot",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of protocols; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of protocols; "
+                    + "default is all.")
         String[] prot = {};
 
         @Option(name = "seq",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of serialIds; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of serialIds; "
+                    + "default is all.")
         Long[] seq = {};
 
         @Option(name = "uid",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of uids; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of uids; "
+                    + "default is all.")
         Integer[] uid = {};
 
         @Option(name = "gid",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of gids; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of gids; "
+                    + "default is all.")
         Integer[] gid = {};
 
         @Option(name = "vomsGroup",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of primary FQAN groups; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of primary FQAN groups; "
+                    + "default is all.")
         String[] vomsGroup = {};
 
         @Option(name = "proc",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of mover process ids; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of mover process ids; "
+                    + "default is all.")
         Integer[] proc = {};
 
         @Option(name = "path",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of paths; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of paths; "
+                    + "default is all.")
         String[] path = {};
 
         @Option(name = "pnfsId",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of pnfsIds; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of pnfsIds; "
+                    + "default is all.")
         String[] pnfsId = {};
 
         @Option(name = "pool",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of pools; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of pools; "
+                    + "default is all.")
         String[] pool = {};
 
         @Option(name = "host",
-                        separator = ",",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of client hosts; "
-                                        + "default is all.")
+              separator = ",",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of client hosts; "
+                    + "default is all.")
         String[] host = {};
 
         @Option(name = "status",
-                        usage = "List only transfers matching this session "
-                                        + "status expression;"
-                                        + "default is all.")
+              usage = "List only transfers matching this session "
+                    + "status expression;"
+                    + "default is all.")
         String status;
 
         @Option(name = "state",
-                        valueSpec = "NOTFOUND|QUEUED|RUNNING",
-                        usage = "List only transfers matching this "
-                                        + "comma-delimited set of mover states; "
-                                        + "default is all.")
+              valueSpec = "NOTFOUND|QUEUED|RUNNING",
+              usage = "List only transfers matching this "
+                    + "comma-delimited set of mover states; "
+                    + "default is all.")
         MoverState state;
 
         @Option(name = "before",
-                        valueSpec = DATETIME_FORMAT,
-                        usage = "List only transfers whose start time "
-                                        + "was before this date-time.")
+              valueSpec = DATETIME_FORMAT,
+              usage = "List only transfers whose start time "
+                    + "was before this date-time.")
         String before;
 
         @Option(name = "after",
-                        valueSpec = DATETIME_FORMAT,
-                        usage = "List only transfers whose start time "
-                                        + "was after this date-time.")
+              valueSpec = DATETIME_FORMAT,
+              usage = "List only transfers whose start time "
+                    + "was after this date-time.")
         String after;
 
         @Option(name = "limit",
-                        usage = "Return at most this number of transfers; "
-                                        + "default is all.")
+              usage = "Return at most this number of transfers; "
+                    + "default is all.")
         Integer limit = Integer.MAX_VALUE;
 
         @Override
@@ -231,7 +228,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
             if (date != null) {
                 filter.setAfter(date.getTime());
             }
-            date =  getDate(before);
+            date = getDate(before);
             if (date != null) {
                 filter.setBefore(date.getTime());
             }
@@ -254,49 +251,50 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
             }
 
             SnapshotList<TransferInfo> result
-                            = get(null,
-                                  0,
-                                  limit,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null,
-                                  null);
+                  = get(null,
+                  0,
+                  limit,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null);
             List<TransferInfo> snapshot = result.getItems();
 
             StringBuilder builder = new StringBuilder();
             snapshot.stream()
-                    .filter(filter::matches)
-                    .forEach((r) -> builder.append(r.toFormattedString())
-                                           .append("\n"));
-
+                  .filter(filter::matches)
+                  .forEach((r) -> builder.append(r.toFormattedString())
+                        .append("\n"));
 
             builder.insert(0, "TOTAL TRANSFERS : "
-                            + filter.getTotalMatched() + "\n\n");
+                  + filter.getTotalMatched() + "\n\n");
             return builder.toString();
         }
     }
 
     @Command(name = "transfers set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "collections of transfer information")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "collections of transfer information")
     class TransfersSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "transfers refresh",
-                    hint = "Query pools and doors for transfer data",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query pools and doors for transfer data",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class TransfersRefreshCommand extends RefreshCommand {
+
     }
 
     private static Function<FieldSort, Comparator<TransferInfo>> nextComparator() {
@@ -348,8 +346,8 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
                     break;
                 default:
                     throw new IllegalArgumentException(
-                                    "sort field " + sort.getName()
-                                                    + " not supported.");
+                          "sort field " + sort.getName()
+                                + " not supported.");
             }
 
             if (sort.isReverse()) {
@@ -361,69 +359,70 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
     }
 
     private static Predicate<TransferInfo> getFilter(String subjectUid,
-                                                     String state, String door,
-                                                     String domain, String protocol,
-                                                     String uid, String gid,
-                                                     String vomsgroup,
-                                                     String path, String pnfsid,
-                                                     String pool, String client) {
+          String state, String door,
+          String domain, String protocol,
+          String uid, String gid,
+          String vomsgroup,
+          String path, String pnfsid,
+          String pool, String client) {
         Predicate<TransferInfo> matchesSubject =
-                        (info) -> subjectUid == null
-                                        || Strings.emptyToNull(info.getUid()) == null  // allow all users to see anonymous transfers
-                                        || info.getUid().equals(subjectUid);
+              (info) -> subjectUid == null
+                    || Strings.emptyToNull(info.getUid()) == null
+                    // allow all users to see anonymous transfers
+                    || info.getUid().equals(subjectUid);
 
         Predicate<TransferInfo> matchesState =
-                        (info) -> state == null || Strings.nullToEmpty(info.getMoverStatus())
-                                                          .contains(state);
+              (info) -> state == null || Strings.nullToEmpty(info.getMoverStatus())
+                    .contains(state);
         Predicate<TransferInfo> matchesDoor =
-                        (info) -> door == null || Strings.nullToEmpty(info.getCellName())
-                                                          .contains(door);
+              (info) -> door == null || Strings.nullToEmpty(info.getCellName())
+                    .contains(door);
         Predicate<TransferInfo> matchesDomain =
-                        (info) -> domain == null || Strings.nullToEmpty(info.getDomainName())
-                                                          .contains(domain);
+              (info) -> domain == null || Strings.nullToEmpty(info.getDomainName())
+                    .contains(domain);
         Predicate<TransferInfo> matchesProtocol =
-                        (info) -> protocol == null || Strings.nullToEmpty(info.getProtocol())
-                                                          .contains(protocol);
+              (info) -> protocol == null || Strings.nullToEmpty(info.getProtocol())
+                    .contains(protocol);
         Predicate<TransferInfo> matchesUid =
-                        (info) -> uid == null || Strings.nullToEmpty(info.getUid())
-                                                          .contains(uid);
+              (info) -> uid == null || Strings.nullToEmpty(info.getUid())
+                    .contains(uid);
         Predicate<TransferInfo> matchesGid =
-                        (info) -> gid == null || Strings.nullToEmpty(info.getGid())
-                                                          .contains(gid);
+              (info) -> gid == null || Strings.nullToEmpty(info.getGid())
+                    .contains(gid);
         Predicate<TransferInfo> matchesVomsGroup =
-                        (info) -> vomsgroup == null || Strings.nullToEmpty(info.getVomsGroup())
-                                                          .contains(vomsgroup);
+              (info) -> vomsgroup == null || Strings.nullToEmpty(info.getVomsGroup())
+                    .contains(vomsgroup);
         Predicate<TransferInfo> matchesPath =
-                        (info) -> path == null || Strings.nullToEmpty(info.getPath())
-                                                           .contains(path);
+              (info) -> path == null || Strings.nullToEmpty(info.getPath())
+                    .contains(path);
         Predicate<TransferInfo> matchesPnfsid =
-                        (info) -> pnfsid == null || Strings.nullToEmpty(info.getPnfsId())
-                                                          .contains(pnfsid);
+              (info) -> pnfsid == null || Strings.nullToEmpty(info.getPnfsId())
+                    .contains(pnfsid);
         Predicate<TransferInfo> matchesPool =
-                        (info) -> pool == null || Strings.nullToEmpty(info.getPool())
-                                                          .contains(pool);
+              (info) -> pool == null || Strings.nullToEmpty(info.getPool())
+                    .contains(pool);
         Predicate<TransferInfo> matchesClient =
-                        (info) -> client == null || Strings.nullToEmpty(info.getReplyHost())
-                                                          .contains(client);
+              (info) -> client == null || Strings.nullToEmpty(info.getReplyHost())
+                    .contains(client);
 
         return matchesSubject.and(matchesState).and(matchesDoor)
-                             .and(matchesDomain).and(matchesProtocol)
-                             .and(matchesUid).and(matchesGid).and(matchesVomsGroup)
-                             .and(matchesPath).and(matchesPnfsid)
-                             .and(matchesPool).and(matchesClient);
+              .and(matchesDomain).and(matchesProtocol)
+              .and(matchesUid).and(matchesGid).and(matchesVomsGroup)
+              .and(matchesPath).and(matchesPnfsid)
+              .and(matchesPool).and(matchesClient);
     }
 
     /**
      * <p>Data store providing snapshots.</p>
      */
     private final SnapshotDataAccess<String, TransferInfo>
-                                        access = new SnapshotDataAccess<>();
+          access = new SnapshotDataAccess<>();
 
     @Override
     public void setCancelled(String pool, int id) {
         List<TransferInfo> current = access.getCurrent();
         for (TransferInfo info : current) {
-            if (pool.equals(info.getPool()) && id ==info.getMoverId()) {
+            if (pool.equals(info.getPool()) && id == info.getMoverId()) {
                 access.invalidate(info);
                 break;
             }
@@ -432,40 +431,40 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
 
     @Override
     public SnapshotList<TransferInfo> get(UUID token,
-                                          Integer offset,
-                                          Integer limit,
-                                          String suid,
-                                          String state,
-                                          String door,
-                                          String domain,
-                                          String protocol,
-                                          String uid,
-                                          String gid,
-                                          String vomsgroup,
-                                          String path,
-                                          String pnfsid,
-                                          String pool,
-                                          String client,
-                                          String sort) throws CacheException {
+          Integer offset,
+          Integer limit,
+          String suid,
+          String state,
+          String door,
+          String domain,
+          String protocol,
+          String uid,
+          String gid,
+          String vomsgroup,
+          String path,
+          String pnfsid,
+          String pool,
+          String client,
+          String sort) throws CacheException {
         Predicate<TransferInfo> filter = getFilter(suid,
-                                                   state, door, domain, protocol,
-                                                   uid, gid, vomsgroup,
-                                                   path, pnfsid, pool, client);
+              state, door, domain, protocol,
+              uid, gid, vomsgroup,
+              path, pnfsid, pool, client);
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,waiting";
         }
 
         List<FieldSort> fields = Arrays.stream(sort.split(","))
-                                       .map(FieldSort::new)
-                                       .collect(Collectors.toList());
+              .map(FieldSort::new)
+              .collect(Collectors.toList());
         Comparator<TransferInfo> sorter
-                        = FieldSort.getSorter(fields, nextComparator());
+              = FieldSort.getSorter(fields, nextComparator());
         SnapshotList<TransferInfo> snapshotList =
-                        access.getSnapshot(token, offset, limit, filter, sorter);
+              access.getSnapshot(token, offset, limit, filter, sorter);
         snapshotList.getItems().stream().forEach((t) -> {
-           if (!t.isValid()) {
-               t.setMoverStatus("CANCELED");
-           }
+            if (!t.isValid()) {
+                t.setMoverStatus("CANCELED");
+            }
         });
         return snapshotList;
     }

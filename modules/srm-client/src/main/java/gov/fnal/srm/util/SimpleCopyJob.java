@@ -74,12 +74,13 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.dcache.srm.Logger;
+
 /**
- *
- * @author  timur
+ * @author timur
  */
 
 public class SimpleCopyJob implements CopyJob {
+
     private java.net.URI from;
     private java.net.URI to;
     private boolean isDone;
@@ -89,9 +90,9 @@ public class SimpleCopyJob implements CopyJob {
 
 
     public SimpleCopyJob(java.net.URI from, java.net.URI to, Logger logger, SRMClient client) {
-        if(from == null || to == null) {
-            throw new IllegalArgumentException("both source and destination"+
-            "must be non-null");
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("both source and destination" +
+                  "must be non-null");
         }
         this.from = from;
         this.to = to;
@@ -121,34 +122,31 @@ public class SimpleCopyJob implements CopyJob {
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return to.hashCode() ^ from.hashCode();
     }
 
     @Override
     public String toString() {
-        return "CopyJob, source = "+from+" destination = "+to;
+        return "CopyJob, source = " + from + " destination = " + to;
     }
 
     @Override
     public void done(boolean success, String error) {
-        synchronized(this) {
-            if(isDone) {
+        synchronized (this) {
+            if (isDone) {
                 return;
             }
         }
-        if(success) {
-            client.setReportSucceeded(from,to);
-        }
-        else
-        {
-            error = "failed to copy: "+error;
-            client.setReportFailed(from,to,error);
+        if (success) {
+            client.setReportSucceeded(from, to);
+        } else {
+            error = "failed to copy: " + error;
+            client.setReportFailed(from, to, error);
 
         }
 
-        synchronized(this) {
+        synchronized (this) {
             isDone = true;
         }
     }

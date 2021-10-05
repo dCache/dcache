@@ -64,38 +64,33 @@ import org.dcache.auth.attributes.Restriction;
 /**
  * Single generic bulk message type which serves various activities.
  */
-public class BulkRequestMessage extends BulkServiceMessage
-{
+public class BulkRequestMessage extends BulkServiceMessage {
+
     private static final long serialVersionUID = 957050116233062328L;
 
     private final BulkRequest request;
-    private       String      requestUrl;
+    private String requestUrl;
 
-    public BulkRequestMessage(BulkRequest request, Restriction restriction)
-    {
+    public BulkRequestMessage(BulkRequest request, Restriction restriction) {
         super(restriction);
         this.request = request;
     }
 
-    public BulkRequest getRequest()
-    {
+    public BulkRequest getRequest() {
         return request;
     }
 
-    public String getRequestUrl()
-    {
+    public String getRequestUrl() {
         return requestUrl;
     }
 
-    public void setRequestUrl(String requestUrl)
-    {
+    public void setRequestUrl(String requestUrl) {
         this.requestUrl = requestUrl;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return "BulkRequestMessage for request " + requestUrl + ", target: "
-                        + request.getTarget() + ", activity: "
-                        + request.getActivity();
+              + request.getTarget() + ", activity: "
+              + request.getActivity();
     }
 }

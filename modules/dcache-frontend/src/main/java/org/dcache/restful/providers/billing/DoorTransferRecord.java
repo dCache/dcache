@@ -62,11 +62,10 @@ package org.dcache.restful.providers.billing;
 import com.google.common.base.Strings;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import org.dcache.services.billing.db.data.TransferRecord;
 
 @ApiModel(description = "Properties pertinent to reads and writes initiated "
-                                + "by external clients through a door/protocol.")
+      + "by external clients through a door/protocol.")
 public final class DoorTransferRecord extends DiskTransferRecord {
 
     private static final String MAINFORMAT = "%s (pool %s)(door %s)(%s)(connect %s)(queued %s)(transferred %s)%s %s\n";
@@ -88,7 +87,7 @@ public final class DoorTransferRecord extends DiskTransferRecord {
     private String owner;
 
     @ApiModelProperty("Fully qualified attribute name (VOMs), if any, "
-                    + "associated with the transaction.")
+          + "associated with the transaction.")
     private String fqan;
 
     public DoorTransferRecord() {
@@ -155,20 +154,20 @@ public final class DoorTransferRecord extends DiskTransferRecord {
 
     public String toDisplayString() {
         String user = String.format(USERFORMAT,
-                                    fqan,
-                                    mappedUID,
-                                    mappedGID,
-                                    owner);
+              fqan,
+              mappedUID,
+              mappedGID,
+              owner);
 
         return String.format(MAINFORMAT,
-                             datestamp,
-                             pool,
-                             door,
-                             client,
-                             connectiontime,
-                             queuedtime,
-                             transfersize,
-                             user,
-                             errormessage);
+              datestamp,
+              pool,
+              door,
+              client,
+              connectiontime,
+              queuedtime,
+              transfersize,
+              user,
+              errormessage);
     }
 }

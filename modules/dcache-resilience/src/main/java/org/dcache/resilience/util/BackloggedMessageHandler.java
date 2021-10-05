@@ -63,15 +63,15 @@ import java.io.Serializable;
 
 /**
  * <p>Defines a component which manages messages when resilience
- *      is in disabled state.</p>
+ * is in disabled state.</p>
  */
 public interface BackloggedMessageHandler {
 
     void initialize();
 
     /**
-     * @param message received which cannot be handled in the present state of
-     *          the resilience system.
+     * @param message received which cannot be handled in the present state of the resilience
+     *                system.
      */
     void saveToBacklog(Serializable message);
 

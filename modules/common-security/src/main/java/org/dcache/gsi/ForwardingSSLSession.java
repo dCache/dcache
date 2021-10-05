@@ -18,143 +18,120 @@
 package org.dcache.gsi;
 
 import com.google.common.collect.ForwardingObject;
-
+import java.security.Principal;
+import java.security.cert.Certificate;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 import javax.security.cert.X509Certificate;
 
-import java.security.Principal;
-import java.security.cert.Certificate;
+public abstract class ForwardingSSLSession extends ForwardingObject implements SSLSession {
 
-public abstract class ForwardingSSLSession extends ForwardingObject implements SSLSession
-{
     @Override
     protected abstract SSLSession delegate();
 
     @Override
-    public byte[] getId()
-    {
+    public byte[] getId() {
         return delegate().getId();
     }
 
     @Override
-    public SSLSessionContext getSessionContext()
-    {
+    public SSLSessionContext getSessionContext() {
         return delegate().getSessionContext();
     }
 
     @Override
-    public long getCreationTime()
-    {
+    public long getCreationTime() {
         return delegate().getCreationTime();
     }
 
     @Override
-    public long getLastAccessedTime()
-    {
+    public long getLastAccessedTime() {
         return delegate().getLastAccessedTime();
     }
 
     @Override
-    public void invalidate()
-    {
+    public void invalidate() {
         delegate().invalidate();
     }
 
     @Override
-    public boolean isValid()
-    {
+    public boolean isValid() {
         return delegate().isValid();
     }
 
     @Override
-    public void putValue(String s, Object o)
-    {
+    public void putValue(String s, Object o) {
         delegate().putValue(s, o);
     }
 
     @Override
-    public Object getValue(String s)
-    {
+    public Object getValue(String s) {
         return delegate().getValue(s);
     }
 
     @Override
-    public void removeValue(String s)
-    {
+    public void removeValue(String s) {
         delegate().removeValue(s);
     }
 
     @Override
-    public String[] getValueNames()
-    {
+    public String[] getValueNames() {
         return delegate().getValueNames();
     }
 
     @Override
-    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
-    {
+    public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException {
         return delegate().getPeerCertificates();
     }
 
     @Override
-    public Certificate[] getLocalCertificates()
-    {
+    public Certificate[] getLocalCertificates() {
         return delegate().getLocalCertificates();
     }
 
     @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
-    {
+    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
         return delegate().getPeerCertificateChain();
     }
 
     @Override
-    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException
-    {
+    public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
         return delegate().getPeerPrincipal();
     }
 
     @Override
-    public Principal getLocalPrincipal()
-    {
+    public Principal getLocalPrincipal() {
         return delegate().getLocalPrincipal();
     }
 
     @Override
-    public String getCipherSuite()
-    {
+    public String getCipherSuite() {
         return delegate().getCipherSuite();
     }
 
     @Override
-    public String getProtocol()
-    {
+    public String getProtocol() {
         return delegate().getProtocol();
     }
 
     @Override
-    public String getPeerHost()
-    {
+    public String getPeerHost() {
         return delegate().getPeerHost();
     }
 
     @Override
-    public int getPeerPort()
-    {
+    public int getPeerPort() {
         return delegate().getPeerPort();
     }
 
     @Override
-    public int getPacketBufferSize()
-    {
+    public int getPacketBufferSize() {
         return delegate().getPacketBufferSize();
     }
 
     @Override
-    public int getApplicationBufferSize()
-    {
+    public int getApplicationBufferSize() {
         return delegate().getApplicationBufferSize();
     }
 }

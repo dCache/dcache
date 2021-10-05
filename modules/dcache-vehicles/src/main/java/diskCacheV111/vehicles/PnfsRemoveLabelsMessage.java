@@ -17,42 +17,36 @@
  */
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.PnfsId;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.PnfsId;
 
 /**
  * Remove a label of  a file object.
  */
-public class PnfsRemoveLabelsMessage extends PnfsMessage
-{
+public class PnfsRemoveLabelsMessage extends PnfsMessage {
+
     private static final long serialVersionUID = -3390360138874265448L;
 
     private final Set<String> _labels = new HashSet<>();
 
-    public PnfsRemoveLabelsMessage(PnfsId id)
-    {
+    public PnfsRemoveLabelsMessage(PnfsId id) {
         super(id);
     }
 
-    public PnfsRemoveLabelsMessage(String path)
-    {
+    public PnfsRemoveLabelsMessage(String path) {
         setPnfsPath(path);
     }
 
-    public void addLabel(String label)
-    {
+    public void addLabel(String label) {
         _labels.add(label);
     }
 
-    public Set<String> getLabels()
-    {
+    public Set<String> getLabels() {
         return _labels;
     }
 
-    public void clearLabel()
-    {
+    public void clearLabel() {
         _labels.clear();
     }
 }

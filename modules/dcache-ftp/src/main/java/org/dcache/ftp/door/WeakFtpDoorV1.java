@@ -1,32 +1,27 @@
 package org.dcache.ftp.door;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
-
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import javax.security.auth.Subject;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.NetLoggerBuilder;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class WeakFtpDoorV1 extends AbstractFtpDoorV1
-{
+public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
     private final Optional<String> _anonymousUser;
@@ -38,17 +33,15 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     private boolean _isAnonymous;
 
     public WeakFtpDoorV1(boolean allowUsernamePassword,
-            Optional<String> anonymousUser, FsPath anonymousRoot,
-            boolean requireAnonPasswordEmail)
-    {
+          Optional<String> anonymousUser, FsPath anonymousRoot,
+          boolean requireAnonPasswordEmail) {
         this("Weak FTP", allowUsernamePassword, anonymousUser, anonymousRoot,
-            requireAnonPasswordEmail);
+              requireAnonPasswordEmail);
     }
 
     protected WeakFtpDoorV1(String name, boolean allowUsernamePassword,
-            Optional<String> anonymousUser, FsPath anonymousRoot,
-            boolean requireAnonPasswordEmail)
-    {
+          Optional<String> anonymousUser, FsPath anonymousRoot,
+          boolean requireAnonPasswordEmail) {
         super(name);
         _anonymousUser = requireNonNull(anonymousUser);
         _allowUsernamePassword = allowUsernamePassword;
@@ -57,14 +50,13 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    protected void logSubject(NetLoggerBuilder log, Subject subject)
-    {
+    protected void logSubject(NetLoggerBuilder log, Subject subject) {
         if (_isAnonymous) {
             log.add("user.name", _user);
             List<String> emails = Subjects.getEmailAddresses(subject);
             if (!emails.isEmpty()) {
                 log.add("user.unverified-email", emails.size() == 1
-                        ? emails.get(0) : emails.toString());
+                      ? emails.get(0) : emails.toString());
             }
         } else {
             log.add("user.name", Subjects.getDisplayName(subject));
@@ -76,8 +68,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    public void ftp_user(String arg) throws FTPCommandException
-    {
+    public void ftp_user(String arg) throws FTPCommandException {
         checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
 
         _user = arg;
@@ -86,11 +77,11 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         if (_isAnonymous) {
             reply("331 Guest login ok, send your email address as password.");
         } else if (_allowUsernamePassword) {
-            reply("331 Password required for "+_user+".");
+            reply("331 Password required for " + _user + ".");
         } else {
             if (_anonymousUser.isPresent()) {
                 reply("530 Login with user \"" + _anonymousUser.get()
-                        + "\" for anonymous access");
+                      + "\" for anonymous access");
             } else {
                 reply("530 USER not supported");
             }
@@ -98,8 +89,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    public void ftp_pass(String arg)
-    {
+    public void ftp_pass(String arg) {
         if (_isAnonymous) {
             doAnonymousLogin(arg);
         } else {
@@ -107,8 +97,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    private void doAnonymousLogin(String email)
-    {
+    private void doAnonymousLogin(String email) {
         boolean isValidEmail = EmailAddressPrincipal.isValid(email);
 
         if (!_requireAnonPasswordEmail || isValidEmail) {
@@ -120,7 +109,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
             }
 
             acceptLogin(subject, Collections.emptySet(), Restrictions.readOnly(),
-                    _anonymousRoot);
+                  _anonymousRoot);
             reply("230 Guest login ok, access restrictions apply.");
         } else {
             LOGGER.debug("Invalid email address as anonymous password: {}", email);
@@ -128,8 +117,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    private void doRegularLogin(String arg)
-    {
+    private void doRegularLogin(String arg) {
         Subject subject = new Subject();
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
         subject.getPrincipals().add(_origin);

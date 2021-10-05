@@ -1,17 +1,16 @@
 package org.dcache.util;
 
-import org.slf4j.MDC;
-
 import java.util.Map;
+import org.slf4j.MDC;
 
 /**
  * The class emulates the Nested Diagnostic Context of Log4j.
- *
- * Besides providing static methods for working with the NDC, the
- * class can be instantiated to capture the state of the NDC.
+ * <p>
+ * Besides providing static methods for working with the NDC, the class can be instantiated to
+ * capture the state of the NDC.
  */
-public class NDC
-{
+public class NDC {
+
     /* Internally the class uses the MDC.  Two MDC keys are used: One
      * to hold the NDC in string form, and another to hold a comma
      * separated list of positions in the NDC string indicating the
@@ -23,19 +22,16 @@ public class NDC
     private final String _ndc;
     private final String _positions;
 
-    public NDC(String ndc, String positions)
-    {
+    public NDC(String ndc, String positions) {
         _ndc = ndc;
         _positions = positions;
     }
 
-    public String getNdc()
-    {
+    public String getNdc() {
         return _ndc;
     }
 
-    public String getPositions()
-    {
+    public String getPositions() {
         return _positions;
     }
 
@@ -44,8 +40,7 @@ public class NDC
      * <code>MDC.remove</code>. <code>value</code> is allowed to be
      * null.
      */
-    private static void setMdc(String key, String value)
-    {
+    private static void setMdc(String key, String value) {
         if (value != null) {
             MDC.put(key, value);
         } else {
@@ -56,8 +51,7 @@ public class NDC
     /**
      * Clear any nested diagnostic information if any.
      */
-    public static void clear()
-    {
+    public static void clear() {
         MDC.remove(KEY_NDC);
         MDC.remove(KEY_POSITIONS);
     }
@@ -65,26 +59,22 @@ public class NDC
     /**
      * Returns the nested diagnostic context for the current thread.
      */
-    public static NDC cloneNdc()
-    {
+    public static NDC cloneNdc() {
         return new NDC(MDC.get(KEY_NDC), MDC.get(KEY_POSITIONS));
     }
 
     /**
      * Replace the nested diagnostic context.
      */
-    public static void set(NDC ndc)
-    {
+    public static void set(NDC ndc) {
         setMdc(KEY_NDC, ndc.getNdc());
         setMdc(KEY_POSITIONS, ndc.getPositions());
     }
 
     /**
-     * Push new diagnostic context information for the current
-     * thread.
+     * Push new diagnostic context information for the current thread.
      */
-    public static void push(String message)
-    {
+    public static void push(String message) {
         String ndc = MDC.get(KEY_NDC);
         if (ndc == null) {
             MDC.put(KEY_NDC, message);
@@ -96,12 +86,10 @@ public class NDC
     }
 
     /**
-     * Removes the diagnostic context information pushed the last.
-     * Clients should call this method before leaving a diagnostic
-     * context.
+     * Removes the diagnostic context information pushed the last. Clients should call this method
+     * before leaving a diagnostic context.
      */
-    public static String pop()
-    {
+    public static String pop() {
         String top = null;
         String ndc = MDC.get(KEY_NDC);
         if (ndc != null) {
@@ -113,7 +101,7 @@ public class NDC
                 MDC.remove(KEY_POSITIONS);
             } else {
                 int offset = Integer.parseInt(positions.substring(pos + 1));
-                top = ndc.substring(offset+1);
+                top = ndc.substring(offset + 1);
                 MDC.put(KEY_NDC, ndc.substring(0, offset));
                 MDC.put(KEY_POSITIONS, positions.substring(0, pos));
             }

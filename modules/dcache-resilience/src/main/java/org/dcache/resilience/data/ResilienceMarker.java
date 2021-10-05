@@ -65,6 +65,7 @@ package org.dcache.resilience.data;
  * @see StorageUnitConstraints
  */
 public class ResilienceMarker {
+
     private boolean resilient;
 
     ResilienceMarker(boolean resilient) {

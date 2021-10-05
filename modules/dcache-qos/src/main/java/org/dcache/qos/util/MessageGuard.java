@@ -68,15 +68,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Checks whether the incoming message carries the qos session id. This is used to
- *  distinguish messages which require handling from those which do not.
- *  <p>
- *  Also stores messages which arrive during the DISABLED state, and provides them
- *  on a one-time-basis to the caller, when re-enabled.
- *  <p>
- *  Class is not marked final for stubbing/mocking purposes.
+ * Checks whether the incoming message carries the qos session id. This is used to distinguish
+ * messages which require handling from those which do not.
+ * <p>
+ * Also stores messages which arrive during the DISABLED state, and provides them on a
+ * one-time-basis to the caller, when re-enabled.
+ * <p>
+ * Class is not marked final for stubbing/mocking purposes.
  */
 public class MessageGuard {
+
     private static final String QOS_KEY = "QOS-";
 
     @VisibleForTesting
@@ -95,17 +96,17 @@ public class MessageGuard {
     }
 
     private BackloggedMessageHandler backlogHandler;
-    private boolean                  enabled = false;
-    private boolean                  dropMessages = false;
+    private boolean enabled = false;
+    private boolean dropMessages = false;
 
     /**
-     *  @param message       informative statement for logging purposes.
-     *  @param messageObject received by the handler.
-     *  @return status of the message (EXCLUDED, REPLICA, EXTERNAL).
+     * @param message       informative statement for logging purposes.
+     * @param messageObject received by the handler.
+     * @return status of the message (EXCLUDED, REPLICA, EXTERNAL).
      */
     public Status getStatus(String message, Object messageObject) {
         LOGGER.trace("**** acceptMessage **** {}: {} -- {}.", message,
-                     messageObject, enabled);
+              messageObject, enabled);
 
         String session = CDC.getSession();
         LOGGER.trace("{} – session {}", message, session);
@@ -113,7 +114,7 @@ public class MessageGuard {
         synchronized (backlogHandler) {
             if (!enabled) {
                 if (!dropMessages && !isQoSSession(session)) {
-                   conditionallySave(messageObject);
+                    conditionallySave(messageObject);
                 }
                 LOGGER.trace("{}: {}.", message, Status.DISABLED);
                 return Status.DISABLED;
@@ -164,11 +165,11 @@ public class MessageGuard {
 
     private void conditionallySave(Object serializable) {
         if (serializable instanceof CellMessage) {
-            serializable = ((CellMessage)serializable).getMessageObject();
+            serializable = ((CellMessage) serializable).getMessageObject();
         }
 
         if (serializable instanceof Message) {
-            backlogHandler.saveToBacklog((Message)serializable);
+            backlogHandler.saveToBacklog((Message) serializable);
         } else {
             LOGGER.warn("{} not of type Message; skipping.", serializable);
         }

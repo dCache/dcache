@@ -1,13 +1,23 @@
 package dmg.cells.services.login;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.net.InetAddresses.toUriString;
+import static org.dcache.util.ByteUnit.KiB;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import javatunnel.UserValidatable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEvent;
+import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.KeepAliveListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -35,26 +45,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellEvent;
-import dmg.cells.nucleus.CellEventListener;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.KeepAliveListener;
-
+import javatunnel.UserValidatable;
 import org.dcache.util.Args;
 import org.dcache.util.NDC;
 import org.dcache.util.Subnet;
 import org.dcache.util.Version;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.net.InetAddresses.toUriString;
-import static org.dcache.util.ByteUnit.KiB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * *
@@ -63,9 +60,9 @@ import static org.dcache.util.ByteUnit.KiB;
  * @version 0.1, 15 Feb 1998
  */
 public class LoginManager
-        extends CellAdapter
-        implements UserValidatable
-{
+      extends CellAdapter
+      implements UserValidatable {
+
     private static final Object DEAD_CELL = new Object();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
@@ -90,11 +87,11 @@ public class LoginManager
     private final Set<Subnet> _allowed;
 
     /**
-     * Tagging interface that a CellMessage payload implements to indicate
-     * the notification should be forwarded to all children.
+     * Tagging interface that a CellMessage payload implements to indicate the notification should
+     * be forwarded to all children.
      */
-    public interface OfInterestToChildren
-    {
+    public interface OfInterestToChildren {
+
     }
 
     /**
@@ -112,13 +109,11 @@ public class LoginManager
      *         Both get their own copy.
      * </pre>
      */
-    public LoginManager(String name, String argString)
-    {
+    public LoginManager(String name, String argString) {
         this(name, "Generic", argString);
     }
 
-    public LoginManager(String name, String cellType, String argString)
-    {
+    public LoginManager(String name, String cellType, String argString) {
         super(name, cellType, argString);
         _nucleus = getNucleus();
         _args = getArgs();
@@ -128,24 +123,23 @@ public class LoginManager
     }
 
     @Override
-    protected void starting() throws Exception
-    {
+    protected void starting() throws Exception {
         if (_args.argc() < 2) {
             throw new
-                    IllegalArgumentException(
-                    "USAGE : ... <listenPort> <loginCell>" +
-                    " [-maxLogin=<n>|-1]" +
-                    " [-keepAlive=<seconds>]" +
-                    " [-acceptErrorWait=<msecs>]" +
-                    " [args givenToLoginClass]");
+                  IllegalArgumentException(
+                  "USAGE : ... <listenPort> <loginCell>" +
+                        " [-maxLogin=<n>|-1]" +
+                        " [-keepAlive=<seconds>]" +
+                        " [-acceptErrorWait=<msecs>]" +
+                        " [args givenToLoginClass]");
         }
 
         int listenPort = Integer.parseInt(_args.argv(0));
         String loginCell = _args.argv(1);
 
         Args childArgs = new Args(_args.toString()
-                                          .replaceFirst("(^|\\s)-consume=\\S*", "")
-                                          .replaceFirst("(^|\\s)-subscribe=\\S*", ""));
+              .replaceFirst("(^|\\s)-consume=\\S*", "")
+              .replaceFirst("(^|\\s)-subscribe=\\S*", ""));
         childArgs.shift();
         childArgs.shift();
 
@@ -173,13 +167,12 @@ public class LoginManager
         _keepAlive = new KeepAliveTask();
         _keepAlive.schedule(keepAlive);
 
-
         _loginCellFactory = new LoginCellFactoryBuilder()
-                .setName(loginCell)
-                .setCellEndpoint(this)
-                .setLoginManagerName(getCellName())
-                .setArgs(childArgs)
-                .build();
+              .setName(loginCell)
+              .setCellEndpoint(this)
+              .setLoginManagerName(getCellName())
+              .setArgs(childArgs)
+              .build();
         _version = new CellVersion(Version.of(_loginCellFactory));
 
         String topic = _args.getOpt("brokerTopic");
@@ -196,11 +189,15 @@ public class LoginManager
             _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", ""));
             _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
             _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
-            _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
+            _loginBrokerPublisher.setUpdateTimeUnit(
+                  TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
             _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
-            _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("brokerRoot", _args.getOption("root"))));
-            _loginBrokerPublisher.setReadPaths(byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
-            _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
+            _loginBrokerPublisher.setRoot(
+                  Strings.emptyToNull(_args.getOption("brokerRoot", _args.getOption("root"))));
+            _loginBrokerPublisher.setReadPaths(
+                  byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
+            _loginBrokerPublisher.setWritePaths(
+                  byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
             _loginBrokerPublisher.setAddress(Strings.emptyToNull(_args.getOption("brokerAddress")));
             _loginBrokerPublisher.setPort(_args.getIntOption("brokerPort", 0));
 
@@ -220,8 +217,7 @@ public class LoginManager
     }
 
     @Override
-    protected void started()
-    {
+    protected void started() {
         _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.afterStart();
@@ -229,8 +225,7 @@ public class LoginManager
     }
 
     @Override
-    public void messageArrived(CellMessage envelope)
-    {
+    public void messageArrived(CellMessage envelope) {
         Serializable message = envelope.getMessageObject();
         if (_loginBrokerPublisher != null) {
             if (message instanceof NoRouteToCellException) {
@@ -251,19 +246,17 @@ public class LoginManager
     }
 
     @Override
-    public CellVersion getCellVersion()
-    {
+    public CellVersion getCellVersion() {
         return _version;
     }
 
-    public int getListenPort()
-    {
+    public int getListenPort() {
         return _listenThread.getListenPort();
     }
 
     public static final String hh_get_children = "[-binary]";
-    public Object ac_get_children(Args args)
-    {
+
+    public Object ac_get_children(Args args) {
         boolean binary = args.hasOption("binary");
         if (binary) {
             /* Important: Do not try to allocate a sized array as _children may be
@@ -280,21 +273,20 @@ public class LoginManager
         }
     }
 
-    private class LoginEventListener implements CellEventListener
-    {
+    private class LoginEventListener implements CellEventListener {
+
         @Override
-        public void cellDied(CellEvent ce)
-        {
+        public void cellDied(CellEvent ce) {
             String removedCell = ce.getSource().toString();
             if (!removedCell.startsWith(getCellName())) {
                 return;
             }
 
             /*  while in some cases remove may be issued prior cell is inserted into _children
-       	     *  following trick is used:
-       	     *  if there is no mapping for this cell, we create a 'dead' mapping, which will
-       	     *  allow following put to identify it as a 'dead' and remove it.
-       	     */
+             *  following trick is used:
+             *  if there is no mapping for this cell, we create a 'dead' mapping, which will
+             *  allow following put to identify it as a 'dead' and remove it.
+             */
             Object cell = _children.putIfAbsent(removedCell, DEAD_CELL);
             if (cell != null) {
                 _children.remove(removedCell, cell);
@@ -304,14 +296,13 @@ public class LoginManager
         }
     }
 
-    private class KeepAliveTask implements Runnable
-    {
+    private class KeepAliveTask implements Runnable {
+
         private ScheduledFuture<?> _future;
         private long _keepAlive;
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 for (Object o : _children.values()) {
                     if (o instanceof KeepAliveListener) {
@@ -327,30 +318,28 @@ public class LoginManager
             }
         }
 
-        public synchronized void schedule(long keepAlive)
-        {
+        public synchronized void schedule(long keepAlive) {
             _keepAlive = keepAlive;
             if (_future != null) {
                 _future.cancel(false);
             }
             if (_keepAlive > 0) {
                 _future = _scheduledExecutor.scheduleWithFixedDelay(this, _keepAlive, _keepAlive,
-                                                                    TimeUnit.MILLISECONDS);
+                      TimeUnit.MILLISECONDS);
             } else {
                 _future = null;
             }
             LOGGER.info("Keep Alive value changed to {}", _keepAlive);
         }
 
-        public synchronized long getKeepAlive()
-        {
+        public synchronized long getKeepAlive() {
             return _keepAlive;
         }
     }
 
     public static final String hh_set_keepalive = "<keepAliveValue/seconds>";
-    public String ac_set_keepalive_$_1(Args args)
-    {
+
+    public String ac_set_keepalive_$_1(Args args) {
         long keepAlive = Long.parseLong(args.argv(0));
         _keepAlive.schedule(keepAlive * 1000L);
         return "keepAlive value set to " + keepAlive + " seconds";
@@ -358,17 +347,15 @@ public class LoginManager
 
     // the cell implementation
     @Override
-    public String toString()
-    {
+    public String toString() {
         ListenThread listenThread = _listenThread;
         LoginCellFactory loginCellFactory = _loginCellFactory;
         return "p=" + (listenThread == null ? "" : String.valueOf(listenThread.getListenPort())) +
-               ";c=" + (loginCellFactory == null ? "" : loginCellFactory.getName());
+              ";c=" + (loginCellFactory == null ? "" : loginCellFactory.getName());
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("--- Login Manager ---");
         pw.println("  Listen Port    : " + _listenThread.getListenPort());
         pw.println("  Protocol engine: " + _loginCellFactory.getName());
@@ -395,8 +382,8 @@ public class LoginManager
     }
 
     public static final String hh_set_max_logins = "<maxNumberOfLogins>|-1";
-    public String ac_set_max_logins_$_1(Args args)
-    {
+
+    public String ac_set_max_logins_$_1(Args args) {
         int n = Integer.parseInt(args.argv(0));
         checkArgument(n == -1 || _maxLogin >= 0, "Can't switch off maxLogin feature");
         checkArgument(n >= 0 || _maxLogin == -1, "Can't switch on maxLogin feature");
@@ -406,8 +393,7 @@ public class LoginManager
     }
 
     @Override
-    protected void stopping()
-    {
+    protected void stopping() {
         LOGGER.info("cleanUp requested by nucleus, closing listen socket");
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.beforeStop();
@@ -423,16 +409,15 @@ public class LoginManager
     }
 
     @Override
-    public void stopped()
-    {
+    public void stopped() {
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();
         }
         LOGGER.info("Bye Bye");
     }
 
-    private class ListenThread implements Runnable
-    {
+    private class ListenThread implements Runnable {
+
         private static final int SHUTDOWN_TIMEOUT = 60000;
 
         private final InetSocketAddress _socketAddress;
@@ -443,8 +428,7 @@ public class LoginManager
         private volatile boolean _shutdown;
         private ServerSocket _serverSocket;
 
-        private ListenThread(int listenPort) throws Exception
-        {
+        private ListenThread(int listenPort) throws Exception {
             long timeout;
             try {
                 timeout = Long.parseLong(_args.getOpt("acceptErrorWait"));
@@ -464,7 +448,7 @@ public class LoginManager
             String ssf = _args.getOpt("socketfactory");
             if (ssf != null) {
                 Args args = new Args(ssf);
-                checkArgument(args.argc() >= 1 , "Invalid Arguments for 'socketfactory'");
+                checkArgument(args.argc() >= 1, "Invalid Arguments for 'socketfactory'");
                 String tunnelFactoryClass = args.argv(0);
 
                 /*
@@ -489,8 +473,7 @@ public class LoginManager
             openPort();
         }
 
-        private void openPort() throws Exception
-        {
+        private void openPort() throws Exception {
             if (_ssfConstructor == null) {
                 _serverSocket = ServerSocketChannel.open().socket();
             } else {
@@ -516,14 +499,16 @@ public class LoginManager
                     Throwables.propagateIfPossible(e.getCause(), Exception.class);
                     throw new RuntimeException(e);
                 }
-                LOGGER.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
+                LOGGER.info("ListenThread : got serverSocket class : {}",
+                      _serverSocket.getClass().getName());
             }
             _serverSocket.bind(_socketAddress);
 
             if (_loginBrokerPublisher != null) {
                 /* Synchronize to make update atomic. */
                 synchronized (_loginBrokerPublisher) {
-                    _loginBrokerPublisher.setSocketAddress((InetSocketAddress) _serverSocket.getLocalSocketAddress());
+                    _loginBrokerPublisher.setSocketAddress(
+                          (InetSocketAddress) _serverSocket.getLocalSocketAddress());
                     String address = Strings.emptyToNull(_args.getOption("brokerAddress"));
                     if (address != null) {
                         _loginBrokerPublisher.setAddress(address);
@@ -539,44 +524,43 @@ public class LoginManager
             LOGGER.trace("Nio Socket Channel : {}", (_serverSocket.getChannel() != null));
         }
 
-        public int getListenPort()
-        {
+        public int getListenPort() {
             return _serverSocket.getLocalPort();
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             ExecutorService executor = Executors.newCachedThreadPool(_nucleus);
             try {
                 _loginCellFactory.startAsync().awaitRunning();
                 while (!_serverSocket.isClosed()) {
                     try {
                         Socket socket = _serverSocket.accept();
-                        InetSocketAddress remoteAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
-
+                        InetSocketAddress remoteAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
 
                         if (!remoteAddress.getAddress().isAnyLocalAddress() &&
-                            !remoteAddress.getAddress().isLoopbackAddress() &&
-                            !_allowed.isEmpty() &&
-                            _allowed.stream()
+                              !remoteAddress.getAddress().isLoopbackAddress() &&
+                              !_allowed.isEmpty() &&
+                              _allowed.stream()
                                     .noneMatch(s -> s.contains(remoteAddress.getAddress()))) {
                             throw new IOException("Remote Host ("
-                                                    + remoteAddress.getAddress()
-                                                    + ") not in the list of allowed subnets");
+                                  + remoteAddress.getAddress()
+                                  + ") not in the list of allowed subnets");
                         }
 
                         socket.setKeepAlive(true);
                         socket.setTcpNoDelay(true);
                         LOGGER.debug("Socket OPEN (ACCEPT) remote = {} local = {}",
-                                socket.getRemoteSocketAddress(), socket.getLocalSocketAddress());
+                              socket.getRemoteSocketAddress(), socket.getLocalSocketAddress());
                         LOGGER.info("Nio Channel (accept) : {}", (socket.getChannel() != null));
 
                         int currentChildCount = _children.size();
                         LOGGER.info("New connection : {}", currentChildCount);
                         if ((_maxLogin > -1) && (currentChildCount >= _maxLogin)) {
                             _connectionDeniedCounter.incrementAndGet();
-                            LOGGER.warn("Connection denied: Number of allowed logins exceeded ({} > {}).", currentChildCount, _maxLogin);
+                            LOGGER.warn(
+                                  "Connection denied: Number of allowed logins exceeded ({} > {}).",
+                                  currentChildCount, _maxLogin);
                             executor.execute(new ShutdownEngine(socket));
                         } else {
                             LOGGER.info("Connection request from {}", socket.getInetAddress());
@@ -598,14 +582,16 @@ public class LoginManager
                             if (_acceptErrorTimeout > 0L) {
                                 synchronized (this) {
                                     while (!_shutdown && _serverSocket.isClosed()) {
-                                        LOGGER.warn("Sleeping {} ms before reopening server socket", _acceptErrorTimeout);
+                                        LOGGER.warn("Sleeping {} ms before reopening server socket",
+                                              _acceptErrorTimeout);
                                         wait(_acceptErrorTimeout);
                                         if (!_shutdown) {
                                             try {
                                                 openPort();
                                                 LOGGER.warn("Resuming operation");
                                             } catch (Exception ee) {
-                                                LOGGER.warn("Failed to open socket: {}", ee.toString());
+                                                LOGGER.warn("Failed to open socket: {}",
+                                                      ee.toString());
                                             }
                                         }
                                     }
@@ -629,8 +615,7 @@ public class LoginManager
             }
         }
 
-        private void shutdownAndAwaitTermination(ExecutorService executor)
-        {
+        private void shutdownAndAwaitTermination(ExecutorService executor) {
             executor.shutdown();
             try {
                 executor.awaitTermination(SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -639,8 +624,7 @@ public class LoginManager
             }
         }
 
-        private void awaitTerminationOfChildren()
-        {
+        private void awaitTerminationOfChildren() {
             try {
                 for (Object child : _children.values()) {
                     if (child instanceof CellAdapter) {
@@ -652,8 +636,7 @@ public class LoginManager
             }
         }
 
-        private void terminateChildren()
-        {
+        private void terminateChildren() {
             for (Object child : _children.values()) {
                 if (child instanceof CellAdapter) {
                     getNucleus().kill(((CellAdapter) child).getCellName());
@@ -661,8 +644,7 @@ public class LoginManager
             }
         }
 
-        public void shutdown()
-        {
+        public void shutdown() {
             LOGGER.info("Listen thread shutdown requested");
 
             synchronized (this) {
@@ -675,7 +657,8 @@ public class LoginManager
                 _shutdown = true;
 
                 try {
-                    LOGGER.debug("Socket SHUTDOWN local = {}", _serverSocket.getLocalSocketAddress());
+                    LOGGER.debug("Socket SHUTDOWN local = {}",
+                          _serverSocket.getLocalSocketAddress());
                     _serverSocket.close();
                 } catch (IOException ee) {
                     LOGGER.warn("ServerSocket close: {}", ee.toString());
@@ -691,22 +674,20 @@ public class LoginManager
     }
 
     /**
-     * Class that closes the output half of a TCP socket, drains any pending input and closes the input once drained.
-     * After creation, the {@link #start} method must be called.  The activity occurs on a separate thread, allowing
-     * the start method to be non-blocking.
+     * Class that closes the output half of a TCP socket, drains any pending input and closes the
+     * input once drained. After creation, the {@link #start} method must be called.  The activity
+     * occurs on a separate thread, allowing the start method to be non-blocking.
      */
-    public static class ShutdownEngine implements Runnable
-    {
+    public static class ShutdownEngine implements Runnable {
+
         private final Socket _socket;
 
-        public ShutdownEngine(Socket socket)
-        {
+        public ShutdownEngine(Socket socket) {
             _socket = socket;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             InputStream inputStream;
             OutputStream outputStream;
             try {
@@ -714,9 +695,9 @@ public class LoginManager
                 outputStream = _socket.getOutputStream();
                 outputStream.close();
                 byte[] buffer = new byte[KiB.toBytes(1)];
-                    /*
-                     * eat the outstanding date from socket and close it
-                     */
+                /*
+                 * eat the outstanding date from socket and close it
+                 */
                 while (inputStream.read(buffer, 0, buffer.length) > 0) {
                 }
                 inputStream.close();
@@ -725,7 +706,7 @@ public class LoginManager
             } finally {
                 try {
                     LOGGER.debug("Socket CLOSE (ACCEPT) remote = {} local = {}",
-                            _socket.getRemoteSocketAddress(), _socket.getLocalSocketAddress());
+                          _socket.getRemoteSocketAddress(), _socket.getLocalSocketAddress());
                     _socket.close();
                 } catch (IOException e) {
                     // ignore
@@ -736,21 +717,20 @@ public class LoginManager
         }
     }
 
-    private class RunEngineThread implements Runnable
-    {
+    private class RunEngineThread implements Runnable {
+
         private Socket _socket;
 
-        private RunEngineThread(Socket socket)
-        {
+        private RunEngineThread(Socket socket) {
             _socket = socket;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             Thread t = Thread.currentThread();
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) _socket.getRemoteSocketAddress();
-            NDC.push(toUriString(remoteSocketAddress.getAddress()) + ':' + remoteSocketAddress.getPort());
+            NDC.push(toUriString(remoteSocketAddress.getAddress()) + ':'
+                  + remoteSocketAddress.getPort());
             try {
                 LOGGER.info("acceptThread ({}): creating protocol engine", t);
 
@@ -780,7 +760,9 @@ public class LoginManager
                     throw (Error) cause;
                 }
                 if (cause instanceof RuntimeException) {
-                    LOGGER.warn("Bug detected in dCache; please report this to <support@dcache.org>", cause);
+                    LOGGER.warn(
+                          "Bug detected in dCache; please report this to <support@dcache.org>",
+                          cause);
                 } else {
                     LOGGER.warn("Exception (ITE) in secure protocol: {}", cause.getMessage());
                 }
@@ -800,8 +782,7 @@ public class LoginManager
         }
     }
 
-    private void loadChanged()
-    {
+    private void loadChanged() {
         int children = _children.size();
         LOGGER.info("New child count : {}", children);
         if (_loginBrokerPublisher != null) {
@@ -810,9 +791,8 @@ public class LoginManager
     }
 
     @Override
-    public boolean validateUser(String userName, String password)
-    {
-        String[] request = { "request", userName, "check-password", userName, password };
+    public boolean validateUser(String userName, String password) {
+        String[] request = {"request", userName, "check-password", userName, password};
 
         try {
             CellMessage msg = new CellMessage(_authenticator, request);
@@ -838,26 +818,24 @@ public class LoginManager
         }
     }
 
-    public static Set<Subnet> allowedSubnets(String netmask)
-    {
+    public static Set<Subnet> allowedSubnets(String netmask) {
         return StreamSupport.stream(Splitter.on(CharMatcher.whitespace())
-                                            .trimResults()
-                                            .omitEmptyStrings()
-                                            .split(netmask)
-                                            .spliterator(),
-                false)
-                            .filter(s -> !s.isEmpty())
-                            .map(LoginManager::validateCreateSubnet)
-                            .collect(Collectors.toSet());
+                          .trimResults()
+                          .omitEmptyStrings()
+                          .split(netmask)
+                          .spliterator(),
+                    false)
+              .filter(s -> !s.isEmpty())
+              .map(LoginManager::validateCreateSubnet)
+              .collect(Collectors.toSet());
     }
 
-    public static Subnet validateCreateSubnet(String subnet)
-    {
+    public static Subnet validateCreateSubnet(String subnet) {
         try {
             return Subnet.create(subnet);
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException(
-                    String.format("Invalid IP/subnet '%s': %s\n.", subnet, iae.getMessage()));
+                  String.format("Invalid IP/subnet '%s': %s\n.", subnet, iae.getMessage()));
         }
     }
 }

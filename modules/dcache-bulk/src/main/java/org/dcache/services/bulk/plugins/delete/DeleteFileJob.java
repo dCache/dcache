@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.delete;
 
+import static org.dcache.services.bulk.plugins.delete.DeleteFileJobProvider.SKIP_DIRS;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
@@ -71,54 +73,54 @@ import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.SingleTargetJob;
 
-import static org.dcache.services.bulk.plugins.delete.DeleteFileJobProvider.SKIP_DIRS;
-
 /**
  * Removes file entry from namespace.
  */
 public class DeleteFileJob extends SingleTargetJob implements NamespaceHandlerAware {
-  private static final Set<FileType> TYPES = EnumSet.allOf(FileType.class);
-  private static final Set<FileAttribute> ATTRIBUTES = EnumSet.noneOf(FileAttribute.class);
 
-  private PnfsHandler pnfsHandler;
+    private static final Set<FileType> TYPES = EnumSet.allOf(FileType.class);
+    private static final Set<FileAttribute> ATTRIBUTES = EnumSet.noneOf(FileAttribute.class);
 
-  public DeleteFileJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
-    super(key, parentKey, activity);
-  }
+    private PnfsHandler pnfsHandler;
 
-  @Override
-  public void setNamespaceHandler(PnfsHandler pnfsHandler) {
-    this.pnfsHandler = pnfsHandler;
-  }
-
-  @Override
-  protected void doRun() {
-    if (attributes.getFileType() == FileType.DIR && isSkipDirs()) {
-      return;
+    public DeleteFileJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
+        super(key, parentKey, activity);
     }
 
-    PnfsDeleteEntryMessage msg
-        = new PnfsDeleteEntryMessage(attributes.getPnfsId(), path.toString(), TYPES, ATTRIBUTES);
-
-    try {
-      msg = pnfsHandler.request(msg);
-    } catch (CacheException e) {
-      setError(e);
-      return;
+    @Override
+    public void setNamespaceHandler(PnfsHandler pnfsHandler) {
+        this.pnfsHandler = pnfsHandler;
     }
 
-    Serializable error = msg.getErrorObject();
-    if (error != null) {
-      setError(error);
-    } else {
-      setState(State.COMPLETED);
-    }
-  }
+    @Override
+    protected void doRun() {
+        if (attributes.getFileType() == FileType.DIR && isSkipDirs()) {
+            return;
+        }
 
-  private boolean isSkipDirs() {
-    if (arguments == null) {
-      return Boolean.parseBoolean(SKIP_DIRS.getDefaultValue());
+        PnfsDeleteEntryMessage msg
+              = new PnfsDeleteEntryMessage(attributes.getPnfsId(), path.toString(), TYPES,
+              ATTRIBUTES);
+
+        try {
+            msg = pnfsHandler.request(msg);
+        } catch (CacheException e) {
+            setError(e);
+            return;
+        }
+
+        Serializable error = msg.getErrorObject();
+        if (error != null) {
+            setError(error);
+        } else {
+            setState(State.COMPLETED);
+        }
     }
-    return Boolean.parseBoolean(arguments.get(SKIP_DIRS.getName()));
-  }
+
+    private boolean isSkipDirs() {
+        if (arguments == null) {
+            return Boolean.parseBoolean(SKIP_DIRS.getDefaultValue());
+        }
+        return Boolean.parseBoolean(arguments.get(SKIP_DIRS.getName()));
+    }
 }

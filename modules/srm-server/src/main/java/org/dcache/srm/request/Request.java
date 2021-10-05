@@ -75,12 +75,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -92,23 +91,21 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.TimeUtils.TimeUnitFormat;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A Request object represents an individual SOAP operation, as defined by the
- * WSDL.  Such requests may be further divided into those requests that do not
- * involve individual files (ReserveSpaceRequest) and those that contain one or
- * more files (subclasses of ContainerRequest).
- *
- * Some SOAP operations are not scheduled (e.g., srmPing).  These are not
- * represented as a subclass of Request.
+ * A Request object represents an individual SOAP operation, as defined by the WSDL.  Such requests
+ * may be further divided into those requests that do not involve individual files
+ * (ReserveSpaceRequest) and those that contain one or more files (subclasses of ContainerRequest).
+ * <p>
+ * Some SOAP operations are not scheduled (e.g., srmPing).  These are not represented as a subclass
+ * of Request.
  */
 public abstract class Request extends Job {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Request.class);
-    private static final long DEFAULT_MAX_UPDATE_PERIOD = 10*60*60;
+    private static final long DEFAULT_MAX_UPDATE_PERIOD = 10 * 60 * 60;
 
     private transient AbstractStorageElement storage;
     private transient Configuration configuration;
@@ -121,12 +118,14 @@ public abstract class Request extends Job {
     private final String client_host;
     private final SRMUser user;
     private final long max_update_period;
-    /** The ID of this SRM instance, as returned to the client. */
+    /**
+     * The ID of this SRM instance, as returned to the client.
+     */
     protected final String srmId;
 
     public Request(@Nonnull String srmId, @Nonnull SRMUser user,
-            long max_update_period, long lifetime, @Nullable String description,
-            String client_host) {
+          long max_update_period, long lifetime, @Nullable String description,
+          String client_host) {
         super(lifetime);
         this.max_update_period = max_update_period;
         this.description = description;
@@ -135,17 +134,16 @@ public abstract class Request extends Job {
         this.srmId = requireNonNull(srmId);
     }
 
-   /**
-     * this constructor is used for restoring the previously
-     * saved Request from persitance storage
+    /**
+     * this constructor is used for restoring the previously saved Request from persitance storage
      */
 
     protected Request(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            int retryDeltaTime, boolean should_updateretryDeltaTime,
-            String description, String client_host, String statusCodeString) {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          int retryDeltaTime, boolean should_updateretryDeltaTime,
+          String description, String client_host, String statusCodeString) {
         super(id,
               nextJobId,
               creationTime,
@@ -168,9 +166,9 @@ public abstract class Request extends Job {
     }
 
 
-
     /**
      * Returns this request ID, as it is received by the client.
+     *
      * @return
      */
     public String getClientRequestId() {
@@ -182,6 +180,7 @@ public abstract class Request extends Job {
 
     /**
      * Getter for property retryDeltaTime.
+     *
      * @return Value of property retryDeltaTime.
      */
     public int getRetryDeltaTime() {
@@ -197,8 +196,8 @@ public abstract class Request extends Job {
 
     /**
      * gets srm user who issued the request
-     * @return
-     * srm user
+     *
+     * @return srm user
      */
     public SRMUser getUser() {
         // user is final, no need to synchronize on get
@@ -208,6 +207,7 @@ public abstract class Request extends Job {
 
     /**
      * Getter for property should_updateretryDeltaTime.
+     *
      * @return Value of property should_updateretryDeltaTime.
      */
     public boolean isShould_updateretryDeltaTime() {
@@ -233,8 +233,7 @@ public abstract class Request extends Job {
     }
 
     /**
-     * status is not going to change
-     * set retry delta time to 1
+     * status is not going to change set retry delta time to 1
      */
     protected void stopUpdating() {
         wlock();
@@ -247,10 +246,9 @@ public abstract class Request extends Job {
     }
 
     /**
-     * updateRetryDeltaTime is called every time user gets RequestStatus
-     * so the next time user waits longer (up to MAX_RETRY_TIME secs)
-     * if nothing has been happening for a while
-     * The algoritm of incrising retryDeltaTime is absolutely arbitrary
+     * updateRetryDeltaTime is called every time user gets RequestStatus so the next time user waits
+     * longer (up to MAX_RETRY_TIME secs) if nothing has been happening for a while The algoritm of
+     * incrising retryDeltaTime is absolutely arbitrary
      */
 
     protected void updateRetryDeltaTime() {
@@ -258,20 +256,18 @@ public abstract class Request extends Job {
         try {
             if (should_updateretryDeltaTime && cyclicUpdateCounter == 0) {
 
-                if(retryDeltaTime <100) {
-                    retryDeltaTime +=3;
-                }
-                else if(retryDeltaTime <300) {
-                    retryDeltaTime +=6;
-                }
-                else {
+                if (retryDeltaTime < 100) {
+                    retryDeltaTime += 3;
+                } else if (retryDeltaTime < 300) {
+                    retryDeltaTime += 6;
+                } else {
                     retryDeltaTime *= 2;
                 }
                 if (retryDeltaTime > max_update_period) {
                     retryDeltaTime = (int) max_update_period;
                 }
             }
-            cyclicUpdateCounter = (cyclicUpdateCounter+1)%5;
+            cyclicUpdateCounter = (cyclicUpdateCounter + 1) % 5;
         } finally {
             wunlock();
         }
@@ -286,15 +282,17 @@ public abstract class Request extends Job {
         return client_host;
     }
 
-    public void checkExpiration()
-    {
+    public void checkExpiration() {
         wlock();
         try {
-            if (creationTime + getLifetime() < System.currentTimeMillis() && !getState().isFinal()) {
+            if (creationTime + getLifetime() < System.currentTimeMillis()
+                  && !getState().isFinal()) {
                 LOGGER.info("expiring request {}", getClientRequestId());
                 StringBuilder sb = new StringBuilder().append("Request lifetime (");
-                TimeUtils.appendDuration(sb, getLifetime(), MILLISECONDS, TimeUnitFormat.SHORT).append(") expired.");
-                setStateAndStatusCode(State.FAILED, sb.toString(), TStatusCode.SRM_REQUEST_TIMED_OUT);
+                TimeUtils.appendDuration(sb, getLifetime(), MILLISECONDS, TimeUnitFormat.SHORT)
+                      .append(") expired.");
+                setStateAndStatusCode(State.FAILED, sb.toString(),
+                      TStatusCode.SRM_REQUEST_TIMED_OUT);
             }
         } catch (IllegalStateTransition e) {
             LOGGER.error("Illegal state transition while expiring job: {}", e.toString());
@@ -307,7 +305,7 @@ public abstract class Request extends Job {
      * @return the storage
      */
     protected final AbstractStorageElement getStorage() {
-        if(storage == null) {
+        if (storage == null) {
             storage = SRM.getSRM().getStorage();
         }
         return storage;
@@ -318,14 +316,13 @@ public abstract class Request extends Job {
      * @return the configuration
      */
     protected final Configuration getConfiguration() {
-        if(configuration == null) {
+        if (configuration == null) {
             configuration = SRM.getSRM().getConfiguration();
         }
         return configuration;
     }
 
-    public TReturnStatus abort(String reason)
-    {
+    public TReturnStatus abort(String reason) {
         wlock();
         try {
             /* [ SRM 2.2, 5.11.2 ]
@@ -340,7 +337,8 @@ public abstract class Request extends Job {
                 setState(State.CANCELED, reason);
             }
         } catch (IllegalStateTransition e) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "Cannot abort request in its current state");
+            return new TReturnStatus(TStatusCode.SRM_FAILURE,
+                  "Cannot abort request in its current state");
         } finally {
             wunlock();
         }
@@ -348,8 +346,7 @@ public abstract class Request extends Job {
     }
 
     public static <R extends Request> R getRequest(String requestToken, Class<R> type)
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         if (requestToken == null) {
             throw new SRMInvalidRequestException("Request token is empty");
         }

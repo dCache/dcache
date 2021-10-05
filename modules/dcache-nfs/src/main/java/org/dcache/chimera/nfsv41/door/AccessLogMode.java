@@ -17,10 +17,10 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
+import diskCacheV111.util.PnfsId;
+
 /**
- * An {@code AccessLogMode} controls amount of information logged by access
- * logger.
- *
+ * An {@code AccessLogMode} controls amount of information logged by access logger.
  */
 public enum AccessLogMode {
 

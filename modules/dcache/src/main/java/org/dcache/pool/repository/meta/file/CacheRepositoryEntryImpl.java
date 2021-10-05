@@ -1,8 +1,14 @@
 package org.dcache.pool.repository.meta.file;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
@@ -12,35 +18,26 @@ import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.OpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfos;
-
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.pool.repository.ReplicaState.CACHED;
-import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
-import static org.dcache.util.Exceptions.messageOrClassName;
+public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord {
 
-public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
@@ -66,9 +63,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     private final FileStore _fileStore;
 
 
-
-    public CacheRepositoryEntryImpl(PnfsId pnfsId, Path controlFile, FileStore fileStore, Path siFile) throws IOException
-    {
+    public CacheRepositoryEntryImpl(PnfsId pnfsId, Path controlFile, FileStore fileStore,
+          Path siFile) throws IOException {
 
         _pnfsId = pnfsId;
         _controlFile = controlFile;
@@ -88,8 +84,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
         try {
             BasicFileAttributes attributes = _fileStore
-                    .getFileAttributeView(pnfsId)
-                    .readAttributes();
+                  .getFileAttributeView(pnfsId)
+                  .readAttributes();
             _lastAccess = attributes.lastModifiedTime().toMillis();
             _size = attributes.size();
         } catch (FileNotFoundException | NoSuchFileException fnf) {
@@ -104,15 +100,13 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized int incrementLinkCount()
-    {
+    public synchronized int incrementLinkCount() {
         _linkCount++;
         return _linkCount;
     }
 
     @Override
-    public synchronized int decrementLinkCount()
-    {
+    public synchronized int decrementLinkCount() {
 
         if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already  zero");
@@ -132,14 +126,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized URI getReplicaUri()
-    {
+    public synchronized URI getReplicaUri() {
         return _fileStore.get(_pnfsId);
     }
 
     @Override
-    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
-    {
+    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException {
         return _fileStore.openDataChannel(_pnfsId, mode);
     }
 
@@ -149,14 +141,15 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized void setLastAccessTime(long time) throws CacheException
-    {
+    public synchronized void setLastAccessTime(long time) throws CacheException {
         try {
             _fileStore
-                    .getFileAttributeView(_pnfsId)
-                    .setTimes(FileTime.fromMillis(time), null, null);
+                  .getFileAttributeView(_pnfsId)
+                  .setTimes(FileTime.fromMillis(time), null, null);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time for " + _pnfsId + ": " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to set modification time for " + _pnfsId + ": " + messageOrClassName(e),
+                  e);
         }
         _lastAccess = System.currentTimeMillis();
     }
@@ -167,16 +160,15 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized long getReplicaSize()
-    {
+    public synchronized long getReplicaSize() {
         try {
             ReplicaState replicaState = _state.getState();
 
             // use cached value only for file in 'trusted state'
-            return replicaState == CACHED || replicaState == PRECIOUS ? _size: _fileStore
-                    .getFileAttributeView(_pnfsId)
-                    .readAttributes()
-                    .size();
+            return replicaState == CACHED || replicaState == PRECIOUS ? _size : _fileStore
+                  .getFileAttributeView(_pnfsId)
+                  .readAttributes()
+                  .size();
 
         } catch (NoSuchFileException e) {
             return 0;
@@ -192,15 +184,13 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized ReplicaState getState()
-    {
+    public synchronized ReplicaState getState() {
         return _state.getState();
     }
 
     @Override
     public synchronized Void setState(ReplicaState state)
-        throws CacheException
-    {
+          throws CacheException {
         try {
             if (_state.getState().isMutable() && !state.isMutable()) {
                 try {
@@ -217,12 +207,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
-    {
+    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException {
         try {
             return _state.removeExpiredStickyFlags();
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to remove expired sticky flags: " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to remove expired sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -259,24 +249,25 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             }
         } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to set file attributes for "
-                    + _pnfsId + ": " + messageOrClassName(e), e);
+                  + _pnfsId + ": " + messageOrClassName(e), e);
         }
         return null;
     }
 
-    private synchronized StorageInfo getStorageInfo()
-    {
+    private synchronized StorageInfo getStorageInfo() {
         return _storageInfo;
     }
 
-    private synchronized void setStorageInfo(StorageInfo storageInfo) throws IOException
-    {
-        Path siFileTemp = Files.createTempFile(_siFile.getParent(), _siFile.getFileName().toString(), null);
+    private synchronized void setStorageInfo(StorageInfo storageInfo) throws IOException {
+        Path siFileTemp = Files.createTempFile(_siFile.getParent(),
+              _siFile.getFileName().toString(), null);
         try {
-            try (ObjectOutputStream objectOut = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(siFileTemp)))) {
+            try (ObjectOutputStream objectOut = new ObjectOutputStream(
+                  new BufferedOutputStream(Files.newOutputStream(siFileTemp)))) {
                 objectOut.writeObject(storageInfo);
             }
-            Files.move(siFileTemp, _siFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(siFileTemp, _siFile, StandardCopyOption.ATOMIC_MOVE,
+                  StandardCopyOption.REPLACE_EXISTING);
         } finally {
             Files.deleteIfExists(siFileTemp);
         }
@@ -285,7 +276,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
     private static StorageInfo readStorageInfo(Path objIn) throws IOException {
         try {
-            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(objIn)))) {
+            try (ObjectInputStream in = new ObjectInputStream(
+                  new BufferedInputStream(Files.newInputStream(objIn)))) {
                 return (StorageInfo) in.readObject();
             }
         } catch (Throwable t) {
@@ -300,8 +292,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public synchronized <T> T update(String why, Update<T> update) throws CacheException
-    {
+    public synchronized <T> T update(String why, Update<T> update) throws CacheException {
         return update.apply(this);
     }
 }

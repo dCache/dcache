@@ -59,19 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.db;
 
-import javax.sql.DataSource;
-
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-
-import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-
+import javax.sql.DataSource;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.vehicles.FileAttributes;
@@ -80,23 +77,24 @@ import org.dcache.vehicles.FileAttributes;
  * <p>Specialized namespace API for resilience handling.</p>
  */
 public interface NamespaceAccess {
+
     Set<FileAttribute> REQUIRED_ATTRIBUTES
-                    = Collections.unmodifiableSet
-                    (EnumSet.of(FileAttribute.PNFSID,
-                                FileAttribute.SIZE,
-                                FileAttribute.ACCESS_TIME,
-                                FileAttribute.ACCESS_LATENCY,
-                                FileAttribute.RETENTION_POLICY,
-                                FileAttribute.STORAGECLASS,
-                                FileAttribute.HSM,
-                                FileAttribute.LOCATIONS));
+          = Collections.unmodifiableSet
+          (EnumSet.of(FileAttribute.PNFSID,
+                FileAttribute.SIZE,
+                FileAttribute.ACCESS_TIME,
+                FileAttribute.ACCESS_LATENCY,
+                FileAttribute.RETENTION_POLICY,
+                FileAttribute.STORAGECLASS,
+                FileAttribute.HSM,
+                FileAttribute.LOCATIONS));
 
     Set<FileAttribute> REFRESHABLE_ATTRIBUTES
-                    = Collections.unmodifiableSet(
-                    EnumSet.of(FileAttribute.ACCESS_TIME,
-                               FileAttribute.RETENTION_POLICY,
-                               FileAttribute.ACCESS_LATENCY,
-                               FileAttribute.LOCATIONS));
+          = Collections.unmodifiableSet(
+          EnumSet.of(FileAttribute.ACCESS_TIME,
+                FileAttribute.RETENTION_POLICY,
+                FileAttribute.ACCESS_LATENCY,
+                FileAttribute.LOCATIONS));
 
     /**
      * <p>Pass-through to namespace.</p>
@@ -120,26 +118,26 @@ public interface NamespaceAccess {
 
     /**
      * <p>Used by the admin command to create a file of all the pnfsids
-     *    on a pool which currently have no readable locations.</p>
+     * on a pool which currently have no readable locations.</p>
      *
-     * @param location pool name.
+     * @param location    pool name.
      * @param poolInfoMap for checking location readability.
      * @param printWriter to write the results to.
      */
     void printInaccessibleFiles(String location,
-                                PoolInfoMap poolInfoMap,
-                                PrintWriter printWriter)
-                    throws CacheException, InterruptedException;
+          PoolInfoMap poolInfoMap,
+          PrintWriter printWriter)
+          throws CacheException, InterruptedException;
 
     void printContainedInFiles(List<String> locations,
-                               PrintWriter printWriter)
-                    throws CacheException, InterruptedException;
+          PrintWriter printWriter)
+          throws CacheException, InterruptedException;
 
     /**
      * <p>Pass-through to namespace.</p>
      *
      * <p>Requests attributes defined by #REFRESHABLE_ATTRIBUTES and
-     *      resets them on the passed in attributes.</p>
+     * resets them on the passed in attributes.</p>
      */
     void refreshAttributes(FileAttributes attributes) throws CacheException;
 

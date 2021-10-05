@@ -63,6 +63,7 @@ package org.dcache.resilience.util;
  * <p>Shared utility for reporting concise error information systematically.</p>
  */
 public final class ExceptionMessage {
+
     private final Throwable exception;
 
     public ExceptionMessage(Throwable exception) {
@@ -76,8 +77,8 @@ public final class ExceptionMessage {
 
         Throwable t = exception.getCause();
         return String.format("%s: %s%s",
-                        exception.getClass().getSimpleName(),
-                        exception.getMessage(),
-                        t == null ? "" : String.format(", cause: %s", t));
+              exception.getClass().getSimpleName(),
+              exception.getMessage(),
+              t == null ? "" : String.format(", cause: %s", t));
     }
 }

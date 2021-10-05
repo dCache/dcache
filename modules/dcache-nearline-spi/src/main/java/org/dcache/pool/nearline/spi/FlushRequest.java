@@ -18,37 +18,34 @@
 package org.dcache.pool.nearline.spi;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
 import java.io.File;
 import java.net.URI;
 import java.util.Set;
-
 import org.dcache.vehicles.FileAttributes;
 
 /**
  * A request to flush a file to nearline storage.
- *
- * The result of a flush request is one or more URIs that identify
- * the flushed file.
+ * <p>
+ * The result of a flush request is one or more URIs that identify the flushed file.
  */
-public interface FlushRequest extends NearlineRequest<Set<URI>>
-{
+public interface FlushRequest extends NearlineRequest<Set<URI>> {
+
     /**
      * A local file system path to the replica to flush.
      *
      * <p>Consider using {@link FlushRequest#getReplicaUri} instead.
      *
      * @return A file system path
-     * @throws UnsupportedOperationException if this pool is not backed by th default
-     *         file system provider.
+     * @throws UnsupportedOperationException if this pool is not backed by th default file system
+     *                                       provider.
      */
     @Deprecated
     File getFile();
 
     /**
-     * A URI to the replica to flush. This identifies the replica in the pool,
-     * not the file stored on tape. This is typically a file:// URI unless
-     * a file store other than the OS file system is used.
+     * A URI to the replica to flush. This identifies the replica in the pool, not the file stored
+     * on tape. This is typically a file:// URI unless a file store other than the OS file system is
+     * used.
      *
      * @return A URI
      * @since 3.0
@@ -64,6 +61,7 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
 
     /**
      * Returns replica creation time in milliseconds.
+     *
      * @return replica creation time.
      */
     long getReplicaCreationTime();
@@ -72,14 +70,13 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
      * Signals that the request is being activated and returns the path of the file.
      *
      * <p>Similar to <code>activate</code>, but in addition to marking the request as
-     * active, this method resolves the path of the file. Resolving the path of a
-     * file is relatively expensive, which is why <code>activate</code> doesn't do
-     * it. If a file has several hard-links, only one of the paths is returned.
+     * active, this method resolves the path of the file. Resolving the path of a file is relatively
+     * expensive, which is why <code>activate</code> doesn't do it. If a file has several
+     * hard-links, only one of the paths is returned.
      *
-     * @return An asynchronous reply indicating when to proceed with processing
-     *         the request. The activation may fail and a NearlineStorage must
-     *         fail the entire request by calling {@code failed} with the exception
-     *         returned by the future. The result carries the path of the file.
+     * @return An asynchronous reply indicating when to proceed with processing the request. The
+     * activation may fail and a NearlineStorage must fail the entire request by calling {@code
+     * failed} with the exception returned by the future. The result carries the path of the file.
      */
     ListenableFuture<String> activateWithPath();
 }

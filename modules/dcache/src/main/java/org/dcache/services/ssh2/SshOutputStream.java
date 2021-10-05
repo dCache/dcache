@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 class SshOutputStream extends FilterOutputStream {
+
     public SshOutputStream(OutputStream out) {
         super(out);
     }

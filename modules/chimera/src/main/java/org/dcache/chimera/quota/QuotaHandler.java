@@ -61,21 +61,21 @@ documents or software obtained from this server.
 package org.dcache.chimera.quota;
 
 
-
-import java.util.Map;
-
 import diskCacheV111.util.RetentionPolicy;
+import java.util.Map;
 
 public interface QuotaHandler {
 
     /**
      * Returns uid, Quota map of all known UIDs
+     *
      * @return Map of (uid, quota)
      */
     Map<Integer, Quota> getUserQuotas();
 
     /**
      * Returns map gid, Quota map of all known GIDs
+     *
      * @return Map of (gid, quota)
      */
     Map<Integer, Quota> getGroupQuotas();
@@ -112,12 +112,14 @@ public interface QuotaHandler {
 
     /**
      * Check if user with UID has exceeded their quotas
+     *
      * @return boolean
      */
     boolean checkUserQuota(int uid, RetentionPolicy rp);
 
     /**
      * Check if user with GID has exceeded their quotas
+     *
      * @return boolean
      */
     boolean checkGroupQuota(int gid, RetentionPolicy rp);

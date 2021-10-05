@@ -17,22 +17,19 @@
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.channel.ChannelSession;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-
+import diskCacheV111.admin.UserAdminShell;
+import dmg.cells.nucleus.CDC;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 
-import diskCacheV111.admin.UserAdminShell;
+public class ShellCommand implements Command {
 
-import dmg.cells.nucleus.CDC;
-
-public class ShellCommand implements Command
-{
     private final File historyFile;
     private final int historySize;
     private final boolean useColor;
@@ -44,8 +41,7 @@ public class ShellCommand implements Command
 
     private Command delegate;
 
-    public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
-    {
+    public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell) {
         this.historyFile = historyFile;
         this.historySize = historySize;
         this.useColor = useColor;
@@ -53,32 +49,27 @@ public class ShellCommand implements Command
     }
 
     @Override
-    public void setInputStream(InputStream in)
-    {
+    public void setInputStream(InputStream in) {
         this.in = in;
     }
 
     @Override
-    public void setOutputStream(OutputStream out)
-    {
+    public void setOutputStream(OutputStream out) {
         this.out = out;
     }
 
     @Override
-    public void setErrorStream(OutputStream err)
-    {
+    public void setErrorStream(OutputStream err) {
         this.err = err;
     }
 
     @Override
-    public void setExitCallback(ExitCallback callback)
-    {
+    public void setExitCallback(ExitCallback callback) {
         this.callback = callback;
     }
 
     @Override
-    public void start(ChannelSession channelSession, Environment env) throws IOException
-    {
+    public void start(ChannelSession channelSession, Environment env) throws IOException {
         try (CDC ignored = new CDC()) {
             String sessionId = Sessions.connectionId(channelSession.getServerSession());
             shell.setSession(sessionId);
@@ -97,8 +88,7 @@ public class ShellCommand implements Command
     }
 
     @Override
-    public void destroy(ChannelSession channelSession) throws Exception
-    {
+    public void destroy(ChannelSession channelSession) throws Exception {
         if (delegate != null) {
             delegate.destroy(channelSession);
         }

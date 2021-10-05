@@ -18,29 +18,18 @@ package org.dcache.chimera;
 
 /**
  * LOCATION INFO
- *
- * Generic storage information
- * ipnfsid   : pnfsid of the inode
- * itype     : type of storage, e.g. tape, disk
- * ilocation : type specific information like pool name for disk and HSM connection for tape
- * ipriority : in case of multiple locations of hint for performance or other needs
- * ictime    : location creation time
- * iatime    : last access time, probably performance killer, but nice to have for statistics
- * istate    : location status ONLINE/OFF-LINE
- *
- *
- * CREATE TABLE t_locationinfo {
- *	ipnfsid CHAR(36),
- *	itype INT NOT NULL,
- *	ilocation VARCHAR(1024) NOT NULL,
- *	ipriority INT NOT NULL,
- *	ictime timestamp NOT NULL,
- *	iatime timestamp NOT NULL,
- *	istate INT NOT NULL,
- *	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ),
- *	PRIMARY KEY (iparent,itype,ilocation)
- * };
- *
+ * <p>
+ * Generic storage information ipnfsid   : pnfsid of the inode itype     : type of storage, e.g.
+ * tape, disk ilocation : type specific information like pool name for disk and HSM connection for
+ * tape ipriority : in case of multiple locations of hint for performance or other needs ictime    :
+ * location creation time iatime    : last access time, probably performance killer, but nice to
+ * have for statistics istate    : location status ONLINE/OFF-LINE
+ * <p>
+ * <p>
+ * CREATE TABLE t_locationinfo { ipnfsid CHAR(36), itype INT NOT NULL, ilocation VARCHAR(1024) NOT
+ * NULL, ipriority INT NOT NULL, ictime timestamp NOT NULL, iatime timestamp NOT NULL, istate INT
+ * NOT NULL, FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ), PRIMARY KEY
+ * (iparent,itype,ilocation) };
  */
 /*
  * @Immutable
@@ -76,7 +65,6 @@ public class StorageGenericLocation implements StorageLocatable {
     private final int _priority;
 
     /**
-     *
      * @param type
      * @param priority
      * @param location
@@ -84,7 +72,8 @@ public class StorageGenericLocation implements StorageLocatable {
      * @param atime
      * @param isOnline
      */
-    public StorageGenericLocation(int type, int priority, String location, long ctime, long atime, boolean isOnline) {
+    public StorageGenericLocation(int type, int priority, String location, long ctime, long atime,
+          boolean isOnline) {
         _type = type;
         _priority = priority;
         _location = location;

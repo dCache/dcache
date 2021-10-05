@@ -60,7 +60,11 @@ documents or software obtained from this server.
 package org.dcache.restful.util.cells;
 
 import com.google.common.util.concurrent.Futures;
-
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.GetAllDomainsReply;
+import dmg.cells.services.GetAllDomainsRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -70,40 +74,33 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.GetAllDomainsReply;
-import dmg.cells.services.GetAllDomainsRequest;
 import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.util.collector.ListenableFutureWrapper;
 
 /**
  * <p>This collector provides a thin layer on top of cell adapter
- *      functionality.  It is mainly responsible for sending messages
- *      and returning message reply futures.  The principal collect method
- *      scatter/gathers requests for {@link CellInfo} to all the well-known
- *      cells of all domains visible to the Routing Manager.</p>
+ * functionality.  It is mainly responsible for sending messages and returning message reply
+ * futures.  The principal collect method scatter/gathers requests for {@link CellInfo} to all the
+ * well-known cells of all domains visible to the Routing Manager.</p>
  */
 public final class CellInfoCollector extends
-                CellMessagingCollector<Map<String, ListenableFutureWrapper<CellInfo>>>
-                implements CellInfoAware {
+      CellMessagingCollector<Map<String, ListenableFutureWrapper<CellInfo>>>
+      implements CellInfoAware {
 
-    private Supplier<CellInfo>     supplier;
+    private Supplier<CellInfo> supplier;
 
     @Override
     public Map<String, ListenableFutureWrapper<CellInfo>> collectData()
-                    throws InterruptedException {
+          throws InterruptedException {
         GetAllDomainsReply reply;
 
         try {
             reply = stub.send(new CellPath("RoutingMgr"),
-                              new GetAllDomainsRequest(),
-                              GetAllDomainsReply.class).get();
+                  new GetAllDomainsRequest(),
+                  GetAllDomainsReply.class).get();
         } catch (ExecutionException e) {
             LOGGER.error("Could not contact Routing Manager: {}, {}.",
-                         e.getMessage(), String.valueOf(e.getCause()));
+                  e.getMessage(), String.valueOf(e.getCause()));
             return Collections.EMPTY_MAP;
         }
 
@@ -116,15 +113,15 @@ public final class CellInfoCollector extends
          *  Otherwise, the message fails.
          */
         Collection<String> cells
-                        = reply.getDomains().get(frontendInfo.getDomainName());
+              = reply.getDomains().get(frontendInfo.getDomainName());
         cells.remove(frontendInfo.getCellName());
 
         reply.getDomains().entrySet()
-             .stream()
-             .map(this::getCellPaths)
-             .flatMap(Collection::stream)
-             .map(this::getCellInfo)
-                    .forEach((future) -> map.put(future.getKey(), future));
+              .stream()
+              .map(this::getCellPaths)
+              .flatMap(Collection::stream)
+              .map(this::getCellInfo)
+              .forEach((future) -> map.put(future.getKey(), future));
 
         ListenableFutureWrapper<CellInfo> wrapper = new ListenableFutureWrapper<>();
         wrapper.setKey(frontendInfo.getCellName() + "@" + frontendInfo.getDomainName());
@@ -142,8 +139,8 @@ public final class CellInfoCollector extends
 
     private List<CellPath> getCellPaths(Entry<String, Collection<String>> entry) {
         return entry.getValue().stream()
-                    .map(cell -> new CellPath(cell, entry.getKey()))
-                    .collect(Collectors.toList());
+              .map(cell -> new CellPath(cell, entry.getKey()))
+              .collect(Collectors.toList());
     }
 
     private ListenableFutureWrapper<CellInfo> getCellInfo(CellPath path) {

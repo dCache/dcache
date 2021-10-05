@@ -17,6 +17,12 @@
  */
 package org.dcache.srm.scheduler;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.BDDMockito.given;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -24,16 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.scheduler.strategy.TapeRecallSchedulingStrategy;
 import org.dcache.srm.taperecallscheduling.SchedulingInfoTape;
 import org.dcache.srm.taperecallscheduling.SchedulingItemJob;
 import org.dcache.srm.taperecallscheduling.TapeInfo;
 import org.dcache.srm.taperecallscheduling.TapeInformant;
-import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
 import org.dcache.srm.taperecallscheduling.TapefileInfo;
+import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,19 +47,15 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.BDDMockito.given;
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BringOnlineFileRequest.class})
 @PowerMockIgnore({"com.sun.org.apache.xerces.*",
-        "javax.xml.*", "org.xml.*", "org.w3c.*", "jdk.xml.*"})
+      "javax.xml.*", "org.xml.*", "org.w3c.*", "jdk.xml.*"})
 public class TapeRecallSchedulingStrategyTests {
 
-    /** time safety margin in milliseconds */
+    /**
+     * time safety margin in milliseconds
+     */
     private static final long TIME_SAFETY_MARGIN = 20;
 
     TapeRecallSchedulingStrategy strategy;
@@ -77,16 +78,16 @@ public class TapeRecallSchedulingStrategyTests {
         @Override
         public Map<String, TapeInfo> getTapeInfos(List<String> tapes) {
             return tapeInfo.entrySet().stream()
-                    .filter(e -> tapes.contains(e.getKey()))
-                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                  .filter(e -> tapes.contains(e.getKey()))
+                  .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         }
 
         @Override
         public Map<String, TapefileInfo> getTapefileInfos(List<String> fileids) {
             return tapeFileInfo.entrySet()
-                    .stream()
-                    .filter(e -> fileids.contains(e.getKey()))
-                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                  .stream()
+                  .filter(e -> fileids.contains(e.getKey()))
+                  .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         }
 
         @Override
@@ -101,7 +102,8 @@ public class TapeRecallSchedulingStrategyTests {
 
     }
 
-    private BringOnlineFileRequest createJob(long jobid, String file, long ctime) throws URISyntaxException {
+    private BringOnlineFileRequest createJob(long jobid, String file, long ctime)
+          throws URISyntaxException {
         BringOnlineFileRequest job = PowerMockito.mock(BringOnlineFileRequest.class);
         given(job.getId()).willReturn(Long.valueOf(jobid));
         given(job.getSurl()).willReturn(new URI("srm://localhost:8443" + file));
@@ -114,7 +116,8 @@ public class TapeRecallSchedulingStrategyTests {
     }
 
     private long getExpiredCtime() {
-        long age = requirementsChecker.maxJobWaitingTime() + SECONDS.toMillis(1) + TIME_SAFETY_MARGIN;
+        long age =
+              requirementsChecker.maxJobWaitingTime() + SECONDS.toMillis(1) + TIME_SAFETY_MARGIN;
         long res = System.currentTimeMillis() - age;
         return res;
     }
@@ -160,7 +163,7 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file10.txt", new TapefileInfo(10, "tape1"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
 
         assertEquals(1, strategy.size());
         assertEquals(null, strategy.remove());
@@ -172,7 +175,7 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file10.txt", new TapefileInfo(10, "tape1"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
         assertEquals(1, strategy.size());
 
         assertEquals(Long.valueOf(10), strategy.remove());
@@ -186,9 +189,9 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file21.txt", new TapefileInfo(10, "tape2"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(21, "/tape/file21.txt", getNewCtime()) );
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getNewCtime()) );
+        strategy.add(createJob(21, "/tape/file21.txt", getNewCtime()));
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getNewCtime()));
         assertEquals(3, strategy.size());
 
         assertEquals(Long.valueOf(21), strategy.remove());
@@ -209,12 +212,12 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file31.txt", new TapefileInfo(10, "tape3"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(12, "/tape/file12.txt", getNewCtime()) );
-        strategy.add( createJob(11, "/tape/file11.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getNewCtime()) );
-        strategy.add( createJob(31, "/tape/file31.txt", getNewCtime()) );
-        strategy.add( createJob(30, "/tape/file30.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(12, "/tape/file12.txt", getNewCtime()));
+        strategy.add(createJob(11, "/tape/file11.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getNewCtime()));
+        strategy.add(createJob(31, "/tape/file31.txt", getNewCtime()));
+        strategy.add(createJob(30, "/tape/file30.txt", getNewCtime()));
         assertEquals(6, strategy.size());
 
         assertEquals(Long.valueOf(10), strategy.remove());
@@ -240,12 +243,12 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file31.txt", new TapefileInfo(10, "tape3"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(12, "/tape/file12.txt", getNewCtime()) );
-        strategy.add( createJob(11, "/tape/file11.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getNewCtime()) );
-        strategy.add( createJob(31, "/tape/file31.txt", getNewCtime()) );
-        strategy.add( createJob(30, "/tape/file30.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(12, "/tape/file12.txt", getNewCtime()));
+        strategy.add(createJob(11, "/tape/file11.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getNewCtime()));
+        strategy.add(createJob(31, "/tape/file31.txt", getNewCtime()));
+        strategy.add(createJob(30, "/tape/file30.txt", getNewCtime()));
         assertEquals(6, strategy.size());
 
         assertEquals(Long.valueOf(10), strategy.remove());
@@ -285,12 +288,12 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file31.txt", new TapefileInfo(10, "tape3"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(12, "/tape/file12.txt", getNewCtime()) );
-        strategy.add( createJob(11, "/tape/file11.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getExpiredCtime() - 10) );
-        strategy.add( createJob(31, "/tape/file31.txt", getExpiredCtime()) );
-        strategy.add( createJob(30, "/tape/file30.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(12, "/tape/file12.txt", getNewCtime()));
+        strategy.add(createJob(11, "/tape/file11.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getExpiredCtime() - 10));
+        strategy.add(createJob(31, "/tape/file31.txt", getExpiredCtime()));
+        strategy.add(createJob(30, "/tape/file30.txt", getNewCtime()));
         assertEquals(6, strategy.size());
 
         assertEquals(Long.valueOf(20), strategy.remove());
@@ -304,7 +307,8 @@ public class TapeRecallSchedulingStrategyTests {
     }
 
     @Test
-    public void shouldOnlySelectTapesFromWhichEnoughVolumeIsRecalledByRecallVolume() throws Exception {
+    public void shouldOnlySelectTapesFromWhichEnoughVolumeIsRecalledByRecallVolume()
+          throws Exception {
         requirementsChecker.setMinNumberOfRequestsForTapeSelection(1000);
         requirementsChecker.setMinTapeRecallPercentage(40);
         tapeInfoProvider.addTapeFileInfo("/tape/file10.txt", new TapefileInfo(2, "tape1"));
@@ -318,12 +322,12 @@ public class TapeRecallSchedulingStrategyTests {
         // tape3 70/100, we recall 68 (enough)
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(12, "/tape/file12.txt", getNewCtime()) );
-        strategy.add( createJob(11, "/tape/file11.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getNewCtime()) );
-        strategy.add( createJob(31, "/tape/file31.txt", getNewCtime()) );
-        strategy.add( createJob(30, "/tape/file30.txt", getNewCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(12, "/tape/file12.txt", getNewCtime()));
+        strategy.add(createJob(11, "/tape/file11.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getNewCtime()));
+        strategy.add(createJob(31, "/tape/file31.txt", getNewCtime()));
+        strategy.add(createJob(30, "/tape/file30.txt", getNewCtime()));
         assertEquals(6, strategy.size());
 
         assertEquals(Long.valueOf(20), strategy.remove());
@@ -345,12 +349,12 @@ public class TapeRecallSchedulingStrategyTests {
         tapeInfoProvider.addTapeFileInfo("/tape/file31.txt", new TapefileInfo(10, "tape3"));
 
         assertEquals(0, strategy.size());
-        strategy.add( createJob(10, "/tape/file10.txt", getNewCtime()) );
-        strategy.add( createJob(12, "/tape/file12.txt", getNewCtime()) );
-        strategy.add( createJob(11, "/tape/file11.txt", getNewCtime()) );
-        strategy.add( createJob(20, "/tape/file20.txt", getNewCtime()) );
-        strategy.add( createJob(31, "/tape/file31.txt", getCooldownedCtime()) );
-        strategy.add( createJob(30, "/tape/file30.txt", getCooldownedCtime()) );
+        strategy.add(createJob(10, "/tape/file10.txt", getNewCtime()));
+        strategy.add(createJob(12, "/tape/file12.txt", getNewCtime()));
+        strategy.add(createJob(11, "/tape/file11.txt", getNewCtime()));
+        strategy.add(createJob(20, "/tape/file20.txt", getNewCtime()));
+        strategy.add(createJob(31, "/tape/file31.txt", getCooldownedCtime()));
+        strategy.add(createJob(30, "/tape/file30.txt", getCooldownedCtime()));
         assertEquals(6, strategy.size());
 
         assertEquals(Long.valueOf(31), strategy.remove());
@@ -397,8 +401,10 @@ public class TapeRecallSchedulingStrategyTests {
         requirementsChecker.setTapeinfolessJobWaitingTime(Duration.ofSeconds(5));
 
         // initialize tape info
-        SchedulingItemJob job = new SchedulingItemJob(10, "/tape/file10.txt", getNewCtime() - Duration.ofSeconds(50).toMillis() - 5);
-        SchedulingItemJob jobTapeinfoless = new SchedulingItemJob(10, "/tape/file10.txt", getNewCtime() - Duration.ofSeconds(5).toMillis() - 5);
+        SchedulingItemJob job = new SchedulingItemJob(10, "/tape/file10.txt",
+              getNewCtime() - Duration.ofSeconds(50).toMillis() - 5);
+        SchedulingItemJob jobTapeinfoless = new SchedulingItemJob(10, "/tape/file10.txt",
+              getNewCtime() - Duration.ofSeconds(5).toMillis() - 5);
 
         assertTrue(requirementsChecker.isJobExpired(job));
         assertTrue(requirementsChecker.isTapeinfolessJobExpired(job));

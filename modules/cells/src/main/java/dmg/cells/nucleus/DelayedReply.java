@@ -1,11 +1,11 @@
 package dmg.cells.nucleus;
 
-import java.io.Serializable;
-
 import static java.util.Objects.requireNonNull;
 
-public class DelayedReply implements Reply
-{
+import java.io.Serializable;
+
+public class DelayedReply implements Reply {
+
     private static final long serialVersionUID = -236693000550935733L;
 
     private CellEndpoint _endpoint;
@@ -13,8 +13,7 @@ public class DelayedReply implements Reply
     private Serializable _msg;
 
     @Override
-    public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
-    {
+    public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope) {
         _endpoint = requireNonNull(endpoint);
         _envelope = requireNonNull(envelope);
         if (_msg != null) {
@@ -22,8 +21,7 @@ public class DelayedReply implements Reply
         }
     }
 
-    public synchronized void reply(Serializable msg)
-    {
+    public synchronized void reply(Serializable msg) {
         _msg = msg;
         if (_envelope != null) {
             send();
@@ -31,8 +29,7 @@ public class DelayedReply implements Reply
         notifyAll();
     }
 
-    protected synchronized void send()
-    {
+    protected synchronized void send() {
         _envelope.revertDirection();
         _envelope.setMessageObject(_msg);
         _endpoint.sendMessage(_envelope);
@@ -40,8 +37,7 @@ public class DelayedReply implements Reply
         _endpoint = null;
     }
 
-    public synchronized Serializable take() throws InterruptedException
-    {
+    public synchronized Serializable take() throws InterruptedException {
         while (_msg == null) {
             wait();
         }

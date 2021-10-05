@@ -17,87 +17,77 @@
  */
 package org.dcache.auth.attributes;
 
+import diskCacheV111.util.FsPath;
 import java.util.Collection;
 import java.util.OptionalLong;
 import java.util.stream.Stream;
 
-import diskCacheV111.util.FsPath;
-
 /**
- *  Various utility classes to handle LoginAttributes
+ * Various utility classes to handle LoginAttributes
  */
-public class LoginAttributes
-{
+public class LoginAttributes {
+
     public static final String ADMIN_ROLE_NAME = "admin";
     public static final String OBSERVER_ROLE_NAME = "observer";
     private static final Role ADMIN_ROLE = new Role(ADMIN_ROLE_NAME);
     private static final Role OBSERVER_ROLE = new Role(OBSERVER_ROLE_NAME);
 
-    private LoginAttributes()
-    {
+    private LoginAttributes() {
         // prevent instantiation
     }
 
     /**
-     * Provide the root directory for this user.  The value takes into account
-     * any Role attributes that may adjust the user's root directory.
+     * Provide the root directory for this user.  The value takes into account any Role attributes
+     * that may adjust the user's root directory.
      */
-    public static FsPath getUserRoot(Collection<LoginAttribute> attributes)
-    {
+    public static FsPath getUserRoot(Collection<LoginAttribute> attributes) {
         FsPath root = FsPath.ROOT;
         for (LoginAttribute attribute : attributes) {
             if (attribute.equals(ADMIN_ROLE) || attribute.equals(OBSERVER_ROLE)) {
                 return FsPath.ROOT;
             }
             if (attribute instanceof RootDirectory) {
-                root = FsPath.create(((RootDirectory)attribute).getRoot());
+                root = FsPath.create(((RootDirectory) attribute).getRoot());
             }
         }
         return root;
     }
 
-    public static Role adminRole()
-    {
+    public static Role adminRole() {
         return ADMIN_ROLE;
     }
 
-    public static Role observerRole()
-    {
+    public static Role observerRole() {
         return OBSERVER_ROLE;
     }
 
-    public static boolean hasAdminRole(Collection<LoginAttribute> attributes)
-    {
+    public static boolean hasAdminRole(Collection<LoginAttribute> attributes) {
         return attributes.stream().anyMatch(ADMIN_ROLE::equals);
     }
 
-    public static boolean hasObserverRole(Collection<LoginAttribute> attributes)
-    {
+    public static boolean hasObserverRole(Collection<LoginAttribute> attributes) {
         return attributes.stream().anyMatch(OBSERVER_ROLE::equals);
     }
 
-    public static Stream<String> assertedRoles(Collection<LoginAttribute> attributes)
-    {
+    public static Stream<String> assertedRoles(Collection<LoginAttribute> attributes) {
         return attributes.stream()
-                .filter(Role.class::isInstance)
-                .map(Role.class::cast)
-                .map(Role::getRole);
+              .filter(Role.class::isInstance)
+              .map(Role.class::cast)
+              .map(Role::getRole);
     }
 
-    public static Stream<String> unassertedRoles(Collection<LoginAttribute> attributes)
-    {
+    public static Stream<String> unassertedRoles(Collection<LoginAttribute> attributes) {
         return attributes.stream()
-                .filter(UnassertedRole.class::isInstance)
-                .map(UnassertedRole.class::cast)
-                .map(UnassertedRole::getRole);
+              .filter(UnassertedRole.class::isInstance)
+              .map(UnassertedRole.class::cast)
+              .map(UnassertedRole::getRole);
     }
 
-    public static OptionalLong maximumUploadSize(Collection<LoginAttribute> attributes)
-    {
+    public static OptionalLong maximumUploadSize(Collection<LoginAttribute> attributes) {
         return attributes.stream()
-                .filter(MaxUploadSize.class::isInstance)
-                .map(MaxUploadSize.class::cast)
-                .mapToLong(a -> a.getMaximumSize())
-                .min();
+              .filter(MaxUploadSize.class::isInstance)
+              .map(MaxUploadSize.class::cast)
+              .mapToLong(a -> a.getMaximumSize())
+              .min();
     }
 }

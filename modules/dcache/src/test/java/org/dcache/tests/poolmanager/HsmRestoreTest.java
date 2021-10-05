@@ -1,21 +1,10 @@
 package org.dcache.tests.poolmanager;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -37,6 +26,15 @@ import diskCacheV111.vehicles.StorageInfos;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
@@ -45,26 +43,26 @@ import org.dcache.tests.cells.MockCellEndpoint.MessageAction;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class HsmRestoreTest {
 
     private static int _counter;
-//    retry intervall of RequestContainer for test purposes lowered
+    //    retry intervall of RequestContainer for test purposes lowered
     private static final int RETRY_INTERVAL = 5;
 
     private MockCellEndpoint _cell;
     private PoolMonitorV5 _poolMonitor;
-    private CostModuleV1 _costModule ;
+    private CostModuleV1 _costModule;
     private PoolSelectionUnit _selectionUnit;
     private PoolSelectionUnitAccess _access;
     private PartitionManager _partitionManager;
-    private PnfsHandler      _pnfsHandler;
+    private PnfsHandler _pnfsHandler;
     private RequestContainerV5 _rc;
 
-    private List<CellMessage> __messages ;
+    private List<CellMessage> __messages;
 
     private ProtocolInfo _protocolInfo;
     private StorageInfo _storageInfo;
@@ -73,10 +71,10 @@ public class HsmRestoreTest {
     @Before
     public void setUp() throws Exception {
         _counter = _counter + 1;
-        _cell= new MockCellEndpoint("HsmRestoreTest" + _counter);
+        _cell = new MockCellEndpoint("HsmRestoreTest" + _counter);
 
-         _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
-            new InetSocketAddress("127.0.0.1", 17));
+        _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
+              new InetSocketAddress("127.0.0.1", 17));
         _storageInfo = new OSMStorageInfo("h1", "rawd");
 
         _partitionManager = new PartitionManager();
@@ -132,7 +130,7 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
-            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
+              new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
@@ -154,7 +152,7 @@ public class HsmRestoreTest {
         Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
-        for( String pool : pools) {
+        for (String pool : pools) {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
@@ -163,13 +161,13 @@ public class HsmRestoreTest {
 
             CellMessage envelope = new CellMessage(new CellAddressCore("irrelevant"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
-            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
+            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId,
+                  poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(envelope, poolUpMessage);
 
         }
-
 
         final AtomicInteger stageRequests = new AtomicInteger(0);
 
@@ -178,11 +176,12 @@ public class HsmRestoreTest {
         _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction);
         _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
-        CellMessage cellMessage = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool);
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, null);
+        CellMessage cellMessage = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
-
 
         assertEquals("No stage request sent to pools", 1, stageRequests.get());
 
@@ -210,7 +209,7 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
-            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
+              new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
@@ -233,7 +232,7 @@ public class HsmRestoreTest {
         Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
-        for( String pool : pools) {
+        for (String pool : pools) {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
@@ -242,13 +241,13 @@ public class HsmRestoreTest {
 
             CellMessage envelope = new CellMessage(new CellAddressCore("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
-            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
+            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId,
+                  poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(envelope, poolUpMessage);
 
         }
-
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
         final AtomicInteger stageRequests2 = new AtomicInteger(0);
@@ -261,9 +260,11 @@ public class HsmRestoreTest {
         _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction2);
         _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
-        CellMessage cellMessage = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, null);
+        CellMessage cellMessage = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool);
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local"));
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
@@ -277,12 +278,14 @@ public class HsmRestoreTest {
         m = __messages.remove(0);
         selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
         assertEquals("Unexpected reply from pool manager",
-                     17, selectReadPool.getReturnCode())
-;
+              17, selectReadPool.getReturnCode())
+        ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
-        CellMessage cellMessage2 = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool2);
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, selectReadPool.getContext());
+        CellMessage cellMessage2 = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
         assertEquals("No stage request sent to pools1", 1, stageRequests1.get());
@@ -301,7 +304,7 @@ public class HsmRestoreTest {
          */
         List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit,_access, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, _access, pools);
 
         /*
          * prepare reply for GetStorageInfo
@@ -311,7 +314,7 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
-            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
+              new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
@@ -334,7 +337,7 @@ public class HsmRestoreTest {
         Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
-        for( String pool : pools) {
+        for (String pool : pools) {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
@@ -343,13 +346,13 @@ public class HsmRestoreTest {
 
             CellMessage envelope = new CellMessage(new CellAddressCore("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
-            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
+            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId,
+                  poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(envelope, poolUpMessage);
 
         }
-
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
         final AtomicInteger replyRequest = new AtomicInteger(0);
@@ -359,15 +362,17 @@ public class HsmRestoreTest {
         _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction1);
         _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction2);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
-        CellMessage cellMessage = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, null);
+        CellMessage cellMessage = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool);
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local"));
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
         // pool replies with an error
         CellMessage m = __messages.remove(0);
-        PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
+        PoolFetchFileMessage ff = (PoolFetchFileMessage) m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
@@ -375,14 +380,15 @@ public class HsmRestoreTest {
         m = __messages.remove(0);
         selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
         assertEquals("Unexpected reply from pool manager",
-                     17, selectReadPool.getReturnCode())
-;
+              17, selectReadPool.getReturnCode())
+        ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
-        CellMessage cellMessage2 = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool2);
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, selectReadPool.getContext());
+        CellMessage cellMessage2 = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
-
 
         assertEquals("Single Pool excluded on second shot", 2, stageRequests1.get());
 
@@ -411,7 +417,7 @@ public class HsmRestoreTest {
         _storageInfo.setIsNew(false);
 
         PnfsGetFileAttributes fileAttributesMessage =
-            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
+              new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
@@ -434,7 +440,7 @@ public class HsmRestoreTest {
         Set<String> connectedHSM = new HashSet<>(1);
         connectedHSM.add("osm");
 
-        for( String pool : pools) {
+        for (String pool : pools) {
 
             PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
@@ -443,13 +449,13 @@ public class HsmRestoreTest {
 
             CellMessage envelope = new CellMessage(new CellAddressCore("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
-            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
+            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId,
+                  poolMode, poolCostInfo);
 
             prepareSelectionUnit(pool, poolMode, connectedHSM);
             _costModule.messageArrived(envelope, poolUpMessage);
 
         }
-
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
         final AtomicInteger stageRequests2 = new AtomicInteger(0);
@@ -462,15 +468,17 @@ public class HsmRestoreTest {
         _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction2);
         _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
-        CellMessage cellMessage = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, null);
+        CellMessage cellMessage = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool);
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local"));
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
         // first pool replies with an error
         CellMessage m = __messages.remove(0);
-        PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
+        PoolFetchFileMessage ff = (PoolFetchFileMessage) m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
@@ -478,17 +486,19 @@ public class HsmRestoreTest {
         m = __messages.remove(0);
         selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
         assertEquals("Unexpected reply from pool manager",
-                     17, selectReadPool.getReturnCode());
+              17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
-        CellMessage cellMessage2 = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool2);
-        cellMessage2.getSourcePath().add(new CellAddressCore("door", "local")) ;
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, selectReadPool.getContext());
+        CellMessage cellMessage2 = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool2);
+        cellMessage2.getSourcePath().add(new CellAddressCore("door", "local"));
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
         // second pool replies with an error
         m = __messages.remove(0);
-        ff = (PoolFetchFileMessage)m.getMessageObject();
+        ff = (PoolFetchFileMessage) m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
@@ -496,23 +506,25 @@ public class HsmRestoreTest {
         m = __messages.remove(0);
         selectReadPool2 = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
         assertEquals("Unexpected reply from pool manager",
-                     17, selectReadPool.getReturnCode());
+              17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool2.getContext());
-        CellMessage cellMessage3 = new CellMessage( new CellAddressCore("PoolManager"), selectReadPool2);
+        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes,
+              _protocolInfo, selectReadPool2.getContext());
+        CellMessage cellMessage3 = new CellMessage(new CellAddressCore("PoolManager"),
+              selectReadPool2);
         _rc.messageArrived(cellMessage3, selectReadPool3);
 
         assertEquals("Three stage requests where expected", 3,
-                     stageRequests1.get() + stageRequests2.get());
+              stageRequests1.get() + stageRequests2.get());
         assertTrue("No stage requests sent to pool1",
-                   stageRequests1.get() != 0);
+              stageRequests1.get() != 0);
         assertTrue("No stage requests sent to pool2",
-                   stageRequests2.get() != 0);
+              stageRequests2.get() != 0);
     }
 
     private void prepareSelectionUnit(String pool,
-            PoolV2Mode poolMode, Set<String> connectedHSM) {
+          PoolV2Mode poolMode, Set<String> connectedHSM) {
         _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
         _selectionUnit.getPool(pool).setPoolMode(poolMode);
     }

@@ -59,20 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import com.google.common.collect.ImmutableList;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import org.dcache.resilience.TestBase;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.google.common.collect.ImmutableList;
+import diskCacheV111.util.CacheException;
+import java.util.Collection;
+import java.util.stream.Collectors;
+import org.dcache.resilience.TestBase;
+import org.junit.Before;
+import org.junit.Test;
+
 public final class PoolInfoMapTest extends TestBase {
+
     Integer group;
     Collection<String> collection;
     PoolInfoDiff diff;
@@ -89,7 +88,7 @@ public final class PoolInfoMapTest extends TestBase {
     @Test
     public void shouldReplaceCurrentPsuWithNewPsu() {
         givenNewPsuWith("new-pool",
-                        "resilient-group");
+              "resilient-group");
         whenCompareIsCalledWithNewPsu();
         whenApplyIsCalled();
         assertThatPoolInfoMapContainsPool("new-pool");
@@ -98,7 +97,7 @@ public final class PoolInfoMapTest extends TestBase {
 
     private void assertThatPoolBelongsToResilientGroup(String pool, String group) {
         assertEquals(poolInfoMap.getGroupIndex(group),
-                     poolInfoMap.getResilientPoolGroup(poolInfoMap.getPoolIndex(pool)));
+              poolInfoMap.getResilientPoolGroup(poolInfoMap.getPoolIndex(pool)));
     }
 
     private void assertThatPoolInfoMapContainsPool(String pool) {
@@ -112,7 +111,7 @@ public final class PoolInfoMapTest extends TestBase {
     }
 
     private void whenCompareIsCalledWithNewPsu() {
-         diff = poolInfoMap.compare(newPoolMonitor);
+        diff = poolInfoMap.compare(newPoolMonitor);
     }
 
     private void whenApplyIsCalled() {
@@ -155,9 +154,9 @@ public final class PoolInfoMapTest extends TestBase {
     }
 
     private void givenAResilientStorageGroupWithRequirementsEqualTo(
-                    int required, Collection<String> tags) {
+          int required, Collection<String> tags) {
         poolInfoMap.setUnitConstraints("resilient-0.dcache-devel-test@enstore",
-                                       required, tags);
+              required, tags);
     }
 
     private void givenResilientGroup() {
@@ -166,7 +165,7 @@ public final class PoolInfoMapTest extends TestBase {
 
     private void whenStorageGroupsAreRequestedFor(String poolGroup) {
         collection = poolInfoMap.getStorageUnitsFor(poolGroup).stream().map(
-                        (i) -> poolInfoMap.getUnit(i))
-                                          .collect(Collectors.toList());
+                    (i) -> poolInfoMap.getUnit(i))
+              .collect(Collectors.toList());
     }
 }

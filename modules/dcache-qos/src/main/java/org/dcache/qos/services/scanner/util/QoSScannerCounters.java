@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.util;
 
+import static org.dcache.qos.data.QoSMessageType.POOL_STATUS_DOWN;
+import static org.dcache.qos.data.QoSMessageType.POOL_STATUS_UP;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,173 +70,176 @@ import org.dcache.qos.util.QoSCounter;
 import org.dcache.qos.util.QoSCounterGroup;
 import org.dcache.qos.util.QoSCounters;
 
-import static org.dcache.qos.data.QoSMessageType.POOL_STATUS_DOWN;
-import static org.dcache.qos.data.QoSMessageType.POOL_STATUS_UP;
-
 public final class QoSScannerCounters extends QoSCounters {
-  private static final String SCANS          = "SCANS";
-  private static final String POOLS          = "POOLS";
-  private static final String FORMAT_SCANS = "%-25s %12s %12s\n";
-  private static final String FORMAT_DETAILS = "%-25s | %12s %12s | %12s %12s %12s | %12s %20s\n";
-  private static final String[] SCANS_HEADER = {"ACTION", "COMPLETED", "FAILED" };
-  private static final String[] DETAILS_HEADER = {"NAME", "TOTAL", "FAILED", "UP", "DOWN", "FORCED",
-                                                  "FILES", "AVGPRD (ms)"};
-  private static final String FORMAT_STATS = "%-15s  | %20s | %25s %8s %5s %12s %5s\n";
-  private static final String[] STATS_HEADER = {"EPOCH", "DATETIME", "POOL", "STATUS", "FORCED", "FILES", "FAILED"};
 
-  class QoSScanCounterGroup extends QoSCounterGroup<QoSCounter> {
-    protected QoSScanCounterGroup(String name) {
-      super(name);
+    private static final String SCANS = "SCANS";
+    private static final String POOLS = "POOLS";
+    private static final String FORMAT_SCANS = "%-25s %12s %12s\n";
+    private static final String FORMAT_DETAILS = "%-25s | %12s %12s | %12s %12s %12s | %12s %20s\n";
+    private static final String[] SCANS_HEADER = {"ACTION", "COMPLETED", "FAILED"};
+    private static final String[] DETAILS_HEADER = {"NAME", "TOTAL", "FAILED", "UP", "DOWN",
+          "FORCED",
+          "FILES", "AVGPRD (ms)"};
+    private static final String FORMAT_STATS = "%-15s  | %20s | %25s %8s %5s %12s %5s\n";
+    private static final String[] STATS_HEADER = {"EPOCH", "DATETIME", "POOL", "STATUS", "FORCED",
+          "FILES", "FAILED"};
+
+    class QoSScanCounterGroup extends QoSCounterGroup<QoSCounter> {
+
+        protected QoSScanCounterGroup(String name) {
+            super(name);
+        }
+
+        @Override
+        public void format(StringBuilder builder) {
+            getKeys().stream()
+                  .forEach(k -> {
+                      QoSCounter c = getCounter(k);
+                      builder.append(String.format(FORMAT_SCANS, k, c.getTotal(), c.getFailed()));
+                  });
+        }
+
+        @Override
+        protected QoSCounter createCounter(String key) {
+            return new QoSCounter(key);
+        }
+    }
+
+    class QoSPoolCounterGroup extends QoSCounterGroup<QoSPoolCounter> {
+
+        protected QoSPoolCounterGroup(String name) {
+            super(name);
+        }
+
+        @Override
+        public void format(StringBuilder builder) {
+            getKeys().stream()
+                  .forEach(k -> {
+                      QoSPoolCounter c = getCounter(k);
+                      long total = c.getTotal();
+                      builder.append(String.format(FORMAT_DETAILS, k, c.getTotal(), c.getFailed(),
+                            c.up.get(), c.down.get(), c.forced.get(), c.files.get(),
+                            total == 0L ? 0L : c.interval.get() / total));
+                  });
+        }
+
+        @Override
+        protected QoSPoolCounter createCounter(String key) {
+            return new QoSPoolCounter(key);
+        }
+    }
+
+    class QoSPoolCounter extends QoSCounter {
+
+        final AtomicLong canceled = new AtomicLong(0L);
+        final AtomicLong files = new AtomicLong(0L);
+        final AtomicLong forced = new AtomicLong(0L);
+        final AtomicLong down = new AtomicLong(0L);
+        final AtomicLong up = new AtomicLong(0L);
+        final AtomicLong interval = new AtomicLong(0L);
+
+        protected QoSPoolCounter(String name) {
+            super(name);
+        }
     }
 
     @Override
-    public void format(StringBuilder builder) {
-      getKeys().stream()
-               .forEach(k-> {
-                  QoSCounter c = getCounter(k);
-                  builder.append(String.format(FORMAT_SCANS, k, c.getTotal(), c.getFailed()));
-          });
+    public void initialize() {
+        groupMap = new HashMap<>();
+        QoSCounterGroup group = new QoSScanCounterGroup(SCANS);
+        group.addCounter(POOL_STATUS_UP.name());
+        group.addCounter(POOL_STATUS_DOWN.name());
+        groupMap.put(SCANS, group);
+
+        group = new QoSPoolCounterGroup(POOLS);
+        groupMap.put(POOLS, group);
     }
 
     @Override
-    protected QoSCounter createCounter(String key) {
-      return new QoSCounter(key);
-    }
-  }
-
-  class QoSPoolCounterGroup extends QoSCounterGroup<QoSPoolCounter> {
-    protected QoSPoolCounterGroup(String name) {
-      super(name);
+    public void appendCounts(StringBuilder builder) {
+        builder.append(String.format(FORMAT_SCANS, (Object[]) SCANS_HEADER));
+        QoSCounterGroup group = groupMap.get(SCANS);
+        group.format(builder);
     }
 
     @Override
-    public void format(StringBuilder builder) {
-      getKeys().stream()
-          .forEach(k -> {
-              QoSPoolCounter c = getCounter(k);
-              long total = c.getTotal();
-              builder.append(String.format(FORMAT_DETAILS, k, c.getTotal(), c.getFailed(),
-                                            c.up.get(), c.down.get(), c.forced.get(), c.files.get(),
-                                            total == 0L ? 0L : c.interval.get()/total));
-          });
+    public void appendDetails(StringBuilder builder) {
+        builder.append(String.format(FORMAT_DETAILS, (Object[]) DETAILS_HEADER));
+        QoSPoolCounterGroup group = (QoSPoolCounterGroup) groupMap.get(POOLS);
+        group.format(builder);
+    }
+
+    public void incrementCancelled(String pool, PoolQoSStatus status,
+          long files, boolean forced, long sincePrevious) {
+        checkPoolCounters(pool);
+        QoSPoolCounterGroup poolCounterGroup = (QoSPoolCounterGroup) groupMap.get(POOLS);
+        QoSPoolCounter counter = poolCounterGroup.getCounter(pool);
+        update(counter, status == PoolQoSStatus.DOWN, files, forced, sincePrevious);
+        counter.canceled.incrementAndGet();
+    }
+
+    public void increment(String pool, PoolQoSStatus status, boolean failed,
+          long files, boolean forced, long sincePrevious) {
+        boolean down = status == PoolQoSStatus.DOWN;
+
+        QoSCounterGroup group = groupMap.get(SCANS);
+        QoSCounter actionCounter
+              = group.getCounter(down ? POOL_STATUS_DOWN.name() : POOL_STATUS_UP.name());
+        actionCounter.incrementTotal();
+
+        checkPoolCounters(pool);
+        QoSPoolCounterGroup poolCounterGroup = (QoSPoolCounterGroup) groupMap.get(POOLS);
+        QoSPoolCounter counter = poolCounterGroup.getCounter(pool);
+
+        if (failed) {
+            actionCounter.incrementFailed();
+            counter.incrementFailed();
+        }
+
+        update(counter, down, files, forced, sincePrevious);
+        counter.incrementTotal();
+
+        if (toFile) {
+            Instant now = Instant.now();
+            synchronized (statisticsBuffer) {
+                statisticsBuffer.add(String.format(FORMAT_STATS, now.toEpochMilli(),
+                      DATE_FORMATTER.format(now), pool,
+                      status.name(), forced, files, failed));
+            }
+        }
     }
 
     @Override
-    protected QoSPoolCounter createCounter(String key) {
-      return new QoSPoolCounter(key);
-    }
-  }
-
-  class QoSPoolCounter extends QoSCounter {
-    final AtomicLong canceled = new AtomicLong(0L);
-    final AtomicLong files = new AtomicLong(0L);
-    final AtomicLong forced = new AtomicLong(0L);
-    final AtomicLong down = new AtomicLong(0L);
-    final AtomicLong up = new AtomicLong(0L);
-    final AtomicLong interval = new AtomicLong(0L);
-
-    protected QoSPoolCounter(String name) {
-      super(name);
-    }
-  }
-
-  @Override
-  public void initialize() {
-    groupMap = new HashMap<>();
-    QoSCounterGroup group = new QoSScanCounterGroup(SCANS);
-    group.addCounter(POOL_STATUS_UP.name());
-    group.addCounter(POOL_STATUS_DOWN.name());
-    groupMap.put(SCANS, group);
-
-    group = new QoSPoolCounterGroup(POOLS);
-    groupMap.put(POOLS, group);
-  }
-
-  @Override
-  public void appendCounts(StringBuilder builder) {
-    builder.append(String.format(FORMAT_SCANS, (Object[])SCANS_HEADER));
-    QoSCounterGroup group = groupMap.get(SCANS);
-    group.format(builder);
-  }
-
-  @Override
-  public void appendDetails(StringBuilder builder) {
-    builder.append(String.format(FORMAT_DETAILS, (Object[])DETAILS_HEADER));
-    QoSPoolCounterGroup group = (QoSPoolCounterGroup)groupMap.get(POOLS);
-    group.format(builder);
-  }
-
-  public void incrementCancelled(String pool, PoolQoSStatus status,
-                                 long files, boolean forced, long sincePrevious) {
-    checkPoolCounters(pool);
-    QoSPoolCounterGroup poolCounterGroup = (QoSPoolCounterGroup)groupMap.get(POOLS);
-    QoSPoolCounter counter = poolCounterGroup.getCounter(pool);
-    update(counter, status == PoolQoSStatus.DOWN, files, forced, sincePrevious);
-    counter.canceled.incrementAndGet();
-  }
-
-  public void increment(String pool, PoolQoSStatus status, boolean failed,
-                        long files, boolean forced, long sincePrevious) {
-    boolean down = status == PoolQoSStatus.DOWN;
-
-    QoSCounterGroup group = groupMap.get(SCANS);
-    QoSCounter actionCounter
-        = group.getCounter(down ? POOL_STATUS_DOWN.name() : POOL_STATUS_UP.name());
-    actionCounter.incrementTotal();
-
-    checkPoolCounters(pool);
-    QoSPoolCounterGroup poolCounterGroup = (QoSPoolCounterGroup)groupMap.get(POOLS);
-    QoSPoolCounter counter = poolCounterGroup.getCounter(pool);
-
-    if (failed) {
-      actionCounter.incrementFailed();
-      counter.incrementFailed();
+    protected String getStatisticsFormat() {
+        return FORMAT_STATS;
     }
 
-    update(counter, down, files, forced, sincePrevious);
-    counter.incrementTotal();
-
-    if (toFile) {
-      Instant now = Instant.now();
-      synchronized (statisticsBuffer) {
-        statisticsBuffer.add(String.format(FORMAT_STATS, now.toEpochMilli(),
-            DATE_FORMATTER.format(now), pool,
-            status.name(), forced, files, failed));
-      }
-    }
-  }
-
-  @Override
-  protected String getStatisticsFormat() {
-    return FORMAT_STATS;
-  }
-
-  @Override
-  protected String[] getStatisticsHeader() {
-    return STATS_HEADER;
-  }
-
-  private void checkPoolCounters(String pool) {
-    QoSPoolCounterGroup group = (QoSPoolCounterGroup)groupMap.get(POOLS);
-    if (!group.hasCounter(pool)) {
-      group.addCounter(pool);
-    }
-  }
-
-  private void update(QoSPoolCounter counter, boolean down, long files,
-                      boolean forced, long sincePrevious) {
-    if (down) {
-      counter.down.incrementAndGet();
-    } else {
-      counter.up.incrementAndGet();
+    @Override
+    protected String[] getStatisticsHeader() {
+        return STATS_HEADER;
     }
 
-    counter.files.addAndGet(files);
-
-    if (forced) {
-      counter.forced.incrementAndGet();
+    private void checkPoolCounters(String pool) {
+        QoSPoolCounterGroup group = (QoSPoolCounterGroup) groupMap.get(POOLS);
+        if (!group.hasCounter(pool)) {
+            group.addCounter(pool);
+        }
     }
 
-    counter.interval.addAndGet(sincePrevious);
-  }
+    private void update(QoSPoolCounter counter, boolean down, long files,
+          boolean forced, long sincePrevious) {
+        if (down) {
+            counter.down.incrementAndGet();
+        } else {
+            counter.up.incrementAndGet();
+        }
+
+        counter.files.addAndGet(files);
+
+        if (forced) {
+            counter.forced.incrementAndGet();
+        }
+
+        counter.interval.addAndGet(sincePrevious);
+    }
 }

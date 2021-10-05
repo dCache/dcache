@@ -63,27 +63,28 @@ import java.util.Optional;
 import org.dcache.qos.util.ExceptionMessage;
 
 public class PoolScanReply {
+
     private final StringBuilder success = new StringBuilder("Scans have been issued for:\n");
-    private final StringBuilder errors  = new StringBuilder("ERRORS:\n");
+    private final StringBuilder errors = new StringBuilder("ERRORS:\n");
 
     public void addPool(String pool, Optional<Exception> exception) {
-      if (exception.isPresent()) {
-        errors.append("\t")
-            .append(String.format("%s, %s", pool, new ExceptionMessage(exception.get())))
-            .append("\n");
-      } else {
-        success.append("\t").append(pool).append("\n");
-      }
+        if (exception.isPresent()) {
+            errors.append("\t")
+                  .append(String.format("%s, %s", pool, new ExceptionMessage(exception.get())))
+                  .append("\n");
+        } else {
+            success.append("\t").append(pool).append("\n");
+        }
     }
 
     public String getReply() {
-      String reply = "";
-      if (success.length() > 0)  {
-        reply += success.toString();
-      }
-      if (errors.length() > 0)  {
-        reply += errors.toString();
-      }
-      return reply;
+        String reply = "";
+        if (success.length() > 0) {
+            reply += success.toString();
+        }
+        if (errors.length() > 0) {
+            reply += errors.toString();
+        }
+        return reply;
     }
 }

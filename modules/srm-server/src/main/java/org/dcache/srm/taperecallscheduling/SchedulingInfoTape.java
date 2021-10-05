@@ -19,10 +19,12 @@
 package org.dcache.srm.taperecallscheduling;
 
 /**
- * Bring online tape scheduling item for tracking a tape's meta-information relevant for job scheduling
- * Used for keeping track of and evaluating oldest and newest job arrival targeting the associated tape
+ * Bring online tape scheduling item for tracking a tape's meta-information relevant for job
+ * scheduling Used for keeping track of and evaluating oldest and newest job arrival targeting the
+ * associated tape
  */
 public class SchedulingInfoTape {
+
     private static final long NO_VALUE = -1;
 
     // scheduling info
@@ -66,8 +68,9 @@ public class SchedulingInfoTape {
     }
 
     /**
-     * Sets the newest job arrival to the given time.
-     * If there is no oldest job arrival time, it is set to the same value.
+     * Sets the newest job arrival to the given time. If there is no oldest job arrival time, it is
+     * set to the same value.
+     *
      * @param jobArrival
      */
     public void setNewestJobArrival(Long jobArrival) {
@@ -100,8 +103,8 @@ public class SchedulingInfoTape {
         StringBuilder sb = new StringBuilder();
         sb.append("Oldest job: ").append(oldestJobArrival).append("\n");
         sb.append("Newest job: ").append(newestJobArrival).append("\n");
-        sb.append("Has").append(hasTapeInfo?"":" no").append(" tape info");
-        if(hasTapeInfo) {
+        sb.append("Has").append(hasTapeInfo ? "" : " no").append(" tape info");
+        if (hasTapeInfo) {
             sb.append("\n");
             sb.append("  Tape capacity: ").append(capacity).append(" in KB").append("\n");
             sb.append("  Used space: ").append(usedSpace).append(" in KB").append("\n");

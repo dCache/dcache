@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,33 +15,29 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.dcache.ftp.client.Session;
-import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.vanilla.FTPServerFacade;
-import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-
 import java.net.ServerSocket;
 import java.net.Socket;
-
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.Session;
+import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This task will wait on the local server for the new incoming connection
- * and when it comes it will start a new transfer thread on the new connection.
- * It is little tricky: it will cause data channel to start
- * a new thread. By the time this task completes, the new
- * thread is running the transfer.
+ * This task will wait on the local server for the new incoming connection and when it comes it will
+ * start a new transfer thread on the new connection. It is little tricky: it will cause data
+ * channel to start a new thread. By the time this task completes, the new thread is running the
+ * transfer.
  * <p>
  * Any resulting exceptions are piped to the local control channel.
  **/
-public class PassiveConnectTask extends Task
-{
+public class PassiveConnectTask extends Task {
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(PassiveConnectTask.class);
+          LoggerFactory.getLogger(PassiveConnectTask.class);
 
     protected ServerSocket myServer;
     protected SocketBox mySocketBox;
@@ -53,33 +49,30 @@ public class PassiveConnectTask extends Task
     protected TransferContext context;
 
     public PassiveConnectTask(ServerSocket myServer,
-                              DataSink sink,
-                              BasicServerControlChannel control,
-                              Session session,
-                              DataChannelFactory factory,
-                              TransferContext context)
-    {
+          DataSink sink,
+          BasicServerControlChannel control,
+          Session session,
+          DataChannelFactory factory,
+          TransferContext context) {
         this.sink = sink;
         init(myServer, control, session, factory, context);
     }
 
     public PassiveConnectTask(ServerSocket myServer,
-                              DataSource source,
-                              BasicServerControlChannel control,
-                              Session session,
-                              DataChannelFactory factory,
-                              TransferContext context)
-    {
+          DataSource source,
+          BasicServerControlChannel control,
+          Session session,
+          DataChannelFactory factory,
+          TransferContext context) {
         this.source = source;
         init(myServer, control, session, factory, context);
     }
 
     private void init(ServerSocket myServer,
-                      BasicServerControlChannel control,
-                      Session session,
-                      DataChannelFactory factory,
-                      TransferContext context)
-    {
+          BasicServerControlChannel control,
+          Session session,
+          DataChannelFactory factory,
+          TransferContext context) {
         if (!(session.serverMode == Session.SERVER_PASSIVE
               || session.serverMode == GridFTPSession.SERVER_EPAS)) {
             throw new IllegalStateException();
@@ -96,8 +89,7 @@ public class PassiveConnectTask extends Task
     }
 
     @Override
-    public void execute()
-    {
+    public void execute() {
         try {
             DataChannel dataChannel = null;
             mySocketBox = null;
@@ -105,9 +97,9 @@ public class PassiveConnectTask extends Task
                 mySocketBox = openSocket();
             } catch (Exception e) {
                 FTPServerFacade.exceptionToControlChannel(
-                        e,
-                        "server.accept() failed",
-                        control);
+                      e,
+                      "server.accept() failed",
+                      control);
                 return;
             }
 
@@ -125,9 +117,9 @@ public class PassiveConnectTask extends Task
 
             } catch (Exception e) {
                 FTPServerFacade.exceptionToControlChannel(
-                        e,
-                        "startTransfer() failed: ",
-                        control);
+                      e,
+                      "startTransfer() failed: ",
+                      control);
                 if (dataChannel != null) {
                     dataChannel.close();
                 }
@@ -141,8 +133,7 @@ public class PassiveConnectTask extends Task
     /**
      * Override this to implement authentication
      **/
-    protected SocketBox openSocket() throws Exception
-    {
+    protected SocketBox openSocket() throws Exception {
         logger.debug("server.accept()");
 
         SocketBox sBox = new SimpleSocketBox();
@@ -152,8 +143,7 @@ public class PassiveConnectTask extends Task
         return sBox;
     }
 
-    private void close()
-    {
+    private void close() {
         // server will by closed by the FTPServerFacade.
         try {
             myServer.close();
@@ -162,8 +152,7 @@ public class PassiveConnectTask extends Task
     }
 
     @Override
-    public void stop()
-    {
+    public void stop() {
         close();
     }
 }

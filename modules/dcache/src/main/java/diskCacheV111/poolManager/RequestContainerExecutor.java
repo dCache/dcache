@@ -17,23 +17,21 @@
  */
 package diskCacheV111.poolManager;
 
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import java.io.PrintWriter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-
 public class RequestContainerExecutor
-        extends ThreadPoolExecutor
-        implements CellCommandListener, CellSetupProvider
-{
-    public RequestContainerExecutor()
-    {
+      extends ThreadPoolExecutor
+      implements CellCommandListener, CellSetupProvider {
+
+    public RequestContainerExecutor() {
         super(Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE,
               60L, TimeUnit.SECONDS,
               new LinkedBlockingQueue<>(128));
@@ -41,16 +39,15 @@ public class RequestContainerExecutor
 
     @AffectsSetup
     @Command(name = "rc set max threads", hint = "set request container thread limit",
-             description = "Sets the maximum number of requests allocated for " +
-                     "processing read requests.")
-    class SetMaxThreadsCommand implements Callable<String>
-    {
+          description = "Sets the maximum number of requests allocated for " +
+                "processing read requests.")
+    class SetMaxThreadsCommand implements Callable<String> {
+
         @Argument
         int count;
 
         @Override
-        public String call()
-        {
+        public String call() {
             if (count == 0) {
                 count = Integer.MAX_VALUE;
             }
@@ -60,8 +57,7 @@ public class RequestContainerExecutor
     }
 
     @Override
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         pw.append("rc set max threads ").println(getMaximumPoolSize());
     }
 }

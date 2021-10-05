@@ -18,14 +18,13 @@
 
 package org.dcache.srm.taperecallscheduling.tapeinfoprovider;
 
-import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapefileInfo;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Scanner;
+import org.dcache.srm.taperecallscheduling.TapeInfo;
+import org.dcache.srm.taperecallscheduling.TapefileInfo;
 
 public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
 
@@ -34,7 +33,9 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
     @Override
     protected void initializeTapeInfo() {
         Optional<File> ofile = getFileIfExists(getTapeinfoDir(), FILENAME_TAPES + FILEENDING);
-        if(ofile.isEmpty()) return;
+        if (ofile.isEmpty()) {
+            return;
+        }
         File file = ofile.get();
 
         HashMap<String, TapeInfo> parsed = new HashMap<>();
@@ -49,7 +50,7 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
                 String data = myReader.nextLine();
 
                 String[] lineParts = data.trim().split(",");
-                if (lineParts.length!=3) {
+                if (lineParts.length != 3) {
                     LOGGER.error("Tape info file line incomplete: '{}'", data);
                     return;
                 }
@@ -63,16 +64,20 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
             setTapeInfo(parsed);
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Reading tape info file {} failed with error {}", file.getName(), e.getMessage());
+            LOGGER.error("Reading tape info file {} failed with error {}", file.getName(),
+                  e.getMessage());
         } catch (NumberFormatException e) {
-            LOGGER.error("Reading tape info file {} failed due to wrong content with error {}", file.getName(), e.getMessage());
+            LOGGER.error("Reading tape info file {} failed due to wrong content with error {}",
+                  file.getName(), e.getMessage());
         }
     }
 
     @Override
     protected void initializeTapefileInfo() {
         Optional<File> ofile = getFileIfExists(getTapeinfoDir(), FILENAME_TAPEFILES + FILEENDING);
-        if(ofile.isEmpty()) return;
+        if (ofile.isEmpty()) {
+            return;
+        }
         File file = ofile.get();
 
         HashMap<String, TapefileInfo> parsed = new HashMap<>();
@@ -87,7 +92,7 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
                 String data = myReader.nextLine();
 
                 String[] lineParts = data.trim().split(",");
-                if (lineParts.length!=3) {
+                if (lineParts.length != 3) {
                     LOGGER.error("Tape info file line incomplete: '{}'", data);
                     return;
                 }
@@ -101,9 +106,11 @@ public class CsvFileTapeInfoProvider extends FilebasedTapeInfoProvider {
             setTapefileInfo(parsed);
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Reading tapefile info file {} failed with error {}", file.getAbsolutePath(), e.getMessage());
+            LOGGER.error("Reading tapefile info file {} failed with error {}",
+                  file.getAbsolutePath(), e.getMessage());
         } catch (NumberFormatException e) {
-            LOGGER.error("Reading tapefile info file {} failed due to wrong content with error {}", file.getAbsolutePath(), e.getMessage());
+            LOGGER.error("Reading tapefile info file {} failed due to wrong content with error {}",
+                  file.getAbsolutePath(), e.getMessage());
         }
     }
 

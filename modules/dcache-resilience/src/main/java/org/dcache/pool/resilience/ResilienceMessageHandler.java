@@ -59,16 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.resilience;
 
-import java.util.Collection;
-import java.util.concurrent.ExecutorService;
-
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
-
+import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
@@ -79,45 +76,45 @@ import org.dcache.vehicles.resilience.ReplicaStatusMessage;
 
 /**
  * <p>Serves requests from resilience to verify records and remove entries
- *      from the repository.</p>
+ * from the repository.</p>
  */
 public final class ResilienceMessageHandler implements CellMessageReceiver {
+
     private static final String SYSTEM_OWNER = "system";
 
-    private Repository   repository;
-    private String       pool;
+    private Repository repository;
+    private String pool;
     private BrokenFileListener brokenFileListener;
 
     private ExecutorService executor;
 
     public void initialize() {
-	repository.addListener(brokenFileListener);
+        repository.addListener(brokenFileListener);
     }
 
     /**
      * <p>Attempts to remove the entry for the pnfsid by releasing the
-     *    persistent (non-expiring) sticky flag owned by system, if
-     *    it exists.</p>
+     * persistent (non-expiring) sticky flag owned by system, if it exists.</p>
      */
     public Reply messageArrived(RemoveReplicaMessage message) {
-        return processStickyFlag(message, message.getPnfsId(),0L);
+        return processStickyFlag(message, message.getPnfsId(), 0L);
     }
 
     /**
      * <p>Sets a system sticky record of indefinite lifetime for the pnfsid.</p>
      *
      * <p>This is called by resilience when a cached copy is being promoted
-     *    to a resilient replica.</p>
+     * to a resilient replica.</p>
      */
     public Reply messageArrived(ForceSystemStickyBitMessage message) {
         return processStickyFlag(message,
-                                 message.getPnfsId(),
-                                 StickyRecord.NON_EXPIRING);
+              message.getPnfsId(),
+              StickyRecord.NON_EXPIRING);
     }
 
     /**
      * <p>Returns whether replica exists, the status of its system sticky flag
-     *    and whether its state allows for reading and removal.</p>
+     * and whether its state allows for reading and removal.</p>
      */
     public Reply messageArrived(ReplicaStatusMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
@@ -132,7 +129,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
                 CacheEntry entry = repository.getEntry(pnfsId);
                 message.setExists(true);
 
-                switch(entry.getState()) {
+                switch (entry.getState()) {
                     case FROM_CLIENT:
                     case FROM_POOL:
                     case FROM_STORE:
@@ -154,16 +151,16 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
                 }
 
                 Collection<StickyRecord> records = entry.getStickyRecords();
-                for (StickyRecord record: records) {
+                for (StickyRecord record : records) {
                     if (record.owner().equals(SYSTEM_OWNER)
-                                    && record.isNonExpiring()) {
+                          && record.isNonExpiring()) {
                         message.setSystemSticky(true);
                         break;
                     }
                 }
 
                 reply.reply(message);
-            } catch (FileNotInCacheException  e) {
+            } catch (FileNotInCacheException e) {
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -190,16 +187,16 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
     }
 
     private Reply processStickyFlag(final Message message,
-                                    final PnfsId pnfsId,
-                                    final long expire) {
+          final PnfsId pnfsId,
+          final long expire) {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
                 if (pnfsId != null) {
                     repository.setSticky(pnfsId,
-                                         SYSTEM_OWNER,
-                                         expire,
-                                         true);
+                          SYSTEM_OWNER,
+                          expire,
+                          true);
                 }
                 reply.reply(message);
             } catch (Exception e) {

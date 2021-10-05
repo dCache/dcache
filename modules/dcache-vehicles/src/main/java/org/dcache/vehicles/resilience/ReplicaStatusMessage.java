@@ -67,9 +67,10 @@ import diskCacheV111.vehicles.Message;
  * replica, (b) its "sticky" state, and (c) whether it is removable.</p>
  */
 public final class ReplicaStatusMessage extends Message {
-    private static final long   serialVersionUID = -5864355937841588647L;
-    private final        String pool;
-    private final        PnfsId pnfsId;
+
+    private static final long serialVersionUID = -5864355937841588647L;
+    private final String pool;
+    private final PnfsId pnfsId;
 
     private boolean exists;
     private boolean waiting;
@@ -95,7 +96,9 @@ public final class ReplicaStatusMessage extends Message {
         return pool;
     }
 
-    public boolean isBroken() { return broken; }
+    public boolean isBroken() {
+        return broken;
+    }
 
     public boolean isReadable() {
         return readable;
@@ -139,9 +142,9 @@ public final class ReplicaStatusMessage extends Message {
 
     public String toString() {
         return String.format(
-                        "%s: (pool %s) (pnfsid %s) (exists %s) (waiting %s) (broken %s) (readable %s) "
-                                        + "(system sticky %s) (removable %s) - %s",
-                        getMessageName(), pool, pnfsId, exists, waiting, broken, readable,
-                        systemSticky, removable, super.toString());
+              "%s: (pool %s) (pnfsid %s) (exists %s) (waiting %s) (broken %s) (readable %s) "
+                    + "(system sticky %s) (removable %s) - %s",
+              getMessageName(), pool, pnfsId, exists, waiting, broken, readable,
+              systemSticky, removable, super.toString());
     }
 }

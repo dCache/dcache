@@ -17,20 +17,20 @@
  */
 package org.dcache.pool.statistics;
 
+import static org.dcache.util.TimeUtils.describe;
+
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-import static org.dcache.util.TimeUtils.describe;
-
 
 /**
- * An immutable snapshot of statistics describing the channel usage in a
- * particular direction: either read- or write operations.
+ * An immutable snapshot of statistics describing the channel usage in a particular direction:
+ * either read- or write operations.
  */
-public class DirectedIoStatistics
-{
+public class DirectedIoStatistics {
+
     private final SnapshotStatistics _statistics;
     private final Duration _idle;
     private final Duration _active;
@@ -40,9 +40,8 @@ public class DirectedIoStatistics
     private final Duration _postActivityWait;
 
     public DirectedIoStatistics(Duration preActivityWait, Duration idle, Duration active,
-            Instant firstAccess, Instant latestAccess, Duration postActivityWait,
-            LiveStatistics statistics)
-    {
+          Instant firstAccess, Instant latestAccess, Duration postActivityWait,
+          LiveStatistics statistics) {
         _preActivityWait = preActivityWait;
         _idle = idle;
         _active = active;
@@ -55,76 +54,69 @@ public class DirectedIoStatistics
     /**
      * The collection of statistics gathered about IO operations.
      */
-    public SnapshotStatistics statistics()
-    {
+    public SnapshotStatistics statistics() {
         return _statistics;
     }
 
     /**
-     * The time spent after the channel was created ("file was opened") waiting
-     * for the first IO operation.  This value includes any time that the pool
-     * spent waiting for the client to connect.
+     * The time spent after the channel was created ("file was opened") waiting for the first IO
+     * operation.  This value includes any time that the pool spent waiting for the client to
+     * connect.
      * <p>
-     * If there has not been any IO operation (yet) then the returned value is
-     * the total time since the mover was created.  This value will not change
-     * once IO operations have started.
+     * If there has not been any IO operation (yet) then the returned value is the total time since
+     * the mover was created.  This value will not change once IO operations have started.
+     *
      * @return time spent waiting for the first IO operation.
      */
-    public Duration preActivity()
-    {
+    public Duration preActivity() {
         return _preActivityWait;
     }
 
     /**
-     * The cumulative time spent while sending data to the client with no
-     * in-flight IO requests.  If the mover is single-threaded (only ever one
-     * IO operation at a time) then this value includes the time spent sending
-     * data over the network.
+     * The cumulative time spent while sending data to the client with no in-flight IO requests.  If
+     * the mover is single-threaded (only ever one IO operation at a time) then this value includes
+     * the time spent sending data over the network.
      * <p>
-     * If there has not been any IO operations (yet) then the returned value
-     * is {@literal Duration.ZERO}.  If a transfer is on-going then the returned
-     * value is the idle time so far, treating the most recent IO operation as
-     * if it were the last for this transfer.
+     * If there has not been any IO operations (yet) then the returned value is {@literal
+     * Duration.ZERO}.  If a transfer is on-going then the returned value is the idle time so far,
+     * treating the most recent IO operation as if it were the last for this transfer.
      */
-    public Duration idle()
-    {
+    public Duration idle() {
         return _idle;
     }
 
     /**
-     * The cumulative time spent during the transfer with at least one active
-     * IO request.  If the mover is single-threaded (only ever one IO operation
-     * at a time) then this value shows for how long the transfer was stalled
-     * while waiting to read data from the underlying storage.
+     * The cumulative time spent during the transfer with at least one active IO request.  If the
+     * mover is single-threaded (only ever one IO operation at a time) then this value shows for how
+     * long the transfer was stalled while waiting to read data from the underlying storage.
      * <p>
-     * If there has not been any IO operations (yet) then the returned value is
-     * {@literal Duration.ZERO}.  If a transfer is on-going then the returned
-     * value is the time spent waiting for IO so far.
+     * If there has not been any IO operations (yet) then the returned value is {@literal
+     * Duration.ZERO}.  If a transfer is on-going then the returned value is the time spent waiting
+     * for IO so far.
      */
-    public Duration active()
-    {
+    public Duration active() {
         return _active;
     }
 
     /**
-     * The time spent after the last IO operation before the channel was closed.
-     * The value includes any time the pool spends processing after the last
-     * IO operation and before the file was closed.
+     * The time spent after the last IO operation before the channel was closed. The value includes
+     * any time the pool spends processing after the last IO operation and before the file was
+     * closed.
      * <p>
-     * If there has not been any IO operations (yet) then the returned value is
-     * {@literal Duration.ZERO}.  If a transfer is on-going then the returned
-     * value is the time spend since the last IO operation.
+     * If there has not been any IO operations (yet) then the returned value is {@literal
+     * Duration.ZERO}.  If a transfer is on-going then the returned value is the time spend since
+     * the last IO operation.
      */
-    public Duration postActivity()
-    {
-       return _postActivityWait;
+    public Duration postActivity() {
+        return _postActivityWait;
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("Pre-activity wait: " + describe(_preActivityWait).orElse("none"));
-        pw.println("First request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_firstAccess)));
-        pw.println("Latest request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_latestAccess)));
+        pw.println("First request: " + org.dcache.util.Strings.describe(
+              Optional.ofNullable(_firstAccess)));
+        pw.println("Latest request: " + org.dcache.util.Strings.describe(
+              Optional.ofNullable(_latestAccess)));
         pw.println("Active: " + describe(_active).orElse("never active"));
         pw.println("Idle: " + describe(_idle).orElse("never idle"));
         pw.println("Post-activity wait: " + describe(_postActivityWait).orElse("none"));

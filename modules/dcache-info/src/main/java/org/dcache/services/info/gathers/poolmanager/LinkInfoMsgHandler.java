@@ -1,12 +1,7 @@
 package org.dcache.services.info.gathers.poolmanager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-
 import dmg.cells.nucleus.UOID;
-
+import java.util.ArrayList;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
@@ -15,26 +10,26 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A class to handle reply messages from PoolManager's "psux ls -x -resolve" command.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkInfoMsgHandler extends CellMessageHandlerSkel
-{
+public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkInfoMsgHandler.class);
     private static final int EXPECTED_ARRAY_SIZE = 13;
 
     public LinkInfoMsgHandler(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgMetaRepo)
-    {
+          MessageMetadataRepository<UOID> msgMetaRepo) {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime)
-    {
+    public void process(Object msgPayload, long metricLifetime) {
         StateUpdate update = null;
 
         Iterable<?> linkInfoArray = (ArrayList<?>) msgPayload;
@@ -66,15 +61,15 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel
 
 
     /**
-     * Append updates to the supplied StateUpdate object containing new data based on
-     * the supplied information.
-     * @param update the StateUpdate object
+     * Append updates to the supplied StateUpdate object containing new data based on the supplied
+     * information.
+     *
+     * @param update    the StateUpdate object
      * @param linksPath the path under which data will be added ("links").
-     * @param o the array of information for this link
-     * @param lifetime how long, in seconds, this data should survive.
+     * @param o         the array of information for this link
+     * @param lifetime  how long, in seconds, this data should survive.
      */
-    private void processInfo(StateUpdate update, StatePath linksPath, Object[] o, long lifetime)
-    {
+    private void processInfo(StateUpdate update, StatePath linksPath, Object[] o, long lifetime) {
         String name = (String) o[0];
         int readPref = (Integer) o[1];
         int cachePref = (Integer) o[2];
@@ -102,12 +97,13 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel
 
         if (uGroups != null) {
             addItems(update, thisLinkPath
-                    .newChild("unitgroups"), uGroups, lifetime);
+                  .newChild("unitgroups"), uGroups, lifetime);
         }
         addItems(update, thisLinkPath.newChild("pools"), pools, lifetime);
         addItems(update, thisLinkPath.newChild("poolgroups"), groups, lifetime);
 
-        update.appendUpdate(thisLinkPath.newChild("selection"), new StringStateValue(tag != null ? tag : "None", lifetime));
+        update.appendUpdate(thisLinkPath.newChild("selection"),
+              new StringStateValue(tag != null ? tag : "None", lifetime));
 
         StatePath unitPath = thisLinkPath.newChild("units");
 

@@ -17,25 +17,22 @@
  */
 package diskCacheV111.srm.dcache;
 
-import java.io.PrintWriter;
-
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import java.io.PrintWriter;
 
 /**
  * Simple sub-class of SRM Configuration to implement the CellInfoProvider interface.
  */
-public class Configuration extends org.dcache.srm.util.Configuration implements CellInfoProvider
-{
+public class Configuration extends org.dcache.srm.util.Configuration implements CellInfoProvider {
+
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println(toString());
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 }

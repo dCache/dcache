@@ -1,58 +1,53 @@
 package diskCacheV111.util;
 
-import org.dcache.util.ByteSizeParser;
-import org.dcache.util.ByteUnit;
-import org.dcache.util.ByteUnits.JedecPrefix;
-import org.dcache.util.ByteUnits.Representation;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.util.ByteUnit.BYTES;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.Type.BINARY;
 import static org.dcache.util.ByteUnits.jedecPrefix;
 
+import org.dcache.util.ByteSizeParser;
+import org.dcache.util.ByteUnit;
+import org.dcache.util.ByteUnits.JedecPrefix;
+import org.dcache.util.ByteUnits.Representation;
+
 /**
  * Immutable quantity of disk space.
- *
- * Essentially just an integer, but can parse suffixes for kibibytes, mebibytes,
- * gibibytes, and tebibytes.
- *
- * The quantity can be unspecified, with the string representation being a dash.
- * This is represented as Long.MAX_VALUE bytes, the quantity larger than any other
- * disk space.
- *
+ * <p>
+ * Essentially just an integer, but can parse suffixes for kibibytes, mebibytes, gibibytes, and
+ * tebibytes.
+ * <p>
+ * The quantity can be unspecified, with the string representation being a dash. This is represented
+ * as Long.MAX_VALUE bytes, the quantity larger than any other disk space.
+ * <p>
  * Disk space is always positive.
  */
-public class DiskSpace
-{
+public class DiskSpace {
+
     public static final DiskSpace UNSPECIFIED = new DiskSpace(Long.MAX_VALUE);
     private static final Representation JEDEC_WITH_LOWER_K = new JedecPrefixLowerKRepresentation();
     private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(jedecPrefix()).build();
 
     private final long _value;
 
-    private static class JedecPrefixLowerKRepresentation extends JedecPrefix
-    {
+    private static class JedecPrefixLowerKRepresentation extends JedecPrefix {
+
         @Override
-        public String of(ByteUnit unit)
-        {
+        public String of(ByteUnit unit) {
             return (unit == KiB) ? "k" : super.of(unit);
         }
     }
 
-    public DiskSpace(long value)
-    {
+    public DiskSpace(long value) {
         checkArgument(value >= 0, "Negative value is not allowed");
         _value = value;
     }
 
-    public DiskSpace(String s)
-    {
+    public DiskSpace(String s) {
         this(parseUnitLong(s));
     }
 
-    private static long parseUnitLong(String s)
-    {
+    private static long parseUnitLong(String s) {
         checkArgument(!s.isEmpty(), "Argument must not be empty");
 
         if (s.equals("Infinity") || s.equals("-")) {
@@ -63,13 +58,11 @@ public class DiskSpace
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return toUnitString(_value);
     }
 
-    public static String toUnitString(long value)
-    {
+    public static String toUnitString(long value) {
         if (value == Long.MAX_VALUE) {
             return "-";
         }
@@ -77,14 +70,12 @@ public class DiskSpace
         return Long.toString(units.convert(value, BYTES)) + JEDEC_WITH_LOWER_K.of(units);
     }
 
-    public long longValue()
-    {
+    public long longValue() {
         return _value;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -98,33 +89,27 @@ public class DiskSpace
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return (int) (_value ^ (_value >>> 32));
     }
 
-    public boolean isLargerThan(long value)
-    {
+    public boolean isLargerThan(long value) {
         return value < _value && _value < Long.MAX_VALUE;
     }
 
-    public boolean isLessThan(long value)
-    {
+    public boolean isLessThan(long value) {
         return _value < value;
     }
 
-    public boolean isSpecified()
-    {
+    public boolean isSpecified() {
         return _value != Long.MAX_VALUE;
     }
 
-    public long orElse(long other)
-    {
+    public long orElse(long other) {
         return isSpecified() ? _value : other;
     }
 
-    public DiskSpace orElse(DiskSpace other)
-    {
+    public DiskSpace orElse(DiskSpace other) {
         return isSpecified() ? this : other;
     }
 }

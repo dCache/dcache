@@ -67,6 +67,7 @@ import java.util.Map;
  * from the {@link org.dcache.pool.classic.TransferServices}.</p>
  */
 public class TransferServicesData implements Serializable {
+
     private static final long serialVersionUID = 7309943766140944031L;
     private String label;
     private Map<String, String> transferServices;
@@ -84,7 +85,7 @@ public class TransferServicesData implements Serializable {
     }
 
     public void setTransferServices(
-                    Map<String, String> transferServices) {
+          Map<String, String> transferServices) {
         this.transferServices = transferServices;
     }
 }

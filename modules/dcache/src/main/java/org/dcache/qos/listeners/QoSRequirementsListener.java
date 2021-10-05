@@ -65,27 +65,28 @@ import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
 
 public interface QoSRequirementsListener {
+
     /**
-     *  Request to the provider for the QoS requirements for a given file.
+     * Request to the provider for the QoS requirements for a given file.
      *
-     *  @param update containing file id, pool (if any) and the type of message which triggered
-     *                the request.
-     *  @return disk and tape requirements for the file.
+     * @param update containing file id, pool (if any) and the type of message which triggered the
+     *               request.
+     * @return disk and tape requirements for the file.
      */
     FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update) throws QoSException;
 
     /**
-     *  A client sends this when it wishes to change a file's QoS requirements.
+     * A client sends this when it wishes to change a file's QoS requirements.
      *
-     *  @param newRequirements describing principally how many peristent disk and tape copies
-     *                         are required.
+     * @param newRequirements describing principally how many peristent disk and tape copies are
+     *                        required.
      */
     void fileQoSRequirementsModified(FileQoSRequirements newRequirements) throws QoSException;
 
     /**
-     *  A client sends this when it wishes to cancel a modification requirement.
+     * A client sends this when it wishes to cancel a modification requirement.
      *
-     *  @param pnfsid of the file for which the modification was requested.
+     * @param pnfsid of the file for which the modification was requested.
      */
     void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException;
 }

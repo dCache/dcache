@@ -73,20 +73,22 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class SRMSimpleCopyClient extends SRMClient
-{
+public class SRMSimpleCopyClient extends SRMClient {
+
     private final java.net.URI from[];
     private final java.net.URI to[];
 
     private Copier copier;
 
-    /** Creates a new instance of SRMGetClient */
-    public SRMSimpleCopyClient(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMSimpleCopyClient(Configuration configuration, java.net.URI[] from,
+          java.net.URI[] to) {
         super(configuration);
-        report = new Report(from,to,configuration.getReport());
+        report = new Report(from, to, configuration.getReport());
         this.from = from;
         this.to = to;
     }
@@ -102,14 +104,14 @@ public class SRMSimpleCopyClient extends SRMClient
         new Thread(copier).start();
         int len = from.length;
 
-        for(int i =0; i<len;++i) {
-            CopyJob job = new SimpleCopyJob(from[i],to[i],logger,this);
+        for (int i = 0; i < len; ++i) {
+            CopyJob job = new SimpleCopyJob(from[i], to[i], logger, this);
             copier.addCopyJob(job);
         }
         copier.doneAddingJobs();
         copier.waitCompletion();
         report.dumpReport();
-        if(!report.everythingAllRight()){
+        if (!report.everythingAllRight()) {
             report.reportErrors(System.err);
             System.exit(1);
         }

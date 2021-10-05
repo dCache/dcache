@@ -2,9 +2,9 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.PnfsId;
-
 import static java.util.Objects.requireNonNull;
+
+import diskCacheV111.util.PnfsId;
 
 public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
@@ -12,16 +12,17 @@ public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
     private static final long serialVersionUID = -7996549495498661141L;
 
-    public PnfsModifyCacheLocationMessage(PnfsId pnfsId, String poolName){
+    public PnfsModifyCacheLocationMessage(PnfsId pnfsId, String poolName) {
         super(requireNonNull(pnfsId));
         _poolName = poolName;
     }
 
-    public String getPoolName(){
-	return _poolName;
+    public String getPoolName() {
+        return _poolName;
     }
-    public String toString(){
-        return super.toString()+";Pool="+_poolName;
+
+    public String toString() {
+        return super.toString() + ";Pool=" + _poolName;
     }
 }
 

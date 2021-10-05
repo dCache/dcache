@@ -17,141 +17,120 @@
  */
 package org.dcache.pool.movers;
 
+import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.OpenOption;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.OpenOption;
 import java.util.Set;
-
-import diskCacheV111.vehicles.ProtocolInfo;
-
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 
-public class MoverChannelDecorator<T extends ProtocolInfo> implements RepositoryChannel
-{
+public class MoverChannelDecorator<T extends ProtocolInfo> implements RepositoryChannel {
+
     private final MoverChannel<T> channel;
 
-    public MoverChannelDecorator(MoverChannel<T> channel)
-    {
+    public MoverChannelDecorator(MoverChannel<T> channel) {
         this.channel = channel;
     }
 
     @Override
-    public long position() throws IOException
-    {
+    public long position() throws IOException {
         return channel.position();
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException
-    {
+    public int read(ByteBuffer dst) throws IOException {
         return channel.read(dst);
     }
 
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return channel.getFileAttributes();
     }
 
     @Override
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException
-    {
+    public long transferTo(long position, long count, WritableByteChannel target)
+          throws IOException {
         return channel.transferTo(position, count, target);
     }
 
     @Override
-    public MoverChannel<T> position(long position) throws IOException
-    {
+    public MoverChannel<T> position(long position) throws IOException {
         return channel.position(position);
     }
 
     @Override
-    public int read(ByteBuffer buffer, long position) throws IOException
-    {
+    public int read(ByteBuffer buffer, long position) throws IOException {
         return channel.read(buffer, position);
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException
-    {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         return channel.transferFrom(src, position, count);
     }
 
     @Override
-    public int write(ByteBuffer buffer, long position) throws IOException
-    {
+    public int write(ByteBuffer buffer, long position) throws IOException {
         return channel.write(buffer, position);
     }
 
     @Override
-    public long write(ByteBuffer[] srcs) throws IOException
-    {
+    public long write(ByteBuffer[] srcs) throws IOException {
         return channel.write(srcs);
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         channel.close();
     }
 
     @Override
-    public MoverChannel<T> truncate(long size) throws IOException
-    {
+    public MoverChannel<T> truncate(long size) throws IOException {
         return channel.truncate(size);
     }
 
     @Override
-    public boolean isOpen()
-    {
+    public boolean isOpen() {
         return channel.isOpen();
     }
 
     @Override
-    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
-    {
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         return channel.write(srcs, offset, length);
     }
 
-    public T getProtocolInfo()
-    {
+    public T getProtocolInfo() {
         return channel.getProtocolInfo();
     }
 
     @Override
-    public long size() throws IOException
-    {
+    public long size() throws IOException {
         return channel.size();
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException
-    {
+    public int write(ByteBuffer src) throws IOException {
         return channel.write(src);
     }
 
-    public Set<? extends OpenOption> getIoMode()
-    {
+    public Set<? extends OpenOption> getIoMode() {
         return channel.getIoMode();
     }
 
     @Override
-    public void sync() throws IOException
-    {
+    public void sync() throws IOException {
         channel.sync();
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException
-    {
+    public long read(ByteBuffer[] dsts) throws IOException {
         return channel.read(dsts);
     }
 
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
-    {
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         return channel.read(dsts, offset, length);
     }
 }

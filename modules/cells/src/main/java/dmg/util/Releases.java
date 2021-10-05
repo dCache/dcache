@@ -19,9 +19,9 @@
 
 package dmg.util;
 
-public abstract class Releases
-{
-    public static final short PRE_2_6      = 0x0205;
+public abstract class Releases {
+
+    public static final short PRE_2_6 = 0x0205;
     public static final short RELEASE_2_10 = 0x020A;
     public static final short RELEASE_2_11 = 0x020B;
     public static final short RELEASE_2_12 = 0x020C;
@@ -29,10 +29,9 @@ public abstract class Releases
     public static final short RELEASE_2_14 = 0x020E;
     public static final short RELEASE_2_15 = 0x020F;
     public static final short RELEASE_2_16 = 0x0210;
-    public static final short RELEASE_3_0  = 0x0300;
+    public static final short RELEASE_3_0 = 0x0300;
 
-    public static short getRelease(String version) throws BadVersionException
-    {
+    public static short getRelease(String version) throws BadVersionException {
         int i = version.indexOf('.');
         if (i < 0) {
             throw new BadVersionException("Invalid dCache version '" + version + "'");
@@ -40,18 +39,18 @@ public abstract class Releases
         int j = version.indexOf('.', i + 1);
         try {
             return j < 0
-                   ? (short) (Short.parseShort(version.substring(0, i)) << 8)
-                   : (short) ((Short.parseShort( version.substring(0, i)) << 8) | Short.parseShort(version.substring(i + 1, j)));
+                  ? (short) (Short.parseShort(version.substring(0, i)) << 8)
+                  : (short) ((Short.parseShort(version.substring(0, i)) << 8) | Short.parseShort(
+                        version.substring(i + 1, j)));
         } catch (NumberFormatException e) {
             throw new BadVersionException("Invalid dCache version '" + version
-                    + "': " + e.getMessage());
+                  + "': " + e.getMessage());
         }
     }
 
-    public static class BadVersionException extends Exception
-    {
-        public BadVersionException(String message)
-        {
+    public static class BadVersionException extends Exception {
+
+        public BadVersionException(String message) {
             super(message);
         }
     }

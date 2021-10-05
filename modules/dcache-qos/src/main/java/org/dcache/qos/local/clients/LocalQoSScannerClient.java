@@ -63,24 +63,25 @@ import org.dcache.qos.listeners.QoSPoolScanResponseListener;
 import org.dcache.qos.services.scanner.handlers.PoolTaskCompletionHandler;
 
 /**
- *  A pass-through to the pool task completion handler. Use this listener when plugging
- *  in directly to the scanner service.
+ * A pass-through to the pool task completion handler. Use this listener when plugging in directly
+ * to the scanner service.
  */
 public final class LocalQoSScannerClient implements QoSPoolScanResponseListener {
-  private PoolTaskCompletionHandler completionHandler;
 
-  @Override
-  public void scanRequestUpdated(String pool, int succeeded, int failed) {
-    for (int p = 0; p < succeeded; ++p) {
-      completionHandler.childTerminated(pool);
+    private PoolTaskCompletionHandler completionHandler;
+
+    @Override
+    public void scanRequestUpdated(String pool, int succeeded, int failed) {
+        for (int p = 0; p < succeeded; ++p) {
+            completionHandler.childTerminated(pool);
+        }
+
+        for (int p = 0; p < failed; ++p) {
+            completionHandler.childTerminatedWithFailure(pool);
+        }
     }
 
-    for (int p = 0; p < failed; ++p) {
-      completionHandler.childTerminatedWithFailure(pool);
+    public void setCompletionHandler(PoolTaskCompletionHandler completionHandler) {
+        this.completionHandler = completionHandler;
     }
-  }
-
-  public void setCompletionHandler(PoolTaskCompletionHandler completionHandler) {
-    this.completionHandler = completionHandler;
-  }
 }

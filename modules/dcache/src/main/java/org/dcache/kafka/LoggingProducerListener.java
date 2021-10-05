@@ -28,14 +28,17 @@ public class LoggingProducerListener implements ProducerListener {
 
 
     @Override
-    public void onSuccess(String topic, Integer partition, Object key, Object value, RecordMetadata recordMetadata) {
+    public void onSuccess(String topic, Integer partition, Object key, Object value,
+          RecordMetadata recordMetadata) {
         //forced by interface
     }
 
     @Override
-    public void onError(String topic, Integer partition, Object key, Object value, Exception exception) {
-        LOGGER.error("Unable to send message to topic {} on  partition {}, with key {} and value {} : {}",
-                topic, partition, key, value, exception.getMessage());
+    public void onError(String topic, Integer partition, Object key, Object value,
+          Exception exception) {
+        LOGGER.error(
+              "Unable to send message to topic {} on  partition {}, with key {} and value {} : {}",
+              topic, partition, key, value, exception.getMessage());
     }
 
     @Override

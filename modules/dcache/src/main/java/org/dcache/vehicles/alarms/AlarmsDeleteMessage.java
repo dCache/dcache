@@ -59,15 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.alarms;
 
-import java.util.List;
-
 import diskCacheV111.vehicles.Message;
+import java.util.List;
 import org.dcache.alarms.LogEntry;
 
 /**
  * <p>Request to delete alarms from underlying store.</p>
  */
 public class AlarmsDeleteMessage extends Message {
+
     private List<LogEntry> toDelete;
 
     public List<LogEntry> getToDelete() {

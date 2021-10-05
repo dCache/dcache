@@ -9,6 +9,11 @@ public class IteratorCookie implements Serializable {
 
     private static final long serialVersionUID = -8975020858113782371L;
 
-    public boolean done(){ return false ; }
-    public boolean invalidated(){ return false ; }
+    public boolean done() {
+        return false;
+    }
+
+    public boolean invalidated() {
+        return false;
+    }
 }

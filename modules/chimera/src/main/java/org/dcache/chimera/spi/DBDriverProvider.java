@@ -6,8 +6,9 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
 
 /**
- * SPI interface to Driver provider. Provide must crate an instance of a
- * {@link FsSqlDriver} for a supported DB type.
+ * SPI interface to Driver provider. Provide must crate an instance of a {@link FsSqlDriver} for a
+ * supported DB type.
+ *
  * @since 2.16
  */
 public interface DBDriverProvider {

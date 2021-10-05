@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -75,9 +74,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
@@ -85,54 +81,54 @@ import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperation;
 import org.dcache.resilience.handlers.FileOperationHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Static methods for writing and reading data for checkpointing purposes.</p>
  *
  * <p>Experimentation with NIO showed that serialization using ByteBuffer
- *      is not efficient, with large writes (of 1M records or more) taking
- *      on the order of 45 minutes to an hour to complete.</p>
+ * is not efficient, with large writes (of 1M records or more) taking on the order of 45 minutes to
+ * an hour to complete.</p>
  *
  * <p>This implementation writes out a simple CDL to a text file.</p>
  *
  * <p>Also includes load and save methods for recording excluded pools.</p>
  *
  * <p><b>A note on why 'parent' pool information is not saved</b>:  When
- *      writing the record, the originating pool must be recorded so that
- *      a copy or remove operation may be replayed.  The information as to
- *      whether this operation was triggered by a new cache location message
- *      (no parent pool) or a scan (with parent pool), however, is discarded,
- *      because the operation will be reloaded only after a service restart,
- *      which means that all previous pool operation counters have been
- *      reset.  If these reloaded operations begin to report themselves as
- *      children of a pool scan, this may confound the counts for a new
- *      scan which could in the meantime be triggered.  It is thus best
- *      to allow these copy operations to complete by themselves without
- *      worrying about whether they originally were from a scan or not.</p>
+ * writing the record, the originating pool must be recorded so that a copy or remove operation may
+ * be replayed.  The information as to whether this operation was triggered by a new cache location
+ * message (no parent pool) or a scan (with parent pool), however, is discarded, because the
+ * operation will be reloaded only after a service restart, which means that all previous pool
+ * operation counters have been reset.  If these reloaded operations begin to report themselves as
+ * children of a pool scan, this may confound the counts for a new scan which could in the meantime
+ * be triggered.  It is thus best to allow these copy operations to complete by themselves without
+ * worrying about whether they originally were from a scan or not.</p>
  */
 public final class CheckpointUtils {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(CheckpointUtils.class);
+          = LoggerFactory.getLogger(CheckpointUtils.class);
 
     /**
      * <p>Read back in from the checkpoint file operation records.
-     *    These are converted to {@link FileUpdate} objects and passed
-     *    to {@link FileOperationHandler#handleLocationUpdate(FileUpdate)}(PnfsId, String)}
-     *    for registration.</p>
+     * These are converted to {@link FileUpdate} objects and passed to {@link
+     * FileOperationHandler#handleLocationUpdate(FileUpdate)}(PnfsId, String)} for
+     * registration.</p>
      *
      * <p>The file to be reloaded is renamed, so that any checkpointing
-     *    begun while the reload is in progress does not overwrite the file.
-     *    In the case of a failed reload, the reload file should be
-     *    manually merged into the current checkpoint file before restart.</p>
+     * begun while the reload is in progress does not overwrite the file. In the case of a failed
+     * reload, the reload file should be manually merged into the current checkpoint file before
+     * restart.</p>
      *
      * @param checkpointFilePath to read
-     * @param poolInfoMap for translating names to indices
-     * @param handler for registering the updates.
+     * @param poolInfoMap        for translating names to indices
+     * @param handler            for registering the updates.
      */
     public static void load(String checkpointFilePath,
-                    PoolInfoMap poolInfoMap,
-                    FileOperationMap pnfsMap,
-                    FileOperationHandler handler) {
+          PoolInfoMap poolInfoMap,
+          FileOperationMap pnfsMap,
+          FileOperationHandler handler) {
         if (!new File(checkpointFilePath).exists()) {
             return;
         }
@@ -154,7 +150,7 @@ public final class CheckpointUtils {
                     }
                 } catch (CacheException e) {
                     LOGGER.debug("Unable to reload operation for {}; {}",
-                                    line, e.getMessage());
+                          line, e.getMessage());
                 }
             }
             reload.delete();
@@ -162,7 +158,7 @@ public final class CheckpointUtils {
             LOGGER.error("Unable to reload checkpoint file: {}", e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during reload checkpoint file: {}",
-                            e.getMessage());
+                  e.getMessage());
         }
     }
 
@@ -182,19 +178,19 @@ public final class CheckpointUtils {
         Collection<String> excluded = new ArrayList<>();
 
         try (BufferedReader fr = new BufferedReader(new FileReader(current))) {
-                while (true) {
+            while (true) {
                 String line = fr.readLine();
                 if (line == null) {
                     break;
                 }
                 excluded.add(line);
             }
-           current.delete();
+            current.delete();
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to reload excluded pools file: {}", e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during reload excluded pools file: {}",
-                            e.getMessage());
+                  e.getMessage());
         }
 
         return excluded;
@@ -202,16 +198,16 @@ public final class CheckpointUtils {
 
     /**
      * <p>Since we use checkpointing as an approximation,
-     *      the fact that the ConcurrentMap (internal to the deque class)
-     *      may be dirty and that it is not locked should not matter greatly.</p>
+     * the fact that the ConcurrentMap (internal to the deque class) may be dirty and that it is not
+     * locked should not matter greatly.</p>
      *
      * @param checkpointFilePath where to write.
-     * @param poolInfoMap for translation of indices to names.
-     * @param iterator from a ConcurrentHashMap implementation of the index.
+     * @param poolInfoMap        for translation of indices to names.
+     * @param iterator           from a ConcurrentHashMap implementation of the index.
      * @return number of records written
      */
     public static long save(String checkpointFilePath, PoolInfoMap poolInfoMap,
-                            Iterator<FileOperation> iterator) {
+          Iterator<FileOperation> iterator) {
         File current = new File(checkpointFilePath);
         File old = new File(checkpointFilePath + "-old");
         if (current.exists()) {
@@ -234,7 +230,7 @@ public final class CheckpointUtils {
             LOGGER.error("Unable to save checkpoint file: {}", e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during save of checkpoint file: {}",
-                            e.getMessage());
+                  e.getMessage());
         }
 
         return count.get();
@@ -246,11 +242,10 @@ public final class CheckpointUtils {
      * <p>If there already is such a file, it is deleted.</p>
      *
      * @param excludedPoolsFile to read
-     * @param operations the pools which could potentially be
-     *                   in the excluded state.
+     * @param operations        the pools which could potentially be in the excluded state.
      */
     public static void save(String excludedPoolsFile,
-                            Map<String, PoolOperation> operations) {
+          Map<String, PoolOperation> operations) {
         File current = new File(excludedPoolsFile);
         if (current.exists()) {
             current.delete();
@@ -258,29 +253,29 @@ public final class CheckpointUtils {
 
         try (PrintWriter fw = new PrintWriter(new FileWriter(excludedPoolsFile, false))) {
             operations.entrySet().stream().filter((e) -> e.getValue().isExcluded())
-                                 .forEach((e) -> fw.println(e.getKey()));
+                  .forEach((e) -> fw.println(e.getKey()));
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to save excluded pools file: {}", e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during save of excluded pools file: {}",
-                            e.getMessage());
+                  e.getMessage());
         }
     }
 
     /**
-     *  <p>Write out the operation's relevant fields to the buffer.</p>
+     * <p>Write out the operation's relevant fields to the buffer.</p>
      *
-     *  <p>See the comments to the class for explanation of why checkpointed
-     *          operations are "orphaned".</p>
+     * <p>See the comments to the class for explanation of why checkpointed
+     * operations are "orphaned".</p>
      */
     private static boolean toString(FileOperation operation,
-                                    StringBuilder builder,
-                                    PoolInfoMap map) {
+          StringBuilder builder,
+          PoolInfoMap map) {
         Integer parent = operation.getParent();
         Integer source = operation.getSource();
         String pool = parent == null ?
-                        (source == null ? null : map.getPool(source)):
-                        map.getPool(parent);
+              (source == null ? null : map.getPool(source)) :
+              map.getPool(parent);
         if (pool == null) {
             /*
              *  Incomplete record.  Skip.
@@ -298,7 +293,7 @@ public final class CheckpointUtils {
 
     /**
      * <p>See the comments to the class for explanation of why checkpointed
-     *          operations are "orphaned".</p>
+     * operations are "orphaned".</p>
      *
      * @return update object constructed from the parsed line.
      */
@@ -311,12 +306,13 @@ public final class CheckpointUtils {
         int opCount = Integer.parseInt(parts[2]);
         Integer gindex = map.getGroupIndex(parts[3]);
         FileUpdate update = new FileUpdate(pnfsId, parts[4],
-                                           MessageType.ADD_CACHE_LOCATION,
-                                           gindex, true);
+              MessageType.ADD_CACHE_LOCATION,
+              gindex, true);
         update.setCount(opCount);
         update.setFromReload(true);
         return update;
     }
 
-    private CheckpointUtils() {}
+    private CheckpointUtils() {
+    }
 }

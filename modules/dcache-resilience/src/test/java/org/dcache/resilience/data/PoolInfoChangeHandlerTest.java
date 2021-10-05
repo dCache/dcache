@@ -59,27 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import com.google.common.collect.ImmutableList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.util.CacheException;
-import org.dcache.resilience.TestBase;
-import org.dcache.resilience.TestSynchronousExecutor;
-import org.dcache.resilience.TestSynchronousExecutor.Mode;
-import org.dcache.resilience.data.PoolOperation.State;
-import org.dcache.resilience.handlers.FileOperationHandler;
-import org.dcache.resilience.handlers.PoolInfoChangeHandler;
-import org.dcache.resilience.handlers.ResilienceMessageHandler;
-import org.dcache.resilience.util.BackloggedMessageHandler;
-import org.dcache.resilience.util.MessageGuard;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -90,15 +69,35 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.google.common.collect.ImmutableList;
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.dcache.resilience.TestBase;
+import org.dcache.resilience.TestSynchronousExecutor;
+import org.dcache.resilience.TestSynchronousExecutor.Mode;
+import org.dcache.resilience.data.PoolOperation.State;
+import org.dcache.resilience.handlers.FileOperationHandler;
+import org.dcache.resilience.handlers.PoolInfoChangeHandler;
+import org.dcache.resilience.handlers.ResilienceMessageHandler;
+import org.dcache.resilience.util.BackloggedMessageHandler;
+import org.dcache.resilience.util.MessageGuard;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 /**
  * <p>Tests the application of the pool monitor diffs.  Note that
- *      for the purposes of these tests, the transition from uninitialized pool
- *      to initialized is ignored.</p>
+ * for the purposes of these tests, the transition from uninitialized pool to initialized is
+ * ignored.</p>
  */
 public class PoolInfoChangeHandlerTest extends TestBase {
+
     PoolInfoChangeHandler poolMonitorChangeHandler;
-    PoolInfoDiff          diff;
-    Integer               removedPoolIndex;
+    PoolInfoDiff diff;
+    Integer removedPoolIndex;
 
     @Before
     public void setUp() throws CacheException {
@@ -116,12 +115,12 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         poolOperationMap.loadPools();
 
         poolInfoMap.getResilientPools().stream()
-                   .forEach((p) -> {
-                            PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
-                            PoolStateUpdate update = new PoolStateUpdate(p, mode);
-                            poolInfoMap.updatePoolStatus(update);
-                            poolOperationMap.update(update);
-                   });
+              .forEach((p) -> {
+                  PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
+                  PoolStateUpdate update = new PoolStateUpdate(p, mode);
+                  poolInfoMap.updatePoolStatus(update);
+                  poolOperationMap.update(update);
+              });
 
         ResilienceMessageHandler handler = new ResilienceMessageHandler();
         handler.setCounters(counters);
@@ -181,7 +180,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         whenPsuUpdateContainsNewPoolForPoolGroup("new-pool", "resilient-group");
         whenPsuChangeHelperIsCalled();
         assertThatPoolInfoContainsPoolForPoolGroup("new-pool",
-                        "resilient-group");
+              "resilient-group");
         assertThatPoolIsBeingScanned("new-pool");
     }
 
@@ -192,7 +191,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         whenPsuUpdateContainsNewPoolForPoolGroup("new-pool", "standard-group");
         whenPsuChangeHelperIsCalled();
         assertThatPoolInfoContainsPoolForPoolGroup("new-pool",
-                        "standard-group");
+              "standard-group");
         assertThatNoScanCalledFor("new-pool");
     }
 
@@ -210,7 +209,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         givenPsuUpdate();
         whenPsuUpdateContainsNewLinkToResilientUnitGroup("new-link");
         whenPsuUpdateContainsPoolGroupAddedToNewLink("standard-group",
-                        "new-link");
+              "new-link");
         whenPsuChangeHelperIsCalled();
         assertThatPoolInfoContainsResilientUnitsForPoolGroup("standard-group");
     }
@@ -229,7 +228,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         givenPsuUpdate();
         whenPoolIsWaitingToBeScanned("resilient_pool-1");
         whenPsuUpdateNoLongerContainsPoolForPoolGroup("resilient_pool-1",
-                        "resilient-group");
+              "resilient-group");
         whenPsuChangeHelperIsCalled();
         assertThatCancelScanHasBeenCalled();
         assertThatPoolIsBeingScanned("resilient_pool-1");
@@ -242,7 +241,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         whenPsuChangeHelperIsCalled();
         assertThatPoolInfoDoesNotContainPool("resilient_pool-2");
         assertThatPoolInfoDoesNotContainPoolForPoolGroup(removedPoolIndex,
-                        "resilient-group");
+              "resilient-group");
         assertThatNoScanCalledFor("resilient_pool-2");
     }
 
@@ -263,14 +262,14 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     public void shouldRemoveStorageUnitFromMap() {
         givenPsuUpdate();
         whenPsuUpdateNoLongerContainsStorageUnit(
-                        "resilient-0.dcache-devel-test@enstore");
+              "resilient-0.dcache-devel-test@enstore");
         whenPsuChangeHelperIsCalled();
         /*
          * This essentially 'orphans' files belonging to it.  Would not be
          * done without removing the files first.
          */
         assertThatPoolInfoDoesNotContainStorageUnit(
-                        "resilient-0.dcache-devel-test@enstore");
+              "resilient-0.dcache-devel-test@enstore");
         assertThatScanIsNotCalled();
     }
 
@@ -280,14 +279,14 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         whenPsuUpdateNoLongerContainsLink("resilient-link");
         whenPsuChangeHelperIsCalled();
         assertThatPoolInfoDoesNotContainResilientUnitsForPoolGroup(
-                        "resilient-group");
+              "resilient-group");
     }
 
     @Test
     public void shouldScanGroupWhenStorageConstraintsAreModified() {
         givenPsuUpdate();
         whenPsuUpdateContainsStorageUnitWithNewConstraints(
-                        "resilient-0.dcache-devel-test@enstore");
+              "resilient-0.dcache-devel-test@enstore");
         whenPsuChangeHelperIsCalled();
         assertThatPoolsInPoolGroupAreBeingScanned("resilient-group");
     }
@@ -309,10 +308,10 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatPoolInfoContainsPoolForPoolGroup(String pool,
-                    String group) {
+          String group) {
         assertTrue(poolInfoMap.getPoolsOfGroup(
-                        poolInfoMap.getGroupIndex(group)).contains(
-                        poolInfoMap.getPoolIndex(pool)));
+              poolInfoMap.getGroupIndex(group)).contains(
+              poolInfoMap.getPoolIndex(pool)));
     }
 
     private void assertThatPoolInfoContainsPoolGroup(String group) {
@@ -320,10 +319,10 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatPoolInfoContainsResilientUnitsForPoolGroup(
-                    String group) {
+          String group) {
         Set<String> units = poolInfoMap.getStorageUnitsFor(group).stream()
-                                       .map(poolInfoMap::getUnit)
-                                       .collect(Collectors.toSet());
+              .map(poolInfoMap::getUnit)
+              .collect(Collectors.toSet());
         assertTrue(units.contains("resilient-0.dcache-devel-test@enstore"));
         assertTrue(units.contains("resilient-1.dcache-devel-test@enstore"));
         assertTrue(units.contains("resilient-2.dcache-devel-test@enstore"));
@@ -345,9 +344,9 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatPoolInfoDoesNotContainPoolForPoolGroup(Integer pool,
-                    String group) {
+          String group) {
         assertFalse(poolInfoMap.getPoolsOfGroup(
-                        poolInfoMap.getGroupIndex(group)).contains(pool));
+              poolInfoMap.getGroupIndex(group)).contains(pool));
     }
 
     private void assertThatPoolInfoDoesNotContainPoolGroup(String group) {
@@ -360,9 +359,9 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatPoolInfoDoesNotContainResilientUnitsForPoolGroup(
-                    String group) {
+          String group) {
         Set<String> units = poolInfoMap.getStorageUnitsFor(group).stream().map(
-                        poolInfoMap::getGroup).collect(Collectors.toSet());
+              poolInfoMap::getGroup).collect(Collectors.toSet());
         assertFalse(units.contains("resilient-0.dcache-devel-test@enstore"));
         assertFalse(units.contains("resilient-1.dcache-devel-test@enstore"));
         assertFalse(units.contains("resilient-2.dcache-devel-test@enstore"));
@@ -391,9 +390,9 @@ public class PoolInfoChangeHandlerTest extends TestBase {
 
     private void assertThatPoolsInPoolGroupAreBeingScanned(String group) {
         poolInfoMap.getPoolsOfGroup(
-                        poolInfoMap.getGroupIndex(group)).stream().forEach(
-                        (p) -> assertThatPoolIsBeingScanned(
-                                        poolInfoMap.getPool(p)));
+              poolInfoMap.getGroupIndex(group)).stream().forEach(
+              (p) -> assertThatPoolIsBeingScanned(
+                    poolInfoMap.getPool(p)));
     }
 
     private void assertThatScanIsNotCalled() {
@@ -428,7 +427,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void whenPsuUpdateContainsNewPoolForPoolGroup(String pool,
-                    String group) {
+          String group) {
         getUpdatedPsu().addToPoolGroup(group, pool);
     }
 
@@ -441,13 +440,13 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void whenPsuUpdateContainsPoolGroupAddedToNewLink(String group,
-                    String link) {
+          String link) {
         getUpdatedPsu().addLink(link, group);
     }
 
     private void whenPsuUpdateContainsStorageUnitWithNewConstraints(String unit) {
         Integer required = getUpdatedPsu().getStorageUnit(unit).getRequiredCopies();
-        getUpdatedPsu().setStorageUnit(unit, required, new String[] { "subnet" });
+        getUpdatedPsu().setStorageUnit(unit, required, new String[]{"subnet"});
     }
 
     private void whenPsuUpdateNoLongerContainsLink(String link) {
@@ -460,14 +459,14 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void whenPsuUpdateNoLongerContainsPoolForPoolGroup(String pool,
-                    String group) {
+          String group) {
         getUpdatedPsu().removeFromPoolGroup(group, pool);
     }
 
     private void whenPsuUpdateNoLongerContainsPoolGroup(String group) {
         getUpdatedPsu().getPoolsByPoolGroup(group).stream().forEach(
-                        (p) -> getUpdatedPsu().removeFromPoolGroup(group,
-                                        p.getName()));
+              (p) -> getUpdatedPsu().removeFromPoolGroup(group,
+                    p.getName()));
         getUpdatedPsu().removePoolGroup(group);
     }
 

@@ -61,7 +61,6 @@ package org.dcache.resilience.util;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,29 +68,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.dcache.resilience.data.PoolInfoMap;
 
 /**
  * <p> Implementation of the {@link PoolTagConstraintDiscriminator} which returns
- *      a list containing the pools or locations with maximum weight.  The weights
- *      are computed in terms of the sum of the size of the value partitions
- *      to which they belong.  For instance, if pool1 has tag1 with value A and
- *      tag2 with value X, and A is shared by 3 other pools but X by 2, then
- *      pool1 has a weight of 5.</p>
+ * a list containing the pools or locations with maximum weight.  The weights are computed in terms
+ * of the sum of the size of the value partitions to which they belong.  For instance, if pool1 has
+ * tag1 with value A and tag2 with value X, and A is shared by 3 other pools but X by 2, then pool1
+ * has a weight of 5.</p>
  *
  * <p>The use case envisaged here is as follows:  a pnfsId/file has a set
- *      of locations which exceeds the maximum by some number K.  The caller
- *      responsible for removal will run getCandidateLocations() on this list
- *      up to K times, each time picking a location from the returned list using
- *      some selection algorithm, and removing the selected location from the
- *      original list, which is then passed in to the i+1 iteration.
- *      The set of weights is recomputed at each iteration based on the
- *      remaining locations.</p>
+ * of locations which exceeds the maximum by some number K.  The caller responsible for removal will
+ * run getCandidateLocations() on this list up to K times, each time picking a location from the
+ * returned list using some selection algorithm, and removing the selected location from the
+ * original list, which is then passed in to the i+1 iteration. The set of weights is recomputed at
+ * each iteration based on the remaining locations.</p>
  */
 public final class RemoveLocationExtractor
-                extends PoolTagConstraintDiscriminator {
+      extends PoolTagConstraintDiscriminator {
+
     class WeightedLocation {
+
         final String location;
         Integer weight;
 
@@ -106,14 +103,14 @@ public final class RemoveLocationExtractor
     }
 
     private final Multimap<String, String> tagValuesByLocation
-                    = ArrayListMultimap.create();
+          = ArrayListMultimap.create();
     private final Map<String, WeightedLocation> weights = new HashMap<>();
     private final PoolInfoMap info;
 
     private int maximal = 0;
 
     public RemoveLocationExtractor(Collection<String> onlyOneCopyPer,
-                                   PoolInfoMap info) {
+          PoolInfoMap info) {
         super(onlyOneCopyPer);
         this.info = info;
     }
@@ -133,13 +130,13 @@ public final class RemoveLocationExtractor
     }
 
     private Map<String, WeightedLocation>
-                calculateWeights(Collection<String> locations) {
+    calculateWeights(Collection<String> locations) {
         locations.stream()
-                 .forEach((l) -> weights.put(l,
-                                             new WeightedLocation(l, 0)));
+              .forEach((l) -> weights.put(l,
+                    new WeightedLocation(l, 0)));
 
-        for (String tag: partitionKeys) {
-            for (String location: locations) {
+        for (String tag : partitionKeys) {
+            for (String location : locations) {
                 Map<String, String> tags = getPoolTagsFor(location);
 
                 if (tags.isEmpty()) {
@@ -152,10 +149,10 @@ public final class RemoveLocationExtractor
                 }
             }
 
-            for (String value: tagValuesByLocation.keySet() ) {
+            for (String value : tagValuesByLocation.keySet()) {
                 Collection<String> locs = tagValuesByLocation.get(value);
                 int count = locs.size();
-                for (String location: locs) {
+                for (String location : locs) {
                     weights.get(location).incrementBy(count);
                 }
             }
@@ -167,17 +164,17 @@ public final class RemoveLocationExtractor
     }
 
     public String findALocationToEvict(Collection<String> locations,
-                                       Collection verified,
-                                       ReplicaVerifier verifier) {
-        Set<String> seen = new HashSet <>();
-        for (String location: locations) {
+          Collection verified,
+          ReplicaVerifier verifier) {
+        Set<String> seen = new HashSet<>();
+        for (String location : locations) {
             Map<String, String> tags = getPoolTagsFor(location);
-            for (String tag: partitionKeys) {
+            for (String tag : partitionKeys) {
                 if (tags.containsKey(tag)) {
                     String nameValue = tag + tags.get(tag);
                     if (seen.contains(nameValue)
-                                    && verifier.isRemovable(location,
-                                                            verified)) {
+                          && verifier.isRemovable(location,
+                          verified)) {
                         return location;
                     }
                     seen.add(nameValue);
@@ -190,9 +187,9 @@ public final class RemoveLocationExtractor
     private List<String> extractMaximal(Map<String, WeightedLocation> weights) {
         final int max = getMaximal(weights.values());
         List<String> maximal = weights.values().stream()
-                                               .filter((w) -> w.weight == max)
-                                               .map((w) -> w.location)
-                                               .collect(Collectors.toList());
+              .filter((w) -> w.weight == max)
+              .map((w) -> w.location)
+              .collect(Collectors.toList());
         weights.clear();
         return maximal;
     }

@@ -42,8 +42,7 @@ public class FsInode_ID extends FsInode {
     }
 
     @Override
-    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException
-    {
+    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException {
         byte[] b = (statCache().getId() + '\n').getBytes(StandardCharsets.US_ASCII);
 
         /*

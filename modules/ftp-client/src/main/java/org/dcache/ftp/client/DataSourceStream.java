@@ -15,18 +15,16 @@
  */
 package org.dcache.ftp.client;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.dcache.util.ByteUnit.KiB;
-
 /**
- * Reference implementation of DataSource. It can be used with
- * non-parallel transfers. It cannot be used with Extended Block Mode because
- * it is not thread safe.
+ * Reference implementation of DataSource. It can be used with non-parallel transfers. It cannot be
+ * used with Extended Block Mode because it is not thread safe.
  **/
-public class DataSourceStream implements DataSource
-{
+public class DataSourceStream implements DataSource {
 
     private static final int DEFAULT_BUFFER_SIZE = KiB.toBytes(16);
 
@@ -34,21 +32,18 @@ public class DataSourceStream implements DataSource
     protected final int bufferSize;
     protected long totalRead = 0;
 
-    public DataSourceStream(InputStream in)
-    {
+    public DataSourceStream(InputStream in) {
         this(in, DEFAULT_BUFFER_SIZE);
     }
 
-    public DataSourceStream(InputStream in, int bufferSize)
-    {
+    public DataSourceStream(InputStream in, int bufferSize) {
         this.in = in;
         this.bufferSize = bufferSize;
     }
 
     @Override
     public Buffer read()
-            throws IOException
-    {
+          throws IOException {
         byte[] buf = new byte[bufferSize];
         int read = in.read(buf);
         if (read == -1) {
@@ -62,14 +57,12 @@ public class DataSourceStream implements DataSource
 
     @Override
     public void close()
-            throws IOException
-    {
+          throws IOException {
         in.close();
     }
 
     @Override
-    public long totalSize()
-    {
+    public long totalSize() {
         return -1;
     }
 }

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.adjuster.adjusters;
 
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -78,135 +80,133 @@ import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
 import org.dcache.qos.util.CacheExceptionUtils;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
-
 /**
- *  Sends message to pin manager to pin file, triggering a stage.
- *  Task is synchronous (waits for reply).
+ * Sends message to pin manager to pin file, triggering a stage. Task is synchronous (waits for
+ * reply).
  */
 public final class StagingAdjuster extends QoSAdjuster {
-  private static final  String             QOS_PIN_REQUEST_ID = "qos";
-  private static final  long               QOS_PIN_TEMP_LIFETIME = TimeUnit.SECONDS.toMillis(30);
 
-  private static ProtocolInfo getProtocolInfo() throws URISyntaxException {
-    return new HttpProtocolInfo("Http",
-        1,
-        1,
-        new InetSocketAddress("localhost", 0),
-        null,
-        null,
-        null,
-        new URI("http",
-            "localhost",
-            null,
-            null));
-  }
+    private static final String QOS_PIN_REQUEST_ID = "qos";
+    private static final long QOS_PIN_TEMP_LIFETIME = TimeUnit.SECONDS.toMillis(30);
 
-  CellStub pinManager;
-  ExecutorService executorService;
-
-  private String poolGroup;
-  private FileAttributes attributes;
-  private ListenableFuture<PinManagerPinMessage> future;
-
-  @Override
-  protected void runAdjuster(QoSAdjusterTask task) {
-    poolGroup = task.getPoolGroup();
-    attributes = task.getAttributes();
-    executorService.submit(() -> {
-      handleStaging();
-      task.setToWaiting();
-    });
-  }
-
-  @Override
-  public synchronized void cancel(String explanation) {
-    if (future != null) {
-      future.cancel(true);
-      cancelPin();
-    }
-  }
-
-  /**
-   *  Polled by main map thread.  If the future is done, this will trigger the
-   *  completion handler.
-   */
-  public void poll() {
-    synchronized (this) {
-      if (future == null) {
-        completionHandler.taskFailed(pnfsId, Optional.empty(),
-            new CacheException(CacheException.SERVICE_UNAVAILABLE,
-                "no future returned by message send."));
-        return;
-      }
+    private static ProtocolInfo getProtocolInfo() throws URISyntaxException {
+        return new HttpProtocolInfo("Http",
+              1,
+              1,
+              new InetSocketAddress("localhost", 0),
+              null,
+              null,
+              null,
+              new URI("http",
+                    "localhost",
+                    null,
+                    null));
     }
 
-    PinManagerPinMessage migrationReply = null;
-    Object error = null;
+    CellStub pinManager;
+    ExecutorService executorService;
 
-    try {
-      LOGGER.debug("poll, checking pin request future.isDone() for {}.", pnfsId);
-      if (!future.isDone()) {
-        return;
-      }
+    private String poolGroup;
+    private FileAttributes attributes;
+    private ListenableFuture<PinManagerPinMessage> future;
 
-      migrationReply = getUninterruptibly(future);
-      if (migrationReply.getReturnCode() != 0) {
-        error = migrationReply.getErrorObject();
-      }
-    } catch (CancellationException e) {
-      /*
-       *  Cancelled state set by caller.
-       */
-    } catch (ExecutionException e) {
-      error = e.getCause();
+    @Override
+    protected void runAdjuster(QoSAdjusterTask task) {
+        poolGroup = task.getPoolGroup();
+        attributes = task.getAttributes();
+        executorService.submit(() -> {
+            handleStaging();
+            task.setToWaiting();
+        });
     }
 
-    LOGGER.debug("poll, calling completion handler for {}.", pnfsId);
-    String target = migrationReply.getPool();
-
-    if (error == null) {
-      completionHandler.taskCompleted(pnfsId, Optional.ofNullable(target));
-    } else if (error instanceof Throwable) {
-      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
-          new CacheException("Pin failure", (Throwable) error));
-    } else {
-      completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
-          new CacheException(String.valueOf(error)));
+    @Override
+    public synchronized void cancel(String explanation) {
+        if (future != null) {
+            future.cancel(true);
+            cancelPin();
+        }
     }
-  }
 
-  /**
-   *  Called when there are no available replicas, but the file can be retrieved from an HSM.
-   *  Issues a request.>
-   */
-  private synchronized void handleStaging() {
-    LOGGER.debug("handleStaging {}, pool group {}.", pnfsId, poolGroup);
-    try {
-      ACTIVITY_LOGGER.info("Staging {}", pnfsId);
-      PinManagerPinMessage message = new PinManagerPinMessage(attributes,
-                                                              getProtocolInfo(),
-                                                              QOS_PIN_REQUEST_ID,
-                                                              QOS_PIN_TEMP_LIFETIME);
-      future = pinManager.send(message, Long.MAX_VALUE);
+    /**
+     * Polled by main map thread.  If the future is done, this will trigger the completion handler.
+     */
+    public void poll() {
+        synchronized (this) {
+            if (future == null) {
+                completionHandler.taskFailed(pnfsId, Optional.empty(),
+                      new CacheException(CacheException.SERVICE_UNAVAILABLE,
+                            "no future returned by message send."));
+                return;
+            }
+        }
 
-      LOGGER.debug("handleStaging, sent pin manager request for {}.", pnfsId);
-    } catch (URISyntaxException e) {
-      completionHandler.taskFailed(pnfsId, Optional.empty(),
-                                   CacheExceptionUtils.getCacheException(CacheException.INVALID_ARGS,
-                                        "could not construct HTTP protocol: %s.",
-                                         pnfsId,
-                                         action,
-                                         e.getMessage(),
-                                         null));
-      }
-  }
+        PinManagerPinMessage migrationReply = null;
+        Object error = null;
 
-  private void cancelPin() {
-    LOGGER.debug("handleStaging, cancelling pin {}.", pnfsId);
-    ACTIVITY_LOGGER.info("handleStaging, cancelling pin {}", pnfsId);
-    PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
-    pinManager.send(message, Long.MAX_VALUE);
-    LOGGER.debug("handleStaging, sent pin manager request to unpin {}.", pnfsId);
-  }
+        try {
+            LOGGER.debug("poll, checking pin request future.isDone() for {}.", pnfsId);
+            if (!future.isDone()) {
+                return;
+            }
+
+            migrationReply = getUninterruptibly(future);
+            if (migrationReply.getReturnCode() != 0) {
+                error = migrationReply.getErrorObject();
+            }
+        } catch (CancellationException e) {
+            /*
+             *  Cancelled state set by caller.
+             */
+        } catch (ExecutionException e) {
+            error = e.getCause();
+        }
+
+        LOGGER.debug("poll, calling completion handler for {}.", pnfsId);
+        String target = migrationReply.getPool();
+
+        if (error == null) {
+            completionHandler.taskCompleted(pnfsId, Optional.ofNullable(target));
+        } else if (error instanceof Throwable) {
+            completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
+                  new CacheException("Pin failure", (Throwable) error));
+        } else {
+            completionHandler.taskFailed(pnfsId, Optional.ofNullable(target),
+                  new CacheException(String.valueOf(error)));
+        }
+    }
+
+    /**
+     * Called when there are no available replicas, but the file can be retrieved from an HSM.
+     * Issues a request.>
+     */
+    private synchronized void handleStaging() {
+        LOGGER.debug("handleStaging {}, pool group {}.", pnfsId, poolGroup);
+        try {
+            ACTIVITY_LOGGER.info("Staging {}", pnfsId);
+            PinManagerPinMessage message = new PinManagerPinMessage(attributes,
+                  getProtocolInfo(),
+                  QOS_PIN_REQUEST_ID,
+                  QOS_PIN_TEMP_LIFETIME);
+            future = pinManager.send(message, Long.MAX_VALUE);
+
+            LOGGER.debug("handleStaging, sent pin manager request for {}.", pnfsId);
+        } catch (URISyntaxException e) {
+            completionHandler.taskFailed(pnfsId, Optional.empty(),
+                  CacheExceptionUtils.getCacheException(CacheException.INVALID_ARGS,
+                        "could not construct HTTP protocol: %s.",
+                        pnfsId,
+                        action,
+                        e.getMessage(),
+                        null));
+        }
+    }
+
+    private void cancelPin() {
+        LOGGER.debug("handleStaging, cancelling pin {}.", pnfsId);
+        ACTIVITY_LOGGER.info("handleStaging, cancelling pin {}", pnfsId);
+        PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+        pinManager.send(message, Long.MAX_VALUE);
+        LOGGER.debug("handleStaging, sent pin manager request to unpin {}.", pnfsId);
+    }
 }

@@ -68,6 +68,6 @@ public final class DcacheReadsDaily extends TransferredEntry {
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + size + ","
-                        + transferred + ")";
+              + transferred + ")";
     }
 }

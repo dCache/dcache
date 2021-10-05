@@ -74,8 +74,7 @@ import java.io.Serializable;
  */
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public final class AccessLatency implements Serializable {
 
@@ -87,23 +86,23 @@ public final class AccessLatency implements Serializable {
     /**
      * An {@code AccessLatency} with lowest possible latency for given system.
      */
-    public static final AccessLatency ONLINE        = new AccessLatency("ONLINE",    1);
+    public static final AccessLatency ONLINE = new AccessLatency("ONLINE", 1);
 
     /**
-     * An {@code AccessLatency} which indicates that file's access latency
-     * can be improved by changing to {@link ONLINE} state.
+     * An {@code AccessLatency} which indicates that file's access latency can be improved by
+     * changing to {@link ONLINE} state.
      */
-    public static final AccessLatency NEARLINE     = new AccessLatency("NEARLINE", 0);
+    public static final AccessLatency NEARLINE = new AccessLatency("NEARLINE", 0);
 
     private final static AccessLatency[] ALL_LATENCIES = {
-        ONLINE,
-        NEARLINE
+          ONLINE,
+          NEARLINE
     };
 
     /**
      * Creates a new instance of FileState
      */
-    private AccessLatency(String name,int id) {
+    private AccessLatency(String name, int id) {
         _name = name;
         _id = id;
     }
@@ -120,16 +119,16 @@ public final class AccessLatency implements Serializable {
     public int getId() {
         return _id;
     }
+
     /**
-     * this package visible method is used to restore the FileState from
-     * the database
+     * this package visible method is used to restore the FileState from the database
      */
     public static AccessLatency getAccessLatency(String latency) throws IllegalArgumentException {
-        if(latency == null || latency.equalsIgnoreCase("null")) {
+        if (latency == null || latency.equalsIgnoreCase("null")) {
             throw new NullPointerException(" null state ");
         }
 
-        for(AccessLatency al: getAllLatencies()) {
+        for (AccessLatency al : getAllLatencies()) {
             if (al._name.equalsIgnoreCase(latency)) {
                 return al;
             }
@@ -169,6 +168,6 @@ public final class AccessLatency implements Serializable {
     }
 
     public Object readResolve() throws ObjectStreamException {
-       return AccessLatency.getAccessLatency(getId());
+        return AccessLatency.getAccessLatency(getId());
     }
 }

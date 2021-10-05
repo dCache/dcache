@@ -17,9 +17,17 @@
  */
 package org.dcache.macaroons;
 
+import static org.dcache.macaroons.ZookeeperSecretHandler.ZK_MACAROONS;
+
 import com.google.common.base.Throwables;
 import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteSource;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Optional;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -28,28 +36,18 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.KeeperException;
+import org.dcache.cells.CuratorFrameworkAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.util.Optional;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
-
-import org.dcache.cells.CuratorFrameworkAware;
-
-import static org.dcache.macaroons.ZookeeperSecretHandler.ZK_MACAROONS;
-
 /**
- * A Zookeeper-backed storage for IdentifiedSecrets.  This class also maintains
- * an in-memory storage for improved performance when searching for suitable
- * existing secrets, or when handling expired secrets.
+ * A Zookeeper-backed storage for IdentifiedSecrets.  This class also maintains an in-memory storage
+ * for improved performance when searching for suitable existing secrets, or when handling expired
+ * secrets.
  */
-public class ZookeeperSecretStorage implements PathChildrenCacheListener, CuratorFrameworkAware, CellLifeCycleAware
-{
+public class ZookeeperSecretStorage implements PathChildrenCacheListener, CuratorFrameworkAware,
+      CellLifeCycleAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperSecretStorage.class);
     private static final String ZK_MACAROONS_SECRETS = ZKPaths.makePath(ZK_MACAROONS, "secrets");
     private static final String IDENTITY_KEY = "id:";
@@ -61,15 +59,13 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
     private CuratorFramework client;
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         this.client = client;
         cache = new PathChildrenCache(client, ZK_MACAROONS_SECRETS, true);
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         cache.getListenable().addListener(this);
         try {
             cache.start();
@@ -80,49 +76,46 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         CloseableUtils.closeQuietly(cache);
     }
 
     @Override
-    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws IOException
-    {
+    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event)
+          throws IOException {
         LOGGER.debug("Recieved event {}", event);
 
         ChildData child = event.getData();
 
         switch (event.getType()) {
-        case CHILD_REMOVED:
-            storage.remove(expiryFromPath(child.getPath()));
-            break;
+            case CHILD_REMOVED:
+                storage.remove(expiryFromPath(child.getPath()));
+                break;
 
-        case CHILD_UPDATED:
-            LOGGER.error("Secret unexpectedly updated: {}", event);
-            break;
+            case CHILD_UPDATED:
+                LOGGER.error("Secret unexpectedly updated: {}", event);
+                break;
 
-        case CHILD_ADDED:
-            storage.put(expiryFromPath(child.getPath()), decodeSecret(child.getData()));
-            break;
+            case CHILD_ADDED:
+                storage.put(expiryFromPath(child.getPath()), decodeSecret(child.getData()));
+                break;
         }
     }
 
-    private Instant expiryFromPath(String path) throws DateTimeParseException
-    {
+    private Instant expiryFromPath(String path) throws DateTimeParseException {
         String expiry = ZKPaths.getNodeFromPath(path);
         return Instant.parse(expiry);
     }
 
-    private String pathFromExpiry(Instant expiry)
-    {
+    private String pathFromExpiry(Instant expiry) {
         return ZKPaths.makePath(ZK_MACAROONS_SECRETS, expiry.toString());
     }
 
-    private IdentifiedSecret decodeSecret(byte[] data) throws IOException
-    {
+    private IdentifiedSecret decodeSecret(byte[] data) throws IOException {
         String id = null;
         String encodedSecret = null;
-        for (String line : ByteSource.wrap(data).asCharSource(StandardCharsets.US_ASCII).readLines()) {
+        for (String line : ByteSource.wrap(data).asCharSource(StandardCharsets.US_ASCII)
+              .readLines()) {
             if (line.startsWith(IDENTITY_KEY)) {
                 id = line.substring(IDENTITY_KEY.length());
             } else if (line.startsWith(SECRET_KEY)) {
@@ -142,8 +135,7 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
         }
     }
 
-    private byte[] encodeSecret(IdentifiedSecret secret)
-    {
+    private byte[] encodeSecret(IdentifiedSecret secret) {
         String encodedSecret = BaseEncoding.base64().omitPadding().encode(secret.getSecret());
 
         StringBuilder sb = new StringBuilder();
@@ -152,27 +144,25 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
         return sb.toString().getBytes(StandardCharsets.US_ASCII);
     }
 
-    public void removeExpiredSecrets()
-    {
+    public void removeExpiredSecrets() {
         storage.expiringBefore(Instant.now()).forEach(this::remove);
     }
 
-    public byte[] get(String identifier)
-    {
+    public byte[] get(String identifier) {
         return storage.get(identifier);
     }
 
-    public Optional<IdentifiedSecret> firstExpiringAfter(Instant earliestExpiry)
-    {
+    public Optional<IdentifiedSecret> firstExpiringAfter(Instant earliestExpiry) {
         return storage.firstExpiringAfter(earliestExpiry);
     }
 
-    public IdentifiedSecret put(Instant expiry, IdentifiedSecret secret) throws Exception
-    {
-        LOGGER.debug("Adding secret {} into ZK with expire after {}", secret.getIdentifier(), expiry);
+    public IdentifiedSecret put(Instant expiry, IdentifiedSecret secret) throws Exception {
+        LOGGER.debug("Adding secret {} into ZK with expire after {}", secret.getIdentifier(),
+              expiry);
 
         try {
-            client.create().creatingParentsIfNeeded().forPath(pathFromExpiry(expiry), encodeSecret(secret));
+            client.create().creatingParentsIfNeeded()
+                  .forPath(pathFromExpiry(expiry), encodeSecret(secret));
             storage.put(expiry, secret);
             return secret;
         } catch (KeeperException.NodeExistsException e) {
@@ -182,8 +172,7 @@ public class ZookeeperSecretStorage implements PathChildrenCacheListener, Curato
         }
     }
 
-    private void remove(Instant expiry)
-    {
+    private void remove(Instant expiry) {
         LOGGER.debug("Removing secret expiring at {} from ZK", expiry);
 
         String path = pathFromExpiry(expiry);

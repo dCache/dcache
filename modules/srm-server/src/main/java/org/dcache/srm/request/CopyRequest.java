@@ -66,17 +66,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-
-import javax.annotation.Nonnull;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -86,9 +82,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.Nonnull;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -122,17 +117,17 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public final class CopyRequest extends ContainerRequest<CopyFileRequest>
-        implements PropertyChangeListener, DelegatedCredentialAware
-{
+      implements PropertyChangeListener, DelegatedCredentialAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyRequest.class);
     private static final String SFN_STRING = "?SFN=";
 
@@ -151,36 +146,36 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     private final transient String targetSpaceToken;
     private final transient Transport clientTransport;
 
-    private final transient Multimap<String,Long> remoteSurlToFileReqIds = HashMultimap.create();
+    private final transient Multimap<String, Long> remoteSurlToFileReqIds = HashMultimap.create();
     private transient TurlGetterPutter remoteTurlClient;
     private final transient QOSPlugin qosPlugin;
 
     private volatile boolean processingDone;
 
     public CopyRequest(@Nonnull String srmId,
-            SRMUser user,
-            Long requestCredentialId,
-            URI[] sourceUrl,
-            URI[] destinationUrl,
-            String spaceToken,
-            long lifetime,
-            long maxUpdatePeriod,
-            TFileStorageType storageType,
-            TRetentionPolicy targetRetentionPolicy,
-            TAccessLatency targetAccessLatency,
-            String description,
-            String clientHost,
-            TOverwriteMode overwriteMode,
-            ImmutableMap<String,String> extraInfo)
-    {
+          SRMUser user,
+          Long requestCredentialId,
+          URI[] sourceUrl,
+          URI[] destinationUrl,
+          String spaceToken,
+          long lifetime,
+          long maxUpdatePeriod,
+          TFileStorageType storageType,
+          TRetentionPolicy targetRetentionPolicy,
+          TAccessLatency targetAccessLatency,
+          String description,
+          String clientHost,
+          TOverwriteMode overwriteMode,
+          ImmutableMap<String, String> extraInfo) {
         super(srmId, user, maxUpdatePeriod, lifetime, description, clientHost,
               id -> {
                   checkArgument(sourceUrl.length == destinationUrl.length,
-                                "unequal number of elements in url arrays");
+                        "unequal number of elements in url arrays");
                   ImmutableList.Builder<CopyFileRequest> requests = ImmutableList.builder();
                   for (int i = 0; i < sourceUrl.length; ++i) {
-                      requests.add(new CopyFileRequest(id, requestCredentialId, sourceUrl[i], destinationUrl[i],
-                                                       spaceToken, lifetime, extraInfo));
+                      requests.add(new CopyFileRequest(id, requestCredentialId, sourceUrl[i],
+                            destinationUrl[i],
+                            spaceToken, lifetime, extraInfo));
                   }
                   return requests.build();
               });
@@ -215,33 +210,32 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
      * restore constructor
      */
     public CopyRequest(@Nonnull String srmId,
-            long id,
-            Long nextJobId,
-            long creationTime,
-            long lifetime,
-            int stateId,
-            SRMUser user,
-            String scheduelerId,
-            long schedulerTimeStamp,
-            int numberOfRetries,
-            long lastStateTransitionTime,
-            JobHistory[] jobHistoryArray,
-            Long credentialId,
-            ImmutableList<CopyFileRequest> fileRequest,
-            int retryDeltaTime,
-            boolean should_updateretryDeltaTime,
-            String description,
-            String client_host,
-            String statusCodeString,
-            TFileStorageType storageType,
-            TRetentionPolicy targetRetentionPolicy,
-            TAccessLatency targetAccessLatency)
-    {
+          long id,
+          Long nextJobId,
+          long creationTime,
+          long lifetime,
+          int stateId,
+          SRMUser user,
+          String scheduelerId,
+          long schedulerTimeStamp,
+          int numberOfRetries,
+          long lastStateTransitionTime,
+          JobHistory[] jobHistoryArray,
+          Long credentialId,
+          ImmutableList<CopyFileRequest> fileRequest,
+          int retryDeltaTime,
+          boolean should_updateretryDeltaTime,
+          String description,
+          String client_host,
+          String statusCodeString,
+          TFileStorageType storageType,
+          TRetentionPolicy targetRetentionPolicy,
+          TAccessLatency targetAccessLatency) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId,
-                user, scheduelerId, schedulerTimeStamp, numberOfRetries,
-                lastStateTransitionTime, jobHistoryArray,
-                fileRequest, retryDeltaTime, should_updateretryDeltaTime,
-                description, client_host, statusCodeString);
+              user, scheduelerId, schedulerTimeStamp, numberOfRetries,
+              lastStateTransitionTime, jobHistoryArray,
+              fileRequest, retryDeltaTime, should_updateretryDeltaTime,
+              description, client_host, statusCodeString);
 
         ArrayList<String> allowedProtocols = new ArrayList<>(4);
 
@@ -268,17 +262,15 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         this.overwriteMode = null;
         this.credentialId = credentialId;
         targetSpaceToken = null;
-     }
+    }
 
     @Override
-    public Long getCredentialId()
-    {
+    public Long getCredentialId() {
         return credentialId;
     }
 
     public void proccessRequest() throws DataAccessException, IOException,
-            SRMException, InterruptedException, IllegalStateTransition
-    {
+          SRMException, InterruptedException, IllegalStateTransition {
         if (getNumOfFileRequest() == 0) {
             try {
                 setState(State.FAILED, "Request contains zero file requests.");
@@ -293,8 +285,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         getTURLs();
     }
 
-    private void identify() throws IOException, SRMException
-    {
+    private void identify() throws IOException, SRMException {
         wlock();
         try {
             URI source = getFileRequests().get(0).getSourceSurl();
@@ -311,18 +302,19 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 URI sourceSurl = cfr.getSourceSurl();
                 URI destinationSurl = cfr.getDestinationSurl();
                 if (!sourceSurl.getScheme().equals(sourceProtocol) ||
-                    !sourceSurl.getHost().equals(sourceHost) ||
-                    sourceSurl.getPort() != sourcePort) {
-                    String err = "Source URL " + sourceSurl + " is inconsistent with first source URL";
+                      !sourceSurl.getHost().equals(sourceHost) ||
+                      sourceSurl.getPort() != sourcePort) {
+                    String err =
+                          "Source URL " + sourceSurl + " is inconsistent with first source URL";
                     LOGGER.error(err);
                     throw new IOException(err);
                 }
 
                 if (!destinationSurl.getScheme().equals(destinationProtocol) ||
-                    !destinationSurl.getHost().equals(destinationHost) ||
-                    destinationSurl.getPort() != destinationPort) {
+                      !destinationSurl.getHost().equals(destinationHost) ||
+                      destinationSurl.getPort() != destinationPort) {
                     String err = "Destination URL " + destinationSurl +
-                                 " is inconsistent with first destination URL";
+                          " is inconsistent with first destination URL";
                     LOGGER.error(err);
                     throw new IOException(err);
                 }
@@ -336,11 +328,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             isDestinationLocal = storage.isLocalSurl(destination);
 
             LOGGER.debug("src (srm={}, local={}), dest (srm={}, local={})",
-                      isSourceSrm, isSourceLocal, isDestinationSrm, isDestinationLocal);
+                  isSourceSrm, isSourceLocal, isDestinationSrm, isDestinationLocal);
 
             if (!isSourceLocal && !isDestinationLocal) {
-                LOGGER.error("Both source ({}) and destination ({}) URLs are remote.", source, destination);
-                throw new SRMInvalidRequestException("Both source and destination URLs are remote.");
+                LOGGER.error("Both source ({}) and destination ({}) URLs are remote.", source,
+                      destination);
+                throw new SRMInvalidRequestException(
+                      "Both source and destination URLs are remote.");
             }
         } finally {
             wunlock();
@@ -348,22 +342,21 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     private void makeQosReservation(int fileIndex) throws MalformedURLException,
-            SRMException
-    {
+          SRMException {
         try {
             CopyFileRequest cfr = getFileRequests().get(fileIndex);
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             QOSTicket qosTicket = getQosPlugin().createTicket(
-                    credential.getCredentialName(),
-                    getStorage().getFileMetaData(getUser(), cfr.getSourceSurl(), false).size,
-                    cfr.getSourceSurl().toASCIIString(),
-                    cfr.getSourceSurl().getPort(),
-                    cfr.getSourceSurl().getPort(),
-                    cfr.getSourceSurl().getScheme(),
-                    cfr.getDestinationSurl().toASCIIString(),
-                    cfr.getDestinationSurl().getPort(),
-                    cfr.getDestinationSurl().getPort(),
-                    cfr.getDestinationSurl().getScheme());
+                  credential.getCredentialName(),
+                  getStorage().getFileMetaData(getUser(), cfr.getSourceSurl(), false).size,
+                  cfr.getSourceSurl().toASCIIString(),
+                  cfr.getSourceSurl().getPort(),
+                  cfr.getSourceSurl().getPort(),
+                  cfr.getSourceSurl().getScheme(),
+                  cfr.getDestinationSurl().toASCIIString(),
+                  cfr.getDestinationSurl().getPort(),
+                  cfr.getDestinationSurl().getPort(),
+                  cfr.getDestinationSurl().getScheme());
             getQosPlugin().addTicket(qosTicket);
             if (getQosPlugin().submit()) {
                 cfr.setQOSTicket(qosTicket);
@@ -375,11 +368,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     private void getTURLs() throws SRMException, IOException,
-            InterruptedException, IllegalStateTransition, DataAccessException
-    {
+          InterruptedException, IllegalStateTransition, DataAccessException {
         if (isSourceSrm() && !isSourceLocal()) { // implying destination is local
             if (getStorageType() != null && !storageType.equals(TFileStorageType.PERMANENT)) {
-                  throw new SRMNotSupportedException("TargetFileStorageType " + getStorageType() + " is not supported");
+                throw new SRMNotSupportedException(
+                      "TargetFileStorageType " + getStorageType() + " is not supported");
             }
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             LOGGER.debug("obtained credential={} id={}", credential, credential.getId());
@@ -391,7 +384,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                     } else {
                         // Since source SURLs are local, we can just set the path
-                        remoteSurlToFileReqIds.put(cfr.getSourceSurl().toASCIIString(), cfr.getId());
+                        remoteSurlToFileReqIds.put(cfr.getSourceSurl().toASCIIString(),
+                              cfr.getId());
                         String path = localPathFromSurl(cfr.getDestinationSurl());
                         LOGGER.debug("setting destination path to {}", path);
                         cfr.setLocalDestinationPath(path);
@@ -400,19 +394,19 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 }
             }
             String[] remoteSurlsUniqueArray = remoteSurlToFileReqIds.keySet()
-                            .toArray(String[]::new);
+                  .toArray(String[]::new);
             if (LOGGER.isDebugEnabled()) {
                 for (int i = 0; i < remoteSurlsUniqueArray.length; ++i) {
                     LOGGER.debug("remoteSurlsUniqueArray[{}]={}", i,
-                            remoteSurlsUniqueArray[i]);
+                          remoteSurlsUniqueArray[i]);
                 }
             }
             // need to fetch files from remote SRM system
             setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
-                    credential, remoteSurlsUniqueArray, getProtocols(),
-                    this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                    this.getRemainingLifetime(), getConfiguration().getCaCertificatePath(),
-                    clientTransport));
+                  credential, remoteSurlsUniqueArray, getProtocols(),
+                  this, getConfiguration().getCopyMaxPollPeriod(), 2,
+                  this.getRemainingLifetime(), getConfiguration().getCaCertificatePath(),
+                  clientTransport));
             getRemoteTurlClient().getInitialRequest();
             getRemoteTurlClient().run();
             return;
@@ -423,7 +417,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 CopyFileRequest cfr = getFileRequests().get(i);
 
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
-                        cfr.getLocalSourcePath() == null) {
+                      cfr.getLocalSourcePath() == null) {
                     String path = localPathFromSurl(cfr.getSourceSurl());
                     LOGGER.debug("setting source path to {}", path);
                     cfr.setLocalSourcePath(path);
@@ -435,8 +429,9 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 CopyFileRequest cfr = getFileRequests().get(i);
 
                 if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
-                        cfr.getSourceTurl() == null) {
-                    LOGGER.debug("getTurlsArrived, setting \"from\" turl to {}", cfr.getSourceSurl());
+                      cfr.getSourceTurl() == null) {
+                    LOGGER.debug("getTurlsArrived, setting \"from\" turl to {}",
+                          cfr.getSourceSurl());
                     cfr.setSourceTurl(cfr.getSourceSurl());
                     cfr.saveJob();
                 }
@@ -509,21 +504,20 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
-                                                   credential, destinationSurls, sizes, getProtocols(), this,
-                                                   getConfiguration().getCopyMaxPollPeriod(), 2,
-                                                   this.getRemainingLifetime(), getStorageType(),
-                                                   getTargetRetentionPolicy(), getTargetAccessLatency(),
-                                                   getOverwriteMode(), getTargetSpaceToken(),
-                                                   getConfiguration().getCaCertificatePath(),
-                                                   clientTransport));
+              credential, destinationSurls, sizes, getProtocols(), this,
+              getConfiguration().getCopyMaxPollPeriod(), 2,
+              this.getRemainingLifetime(), getStorageType(),
+              getTargetRetentionPolicy(), getTargetAccessLatency(),
+              getOverwriteMode(), getTargetSpaceToken(),
+              getConfiguration().getCaCertificatePath(),
+              clientTransport));
         getRemoteTurlClient().getInitialRequest();
 
         getRemoteTurlClient().run();
     }
 
     public void turlArrived(String surl, String turl, String remoteRequestId,
-            String remoteFileId, Long size)
-    {
+          String remoteFileId, Long size) {
         Collection<Long> fileRequestIds;
         synchronized (remoteSurlToFileReqIds) {
             fileRequestIds = remoteSurlToFileReqIds.removeAll(surl);
@@ -556,7 +550,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         cfr.scheduleWith(Scheduler.getScheduler(theSchedulerId));
                     }
                 } catch (IllegalStateException | IllegalArgumentException |
-                        IllegalStateTransition e) {
+                      IllegalStateTransition e) {
                     LOGGER.error("failed to schedule CopyFileRequest {}: {}", cfr, e.toString());
                     try {
                         cfr.setState(State.FAILED, "Failed to schedule request: " + e.getMessage());
@@ -569,8 +563,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     public void turlRetrievalFailed(String surl, String reason,
-            String remoteRequestId, String remoteFileId)
-    {
+          String remoteRequestId, String remoteFileId) {
         Collection<Long> fileRequestSet;
         synchronized (remoteSurlToFileReqIds) {
             fileRequestSet = remoteSurlToFileReqIds.removeAll(surl);
@@ -593,8 +586,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         remoteFileRequestDone(surl, remoteRequestId, remoteFileId);
     }
 
-    public void turlsRetrievalFailed(Object reason)
-    {
+    public void turlsRetrievalFailed(Object reason) {
         ArrayList<Map.Entry<String, Long>> entries;
         synchronized (remoteSurlToFileReqIds) {
             entries = new ArrayList<>(remoteSurlToFileReqIds.entries());
@@ -614,38 +606,36 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public void remoteFileRequestDone(String surl, String requestId, String fileId)
-    {
+    public void remoteFileRequestDone(String surl, String requestId, String fileId) {
         try {
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             String caCertificatePath = getConfiguration().getCaCertificatePath();
             if (isSourceSrm() && !isSourceLocal()) {
-               RemoteTurlGetterV2.staticReleaseFile(credential,
-                                                    surl, requestId,
-                                                    0,
-                                                    0,
-                                                    caCertificatePath,
-                                                    clientTransport);
+                RemoteTurlGetterV2.staticReleaseFile(credential,
+                      surl, requestId,
+                      0,
+                      0,
+                      caCertificatePath,
+                      clientTransport);
             } else {
                 RemoteTurlPutterV2.staticPutDone(credential,
-                                                 surl, requestId,
-                                                 0,
-                                                 0,
-                                                 caCertificatePath,
-                                                 clientTransport);
+                      surl, requestId,
+                      0,
+                      0,
+                      caCertificatePath,
+                      clientTransport);
             }
         } catch (Exception e) {
             LOGGER.error("set remote file status to done failed, surl={}, " +
-                     "requestId={}, fileId={}", surl, requestId, fileId);
+                  "requestId={}, fileId={}", surl, requestId, fileId);
         }
     }
 
     private CopyFileRequest getFileRequestBySurls(String source, String destination)
-            throws SRMInvalidRequestException, SRMInvalidPathException
-    {
+          throws SRMInvalidRequestException, SRMInvalidPathException {
         for (CopyFileRequest request : getFileRequests()) {
             if (request.getSourceSurl().toString().equals(source) &&
-                    request.getDestinationSurl().toString().equals(destination)) {
+                  request.getDestinationSurl().toString().equals(destination)) {
                 return request;
             }
         }
@@ -654,8 +644,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
 
     @Override
-    public void run() throws SRMException, IllegalStateTransition
-    {
+    public void run() throws SRMException, IllegalStateTransition {
         if (!getState().isFinal() && !isProcessingDone()) {
             try {
                 proccessRequest();
@@ -682,8 +671,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         if (newState.isFinal()) {
             TurlGetterPutter client = getRemoteTurlClient();
             if (client != null) {
@@ -708,8 +696,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         LOGGER.debug("propertyChange");
         try {
             if (evt instanceof TURLsArrivedEvent) {
@@ -719,16 +706,16 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 String remoteRequestId = tae.getRequestId();
                 String remoteFileId = tae.getFileRequestId();
                 Long size = tae.getSize();
-                turlArrived(SURL, TURL, remoteRequestId,remoteFileId, size);
+                turlArrived(SURL, TURL, remoteRequestId, remoteFileId, size);
             } else if (evt instanceof TURLsGetFailedEvent) {
-                TURLsGetFailedEvent tgfe = (TURLsGetFailedEvent)evt;
+                TURLsGetFailedEvent tgfe = (TURLsGetFailedEvent) evt;
                 String SURL = tgfe.getSURL();
                 String reason = tgfe.getReason();
                 String remoteRequestId = tgfe.getRequestId();
                 String remoteFileId = tgfe.getFileRequestId();
                 turlRetrievalFailed(SURL, reason, remoteRequestId, remoteFileId);
             } else if (evt instanceof RequestFailedEvent) {
-                RequestFailedEvent rfe = (RequestFailedEvent)evt;
+                RequestFailedEvent rfe = (RequestFailedEvent) evt;
                 Object reason = rfe.getReason();
                 turlsRetrievalFailed(reason);
             }
@@ -737,8 +724,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public void fileRequestCompleted()
-    {
+    public void fileRequestCompleted() {
         resetRetryDeltaTime();
 
         if (isProcessingDone()) {
@@ -769,24 +755,22 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public final SrmCopyResponse getSrmCopyResponse() throws SRMInvalidRequestException
-    {
+    public final SrmCopyResponse getSrmCopyResponse() throws SRMInvalidRequestException {
         SrmCopyResponse response = new SrmCopyResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
-        response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses()));
+        response.setArrayOfFileStatuses(
+              new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses()));
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
-    private String getTRequestToken()
-    {
+    private String getTRequestToken() {
         return String.valueOf(getId());
     }
 
     public final TCopyRequestFileStatus[] getArrayOfTCopyRequestFileStatuses()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         List<CopyFileRequest> fileRequests = getFileRequests();
         int len = fileRequests.size();
         TCopyRequestFileStatus[] copyRequestFileStatuses = new TCopyRequestFileStatus[len];
@@ -797,9 +781,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     public final TCopyRequestFileStatus[] getArrayOfTCopyRequestFileStatuses(
-            org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
-            throws SRMInvalidRequestException
-    {
+          org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
+          throws SRMInvalidRequestException {
         if (fromurls == null && tourls == null) {
             return getArrayOfTCopyRequestFileStatuses();
         }
@@ -808,27 +791,29 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         TCopyRequestFileStatus[] copyRequestFileStatuses = new TCopyRequestFileStatus[len];
         for (int i = 0; i < len; ++i) {
             try {
-                copyRequestFileStatuses[i] = getFileRequestBySurls(fromurls[i].toString(), tourls[i].toString()).getTCopyRequestFileStatus();
+                copyRequestFileStatuses[i] = getFileRequestBySurls(fromurls[i].toString(),
+                      tourls[i].toString()).getTCopyRequestFileStatus();
             } catch (SRMInvalidPathException e) {
                 copyRequestFileStatuses[i] = new TCopyRequestFileStatus(fromurls[i], tourls[i],
-                        new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "No such file request"), null, null, null);
+                      new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "No such file request"), null,
+                      null, null);
             }
         }
         return copyRequestFileStatuses;
     }
 
     public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
-            throws SRMInvalidRequestException
-    {
-        return getSrmStatusOfCopyRequest(null,null);
+          throws SRMInvalidRequestException {
+        return getSrmStatusOfCopyRequest(null, null);
     }
 
-    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
-            throws SRMInvalidRequestException
-    {
+    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(
+          org.apache.axis.types.URI[] fromurls, org.apache.axis.types.URI[] tourls)
+          throws SRMInvalidRequestException {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(getTReturnStatus());
-        TCopyRequestFileStatus[] fileStatuses = getArrayOfTCopyRequestFileStatuses(fromurls, tourls);
+        TCopyRequestFileStatus[] fileStatuses = getArrayOfTCopyRequestFileStatuses(fromurls,
+              tourls);
         response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(fileStatuses));
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
@@ -836,8 +821,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
     @Nonnull
     @Override
-    public final CopyFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
-    {
+    public final CopyFileRequest getFileRequestBySurl(URI surl)
+          throws SRMFileRequestNotFoundException {
         for (CopyFileRequest request : getFileRequests()) {
             if (request.getSourceSurl().equals(surl) || request.getDestinationSurl().equals(surl)) {
                 return request;
@@ -847,8 +832,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    public TRequestType getRequestType()
-    {
+    public TRequestType getRequestType() {
         rlock();
         try {
             return TRequestType.COPY;
@@ -857,8 +841,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public TFileStorageType getStorageType()
-    {
+    public TFileStorageType getStorageType() {
         rlock();
         try {
             return storageType;
@@ -867,23 +850,19 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public TRetentionPolicy getTargetRetentionPolicy()
-    {
+    public TRetentionPolicy getTargetRetentionPolicy() {
         return targetRetentionPolicy;
     }
 
-    public TAccessLatency getTargetAccessLatency()
-    {
+    public TAccessLatency getTargetAccessLatency() {
         return targetAccessLatency;
     }
 
-    public TOverwriteMode getOverwriteMode()
-    {
+    public TOverwriteMode getOverwriteMode() {
         return overwriteMode;
     }
 
-    public boolean isOverwrite()
-    {
+    public boolean isOverwrite() {
         if (getConfiguration().isOverwrite()) {
             if (getOverwriteMode() == null) {
                 return getConfiguration().isOverwrite_by_default();
@@ -894,8 +873,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException
-    {
+    public long extendLifetimeMillis(long newLifetimeInMillis) throws SRMException {
         /* [ SRM 2.2, 5.16.2 ]
          *
          * h) Lifetime cannot be extended on the released files, aborted files, expired
@@ -914,8 +892,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return true if the source SURL starts 'srm://'
      */
-    private boolean isSourceSrm()
-    {
+    private boolean isSourceSrm() {
         rlock();
         try {
             return isSourceSrm;
@@ -927,8 +904,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return true if the destination SURL starts 'srm://'
      */
-    private boolean isDestinationSrm()
-    {
+    private boolean isDestinationSrm() {
         rlock();
         try {
             return isDestinationSrm;
@@ -940,8 +916,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return true if the source is this storage system
      */
-    private boolean isSourceLocal()
-    {
+    private boolean isSourceLocal() {
         rlock();
         try {
             return isSourceLocal;
@@ -953,8 +928,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return true if the destination is this storage system
      */
-    private boolean isDestinationLocal()
-    {
+    private boolean isDestinationLocal() {
         rlock();
         try {
             return isDestinationLocal;
@@ -966,8 +940,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return the protocols
      */
-    private String[] getProtocols()
-    {
+    private String[] getProtocols() {
         rlock();
         try {
             return protocols;
@@ -979,8 +952,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return the targetSpaceToken
      */
-    private String getTargetSpaceToken()
-    {
+    private String getTargetSpaceToken() {
         rlock();
         try {
             return targetSpaceToken;
@@ -992,8 +964,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return the getter_putter
      */
-    private TurlGetterPutter getRemoteTurlClient()
-    {
+    private TurlGetterPutter getRemoteTurlClient() {
         rlock();
         try {
             return remoteTurlClient;
@@ -1005,8 +976,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @param client the getter_putter to set
      */
-    private void setRemoteTurlClient(TurlGetterPutter client)
-    {
+    private void setRemoteTurlClient(TurlGetterPutter client) {
         wlock();
         try {
             this.remoteTurlClient = client;
@@ -1018,8 +988,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return the qosPlugin
      */
-    private QOSPlugin getQosPlugin()
-    {
+    private QOSPlugin getQosPlugin() {
         rlock();
         try {
             return qosPlugin;
@@ -1031,8 +1000,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @return the processingDone
      */
-    private boolean isProcessingDone()
-    {
+    private boolean isProcessingDone() {
         rlock();
         try {
             return processingDone;
@@ -1044,8 +1012,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     /**
      * @param processingDone the processingDone to set
      */
-    private void setProcessingDone(boolean processingDone)
-    {
+    private void setProcessingDone(boolean processingDone) {
         wlock();
         try {
             this.processingDone = processingDone;
@@ -1054,12 +1021,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    private static String localPathFromSurl(URI surl)
-    {
+    private static String localPathFromSurl(URI surl) {
         String path = surl.getPath();
         int index = path.indexOf(SFN_STRING);
         if (index != -1) {
-            path = path.substring(index+SFN_STRING.length());
+            path = path.substring(index + SFN_STRING.length());
         }
         if (!path.startsWith("/")) {
             path = "/" + path;

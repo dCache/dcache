@@ -59,27 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.restores;
 
-import org.springframework.beans.factory.annotation.Required;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.poolManager.RestoreRequestsReceiver;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.util.collector.CellMessagingCollector;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>
  */
 public class RestoreCollector extends
-                CellMessagingCollector<List<RestoreHandlerInfo>> {
+      CellMessagingCollector<List<RestoreHandlerInfo>> {
+
     private RestoreRequestsReceiver receiver;
-    private CellStub    pnfsStub;
+    private CellStub pnfsStub;
     private PnfsHandler pnfsHandler;
 
     /**

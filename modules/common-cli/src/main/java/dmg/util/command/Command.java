@@ -10,17 +10,15 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Command
-{
+public @interface Command {
+
     /**
-     * Name of the command. May consist of multiple white space
-     * separated words.
+     * Name of the command. May consist of multiple white space separated words.
      */
     String name();
 
     /**
-     * Short, single sentence, description of the command, without
-     * a trailing period.
+     * Short, single sentence, description of the command, without a trailing period.
      */
     String hint() default "";
 

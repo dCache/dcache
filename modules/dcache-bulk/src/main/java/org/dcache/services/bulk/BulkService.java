@@ -85,239 +85,245 @@ import org.springframework.beans.factory.annotation.Required;
  * processing.
  */
 public class BulkService implements CellLifeCycleAware, CellMessageReceiver {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BulkService.class);
 
-  private BulkRequestStore requestStore;
-  private BulkServiceQueue queue;
-  private BulkSubmissionHandler submissionHandler;
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkService.class);
 
-  private ExecutorService incomingExecutorService;
-  private BulkServiceStatistics statistics;
-  private int maxRequestsPerUser;
+    private BulkRequestStore requestStore;
+    private BulkServiceQueue queue;
+    private BulkSubmissionHandler submissionHandler;
 
-  @Override
-  public void afterStart() {
-    /*
-     * Maintaining checkpoints on jobs that have been launched
-     * is currently unimplemented (it presents several notable
-     * complications).
-     *
-     * Since individual jobs are thus considered lost on restart, we
-     * must treat all unfinished requests as if they were idempotent.
-     *
-     * We thus reload the requests from the persistent store into memory,
-     * resetting any requests with non-terminal states to QUEUED
-     * (the latter is taken care of by the underlying implementation.)
-     *
-     * There is no danger in a race here because the state of the
-     * requests is not checked until the job queue is initialized
-     * and started.
-     */
-    try {
-      LOGGER.info("Loading requests into the request store/queue; "
-          + "incomplete requests will be reset to QUEUED.");
-      requestStore.load();
-    } catch (BulkServiceException e) {
-      LOGGER.error("There was a problem reloading requests {}.", e.toString());
-    }
+    private ExecutorService incomingExecutorService;
+    private BulkServiceStatistics statistics;
+    private int maxRequestsPerUser;
 
-    LOGGER.info("Initializing the job queue.");
-    queue.initialize();
+    @Override
+    public void afterStart() {
+        /*
+         * Maintaining checkpoints on jobs that have been launched
+         * is currently unimplemented (it presents several notable
+         * complications).
+         *
+         * Since individual jobs are thus considered lost on restart, we
+         * must treat all unfinished requests as if they were idempotent.
+         *
+         * We thus reload the requests from the persistent store into memory,
+         * resetting any requests with non-terminal states to QUEUED
+         * (the latter is taken care of by the underlying implementation.)
+         *
+         * There is no danger in a race here because the state of the
+         * requests is not checked until the job queue is initialized
+         * and started.
+         */
+        try {
+            LOGGER.info("Loading requests into the request store/queue; "
+                  + "incomplete requests will be reset to QUEUED.");
+            requestStore.load();
+        } catch (BulkServiceException e) {
+            LOGGER.error("There was a problem reloading requests {}.", e.toString());
+        }
 
-    LOGGER.info("Signalling the job queue.");
-    queue.signal();
+        LOGGER.info("Initializing the job queue.");
+        queue.initialize();
 
-    LOGGER.info("Service startup completed.");
-  }
-
-  @Override
-  public void beforeStop() {
-    try {
-      requestStore.save();
-    } catch (BulkServiceException e) {
-      LOGGER.warn("Problem storing on shutdown: {}.", e.toString());
-    }
-  }
-
-  public Reply messageArrived(BulkRequestMessage message) {
-    LOGGER.trace("received BulkRequestMessage {}", message);
-
-    MessageReply<Message> reply = new MessageReply<>();
-    incomingExecutorService.execute(() -> {
-      try {
-        BulkRequest request = message.getRequest();
-        Subject subject = message.getSubject();
-        checkQuota(subject);
-        checkRestrictions(message.getRestriction(), request.getId());
-        request.setId(UUID.randomUUID().toString());
-        requestStore.store(subject, message.getRestriction(), request,null);
+        LOGGER.info("Signalling the job queue.");
         queue.signal();
-        statistics.incrementRequestsReceived(request.getActivity());
-        message.setRequestUrl(request.getUrlPrefix() + "/" + request.getId());
-        reply.reply(message);
-      } catch (BulkServiceException e) {
-        LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message, e.toString());
-        reply.fail(message, e);
-      }
-    });
-    return reply;
-  }
 
-  public Reply messageArrived(BulkRequestListMessage message) {
-    LOGGER.trace("received BulkRequestListMessage {}", message);
-
-    MessageReply<Message> reply = new MessageReply<>();
-    incomingExecutorService.execute(() -> {
-      try {
-        List<String> requests = requestStore.getRequestUrls(message.getSubject(), message.getStatus())
-                                            .stream()
-                                            .collect(Collectors.toList());
-        message.setRequests(requests);
-        reply.reply(message);
-      } catch (BulkServiceException e) {
-        LOGGER.error("messageArrived(BulkRequestListMessage) {}: {}", message, e.toString());
-        reply.fail(message, e);
-      }
-    });
-    return reply;
-  }
-
-  public Reply messageArrived(BulkRequestStatusMessage message) {
-    LOGGER.trace("received BulkRequestStatusMessage {}", message);
-
-    MessageReply<Message> reply = new MessageReply<>();
-    incomingExecutorService.execute(() -> {
-      try {
-        String requestId = message.getRequestId();
-        checkRestrictions(message.getRestriction(), requestId);
-        /*
-         *  Checks permissions and presence of request.
-         */
-        BulkRequestStatus status = requestStore.getStatus(message.getSubject(), requestId);
-        message.setStatus(status);
-        reply.reply(message);
-      } catch (BulkServiceException e) {
-        LOGGER.error("messageArrived(BulkRequestStatusMessage) {}: {}", message, e.toString());
-        reply.fail(message, e);
-      }
-    });
-    return reply;
-  }
-
-  public Reply messageArrived(BulkRequestCancelMessage message) {
-    LOGGER.trace("received BulkRequestCancelMessage {}", message);
-
-    MessageReply<Message> reply = new MessageReply<>();
-    incomingExecutorService.execute(() -> {
-      try {
-        String requestId = message.getRequestId();
-        checkRestrictions(message.getRestriction(), requestId);
-        /*
-         *  Checks permissions and presence of request.
-         */
-        submissionHandler.cancelRequest(message.getSubject(), requestId);
-        reply.reply(message);
-      } catch (BulkServiceException e) {
-        LOGGER.error("messageArrived(BulkRequestCancelMessage) {}: {}", message, e.toString());
-        reply.fail(message, e);
-      }
-    });
-    return reply;
-  }
-
-  public Reply messageArrived(BulkRequestClearMessage message) {
-    LOGGER.trace("received BulkRequestClearMessage {}", message);
-
-    MessageReply<Message> reply = new MessageReply<>();
-    incomingExecutorService.execute(() -> {
-      try {
-        String requestId = message.getRequestId();
-        checkRestrictions(message.getRestriction(), requestId);
-        /*
-         *  Checks permissions and presence of request.
-         */
-        submissionHandler.clearRequest(message.getSubject(), requestId);
-        reply.reply(message);
-      } catch (BulkServiceException e) {
-        LOGGER.error("messageArrived(BulkRequestClearMessage) {}: {}", message, e.toString());
-        reply.fail(message, e);
-      }
-    });
-    return reply;
-  }
-
-  public BulkServiceQueue getQueue() {
-    return queue;
-  }
-
-  @Required
-  public void setQueue(BulkServiceQueue queue) {
-    this.queue = queue;
-  }
-
-  public BulkSubmissionHandler getSubmissionHandler() {
-    return submissionHandler;
-  }
-
-  @Required
-  public void setSubmissionHandler(BulkSubmissionHandler submissionHandler) {
-    this.submissionHandler = submissionHandler;
-  }
-
-  public BulkRequestStore getRequestStore() {
-    return requestStore;
-  }
-
-  @Required
-  public void setRequestStore(BulkRequestStore requestStore) {
-    this.requestStore = requestStore;
-  }
-
-  @Required
-  public void setIncomingExecutorService(ExecutorService incomingExecutorService) {
-    this.incomingExecutorService = incomingExecutorService;
-  }
-
-  @Required
-  public void setMaxRequestsPerUser(int maxRequestsPerUser) {
-    this.maxRequestsPerUser = maxRequestsPerUser;
-  }
-
-  @Required
-  public void setStatistics(BulkServiceStatistics statistics) {
-    this.statistics = statistics;
-  }
-
-  /**
-   * This may be subject to change.
-   *
-   * @param restriction from the incoming message
-   * @param requestId
-   * @throws BulkPermissionDeniedException
-   * @throws BulkRequestStorageException
-   */
-  private void checkRestrictions(Restriction restriction,
-      String requestId)
-      throws BulkPermissionDeniedException,
-      BulkRequestStorageException {
-    Optional<Restriction> option = requestStore.getRestriction(requestId);
-    Restriction original = option.orElse(null);
-
-    if (restriction == null || Restrictions.none().equals(restriction)) {
-      return;
+        LOGGER.info("Service startup completed.");
     }
 
-    if (original != null && !original.isSubsumedBy(restriction)) {
-      throw new BulkPermissionDeniedException(requestId);
+    @Override
+    public void beforeStop() {
+        try {
+            requestStore.save();
+        } catch (BulkServiceException e) {
+            LOGGER.warn("Problem storing on shutdown: {}.", e.toString());
+        }
     }
-  }
 
-  private void checkQuota(Subject subject) throws BulkQuotaExceededException,
-      BulkRequestStorageException {
-    String user = BulkRequestStore.uidGidKey(subject);
-    if (requestStore.countNonTerminated(user) >= maxRequestsPerUser) {
-      throw new BulkQuotaExceededException(user);
+    public Reply messageArrived(BulkRequestMessage message) {
+        LOGGER.trace("received BulkRequestMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                BulkRequest request = message.getRequest();
+                Subject subject = message.getSubject();
+                checkQuota(subject);
+                checkRestrictions(message.getRestriction(), request.getId());
+                request.setId(UUID.randomUUID().toString());
+                requestStore.store(subject, message.getRestriction(), request, null);
+                queue.signal();
+                statistics.incrementRequestsReceived(request.getActivity());
+                message.setRequestUrl(request.getUrlPrefix() + "/" + request.getId());
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkRequestMessage) {}: {}", message, e.toString());
+                reply.fail(message, e);
+            }
+        });
+        return reply;
     }
-    statistics.addUserRequest(user);
-  }
+
+    public Reply messageArrived(BulkRequestListMessage message) {
+        LOGGER.trace("received BulkRequestListMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                List<String> requests = requestStore.getRequestUrls(message.getSubject(),
+                            message.getStatus())
+                      .stream()
+                      .collect(Collectors.toList());
+                message.setRequests(requests);
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkRequestListMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(BulkRequestStatusMessage message) {
+        LOGGER.trace("received BulkRequestStatusMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                String requestId = message.getRequestId();
+                checkRestrictions(message.getRestriction(), requestId);
+                /*
+                 *  Checks permissions and presence of request.
+                 */
+                BulkRequestStatus status = requestStore.getStatus(message.getSubject(), requestId);
+                message.setStatus(status);
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkRequestStatusMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(BulkRequestCancelMessage message) {
+        LOGGER.trace("received BulkRequestCancelMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                String requestId = message.getRequestId();
+                checkRestrictions(message.getRestriction(), requestId);
+                /*
+                 *  Checks permissions and presence of request.
+                 */
+                submissionHandler.cancelRequest(message.getSubject(), requestId);
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkRequestCancelMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(BulkRequestClearMessage message) {
+        LOGGER.trace("received BulkRequestClearMessage {}", message);
+
+        MessageReply<Message> reply = new MessageReply<>();
+        incomingExecutorService.execute(() -> {
+            try {
+                String requestId = message.getRequestId();
+                checkRestrictions(message.getRestriction(), requestId);
+                /*
+                 *  Checks permissions and presence of request.
+                 */
+                submissionHandler.clearRequest(message.getSubject(), requestId);
+                reply.reply(message);
+            } catch (BulkServiceException e) {
+                LOGGER.error("messageArrived(BulkRequestClearMessage) {}: {}", message,
+                      e.toString());
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public BulkServiceQueue getQueue() {
+        return queue;
+    }
+
+    @Required
+    public void setQueue(BulkServiceQueue queue) {
+        this.queue = queue;
+    }
+
+    public BulkSubmissionHandler getSubmissionHandler() {
+        return submissionHandler;
+    }
+
+    @Required
+    public void setSubmissionHandler(BulkSubmissionHandler submissionHandler) {
+        this.submissionHandler = submissionHandler;
+    }
+
+    public BulkRequestStore getRequestStore() {
+        return requestStore;
+    }
+
+    @Required
+    public void setRequestStore(BulkRequestStore requestStore) {
+        this.requestStore = requestStore;
+    }
+
+    @Required
+    public void setIncomingExecutorService(ExecutorService incomingExecutorService) {
+        this.incomingExecutorService = incomingExecutorService;
+    }
+
+    @Required
+    public void setMaxRequestsPerUser(int maxRequestsPerUser) {
+        this.maxRequestsPerUser = maxRequestsPerUser;
+    }
+
+    @Required
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
+    }
+
+    /**
+     * This may be subject to change.
+     *
+     * @param restriction from the incoming message
+     * @param requestId
+     * @throws BulkPermissionDeniedException
+     * @throws BulkRequestStorageException
+     */
+    private void checkRestrictions(Restriction restriction,
+          String requestId)
+          throws BulkPermissionDeniedException,
+          BulkRequestStorageException {
+        Optional<Restriction> option = requestStore.getRestriction(requestId);
+        Restriction original = option.orElse(null);
+
+        if (restriction == null || Restrictions.none().equals(restriction)) {
+            return;
+        }
+
+        if (original != null && !original.isSubsumedBy(restriction)) {
+            throw new BulkPermissionDeniedException(requestId);
+        }
+    }
+
+    private void checkQuota(Subject subject) throws BulkQuotaExceededException,
+          BulkRequestStorageException {
+        String user = BulkRequestStore.uidGidKey(subject);
+        if (requestStore.countNonTerminated(user) >= maxRequestsPerUser) {
+            throw new BulkQuotaExceededException(user);
+        }
+        statistics.addUserRequest(user);
+    }
 }

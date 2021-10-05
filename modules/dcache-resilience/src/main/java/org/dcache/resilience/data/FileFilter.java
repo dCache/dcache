@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.base.Splitter;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -68,21 +67,22 @@ import java.util.Set;
  * <p>Simple implementation of matcher.</p>
  */
 public class FileFilter implements FileMatcher {
+
     private Set<String> state;
     private Set<String> pnfsids;
-    private String      retentionPolicy;
-    private String      storageUnit;
-    private String      parent;
-    private String      source;
-    private String      target;
-    private Long        lastUpdateBefore;
-    private Long        lastUpdateAfter;
-    private Integer     opCount;
-    private boolean     forceRemoval = false;
+    private String retentionPolicy;
+    private String storageUnit;
+    private String parent;
+    private String source;
+    private String target;
+    private Long lastUpdateBefore;
+    private Long lastUpdateAfter;
+    private Integer opCount;
+    private boolean forceRemoval = false;
 
     protected boolean matchesPool(String toMatch,
-                                  Integer operationValue,
-                                  PoolInfoMap map) {
+          Integer operationValue,
+          PoolInfoMap map) {
         if (toMatch == null) {
             return true;
         }
@@ -111,15 +111,15 @@ public class FileFilter implements FileMatcher {
     @Override
     public boolean isUndefined() {
         return (null == pnfsids || pnfsids.isEmpty()) &&
-                        null == state &&
-                        null == parent &&
-                        null == source &&
-                        null == target &&
-                        null == retentionPolicy &&
-                        null == storageUnit &&
-                        null == opCount &&
-                        null == lastUpdateBefore &&
-                        null == lastUpdateAfter;
+              null == state &&
+              null == parent &&
+              null == source &&
+              null == target &&
+              null == retentionPolicy &&
+              null == storageUnit &&
+              null == opCount &&
+              null == lastUpdateBefore &&
+              null == lastUpdateAfter;
     }
 
     /**
@@ -132,17 +132,17 @@ public class FileFilter implements FileMatcher {
         }
 
         if (pnfsids != null && !pnfsids.contains(
-                        operation.getPnfsId().toString())) {
+              operation.getPnfsId().toString())) {
             return false;
         }
 
         if (retentionPolicy != null && !retentionPolicy.equals(
-                        operation.getRetentionPolicyName())) {
+              operation.getRetentionPolicyName())) {
             return false;
         }
 
         if (storageUnit != null &&
-                        !storageUnit.equals(map.getUnit(operation.getStorageUnit()))) {
+              !storageUnit.equals(map.getUnit(operation.getStorageUnit()))) {
             return false;
         }
 
@@ -206,7 +206,7 @@ public class FileFilter implements FileMatcher {
     }
 
     public void setState(Set<String> states) {
-            this.state = states;
+        this.state = states;
     }
 
     public void setStorageUnit(String storageUnit) {

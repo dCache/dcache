@@ -17,12 +17,17 @@
  */
 package org.dcache.gplazma.omnisession;
 
-import org.junit.Test;
-
-import java.util.List;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.GiB;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.fail;
 
 import diskCacheV111.util.FsPath;
-
+import java.util.List;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.MaxUploadSize;
@@ -32,80 +37,67 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.omnisession.LineBasedParser.UnrecoverableParsingException;
 import org.dcache.util.PrincipalSetMaker;
+import org.junit.Test;
 
-import static org.dcache.util.ByteUnit.BYTES;
-import static org.dcache.util.ByteUnit.GiB;
-import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+public class ConfigurationParserTest {
 
-public class ConfigurationParserTest
-{
     private Configuration configuration;
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldRejectUsersIfFileIsEmpty() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldRejectUsersIfFileIsEmpty() throws Exception {
         givenConfig();
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
     @Test
-    public void shouldMatchLineWithUsername() throws Exception
-    {
+    public void shouldMatchLineWithUsername() throws Exception {
         givenConfig("username:paul root:/ home:/");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(loginAttributes, containsInAnyOrder(new RootDirectory("/"),
-                new HomeDirectory("/")));
+              new HomeDirectory("/")));
     }
 
     @Test
-    public void shouldAcceptCommentLine() throws Exception
-    {
+    public void shouldAcceptCommentLine() throws Exception {
         givenConfig("# This is a line with a comment",
-                "username:paul root:/ home:/");
+              "username:paul root:/ home:/");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(loginAttributes, containsInAnyOrder(new RootDirectory("/"),
-                new HomeDirectory("/")));
+              new HomeDirectory("/")));
     }
 
     @Test
-    public void shouldAcceptEmptyLine() throws Exception
-    {
+    public void shouldAcceptEmptyLine() throws Exception {
         givenConfig("",
-                "username:paul root:/ home:/");
+              "username:paul root:/ home:/");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(loginAttributes, containsInAnyOrder(new RootDirectory("/"),
-                new HomeDirectory("/")));
+              new HomeDirectory("/")));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldNotMatchWithWrongUsername() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldNotMatchWithWrongUsername() throws Exception {
         givenConfig("username:paul root:/ home:/");
 
         attributesFor(aSetOfPrincipals().withUsername("tigran"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldRejectLineWithoutAttributes() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldRejectLineWithoutAttributes() throws Exception {
         givenConfig("username:paul");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:paul root:/Users/paul");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
@@ -114,8 +106,7 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndHome() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndHome() throws Exception {
         givenConfig("username:paul home:/Users/paul");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
@@ -124,8 +115,7 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndReadOnly() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndReadOnly() throws Exception {
         givenConfig("username:paul read-only");
 
         var loginAttributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
@@ -134,8 +124,7 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndPrefix() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndPrefix() throws Exception {
         givenConfig("username:paul prefix:/path");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
@@ -144,35 +133,32 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndMaxUpload() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndMaxUpload() throws Exception {
         givenConfig("username:paul max-upload:5GiB");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(attributes.size(), equalTo(1));
-        var restriction = (MaxUploadSize)attributes.get(0);
+        var restriction = (MaxUploadSize) attributes.get(0);
 
         assertThat(restriction.getMaximumSize(), equalTo(BYTES.convert(5l, GiB)));
     }
 
     @Test
-    public void shouldMatchLineWithUsernameAndPrefixAndRoot() throws Exception
-    {
+    public void shouldMatchLineWithUsernameAndPrefixAndRoot() throws Exception {
         givenConfig("username:paul root:/root-path prefix:/prefix-path");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(attributes, containsInAnyOrder(
-                new PrefixRestriction(FsPath.create("/prefix-path")),
-                new RootDirectory("/root-path")));
+              new PrefixRestriction(FsPath.create("/prefix-path")),
+              new RootDirectory("/root-path")));
     }
 
     @Test
-    public void shouldMatchFirstOfTwoLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchFirstOfTwoLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:paul root:/pauls-root",
-                "username:tigran root:/tigrans-root");
+              "username:tigran root:/tigrans-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -180,10 +166,9 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchSecondOfTwoLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchSecondOfTwoLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:tigran root:/tigrans-root",
-                "username:paul root:/pauls-root");
+              "username:paul root:/pauls-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -191,11 +176,10 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchFirstOfThreeLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchFirstOfThreeLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:paul root:/pauls-root",
-                "username:tigran root:/tigrans-root",
-                "username:lea root:/leas-root");
+              "username:tigran root:/tigrans-root",
+              "username:lea root:/leas-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -203,11 +187,10 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchSecondOfThreeLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchSecondOfThreeLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:tigran root:/tigrans-root",
-                "username:paul root:/pauls-root",
-                "username:lea root:/leas-root");
+              "username:paul root:/pauls-root",
+              "username:lea root:/leas-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -215,11 +198,10 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchThirdOfThreeLineWithUsernameAndRoot() throws Exception
-    {
+    public void shouldMatchThirdOfThreeLineWithUsernameAndRoot() throws Exception {
         givenConfig("username:tigran root:/tigrans-root",
-                "username:lea root:/leas-root",
-                "username:paul root:/pauls-root");
+              "username:lea root:/leas-root",
+              "username:paul root:/pauls-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -227,8 +209,7 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchDefaultWithRoot() throws Exception
-    {
+    public void shouldMatchDefaultWithRoot() throws Exception {
         givenConfig("DEFAULT root:/general-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
@@ -237,10 +218,9 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchFirstLineWithDefault() throws Exception
-    {
+    public void shouldMatchFirstLineWithDefault() throws Exception {
         givenConfig("username:paul root:/pauls-root",
-                "DEFAULT root:/general-root");
+              "DEFAULT root:/general-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -248,10 +228,9 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchDefaultLineWithUserAndDefault() throws Exception
-    {
+    public void shouldMatchDefaultLineWithUserAndDefault() throws Exception {
         givenConfig("username:tigran root:/tigrans-root",
-                "DEFAULT root:/general-root");
+              "DEFAULT root:/general-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -259,10 +238,9 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchSecondLineWithFirstLineDefault() throws Exception
-    {
+    public void shouldMatchSecondLineWithFirstLineDefault() throws Exception {
         givenConfig("DEFAULT root:/general-root",
-                "username:paul root:/pauls-root");
+              "username:paul root:/pauls-root");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
@@ -270,132 +248,118 @@ public class ConfigurationParserTest
     }
 
     @Test
-    public void shouldMatchFirstLineAndDefault() throws Exception
-    {
+    public void shouldMatchFirstLineAndDefault() throws Exception {
         givenConfig("username:paul read-only",
-                "DEFAULT home:/ root:/");
+              "DEFAULT home:/ root:/");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(attributes, containsInAnyOrder(new HomeDirectory("/"),
-                new RootDirectory("/"), Restrictions.readOnly()));
+              new RootDirectory("/"), Restrictions.readOnly()));
     }
 
     @Test
-    public void shouldMatchFirstLineAndSecondLineAndDefault() throws Exception
-    {
+    public void shouldMatchFirstLineAndSecondLineAndDefault() throws Exception {
         givenConfig("username:paul read-only",
-                "gid:1000 home:/",
-                "DEFAULT root:/");
+              "gid:1000 home:/",
+              "DEFAULT root:/");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul").withGid(1000));
 
         assertThat(attributes, containsInAnyOrder(new HomeDirectory("/"),
-                new RootDirectory("/"), Restrictions.readOnly()));
+              new RootDirectory("/"), Restrictions.readOnly()));
     }
 
     @Test
-    public void shouldIgnoreRepeatedDeclarationInSubsequentLines() throws Exception
-    {
+    public void shouldIgnoreRepeatedDeclarationInSubsequentLines() throws Exception {
         givenConfig("username:paul home:/Users/paul",
-                "gid:1000 home:/group-1000",
-                "DEFAULT home:/");
+              "gid:1000 home:/group-1000",
+              "DEFAULT home:/");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul").withGid(1000));
 
         assertThat(attributes, contains(new HomeDirectory("/Users/paul")));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailBadAttributeOnMatchedLine() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailBadAttributeOnMatchedLine() throws Exception {
         givenConfig("username:paul INVALID",
-                "username:tigran read-only");
+              "username:tigran read-only");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
     @Test
-    public void shouldIgnoreBadAttributeOnUnmatchedLine() throws Exception
-    {
+    public void shouldIgnoreBadAttributeOnUnmatchedLine() throws Exception {
         givenConfig("username:paul read-only",
-                "username:tigran INVALID");
+              "username:tigran INVALID");
 
         var attributes = attributesFor(aSetOfPrincipals().withUsername("paul"));
 
         assertThat(attributes, contains(Restrictions.readOnly()));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailBadMaxpUload() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailBadMaxpUload() throws Exception {
         givenConfig("username:paul max-upload:INVALID");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailAttributeDefinedTwice() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailAttributeDefinedTwice() throws Exception {
         givenConfig("username:paul max-upload:1GiB max-upload:2GiB");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailUnknownType() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailUnknownType() throws Exception {
         givenConfig("username:paul INVALID:INVALID");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailMissingType() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailMissingType() throws Exception {
         givenConfig("username:paul :INVALID");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void shouldFailMissingArgument() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailMissingArgument() throws Exception {
         givenConfig("username:paul INVALID:");
 
         attributesFor(aSetOfPrincipals().withUsername("paul"));
     }
 
-    @Test(expected=UnrecoverableParsingException.class)
-    public void shouldRejectConfigWithBadPredicate() throws Exception
-    {
+    @Test(expected = UnrecoverableParsingException.class)
+    public void shouldRejectConfigWithBadPredicate() throws Exception {
         ConfigurationParser parser = new ConfigurationParser();
         parser.accept("BAD-PREDICATE read-only");
     }
 
-    @Test(expected=UnrecoverableParsingException.class)
-    public void shouldRejectConfigWithMultipleDefault() throws Exception
-    {
+    @Test(expected = UnrecoverableParsingException.class)
+    public void shouldRejectConfigWithMultipleDefault() throws Exception {
         ConfigurationParser parser = new ConfigurationParser();
         parser.accept("DEFAULT read-only");
         parser.accept("DEFAULT read-only");
     }
 
     private List<LoginAttribute> attributesFor(PrincipalSetMaker maker)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         return configuration.attributesFor(maker.build());
     }
 
-    private void givenConfig(String...lines)
-    {
+    private void givenConfig(String... lines) {
         ConfigurationParser parser = new ConfigurationParser();
         for (String line : lines) {
             try {
                 parser.accept(line);
             } catch (UnrecoverableParsingException e) {
                 fail("Parsing line \"" + line + "\" failed unexpectedly: "
-                        + e.getMessage());
+                      + e.getMessage());
             }
         }
         configuration = parser.build();
