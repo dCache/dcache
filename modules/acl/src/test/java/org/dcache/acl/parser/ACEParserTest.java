@@ -8,6 +8,7 @@ import static org.dcache.acl.enums.AceType.ACCESS_ALLOWED_ACE_TYPE;
 import static org.dcache.acl.enums.AceType.ACCESS_DENIED_ACE_TYPE;
 import static org.dcache.acl.parser.ACEParser.parseLinuxAce;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
@@ -123,6 +124,12 @@ public class ACEParserTest {
     @Test(expected = IllegalArgumentException.class)
     public void testWrongSpecialPrincipal() {
         parseLinuxAce("D:g:SOMEONW@:w");
+    }
+
+    @Test
+    public void testImplicitGroupACE() {
+        var ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.parseInt("rwx"), Who.GROUP, 123);
+        assertTrue("Identifier group is not set", IDENTIFIER_GROUP.matches(ace.getFlags()));
     }
 
     public static int toAccessMask(AccessMask... masks) {
