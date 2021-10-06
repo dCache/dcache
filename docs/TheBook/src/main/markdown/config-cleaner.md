@@ -14,6 +14,8 @@ they couldn't respond in time. The cleaner will periodically try to delete data 
 
 The cleaner service can be run in high availability (HA) mode (coordinated via [ZooKeeper](config-zookeeper.md)) by having several cleaner cells in a dCache instance, which then need to share the same database. Only one such cleaner instance will be active at any point in time. If the currently active one ("master") is unavailable, another one is automatically taking its place.
 
+The property `cleaner.limits.threads` controls the number of pools processed in parallel.
+
 ### Disk Cleaner
 
 The disk cleaner is responsible for removing disk-resident file replicas.
