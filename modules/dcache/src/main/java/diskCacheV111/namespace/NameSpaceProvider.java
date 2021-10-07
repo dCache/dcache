@@ -431,4 +431,17 @@ public interface NameSpaceProvider {
     void removeLabel(Subject subject, FsPath path, String label) throws CacheException;
 
 
+    /**
+     * Return all files  having the given label
+     * @param subject The user making the request.
+     * @param path label name value or virtual dir name.
+     * @throws FileNotFoundCacheException if the path does not exist.
+     * @throws PermissionDeniedCacheException if the user is not allowed to
+     * remove the label.
+     * @throws CacheException a generic failure in removing the attribute.
+     */
+    void listVirtualDirectory(Subject subject, String path, Range<Integer> range,
+                         Set<FileAttribute> attrs, ListHandler handler)  throws  CacheException;
+
+
 }

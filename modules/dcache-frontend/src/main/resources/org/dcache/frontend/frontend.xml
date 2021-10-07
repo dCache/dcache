@@ -563,6 +563,7 @@
     <bean class="org.dcache.restful.resources.doors.DoorsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.labels.LabelsResources" scope="request"/>
     <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolGroupInfoResources" scope="request"/>
     <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request">

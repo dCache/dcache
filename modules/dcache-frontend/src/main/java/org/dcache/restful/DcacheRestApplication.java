@@ -11,6 +11,7 @@ import org.dcache.restful.resources.alarms.AlarmsResources;
 import org.dcache.restful.resources.billing.BillingResources;
 import org.dcache.restful.resources.cells.CellInfoResources;
 import org.dcache.restful.resources.doors.DoorsResources;
+import org.dcache.restful.resources.labels.LabelsResources;
 import org.dcache.restful.resources.namespace.FileResources;
 import org.dcache.restful.resources.pool.PoolGroupInfoResources;
 import org.dcache.restful.resources.pool.PoolInfoResources;
@@ -50,6 +51,10 @@ public class DcacheRestApplication extends ResourceConfig {
         register(SwaggerSerializers.class);
         register(EventResources.class);
         register(DoorsResources.class);
+
+
+        //register labels
+        register(LabelsResources.class);
 
         //register filters
         register(RequestUser.class);

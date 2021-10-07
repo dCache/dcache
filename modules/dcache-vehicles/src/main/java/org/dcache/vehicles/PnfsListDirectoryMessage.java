@@ -24,6 +24,11 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
 
     private static final long serialVersionUID = -5774904472984157638L;
 
+    public enum PathType
+    {
+        PATH, LABEL
+    }
+
     private final Glob _pattern;
     private final Integer _lower;
     private final Integer _upper;
@@ -38,6 +43,17 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
      */
     private boolean _isFinal;
     private int _messageCount;
+
+
+
+    /**
+     * there are two possible values for this field     *
+     *  Path to directory to list
+     *  or path to virtual directory to list (which is the label value of a streamed files)
+     *  */
+    private static  PathType _pathType = PathType.PATH;
+
+
 
     /**
      * Constructs a new message.
@@ -135,6 +151,14 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
     public void setSucceeded(int messageCount) {
         setSucceeded();
         _messageCount = messageCount;
+    }
+
+    public static PathType getPathType() {
+        return _pathType;
+    }
+
+    public static void setPathType(PathType pathType) {
+        _pathType = pathType;
     }
 
     public boolean isFinal() {

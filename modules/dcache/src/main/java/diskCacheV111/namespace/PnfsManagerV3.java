@@ -2170,13 +2170,21 @@ public class PnfsManagerV3
                         : delay - envelope.getLocalAge();
             CellPath source = envelope.getSourcePath().revert();
             ListHandlerImpl handler =
-                  new ListHandlerImpl(source, envelope.getUOID(),
-                        msg, initialDelay, delay);
-            _nameSpaceProvider.list(msg.getSubject(), path,
-                  msg.getPattern(),
-                  msg.getRange(),
-                  msg.getRequestedAttributes(),
-                  handler);
+                new ListHandlerImpl(source, envelope.getUOID(),
+                                    msg, initialDelay, delay);
+
+            if (msg.getPathType() == PnfsListDirectoryMessage.PathType.LABEL) {
+                _nameSpaceProvider.listVirtualDirectory(msg.getSubject(), path.substring(1),
+                        msg.getRange(),
+                        msg.getRequestedAttributes(),
+                        handler);
+            } else {
+                _nameSpaceProvider.list(msg.getSubject(), path,
+                      msg.getPattern(),
+                      msg.getRange(),
+                      msg.getRequestedAttributes(),
+                      handler);
+            }
             msg.setSucceeded(handler.getMessageCount() + 1);
         } catch (FileNotFoundCacheException | NotDirCacheException e) {
             msg.setFailed(e.getRc(), e.getMessage());
