@@ -19,8 +19,6 @@ package org.dcache.srm.scheduler;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 
 import java.net.URI;
@@ -32,8 +30,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.scheduler.strategy.TapeRecallSchedulingStrategy;
-import org.dcache.srm.taperecallscheduling.SchedulingInfoTape;
-import org.dcache.srm.taperecallscheduling.SchedulingItemJob;
 import org.dcache.srm.taperecallscheduling.TapeInfo;
 import org.dcache.srm.taperecallscheduling.TapeInformant;
 import org.dcache.srm.taperecallscheduling.TapeRecallSchedulingRequirementsChecker;
@@ -363,76 +359,4 @@ public class TapeRecallSchedulingStrategyTests {
 
         assertEquals(4, strategy.size());
     }
-
-    @Test
-    public void evaluatesSufficientRelativeTapeRecallVolumeCorrectly() {
-        requirementsChecker.setMinTapeRecallPercentage(80);
-
-        // initialize tape info
-        tapeInfoProvider.addTapeInfo("tapeX", new TapeInfo(100, 40));
-        tapeInfoProvider.addTapeFileInfo("/tape/fileX.txt", new TapefileInfo(40, "tapeX"));
-
-        SchedulingInfoTape sit = new SchedulingInfoTape();
-        sit.addTapeInfo(100, 40);
-
-        assertFalse(requirementsChecker.isTapeRecallVolumeSufficient(sit, 30));
-        assertTrue(requirementsChecker.isTapeRecallVolumeSufficient(sit, 40));
-        assertTrue(requirementsChecker.isTapeRecallVolumeSufficient(sit, 80));
-    }
-
-    @Test
-    public void evaluatesSufficientTapeRecallVolumeCorrectly() {
-        requirementsChecker.setMinTapeRecallPercentage(80);
-
-        // initialize tape info
-        tapeInfoProvider.addTapeInfo("tapeX", new TapeInfo(100, 100));
-        tapeInfoProvider.addTapeFileInfo("/tape/fileX.txt", new TapefileInfo(40, "tapeX"));
-
-        SchedulingInfoTape sit = new SchedulingInfoTape();
-        sit.addTapeInfo(100, 100);
-
-        assertFalse(requirementsChecker.isTapeRecallVolumeSufficient(sit, 70));
-        assertTrue(requirementsChecker.isTapeRecallVolumeSufficient(sit, 81));
-    }
-
-    @Test
-    public void assessJobExpiry() {
-        requirementsChecker.setMaxJobWaitingTime(Duration.ofSeconds(50));
-        requirementsChecker.setTapeinfolessJobWaitingTime(Duration.ofSeconds(5));
-
-        // initialize tape info
-        SchedulingItemJob job = new SchedulingItemJob(10, "/tape/file10.txt",
-              getNewCtime() - Duration.ofSeconds(50).toMillis() - 5);
-        SchedulingItemJob jobTapeinfoless = new SchedulingItemJob(10, "/tape/file10.txt",
-              getNewCtime() - Duration.ofSeconds(5).toMillis() - 5);
-
-        assertTrue(requirementsChecker.isJobExpired(job));
-        assertTrue(requirementsChecker.isTapeinfolessJobExpired(job));
-        assertTrue(requirementsChecker.isTapeinfolessJobExpired(jobTapeinfoless));
-        assertFalse(requirementsChecker.isJobExpired(jobTapeinfoless));
-    }
-
-    @Test
-    public void shouldCompareOldestTapeRequestAgeIfOneIsNotSet() {
-        SchedulingInfoTape tapeInfo1 = new SchedulingInfoTape();
-        tapeInfo1.addTapeInfo(100, 100);
-        tapeInfo1.setOldestJobArrival(getNewCtime());
-
-        SchedulingInfoTape tapeInfo2 = new SchedulingInfoTape();
-        tapeInfo2.addTapeInfo(100, 100);
-
-        assertEquals(1, requirementsChecker.compareOldestTapeRequestAge(tapeInfo1, tapeInfo2));
-    }
-
-    @Test
-    public void shouldCompareOldestTapeRequestAgeIfBothAreNotSet() {
-        SchedulingInfoTape tapeInfo1 = new SchedulingInfoTape();
-        tapeInfo1.addTapeInfo(100, 100);
-
-        SchedulingInfoTape tapeInfo2 = new SchedulingInfoTape();
-        tapeInfo2.addTapeInfo(100, 100);
-
-        assertEquals(0, requirementsChecker.compareOldestTapeRequestAge(tapeInfo1, tapeInfo2));
-    }
-
 }
