@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
@@ -150,7 +151,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         tapesWithJobs.computeIfAbsent(tape, k -> new LinkedList<>());
         SchedulingInfoTape tapeSchedItem = tapes.computeIfAbsent(tape,
               k -> new SchedulingInfoTape());
-        tapeSchedItem.setNewestJobArrival(job.getCreationTime());
+        long ctime = job.getCreationTime();
+        tapeSchedItem.setNewestJobArrivalAndOldestIfNotExists(ctime);
         return tapesWithJobs.get(tape).add(job);
     }
 
@@ -239,7 +241,11 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
         Map<String, Long> tapesWithRecallVolume = eligibleTapes.stream()
               .collect(Collectors.toMap(Function.identity(),
-                    t -> tapesWithJobs.get(t).stream().mapToLong(i -> i.getFileSize()).sum()));
+                    t -> tapesWithJobs.get(t).stream()
+                          .map(SchedulingItemJob::getFileSize)
+                          .filter(OptionalLong::isPresent)
+                          .mapToLong(OptionalLong::getAsLong)
+                          .sum()));
 
         List<String> tapesWithSufficientRecallVolume = tapesWithRecallVolume.entrySet().stream()
               .filter(e -> requirementsChecker.isTapeRecallVolumeSufficient(tapes.get(e.getKey()),

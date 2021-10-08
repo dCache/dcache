@@ -18,6 +18,8 @@
 
 package org.dcache.srm.taperecallscheduling;
 
+import java.util.OptionalLong;
+
 /**
  * Bring online tape scheduling item for tracking a tape's meta-information relevant for job
  * scheduling Used for keeping track of and evaluating oldest and newest job arrival targeting the
@@ -25,23 +27,21 @@ package org.dcache.srm.taperecallscheduling;
  */
 public class SchedulingInfoTape {
 
-    private static final long NO_VALUE = -1;
-
     // scheduling info
-    private long oldestJobArrival = NO_VALUE;
-    private long newestJobArrival = NO_VALUE;
+    private OptionalLong oldestJobArrival = OptionalLong.empty();
+    private OptionalLong newestJobArrival = OptionalLong.empty();
 
     // tape capacity info
     private boolean hasTapeInfo = false;
-    private long capacity = NO_VALUE;
-    private long usedSpace = NO_VALUE;
+    private OptionalLong capacity = OptionalLong.empty();
+    private OptionalLong usedSpace = OptionalLong.empty();
 
     public boolean addTapeInfo(long capacity, long usedSpace) {
         if (hasTapeInfo) {
             return false;
         }
-        this.capacity = capacity;
-        this.usedSpace = usedSpace;
+        this.capacity = OptionalLong.of(capacity);
+        this.usedSpace = OptionalLong.of(usedSpace);
         hasTapeInfo = true;
         return true;
     }
@@ -50,21 +50,25 @@ public class SchedulingInfoTape {
         return hasTapeInfo;
     }
 
-    public long getCapacity() {
+    public OptionalLong getCapacity() {
         return capacity;
     }
 
-    public long getUsedSpace() {
+    public OptionalLong getUsedSpace() {
         return usedSpace;
     }
 
     public void resetJobArrivalTimes() {
-        this.oldestJobArrival = NO_VALUE;
-        this.newestJobArrival = NO_VALUE;
+        oldestJobArrival = OptionalLong.empty();
+        newestJobArrival = OptionalLong.empty();
     }
 
-    public Long getNewestJobArrival() {
-        return newestJobArrival == NO_VALUE ? null : newestJobArrival;
+    public OptionalLong getNewestJobArrival() {
+        return newestJobArrival;
+    }
+
+    public void setNewestJobArrival(long jobArrival) {
+        newestJobArrival = OptionalLong.of(jobArrival);
     }
 
     /**
@@ -73,29 +77,19 @@ public class SchedulingInfoTape {
      *
      * @param jobArrival
      */
-    public void setNewestJobArrival(Long jobArrival) {
-
-        if (jobArrival == null || jobArrival <= 0) {
-            this.newestJobArrival = NO_VALUE;
-
-        } else {
-            this.newestJobArrival = jobArrival;
-            if (oldestJobArrival == NO_VALUE) {
-                oldestJobArrival = jobArrival;
-            }
+    public void setNewestJobArrivalAndOldestIfNotExists(long jobArrival) {
+        setNewestJobArrival(jobArrival);
+        if (getOldestJobArrival().isEmpty()) {
+            setOldestJobArrival(jobArrival);
         }
     }
 
-    public Long getOldestJobArrival() {
-        return oldestJobArrival == NO_VALUE ? null : oldestJobArrival;
+    public OptionalLong getOldestJobArrival() {
+        return oldestJobArrival;
     }
 
-    public void setOldestJobArrival(Long jobArrival) {
-        if (jobArrival == null || jobArrival <= 0) {
-            this.oldestJobArrival = NO_VALUE;
-        } else {
-            this.oldestJobArrival = jobArrival;
-        }
+    public void setOldestJobArrival(long jobArrival) {
+        oldestJobArrival = OptionalLong.of(jobArrival);
     }
 
     @Override

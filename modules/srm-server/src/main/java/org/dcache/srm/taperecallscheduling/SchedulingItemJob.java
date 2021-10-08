@@ -18,18 +18,18 @@
 
 package org.dcache.srm.taperecallscheduling;
 
+import java.util.OptionalLong;
+
 /**
  * Bring online job scheduling item for tracking a job's meta-information relevant for job
  * scheduling
  */
 public class SchedulingItemJob {
 
-    private static final long NO_VALUE = -1;
-
     private final long jobid;
     private final String fileid;
     private final long creationTime;
-    private long fileSize = NO_VALUE;
+    private OptionalLong fileSize = OptionalLong.empty();
     private boolean attemptedToRetrieveTapeLocationInfo = false;
 
     public SchedulingItemJob(long jobid, String fileid, long ctime) {
@@ -50,12 +50,12 @@ public class SchedulingItemJob {
         return creationTime;
     }
 
-    public Long getFileSize() {
-        return fileSize == NO_VALUE ? null : fileSize;
+    public OptionalLong getFileSize() {
+        return fileSize;
     }
 
     public void setFileSize(long fileSize) {
-        this.fileSize = fileSize <= 0 ? NO_VALUE : fileSize;
+        this.fileSize = OptionalLong.of(fileSize);
     }
 
     public boolean attemptedToRetrieveTapeLocationInfo() {
