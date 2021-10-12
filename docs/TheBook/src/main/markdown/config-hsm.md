@@ -251,11 +251,11 @@ Define the `executable` and Set the maximum number of concurrent `PUT` and `GET`
     #
     st set max active <numberOfConcurrentPUTS>
 
-   #
-   # GET operations
-   # set the maximum number of active GET operations >= 1
-   #
-   rh set max active `numberOfConcurrentGETs`
+    #
+    # GET operations
+    # set the maximum number of active GET operations >= 1
+    #
+    rh set max active `numberOfConcurrentGETs`
 
        - <hsmType>: the type ot the TSS system. Must be set to “osm” for basic setups.
        - <hsmInstanceName>: the instance name of the TSS system. Must be set to “osm” for basic setups.
