@@ -22,8 +22,12 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.util.PrincipalSetMaker;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Subjects {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Subjects.class);
 
     public static final String UNKNOWN = "<unknown>";
 
@@ -480,6 +484,9 @@ public class Subjects {
                     principal = new UidPrincipal(value);
                     break;
                 case "user":
+                    LOGGER.warn("Please use \"username:{}\" instead of \"{}\"", value, arg);
+                    // FALL THROUGH
+                case "username":
                     principal = new UserNamePrincipal(value);
                     break;
                 default:
