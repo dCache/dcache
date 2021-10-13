@@ -86,6 +86,7 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
 import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.gplazma.AuthenticationException;
@@ -324,6 +325,46 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
               new JwtJtiPrincipal("EXAMPLE", jti)));
+    }
+
+    @Test
+    public void shouldAcceptNonExpiredJwtWithUser() throws Exception {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE",
+              "https://example.org/ /prefix/path user:paul"));
+        givenThat("OP1",
+              isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+              .withClaim("jti", jti)
+              .withClaim("sub", sub)
+              .withClaim("scope", "read:/")
+              .withClaim("exp", Instant.now().plus(10, MINUTES))
+              .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UserNamePrincipal("paul"),
+                new JwtSubPrincipal("EXAMPLE", sub), new JwtJtiPrincipal("EXAMPLE", jti)));
+    }
+
+    @Test
+    public void shouldAcceptNonExpiredJwtWithUsername() throws Exception {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE",
+              "https://example.org/ /prefix/path username:paul"));
+        givenThat("OP1",
+              isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+              .withClaim("jti", jti)
+              .withClaim("sub", sub)
+              .withClaim("scope", "read:/")
+              .withClaim("exp", Instant.now().plus(10, MINUTES))
+              .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UserNamePrincipal("paul"),
+                new JwtSubPrincipal("EXAMPLE", sub), new JwtJtiPrincipal("EXAMPLE", jti)));
     }
 
     @Test(expected = AuthenticationException.class)
