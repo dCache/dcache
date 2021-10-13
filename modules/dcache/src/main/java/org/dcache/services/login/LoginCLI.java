@@ -41,7 +41,7 @@ public class LoginCLI
           + "    fqan      an FQAN, the first is taken as the primary FQAN\n"
           + "    kerberos  a kerberos principal (e.g. paul@EXAMPLE.ORG)\n"
           + "    name      the desired username when authentication without a password\n"
-          + "    user      the authenticated username\n";
+          + "    username  the authenticated username\n";
     public static final String hh_test_login = "<principal> [<principal> ...] # show result of login";
 
     public String ac_test_login_$_1_99(Args args) {
