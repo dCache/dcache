@@ -61,6 +61,18 @@ public class BanFilePluginTest {
     }
 
     @Test(expected = AuthenticationException.class)
+    public void shouldFailForBannedUserWithUser() throws IOException, AuthenticationException {
+        givenConfig("ban user:bert");
+        plugin.account(Set.of(new UserNamePrincipal("bert")));
+    }
+
+    @Test(expected = AuthenticationException.class)
+    public void shouldFailForBannedUserWithUsername() throws IOException, AuthenticationException {
+        givenConfig("ban username:bert");
+        plugin.account(Set.of(new UserNamePrincipal("bert")));
+    }
+
+    @Test(expected = AuthenticationException.class)
     public void shouldFailIfAnyPrincipalIsBanned() throws IOException, AuthenticationException {
         givenConfig("ban org.dcache.auth.UserNamePrincipal:bert");
         plugin.account(Set.of(new LoginNamePrincipal("ernie"), new UserNamePrincipal("bert")));
