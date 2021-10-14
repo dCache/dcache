@@ -45,7 +45,7 @@ For more info, check the official [dCache.ORG](http://www.dcache.org) web page.
 
 Contributors
 ============
-dCache is a joinet effort between
+dCache is a joint effort between
 [Deutsches Elektronen-Synchrotron DESY](http://www.desy.de),
 [Fermi National Accelerator Laboratory](http://www.fnal.gov)
 and [Nordic DataGrid Facility](http://www.ndgf.org).
@@ -98,3 +98,5 @@ then you just add a line saying ( git commit -s )
 
 using your real name (sorry, no pseudonyms or anonymous contributions.)
 
+We use an adapted version of the [`Google style guide for Java`](https://github.com/google/styleguide) that can be found in the root of this project for IntelliJ.
+The used reformatting involves optimization of imports (reordering), application of all syntactical sugar settings, but does not include code rearrangement (fields, methods, classes) or code cleanup for existing code. Reformatting should be applied to the changed code before submitting a patch.
