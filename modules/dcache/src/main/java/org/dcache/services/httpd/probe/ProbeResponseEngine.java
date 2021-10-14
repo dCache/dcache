@@ -1,5 +1,7 @@
 package org.dcache.services.httpd.probe;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.gson.GsonBuilder;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -11,38 +13,31 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
 import org.dcache.vehicles.BeanQueryMessage;
 import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
- * Provides a simple interface to query bean properties of
- * UniversalSpringCells.
+ * Provides a simple interface to query bean properties of UniversalSpringCells.
  */
-public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSender
-{
+public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSender {
+
     private CellStub stub;
 
-    public ProbeResponseEngine(String[] someArgs)
-    {
+    public ProbeResponseEngine(String[] someArgs) {
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        stub =  new CellStub(endpoint);
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        stub = new CellStub(endpoint);
     }
 
     @Override
-    public void queryUrl(HttpRequest request) throws HttpException
-    {
+    public void queryUrl(HttpRequest request) throws HttpException {
         try {
             String[] urlItems = request.getRequestTokens();
             if (urlItems.length < 2) {
@@ -52,14 +47,16 @@ public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSende
             /* urlItems[0] is the mount point.
              */
             BeanQueryMessage queryMessage = (urlItems.length == 3) ?
-                    new BeanQuerySinglePropertyMessage(urlItems[2]) :
-                    new BeanQueryAllPropertiesMessage();
+                  new BeanQuerySinglePropertyMessage(urlItems[2]) :
+                  new BeanQueryAllPropertiesMessage();
             BeanQueryMessage queryReply = stub.sendAndWait(new CellPath(urlItems[1]), queryMessage);
 
             request.setContentType("application/json; charset=utf-8");
             Writer writer = new OutputStreamWriter(request.getOutputStream(), UTF_8);
-            writer.append(new GsonBuilder().serializeSpecialFloatingPointValues().setPrettyPrinting().disableHtmlEscaping().create().toJson(queryReply
-                    .getResult()));
+            writer.append(
+                  new GsonBuilder().serializeSpecialFloatingPointValues().setPrettyPrinting()
+                        .disableHtmlEscaping().create().toJson(queryReply
+                              .getResult()));
             writer.flush();
         } catch (NoRouteToCellException e) {
             throw new HttpException(503, "The cell was unreachable, suspect trouble.");
@@ -70,7 +67,8 @@ public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSende
         } catch (CacheException | IOException e) {
             throw new HttpException(500, e.getMessage());
         } catch (InterruptedException e) {
-            throw new HttpException(503, "Received interrupt whilst processing data. Please try again later.");
+            throw new HttpException(503,
+                  "Received interrupt whilst processing data. Please try again later.");
         }
     }
 }

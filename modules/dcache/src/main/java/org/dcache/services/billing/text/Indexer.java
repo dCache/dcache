@@ -1,5 +1,12 @@
 package org.dcache.services.billing.text;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.io.Files.isFile;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static org.dcache.util.ByteUnit.KiB;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
@@ -17,12 +24,6 @@ import com.google.common.io.CharSource;
 import com.google.common.io.CharStreams;
 import com.google.common.io.LineProcessor;
 import com.google.gson.stream.JsonWriter;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -63,24 +64,21 @@ import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.dcache.boot.LayoutBuilder;
 import org.dcache.util.Args;
 import org.dcache.util.configuration.ConfigurationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.io.Files.isFile;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static org.dcache.util.ByteUnit.KiB;
-import static java.nio.charset.StandardCharsets.UTF_8;
+public class Indexer {
 
-public class Indexer
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(Indexer.class);
 
     private static final Pattern BILLING_NAME_PATTERN =
-            Pattern.compile("^billing-(\\d\\d\\d\\d.\\d\\d.\\d\\d)(\\.bz2)?$");
+          Pattern.compile("^billing-(\\d\\d\\d\\d.\\d\\d.\\d\\d)(\\.bz2)?$");
     private static final String BILLING_TEXT_FLAT_DIR = "billing.text.flat-dir";
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
     private static final String BILLING_TEXT_FORMAT_PREFIX = "billing.parser.format!";
@@ -88,17 +86,17 @@ public class Indexer
     private static final int PIPE_SIZE = KiB.toBytes(2);
 
     private static final DateTimeFormatter CLI_DATE_FORMAT =
-            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM);
+          DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM);
     private static final DateTimeFormatter DEFAULT_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("MM.dd");
+          DateTimeFormatter.ofPattern("MM.dd");
     private static final DateTimeFormatter DEFAULT_TIME_FORMAT =
-            DateTimeFormatter.ofPattern("HH:mm:ss");
+          DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter FILE_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("uuuu.MM.dd");
+          DateTimeFormatter.ofPattern("uuuu.MM.dd");
     private static final DateTimeFormatter DIRECTORY_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("uuuu" + File.separator + "MM");
+          DateTimeFormatter.ofPattern("uuuu" + File.separator + "MM");
     private static final DateTimeFormatter ISO8601_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
+          DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
 
     /**
      * Almost identical to the file tree traverser from Guava, sorts directory entries
@@ -123,12 +121,12 @@ public class Indexer
     private final File dir;
     private final ImmutableMap<String, String> formats;
 
-    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
-    {
+    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
         ConfigurationProperties configuration = new LayoutBuilder().build().properties();
-        isFlat = Boolean.valueOf(args.getOption("flat", configuration.getValue(BILLING_TEXT_FLAT_DIR)));
+        isFlat = Boolean.valueOf(
+              args.getOption("flat", configuration.getValue(BILLING_TEXT_FLAT_DIR)));
         dir = new File(args.getOption("dir", configuration.getValue(BILLING_TEXT_DIR)));
         formats = getBillingFormats(configuration);
 
@@ -143,22 +141,24 @@ public class Indexer
             }
 
             FluentIterable<File> filesWithPossibleMatch =
-                    SORTED_FILE_TREE_TRAVERSER
-                            .preOrderTraversal(dir);
+                  SORTED_FILE_TREE_TRAVERSER
+                        .preOrderTraversal(dir);
             if (args.hasOption("since") || args.hasOption("until")) {
                 LocalDate since = args.hasOption("since")
-                        ? LocalDate.parse(args.getOption("since"), CLI_DATE_FORMAT) : LocalDate.ofEpochDay(0);
+                      ? LocalDate.parse(args.getOption("since"), CLI_DATE_FORMAT)
+                      : LocalDate.ofEpochDay(0);
                 LocalDate until = args.hasOption("until")
-                        ? LocalDate.parse(args.getOption("until"), CLI_DATE_FORMAT) : LocalDate.now().plusDays(1);
+                      ? LocalDate.parse(args.getOption("until"), CLI_DATE_FORMAT)
+                      : LocalDate.now().plusDays(1);
                 filesWithPossibleMatch =
-                        filesWithPossibleMatch.filter(file -> isInRange(file, since, until));
+                      filesWithPossibleMatch.filter(file -> isInRange(file, since, until));
             }
             if (searchTerms.contains("")) {
                 filesWithPossibleMatch =
-                        filesWithPossibleMatch.filter(file -> isBillingFile(file));
+                      filesWithPossibleMatch.filter(file -> isBillingFile(file));
             } else {
                 filesWithPossibleMatch =
-                        filesWithPossibleMatch.filter(isBillingFileAndMightContain(searchTerms));
+                      filesWithPossibleMatch.filter(isBillingFileAndMightContain(searchTerms));
             }
 
             if (args.hasOption("files")) {
@@ -205,7 +205,8 @@ public class Indexer
                 File file = new File(name);
                 Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (!matcher.matches()) {
-                    throw new IllegalArgumentException("File name does not follow the format of billing files: " + name);
+                    throw new IllegalArgumentException(
+                          "File name does not follow the format of billing files: " + name);
                 }
                 index(fpp, file, getIndexFile(file.getParentFile(), matcher.group(1)));
             }
@@ -224,13 +225,10 @@ public class Indexer
         }
     }
 
-    private OutputWriter toText(final PrintStream out)
-    {
-        return new OutputWriter()
-        {
+    private OutputWriter toText(final PrintStream out) {
+        return new OutputWriter() {
             @Override
-            public void write(LocalDate date, String line) throws IOException
-            {
+            public void write(LocalDate date, String line) throws IOException {
                 if (!line.isEmpty() && line.charAt(0) != '#') {
                     // Prepend year if the default timestamp format is used
                     try {
@@ -244,20 +242,17 @@ public class Indexer
             }
 
             @Override
-            public void close()
-            {
+            public void close() {
             }
         };
     }
 
-    private OutputWriter toJson(final PrintStream out) throws IOException, URISyntaxException
-    {
-        return new OutputWriter()
-        {
+    private OutputWriter toJson(final PrintStream out) throws IOException, URISyntaxException {
+        return new OutputWriter() {
             final JsonWriter writer = new JsonWriter(new OutputStreamWriter(out));
 
             final BillingParserBuilder builder =
-                    new BillingParserBuilder(formats).addAllAttributes();
+                  new BillingParserBuilder(formats).addAllAttributes();
 
             Function<String, Map<String, String>> parser = builder.buildToMap();
 
@@ -267,8 +262,7 @@ public class Indexer
             }
 
             @Override
-            public void write(LocalDate date, String line) throws IOException
-            {
+            public void write(LocalDate date, String line) throws IOException {
                 if (line.startsWith("##")) {
                     parser = builder.withFormat(line).addAllAttributes().buildToMap();
                 } else {
@@ -285,8 +279,7 @@ public class Indexer
             }
 
             @Override
-            public void close() throws IOException
-            {
+            public void close() throws IOException {
                 writer.endArray();
                 writer.flush();
                 out.println();
@@ -294,18 +287,15 @@ public class Indexer
         };
     }
 
-    private OutputWriter toYaml(final PrintStream out) throws IOException, URISyntaxException
-    {
-        return new OutputWriter()
-        {
+    private OutputWriter toYaml(final PrintStream out) throws IOException, URISyntaxException {
+        return new OutputWriter() {
             final BillingParserBuilder builder =
-                    new BillingParserBuilder(formats).addAllAttributes();
+                  new BillingParserBuilder(formats).addAllAttributes();
 
             Function<String, Map<String, String>> parser = builder.buildToMap();
 
             @Override
-            public void write(LocalDate date, String line) throws IOException
-            {
+            public void write(LocalDate date, String line) throws IOException {
                 if (line.startsWith("##")) {
                     parser = builder.withFormat(line).addAllAttributes().buildToMap();
                 } else {
@@ -325,8 +315,7 @@ public class Indexer
             }
 
             @Override
-            public void close()
-            {
+            public void close() {
             }
         };
     }
@@ -334,13 +323,13 @@ public class Indexer
     /**
      * Searches for searchTerm in files and writes any matching lines to out.
      */
-    private static void find(final Collection<String> searchTerms, FluentIterable<File> files, final OutputWriter out)
-            throws IOException
-    {
+    private static void find(final Collection<String> searchTerms, FluentIterable<File> files,
+          final OutputWriter out)
+          throws IOException {
         int threads = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         try {
-            List<Map.Entry<LocalDate,Reader>> readers = new ArrayList<>();
+            List<Map.Entry<LocalDate, Reader>> readers = new ArrayList<>();
             for (File file : files) {
                 Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (matcher.matches()) {
@@ -359,18 +348,15 @@ public class Indexer
                 }
             }
             for (final Map.Entry<LocalDate, Reader> entry : readers) {
-                CharStreams.readLines(entry.getValue(), new LineProcessor<Void>()
-                {
+                CharStreams.readLines(entry.getValue(), new LineProcessor<Void>() {
                     @Override
-                    public boolean processLine(String line) throws IOException
-                    {
+                    public boolean processLine(String line) throws IOException {
                         out.write(entry.getKey(), line);
                         return true;
                     }
 
                     @Override
-                    public Void getResult()
-                    {
+                    public Void getResult() {
                         return null;
                     }
                 });
@@ -381,13 +367,10 @@ public class Indexer
     }
 
     private static void grep(final Collection<String> searchTerms, File file, PrintWriter out)
-            throws IOException
-    {
-        asCharSource(file, UTF_8).readLines(new LineProcessor<Void>()
-        {
+          throws IOException {
+        asCharSource(file, UTF_8).readLines(new LineProcessor<Void>() {
             @Override
-            public boolean processLine(String line) throws IOException
-            {
+            public boolean processLine(String line) throws IOException {
                 if (!line.isEmpty() && line.charAt(0) != '#') {
                     for (String term : searchTerms) {
                         if (line.contains(term)) {
@@ -402,47 +385,44 @@ public class Indexer
             }
 
             @Override
-            public Void getResult()
-            {
+            public Void getResult() {
                 return null;
             }
         });
-   }
+    }
 
-    private void index(double fpp, File billingFile, File indexFile) throws IOException
-    {
+    private void index(double fpp, File billingFile, File indexFile) throws IOException {
         int threads = Runtime.getRuntime().availableProcessors();
         Set<String> index = produceIndex(billingFile, threads);
         BloomFilter<CharSequence> filter = produceBloomFilter(fpp, index);
         writeToFile(indexFile, filter);
     }
 
-    private static void decompress(File compressedFile) throws IOException
-    {
+    private static void decompress(File compressedFile) throws IOException {
         String path = compressedFile.getPath();
         checkArgument(path.endsWith("." + BZ2), "File must have " + BZ2 + " extension.");
         String pathWithoutExtension = path.replace("." + BZ2 + "$", "");
 
         File file = new File(compressedFile.getParent(), pathWithoutExtension);
-        try (InputStream in = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+        try (InputStream in = new BZip2CompressorInputStream(
+              new BufferedInputStream(new FileInputStream(file)))) {
             Files.copy(in, file.toPath());
         }
         java.nio.file.Files.delete(compressedFile.toPath());
     }
 
-    private static void compress(File file) throws IOException
-    {
+    private static void compress(File file) throws IOException {
         File compressedFile = new File(file.getPath() + "." + BZ2);
 
-        BufferedOutputStream bufOut = new BufferedOutputStream(Files.newOutputStream(compressedFile.toPath()));
+        BufferedOutputStream bufOut = new BufferedOutputStream(
+              Files.newOutputStream(compressedFile.toPath()));
         try (OutputStream out = new BZip2CompressorOutputStream(bufOut)) {
             Files.copy(file.toPath(), out);
         }
         java.nio.file.Files.delete(file.toPath());
     }
 
-    private static void help(PrintStream out)
-    {
+    private static void help(PrintStream out) {
         out.println("COMMANDS:");
         out.println("   -all [-fpp=PROP] [-dir=BASE]");
         out.println("          (Re)index all billing files.");
@@ -450,15 +430,20 @@ public class Indexer
         out.println("          Compress FILE.");
         out.println("   -decompress FILE...");
         out.println("          Decompress FILE.");
-        out.println("   -find [-files|-json|-yaml] [-dir=BASE] [-since=DATE] [-until=DATE] [-f=FILE] [SEARCHTERM]...");
-        out.println("          Output billing entries that contain SEARCHTERM. Valid search terms are");
-        out.println("          path, pnfsid, dn and path prefixes of those. Optionally output names");
-        out.println("          of billing files that might contain the search term. If no search term");
+        out.println(
+              "   -find [-files|-json|-yaml] [-dir=BASE] [-since=DATE] [-until=DATE] [-f=FILE] [SEARCHTERM]...");
+        out.println(
+              "          Output billing entries that contain SEARCHTERM. Valid search terms are");
+        out.println(
+              "          path, pnfsid, dn and path prefixes of those. Optionally output names");
+        out.println(
+              "          of billing files that might contain the search term. If no search term");
         out.println("          is provided, all entries are output.");
         out.println("   -index [-fpp=PROP] FILE...");
         out.println("          Create index for FILE.");
         out.println("   -yesterday [-compress] [-fpp=PROP] [-dir=BASE] [-flat=BOOL]");
-        out.println("          Index yesterday's billing file. Optionally compresses the billing file");
+        out.println(
+              "          Index yesterday's billing file. Optionally compresses the billing file");
         out.println("          after indexing it.");
         out.println("");
         out.println("OPTIONS:");
@@ -474,8 +459,7 @@ public class Indexer
     }
 
     private static LocalDateTime parseDefaultTimestamp(int year, String s)
-            throws DateTimeParseException
-    {
+          throws DateTimeParseException {
         MonthDay monthDay = MonthDay.parse(s.substring(0, 5), DEFAULT_DATE_FORMAT);
         LocalTime time = LocalTime.parse(s.substring(6, 14), DEFAULT_TIME_FORMAT);
         return monthDay.atYear(year).atTime(time);
@@ -484,50 +468,45 @@ public class Indexer
     /**
      * Completes the date field of billing entries by adding a year to it.
      */
-    private static void fixDate(int year, Map<String,String> attributes)
-    {
+    private static void fixDate(int year, Map<String, String> attributes) {
         String s = attributes.get("date");
         if (s != null) {
             try {
                 LocalDateTime timestamp = parseDefaultTimestamp(year, s);
-                attributes.put("date", ISO8601_FORMAT.format(timestamp.atZone(ZoneId.systemDefault())));
+                attributes.put("date",
+                      ISO8601_FORMAT.format(timestamp.atZone(ZoneId.systemDefault())));
             } catch (DateTimeParseException ignore) {
             }
         }
     }
 
-    private File getDirectory(LocalDate date)
-    {
+    private File getDirectory(LocalDate date) {
         return isFlat ? dir : new File(this.dir, DIRECTORY_DATE_FORMAT.format(date));
     }
 
-    private File getBillingFile(LocalDate date)
-    {
+    private File getBillingFile(LocalDate date) {
         return new File(getDirectory(date), "billing-" + FILE_DATE_FORMAT.format(date));
     }
 
-    private File getErrorFile(LocalDate date)
-    {
+    private File getErrorFile(LocalDate date) {
         return new File(getDirectory(date), "billing-error-" + FILE_DATE_FORMAT.format(date));
     }
 
-    private File getIndexFile(LocalDate date)
-    {
+    private File getIndexFile(LocalDate date) {
         return getIndexFile(getDirectory(date), FILE_DATE_FORMAT.format(date));
     }
 
-    private static File getIndexFile(File dir, String date)
-    {
+    private static File getIndexFile(File dir, String date) {
         return new File(dir, "index-" + date);
     }
 
     private Set<String> produceIndex(final File file, int threads)
-            throws IOException
-    {
+          throws IOException {
         try {
             IndexProcessor processor = new IndexProcessor(formats);
             Set<String> index;
-            try (ParallelizingLineProcessor<Set<String>> parallelizer = new ParallelizingLineProcessor<>(threads, processor)) {
+            try (ParallelizingLineProcessor<Set<String>> parallelizer = new ParallelizingLineProcessor<>(
+                  threads, processor)) {
                 index = asCharSource(file, UTF_8).readLines(parallelizer);
             }
             return index;
@@ -538,15 +517,14 @@ public class Indexer
         }
     }
 
-    private static CharSource asCharSource(final File file, Charset charset)
-    {
+    private static CharSource asCharSource(final File file, Charset charset) {
         ByteSource source;
         if (file.getPath().endsWith("." + BZ2)) {
             source = new ByteSource() {
                 @Override
-                public InputStream openStream() throws IOException
-                {
-                    return new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)));
+                public InputStream openStream() throws IOException {
+                    return new BZip2CompressorInputStream(
+                          new BufferedInputStream(new FileInputStream(file)));
                 }
             };
         } else {
@@ -555,32 +533,28 @@ public class Indexer
         return source.asCharSource(charset);
     }
 
-    private static BloomFilter<CharSequence> produceBloomFilter(double fpp, Set<String> index)
-    {
+    private static BloomFilter<CharSequence> produceBloomFilter(double fpp, Set<String> index) {
         BloomFilter<CharSequence> filter =
-                BloomFilter.create(Funnels.stringFunnel(UTF_8), index.size(), fpp);
+              BloomFilter.create(Funnels.stringFunnel(UTF_8), index.size(), fpp);
         index.forEach(filter::put);
         return filter;
     }
 
     private static void writeToFile(File outFile, Object object)
-            throws IOException
-    {
+          throws IOException {
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outFile))) {
             out.writeObject(object);
         }
     }
 
     private static Object readFromFile(File outFile)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(outFile))) {
             return in.readObject();
         }
     }
 
-    private static boolean isBillingFile(File file)
-    {
+    private static boolean isBillingFile(File file) {
         if (!file.isFile()) {
             return false;
         }
@@ -591,33 +565,32 @@ public class Indexer
     /**
      * Returns all billing format strings from configuration.
      */
-    private static ImmutableMap<String,String> getBillingFormats(ConfigurationProperties configuration)
-    {
-        ImmutableMap.Builder<String,String> formats = ImmutableMap.builder();
+    private static ImmutableMap<String, String> getBillingFormats(
+          ConfigurationProperties configuration) {
+        ImmutableMap.Builder<String, String> formats = ImmutableMap.builder();
         for (String name : configuration.stringPropertyNames()) {
             if (name.startsWith(BILLING_TEXT_FORMAT_PREFIX)) {
-                formats.put(name.substring(BILLING_TEXT_FORMAT_PREFIX.length()), configuration.getValue(name));
+                formats.put(name.substring(BILLING_TEXT_FORMAT_PREFIX.length()),
+                      configuration.getValue(name));
             }
         }
         return formats.build();
     }
 
-    private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
-    {
+    private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms) {
         final List<String> searchTerms = terms.stream()
-                .map(str -> str.endsWith("/") ? str.substring(0, str.length() - 1) : str)
-                .collect(toList());
-        return new Predicate<File>()
-        {
+              .map(str -> str.endsWith("/") ? str.substring(0, str.length() - 1) : str)
+              .collect(toList());
+        return new Predicate<File>() {
             @Override
-            public boolean apply(File file)
-            {
+            public boolean apply(File file) {
                 if (!file.isFile()) {
                     return false;
                 }
                 try {
                     Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
-                    return matcher.matches() && mightContain(getIndexFile(file.getParentFile(), matcher.group(1)));
+                    return matcher.matches() && mightContain(
+                          getIndexFile(file.getParentFile(), matcher.group(1)));
                 } catch (ClassNotFoundException | IOException e) {
                     throw new RuntimeException("Failed to read index", e);
                 }
@@ -625,8 +598,7 @@ public class Indexer
 
             @SuppressWarnings("unchecked")
             private boolean mightContain(File index)
-                    throws IOException, ClassNotFoundException
-            {
+                  throws IOException, ClassNotFoundException {
                 if (!index.exists()) {
                     return true;
                 }
@@ -641,8 +613,7 @@ public class Indexer
         };
     }
 
-    private static boolean isInRange(File file, LocalDate since, LocalDate until)
-    {
+    private static boolean isInRange(File file, LocalDate since, LocalDate until) {
         Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
         if (matcher.matches()) {
             LocalDate date = LocalDate.parse(matcher.group(1), FILE_DATE_FORMAT);
@@ -656,26 +627,24 @@ public class Indexer
     /**
      * Billing file line processor that collects strings to index.
      */
-    private static class IndexProcessor implements LineProcessor<Set<String>>
-    {
+    private static class IndexProcessor implements LineProcessor<Set<String>> {
+
         private final Set<String> result = Sets.newConcurrentHashSet();
         private final BillingParserBuilder builder;
 
         private Function<String, String[]> parser;
 
         private IndexProcessor(ImmutableMap<String, String> formats)
-                throws IOException, URISyntaxException
-        {
+              throws IOException, URISyntaxException {
             builder = new BillingParserBuilder(formats)
-                    .addAttribute("path")
-                    .addAttribute("pnfsid")
-                    .addAttribute("owner");
+                  .addAttribute("path")
+                  .addAttribute("pnfsid")
+                  .addAttribute("owner");
             parser = builder.buildToArray();
         }
 
         @Override
-        public boolean processLine(String line) throws IOException
-        {
+        public boolean processLine(String line) throws IOException {
             if (!line.isEmpty() && line.charAt(0) != '#') {
                 String[] value = parser.apply(line);
                 if (!Strings.isNullOrEmpty(value[0])) {
@@ -694,13 +663,11 @@ public class Indexer
         }
 
         @Override
-        public Set<String> getResult()
-        {
+        public Set<String> getResult() {
             return result;
         }
 
-        private static void addAllPathPrefixes(String path, Set<String> paths)
-        {
+        private static void addAllPathPrefixes(String path, Set<String> paths) {
             int next;
             while (paths.add(path) && (next = path.lastIndexOf('/')) > 0) {
                 path = path.substring(0, next);
@@ -709,9 +676,8 @@ public class Indexer
     }
 
     public static void main(String[] arguments)
-            throws URISyntaxException, ExecutionException, InterruptedException,
-                   ClassNotFoundException
-    {
+          throws URISyntaxException, ExecutionException, InterruptedException,
+          ClassNotFoundException {
         LogManager.getLogManager().reset();
         SLF4JBridgeHandler.install();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.error("Uncaught exception", e));
@@ -733,8 +699,8 @@ public class Indexer
         }
     }
 
-    private interface OutputWriter extends Closeable
-    {
+    private interface OutputWriter extends Closeable {
+
         void write(LocalDate date, String line) throws IOException;
     }
 }

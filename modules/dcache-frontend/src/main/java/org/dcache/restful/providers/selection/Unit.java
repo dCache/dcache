@@ -59,23 +59,22 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-
 @ApiModel(description = "A selection unit describes a predicate that might be satisfied by "
-                + "a particular request.")
+      + "a particular request.")
 public final class Unit extends SelectionType {
+
     private static final long serialVersionUID = 5839097559975700910L;
 
     @ApiModelProperty(value = "The aspect of a request checked by this unit.",
-                    allowableValues = "net,store,dcache,protocol")
+          allowableValues = "net,store,dcache,protocol")
     private final String type;
 
     @ApiModelProperty("The unit groups that reference this unit.")
@@ -90,10 +89,10 @@ public final class Unit extends SelectionType {
         super(unit.getName());
         type = unit.getType().name();
         groups = unit.getMemberOfUnitGroups()
-                     .stream()
-                     .sorted(Comparator.comparing(SelectionUnitGroup::getName))
-                     .map(SelectionUnitGroup::getName)
-                     .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionUnitGroup::getName))
+              .map(SelectionUnitGroup::getName)
+              .collect(Collectors.toList());
     }
 
     public List<String> getGroups() {

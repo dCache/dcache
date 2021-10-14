@@ -18,23 +18,21 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509Credential;
-
 import org.dcache.delegation.gridsite2.DelegationException;
 
 /**
- * A CredentialDelegation represents the process of creating a delegated
- * credential.  At any time, a CredentialDelegation object is either incomplete
- * or complete.  When created, it is initially incomplete.
+ * A CredentialDelegation represents the process of creating a delegated credential.  At any time, a
+ * CredentialDelegation object is either incomplete or complete.  When created, it is initially
+ * incomplete.
  * <p>
- * When incomplete, calls to {@code getCertificateSigningRequest} will provide
- * a CSR that contains the public key of a key-pair.  The delegator should sign
- * this with the private key of their credential, creating a certificate.  The
- * resulting certificate should be provided by calling
- * {@code acceptCertificate}.  If successful, this call will complete the
- * CredentialDelegation and the resulting credential will be returned.
+ * When incomplete, calls to {@code getCertificateSigningRequest} will provide a CSR that contains
+ * the public key of a key-pair.  The delegator should sign this with the private key of their
+ * credential, creating a certificate.  The resulting certificate should be provided by calling
+ * {@code acceptCertificate}.  If successful, this call will complete the CredentialDelegation and
+ * the resulting credential will be returned.
  */
-public interface CredentialDelegation
-{
+public interface CredentialDelegation {
+
     /**
      * Obtain the certificate signing request to send to the delegator.
      */
@@ -46,11 +44,10 @@ public interface CredentialDelegation
     DelegationIdentity getId();
 
     /**
-     * Complete a in-progress CredentialDelegation with the supplied
-     * certificate and return the delegated credential.  Throws a
-     * DelegationException if the certificate is invalid or a certificate has
-     * already been accepted.
+     * Complete a in-progress CredentialDelegation with the supplied certificate and return the
+     * delegated credential.  Throws a DelegationException if the certificate is invalid or a
+     * certificate has already been accepted.
      */
     X509Credential acceptCertificate(String certificate)
-            throws DelegationException;
+          throws DelegationException;
 }

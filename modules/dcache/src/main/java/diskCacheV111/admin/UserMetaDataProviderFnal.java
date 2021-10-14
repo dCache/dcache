@@ -1,37 +1,32 @@
-package diskCacheV111.admin ;
+package diskCacheV111.admin;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.CellAdapter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import dmg.cells.nucleus.CellAdapter;
-
 import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
 import org.dcache.util.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Author : Patrick Fuhrmann, Vladimir Podstavkov
- * Based on the UserMetaDataProviderExample
- *
+ * Author : Patrick Fuhrmann, Vladimir Podstavkov Based on the UserMetaDataProviderExample
  */
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
     private static final Logger _log =
-        LoggerFactory.getLogger(UserMetaDataProviderFnal.class);
+          LoggerFactory.getLogger(UserMetaDataProviderFnal.class);
 
-    private final CellAdapter _cell    ;
-    private final Map<String,Object>  _context;
-    private final Args        _args    ;
-    private final String      _ourName ;
+    private final CellAdapter _cell;
+    private final Map<String, Object> _context;
+    private final Args _args;
+    private final String _ourName;
 
-    private int     _requestCount;
+    private int _requestCount;
     private final Map<String, Integer> _userStatistics =
-            new HashMap<>();
+          new HashMap<>();
 
     //generalized kpwd file path used by all flavors
     private String _kpwdFilePath;
@@ -41,16 +36,16 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      */
     public UserMetaDataProviderFnal(CellAdapter cell) {
 
-        _cell    =  cell ;
-        _context = _cell.getDomainContext() ;
-        _args    = _cell.getArgs() ;
-        _ourName = this.getClass().getName() ;
+        _cell = cell;
+        _context = _cell.getDomainContext();
+        _args = _cell.getArgs();
+        _ourName = this.getClass().getName();
         //
         //
         //  get some information from the
         //  command line or the domain context.
         //
-        _kpwdFilePath = (String)_context.get("kpwd-file") ;
+        _kpwdFilePath = (String) _context.get("kpwd-file");
         _kpwdFilePath = _kpwdFilePath == null ? _args.getOpt("kpwd-file") : _kpwdFilePath;
 
         if (_kpwdFilePath == null) {
@@ -61,33 +56,34 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     /**
      * just for the fun of it
      */
-    public static final String hh_ls = "" ;
+    public static final String hh_ls = "";
 
-    public String ac_ls( Args args ) {
-        StringBuilder sb = new StringBuilder() ;
+    public String ac_ls(Args args) {
+        StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Integer> entry : _userStatistics
-                .entrySet()) {
+              .entrySet()) {
             sb.append(entry.getKey()).
-                    append("  ->  ").
-                    append(entry.getValue()).
-                    append("\n");
+                  append("  ->  ").
+                  append(entry.getValue()).
+                  append("\n");
         }
         return sb.toString();
     }
 
-    private void updateStatistics( String userName ) {
+    private void updateStatistics(String userName) {
         Integer count = _userStatistics.get(userName);
         int c = count == null ? 0 : count;
-        _userStatistics.put( userName , c + 1) ;
-        _requestCount++ ;
+        _userStatistics.put(userName, c + 1);
+        _requestCount++;
     }
 
     /**
      * and of course the interface definition
      */
     @Override
-    public synchronized Map<String,String> getUserMetaData( String userName, String userRole, List<String> attributes )
-        throws Exception {
+    public synchronized Map<String, String> getUserMetaData(String userName, String userRole,
+          List<String> attributes)
+          throws Exception {
 
         //
         // 'attributes' is a list of keys somebody (door)
@@ -100,18 +96,19 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         // throw an exception rather returning an empty
         // map.
         //
-        updateStatistics( userName ) ;
+        updateStatistics(userName);
         //
         // get the information for the user
         //
-        Map<String,String> result = getUserMD(userName, userRole) ;
+        Map<String, String> result = getUserMD(userName, userRole);
         //
         // check for minimum requirments
         //
-        if ( ( result.get("uid") == null ) ||
-             ( result.get("gid") == null ) ||
-             ( result.get("home") == null )  ) {
-            throw new IllegalArgumentException(_ourName + " : insufficient info for user : " + userName + "->" + userRole);
+        if ((result.get("uid") == null) ||
+              (result.get("gid") == null) ||
+              (result.get("home") == null)) {
+            throw new IllegalArgumentException(
+                  _ourName + " : insufficient info for user : " + userName + "->" + userRole);
         }
 
         return result;
@@ -119,8 +116,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     }
 
 
-    private Map<String,String> getUserMD(String userPrincipal, String userRole)
-    {
+    private Map<String, String> getUserMD(String userPrincipal, String userRole) {
         KAuthFile authf;
         UserAuthBase pwdRecord;
         Map<String, String> answer = new HashMap<>();
@@ -129,8 +125,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
         try {
             authf = new KAuthFile(_kpwdFilePath);
-        }
-        catch ( Exception e ) {
+        } catch (Exception e) {
             _log.warn("User authentication file not found: {}", e.toString());
             return answer;
         }
@@ -139,23 +134,23 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             userRole = authf.getIdMapping(userPrincipal);
             _log.warn("userRole={}", userRole);
 
-            if(userRole == null) {
+            if (userRole == null) {
                 _log.warn("User {} not found.", userPrincipal);
                 return answer;
             }
         }
         pwdRecord = authf.getUserRecord(userRole);
-        if( pwdRecord == null ) {
+        if (pwdRecord == null) {
             _log.warn("User {} not found.", userRole);
             return answer;
         }
 
-        if( !((UserAuthRecord)pwdRecord).hasSecureIdentity(userPrincipal) ) {
-            _log.warn(userPrincipal+": Permission denied");
+        if (!((UserAuthRecord) pwdRecord).hasSecureIdentity(userPrincipal)) {
+            _log.warn(userPrincipal + ": Permission denied");
             return answer;
         }
-        uid  = pwdRecord.UID;
-        gid  = pwdRecord.GIDs.get(0);
+        uid = pwdRecord.UID;
+        gid = pwdRecord.GIDs.get(0);
         home = pwdRecord.Home;
 
         answer.put("uid", String.valueOf(uid));
@@ -171,7 +166,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
      * and of course the interface definition
      */
     public String toString() {
-        return "rc="+_requestCount;
+        return "rc=" + _requestCount;
     }
 
 }

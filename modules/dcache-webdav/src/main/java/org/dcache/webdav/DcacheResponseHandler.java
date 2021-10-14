@@ -1,9 +1,21 @@
 package org.dcache.webdav;
 
+import static io.milton.http.Response.Status.SC_BAD_REQUEST;
+import static io.milton.http.Response.Status.SC_CONFLICT;
+import static io.milton.http.Response.Status.SC_FORBIDDEN;
+import static io.milton.http.Response.Status.SC_INSUFFICIENT_STORAGE;
+import static io.milton.http.Response.Status.SC_INTERNAL_SERVER_ERROR;
+import static io.milton.http.Response.Status.SC_METHOD_NOT_ALLOWED;
+import static io.milton.http.Response.Status.SC_NOT_FOUND;
+import static io.milton.http.Response.Status.SC_NOT_IMPLEMENTED;
+import static io.milton.http.Response.Status.SC_UNAUTHORIZED;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import diskCacheV111.util.FsPath;
 import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.http.AuthenticationService;
 import io.milton.http.Range;
@@ -19,14 +31,6 @@ import io.milton.http.webdav.PropFindResponse.NameAndError;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.stringtemplate.v4.ST;
-
-import javax.security.auth.Subject;
-import javax.xml.namespace.QName;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -35,46 +39,45 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.util.FsPath;
-
+import javax.security.auth.Subject;
+import javax.xml.namespace.QName;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
-
-import static java.util.Objects.requireNonNull;
-import static io.milton.http.Response.Status.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.stringtemplate.v4.ST;
 
 /**
- * This class controls how Milton responds under different circumstances by
- * decorating the standard response handler.  This is done to provide template-
- * based custom error pages, to add support for additional headers in the
- * response, and to work-around some bugs.
+ * This class controls how Milton responds under different circumstances by decorating the standard
+ * response handler.  This is done to provide template- based custom error pages, to add support for
+ * additional headers in the response, and to work-around some bugs.
  */
-public class DcacheResponseHandler extends AbstractWrappingResponseHandler
-{
+public class DcacheResponseHandler extends AbstractWrappingResponseHandler {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(DcacheResponseHandler.class);
+          LoggerFactory.getLogger(DcacheResponseHandler.class);
 
     public static final String HTML_TEMPLATE_NAME = "errorpage";
 
     private static final Splitter PATH_SPLITTER =
-        Splitter.on('/').omitEmptyStrings();
+          Splitter.on('/').omitEmptyStrings();
 
-    private final ImmutableMap<Response.Status,String> ERRORS =
-        ImmutableMap.<Response.Status,String>builder()
-        .put(SC_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR")
-        .put(SC_FORBIDDEN, "PERMISSION DENIED")
-        .put(SC_BAD_REQUEST, "BAD REQUEST")
-        .put(SC_NOT_IMPLEMENTED, "NOT IMPLEMENTED")
-        .put(SC_CONFLICT, "CONFLICT")
-        .put(SC_UNAUTHORIZED, "UNAUTHORIZED")
-        .put(SC_METHOD_NOT_ALLOWED, "METHOD NOT ALLOWED")
-        .put(SC_NOT_FOUND, "FILE NOT FOUND")
-        .put(SC_INSUFFICIENT_STORAGE, "INSUFFICIENT STORAGE")
-        .build();
+    private final ImmutableMap<Response.Status, String> ERRORS =
+          ImmutableMap.<Response.Status, String>builder()
+                .put(SC_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR")
+                .put(SC_FORBIDDEN, "PERMISSION DENIED")
+                .put(SC_BAD_REQUEST, "BAD REQUEST")
+                .put(SC_NOT_IMPLEMENTED, "NOT IMPLEMENTED")
+                .put(SC_CONFLICT, "CONFLICT")
+                .put(SC_UNAUTHORIZED, "UNAUTHORIZED")
+                .put(SC_METHOD_NOT_ALLOWED, "METHOD NOT ALLOWED")
+                .put(SC_NOT_FOUND, "FILE NOT FOUND")
+                .put(SC_INSUFFICIENT_STORAGE, "INSUFFICIENT STORAGE")
+                .build();
 
     private AuthenticationService _authenticationService;
     private String _staticContentPath;
@@ -83,62 +86,53 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 
     private PathMapper pathMapper;
 
-    public void setPathMapper(PathMapper mapper)
-    {
+    public void setPathMapper(PathMapper mapper) {
         pathMapper = requireNonNull(mapper);
     }
 
-    public void setAuthenticationService(AuthenticationService authenticationService)
-    {
+    public void setAuthenticationService(AuthenticationService authenticationService) {
         _authenticationService = authenticationService;
     }
 
     /**
-     * Sets the resource containing the StringTemplateGroup for
-     * directory listing.
+     * Sets the resource containing the StringTemplateGroup for directory listing.
      */
-    public void setReloadableTemplate(ReloadableTemplate template)
-    {
+    public void setReloadableTemplate(ReloadableTemplate template) {
         _template = template;
     }
 
     @Required
-    public void setTemplateConfig(ImmutableMap<String, String> config)
-    {
+    public void setTemplateConfig(ImmutableMap<String, String> config) {
         _templateConfig = config;
     }
 
     /**
      * Returns the static content path.
      */
-    public String getStaticContentPath()
-    {
+    public String getStaticContentPath() {
         return _staticContentPath;
     }
 
     /**
-     * The static content path is the path under which the service
-     * exports the static content. This typically contains stylesheets
-     * and image files.
+     * The static content path is the path under which the service exports the static content. This
+     * typically contains stylesheets and image files.
      */
-    public void setStaticContentPath(String path)
-    {
+    public void setStaticContentPath(String path) {
         _staticContentPath = path;
     }
 
     @Override
-    public void respondNotFound(Response response, Request request)
-    {
+    public void respondNotFound(Response response, Request request) {
         errorResponse(request, response, SC_NOT_FOUND);
     }
 
     @Override
-    public void respondUnauthorised(Resource resource, Response response, Request request)
-    {
+    public void respondUnauthorised(Resource resource, Response response, Request request) {
         // If GET on the root results in an authorization failure, we redirect to the users
         // home directory for convenience.
         if (request.getAbsolutePath().equals("/") && request.getMethod() == Request.Method.GET) {
-            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(ServletRequest.getRequest());
+            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(
+                  ServletRequest.getRequest());
             FsPath userRoot = FsPath.ROOT;
             String userHome = "/";
             for (LoginAttribute attribute : login) {
@@ -150,7 +144,8 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             }
             try {
                 FsPath redirectFullPath = userRoot.chroot(userHome);
-                String redirectPath = pathMapper.asRequestPath(ServletRequest.getRequest(), redirectFullPath);
+                String redirectPath = pathMapper.asRequestPath(ServletRequest.getRequest(),
+                      redirectFullPath);
                 if (!redirectPath.equals("/")) {
                     respondRedirect(response, request, redirectPath);
                 }
@@ -159,49 +154,44 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             }
         }
         List<String> challenges =
-            _authenticationService.getChallenges(resource, request);
+              _authenticationService.getChallenges(resource, request);
         response.setAuthenticateHeader(challenges);
         errorResponse(request, response, SC_UNAUTHORIZED);
     }
 
     @Override
-    public void respondMethodNotImplemented(Resource resource, Response response, Request request)
-    {
+    public void respondMethodNotImplemented(Resource resource, Response response, Request request) {
         errorResponse(request, response, SC_NOT_IMPLEMENTED);
     }
 
     @Override
-    public void respondMethodNotAllowed(Resource resource, Response response, Request request)
-    {
+    public void respondMethodNotAllowed(Resource resource, Response response, Request request) {
         errorResponse(request, response, SC_METHOD_NOT_ALLOWED);
     }
 
     @Override
-    public void respondServerError(Request request, Response response, String reason)
-    {
+    public void respondServerError(Request request, Response response, String reason) {
         errorResponse(request, response, SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override
-    public void respondConflict(Resource resource, Response response, Request request, String reason)
-    {
+    public void respondConflict(Resource resource, Response response, Request request,
+          String reason) {
         errorResponse(request, response, SC_CONFLICT);
     }
 
     @Override
-    public void respondForbidden(Resource resource, Response response, Request request)
-    {
+    public void respondForbidden(Resource resource, Response response, Request request) {
         errorResponse(request, response, SC_FORBIDDEN);
     }
 
     @Override
-    public void respondInsufficientStorage(Request request, Response response, StorageChecker.StorageErrorReason storageErrorReason)
-    {
+    public void respondInsufficientStorage(Request request, Response response,
+          StorageChecker.StorageErrorReason storageErrorReason) {
         errorResponse(request, response, SC_INSUFFICIENT_STORAGE);
     }
 
-    private void errorResponse(Request request, Response response, Response.Status status)
-    {
+    private void errorResponse(Request request, Response response, Response.Status status) {
         try {
             String decodedPath = URI.create(request.getAbsoluteUrl()).getPath();
             String error = generateErrorPage(decodedPath, status);
@@ -217,10 +207,9 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     /**
      * Generates an error page.
      */
-    private String generateErrorPage(String path, Response.Status status)
-    {
+    private String generateErrorPage(String path, Response.Status status) {
         String[] base =
-            Iterables.toArray(PATH_SPLITTER.split(path), String.class);
+              Iterables.toArray(PATH_SPLITTER.split(path), String.class);
 
         ST template = _template.getInstanceOf(HTML_TEMPLATE_NAME);
 
@@ -244,26 +233,24 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         return template.render();
     }
 
-    public static String templateNotFoundErrorPage(String filename, String template)
-    {
+    public static String templateNotFoundErrorPage(String filename, String template) {
         return "<html><head><title>Broken dCache installation</title></head>" +
-                "<body><div style='margin: 5px; border: 2px solid red; padding: 2px 10px;'>" +
-                "<h1>Broken dCache installation</h1>" +
-                "<p style='width: 50em'>The webdav service of your dCache " +
-                "installation cannot generate this page correctly because it could " +
-                "not find the <tt style='font-size: 120%; color: green;'>" + template +
-                "</tt> template.  Please check the file <tt>" +
-                filename + "</tt> for a line that starts:</p>" +
-                "<code>" + template + "(...) ::= &lt;&lt;</code>" +
-                "<p style='width: 50em'>For more details on the format of this file, see the " +
-                "<a href='https://theantlrguy.atlassian.net/wiki/display/ST4/Group+file+syntax'>" +
-                "template language documentation</a>.</p></div></body></html>";
+              "<body><div style='margin: 5px; border: 2px solid red; padding: 2px 10px;'>" +
+              "<h1>Broken dCache installation</h1>" +
+              "<p style='width: 50em'>The webdav service of your dCache " +
+              "installation cannot generate this page correctly because it could " +
+              "not find the <tt style='font-size: 120%; color: green;'>" + template +
+              "</tt> template.  Please check the file <tt>" +
+              filename + "</tt> for a line that starts:</p>" +
+              "<code>" + template + "(...) ::= &lt;&lt;</code>" +
+              "<p style='width: 50em'>For more details on the format of this file, see the " +
+              "<a href='https://theantlrguy.atlassian.net/wiki/display/ST4/Group+file+syntax'>" +
+              "template language documentation</a>.</p></div></body></html>";
     }
 
     @Override
     public void respondPropFind(List<PropFindResponse> propFindResponses,
-                                Response response, Request request, Resource r)
-    {
+          Response response, Request request, Resource r) {
         /* Milton adds properties with a null value to the PROPFIND response.
          * gvfs doesn't like this and it is unclear whether or not this violates
          * RFC 2518.
@@ -273,18 +260,18 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
          *
          * See http://lists.justthe.net/pipermail/milton-users/2012-June/001363.html
          */
-        for (PropFindResponse propFindResponse: propFindResponses) {
-            Map<Response.Status,List<PropFindResponse.NameAndError>> errors =
-                    propFindResponse.getErrorProperties();
+        for (PropFindResponse propFindResponse : propFindResponses) {
+            Map<Response.Status, List<PropFindResponse.NameAndError>> errors =
+                  propFindResponse.getErrorProperties();
             List<NameAndError> unknownProperties =
-                    errors.get(Response.Status.SC_NOT_FOUND);
+                  errors.get(Response.Status.SC_NOT_FOUND);
             if (unknownProperties == null) {
                 unknownProperties = Lists.newArrayList();
                 errors.put(Response.Status.SC_NOT_FOUND, unknownProperties);
             }
 
             Iterator<Map.Entry<QName, ValueAndType>> iterator =
-                    propFindResponse.getKnownProperties().entrySet().iterator();
+                  propFindResponse.getKnownProperties().entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<QName, ValueAndType> entry = iterator.next();
                 if (entry.getValue().getValue() == null) {
@@ -298,26 +285,24 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 
 
     @Override
-    public void respondHead(Resource resource, Response response, Request request)
-    {
+    public void respondHead(Resource resource, Response response, Request request) {
         super.respondHead(resource, response, request);
         rfc3230(resource, response);
     }
 
     @Override
-    public void respondPartialContent(GetableResource resource, Response response, Request request, Map<String, String> params, List<Range> ranges)
-            throws NotAuthorizedException, BadRequestException, NotFoundException
-    {
+    public void respondPartialContent(GetableResource resource, Response response, Request request,
+          Map<String, String> params, List<Range> ranges)
+          throws NotAuthorizedException, BadRequestException, NotFoundException {
         super.respondPartialContent(resource, response, request, params, ranges);
         rfc3230(resource, response);
     }
 
     @Override
     public void respondPartialContent(GetableResource resource,
-            Response response, Request request, Map<String,String> params,
-            Range range) throws NotAuthorizedException, BadRequestException,
-            NotFoundException
-    {
+          Response response, Request request, Map<String, String> params,
+          Range range) throws NotAuthorizedException, BadRequestException,
+          NotFoundException {
         Long contentLength = resource.getContentLength();
         /* [RFC 2616, section 14.35.1]
          *
@@ -327,7 +312,8 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
          *
          * Milton ought to do this, but it doesn't.
          */
-        if (contentLength != null && range.getFinish() != null && range.getFinish() >= contentLength) {
+        if (contentLength != null && range.getFinish() != null
+              && range.getFinish() >= contentLength) {
             range = new Range(range.getStart(), contentLength - 1);
         }
         super.respondPartialContent(resource, response, request, params, range);
@@ -335,27 +321,24 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     }
 
     @Override
-    public void respondContent(Resource resource,  Response response,
-            Request request, Map<String, String> params)
-            throws NotAuthorizedException, BadRequestException,
-            NotFoundException
-    {
+    public void respondContent(Resource resource, Response response,
+          Request request, Map<String, String> params)
+          throws NotAuthorizedException, BadRequestException,
+          NotFoundException {
         super.respondContent(resource, response, request, params);
         rfc3230(resource, response);
     }
 
     @Override
-    public void respondCreated(Resource resource, Response response, Request request)
-    {
+    public void respondCreated(Resource resource, Response response, Request request) {
         super.respondCreated(resource, response, request);
         rfc3230(resource, response);
     }
 
-    private void rfc3230(Resource resource, Response response)
-    {
+    private void rfc3230(Resource resource, Response response) {
         if (resource instanceof DcacheFileResource) {
             ((DcacheFileResource) resource).getRfc3230Digest()
-                    .ifPresent(d -> response.setNonStandardHeader("Digest", d));
+                  .ifPresent(d -> response.setNonStandardHeader("Digest", d));
         }
     }
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,7 @@ package org.dcache.ftp.client.vanilla;
 /**
  * Represents an FTP Control Channel Command
  */
-public class Command
-{
+public class Command {
 
     public static final Command FEAT = new Command("FEAT");
     public static final Command ABOR = new Command("ABOR");
@@ -29,7 +28,6 @@ public class Command
     public static final Command PASV = new Command("PASV");
     public static final Command SPAS = new Command("SPAS");
     public static final Command EPSV = new Command("EPSV");
-
 
     ///////////////////////////////////////
     // attributes
@@ -43,28 +41,24 @@ public class Command
 
     /**
      * @param name       the command name, eg. "PUT"
-     * @param parameters the command parameters; in other words everything that
-     *                   is contained between the space after the command name and the trailing
-     *                   Telnet EOL, excluding both the mentioned space and EOL. For instance,
-     *                   in command "STOR /tmp/file.txt\r\n", the parameters would be:
-     *                   "/tmp/file.txt"
-     *                   and trailing EOL.
+     * @param parameters the command parameters; in other words everything that is contained between
+     *                   the space after the command name and the trailing Telnet EOL, excluding
+     *                   both the mentioned space and EOL. For instance, in command "STOR
+     *                   /tmp/file.txt\r\n", the parameters would be: "/tmp/file.txt" and trailing
+     *                   EOL.
      */
     public Command(String name, String parameters)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         initialize(name, parameters);
     } // end Command        
 
     public Command(String name)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         initialize(name, null);
     }
 
     private void initialize(String name, String parameters)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         if (name == null) {
             throw new IllegalArgumentException("null name");
         }
@@ -80,13 +74,11 @@ public class Command
      * <name> <sp> <parameters> <CRLF>
      * </p>
      */
-    public static String toString(Command command)
-    {
+    public static String toString(Command command) {
         return command.toString();
     }
 
-    public String toString()
-    {
+    public String toString() {
         if (parameters == null) {
             return name + FTPControlChannel.CRLF;
         } else {

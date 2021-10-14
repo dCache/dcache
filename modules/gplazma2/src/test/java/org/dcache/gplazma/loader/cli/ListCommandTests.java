@@ -1,25 +1,24 @@
 package org.dcache.gplazma.loader.cli;
 
-import com.google.common.collect.ImmutableList;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
+import com.google.common.collect.ImmutableList;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.dcache.gplazma.loader.PluginRepositoryFactory;
 import org.dcache.gplazma.loader.StaticClassPluginRepositoryFactory;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-
-import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ListCommandTests {
+
     private static final PluginRepositoryFactory FACTORY =
-            new StaticClassPluginRepositoryFactory( ImmutableList.of( DummyPlugin.class,
-                                                    AnotherDummyPlugin.class ));
+          new StaticClassPluginRepositoryFactory(ImmutableList.of(DummyPlugin.class,
+                AnotherDummyPlugin.class));
 
     ListCommand _command;
     AnyOrderLineAsserter _asserter;
@@ -27,10 +26,10 @@ public class ListCommandTests {
     @Before
     public void setUp() {
         _command = new ListCommand();
-        _command.setFactory( FACTORY);
+        _command.setFactory(FACTORY);
 
         OutputStream output = new ByteArrayOutputStream();
-        _command.setOutput( new PrintStream(output));
+        _command.setOutput(new PrintStream(output));
 
         _asserter = new AnyOrderLineAsserter(output);
     }
@@ -39,8 +38,9 @@ public class ListCommandTests {
     public void testShortList() {
         _command.run(new String[0]);
 
-        _asserter.add( "AnotherDummyPlugin (org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin)");
-        _asserter.add( "DummyPlugin (org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin)");
+        _asserter.add(
+              "AnotherDummyPlugin (org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin)");
+        _asserter.add("DummyPlugin (org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin)");
         _asserter.run();
     }
 
@@ -48,14 +48,17 @@ public class ListCommandTests {
     public void testDetailedList() {
         _command.run(new String[]{"-l"});
 
-        _asserter.add( "Plugin:");
-        _asserter.add( "    Class: org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin");
-        _asserter.add( "    Name: AnotherDummyPlugin,org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin");
-        _asserter.add( "    Shortest name: AnotherDummyPlugin");
-        _asserter.add( "Plugin:");
-        _asserter.add( "    Class: org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin");
-        _asserter.add( "    Name: DummyPlugin,org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin");
-        _asserter.add( "    Shortest name: DummyPlugin");
+        _asserter.add("Plugin:");
+        _asserter.add(
+              "    Class: org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin");
+        _asserter.add(
+              "    Name: AnotherDummyPlugin,org.dcache.gplazma.loader.cli.ListCommandTests$AnotherDummyPlugin");
+        _asserter.add("    Shortest name: AnotherDummyPlugin");
+        _asserter.add("Plugin:");
+        _asserter.add("    Class: org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin");
+        _asserter.add(
+              "    Name: DummyPlugin,org.dcache.gplazma.loader.cli.ListCommandTests$DummyPlugin");
+        _asserter.add("    Shortest name: DummyPlugin");
         _asserter.run();
     }
 
@@ -75,15 +78,15 @@ public class ListCommandTests {
 
 
     /**
-     * Verify that the expected lines all appear in the output and no other
-     * lines appear, but be insensitive about the order in which the lines
-     * appear.
+     * Verify that the expected lines all appear in the output and no other lines appear, but be
+     * insensitive about the order in which the lines appear.
      */
     public final class AnyOrderLineAsserter {
+
         private final List<String> _expectedLines = new ArrayList<>();
         private final OutputStream _out;
 
-        public AnyOrderLineAsserter( OutputStream out) {
+        public AnyOrderLineAsserter(OutputStream out) {
             _out = out;
         }
 
@@ -93,18 +96,18 @@ public class ListCommandTests {
 
         public void run() {
             List<String> notYetFoundLines = new ArrayList<>(_expectedLines);
-            String[] actualLines = _out.toString().split( "\n");
+            String[] actualLines = _out.toString().split("\n");
 
-            int lineNumber=1;
-            for( String actualLine : actualLines) {
-                if( !notYetFoundLines.remove( actualLine)) {
-                    fail( "[line " + lineNumber + "]" + " unexpected line in output: " + actualLine);
+            int lineNumber = 1;
+            for (String actualLine : actualLines) {
+                if (!notYetFoundLines.remove(actualLine)) {
+                    fail("[line " + lineNumber + "]" + " unexpected line in output: " + actualLine);
                 }
                 lineNumber++;
             }
 
-            if( !notYetFoundLines.isEmpty()) {
-                fail( "Missing output (" + notYetFoundLines.size() + ")");
+            if (!notYetFoundLines.isEmpty()) {
+                fail("Missing output (" + notYetFoundLines.size() + ")");
             }
         }
     }

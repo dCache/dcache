@@ -1,6 +1,11 @@
 package org.dcache.tests.cells;
 
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -8,90 +13,80 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * Abstract helper class for creating cell stubs for testing.
- *
- * The intention is that this class is subclassed for each test case.
- * The test case is implemented in the <code>run</code> method, which
- * is executed as part of the stub constructor.
- *
- * The subclass implements a number of message handlers. A message
- * handler is a method annotated with <code>@Message</code>. The stub
- * will send messages send to a CellEndpointHelper and forward them to
- * the appropriate handler. A handler is used exactly once. If the same
- * message is expected several times, several message handlers must be
- * defined.
- *
- * To precisely test the cell interaction, the test is split into a
- * number of steps. The test starts at step 0. Each message handler is
- * bound to a step and the test is automatically advanced to the next
- * step matching the message handler used. In case several message
- * handlers apply, the one with the lowest step is used. The
+ * <p>
+ * The intention is that this class is subclassed for each test case. The test case is implemented
+ * in the <code>run</code> method, which is executed as part of the stub constructor.
+ * <p>
+ * The subclass implements a number of message handlers. A message handler is a method annotated
+ * with <code>@Message</code>. The stub will send messages send to a CellEndpointHelper and forward
+ * them to the appropriate handler. A handler is used exactly once. If the same message is expected
+ * several times, several message handlers must be defined.
+ * <p>
+ * To precisely test the cell interaction, the test is split into a number of steps. The test starts
+ * at step 0. Each message handler is bound to a step and the test is automatically advanced to the
+ * next step matching the message handler used. In case several message handlers apply, the one with
+ * the lowest step is used. The
  * <code>run</code> method can assert the progress of the test by
  * calling <code>assertStep</code>.
- *
  */
-public abstract class CellStubHelper
-{
+public abstract class CellStubHelper {
+
     /**
-     * This class wraps methods for handling message.  Handlers
-     * implement the chain of command pattern.
+     * This class wraps methods for handling message.  Handlers implement the chain of command
+     * pattern.
      */
-    class Handler implements Comparable<Handler>
-    {
-        /** The method this handler wraps. */
+    class Handler implements Comparable<Handler> {
+
+        /**
+         * The method this handler wraps.
+         */
         private final Method _method;
 
-        /** The annotation of the method. */
+        /**
+         * The annotation of the method.
+         */
         private final Message _annotation;
 
-        /** Whether the handler has been called. */
+        /**
+         * Whether the handler has been called.
+         */
         private boolean _used;
 
-        public Handler(Method method, Message annotation)
-        {
+        public Handler(Method method, Message annotation) {
             _method = method;
             _method.setAccessible(true);
             _annotation = annotation;
             _used = false;
         }
 
-        public boolean isRequired()
-        {
+        public boolean isRequired() {
             return _annotation.required();
         }
 
-        public boolean isUsed()
-        {
+        public boolean isUsed() {
             return _used;
         }
 
-        public int getStep()
-        {
+        public int getStep() {
             return _annotation.step();
         }
 
-        public String getCellName()
-        {
+        public String getCellName() {
             return _annotation.cell();
         }
 
-        /** Handlers are ordered according to the step annotation. */
+        /**
+         * Handlers are ordered according to the step annotation.
+         */
         @Override
-        public int compareTo(Handler handler)
-        {
+        public int compareTo(Handler handler) {
             return Integer.compare(getStep(), handler.getStep());
         }
 
         public CellMessage call(CellMessage msg)
-                throws Throwable
-        {
+              throws Throwable {
             /* Cannot use handler belonging to a previous step.
              */
             if (_step > getStep()) {
@@ -116,10 +111,11 @@ public abstract class CellStubHelper
             /* Deliver message.
              */
             try {
-                msg.setMessageObject((Serializable) _method.invoke(CellStubHelper.this, msg.getMessageObject()));
+                msg.setMessageObject(
+                      (Serializable) _method.invoke(CellStubHelper.this, msg.getMessageObject()));
             } catch (IllegalAccessException e) {
                 fail("Unexpected failure while invoking message handler: " +
-                        e.getMessage());
+                      e.getMessage());
             } catch (InvocationTargetException e) {
                 throw e.getTargetException();
             } catch (IllegalArgumentException e) {
@@ -138,8 +134,7 @@ public abstract class CellStubHelper
             return msg;
         }
 
-        public String toString()
-        {
+        public String toString() {
             return _method.toString();
         }
     }
@@ -151,8 +146,7 @@ public abstract class CellStubHelper
     protected Throwable _failed;
 
     public CellStubHelper(CellEndpointHelper endpoint)
-        throws Throwable
-    {
+          throws Throwable {
         _step = 0;
 
         try {
@@ -178,8 +172,7 @@ public abstract class CellStubHelper
         }
     }
 
-    synchronized public CellMessage messageArrived(CellMessage msg)
-    {
+    synchronized public CellMessage messageArrived(CellMessage msg) {
         try {
             for (Handler handler : _handlers) {
                 CellMessage reply = handler.call(msg);
@@ -199,13 +192,11 @@ public abstract class CellStubHelper
         }
     }
 
-    protected void assertStep(String message, int step)
-    {
+    protected void assertStep(String message, int step) {
         assertStep(message, step, 100);
     }
 
-    protected void assertStep(String message, int step, long timeout)
-    {
+    protected void assertStep(String message, int step, long timeout) {
         /* We need to make sure that messages have actually been
          * delivered. Currently I cannot find a better way than to
          * sleep for a moment... (REVISIT).
@@ -218,11 +209,11 @@ public abstract class CellStubHelper
 
         assertTrue(message, _step <= step);
 
-        for (Handler handler: _handlers) {
+        for (Handler handler : _handlers) {
             assertTrue("Required message missing: " + handler,
-                       !handler.isRequired()
-                       || handler.isUsed()
-                       || handler.getStep() >= step);
+                  !handler.isRequired()
+                        || handler.isUsed()
+                        || handler.getStep() >= step);
         }
 
         _step = step;

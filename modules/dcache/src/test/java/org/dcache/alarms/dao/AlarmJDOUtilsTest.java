@@ -59,18 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Some simple filter consistency tests.
@@ -151,7 +149,7 @@ public class AlarmJDOUtilsTest {
 
     private void givenFilterParametersAre(Date after, Date before, String type) {
         Long lafter = after == null ? null : after.getTime();
-        Long lbefore = before == null ? null: before.getTime();
+        Long lbefore = before == null ? null : before.getTime();
         filter = AlarmJDOUtils.getFilter(lafter, lbefore, type);
     }
 

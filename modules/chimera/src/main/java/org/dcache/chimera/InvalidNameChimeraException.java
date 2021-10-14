@@ -17,6 +17,7 @@
 package org.dcache.chimera;
 
 public class InvalidNameChimeraException extends ChimeraFsException {
+
     static final long serialVersionUID = -8838867882017718935L;
 
     public InvalidNameChimeraException(String msg) {

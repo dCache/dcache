@@ -2,83 +2,58 @@ package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
+import java.security.Principal;
+import java.util.Properties;
+import java.util.Set;
+import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.security.Principal;
-import java.util.Properties;
-import java.util.Set;
-
-import org.dcache.gplazma.AuthenticationException;
-
 /**
- * These tests test the gPlazma plugin for Argus. They rely on the following
- * configuration:
- *
- * Argus PEP Endpoint at http://swords.desy.de:8154/authz
- * with the following configuration:
- *
- * --- pepd.ini
- * [SERVICE]
- * entityId = http://swords.desy.de/authz
- * hostname = swords.desy.de
- * port = 8154
- * adminPort = 8155
- * adminPassword =
- *
- * # PIPs to apply on incoming request
- * pips = OPENSSLSUBJECT_PIP
- *
- * [PDP]
- * pdps = http://localhost:8152/authz
- *
- * [SECURITY]
- * servicePrivateKey = /etc/grid-security/hostkey.pem
- * serviceCertificate = /etc/grid-security/hostcert.pem
- * trustInfoDir = /etc/grid-security/certificates
- * enableSSL = false
+ * These tests test the gPlazma plugin for Argus. They rely on the following configuration:
+ * <p>
+ * Argus PEP Endpoint at http://swords.desy.de:8154/authz with the following configuration:
+ * <p>
+ * --- pepd.ini [SERVICE] entityId = http://swords.desy.de/authz hostname = swords.desy.de port =
+ * 8154 adminPort = 8155 adminPassword =
+ * <p>
+ * # PIPs to apply on incoming request pips = OPENSSLSUBJECT_PIP
+ * <p>
+ * [PDP] pdps = http://localhost:8152/authz
+ * <p>
+ * [SECURITY] servicePrivateKey = /etc/grid-security/hostkey.pem serviceCertificate =
+ * /etc/grid-security/hostcert.pem trustInfoDir = /etc/grid-security/certificates enableSSL = false
  * requireClientCertAuthentication = true
- *
- * [OPENSSLSUBJECT_PIP]
- * parserClass = org.glite.authz.pep.pip.provider.OpenSSLSubjectPIPIniConfigurationParser
+ * <p>
+ * [OPENSSLSUBJECT_PIP] parserClass = org.glite.authz.pep.pip.provider.OpenSSLSubjectPIPIniConfigurationParser
  * opensslSubjectAttributeIDs = urn:oasis:names:tc:xacml:1.0:subject:subject-id
- * opensslSubjectAttributeDatatypes = http://www.w3.org/2001/XMLSchema#string
- * ---
- *
- * and the policies created by running these 3 commands on the PAP server:
- * # pap-admin ap --action access --resource dcache permit subject="/C=EX/O=Example Org/OU=SOMEUNIT/CN=Some One"
- * # pap-admin ap --action access --resource dcache permit subject="/C=BG/O=Bogus Org/OU=BOGUS/CN=La Bogus"
- * # pap-admin ban subject "/C=BG/O=Bogus Org/OU=BOGUS/CN=La Bogus"
- *
- *
- * # pap-admin lp
- * should then print the following:
- * *****************************************************************************
+ * opensslSubjectAttributeDatatypes = http://www.w3.org/2001/XMLSchema#string ---
+ * <p>
+ * and the policies created by running these 3 commands on the PAP server: # pap-admin ap --action
+ * access --resource dcache permit subject="/C=EX/O=Example Org/OU=SOMEUNIT/CN=Some One" # pap-admin
+ * ap --action access --resource dcache permit subject="/C=BG/O=Bogus Org/OU=BOGUS/CN=La Bogus" #
+ * pap-admin ban subject "/C=BG/O=Bogus Org/OU=BOGUS/CN=La Bogus"
+ * <p>
+ * <p>
+ * # pap-admin lp should then print the following: *****************************************************************************
  * default (local):
- *
+ * <p>
  * resource ".*" {
- *
- *     action ".*" {
- *         rule deny { subject="CN=La Bogus,OU=BOGUS,O=Bogus Org,C=BG" }
- *     }
- * }
- *
+ * <p>
+ * action ".*" { rule deny { subject="CN=La Bogus,OU=BOGUS,O=Bogus Org,C=BG" } } }
+ * <p>
  * resource "dcache" {
- *
- *     action "access" {
- *         rule permit { subject="CN=La Bogus,OU=BOGUS,O=Bogus Org,C=BG" }
- *         rule permit { subject="CN=Some One,OU=SOMEUNIT,O=Example Org,C=EX" }
- *     }
- * }
- *
+ * <p>
+ * action "access" { rule permit { subject="CN=La Bogus,OU=BOGUS,O=Bogus Org,C=BG" } rule permit {
+ * subject="CN=Some One,OU=SOMEUNIT,O=Example Org,C=EX" } } }
+ * <p>
  * *****************************************************************************
- *
- * and on the machine swords.desy.de with a running Argus system and the
- * corresponding certificates.
+ * <p>
+ * and on the machine swords.desy.de with a running Argus system and the corresponding
+ * certificates.
  *
  * @author karsten
- *
  */
 public class GPlazmaArgusPluginITCase {
 
@@ -95,27 +70,32 @@ public class GPlazmaArgusPluginITCase {
     private static final String TRUST_MATERIAL = "gplazma.argus.ca";
     private static final String VALID_CERT_PATH = "/etc/grid-security/certificates";
     private static final String HOST_CERT = "gplazma.argus.hostcert";
-    private static final String VALID_HOSTCERT = Resources.getResource("org/dcache/gplazma/plugins/test.crt").getFile();
+    private static final String VALID_HOSTCERT = Resources.getResource(
+          "org/dcache/gplazma/plugins/test.crt").getFile();
     private static final String HOST_KEY = "gplazma.argus.hostkey";
-    private static final String VALID_HOSTKEY = Resources.getResource("org/dcache/gplazma/plugins/test.key").getFile();
+    private static final String VALID_HOSTKEY = Resources.getResource(
+          "org/dcache/gplazma/plugins/test.key").getFile();
     private static final String KEY_PASS = "gplazma.argus.hostkey.password";
 
     private static final Set<Principal> PermittedPrincipal =
-            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN));
+          ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN));
     private static final Set<Principal> BannedPrincipal =
-            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_BANNED_DN));
+          ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_BANNED_DN));
     private static final Set<Principal> PermittedAndBannedPrincipals =
-            ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN), new GlobusPrincipal(PERMITTED_BANNED_DN));
+          ImmutableSet.<Principal>of(new GlobusPrincipal(PERMITTED_DN),
+                new GlobusPrincipal(PERMITTED_BANNED_DN));
     private static final Set<Principal> UnknownPrincipals =
-            ImmutableSet.<Principal>of(new GlobusPrincipal(UNKNOWN_DN));
+          ImmutableSet.<Principal>of(new GlobusPrincipal(UNKNOWN_DN));
 
     /**
      * Test successful authorisation with correct parameters
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test
+    @Ignore
+    @Test
     public void shouldSucceedForPermittedPrincipal()
-            throws AuthenticationException {
+          throws AuthenticationException {
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, VALID_ENDPOINT);
         givenConfiguration.put(RESOURCE_ID, VALID_RESOURCE);
@@ -132,11 +112,13 @@ public class GPlazmaArgusPluginITCase {
 
     /**
      * Test successful authorisation with correct parameters
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test
+    @Ignore
+    @Test
     public void shouldSucceedForMultipleEndpointsAndPermittedPrincipal()
-            throws AuthenticationException {
+          throws AuthenticationException {
 
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, INVALID_ENDPOINT);
@@ -154,13 +136,14 @@ public class GPlazmaArgusPluginITCase {
     }
 
     /**
-     * Authorisation success on unknown DN
-     * (here the DN is in wrong order)
+     * Authorisation success on unknown DN (here the DN is in wrong order)
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test
+    @Ignore
+    @Test
     public void shouldSucceedForUnknownPrincipal()
-            throws AuthenticationException {
+          throws AuthenticationException {
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, VALID_ENDPOINT);
         givenConfiguration.put(RESOURCE_ID, VALID_RESOURCE);
@@ -177,11 +160,13 @@ public class GPlazmaArgusPluginITCase {
 
     /**
      * Test result DENY authorisation with banned user
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test(expected=AuthenticationException.class)
+    @Ignore
+    @Test(expected = AuthenticationException.class)
     public void shouldFailForBannedPrincipal()
-            throws AuthenticationException {
+          throws AuthenticationException {
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, VALID_ENDPOINT);
         givenConfiguration.put(RESOURCE_ID, VALID_RESOURCE);
@@ -198,11 +183,13 @@ public class GPlazmaArgusPluginITCase {
 
     /**
      * Test result DENY authorisation with banned user
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test(expected=AuthenticationException.class)
+    @Ignore
+    @Test(expected = AuthenticationException.class)
     public void shouldFailForPermittedAndBannedPrincipal()
-            throws AuthenticationException {
+          throws AuthenticationException {
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, VALID_ENDPOINT);
         givenConfiguration.put(RESOURCE_ID, VALID_RESOURCE);
@@ -219,11 +206,13 @@ public class GPlazmaArgusPluginITCase {
 
     /**
      * Test result DENY with invalid/unreachable PEP
+     *
      * @throws AuthenticationException
      */
-    @Ignore @Test(expected=AuthenticationException.class)
+    @Ignore
+    @Test(expected = AuthenticationException.class)
     public void shouldFailForNonExistentPepEndpoint()
-            throws AuthenticationException {
+          throws AuthenticationException {
         Properties givenConfiguration = new Properties();
         givenConfiguration.put(PEP_ENDPOINT, INVALID_ENDPOINT);
         givenConfiguration.put(RESOURCE_ID, VALID_RESOURCE);

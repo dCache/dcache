@@ -4,43 +4,38 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * The LoAPrincipal identifies what level of assurance (how certain it
- * is) that the user's identity, as described in the material used to
- * authenticate, accurately reflects the identity of the person issuing
- * the request.
+ * The LoAPrincipal identifies what level of assurance (how certain it is) that the user's identity,
+ * as described in the material used to authenticate, accurately reflects the identity of the person
+ * issuing the request.
+ *
  * @since 2.14
  */
-public class LoAPrincipal implements Principal, Serializable
-{
+public class LoAPrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final LoA _loa;
 
-    public LoAPrincipal(LoA loa)
-    {
+    public LoAPrincipal(LoA loa) {
         _loa = loa;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _loa.getName();
     }
 
-    public LoA getLoA()
-    {
+    public LoA getLoA() {
         return _loa;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _loa.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -49,19 +44,17 @@ public class LoAPrincipal implements Principal, Serializable
             return false;
         }
 
-        LoAPrincipal otherLoA = (LoAPrincipal)other;
+        LoAPrincipal otherLoA = (LoAPrincipal) other;
 
         return _loa == otherLoA._loa;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + '[' + getName() + ']';
     }
 
-    private Object readResolve()
-    {
+    private Object readResolve() {
         if (_loa == LoA.IGTF_LOA_CEDER) {
             return new LoAPrincipal(LoA.IGTF_LOA_CEDAR);
         }
@@ -69,8 +62,7 @@ public class LoAPrincipal implements Principal, Serializable
         return this;
     }
 
-    private Object writeReplace()
-    {
+    private Object writeReplace() {
         if (_loa == LoA.IGTF_LOA_CEDER) {
             return new LoAPrincipal(LoA.IGTF_LOA_CEDAR);
         }

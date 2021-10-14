@@ -74,18 +74,21 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMAdvisoryDeleteClientV1 extends SRMClient implements Runnable {
 
     private java.net.URI surls[];
     private String surl_strings[];
-    /** Creates a new instance of SRMGetClient */
-    public SRMAdvisoryDeleteClientV1(Configuration configuration, java.net.URI[] surls, String[] surl_strings) {
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMAdvisoryDeleteClientV1(Configuration configuration, java.net.URI[] surls,
+          String[] surl_strings) {
         super(configuration);
         this.surls = surls;
-        this.surl_strings=surl_strings;
+        this.surl_strings = surl_strings;
     }
 
     @Override

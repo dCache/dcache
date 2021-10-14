@@ -1,17 +1,21 @@
 package org.dcache.restful.qos;
 
+import static org.dcache.qos.QoSTransitionEngine.Qos.DISK;
+import static org.dcache.qos.QoSTransitionEngine.Qos.DISK_TAPE;
+import static org.dcache.qos.QoSTransitionEngine.Qos.TAPE;
+import static org.dcache.qos.QoSTransitionEngine.Qos.VOLATILE;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.BadRequestException;
@@ -24,18 +28,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
 import org.dcache.qos.QoSTransitionEngine.Qos;
 import org.dcache.restful.util.RequestUser;
-
-import static org.dcache.qos.QoSTransitionEngine.Qos.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * RestFul API for querying and manipulating QoS
@@ -44,6 +43,7 @@ import static org.dcache.qos.QoSTransitionEngine.Qos.*;
 @Api(value = "qos", authorizations = {@Authorization("basicAuth")})
 @Path("/qos-management/qos/")
 public class QosManagement {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(QosManagement.class);
 
     @Inject
@@ -52,18 +52,18 @@ public class QosManagement {
 
     @GET
     @ApiOperation("List the available quality of services for a specific object "
-            + "type.  Requires authentication.")
+          + "type.  Requires authentication.")
     @ApiResponses({
-                @ApiResponse(code = 401, message = "Unauthorized."),
-                @ApiResponse(code = 403, message = "Forbidden."),
-                @ApiResponse(code = 404, message = "Not found."),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 401, message = "Unauthorized."),
+          @ApiResponse(code = 403, message = "Forbidden."),
+          @ApiResponse(code = 404, message = "Not found."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("{type}")
     @Produces(MediaType.APPLICATION_JSON)
     public String getQosList(@ApiParam(value = "The kind of object to query.",
-                                     allowableValues="file,directory")
-                             @PathParam("type") String qosValue) {
+          allowableValues = "file,directory")
+    @PathParam("type") String qosValue) {
 
         JSONObject json = new JSONObject();
 
@@ -73,15 +73,15 @@ public class QosManagement {
 
         if ("file".equals(qosValue)) {
             JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
-                                                         TAPE.displayName(),
-                                                         DISK_TAPE.displayName(),
-                                                         VOLATILE.displayName()));
+                  TAPE.displayName(),
+                  DISK_TAPE.displayName(),
+                  VOLATILE.displayName()));
             json.put("name", list);
         } else if ("directory".equals(qosValue.trim())) {
             JSONArray list = new JSONArray(Arrays.asList(DISK.displayName(),
-                                                         TAPE.displayName(),
-                                                         DISK_TAPE.displayName(),
-                                                         VOLATILE.displayName()));
+                  TAPE.displayName(),
+                  DISK_TAPE.displayName(),
+                  VOLATILE.displayName()));
             json.put("name", list);
         } else {
             throw new NotFoundException();
@@ -96,21 +96,21 @@ public class QosManagement {
 
     @GET
     @ApiOperation("Provide information about a specific file quality of "
-            + "services.  Requires authentication.")
+          + "services.  Requires authentication.")
     @ApiResponses({
-                @ApiResponse(code = 401, message = "Unauthorized"),
-                @ApiResponse(code = 403, message = "Forbidden"),
-                @ApiResponse(code = 404, message = "Not found"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("/file/{qos}")
     @Produces(MediaType.APPLICATION_JSON)
     public BackendCapabilityResponse getQueriedQosForFiles(
-            @ApiParam("The file quality of service to query.")
-            @PathParam("qos") String qosValue) throws CacheException {
+          @ApiParam("The file quality of service to query.")
+          @PathParam("qos") String qosValue) throws CacheException {
 
         BackendCapabilityResponse backendCapabilityResponse
-                        = new BackendCapabilityResponse();
+              = new BackendCapabilityResponse();
 
         BackendCapability backendCapability = new BackendCapability();
 
@@ -124,42 +124,41 @@ public class QosManagement {
 
             QoSMetadata qoSMetadata;
 
-            switch (Qos.fromDisplayName(qosValue))
-            {
+            switch (Qos.fromDisplayName(qosValue)) {
                 case DISK:
                     qoSMetadata = new QoSMetadata("1",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, DISK.displayName(),
-                                         Arrays.asList(TAPE.displayName(),
-                                                       DISK_TAPE.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(TAPE.displayName(),
+                                DISK_TAPE.displayName()),
+                          qoSMetadata);
                     break;
                 case TAPE:
                     qoSMetadata = new QoSMetadata("1",
-                                                  geographicPlacement,
-                                                  "600000");
+                          geographicPlacement,
+                          "600000");
                     setBackendCapability(backendCapability, TAPE.displayName(),
-                                         Arrays.asList(DISK_TAPE.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(DISK_TAPE.displayName()),
+                          qoSMetadata);
                     break;
                 case DISK_TAPE:
                     qoSMetadata = new QoSMetadata("2",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, DISK_TAPE.displayName(),
-                                         Arrays.asList(TAPE.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(TAPE.displayName()),
+                          qoSMetadata);
                     break;
                 case VOLATILE:
                     qoSMetadata = new QoSMetadata("0",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, VOLATILE.displayName(),
-                                         Arrays.asList(DISK.displayName(),
-                                                       TAPE.displayName(),
-                                                       DISK_TAPE.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(DISK.displayName(),
+                                TAPE.displayName(),
+                                DISK_TAPE.displayName()),
+                          qoSMetadata);
                     break;
                 default:
                     throw new NotFoundException();
@@ -184,21 +183,21 @@ public class QosManagement {
 
     @GET
     @ApiOperation("Provides information about a specific directory quality of "
-            + "services.  Requires authentication.")
+          + "services.  Requires authentication.")
     @ApiResponses({
-                @ApiResponse(code = 401, message = "Unauthorized."),
-                @ApiResponse(code = 403, message = "Forbidden."),
-                @ApiResponse(code = 404, message = "Not found."),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 401, message = "Unauthorized."),
+          @ApiResponse(code = 403, message = "Forbidden."),
+          @ApiResponse(code = 404, message = "Not found."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("/directory/{qos}")
     @Produces(MediaType.APPLICATION_JSON)
     public BackendCapabilityResponse getQueriedQosForDirectories(
-            @ApiParam("The directory quality of service to query.")
-            @PathParam("qos") String qosValue) throws CacheException {
+          @ApiParam("The directory quality of service to query.")
+          @PathParam("qos") String qosValue) throws CacheException {
 
         BackendCapabilityResponse backendCapabilityResponse
-                        = new BackendCapabilityResponse();
+              = new BackendCapabilityResponse();
 
         BackendCapability backendCapability = new BackendCapability();
 
@@ -212,39 +211,38 @@ public class QosManagement {
 
             QoSMetadata qoSMetadata;
 
-            switch (Qos.fromDisplayName(qosValue))
-            {
+            switch (Qos.fromDisplayName(qosValue)) {
                 case DISK:
                     qoSMetadata = new QoSMetadata("1",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, DISK.displayName(),
-                                         Arrays.asList(TAPE.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(TAPE.displayName()),
+                          qoSMetadata);
                     break;
                 case TAPE:
                     qoSMetadata = new QoSMetadata("1",
-                                                  geographicPlacement,
-                                                  "600000");
+                          geographicPlacement,
+                          "600000");
                     setBackendCapability(backendCapability, TAPE.displayName(),
-                                         Arrays.asList(DISK.displayName()),
-                                         qoSMetadata);
+                          Arrays.asList(DISK.displayName()),
+                          qoSMetadata);
                     break;
                 case DISK_TAPE:
                     qoSMetadata = new QoSMetadata("2",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, DISK_TAPE.displayName(),
-                                         Collections.emptyList(),
-                                         qoSMetadata);
+                          Collections.emptyList(),
+                          qoSMetadata);
                     break;
                 case VOLATILE:
                     qoSMetadata = new QoSMetadata("0",
-                                                  geographicPlacement,
-                                                  "100");
+                          geographicPlacement,
+                          "100");
                     setBackendCapability(backendCapability, VOLATILE.displayName(),
-                                         Collections.emptyList(),
-                                         qoSMetadata);
+                          Collections.emptyList(),
+                          qoSMetadata);
                     break;
                 default:
                     throw new NotFoundException();
@@ -267,9 +265,9 @@ public class QosManagement {
 
 
     public void setBackendCapability(BackendCapability backendCapability,
-                                     String name,
-                                     List<String> transitions,
-                                     QoSMetadata qoSMetadata) {
+          String name,
+          List<String> transitions,
+          QoSMetadata qoSMetadata) {
 
         backendCapability.setName(name);
         backendCapability.setTransition(transitions);

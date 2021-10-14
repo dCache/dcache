@@ -18,10 +18,8 @@ public class Owner {
     private int _gid;
 
     /**
-     * @param uid
-     *            Owning user’s virtual user ID.
-     * @param gid
-     *            Owning group’s virtual group ID.
+     * @param uid Owning user’s virtual user ID.
+     * @param gid Owning group’s virtual group ID.
      */
     public Owner(int uid, int gid) {
         super();

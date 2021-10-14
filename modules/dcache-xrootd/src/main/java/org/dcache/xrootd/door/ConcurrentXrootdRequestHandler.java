@@ -19,67 +19,61 @@ package org.dcache.xrootd.door;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import dmg.cells.nucleus.CDC;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.ChannelPromiseNotifier;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.util.CDCListeningExecutorServiceDecorator;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
 
 /**
- * Subclass of AbstractXrootdRequestHandler that dispatches calls to doOnXXX methods
- * from a supplied executor.
- *
+ * Subclass of AbstractXrootdRequestHandler that dispatches calls to doOnXXX methods from a supplied
+ * executor.
+ * <p>
  * Ensures that the CDC survives the thread boundaries.
  */
-public class ConcurrentXrootdRequestHandler extends AbstractXrootdRequestHandler
-{
+public class ConcurrentXrootdRequestHandler extends AbstractXrootdRequestHandler {
+
     protected final ListeningExecutorService _executor;
 
     /**
-     * The set of requests which are currently processed for this channel. They
-     * will be interrupted in case the channel is disconnected.
+     * The set of requests which are currently processed for this channel. They will be interrupted
+     * in case the channel is disconnected.
      */
     private final Set<Future<?>> _requests = Collections.synchronizedSet(new HashSet<>());
 
-    public ConcurrentXrootdRequestHandler(ExecutorService executor)
-    {
+    public ConcurrentXrootdRequestHandler(ExecutorService executor) {
         _executor = new CDCListeningExecutorServiceDecorator(executor);
     }
 
     @Override
-    protected ChannelFuture respond(ChannelHandlerContext ctx, Object response)
-    {
+    protected ChannelFuture respond(ChannelHandlerContext ctx, Object response) {
         CDC cdc = new CDC();
         ChannelPromise promise = ctx.newPromise();
         ctx.executor().execute(() -> {
             try (CDC ignored = cdc.restore()) {
                 ctx.writeAndFlush(response)
-                        .addListener(future -> {
+                      .addListener(future -> {
                                 if (!future.isSuccess()) {
                                     exceptionCaught(ctx, future.cause());
                                 }
                             }
-                        )
-                        .addListener(new ChannelPromiseNotifier(promise));
+                      )
+                      .addListener(new ChannelPromiseNotifier(promise));
             }
         });
         return promise;
     }
 
     @Override
-    protected void requestReceived(ChannelHandlerContext ctx, XrootdRequest req)
-    {
+    protected void requestReceived(ChannelHandlerContext ctx, XrootdRequest req) {
         ListenableFuture<?> future = _executor.submit(() -> super.requestReceived(ctx, req));
         _requests.add(future);
         future.addListener(() -> _requests.remove(future), _executor);
@@ -87,8 +81,7 @@ public class ConcurrentXrootdRequestHandler extends AbstractXrootdRequestHandler
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx)
-            throws Exception
-    {
+          throws Exception {
         synchronized (_requests) {
             for (Future<?> request : _requests) {
                 request.cancel(true);

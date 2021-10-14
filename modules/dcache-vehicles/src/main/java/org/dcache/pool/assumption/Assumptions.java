@@ -18,66 +18,59 @@
  */
 package org.dcache.pool.assumption;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * This class contains static utility methods that operate on or return objects
- * of type {@link Assumption}.
+ * This class contains static utility methods that operate on or return objects of type {@link
+ * Assumption}.
  */
-public class Assumptions
-{
+public class Assumptions {
+
     private static final Assumption UNRESTRICTED = new UnrestrictedAssumption();
 
-    private Assumptions()
-    {
+    private Assumptions() {
     }
 
     /**
      * Returns an unrestricted assumption.
      */
-    public static Assumption none()
-    {
+    public static Assumption none() {
         return UNRESTRICTED;
     }
 
-    static class CompositeAssumption implements Assumption
-    {
+    static class CompositeAssumption implements Assumption {
+
         private static final long serialVersionUID = -4466714443555351986L;
 
         private final Set<Assumption> assumptions;
 
-        public CompositeAssumption(ImmutableSet<Assumption> assumptions)
-        {
+        public CompositeAssumption(ImmutableSet<Assumption> assumptions) {
             this.assumptions = requireNonNull(assumptions);
         }
 
         @Override
-        public boolean isSatisfied(Pool pool)
-        {
+        public boolean isSatisfied(Pool pool) {
             return assumptions.stream().allMatch(a -> a.isSatisfied(pool));
         }
 
         @Override
-        public Assumption and(Assumption that)
-        {
+        public Assumption and(Assumption that) {
             return that.and(this);
         }
 
         @Override
-        public Assumption and(CompositeAssumption those)
-        {
-            return new CompositeAssumption(ImmutableSet.copyOf(Iterables.concat(this.assumptions, those.assumptions)));
+        public Assumption and(CompositeAssumption those) {
+            return new CompositeAssumption(
+                  ImmutableSet.copyOf(Iterables.concat(this.assumptions, those.assumptions)));
         }
 
         @Override
-        public boolean equals(Object o)
-        {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
@@ -90,53 +83,45 @@ public class Assumptions
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return assumptions.hashCode();
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return assumptions.stream().map(Object::toString).collect(Collectors.joining(" and "));
         }
 
-        Assumption unfold()
-        {
+        Assumption unfold() {
             return assumptions.size() == 1 ? assumptions.iterator().next() : this;
         }
     }
 
-    private static class UnrestrictedAssumption implements Assumption
-    {
+    private static class UnrestrictedAssumption implements Assumption {
+
         private static final long serialVersionUID = -5962740006489865911L;
 
         @Override
-        public boolean isSatisfied(Pool pool)
-        {
+        public boolean isSatisfied(Pool pool) {
             return true;
         }
 
-        public Object readResolve()
-        {
+        public Object readResolve() {
             return UNRESTRICTED;
         }
 
         @Override
-        public Assumption and(Assumption that)
-        {
+        public Assumption and(Assumption that) {
             return that;
         }
 
         @Override
-        public Assumption and(CompositeAssumption those)
-        {
+        public Assumption and(CompositeAssumption those) {
             return those.unfold();
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "none";
         }
     }

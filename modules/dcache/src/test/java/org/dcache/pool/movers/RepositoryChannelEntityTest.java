@@ -17,28 +17,27 @@
  */
 package org.dcache.pool.movers;
 
-import org.junit.Test;
-import org.junit.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
-import org.dcache.pool.repository.RepositoryChannel;
-
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
-public class RepositoryChannelEntityTest
-{
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.junit.Before;
+import org.junit.Test;
+
+public class RepositoryChannelEntityTest {
+
     private static final String CHANNEL_DATA = "THIS IS SOME TEST DATA";
     private static final byte[] CHANNEL_RAW_DATA = CHANNEL_DATA.getBytes(StandardCharsets.UTF_8);
 
@@ -46,63 +45,56 @@ public class RepositoryChannelEntityTest
     private RepositoryChannelEntity entity;
 
     @Before
-    public void setup() throws Exception
-    {
+    public void setup() throws Exception {
         channel = mock(RepositoryChannel.class);
 
         given(channel.read(any(), anyLong())).willAnswer(i -> {
-                    ByteBuffer bb = i.getArgument(0);
-                    int requestedOffset = ((Long)i.getArgument(1)).intValue();
+            ByteBuffer bb = i.getArgument(0);
+            int requestedOffset = ((Long) i.getArgument(1)).intValue();
 
-                    int requestedEnd = requestedOffset + bb.remaining();
-                    int boundedEnd = Math.min(requestedEnd, CHANNEL_RAW_DATA.length);
-                    int boundedOffset = Math.min(requestedOffset, CHANNEL_RAW_DATA.length);
+            int requestedEnd = requestedOffset + bb.remaining();
+            int boundedEnd = Math.min(requestedEnd, CHANNEL_RAW_DATA.length);
+            int boundedOffset = Math.min(requestedOffset, CHANNEL_RAW_DATA.length);
 
-                    int transferred = boundedEnd - boundedOffset;
+            int transferred = boundedEnd - boundedOffset;
 
-                    boolean isEof = bb.remaining() > 0 && transferred == 0;
+            boolean isEof = bb.remaining() > 0 && transferred == 0;
 
-                    bb.put(CHANNEL_RAW_DATA, boundedOffset, transferred);
+            bb.put(CHANNEL_RAW_DATA, boundedOffset, transferred);
 
-                    return isEof ? -1 : transferred;
-                });
+            return isEof ? -1 : transferred;
+        });
 
         entity = new RepositoryChannelEntity(channel);
     }
 
     @Test
-    public void shouldBeRepeatable()
-    {
+    public void shouldBeRepeatable() {
         assertTrue(entity.isRepeatable());
     }
 
     @Test
-    public void shouldBeStreaming()
-    {
+    public void shouldBeStreaming() {
         assertTrue(entity.isStreaming());
     }
 
     @Test
-    public void shouldNotBeChunked()
-    {
+    public void shouldNotBeChunked() {
         assertFalse(entity.isChunked());
     }
 
     @Test
-    public void shouldNotSpecifyContentType()
-    {
+    public void shouldNotSpecifyContentType() {
         assertThat(entity.getContentType(), equalTo(null));
     }
 
     @Test
-    public void shouldNotSpecifyContentEncoding()
-    {
+    public void shouldNotSpecifyContentEncoding() {
         assertThat(entity.getContentEncoding(), equalTo(null));
     }
 
     @Test
-    public void shouldReturnKnownFileSize() throws Exception
-    {
+    public void shouldReturnKnownFileSize() throws Exception {
         given(channel.size()).willReturn(10240L);
 
         long size = entity.getContentLength();
@@ -111,8 +103,7 @@ public class RepositoryChannelEntityTest
     }
 
     @Test
-    public void shouldChunkEncodeForUnknownFileSize() throws Exception
-    {
+    public void shouldChunkEncodeForUnknownFileSize() throws Exception {
         given(channel.size()).willThrow(new IOException("Unable to stat file"));
 
         long size = entity.getContentLength();
@@ -121,16 +112,14 @@ public class RepositoryChannelEntityTest
     }
 
     @Test
-    public void shouldNotCloseStreamOnGetContentClose() throws Exception
-    {
+    public void shouldNotCloseStreamOnGetContentClose() throws Exception {
         entity.getContent().close();
 
         verify(channel, never()).close();
     }
 
     @Test
-    public void shouldNotCloseStreamOnWriteTo() throws Exception
-    {
+    public void shouldNotCloseStreamOnWriteTo() throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         entity.writeTo(output);
@@ -140,8 +129,7 @@ public class RepositoryChannelEntityTest
     }
 
     @Test
-    public void shouldSupportMultipleWriteTo() throws Exception
-    {
+    public void shouldSupportMultipleWriteTo() throws Exception {
         ByteArrayOutputStream output1 = new ByteArrayOutputStream();
         ByteArrayOutputStream output2 = new ByteArrayOutputStream();
 

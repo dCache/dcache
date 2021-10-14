@@ -1,7 +1,6 @@
 package org.dcache.gplazma.strategies;
 
 /**
- *
  * @author timur
  */
 public class DefaultStrategyFactory extends StrategyFactory {

@@ -17,191 +17,162 @@
  */
 package org.dcache.gsi;
 
+import java.nio.ByteBuffer;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
-import java.nio.ByteBuffer;
-
 /**
  * Abstract SSLEngine that delegates all calls to another SSLEngine.
  */
-public abstract class ForwardingSSLEngine extends SSLEngine
-{
+public abstract class ForwardingSSLEngine extends SSLEngine {
+
     /**
-     * Returns the backing delegate instance that methods are forwarded to.
-     * Subclasses override this method to supply the instance being decorated.
+     * Returns the backing delegate instance that methods are forwarded to. Subclasses override this
+     * method to supply the instance being decorated.
      */
     protected abstract SSLEngine delegate();
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return delegate().toString();
     }
 
     @Override
-    public String getPeerHost()
-    {
+    public String getPeerHost() {
         return delegate().getPeerHost();
     }
 
     @Override
-    public int getPeerPort()
-    {
+    public int getPeerPort() {
         return delegate().getPeerPort();
     }
 
     @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length,
-                                ByteBuffer dst) throws SSLException
-    {
+          ByteBuffer dst) throws SSLException {
         return delegate().wrap(srcs, offset, length, dst);
     }
 
     @Override
     public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts,
-                                  int offset, int length) throws SSLException
-    {
+          int offset, int length) throws SSLException {
         return delegate().unwrap(src, dsts, offset, length);
     }
 
     @Override
-    public Runnable getDelegatedTask()
-    {
+    public Runnable getDelegatedTask() {
         return delegate().getDelegatedTask();
     }
 
     @Override
-    public void closeInbound() throws SSLException
-    {
+    public void closeInbound() throws SSLException {
         delegate().closeInbound();
     }
 
     @Override
-    public boolean isInboundDone()
-    {
+    public boolean isInboundDone() {
         return delegate().isInboundDone();
     }
 
     @Override
-    public void closeOutbound()
-    {
+    public void closeOutbound() {
         delegate().closeOutbound();
     }
 
     @Override
-    public boolean isOutboundDone()
-    {
+    public boolean isOutboundDone() {
         return delegate().isOutboundDone();
     }
 
     @Override
-    public String[] getSupportedCipherSuites()
-    {
+    public String[] getSupportedCipherSuites() {
         return delegate().getSupportedCipherSuites();
     }
 
     @Override
-    public String[] getEnabledCipherSuites()
-    {
+    public String[] getEnabledCipherSuites() {
         return delegate().getEnabledCipherSuites();
     }
 
     @Override
-    public void setEnabledCipherSuites(String[] strings)
-    {
+    public void setEnabledCipherSuites(String[] strings) {
         delegate().setEnabledCipherSuites(strings);
     }
 
     @Override
-    public String[] getSupportedProtocols()
-    {
+    public String[] getSupportedProtocols() {
         return delegate().getSupportedProtocols();
     }
 
     @Override
-    public String[] getEnabledProtocols()
-    {
+    public String[] getEnabledProtocols() {
         return delegate().getEnabledProtocols();
     }
 
     @Override
-    public void setEnabledProtocols(String[] strings)
-    {
+    public void setEnabledProtocols(String[] strings) {
         delegate().setEnabledProtocols(strings);
     }
 
     @Override
-    public SSLSession getSession()
-    {
+    public SSLSession getSession() {
         return delegate().getSession();
     }
 
     @Override
-    public SSLSession getHandshakeSession()
-    {
+    public SSLSession getHandshakeSession() {
         return delegate().getHandshakeSession();
     }
 
     @Override
-    public void beginHandshake() throws SSLException
-    {
+    public void beginHandshake() throws SSLException {
         delegate().beginHandshake();
     }
 
     @Override
-    public SSLEngineResult.HandshakeStatus getHandshakeStatus()
-    {
+    public SSLEngineResult.HandshakeStatus getHandshakeStatus() {
         return delegate().getHandshakeStatus();
     }
 
     @Override
-    public void setUseClientMode(boolean b)
-    {
+    public void setUseClientMode(boolean b) {
         delegate().setUseClientMode(b);
     }
 
     @Override
-    public boolean getUseClientMode()
-    {
+    public boolean getUseClientMode() {
         return delegate().getUseClientMode();
     }
 
     @Override
-    public void setNeedClientAuth(boolean b)
-    {
+    public void setNeedClientAuth(boolean b) {
         delegate().setNeedClientAuth(b);
     }
 
     @Override
-    public boolean getNeedClientAuth()
-    {
+    public boolean getNeedClientAuth() {
         return delegate().getNeedClientAuth();
     }
 
     @Override
-    public void setWantClientAuth(boolean b)
-    {
+    public void setWantClientAuth(boolean b) {
         delegate().setWantClientAuth(b);
     }
 
     @Override
-    public boolean getWantClientAuth()
-    {
+    public boolean getWantClientAuth() {
         return delegate().getWantClientAuth();
     }
 
     @Override
-    public void setEnableSessionCreation(boolean b)
-    {
+    public void setEnableSessionCreation(boolean b) {
         delegate().setEnableSessionCreation(b);
     }
 
     @Override
-    public boolean getEnableSessionCreation()
-    {
+    public boolean getEnableSessionCreation() {
         return delegate().getEnableSessionCreation();
     }
 }

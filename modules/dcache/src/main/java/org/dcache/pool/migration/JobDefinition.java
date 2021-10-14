@@ -1,18 +1,15 @@
 package org.dcache.pool.migration;
 
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.function.Predicate;
-
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.util.expression.Expression;
 
 /**
  * Immutable record class holding the parameters that define a job.
  */
-public class JobDefinition
-{
+public class JobDefinition {
+
     /**
      * Selection criteria defining which replicas to include in the migration job.
      */
@@ -39,8 +36,7 @@ public class JobDefinition
     public final Comparator<CacheEntry> comparator;
 
     /**
-     * Pool information about the source pool. Must contain exactly one
-     * pool.
+     * Pool information about the source pool. Must contain exactly one pool.
      */
     public final RefreshablePoolList sourceList;
 
@@ -55,20 +51,19 @@ public class JobDefinition
     public final long refreshPeriod;
 
     /**
-     * Whether the job is permanent. Permanent jobs add new replicas to the job if
-     * they match the selection criteria.
+     * Whether the job is permanent. Permanent jobs add new replicas to the job if they match the
+     * selection criteria.
      */
     public final boolean isPermanent;
 
     /**
-     * Whether the job is eager. Eager jobs proceed by creating new replicas if
-     * existing replicas are inaccessible.
+     * Whether the job is eager. Eager jobs proceed by creating new replicas if existing replicas
+     * are inaccessible.
      */
     public final boolean isEager;
 
     /**
-     * Wether the job will only copy meta data to existing replicas or create
-     * new replicas.
+     * Wether the job will only copy meta data to existing replicas or create new replicas.
      */
     public final boolean isMetaOnly;
 
@@ -93,8 +88,8 @@ public class JobDefinition
     public final Expression stopWhen;
 
     /**
-     * Whether the migration job overrides the mode of the source pool, that is,
-     * whether to allow migration even if the source pool is disabled.
+     * Whether the migration job overrides the mode of the source pool, that is, whether to allow
+     * migration even if the source pool is disabled.
      */
     public final boolean forceSourceMode;
 
@@ -109,24 +104,23 @@ public class JobDefinition
     public final int replicas;
 
     public JobDefinition(Predicate<CacheEntry> filter,
-                         CacheEntryMode sourceMode,
-                         CacheEntryMode targetMode,
-                         PoolSelectionStrategy selectionStrategy,
-                         Comparator<CacheEntry> comparator,
-                         RefreshablePoolList sourceList,
-                         RefreshablePoolList poolList,
-                         long refreshPeriod,
-                         boolean isPermanent,
-                         boolean isEager,
-                         boolean isMetaOnly,
-                         int replicas,
-                         boolean mustMovePins,
-                         boolean computeChecksumOnUpdate,
-                         boolean maintainAtime,
-                         Expression pauseWhen,
-                         Expression stopWhen,
-                         boolean forceSourceMode)
-    {
+          CacheEntryMode sourceMode,
+          CacheEntryMode targetMode,
+          PoolSelectionStrategy selectionStrategy,
+          Comparator<CacheEntry> comparator,
+          RefreshablePoolList sourceList,
+          RefreshablePoolList poolList,
+          long refreshPeriod,
+          boolean isPermanent,
+          boolean isEager,
+          boolean isMetaOnly,
+          int replicas,
+          boolean mustMovePins,
+          boolean computeChecksumOnUpdate,
+          boolean maintainAtime,
+          Expression pauseWhen,
+          Expression stopWhen,
+          boolean forceSourceMode) {
         this.filter = filter;
         this.sourceMode = sourceMode;
         this.targetMode = targetMode;

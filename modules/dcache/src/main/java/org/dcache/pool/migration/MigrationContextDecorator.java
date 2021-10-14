@@ -18,79 +18,66 @@
  */
 package org.dcache.pool.migration;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import diskCacheV111.util.PnfsId;
-
+import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 
-public class MigrationContextDecorator implements MigrationContext
-{
+public class MigrationContextDecorator implements MigrationContext {
+
     private final MigrationContext inner;
 
-    public MigrationContextDecorator(MigrationContext inner)
-    {
+    public MigrationContextDecorator(MigrationContext inner) {
         this.inner = inner;
     }
 
     @Override
-    public String getPoolName()
-    {
+    public String getPoolName() {
         return inner.getPoolName();
     }
 
     @Override
-    public ScheduledExecutorService getExecutor()
-    {
+    public ScheduledExecutorService getExecutor() {
         return inner.getExecutor();
     }
 
     @Override
-    public CellStub getPoolStub()
-    {
+    public CellStub getPoolStub() {
         return inner.getPoolStub();
     }
 
     @Override
-    public CellStub getPnfsStub()
-    {
+    public CellStub getPnfsStub() {
         return inner.getPnfsStub();
     }
 
     @Override
-    public CellStub getPoolManagerStub()
-    {
+    public CellStub getPoolManagerStub() {
         return inner.getPoolManagerStub();
     }
 
     @Override
-    public CellStub getPinManagerStub()
-    {
+    public CellStub getPinManagerStub() {
         return inner.getPinManagerStub();
     }
 
     @Override
-    public Repository getRepository()
-    {
+    public Repository getRepository() {
         return inner.getRepository();
     }
 
     @Override
-    public boolean lock(PnfsId pnfsId)
-    {
+    public boolean lock(PnfsId pnfsId) {
         return inner.lock(pnfsId);
     }
 
     @Override
-    public void unlock(PnfsId pnfsId)
-    {
+    public void unlock(PnfsId pnfsId) {
         inner.unlock(pnfsId);
     }
 
     @Override
-    public boolean isActive(PnfsId pnfsId)
-    {
+    public boolean isActive(PnfsId pnfsId) {
         return inner.isActive(pnfsId);
     }
 }

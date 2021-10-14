@@ -17,28 +17,25 @@
  */
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.PnfsId;
+import static java.util.Objects.requireNonNull;
 
+import diskCacheV111.util.PnfsId;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * An Allocator that is based on some Account object.
  */
-public abstract class AccountAllocator implements Allocator
-{
+public abstract class AccountAllocator implements Allocator {
+
     protected final Account _account;
 
-    public AccountAllocator(Account account)
-    {
+    public AccountAllocator(Account account) {
         _account = requireNonNull(account);
     }
 
     @Override
-    public void free(PnfsId id, long space)
-    {
+    public void free(PnfsId id, long space) {
         _account.free(id, space);
     }
 }

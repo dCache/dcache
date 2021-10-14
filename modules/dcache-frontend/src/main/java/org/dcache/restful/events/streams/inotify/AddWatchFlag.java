@@ -21,14 +21,12 @@ package org.dcache.restful.events.streams.inotify;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
-
 import org.dcache.namespace.events.EventType;
 
 /**
  * The flags that may be supplied when requesting a new watch.
  */
-public enum AddWatchFlag
-{
+public enum AddWatchFlag {
     // Which events are of interest.
     IN_ACCESS,
     IN_ATTRIB,
@@ -45,82 +43,97 @@ public enum AddWatchFlag
 
     // The following three macros is equivalent to a specific subset of the above event flags.
 
-    /** A macro, equivalent to all events. */
+    /**
+     * A macro, equivalent to all events.
+     */
     IN_ALL_EVENTS,
 
-    /** A macro, equivalent to IN_CLOSE_WRITE | IN_CLOSE_NOWRITE. */
+    /**
+     * A macro, equivalent to IN_CLOSE_WRITE | IN_CLOSE_NOWRITE.
+     */
     IN_CLOSE,
 
-    /** A macro, equivalent to IN_MOVED_FROM | IN_MOVED_TO. */
+    /**
+     * A macro, equivalent to IN_MOVED_FROM | IN_MOVED_TO.
+     */
     IN_MOVE,
 
     // Additional flags that modify behaviour without selecting additional events
 
-    /** Report namespace events against a symlink itself, not what it points to. */
+    /**
+     * Report namespace events against a symlink itself, not what it points to.
+     */
     IN_DONT_FOLLOW,
 
-    /** Stop sending events after a file is unlinked, but still opened. */
+    /**
+     * Stop sending events after a file is unlinked, but still opened.
+     */
     IN_EXCL_UNLINK,
 
-    /** When a request is merged, use union of flags, rather than replacing. */
+    /**
+     * When a request is merged, use union of flags, rather than replacing.
+     */
     IN_MASK_ADD,
 
-    /** Close the watch after the first event is sent. */
+    /**
+     * Close the watch after the first event is sent.
+     */
     IN_ONESHOT,
 
-    /** Accept the request, but do not send events if the target is not a dir. */
+    /**
+     * Accept the request, but do not send events if the target is not a dir.
+     */
     IN_ONLYDIR;
 
     public static final EnumSet<AddWatchFlag> ALL_EVENTS = EnumSet.of(
-            AddWatchFlag.IN_ACCESS, AddWatchFlag.IN_ATTRIB,
-            AddWatchFlag.IN_CLOSE_WRITE, AddWatchFlag.IN_CLOSE_NOWRITE,
-            AddWatchFlag.IN_CREATE, AddWatchFlag.IN_DELETE,
-            AddWatchFlag.IN_DELETE_SELF, AddWatchFlag.IN_MODIFY,
-            AddWatchFlag.IN_MOVE_SELF, AddWatchFlag.IN_MOVED_FROM,
-            AddWatchFlag.IN_MOVED_TO, AddWatchFlag.IN_OPEN);
+          AddWatchFlag.IN_ACCESS, AddWatchFlag.IN_ATTRIB,
+          AddWatchFlag.IN_CLOSE_WRITE, AddWatchFlag.IN_CLOSE_NOWRITE,
+          AddWatchFlag.IN_CREATE, AddWatchFlag.IN_DELETE,
+          AddWatchFlag.IN_DELETE_SELF, AddWatchFlag.IN_MODIFY,
+          AddWatchFlag.IN_MOVE_SELF, AddWatchFlag.IN_MOVED_FROM,
+          AddWatchFlag.IN_MOVED_TO, AddWatchFlag.IN_OPEN);
 
-    public static Set<EventType> asEventType(Collection<AddWatchFlag> flags)
-    {
+    public static Set<EventType> asEventType(Collection<AddWatchFlag> flags) {
         EnumSet<EventType> requestFlags = EnumSet.noneOf(EventType.class);
 
         for (AddWatchFlag flag : flags) {
             switch (flag) {
-            case IN_ACCESS:
-                requestFlags.add(EventType.IN_ACCESS);
-                break;
-            case IN_ATTRIB:
-                requestFlags.add(EventType.IN_ATTRIB);
-                break;
-            case IN_CLOSE_WRITE:
-                requestFlags.add(EventType.IN_CLOSE_WRITE);
-                break;
-            case IN_CLOSE_NOWRITE:
-                requestFlags.add(EventType.IN_CLOSE_NOWRITE);
-                break;
-            case IN_CREATE:
-                requestFlags.add(EventType.IN_CREATE);
-                break;
-            case IN_DELETE:
-                requestFlags.add(EventType.IN_DELETE);
-                break;
-            case IN_DELETE_SELF:
-                requestFlags.add(EventType.IN_DELETE_SELF);
-                break;
-            case IN_MODIFY:
-                requestFlags.add(EventType.IN_MODIFY);
-                break;
-            case IN_MOVE_SELF:
-                requestFlags.add(EventType.IN_MOVE_SELF);
-                break;
-            case IN_MOVED_FROM:
-                requestFlags.add(EventType.IN_MOVED_FROM);
-                break;
-            case IN_MOVED_TO:
-                requestFlags.add(EventType.IN_MOVED_TO);
-                break;
-            case IN_OPEN:
-                requestFlags.add(EventType.IN_OPEN);
-                break;
+                case IN_ACCESS:
+                    requestFlags.add(EventType.IN_ACCESS);
+                    break;
+                case IN_ATTRIB:
+                    requestFlags.add(EventType.IN_ATTRIB);
+                    break;
+                case IN_CLOSE_WRITE:
+                    requestFlags.add(EventType.IN_CLOSE_WRITE);
+                    break;
+                case IN_CLOSE_NOWRITE:
+                    requestFlags.add(EventType.IN_CLOSE_NOWRITE);
+                    break;
+                case IN_CREATE:
+                    requestFlags.add(EventType.IN_CREATE);
+                    break;
+                case IN_DELETE:
+                    requestFlags.add(EventType.IN_DELETE);
+                    break;
+                case IN_DELETE_SELF:
+                    requestFlags.add(EventType.IN_DELETE_SELF);
+                    break;
+                case IN_MODIFY:
+                    requestFlags.add(EventType.IN_MODIFY);
+                    break;
+                case IN_MOVE_SELF:
+                    requestFlags.add(EventType.IN_MOVE_SELF);
+                    break;
+                case IN_MOVED_FROM:
+                    requestFlags.add(EventType.IN_MOVED_FROM);
+                    break;
+                case IN_MOVED_TO:
+                    requestFlags.add(EventType.IN_MOVED_TO);
+                    break;
+                case IN_OPEN:
+                    requestFlags.add(EventType.IN_OPEN);
+                    break;
             }
         }
 

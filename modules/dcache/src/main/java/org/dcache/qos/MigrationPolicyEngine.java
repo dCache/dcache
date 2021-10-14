@@ -20,9 +20,14 @@ package org.dcache.qos;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.StorageUnitInfoExtractor;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,17 +38,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.StorageUnitInfoExtractor;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyReplicaMessage;
 import org.dcache.pool.migration.PoolMigrationMessage;
@@ -52,41 +46,41 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *   Handles copying of a file to a pool which is attached to an HSM.
+ * Handles copying of a file to a pool which is attached to an HSM.
  */
-public class MigrationPolicyEngine
-{
+public class MigrationPolicyEngine {
+
     private static final Logger LOGGER
-                                                 = LoggerFactory.getLogger(
-                    MigrationPolicyEngine.class);
+          = LoggerFactory.getLogger(
+          MigrationPolicyEngine.class);
 
     private static Set<String> getPoolsLinkedToStorageUnit(PoolSelectionUnit psu,
-                                                           FileAttributes attributes)
-    {
+          FileAttributes attributes) {
         String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
 
         return StorageUnitInfoExtractor.getPoolGroupsFor(unitKey,
-                                                         psu,
-                                                         false)
-                                       .stream()
-                                       .map(pgroup -> psu.getPoolsByPoolGroup(pgroup))
-                                       .flatMap(c -> c.stream())
-                                       .map(SelectionPool::getName)
-                                       .collect(Collectors.toSet());
+                    psu,
+                    false)
+              .stream()
+              .map(pgroup -> psu.getPoolsByPoolGroup(pgroup))
+              .flatMap(c -> c.stream())
+              .map(SelectionPool::getName)
+              .collect(Collectors.toSet());
     }
 
-    private final   FileAttributes                                fileAttributes;
-    private final   CellStub                                      cellStub;
-    private final   PoolMonitor                                   poolMonitor;
-    private final   UUID                                          uuid = UUID.randomUUID();
-    private         List<StickyRecord>                            stickyRecords;
+    private final FileAttributes fileAttributes;
+    private final CellStub cellStub;
+    private final PoolMonitor poolMonitor;
+    private final UUID uuid = UUID.randomUUID();
+    private List<StickyRecord> stickyRecords;
 
     public MigrationPolicyEngine(FileAttributes fileAttributes,
-                                 CellStub cellStub,
-                                 PoolMonitor poolMonitor)
-    {
+          CellStub cellStub,
+          PoolMonitor poolMonitor) {
         this.fileAttributes = fileAttributes;
         this.cellStub = cellStub;
         this.poolMonitor = poolMonitor;
@@ -102,8 +96,7 @@ public class MigrationPolicyEngine
      *   TODO that the file can be migrated only to one pool.
      */
     public synchronized ListenableFuture<PoolMigrationMessage> adjust()
-                    throws CacheException
-    {
+          throws CacheException {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         Collection<String> sourcePools = fileAttributes.getLocations();
@@ -116,12 +109,12 @@ public class MigrationPolicyEngine
 
         if (targetPools.isEmpty()) {
             throw CacheExceptionFactory.exceptionOf(CacheException.NO_POOL_CONFIGURED,
-                                                    "No HSM pool available");
+                  "No HSM pool available");
         }
 
         List<String> samePools = targetPools.stream()
-                                            .filter(n -> sourcePools.contains(n))
-                                            .collect(Collectors.toList());
+              .filter(n -> sourcePools.contains(n))
+              .collect(Collectors.toList());
 
         boolean isOnHsmPool = !samePools.isEmpty();
 
@@ -129,44 +122,44 @@ public class MigrationPolicyEngine
         List<URI> locations = fileAttributes.getStorageInfo().locations();
 
         LOGGER.debug("{}, adjust; locations {}, already on hsm pool? {}: ",
-                     id, locations, isOnHsmPool);
+              id, locations, isOnHsmPool);
 
         ListenableFuture<PoolMigrationMessage> future = null;
 
         if (fileAttributes.getStorageInfo().locations().isEmpty()
-                        || !isOnHsmPool) {
+              || !isOnHsmPool) {
 
             String sourcePool = isOnHsmPool ? samePools.get(0) :
-                            getRandomPool(sourcePools);
+                  getRandomPool(sourcePools);
 
             String target = isOnHsmPool ?
-                            samePools.get(0) :
-                            getRandomPool(targetPools);
+                  samePools.get(0) :
+                  getRandomPool(targetPools);
 
             LOGGER.debug("{}, selected source {}, selected target {}",
-                         id, sourcePool, target);
+                  id, sourcePool, target);
 
             PoolSelectionUnit.SelectionPool pool = psu.getPool(target);
 
             LOGGER.debug("{}, target pool {}", id, pool);
 
             PoolMigrationCopyReplicaMessage message
-                            = new PoolMigrationCopyReplicaMessage(uuid,
-                                                                  sourcePool,
-                                                                  fileAttributes,
-                                                                  ReplicaState.PRECIOUS,
-                                                                  stickyRecords,
-                                                                  false,
-                                                                  false,
-                                                                  null,
-                                                                  false
+                  = new PoolMigrationCopyReplicaMessage(uuid,
+                  sourcePool,
+                  fileAttributes,
+                  ReplicaState.PRECIOUS,
+                  stickyRecords,
+                  false,
+                  false,
+                  null,
+                  false
             );
 
             LOGGER.debug("{}, sending migration copy replica message to {}.",
-                         id, pool.getAddress());
+                  id, pool.getAddress());
             future = cellStub.send(new CellPath(pool.getAddress()),
-                                   message,
-                                   CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL);
+                  message,
+                  CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL);
         } else {
             LOGGER.debug("{}, no need to migrate", id);
         }
@@ -174,14 +167,12 @@ public class MigrationPolicyEngine
         return future;
     }
 
-    private String getRandomPool(Collection<String> targetPools)
-    {
+    private String getRandomPool(Collection<String> targetPools) {
         int locationCount = targetPools.size();
         int r = new Random().nextInt(locationCount);
         Iterator<String> i = targetPools.iterator();
 
-        while (r-- > 0)
-        {
+        while (r-- > 0) {
             i.next();
         }
 
@@ -190,8 +181,7 @@ public class MigrationPolicyEngine
     }
 
     private Collection<String> getTargetPools(FileAttributes fileAttributes,
-                                              PoolSelectionUnit psu)
-    {
+          PoolSelectionUnit psu) {
         Set<String> linkedPools = getPoolsLinkedToStorageUnit(psu, fileAttributes);
         Set<String> hsms = ImmutableSet.of(fileAttributes.getHsm());
 

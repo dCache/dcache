@@ -17,33 +17,29 @@
  */
 package org.dcache.util.configuration;
 
-import org.springframework.beans.factory.FactoryBean;
-
 import java.util.Map;
+import org.springframework.beans.factory.FactoryBean;
 
 
 /**
- * The ConfigurationMapFactoryBean builds a Map from some (possibly empty)
- * subset of dCache configuration.  The Bean takes a String prefix as an
- * argument.  All configuration properties with a key that starts with this
- * prefix are used to build the map, all others are ignored.  The map entries
- * are created by removing the prefix from matching property keys to form the
- * map-entry's key.  The corresponding map-entry's value is the property value.
+ * The ConfigurationMapFactoryBean builds a Map from some (possibly empty) subset of dCache
+ * configuration.  The Bean takes a String prefix as an argument.  All configuration properties with
+ * a key that starts with this prefix are used to build the map, all others are ignored.  The map
+ * entries are created by removing the prefix from matching property keys to form the map-entry's
+ * key.  The corresponding map-entry's value is the property value.
  * <p>
  * The created Map bean is immutable.
  */
 public class ConfigurationMapFactoryBean extends AbstractPrefixFactoryBean
-        implements FactoryBean<Map<String,String>>
-{
+      implements FactoryBean<Map<String, String>> {
+
     @Override
-    public Map<String, String> getObject()
-    {
+    public Map<String, String> getObject() {
         return configuration();
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return Map.class;
     }
 }

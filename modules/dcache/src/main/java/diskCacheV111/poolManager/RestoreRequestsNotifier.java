@@ -59,48 +59,47 @@ documents or software obtained from this server.
  */
 package diskCacheV111.poolManager;
 
-import org.springframework.beans.factory.annotation.Required;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellLifeCycleAware;
-
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 import org.dcache.util.FireAndForgetTask;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Periodically publishes a list of the restore requests for this
- *  given PoolManager/RequestContainer on the restore requests topic.</p>
+ * given PoolManager/RequestContainer on the restore requests topic.</p>
  */
 public final class RestoreRequestsNotifier implements Runnable,
-                CellLifeCycleAware, CellIdentityAware {
-    private long     timeout     = 1;
+      CellLifeCycleAware, CellIdentityAware {
+
+    private long timeout = 1;
     private TimeUnit timeoutUnit = TimeUnit.MINUTES;
 
-    private RequestContainerV5       requestContainer;
+    private RequestContainerV5 requestContainer;
     private ScheduledExecutorService executorService;
-    private CellStub                 restoreRequests;
-    private CellAddressCore          address;
+    private CellStub restoreRequests;
+    private CellAddressCore address;
 
     @Override
     public void afterStart() {
         executorService.schedule(new FireAndForgetTask(this),
-                                 timeout,
-                                 timeoutUnit);
+              timeout,
+              timeoutUnit);
     }
 
     @Override
     public void run() {
         PoolManagerGetRestoreHandlerInfo message
-                        = new PoolManagerGetRestoreHandlerInfo(address);
+              = new PoolManagerGetRestoreHandlerInfo(address);
         message.setResult(requestContainer.getRestoreHandlerInfo());
         restoreRequests.notify(message);
         executorService.schedule(new FireAndForgetTask(this),
-                                 timeout,
-                                 timeoutUnit);
+              timeout,
+              timeoutUnit);
     }
 
     @Override
@@ -110,13 +109,13 @@ public final class RestoreRequestsNotifier implements Runnable,
 
     @Required
     public void setExecutorService(
-                    ScheduledExecutorService executorService) {
+          ScheduledExecutorService executorService) {
         this.executorService = executorService;
     }
 
     @Required
     public void setRequestContainer(
-                    RequestContainerV5 requestContainer) {
+          RequestContainerV5 requestContainer) {
         this.requestContainer = requestContainer;
     }
 

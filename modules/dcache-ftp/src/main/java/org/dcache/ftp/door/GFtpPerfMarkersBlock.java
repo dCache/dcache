@@ -69,7 +69,6 @@ COPYRIGHT STATUS:
 package org.dcache.ftp.door;
 
 import java.io.PrintWriter;
-
 import org.dcache.util.LineIndentingPrintWriter;
 
 /**
@@ -83,81 +82,100 @@ import org.dcache.util.LineIndentingPrintWriter;
  */
 
 public class GFtpPerfMarkersBlock {
-    public int getLength() { return (markers == null) ? 0: markers.length; }
+
+    public int getLength() {
+        return (markers == null) ? 0 : markers.length;
+    }
 
     // By RFC definition, performance marker _includes_ number of streams in transfer.
     // This number may be not known apriory, and array is created with the length of Max number of streams allowed
     // Later when data streams are opened, the number of open streams can be less then max.
 
-    private int     count;   // Current number of Performance Markers defined <= max
-                                        //   equals numbers of open data streams
+    private int count;   // Current number of Performance Markers defined <= max
+    //   equals numbers of open data streams
 //    private int     max;     // Maximum number of performance markers, size of the GFtpPerfMarker[]
 
     private GFtpPerfMarker[] markers;
-    public  GFtpPerfMarker[] getGFtpPerfMarkers() { return markers; }
 
-    public  GFtpPerfMarker markers( int idx)
-            throws IllegalArgumentException {
-        if( idx < 0 || idx > markers.length ) {
+    public GFtpPerfMarker[] getGFtpPerfMarkers() {
+        return markers;
+    }
+
+    public GFtpPerfMarker markers(int idx)
+          throws IllegalArgumentException {
+        if (idx < 0 || idx > markers.length) {
             throw new IllegalArgumentException();
         } else {
             return markers[idx];
         }
     }
-    /** Default constructor - empty block */
+
+    /**
+     * Default constructor - empty block
+     */
     public GFtpPerfMarkersBlock() {
         clear();
     }
-    /** Constructor - create block of markers of specified length */
-    public GFtpPerfMarkersBlock( int length ) {
-        createNewBlock( length );
+
+    /**
+     * Constructor - create block of markers of specified length
+     */
+    public GFtpPerfMarkersBlock(int length) {
+        createNewBlock(length);
     }
-    private void createNewBlock( int length ){
-        if ( length > 0 ) {
+
+    private void createNewBlock(int length) {
+        if (length > 0) {
             count = length;
 
             markers = new GFtpPerfMarker[length];
             for (int jStripe = 0; jStripe < length; jStripe++) {
-                this.markers[jStripe] = new GFtpPerfMarker(jStripe, length );
+                this.markers[jStripe] = new GFtpPerfMarker(jStripe, length);
             }
-        }else{
+        } else {
             clear();
         }
     }
 
-    /** Copy constructor */
-    GFtpPerfMarkersBlock( GFtpPerfMarkersBlock pm ){
+    /**
+     * Copy constructor
+     */
+    GFtpPerfMarkersBlock(GFtpPerfMarkersBlock pm) {
         int length = pm.getLength();
-        count   = pm.getCount();
-        count   = (count < length) ? count : length;
+        count = pm.getCount();
+        count = (count < length) ? count : length;
 
-        if( pm.markers != null ) {
+        if (pm.markers != null) {
             markers = new GFtpPerfMarker[length];
             for (int jStripe = 0; jStripe < length; jStripe++) {
                 this.markers[jStripe] = new GFtpPerfMarker(jStripe, pm.count);
-                this.markers[jStripe].setBytesWithTime( pm.markers[jStripe].getstripeBytesTransferred(),
-                        pm.markers[jStripe].getTimeStamp() );
+                this.markers[jStripe].setBytesWithTime(
+                      pm.markers[jStripe].getstripeBytesTransferred(),
+                      pm.markers[jStripe].getTimeStamp());
             }
-        }else{
+        } else {
             clear();
         }
     }
-    public void setCount( int c ) {
-        if( markers != null ) {
+
+    public void setCount(int c) {
+        if (markers != null) {
             count = (c < markers.length) ? c : markers.length;
         } else {
             count = 0;
         }
     }
-    public int getCount()  { return count; }
 
-    public void clear(){
-        count   = 0;
+    public int getCount() {
+        return count;
+    }
+
+    public void clear() {
+        count = 0;
         markers = null;
     }
 
-    public long getBytesTransferred()
-    {
+    public long getBytesTransferred() {
         long sum = 0;
         for (GFtpPerfMarker marker : markers) {
             sum += marker.getstripeBytesTransferred();
@@ -165,8 +183,7 @@ public class GFtpPerfMarkersBlock {
         return sum;
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         if (getLength() == 1) {
             markers[0].getInfo(pw);
         } else {

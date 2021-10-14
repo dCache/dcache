@@ -1,14 +1,10 @@
 package org.dcache.auth;
 
+import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
+
 import com.google.common.collect.Range;
-
-import javax.security.auth.Subject;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -27,7 +23,10 @@ import diskCacheV111.vehicles.PnfsListExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsReadExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsRemoveExtendedAttributesMessage;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage;
-
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
@@ -40,48 +39,40 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
-import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
-import static org.dcache.namespace.FileType.DIR;
-import static org.dcache.namespace.FileType.REGULAR;
-
 /**
- * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide
- * an implementation of the NameSpaceProvider interface.  This implementation
- * is thread-safe.
+ * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide an implementation of the
+ * NameSpaceProvider interface.  This implementation is thread-safe.
  */
-public class RemoteNameSpaceProvider implements NameSpaceProvider
-{
+public class RemoteNameSpaceProvider implements NameSpaceProvider {
+
     private final PnfsHandler _pnfs;
     private final ListDirectoryHandler _handler;
 
 
     public RemoteNameSpaceProvider(PnfsHandler pnfsHandler,
-            ListDirectoryHandler listHandler)
-    {
+          ListDirectoryHandler listHandler) {
         _pnfs = pnfsHandler;
         _handler = listHandler;
     }
 
-    public RemoteNameSpaceProvider(PnfsHandler pnfsHandler)
-    {
+    public RemoteNameSpaceProvider(PnfsHandler pnfsHandler) {
         this(pnfsHandler, new ListDirectoryHandler(pnfsHandler));
     }
 
     @Override
     public FileAttributes createFile(Subject subject, String path,
-            FileAttributes assignAttributes, Set<FileAttribute> requestedAttributes)
-            throws CacheException
-    {
+          FileAttributes assignAttributes, Set<FileAttribute> requestedAttributes)
+          throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         assignAttributes.setFileType(REGULAR);
         PnfsCreateEntryMessage message = new PnfsCreateEntryMessage(path,
-                assignAttributes, requestedAttributes);
+              assignAttributes, requestedAttributes);
         return pnfs.request(message).getFileAttributes();
     }
 
     @Override
     public PnfsId createDirectory(Subject subject, String path, FileAttributes attributes)
-            throws CacheException {
+          throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         attributes.setFileType(DIR);
         PnfsCreateEntryMessage returnMsg = pnfs.createPnfsDirectory(path, attributes);
@@ -90,8 +81,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
 
     @Override
     public PnfsId createSymLink(Subject subject, String path, String dest,
-            FileAttributes attributes) throws CacheException
-    {
+          FileAttributes attributes) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
 
         PnfsCreateEntryMessage returnMsg = pnfs.createSymLink(path, dest, attributes);
@@ -101,60 +91,53 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId id, Set<FileAttribute> attr) throws CacheException
-    {
+          PnfsId id, Set<FileAttribute> attr) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.deletePnfsEntry(id, null, allowed, attr);
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            String path, Set<FileAttribute> attr) throws CacheException
-    {
+          String path, Set<FileAttribute> attr) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.deletePnfsEntry(null, path, allowed, attr);
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId pnfsId, String path, Set<FileAttribute> attr) throws CacheException
-    {
+          PnfsId pnfsId, String path, Set<FileAttribute> attr) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.deletePnfsEntry(pnfsId, path, allowed, attr);
     }
 
     @Override
-    public void rename(Subject subject, PnfsId id, String sourcePath, String newName, boolean overwrite) throws CacheException
-    {
+    public void rename(Subject subject, PnfsId id, String sourcePath, String newName,
+          boolean overwrite) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         pnfs.renameEntry(id, sourcePath, newName, overwrite);
     }
 
     @Override
-    public String pnfsidToPath(Subject subject, PnfsId id) throws CacheException
-    {
+    public String pnfsidToPath(Subject subject, PnfsId id) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.getPathByPnfsId(id).toString();
     }
 
     @Override
     public PnfsId pathToPnfsid(Subject subject, String path,
-            boolean followLinks) throws CacheException
-    {
+          boolean followLinks) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.getPnfsIdByPath(path, followLinks);
     }
 
     @Override
-    public Collection<Link> find(Subject subject, PnfsId id) throws CacheException
-    {
+    public Collection<Link> find(Subject subject, PnfsId id) throws CacheException {
         return new PnfsHandler(_pnfs, subject, Restrictions.none()).find(id);
     }
 
     @Override
     public void removeFileAttribute(Subject subject, PnfsId id,
-            String attribute) throws CacheException
-    {
+          String attribute) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         pnfs.notify(new PnfsFlagMessage(id, attribute, REMOVE));
     }
@@ -162,58 +145,52 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
 
     @Override
     public void removeChecksum(Subject subject, PnfsId id, ChecksumType type)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         pnfs.removeChecksum(id, type);
     }
 
     @Override
     public void addCacheLocation(Subject subject, PnfsId id, String pool)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         pnfs.addCacheLocation(id, pool);
     }
 
     @Override
     public List<String> getCacheLocation(Subject subject, PnfsId id)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.getCacheLocations(id);
     }
 
     @Override
     public void clearCacheLocation(Subject subject, PnfsId id, String pool,
-            boolean removeIfLast) throws CacheException
-    {
+          boolean removeIfLast) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         pnfs.request(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
     }
 
     @Override
     public FileAttributes getFileAttributes(Subject subject, PnfsId id,
-            Set<FileAttribute> attr) throws CacheException
-    {
+          Set<FileAttribute> attr) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.getFileAttributes(id, attr);
     }
 
     @Override
     public FileAttributes setFileAttributes(Subject subject, PnfsId id,
-            FileAttributes attr, Set<FileAttribute> acquire) throws CacheException
-    {
+          FileAttributes attr, Set<FileAttribute> acquire) throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
         return pnfs.setFileAttributes(id, attr, acquire);
     }
 
     @Override
     public void list(Subject subject, String path, Glob glob,
-            Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
-            throws CacheException
-    {
-        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(), FsPath.create(path), glob, range, attrs)) {
+          Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
+          throws CacheException {
+        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(),
+              FsPath.create(path), glob, range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }
@@ -224,42 +201,39 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
 
     @Override
     public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
-                                   Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
-                                   Set<CreateOption> options)
-            throws CacheException
-    {
-        PnfsCreateUploadPath msg = new PnfsCreateUploadPath(subject, Restrictions.none(), path, rootPath,
-                                                            size, al, rp, spaceToken, options);
+          Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
+          Set<CreateOption> options)
+          throws CacheException {
+        PnfsCreateUploadPath msg = new PnfsCreateUploadPath(subject, Restrictions.none(), path,
+              rootPath,
+              size, al, rp, spaceToken, options);
         return _pnfs.request(msg).getUploadPath();
     }
 
     @Override
     public FileAttributes commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath,
-                                       Set<CreateOption> options, Set<FileAttribute> attributes)
-            throws CacheException
-    {
+          Set<CreateOption> options, Set<FileAttribute> attributes)
+          throws CacheException {
         PnfsCommitUpload msg = new PnfsCommitUpload(subject,
-                                                    Restrictions.none(),
-                                                    uploadPath,
-                                                    pnfsPath,
-                                                    options,
-                                                    attributes);
+              Restrictions.none(),
+              uploadPath,
+              pnfsPath,
+              options,
+              attributes);
         return _pnfs.request(msg).getFileAttributes();
     }
 
     @Override
     public Collection<FileAttributes> cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
-            Set<FileAttribute> requested, String explanation) throws CacheException
-    {
+          Set<FileAttribute> requested, String explanation) throws CacheException {
         return _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(),
-                uploadPath, path, requested, explanation)).getDeletedFiles();
+              uploadPath, path, requested, explanation)).getDeletedFiles();
     }
 
     public byte[] readExtendedAttribute(Subject subject, FsPath path, String name)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsReadExtendedAttributesMessage message =
-                new PnfsReadExtendedAttributesMessage(path.toString());
+              new PnfsReadExtendedAttributesMessage(path.toString());
         message.addName(name);
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());
@@ -267,24 +241,23 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     public void writeExtendedAttribute(Subject subject, FsPath path, String name,
-            byte[] value, SetExtendedAttributeMode mode) throws CacheException
-    {
+          byte[] value, SetExtendedAttributeMode mode) throws CacheException {
         PnfsWriteExtendedAttributesMessage.Mode m;
         switch (mode) {
-        case CREATE:
-            m = PnfsWriteExtendedAttributesMessage.Mode.CREATE;
-            break;
-        case REPLACE:
-            m = PnfsWriteExtendedAttributesMessage.Mode.MODIFY;
-            break;
-        case EITHER:
-            m = PnfsWriteExtendedAttributesMessage.Mode.EITHER;
-            break;
-        default:
-            throw new RuntimeException("Unknown mode " + mode);
+            case CREATE:
+                m = PnfsWriteExtendedAttributesMessage.Mode.CREATE;
+                break;
+            case REPLACE:
+                m = PnfsWriteExtendedAttributesMessage.Mode.MODIFY;
+                break;
+            case EITHER:
+                m = PnfsWriteExtendedAttributesMessage.Mode.EITHER;
+                break;
+            default:
+                throw new RuntimeException("Unknown mode " + mode);
         }
         PnfsWriteExtendedAttributesMessage message =
-                new PnfsWriteExtendedAttributesMessage(path.toString(), m);
+              new PnfsWriteExtendedAttributesMessage(path.toString(), m);
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());
         message.putValue(name, value);
@@ -292,20 +265,18 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     public Set<String> listExtendedAttributes(Subject subject, FsPath path)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsListExtendedAttributesMessage message =
-                new PnfsListExtendedAttributesMessage(path.toString());
+              new PnfsListExtendedAttributesMessage(path.toString());
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());
         return _pnfs.request(message).getNames();
     }
 
     public void removeExtendedAttribute(Subject subject, FsPath path, String name)
-            throws CacheException
-    {
+          throws CacheException {
         PnfsRemoveExtendedAttributesMessage message =
-                new PnfsRemoveExtendedAttributesMessage(path.toString());
+              new PnfsRemoveExtendedAttributesMessage(path.toString());
         message.addName(name);
         message.setSubject(subject);
         message.setRestriction(Restrictions.none());

@@ -59,14 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import com.google.common.collect.ImmutableSet;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
+import com.google.common.collect.ImmutableSet;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
-
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestMessageProcessor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
@@ -74,12 +73,12 @@ import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.PoolStatusForResilience;
 import org.dcache.vehicles.resilience.ReplicaStatusMessage;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.junit.Before;
+import org.junit.Test;
 
 public class PoolOperationHandlerTest extends TestBase
-                implements TestMessageProcessor {
+      implements TestMessageProcessor {
+
     String pool;
 
     @Override
@@ -213,7 +212,7 @@ public class PoolOperationHandlerTest extends TestBase
     public void shouldSubmitUpdateWhenDownIsReceivedOnResilientPool() {
         givenADownStatusChangeFor("resilient_pool-0");
         assertEquals(PoolStatusForResilience.DOWN,
-                        poolOperationMap.getCurrentStatus(pool));
+              poolOperationMap.getCurrentStatus(pool));
         assertEquals("WAITING", poolOperationMap.getState(pool));
     }
 
@@ -222,7 +221,7 @@ public class PoolOperationHandlerTest extends TestBase
         givenADownStatusChangeFor("resilient_pool-0");
         givenARestartStatusChangeFor("resilient_pool-0");
         assertEquals(PoolStatusForResilience.ENABLED,
-                        poolOperationMap.getCurrentStatus(pool));
+              poolOperationMap.getCurrentStatus(pool));
         assertEquals("WAITING", poolOperationMap.getState(pool));
     }
 
@@ -230,14 +229,14 @@ public class PoolOperationHandlerTest extends TestBase
     public void shouldSubmitUpdateWhenWriteDisabled() {
         givenADisabledStrictStatusChangeFor("resilient_pool-0");
         assertEquals(PoolStatusForResilience.DOWN,
-                        poolOperationMap.getCurrentStatus(pool));
+              poolOperationMap.getCurrentStatus(pool));
         assertEquals("WAITING", poolOperationMap.getState(pool));
     }
 
     private void givenADownStatusChangeFor(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
+              new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
         poolInfoMap.updatePoolStatus(update);
         poolOperationHandler.handlePoolStatusChange(update);
     }
@@ -245,7 +244,7 @@ public class PoolOperationHandlerTest extends TestBase
     private void givenAReadOnlyDownStatusChangeFor(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
+              new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
         poolInfoMap.updatePoolStatus(update);
         poolOperationHandler.handlePoolStatusChange(update);
     }
@@ -253,7 +252,7 @@ public class PoolOperationHandlerTest extends TestBase
     private void givenARestartStatusChangeFor(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.ENABLED));
+              new PoolV2Mode(PoolV2Mode.ENABLED));
         poolInfoMap.updatePoolStatus(update);
         poolOperationHandler.handlePoolStatusChange(update);
     }
@@ -261,7 +260,7 @@ public class PoolOperationHandlerTest extends TestBase
     private void givenADisabledStrictStatusChangeFor(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
+              new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
         poolInfoMap.updatePoolStatus(update);
         poolOperationHandler.handlePoolStatusChange(update);
     }
@@ -269,7 +268,7 @@ public class PoolOperationHandlerTest extends TestBase
     private void givenAnUpStatusChangeFor(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
+              new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
         poolInfoMap.updatePoolStatus(update);
         poolOperationHandler.handlePoolStatusChange(update);
     }
@@ -290,9 +289,9 @@ public class PoolOperationHandlerTest extends TestBase
     }
 
     private void setAllPoolsToEnabled() {
-        poolInfoMap.getResilientPools().stream().forEach((p)-> {
+        poolInfoMap.getResilientPools().stream().forEach((p) -> {
             PoolStateUpdate update
-                = new PoolStateUpdate(p, new PoolV2Mode(PoolV2Mode.ENABLED));
+                  = new PoolStateUpdate(p, new PoolV2Mode(PoolV2Mode.ENABLED));
             poolInfoMap.updatePoolStatus(update);
         });
     }

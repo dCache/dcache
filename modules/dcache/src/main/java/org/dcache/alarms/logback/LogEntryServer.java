@@ -78,10 +78,8 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.logback;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ServerSocketFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -89,26 +87,27 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.net.ServerSocketFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This implementation adapts {@link ch.qos.logback.classic.net.SimpleSocketServer}
- * to run directly as a dCache cell component and to bypass re-entry of
- * the remotely sent logging event into the logging context.
+ * This implementation adapts {@link ch.qos.logback.classic.net.SimpleSocketServer} to run directly
+ * as a dCache cell component and to bypass re-entry of the remotely sent logging event into the
+ * logging context.
  * <p>
- *
- * This is achieved via a special implementation of the logback SocketNode
- * which calls the LogEntryHandler directly.
+ * <p>
+ * This is achieved via a special implementation of the logback SocketNode which calls the
+ * LogEntryHandler directly.
  *
  * @author Ceki G&uuml;lc&uuml;
  * @author S&eacute;bastien Pennec
  * @author arossi
  */
 public final class LogEntryServer implements Runnable {
+
     private static final Logger LOGGER
-        = LoggerFactory.getLogger(LogEntryServer.class);
+          = LoggerFactory.getLogger(LogEntryServer.class);
 
     private final List<LogEntryServerSocketNode> socketNodeList = new ArrayList<>();
 
@@ -123,9 +122,9 @@ public final class LogEntryServer implements Runnable {
     public void run() {
         try {
             serverSocket = ServerSocketFactory.getDefault()
-                                              .createServerSocket(port);
+                  .createServerSocket(port);
         } catch (IOException t) {
-            throw new RuntimeException ("Failed to create the server socket.", t);
+            throw new RuntimeException("Failed to create the server socket.", t);
         }
 
         LOGGER.debug("Listening on port {}.", port);
@@ -135,24 +134,24 @@ public final class LogEntryServer implements Runnable {
                 LOGGER.debug("Waiting to accept a new client.");
                 Socket socket = serverSocket.accept();
                 LOGGER.debug("Connected to client at {}.",
-                                socket.getInetAddress());
+                      socket.getInetAddress());
                 LOGGER.debug("Starting new socket node.");
                 LogEntryServerSocketNode newSocketNode
-                    = new LogEntryServerSocketNode(this, socket);
-                synchronized(socketNodeList) {
+                      = new LogEntryServerSocketNode(this, socket);
+                synchronized (socketNodeList) {
                     socketNodeList.add(newSocketNode);
                 }
                 new Thread(newSocketNode).start();
             } catch (SocketException t) {
                 if (!t.getMessage().contains("closed")) {
-                   LOGGER.error("There was a problem connecting to client: {}; "
-                                    + "cause: {}.",
-                                    t.getMessage(), t.getCause());
+                    LOGGER.error("There was a problem connecting to client: {}; "
+                                + "cause: {}.",
+                          t.getMessage(), t.getCause());
                 }
             } catch (IOException t) {
                 LOGGER.error("There was a problem connecting to client: {}; "
-                                + "cause: {}.",
-                                t.getMessage(), t.getCause());
+                            + "cause: {}.",
+                      t.getMessage(), t.getCause());
             }
         }
     }
@@ -168,7 +167,7 @@ public final class LogEntryServer implements Runnable {
 
     public void socketNodeClosing(LogEntryServerSocketNode socketNode) {
         LOGGER.debug("Removing {}.", socketNode);
-        synchronized(socketNodeList) {
+        synchronized (socketNodeList) {
             socketNodeList.remove(socketNode);
         }
     }

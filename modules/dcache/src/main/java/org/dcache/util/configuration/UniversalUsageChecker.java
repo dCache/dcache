@@ -20,15 +20,13 @@ package org.dcache.util.configuration;
 import java.util.Properties;
 
 /**
- * A simple implementation of UsageChecker that declares all properties as
- * standard.  This has the effect of silencing any warnings from non-standard
- * properties.
+ * A simple implementation of UsageChecker that declares all properties as standard.  This has the
+ * effect of silencing any warnings from non-standard properties.
  */
-public class UniversalUsageChecker implements UsageChecker
-{
+public class UniversalUsageChecker implements UsageChecker {
+
     @Override
-    public boolean isStandardProperty(Properties defaults, String name)
-    {
+    public boolean isStandardProperty(Properties defaults, String name) {
         return true;
     }
 }

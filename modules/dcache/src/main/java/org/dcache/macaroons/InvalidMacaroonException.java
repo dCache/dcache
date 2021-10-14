@@ -22,14 +22,13 @@ import static org.dcache.util.Exceptions.genericCheck;
 /**
  * An exception that indicates that the supplied macaroon is not acceptable.
  */
-public class InvalidMacaroonException extends Exception
-{
+public class InvalidMacaroonException extends Exception {
+
     /**
      * A utility method similar to Guava check* methods.
      */
     public static void checkMacaroon(boolean isOK, String message, Object... arguments)
-            throws InvalidMacaroonException
-    {
+          throws InvalidMacaroonException {
         genericCheck(isOK, InvalidMacaroonException::new, message, arguments);
     }
 

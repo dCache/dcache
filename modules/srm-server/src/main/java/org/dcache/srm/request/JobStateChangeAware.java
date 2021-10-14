@@ -20,40 +20,38 @@ package org.dcache.srm.request;
 import org.dcache.srm.scheduler.State;
 
 /**
- * Obtain notification about a job changing its state.  It is guaranteed that
- * the method is called for all state changes of subscribed jobs and that the
- * method is called in the order the job experiences the corresponding state
- * transitions.
+ * Obtain notification about a job changing its state.  It is guaranteed that the method is called
+ * for all state changes of subscribed jobs and that the method is called in the order the job
+ * experiences the corresponding state transitions.
  * <p>
- * Any further changes to the job are blocked until all subscribed
- * JobStateChangeAware methods return.  Therefore, a method call will not see
- * a job change any of its internal state for the duration of the call.
+ * Any further changes to the job are blocked until all subscribed JobStateChangeAware methods
+ * return.  Therefore, a method call will not see a job change any of its internal state for the
+ * duration of the call.
  * <p>
- * The method will not be called concurrently regarding the same job; however,
- * it may be called concurrently from different jobs.  Therefore the method
- * must be thread-safe.
+ * The method will not be called concurrently regarding the same job; however, it may be called
+ * concurrently from different jobs.  Therefore the method must be thread-safe.
  * <p>
- * There are no guarantees in which order different JobStateChangeAware
- * classes are called.  Any interactions between different JobStateChangeAware
- * classes must not make any assumptions in which order they are called
- * and not assume that their methods are called sequentially.
+ * There are no guarantees in which order different JobStateChangeAware classes are called.  Any
+ * interactions between different JobStateChangeAware classes must not make any assumptions in which
+ * order they are called and not assume that their methods are called sequentially.
  * <p>
- * Obtaining the job's read-lock from within the the call is guaranteed not to
- * block.  Therefore, it's guaranteed safe to call any of the job's methods
- * protected only by this job's read lock (e.g., getter methods).
+ * Obtaining the job's read-lock from within the the call is guaranteed not to block.  Therefore,
+ * it's guaranteed safe to call any of the job's methods protected only by this job's read lock
+ * (e.g., getter methods).
  * <p>
- * Methods MUST NOT call any method that attempts to acquire the Job's write
- * lock; for example, by attempting to modify the Job in any way.
+ * Methods MUST NOT call any method that attempts to acquire the Job's write lock; for example, by
+ * attempting to modify the Job in any way.
  */
 @FunctionalInterface
-public interface JobStateChangeAware
-{
+public interface JobStateChangeAware {
+
     /**
-     * This method is called after a Job object has changed state.
-     * Concrete implementations of this method are not expected to block and
-     * MUST NOT obtain the Job's write lock (e.g., updating the job).
-     * @param job The job that has just changed state.
-     * @param oldState The state this job had before acquiring its current state.
+     * This method is called after a Job object has changed state. Concrete implementations of this
+     * method are not expected to block and MUST NOT obtain the Job's write lock (e.g., updating the
+     * job).
+     *
+     * @param job         The job that has just changed state.
+     * @param oldState    The state this job had before acquiring its current state.
      * @param description A short description on what triggered the change.
      */
     void jobStateChanged(Job job, State oldState, String description);

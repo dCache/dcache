@@ -23,13 +23,10 @@ import java.sql.Time;
 import java.util.EnumSet;
 import java.util.Formatter;
 import org.dcache.chimera.FileState;
-
 import org.dcache.chimera.UnixPermission;
 
 /**
- *
  * Unix file stat structure abstraction
- *
  */
 public class Stat {
 
@@ -97,12 +94,10 @@ public class Stat {
      */
     private FileState _state;
 
-    public Stat()
-    {
+    public Stat() {
     }
 
-    public Stat(Stat stat)
-    {
+    public Stat(Stat stat) {
         _definedAttrs.addAll(stat._definedAttrs);
         _dev = stat._dev;
         _ino = stat._ino;
@@ -264,7 +259,6 @@ public class Stat {
     }
 
     /**
-     *
      * @return creation time in milliseconds
      */
     public long getCrTime() {
@@ -307,15 +301,15 @@ public class Stat {
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format(
-                    "%s %8d %6d %6d %6d %6d %s %s",
-                    new UnixPermission(this.getMode()),
-                    this.getNlink(),
-                    this.getUid(),
-                    this.getGid(),
-                    this.getSize(),
-                    this.getGeneration(),
-                    new Date(this.getMTime()),
-                    new Time(this.getMTime()));
+                  "%s %8d %6d %6d %6d %6d %s %s",
+                  new UnixPermission(this.getMode()),
+                  this.getNlink(),
+                  this.getUid(),
+                  this.getGid(),
+                  this.getSize(),
+                  this.getGeneration(),
+                  new Date(this.getMTime()),
+                  new Time(this.getMTime()));
             formatter.flush();
         }
 
@@ -414,6 +408,7 @@ public class Stat {
 
     /**
      * Returns <tt>true</tt> iff at least one attribute is set.
+     *
      * @return <tt>true</tt> iff at least one attribute is set.
      */
     public boolean isDefinedAny() {
@@ -421,57 +416,59 @@ public class Stat {
     }
 
     public EnumSet<StatAttributes> getDefinedAttributeses() {
-	return EnumSet.copyOf(_definedAttrs);
+        return EnumSet.copyOf(_definedAttrs);
     }
 
     /**
      * Update stat with values provided by <tt>other</tt> Stat.
+     *
      * @param other to get values from.
      */
     public void update(Stat other) {
         for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
             switch (attr) {
-            case DEV:
-                this.setDev(other.getDev());
-                break;
-            case MODE:
-                this.setMode(other.getMode() & UnixPermission.S_PERMS | getMode() & ~UnixPermission.S_PERMS);
-                break;
-            case NLINK:
-                this.setNlink(other.getNlink());
-                break;
-            case UID:
-                this.setUid(other.getUid());
-                break;
-            case GID:
-                this.setGid(other.getGid());
-                break;
-            case RDEV:
-                this.setRdev(other.getRdev());
-                break;
-            case SIZE:
-                this.setSize(other.getSize());
-                break;
-            case FILEID:
-            case INO:
-                break;
-            case GENERATION:
-                this.setGeneration(other.getGeneration());
-                break;
-            case ATIME:
-                this.setATime(other.getATime());
-                break;
-            case MTIME:
-                this.setMTime(other.getMTime());
-                break;
-            case CTIME:
-                this.setCTime(other.getCTime());
-                break;
-            case CRTIME:
-                this.setCrTime(other.getCrTime());
-                break;
-            case BLK_SIZE:
-                break;
+                case DEV:
+                    this.setDev(other.getDev());
+                    break;
+                case MODE:
+                    this.setMode(other.getMode() & UnixPermission.S_PERMS
+                          | getMode() & ~UnixPermission.S_PERMS);
+                    break;
+                case NLINK:
+                    this.setNlink(other.getNlink());
+                    break;
+                case UID:
+                    this.setUid(other.getUid());
+                    break;
+                case GID:
+                    this.setGid(other.getGid());
+                    break;
+                case RDEV:
+                    this.setRdev(other.getRdev());
+                    break;
+                case SIZE:
+                    this.setSize(other.getSize());
+                    break;
+                case FILEID:
+                case INO:
+                    break;
+                case GENERATION:
+                    this.setGeneration(other.getGeneration());
+                    break;
+                case ATIME:
+                    this.setATime(other.getATime());
+                    break;
+                case MTIME:
+                    this.setMTime(other.getMTime());
+                    break;
+                case CTIME:
+                    this.setCTime(other.getCTime());
+                    break;
+                case CRTIME:
+                    this.setCrTime(other.getCrTime());
+                    break;
+                case BLK_SIZE:
+                    break;
             }
         }
     }

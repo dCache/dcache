@@ -67,9 +67,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Data object which aids in the construction of the X-axis of a 1-D histogram.<br>
  * <br>
- * Contains convenience methods for computing and returning the number of bins
- * and the bin width based on the upper bound time value, {@link BinType} and
- * the {@link Type}.
+ * Contains convenience methods for computing and returning the number of bins and the bin width
+ * based on the upper bound time value, {@link BinType} and the {@link Type}.
  *
  * @author arossi
  */
@@ -92,8 +91,8 @@ public final class TimeFrame implements Serializable {
     private static final long serialVersionUID = 3114577177366772739L;
 
     /**
-     * @return Current time rounded up to next 12-hour interval for hourly and
-     *         down to the current day for daily data.
+     * @return Current time rounded up to next 12-hour interval for hourly and down to the current
+     * day for daily data.
      */
     public static Calendar computeHighTimeFromNow(BinType type) {
         Calendar cal = Calendar.getInstance();
@@ -139,22 +138,22 @@ public final class TimeFrame implements Serializable {
         Calendar tmp = Calendar.getInstance();
         tmp.setTime(highDate.getTime());
 
-        switch(timeframe) {
+        switch (timeframe) {
             case DAY:
                 lowDate.setTime(new Date(highDate.getTimeInMillis()
-                            - TimeUnit.DAYS.toMillis(1)));
+                      - TimeUnit.DAYS.toMillis(1)));
                 break;
             case WEEK:
                 lowDate.setTime(new Date(highDate.getTimeInMillis()
-                            - TimeUnit.DAYS.toMillis(7)));
+                      - TimeUnit.DAYS.toMillis(7)));
                 break;
             case MONTH:
                 lowDate.setTime(new Date(highDate.getTimeInMillis()
-                            - TimeUnit.DAYS.toMillis(30)));
+                      - TimeUnit.DAYS.toMillis(30)));
                 break;
             case YEAR:
                 lowDate.setTime(new Date(highDate.getTimeInMillis()
-                            - TimeUnit.DAYS.toMillis(365)));
+                      - TimeUnit.DAYS.toMillis(365)));
                 break;
             case THIS_DAY:
                 tmp.set(Calendar.MINUTE, 0);
@@ -188,7 +187,7 @@ public final class TimeFrame implements Serializable {
                 tmp.set(Calendar.MINUTE, 59);
                 tmp.set(Calendar.HOUR_OF_DAY, 23);
                 tmp.set(Calendar.DAY_OF_MONTH,
-                            tmp.getActualMaximum(Calendar.DAY_OF_MONTH));
+                      tmp.getActualMaximum(Calendar.DAY_OF_MONTH));
                 highDate.setTime(new Date(tmp.getTimeInMillis()));
                 break;
             case THIS_YEAR:
@@ -203,24 +202,36 @@ public final class TimeFrame implements Serializable {
                 tmp.set(Calendar.MINUTE, 59);
                 tmp.set(Calendar.HOUR_OF_DAY, 23);
                 tmp.set(Calendar.DAY_OF_MONTH,
-                            tmp.getActualMaximum(Calendar.DAY_OF_MONTH));
+                      tmp.getActualMaximum(Calendar.DAY_OF_MONTH));
                 highDate.setTime(new Date(tmp.getTimeInMillis()));
                 break;
             default:
                 break;
         }
 
-        switch(timebin) {
-            case TEN_MINUTE:    binWidth = 10 * 60;         break;
-            case HOUR:          binWidth = 3600;            break;
-            case DAY:           binWidth = 3600 * 24;       break;
-            case WEEK:          binWidth = 3600 * 24 * 7;   break;
-            case MONTH:         binWidth = 3600 * 24 * 30;  break;
-            default:            binWidth = 3600;            break;
+        switch (timebin) {
+            case TEN_MINUTE:
+                binWidth = 10 * 60;
+                break;
+            case HOUR:
+                binWidth = 3600;
+                break;
+            case DAY:
+                binWidth = 3600 * 24;
+                break;
+            case WEEK:
+                binWidth = 3600 * 24 * 7;
+                break;
+            case MONTH:
+                binWidth = 3600 * 24 * 30;
+                break;
+            default:
+                binWidth = 3600;
+                break;
         }
 
         binCount = (int) ((getHighTime().doubleValue() / 1000
-                          - getLowTime().doubleValue() / 1000) / binWidth);
+              - getLowTime().doubleValue() / 1000) / binWidth);
     }
 
     public int getBinCount() {

@@ -19,27 +19,25 @@
 
 package dmg.cells.services;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.NodeCache;
-import org.apache.curator.framework.recipes.cache.NodeCacheListener;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException.ConnectionLossException;
-import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.SocketFactory;
-
+import dmg.cells.network.LocationManagerConnector;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellDomainRole;
+import dmg.cells.nucleus.CellEvent;
+import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.services.login.LoginManager;
+import dmg.cells.zookeeper.LmPersistentNode;
+import dmg.cells.zookeeper.LmPersistentNode.PersistentNodeException;
+import dmg.util.CommandException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -63,33 +61,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import dmg.cells.network.LocationManagerConnector;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellDomainRole;
-import dmg.cells.nucleus.CellEvent;
-import dmg.cells.nucleus.CellEventListener;
-import dmg.cells.services.login.LoginManager;
-import dmg.cells.zookeeper.LmPersistentNode;
-import dmg.cells.zookeeper.LmPersistentNode.PersistentNodeException;
-import dmg.util.CommandException;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-
+import javax.net.SocketFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.NodeCache;
+import org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
+import org.apache.zookeeper.data.Stat;
 import org.dcache.ssl.CanlSslSocketCreator;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The location manager establishes the cell communication topology.
  */
-public class LocationManager extends CellAdapter
-{
+public class LocationManager extends CellAdapter {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(LocationManager.class);
+          LoggerFactory.getLogger(LocationManager.class);
 
     // legacy support. remove in 7.0
     private static final String ZK_CORES_PLAIN = "/dcache/lm/cores";
@@ -98,51 +94,46 @@ public class LocationManager extends CellAdapter
     private static final String ZK_CORE_CONFIG = "/dcache/lm/core-config";
 
     private final CoreDomains coreDomains;
-    private final CoreConfig  coreConfig;
+    private final CoreConfig coreConfig;
     private final Args args;
     private final CellDomainRole role;
     private final Client client;
 
-    enum State
-    {
+    enum State {
         BRING_UP,
         TEAR_DOWN
     }
 
-    public enum ConnectionType
-    {
+    public enum ConnectionType {
         PLAIN("none", "tcp"),
         TLS("tls", "tls");
 
-        private static final ImmutableMap<String,ConnectionType> CONFIG_TO_VALUE =
-                ImmutableMap.of(PLAIN.config, PLAIN, TLS.config, TLS);
+        private static final ImmutableMap<String, ConnectionType> CONFIG_TO_VALUE =
+              ImmutableMap.of(PLAIN.config, PLAIN, TLS.config, TLS);
 
         private final String config;
         private final String scheme;
 
-        ConnectionType(String config, String scheme)
-        {
+        ConnectionType(String config, String scheme) {
             this.config = config;
             this.scheme = scheme;
         }
 
-        public static Optional<ConnectionType> fromConfig(String value)
-        {
+        public static Optional<ConnectionType> fromConfig(String value) {
             return Optional.ofNullable(CONFIG_TO_VALUE.get(value));
         }
 
         /**
          * Get url scheme corresponding to given connection type.
+         *
          * @return scheme corresponding to connection type.
          */
-        public String getConnectionScheme()
-        {
+        public String getConnectionScheme() {
             return scheme;
         }
     }
 
-    enum Mode
-    {
+    enum Mode {
         PLAIN("none"),
         PLAIN_TLS("none,tls"),
         TLS("tls");
@@ -166,8 +157,7 @@ public class LocationManager extends CellAdapter
             return this._mode;
         }
 
-        public Set<Mode> getModeAsSet()
-        {
+        public Set<Mode> getModeAsSet() {
             switch (this) {
                 case PLAIN_TLS:
                     return plainAndTls;
@@ -178,8 +168,7 @@ public class LocationManager extends CellAdapter
             }
         }
 
-        public static Mode fromString(String mode)
-        {
+        public static Mode fromString(String mode) {
             String m = filterAndSort(mode);
 
             for (Mode b : Mode.values()) {
@@ -190,8 +179,7 @@ public class LocationManager extends CellAdapter
             throw new IllegalArgumentException("No Mode of type: " + mode);
         }
 
-        public static boolean isValid(String mode)
-        {
+        public static boolean isValid(String mode) {
             String m = filterAndSort(mode);
 
             for (Mode b : Mode.values()) {
@@ -204,16 +192,16 @@ public class LocationManager extends CellAdapter
 
         private static String filterAndSort(String mode) {
             return Arrays.stream(mode.split(","))
-                         .map(String::trim)
-                         .filter(s -> !s.isEmpty())
-                         .distinct()
-                         .sorted()
-                         .collect(Collectors.joining(","));
+                  .map(String::trim)
+                  .filter(s -> !s.isEmpty())
+                  .distinct()
+                  .sorted()
+                  .collect(Collectors.joining(","));
         }
     }
 
-    private static class CoreDomainInfo
-    {
+    private static class CoreDomainInfo {
+
         private final Set<URI> endpoints;
 
         public CoreDomainInfo() {
@@ -224,7 +212,7 @@ public class LocationManager extends CellAdapter
             this();
 
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                    DataInputStream in = new DataInputStream(bais)) {
+                  DataInputStream in = new DataInputStream(bais)) {
                 while (in.available() > 0) {
                     String info = in.readUTF();
                     URI entry = URI.create(info);
@@ -239,19 +227,20 @@ public class LocationManager extends CellAdapter
                     }
                 }
             } catch (IOException ie) {
-                throw new IllegalArgumentException("Failed deserializing LocationManager Cores as uri: {}", ie.getCause());
+                throw new IllegalArgumentException(
+                      "Failed deserializing LocationManager Cores as uri: {}", ie.getCause());
             }
         }
 
-        void addCore(String scheme, String host, int port)
-        {
+        void addCore(String scheme, String host, int port) {
             switch (scheme) {
-            case "tls":
-            case "tcp":
-                endpoints.add(URI.create(String.format("%s://%s:%s", scheme, host, port)));
-                break;
-            default:
-                throw new RuntimeException("Unknown Scheme " + scheme + " for LocationManager Cores");
+                case "tls":
+                case "tcp":
+                    endpoints.add(URI.create(String.format("%s://%s:%s", scheme, host, port)));
+                    break;
+                default:
+                    throw new RuntimeException(
+                          "Unknown Scheme " + scheme + " for LocationManager Cores");
             }
         }
 
@@ -263,11 +252,10 @@ public class LocationManager extends CellAdapter
             endpoints.removeIf(u -> u.getScheme().equalsIgnoreCase("tls"));
         }
 
-        byte[] toBytes()
-        {
+        byte[] toBytes() {
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(baos)) {
-                for(URI uri: endpoints) {
+                  DataOutputStream out = new DataOutputStream(baos)) {
+                for (URI uri : endpoints) {
                     out.writeUTF(uri.toString());
                 }
                 return baos.toByteArray();
@@ -277,12 +265,11 @@ public class LocationManager extends CellAdapter
             return new byte[0];
         }
 
-        public Optional<HostAndPort> getEndpointForSchema(String schema)
-        {
+        public Optional<HostAndPort> getEndpointForSchema(String schema) {
             return endpoints.stream()
-                    .filter(u -> u.getScheme().equalsIgnoreCase(schema))
-                    .findAny()
-                    .map(u -> HostAndPort.fromParts(u.getHost(), u.getPort()));
+                  .filter(u -> u.getScheme().equalsIgnoreCase(schema))
+                  .findAny()
+                  .map(u -> HostAndPort.fromParts(u.getHost(), u.getPort()));
         }
 
         @Override
@@ -309,8 +296,8 @@ public class LocationManager extends CellAdapter
         }
     }
 
-    private static class BadConfigException extends Exception
-    {
+    private static class BadConfigException extends Exception {
+
         public BadConfigException() {
             super();
         }
@@ -321,12 +308,12 @@ public class LocationManager extends CellAdapter
     }
 
     /**
-     * Represents a group of listening domains in ZooKeeper. For each
-     * listening domain the socket address is registered. May be used
-     * by non-listening domains too to learn about listening domains.
+     * Represents a group of listening domains in ZooKeeper. For each listening domain the socket
+     * address is registered. May be used by non-listening domains too to learn about listening
+     * domains.
      */
-    private abstract static class CoreDomains implements Closeable
-    {
+    private abstract static class CoreDomains implements Closeable {
+
         private final String domainName;
         private final CuratorFramework client;
         protected final PathChildrenCache cores;
@@ -336,35 +323,32 @@ public class LocationManager extends CellAdapter
         private LmPersistentNode<HostAndPort> localLegacy; // remove with 7.0
         private LmPersistentNode<CoreDomainInfo> localUri;
 
-        protected CoreDomains(String domainName, CuratorFramework client, PathChildrenCache cores)
-        {
+        protected CoreDomains(String domainName, CuratorFramework client, PathChildrenCache cores) {
             this.domainName = domainName;
             this.client = client;
             this.cores = cores;
         }
 
-        public static CoreDomains createWithMode(String domainName, CuratorFramework client, String mode)
-                throws BadConfigException
-        {
+        public static CoreDomains createWithMode(String domainName, CuratorFramework client,
+              String mode)
+              throws BadConfigException {
             LOGGER.info("Creating CoreDomains: {}, {}", domainName, mode);
-            ConnectionType type = ConnectionType.fromConfig(mode).orElseThrow(() -> new BadConfigException("Bad mode " + mode));
+            ConnectionType type = ConnectionType.fromConfig(mode)
+                  .orElseThrow(() -> new BadConfigException("Bad mode " + mode));
 
             return new CoreDomainLocations(domainName, client, type);
         }
 
-        void onChange(Consumer<PathChildrenCacheEvent> consumer)
-        {
+        void onChange(Consumer<PathChildrenCacheEvent> consumer) {
             cores.getListenable().addListener((client, event) -> consumer.accept(event));
         }
 
-        void start() throws Exception
-        {
+        void start() throws Exception {
             cores.start();
         }
 
         @Override
-        public void close() throws IOException
-        {
+        public void close() throws IOException {
             CloseableUtils.closeQuietly(cores);
             if (localLegacy != null) {
                 CloseableUtils.closeQuietly(localLegacy);
@@ -374,55 +358,54 @@ public class LocationManager extends CellAdapter
             }
         }
 
-        Map<String,CoreDomainInfo> cores()
-        {
+        Map<String, CoreDomainInfo> cores() {
             return Collections.emptyMap();
         }
 
-        String pathOf(String core, String domainName)
-        {
+        String pathOf(String core, String domainName) {
             return ZKPaths.makePath(core, domainName);
         }
 
-        private void setCoreDomainInfoUri(CoreDomainInfo coreDomainInfo) throws PersistentNodeException
-        {
+        private void setCoreDomainInfoUri(CoreDomainInfo coreDomainInfo)
+              throws PersistentNodeException {
             localUri = LmPersistentNode.createOrUpdate(client,
-                                                        pathOf(ZK_CORES_URI, domainName),
-                                                        coreDomainInfo,
-                                                        CoreDomainInfo::toBytes,
-                                                        localUri);
+                  pathOf(ZK_CORES_URI, domainName),
+                  coreDomainInfo,
+                  CoreDomainInfo::toBytes,
+                  localUri);
 
             // produce legacy file for backward compatibility. Remove with 7.0
             Optional<HostAndPort> plainConnection = coreDomainInfo.getEndpointForSchema("tcp");
             if (plainConnection.isPresent()) {
                 localLegacy = LmPersistentNode.createOrUpdate(client,
-                                                            pathOf(ZK_CORES_PLAIN, domainName),
-                                                            plainConnection.get(),
-                                                            address -> address.toString()
-                                                                              .getBytes(StandardCharsets.US_ASCII),
-                                                            localLegacy);
+                      pathOf(ZK_CORES_PLAIN, domainName),
+                      plainConnection.get(),
+                      address -> address.toString()
+                            .getBytes(StandardCharsets.US_ASCII),
+                      localLegacy);
             }
 
         }
     }
 
-    private static class CoreDomainLocations extends CoreDomains
-    {
+    private static class CoreDomainLocations extends CoreDomains {
+
         private final ConnectionType connectionType;
-        CoreDomainLocations(String domainName, CuratorFramework client, ConnectionType connectionType)
-        {
+
+        CoreDomainLocations(String domainName, CuratorFramework client,
+              ConnectionType connectionType) {
             super(domainName, client, new PathChildrenCache(client, ZK_CORES_URI, true));
             this.connectionType = connectionType;
         }
 
         @Override
-        Map<String,CoreDomainInfo> cores()
-        {
+        Map<String, CoreDomainInfo> cores() {
             Map<String, CoreDomainInfo> coresInfo = new HashMap<>();
-            for (ChildData d: cores.getCurrentData()) {
-                CoreDomainInfo urlInfo =  new CoreDomainInfo(d.getData());
+            for (ChildData d : cores.getCurrentData()) {
+                CoreDomainInfo urlInfo = new CoreDomainInfo(d.getData());
 
-                if (urlInfo.getEndpointForSchema(connectionType.getConnectionScheme()).isPresent()) {
+                if (urlInfo.getEndpointForSchema(connectionType.getConnectionScheme())
+                      .isPresent()) {
                     coresInfo.put(ZKPaths.getNodeFromPath(d.getPath()), urlInfo);
                 }
             }
@@ -430,8 +413,8 @@ public class LocationManager extends CellAdapter
         }
     }
 
-    private class CoreConfig implements NodeCacheListener, Closeable
-    {
+    private class CoreConfig implements NodeCacheListener, Closeable {
+
         private final CuratorFramework _curator;
 
         /**
@@ -454,26 +437,25 @@ public class LocationManager extends CellAdapter
          */
         private final BiConsumer<Mode, State> _reset;
 
-        CoreConfig(CuratorFramework curator, BiConsumer<Mode, State> f)
-        {
+        CoreConfig(CuratorFramework curator, BiConsumer<Mode, State> f) {
             _curator = curator;
             _cache = new NodeCache(_curator, ZK_CORE_CONFIG);
             _reset = f;
         }
 
-        public Mode getMode()
-        {
+        public Mode getMode() {
             return _mode;
         }
 
-        synchronized void start() throws Exception
-        {
+        synchronized void start() throws Exception {
             _cache.getListenable().addListener(this);
             try {
                 _cache.start(true);
                 apply(_cache.getCurrentData());
             } catch (ConnectionLossException e) {
-                LOGGER.warn("Failed to connect to zookeeper, using mode {} until connection reestablished", _mode);
+                LOGGER.warn(
+                      "Failed to connect to zookeeper, using mode {} until connection reestablished",
+                      _mode);
             }
         }
 
@@ -481,19 +463,23 @@ public class LocationManager extends CellAdapter
             if (currentData == null) {
                 _current = null;
                 _mode = Mode.PLAIN;
-                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " not present; assuming mode {}", _mode);
-            } else if (_current == null || currentData.getStat().getVersion() > _current.getVersion()) {
+                LOGGER.info(
+                      "CoreDomain config node " + ZK_CORE_CONFIG + " not present; assuming mode {}",
+                      _mode);
+            } else if (_current == null
+                  || currentData.getStat().getVersion() > _current.getVersion()) {
                 _mode = Mode.fromString(new String(currentData.getData(), UTF_8));
-                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " switching to mode {}", _mode);
+                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " switching to mode {}",
+                      _mode);
                 _current = currentData.getStat();
             } else {
-                LOGGER.info("Ignoring spurious CoreDomain config node " + ZK_CORE_CONFIG + " updated");
+                LOGGER.info(
+                      "Ignoring spurious CoreDomain config node " + ZK_CORE_CONFIG + " updated");
             }
         }
 
         @Override
-        public synchronized void nodeChanged() throws Exception
-        {
+        public synchronized void nodeChanged() throws Exception {
             Set<Mode> oldModes = _mode.getModeAsSet();
             apply(_cache.getCurrentData());
             Set<Mode> curModes = _mode.getModeAsSet();
@@ -508,96 +494,97 @@ public class LocationManager extends CellAdapter
 
             Set<Mode> up = Sets.difference(curModes, oldModes).copyInto(new HashSet<>());
             LOGGER.info("Following modes from CoreDomain are being brought up: [{}]",
-                    Joiner.on(',').join(up));
+                  Joiner.on(',').join(up));
             up.stream().forEach(u -> _reset.accept(u, State.BRING_UP));
 
             Set<Mode> down = Sets.difference(oldModes, curModes).copyInto(new HashSet<>());
             LOGGER.info("Following modes from CoreDomain are being taken down: [{}]",
-                            Joiner.on(',').join(down));
+                  Joiner.on(',').join(down));
             down.stream().forEach(d -> _reset.accept(d, State.TEAR_DOWN));
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             CloseableUtils.closeQuietly(_cache);
         }
     }
 
     /**
      * Client component of the location manager for satellite domains.
-     *
+     * <p>
      * Its primary task is to discover core domains and create and kill connector cells.
      */
-    public class Client implements CellEventListener
-    {
+    public class Client implements CellEventListener {
+
         private final Map<String, String> connectors = new HashMap<>();
 
-        public Client()
-        {
+        public Client() {
             addCommandListener(this);
             addCellEventListener(this);
         }
 
-        public void start() throws Exception
-        {
+        public void start() throws Exception {
         }
 
-        public void close()
-        {
+        public void close() {
         }
 
-        public void reset(Mode mode, State state)
-        {
+        public void reset(Mode mode, State state) {
         }
 
-        public void update(PathChildrenCacheEvent event)
-        {
+        public void update(PathChildrenCacheEvent event) {
             LOGGER.info("{}", event);
             String cell;
 
             switch (event.getType()) {
-            case CHILD_REMOVED:
-                cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
-                if (cell != null) {
-                    killConnector(cell);
-                }
-                break;
-            case CHILD_UPDATED:
-                cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
-                if (cell != null) {
-                    killConnector(cell);
-                }
-                // fall through
-            case CHILD_ADDED:
-                //Log if the Core Domain Information received is incompatible with previous
-                CoreDomainInfo info = infoFromZKEvent(event);
-                String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
-
-                try {
-                    if (shouldConnectTo(domain)) {
-                        cell = connectors.remove(domain);
-                        if (cell != null) {
-                            LOGGER.error("About to create tunnel to core domain {}, but to my surprise " +
-                                         "a tunnel called {} already exists. Will kill it. Please contact " +
-                                         "support@dcache.org.", domain, cell);
-                            killConnector(cell);
-                        }
-                        cell = connectors.put(domain, startConnector(domain, info));
-                        if (cell != null) {
-                            LOGGER.error("Created a tunnel to core domain {}, but to my surprise " +
-                                         "a tunnel called {} already exists. Will kill it. Please contact " +
-                                         "support@dcache.org.", domain, cell);
-                            killConnector(cell);
-                        }
+                case CHILD_REMOVED:
+                    cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
+                    if (cell != null) {
+                        killConnector(cell);
                     }
-                } catch (ExecutionException e) {
-                    LOGGER.error("Failed to start tunnel connector to {}: {}", domain, e.getCause());
-                } catch (InterruptedException ignored) {
-                } catch (BadConfigException be) {
-                    LOGGER.error("Invalid ports provided for starting connector in mode {}", args.getOpt("mode"));
-                }
-                break;
+                    break;
+                case CHILD_UPDATED:
+                    cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
+                    if (cell != null) {
+                        killConnector(cell);
+                    }
+                    // fall through
+                case CHILD_ADDED:
+                    //Log if the Core Domain Information received is incompatible with previous
+                    CoreDomainInfo info = infoFromZKEvent(event);
+                    String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
+
+                    try {
+                        if (shouldConnectTo(domain)) {
+                            cell = connectors.remove(domain);
+                            if (cell != null) {
+                                LOGGER.error(
+                                      "About to create tunnel to core domain {}, but to my surprise "
+                                            +
+                                            "a tunnel called {} already exists. Will kill it. Please contact "
+                                            +
+                                            "support@dcache.org.", domain, cell);
+                                killConnector(cell);
+                            }
+                            cell = connectors.put(domain, startConnector(domain, info));
+                            if (cell != null) {
+                                LOGGER.error(
+                                      "Created a tunnel to core domain {}, but to my surprise " +
+                                            "a tunnel called {} already exists. Will kill it. Please contact "
+                                            +
+                                            "support@dcache.org.", domain, cell);
+                                killConnector(cell);
+                            }
+                        }
+                    } catch (ExecutionException e) {
+                        LOGGER.error("Failed to start tunnel connector to {}: {}", domain,
+                              e.getCause());
+                    } catch (InterruptedException ignored) {
+                    } catch (BadConfigException be) {
+                        LOGGER.error("Invalid ports provided for starting connector in mode {}",
+                              args.getOpt("mode"));
+                    }
+                    break;
             }
         }
 
@@ -605,51 +592,48 @@ public class LocationManager extends CellAdapter
             return new CoreDomainInfo(event.getData().getData());
         }
 
-        protected boolean shouldConnectTo(String domain)
-        {
+        protected boolean shouldConnectTo(String domain) {
             return true;
         }
 
         @Override
-        public void cellDied(CellEvent ce)
-        {
+        public void cellDied(CellEvent ce) {
             connectors.values().remove((String) ce.getSource());
         }
     }
 
     /**
      * Client component of location manager for core domains.
-     *
-     * Its task is to allow a listener to register itself in ZooKeeper and to connect to
-     * core domains with a domain name lexicographically smaller than the localPlain domain.
+     * <p>
+     * Its task is to allow a listener to register itself in ZooKeeper and to connect to core
+     * domains with a domain name lexicographically smaller than the localPlain domain.
      */
-    public class CoreClient extends Client
-    {
+    public class CoreClient extends Client {
+
         private LoginManager lmTls;
         private LoginManager lmPlain;
         private volatile CoreDomainInfo info = new CoreDomainInfo();
 
         @Override
-        protected boolean shouldConnectTo(String domain)
-        {
+        protected boolean shouldConnectTo(String domain) {
             return domain.compareTo(getCellDomainName()) < 0;
         }
 
         @Override
-        public void start() throws Exception
-        {
+        public void start() throws Exception {
             switch (coreConfig.getMode()) {
-            case PLAIN:
-                startListenerWithTcp();
-                break;
-            case PLAIN_TLS:
-                startListenerWithTcp();
-                //fall through
-            case TLS:
-                startListenerWithTls();
-                break;
-            default:
-                throw new IllegalArgumentException("Mode " + coreConfig.getMode() + "not supported for Core Domain");
+                case PLAIN:
+                    startListenerWithTcp();
+                    break;
+                case PLAIN_TLS:
+                    startListenerWithTcp();
+                    //fall through
+                case TLS:
+                    startListenerWithTls();
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                          "Mode " + coreConfig.getMode() + "not supported for Core Domain");
             }
             coreDomains.setCoreDomainInfoUri(info);
         }
@@ -660,8 +644,7 @@ public class LocationManager extends CellAdapter
         }
 
         @Override
-        public synchronized void reset(Mode mode, State state)
-        {
+        public synchronized void reset(Mode mode, State state) {
             try {
                 switch (mode) {
                     case PLAIN:
@@ -690,44 +673,47 @@ public class LocationManager extends CellAdapter
                 }
                 coreDomains.setCoreDomainInfoUri(info);
             } catch (PersistentNodeException e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.getMessage());
-            }  catch (InterruptedException e) {
+                LOGGER.error("Failed to reset location manager on CoreConfig update: {}",
+                      e.getMessage());
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.getCause().toString());
+                LOGGER.error("Failed to reset location manager on CoreConfig update: {}",
+                      e.getCause().toString());
                 kill();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed to reset location manager on CoreConfig update", e);
                 kill();
             } catch (Exception e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.toString());
+                LOGGER.error("Failed to reset location manager on CoreConfig update: {}",
+                      e.toString());
                 kill();
             }
         }
 
         private void startListenerWithTcp()
-                throws ExecutionException, InterruptedException, UnknownHostException
-        {
+              throws ExecutionException, InterruptedException, UnknownHostException {
             String cellArgs = String.format("%s -netmask='%s'",
-                                            args.argv(0),
-                                            args.getOption("netmask", ""));
+                  args.argv(0),
+                  args.getOption("netmask", ""));
             lmPlain = startListener(cellArgs);
             LOGGER.info("lmPlain: {}; port; {} ", lmPlain, lmPlain.getListenPort());
-            info.addCore("tcp", InetAddress.getLocalHost().getCanonicalHostName(), lmPlain.getListenPort());
+            info.addCore("tcp", InetAddress.getLocalHost().getCanonicalHostName(),
+                  lmPlain.getListenPort());
         }
 
         private void startListenerWithTls()
-                throws ExecutionException, InterruptedException, UnknownHostException
-        {
+              throws ExecutionException, InterruptedException, UnknownHostException {
             checkArgument(args.hasOption("socketfactory"),
-                    "No Socketfactory provided to Core Domain for channel encryption");
+                  "No Socketfactory provided to Core Domain for channel encryption");
 
             String cellArgs = String.format("%s -socketfactory='%s'",
-                    Integer.parseInt((args.argc() == 1) ? args.argv(0) : args.argv(1)),
-                    args.getOpt("socketfactory"));
+                  Integer.parseInt((args.argc() == 1) ? args.argv(0) : args.argv(1)),
+                  args.getOpt("socketfactory"));
             lmTls = startListener(cellArgs);
             LOGGER.info("lmTls: {}; port; {} ", lmTls, lmTls.getListenPort());
-            info.addCore("tls", InetAddress.getLocalHost().getCanonicalHostName(), lmTls.getListenPort());
+            info.addCore("tls", InetAddress.getLocalHost().getCanonicalHostName(),
+                  lmTls.getListenPort());
         }
 
         private void stopListenerTls() {
@@ -748,29 +734,31 @@ public class LocationManager extends CellAdapter
     }
 
     /**
-     * Usage : ... [-legacy=<port>] [-role=satellite|core] -mode=none|tls -- [<port>] <client options>
+     * Usage : ... [-legacy=<port>] [-role=satellite|core] -mode=none|tls -- [<port>] <client
+     * options>
      */
-    public LocationManager(String name, String args) throws CommandException, IOException, BadConfigException
-    {
+    public LocationManager(String name, String args)
+          throws CommandException, IOException, BadConfigException {
         super(name, "System", args);
         this.args = getArgs();
 
-        coreDomains = CoreDomains.createWithMode(getCellDomainName(), getCuratorFramework(), this.args.getOpt("mode"));
+        coreDomains = CoreDomains.createWithMode(getCellDomainName(), getCuratorFramework(),
+              this.args.getOpt("mode"));
 
         if (this.args.hasOption("role")) {
             role = CellDomainRole.valueOf(this.args.getOption("role").toUpperCase());
             switch (role) {
-            case CORE:
-                checkArgument(this.args.argc() >= 1, "Listening port is required.");
-                client = new CoreClient();
-                coreDomains.onChange(client::update);
-                coreConfig = new CoreConfig(getCuratorFramework(), client::reset);
-                break;
-            default:
-                client = new Client();
-                coreDomains.onChange(client::update);
-                coreConfig = null;
-                break;
+                case CORE:
+                    checkArgument(this.args.argc() >= 1, "Listening port is required.");
+                    client = new CoreClient();
+                    coreDomains.onChange(client::update);
+                    coreConfig = new CoreConfig(getCuratorFramework(), client::reset);
+                    break;
+                default:
+                    client = new Client();
+                    coreDomains.onChange(client::update);
+                    coreConfig = null;
+                    break;
             }
         } else {
             role = null;
@@ -780,8 +768,7 @@ public class LocationManager extends CellAdapter
     }
 
     @Override
-    protected void started()
-    {
+    protected void started() {
         try {
             coreDomains.start();
             if (coreConfig != null) {
@@ -802,16 +789,15 @@ public class LocationManager extends CellAdapter
     }
 
     @Override
-    public void stopping()
-    {
+    public void stopping() {
         CloseableUtils.closeQuietly(coreDomains);
         if (client != null) {
             client.close();
         }
     }
 
-    private LoginManager startListener(String args) throws ExecutionException, InterruptedException
-    {
+    private LoginManager startListener(String args)
+          throws ExecutionException, InterruptedException {
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
         String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role;
@@ -823,87 +809,90 @@ public class LocationManager extends CellAdapter
     }
 
     private String startConnector(String remoteDomain, CoreDomainInfo domainInfo)
-            throws ExecutionException, InterruptedException, BadConfigException
-    {
+          throws ExecutionException, InterruptedException, BadConfigException {
         checkArgument(args.hasOption("mode"), "No mode specified to run connector");
 
         String cellName = "c-" + remoteDomain + '*';
         String clientKey = args.getOpt("clientKey");
-        clientKey = (clientKey != null) && (!clientKey.isEmpty()) ? ("-clientKey=" + clientKey) : "";
+        clientKey =
+              (clientKey != null) && (!clientKey.isEmpty()) ? ("-clientKey=" + clientKey) : "";
         String clientName = args.getOpt("clientUserName");
-        clientName = (clientName != null) && (!clientName.isEmpty()) ? ("-clientUserName=" + clientName) : "";
+        clientName =
+              (clientName != null) && (!clientName.isEmpty()) ? ("-clientUserName=" + clientName)
+                    : "";
 
         HostAndPort where;
         SocketFactory socketFactory;
         Mode mode = Mode.fromString(args.getOption("mode"));
 
-        switch(mode) {
-        case PLAIN:
-            LOGGER.info("Starting Connection in mode: PLAIN with {}", args.getArguments());
-            where = domainInfo.getEndpointForSchema("tcp").orElseThrow(BadConfigException::new);
-            socketFactory = SocketFactory.getDefault();
-            break;
-        case TLS:
-            LOGGER.info("Starting Connection in mode: TLS with {}", args.getArguments());
-            where = domainInfo.getEndpointForSchema("tls").orElseThrow(BadConfigException::new);
-            try {
-                switch (role) {
-                case CORE:
-                    socketFactory = new CanlSslSocketCreator(new Args(args.getOption("socketfactory")));
-                    break;
-                default:
-                    args.shift(2);
-                    socketFactory = new CanlSslSocketCreator(args);
+        switch (mode) {
+            case PLAIN:
+                LOGGER.info("Starting Connection in mode: PLAIN with {}", args.getArguments());
+                where = domainInfo.getEndpointForSchema("tcp").orElseThrow(BadConfigException::new);
+                socketFactory = SocketFactory.getDefault();
+                break;
+            case TLS:
+                LOGGER.info("Starting Connection in mode: TLS with {}", args.getArguments());
+                where = domainInfo.getEndpointForSchema("tls").orElseThrow(BadConfigException::new);
+                try {
+                    switch (role) {
+                        case CORE:
+                            socketFactory = new CanlSslSocketCreator(
+                                  new Args(args.getOption("socketfactory")));
+                            break;
+                        default:
+                            args.shift(2);
+                            socketFactory = new CanlSslSocketCreator(args);
+                    }
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(
+                          String.format("Problem creating socket factory with arguments: %s",
+                                args.toString()));
                 }
-            } catch (IOException e) {
+                break;
+            default:
                 throw new IllegalArgumentException(
-                                String.format("Problem creating socket factory with arguments: %s", args.toString()));
-            }
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid mode to start connector: " + args.getOption("mode"));
+                      "Invalid mode to start connector: " + args.getOption("mode"));
         }
 
         String cellArgs = "-domain=" + remoteDomain + ' '
-                + "-lm=" + getCellName() + ' '
-                + "-role=" + role + ' '
-                + "-where=" + where + ' '
-                + clientKey + ' '
-                + clientName;
+              + "-lm=" + getCellName() + ' '
+              + "-role=" + role + ' '
+              + "-where=" + where + ' '
+              + clientKey + ' '
+              + clientName;
 
         LOGGER.info("Starting connector with {}", cellArgs);
-        LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs, socketFactory);
+        LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs,
+              socketFactory);
         c.start().get();
         return c.getCellName();
     }
 
-    private void killConnector(String cell)
-    {
+    private void killConnector(String cell) {
         LOGGER.info("Killing connector {}", cell);
         getNucleus().kill(cell);
     }
 
-    private void killListener(String cell)
-    {
+    private void killListener(String cell) {
         LOGGER.info("Killing listener {}", cell);
         getNucleus().kill(cell);
     }
 
     @Command(name = "ls", hint = "list core domain information",
-            description = "Provides information on available core domains.")
-    class ListCommand implements Callable<String>
-    {
+          description = "Provides information on available core domains.")
+    class ListCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             ColumnWriter writer = new ColumnWriter()
-                    .header("NAME").left("name").space()
-                    .header("PROTOCOL").left("protocol").space()
-                    .header("HOST").left("host").space()
-                    .header("PORT").right("port");
+                  .header("NAME").left("name").space()
+                  .header("PROTOCOL").left("protocol").space()
+                  .header("HOST").left("host").space()
+                  .header("PORT").right("port");
             for (Map.Entry<String, CoreDomainInfo> entry : coreDomains.cores().entrySet()) {
                 CoreDomainInfo info = entry.getValue();
-                info.getEndpointForSchema("tcp").ifPresent( tcp -> {
+                info.getEndpointForSchema("tcp").ifPresent(tcp -> {
                     writer.row()
                           .value("name", entry.getKey())
                           .value("protocol", "PLAIN")
@@ -924,41 +913,37 @@ public class LocationManager extends CellAdapter
     }
 
     @Command(name = "set core-config", hint = "set operating mode for CoreDomain",
-                description = "Specify the mode to be none, tls or none,tls in which the CoreDomain should run")
-    class SetCoreConfigCommand implements Callable<String>
-    {
+          description = "Specify the mode to be none, tls or none,tls in which the CoreDomain should run")
+    class SetCoreConfigCommand implements Callable<String> {
+
         @Argument(index = 0,
-                usage = "Mode in which CoreDomain should run.")
+              usage = "Mode in which CoreDomain should run.")
         String _modes;
 
         @Override
-        public synchronized String call() throws Exception
-        {
+        public synchronized String call() throws Exception {
             CuratorFramework curator = getCuratorFramework();
             Set<String> modes = Sets.newHashSet(_modes.split(","))
-                                    .stream()
-                                    .map(String::trim)
-                                    .filter(s -> !s.isEmpty())
-                                    .collect(Collectors.toSet());
+                  .stream()
+                  .map(String::trim)
+                  .filter(s -> !s.isEmpty())
+                  .collect(Collectors.toSet());
 
-            if (modes.stream().allMatch(Mode::isValid))
-            {
+            if (modes.stream().allMatch(Mode::isValid)) {
                 String config = Joiner.on(",").join(modes);
                 byte[] data = config.getBytes(UTF_8);
 
-                if(curator.checkExists().forPath(ZK_CORE_CONFIG) != null)
-                {
+                if (curator.checkExists().forPath(ZK_CORE_CONFIG) != null) {
                     curator.setData()
-                           .forPath(ZK_CORE_CONFIG, data);
+                          .forPath(ZK_CORE_CONFIG, data);
                 } else {
                     curator.create()
-                           .creatingParentContainersIfNeeded()
-                           .withMode(CreateMode.PERSISTENT)
-                           .forPath(ZK_CORE_CONFIG, data);
+                          .creatingParentContainersIfNeeded()
+                          .withMode(CreateMode.PERSISTENT)
+                          .forPath(ZK_CORE_CONFIG, data);
                 }
 
-                if (Arrays.equals(curator.getData().forPath(ZK_CORE_CONFIG), data))
-                {
+                if (Arrays.equals(curator.getData().forPath(ZK_CORE_CONFIG), data)) {
                     return "Successfully updated CoreDomain mode configuration to " + config;
                 } else {
                     return "Could not change CoreDomain configuration to " + config;
@@ -966,18 +951,19 @@ public class LocationManager extends CellAdapter
             }
 
             throw new BadConfigException("Invalid Modes provided for CoreDomain configuration. " +
-                                            "Valid modes are \"none\", \"tls\" or \"none,tls\"");
+                  "Valid modes are \"none\", \"tls\" or \"none,tls\"");
         }
     }
 
     @Command(name = "get core-config", hint = "get current mode of operation for CoreDomain",
-            description = "Get the current operating modes of the CoreDomain. It should be one of the following " +
-                    "\"none\", \"tls\" or \"none,tls\".")
-    class GetCoreConfigCommand implements Callable<String>
-    {
+          description =
+                "Get the current operating modes of the CoreDomain. It should be one of the following "
+                      +
+                      "\"none\", \"tls\" or \"none,tls\".")
+    class GetCoreConfigCommand implements Callable<String> {
+
         @Override
-        public String call() throws Exception
-        {
+        public String call() throws Exception {
             return new String(getCuratorFramework().getData().forPath(ZK_CORE_CONFIG), UTF_8);
         }
     }

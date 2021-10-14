@@ -23,12 +23,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A tagging annotation that indicates the class provides input material to
- * support the login process.  This is typically material that the door has
- * discovered about the client and represented using principals.
+ * A tagging annotation that indicates the class provides input material to support the login
+ * process.  This is typically material that the door has discovered about the client and
+ * represented using principals.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface AuthenticationInput
-{
+public @interface AuthenticationInput {
+
 }

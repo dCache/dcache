@@ -17,25 +17,22 @@
  */
 package org.dcache.dss;
 
+import java.util.Collections;
+import java.util.Set;
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
+public class KerberosDssContext extends GssDssContext {
 
-import java.util.Collections;
-import java.util.Set;
-
-public class KerberosDssContext extends GssDssContext
-{
-    public KerberosDssContext(GSSContext context) throws GSSException
-    {
+    public KerberosDssContext(GSSContext context) throws GSSException {
         super(context);
     }
 
-    protected Subject createSubject() throws GSSException
-    {
-        Set<KerberosPrincipal> principals = Collections.singleton(new KerberosPrincipal(context.getSrcName().toString()));
+    protected Subject createSubject() throws GSSException {
+        Set<KerberosPrincipal> principals = Collections.singleton(
+              new KerberosPrincipal(context.getSrcName().toString()));
         return new Subject(false, principals, Collections.emptySet(), Collections.emptySet());
     }
 }

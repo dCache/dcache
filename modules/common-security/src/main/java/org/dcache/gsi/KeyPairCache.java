@@ -23,27 +23,24 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A source of KeyPairs, where successive requests for the same length will
- * return the same KeyPair.  This class takes inspiration from
- * org.globus.gsi.gssapi.KeyPairCache from JGlobus but uses Guava's Cache
- * support rather than implementing a custom cache.
+ * A source of KeyPairs, where successive requests for the same length will return the same KeyPair.
+ *  This class takes inspiration from org.globus.gsi.gssapi.KeyPairCache from JGlobus but uses
+ * Guava's Cache support rather than implementing a custom cache.
  */
-public class KeyPairCache
-{
+public class KeyPairCache {
+
     private static final Logger LOG = LoggerFactory.getLogger(KeyPairCache.class);
 
     private static final String DEFAULT_ALGORITHM = "RSA";
@@ -53,67 +50,60 @@ public class KeyPairCache
     private static final int EXPIRE_AFTER = 1;
 
     private static final Executor _executor = Executors.newCachedThreadPool(
-            new ThreadFactoryBuilder().setNameFormat("KeyPair-generator-%d").setDaemon(true).build());
+          new ThreadFactoryBuilder().setNameFormat("KeyPair-generator-%d").setDaemon(true).build());
 
-    private final LoadingCache<Integer,KeyPair> _cache;
+    private final LoadingCache<Integer, KeyPair> _cache;
     private String algorithm = DEFAULT_ALGORITHM;
     private String provider = DEFAULT_PROVIDER;
 
-    public KeyPairCache(long lifetime, TimeUnit unit)
-    {
-        if(lifetime > 0) {
+    public KeyPairCache(long lifetime, TimeUnit unit) {
+        if (lifetime > 0) {
             _cache = CacheBuilder.newBuilder()
-                    .maximumSize(1000)
-                    .expireAfterWrite(EXPIRE_AFTER, TimeUnit.DAYS)
-                    .refreshAfterWrite(lifetime, unit)
-                    .build(
-                        new CacheLoader<Integer,KeyPair>() {
+                  .maximumSize(1000)
+                  .expireAfterWrite(EXPIRE_AFTER, TimeUnit.DAYS)
+                  .refreshAfterWrite(lifetime, unit)
+                  .build(
+                        new CacheLoader<Integer, KeyPair>() {
                             @Override
                             public KeyPair load(Integer keySize) throws
-                                    NoSuchAlgorithmException,
-                                    NoSuchProviderException
-                            {
+                                  NoSuchAlgorithmException,
+                                  NoSuchProviderException {
                                 return generate(keySize);
                             }
 
                             @Override
                             public ListenableFuture<KeyPair> reload(final
-                                    Integer keySize, KeyPair previous)
-                            {
+                            Integer keySize, KeyPair previous) {
                                 ListenableFutureTask<KeyPair> task =
-                                        ListenableFutureTask.create(() -> generate(keySize));
+                                      ListenableFutureTask.create(() -> generate(keySize));
                                 _executor.execute(task);
                                 return task;
                             }
                         }
-                    );
+                  );
         } else {
             _cache = null;
         }
     }
 
-    public String getAlgorithm()
-    {
+    public String getAlgorithm() {
         return algorithm;
     }
 
-    public void setAlgorithm(String value)
-    {
+    public void setAlgorithm(String value) {
         algorithm = value;
     }
 
-    public String getProvider()
-    {
+    public String getProvider() {
         return provider;
     }
 
-    public void setProvider(String value)
-    {
+    public void setProvider(String value) {
         provider = value;
     }
 
     public KeyPair getKeyPair(int bits)
-        throws NoSuchAlgorithmException, NoSuchProviderException {
+          throws NoSuchAlgorithmException, NoSuchProviderException {
 
         if (_cache == null) {
             return generate(bits);
@@ -128,12 +118,11 @@ public class KeyPairCache
     }
 
     private KeyPair generate(int bits) throws NoSuchAlgorithmException,
-            NoSuchProviderException
-    {
+          NoSuchProviderException {
         LOG.debug("Generating KeyPair for {} bits", bits);
 
         KeyPairGenerator generator =
-            KeyPairGenerator.getInstance(this.algorithm, this.provider);
+              KeyPairGenerator.getInstance(this.algorithm, this.provider);
         generator.initialize(bits);
         return generator.generateKeyPair();
     }

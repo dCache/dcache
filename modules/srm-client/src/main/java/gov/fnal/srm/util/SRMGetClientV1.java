@@ -72,31 +72,34 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMGetClientV1 extends SRMClient implements Runnable {
+
     private String[] protocols;
     java.net.URI from[];
     java.net.URI to[];
     private HashSet<Integer> fileIDs = new HashSet<>();
-    private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
+    private HashMap<Integer, RequestFileStatus> fileIDsMap = new HashMap<>();
     private Copier copier;
     private int requestID;
     private Thread hook;
-    /** Creates a new instance of SRMGetClient */
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
     public SRMGetClientV1(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
-        report = new Report(from,to,configuration.getReport());
+        report = new Report(from, to, configuration.getReport());
         this.protocols = configuration.getProtocols();
         this.from = from;
         this.to = to;
@@ -114,161 +117,177 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
     @Override
     public void start() throws Exception {
         try {
-            copier = new Copier(urlcopy,configuration);
+            copier = new Copier(urlcopy, configuration);
             copier.setDebug(debug);
             new Thread(copier).start();
             int len = from.length;
             String SURLS[] = new String[len];
-            for(int i = 0; i < len; ++i) {
+            for (int i = 0; i < len; ++i) {
                 SURLS[i] = from[i].toASCIIString();
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            RequestStatus rs = srm.get(SURLS,protocols);
+            RequestStatus rs = srm.get(SURLS, protocols);
 
-            if(rs == null) {
+            if (rs == null) {
                 throw new IOException(" null requests status");
             }
             requestID = rs.requestId;
-            dsay(" srm returned requestId = "+rs.requestId);
+            dsay(" srm returned requestId = " + rs.requestId);
             try {
-                if(rs.state.equals("Failed")) {
-                    esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-                    for(int i = 0; i< rs.fileStatuses.length;++i) {
-                        edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                if (rs.state.equals("Failed")) {
+                    esay("rs.state = " + rs.state + " rs.error = " + rs.errorMessage);
+                    for (int i = 0; i < rs.fileStatuses.length; ++i) {
+                        edsay("      ====> fileStatus state ==" + rs.fileStatuses[i].state);
                     }
-                    throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    throw new IOException(
+                          "rs.state = " + rs.state + " rs.error = " + rs.errorMessage);
                 }
 
-                if(rs.fileStatuses.length != len) {
-                    esay( "incorrect number of RequestFileStatuses"+
-                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-                    throw new IOException("incorrect number of RequestFileStatuses"+
-                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                if (rs.fileStatuses.length != len) {
+                    esay("incorrect number of RequestFileStatuses" +
+                          "in RequestStatus expected " + len + " received "
+                          + rs.fileStatuses.length);
+                    throw new IOException("incorrect number of RequestFileStatuses" +
+                          "in RequestStatus expected " + len + " received "
+                          + rs.fileStatuses.length);
                 }
 
-                for(int i =0; i<len;++i) {
+                for (int i = 0; i < len; ++i) {
                     Integer fileId = rs.fileStatuses[i].fileId;
                     fileIDs.add(fileId);
-                    fileIDsMap.put(fileId,rs.fileStatuses[i]);
+                    fileIDsMap.put(fileId, rs.fileStatuses[i]);
                 }
-                while(!fileIDs.isEmpty()) {
+                while (!fileIDs.isEmpty()) {
                     Iterator<Integer> iter = fileIDs.iterator();
                     Collection<Integer> removeIDs = new HashSet<>();
 
-                    while(iter.hasNext()) {
+                    while (iter.hasNext()) {
                         Integer nextID = iter.next();
-                        RequestFileStatus frs = getFileRequest(rs,nextID);
-                        if(frs == null) {
-                            throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
+                        RequestFileStatus frs = getFileRequest(rs, nextID);
+                        if (frs == null) {
+                            throw new IOException(
+                                  "request status does not have" + "RequestFileStatus fileID = "
+                                        + nextID);
                         }
-                        if(frs.state.equals("Failed")) {
+                        if (frs.state.equals("Failed")) {
                             removeIDs.add(nextID);
                             java.net.URI surl = new java.net.URI(frs.SURL);
                             java.net.URI filedest = null;
-                            if(len == 1) {
+                            if (len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
                                 filedest = to[0];
-                            }else {
-                                for(int i =0; i< len;++i) {
-                                    if(surl.equals(from[i])) {
+                            } else {
+                                for (int i = 0; i < len; ++i) {
+                                    if (surl.equals(from[i])) {
                                         filedest = to[i];
                                         break;
                                     }
                                 }
                             }
-                            setReportFailed(surl,filedest,  rs.errorMessage);
-                            esay( "copying from SURL "+frs.SURL+" to file "+filedest +" failed: File Status is \"Failed\"");
+                            setReportFailed(surl, filedest, rs.errorMessage);
+                            esay("copying from SURL " + frs.SURL + " to file " + filedest
+                                  + " failed: File Status is \"Failed\"");
                             continue;
                         }
 
-                        if(frs.state.equals("Ready") ) {
-                            if(frs.TURL  == null) {
-                                throw new IOException("  TURL not found, (check root path in kpwd) fileStatus state =="+frs.state);
+                        if (frs.state.equals("Ready")) {
+                            if (frs.TURL == null) {
+                                throw new IOException(
+                                      "  TURL not found, (check root path in kpwd) fileStatus state =="
+                                            + frs.state);
                             }
-                            say("FileRequestStatus with SURL="+frs.SURL+" is Ready");
-                            say("       received TURL="+ frs.TURL);
+                            say("FileRequestStatus with SURL=" + frs.SURL + " is Ready");
+                            say("       received TURL=" + frs.TURL);
                             java.net.URI globusTURL = new java.net.URI(frs.TURL);
                             java.net.URI filedest = null;
                             java.net.URI surl = new java.net.URI(frs.SURL);
 
-                            if(len == 1) {
+                            if (len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
                                 filedest = to[0];
-                            }else {
-                                for(int i =0; i< len;++i) {
-                                    if(surl.equals(from[i])) {
+                            } else {
+                                for (int i = 0; i < len; ++i) {
+                                    if (surl.equals(from[i])) {
                                         filedest = to[i];
                                         break;
                                     }
                                 }
                             }
-                            setReportFailed(surl,filedest,  "received TURL, but did not complete transfer");
-                            if(filedest == null) {
-                                String error ="could not find file destination "+"for source SURL "+ surl;
-                                esay( error);
+                            setReportFailed(surl, filedest,
+                                  "received TURL, but did not complete transfer");
+                            if (filedest == null) {
+                                String error =
+                                      "could not find file destination " + "for source SURL "
+                                            + surl;
+                                esay(error);
                                 throw new IOException(error);
                             }
-                            CopyJob job = new SRMV1CopyJob(globusTURL,filedest,srm,requestID, nextID,logger,surl,true,this);
+                            CopyJob job = new SRMV1CopyJob(globusTURL, filedest, srm, requestID,
+                                  nextID, logger, surl, true, this);
                             copier.addCopyJob(job);
                             removeIDs.add(nextID);
                         }
                     }
                     fileIDs.removeAll(removeIDs);
 
-                    if(fileIDs.isEmpty()) {
+                    if (fileIDs.isEmpty()) {
                         dsay("fileIDs is empty, breaking the loop");
                         Runtime.getRuntime().removeShutdownHook(hook);
                         break;
                     }
 
-                    try{
+                    try {
                         int retrytime = rs.retryDeltaTime;
-                        if( retrytime <= 0 ) {
+                        if (retrytime <= 0) {
                             retrytime = 1;
                         }
-                        say("sleeping "+retrytime+" seconds ...");
+                        say("sleeping " + retrytime + " seconds ...");
                         Thread.sleep(retrytime * 1000);
-                    }catch(InterruptedException ie) {
+                    } catch (InterruptedException ie) {
                     }
 
                     rs = srm.getRequestStatus(requestID);
-                    if(rs == null) {
+                    if (rs == null) {
                         throw new IOException(" null requests status");
                     }
-                    if(rs.state.equals("Failed")) {
-                        esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-                        for(int i = 0; i< rs.fileStatuses.length;++i) {
-                            edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                    if (rs.state.equals("Failed")) {
+                        esay("rs.state = " + rs.state + " rs.error = " + rs.errorMessage);
+                        for (int i = 0; i < rs.fileStatuses.length; ++i) {
+                            edsay("      ====> fileStatus state ==" + rs.fileStatuses[i].state);
                         }
-                        throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                        throw new IOException(
+                              "rs.state = " + rs.state + " rs.error = " + rs.errorMessage);
                     }
-                    if(rs.fileStatuses.length != len) {
-                        esay( "incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-                        throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    if (rs.fileStatuses.length != len) {
+                        esay("incorrect number of RequestFileStatuses"
+                              + "in RequestStatus expected " + len + " received "
+                              + rs.fileStatuses.length);
+                        throw new IOException("incorrect number of RequestFileStatuses"
+                              + "in RequestStatus expected " + len + " received "
+                              + rs.fileStatuses.length);
                     }
 
-                    for(int i =0; i<len;++i) {
-                        fileIDsMap.put(rs.fileStatuses[i].fileId,rs.fileStatuses[i]);
+                    for (int i = 0; i < len; ++i) {
+                        fileIDsMap.put(rs.fileStatuses[i].fileId, rs.fileStatuses[i]);
                     }
                 }
-            }catch(IOException ioe) {
-                if(configuration.isDebug()) {
+            } catch (IOException ioe) {
+                if (configuration.isDebug()) {
                     ioe.printStackTrace();
-                }
-                else {
+                } else {
                     esay(ioe.toString());
                 }
-                done(rs,srm);
+                done(rs, srm);
                 throw ioe;
             }
-        }finally{
-            if(copier != null) {
+        } finally {
+            if (copier != null) {
                 copier.doneAddingJobs();
                 copier.waitCompletion();
             }
             report.dumpReport();
-            if(!report.everythingAllRight()){
+            if (!report.everythingAllRight()) {
                 report.reportErrors(System.err);
                 System.exit(1);
             }
@@ -279,15 +298,15 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
     public void run() {
         say("setting all remaining file statuses to \"Done\"");
         copier.stop();
-        while(true) {
-            if(fileIDs.isEmpty()) {
+        while (true) {
+            if (fileIDs.isEmpty()) {
                 break;
             }
             Integer fileId = fileIDs.iterator().next();
             fileIDs.remove(fileId);
-            say("setting file request "+fileId+" status to Done");
+            say("setting file request " + fileId + " status to Done");
             RequestFileStatus rfs = fileIDsMap.get(fileId);
-            srm.setFileStatus(requestID,rfs.fileId,"Done");
+            srm.setFileStatus(requestID, rfs.fileId, "Done");
         }
         say("set all file statuses to \"Done\"");
     }

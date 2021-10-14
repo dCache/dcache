@@ -17,109 +17,97 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-
 import java.io.IOException;
 import java.util.List;
 
 /**
  * A JsonNode that delegates all operations to some other JsonNode.
  */
-public abstract class ForwardingJsonNode extends JsonNode
-{
+public abstract class ForwardingJsonNode extends JsonNode {
+
     protected abstract JsonNode delegate();
 
     @Override
-    public JsonToken asToken()
-    {
+    public JsonToken asToken() {
         return delegate().asToken();
     }
 
     @Override
-    public JsonParser.NumberType numberType()
-    {
+    public JsonParser.NumberType numberType() {
         return delegate().numberType();
     }
 
     @Override
-    public JsonNode get(int index)
-    {
+    public JsonNode get(int index) {
         return delegate().get(index);
     }
 
     @Override
-    public JsonNode get(String fieldName)
-    {
+    public JsonNode get(String fieldName) {
         return delegate().get(fieldName);
     }
 
     @Override
-    public String asText()
-    {
+    public String asText() {
         return delegate().asText();
     }
 
     @Override
-    public JsonNode findValue(String fieldName)
-    {
+    public JsonNode findValue(String fieldName) {
         return delegate().findValue(fieldName);
     }
 
     @Override
-    public JsonNode findPath(String fieldName)
-    {
+    public JsonNode findPath(String fieldName) {
         return delegate().findPath(fieldName);
     }
 
     @Override
-    public JsonNode findParent(String fieldName)
-    {
+    public JsonNode findParent(String fieldName) {
         return delegate().findParent(fieldName);
     }
 
     @Override
-    public List<JsonNode> findValues(String fieldName, List<JsonNode> foundSoFar)
-    {
+    public List<JsonNode> findValues(String fieldName, List<JsonNode> foundSoFar) {
         return delegate().findValues(fieldName, foundSoFar);
     }
 
     @Override
-    public List<String> findValuesAsText(String fieldName, List<String> foundSoFar)
-    {
+    public List<String> findValuesAsText(String fieldName, List<String> foundSoFar) {
         return delegate().findValuesAsText(fieldName, foundSoFar);
     }
 
     @Override
-    public List<JsonNode> findParents(String fieldName, List<JsonNode> foundSoFar)
-    {
+    public List<JsonNode> findParents(String fieldName, List<JsonNode> foundSoFar) {
         return delegate().findParents(fieldName, foundSoFar);
     }
 
     @Override
-    public JsonNode path(String fieldName)
-    {
+    public JsonNode path(String fieldName) {
         return delegate().path(fieldName);
     }
 
     @Override
-    public JsonNode path(int index)
-    {
+    public JsonNode path(int index) {
         return delegate().path(index);
     }
 
     @Override
-    public JsonParser traverse()
-    {
+    public JsonParser traverse() {
         return delegate().traverse();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return delegate().toString();
     }
 
@@ -129,8 +117,7 @@ public abstract class ForwardingJsonNode extends JsonNode
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         return delegate().equals(o);
     }
 
@@ -150,12 +137,14 @@ public abstract class ForwardingJsonNode extends JsonNode
     }
 
     @Override
-    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        delegate().serialize(jsonGenerator,serializerProvider);
+    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+          throws IOException {
+        delegate().serialize(jsonGenerator, serializerProvider);
     }
 
     @Override
-    public void serializeWithType(JsonGenerator jsonGenerator, SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
+    public void serializeWithType(JsonGenerator jsonGenerator,
+          SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
         delegate().serializeWithType(jsonGenerator, serializerProvider, typeSerializer);
     }
 }

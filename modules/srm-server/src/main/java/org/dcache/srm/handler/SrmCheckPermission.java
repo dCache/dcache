@@ -1,10 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -21,31 +19,29 @@ import org.dcache.srm.v2_2.TPermissionMode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmCheckPermission {
 
-public class SrmCheckPermission
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmCheckPermission.class);
+          LoggerFactory.getLogger(SrmCheckPermission.class);
     private final AbstractStorageElement storage;
     private final SrmCheckPermissionRequest request;
     private final SRMUser user;
     private SrmCheckPermissionResponse response;
 
     public SrmCheckPermission(SRMUser user,
-                              SrmCheckPermissionRequest request,
-                              AbstractStorageElement storage,
-                              SRM srm,
-                              String clientHost)
-    {
+          SrmCheckPermissionRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
     }
 
-    public SrmCheckPermissionResponse getResponse()
-    {
+    public SrmCheckPermissionResponse getResponse() {
         if (response == null) {
             try {
                 response = srmCheckPermission();
@@ -60,8 +56,7 @@ public class SrmCheckPermission
     }
 
     private SrmCheckPermissionResponse srmCheckPermission()
-            throws SRMInternalErrorException, SRMInvalidRequestException
-    {
+          throws SRMInternalErrorException, SRMInvalidRequestException {
         org.apache.axis.types.URI[] surls = request.getArrayOfSURLs().getUrlArray();
         if (surls == null || surls.length == 0) {
             throw new SRMInvalidRequestException("arrayOfSURLs is empty");
@@ -74,7 +69,8 @@ public class SrmCheckPermission
             TReturnStatus returnStatus;
             TPermissionMode pm = null;
             try {
-                FileMetaData fmd = storage.getFileMetaData(user, URI.create(surls[i].toString()), false);
+                FileMetaData fmd = storage.getFileMetaData(user, URI.create(surls[i].toString()),
+                      false);
                 int mode = fmd.permMode;
                 if (fmd.isOwner(user)) {
                     pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((mode >> 6) & 0x7));
@@ -91,7 +87,8 @@ public class SrmCheckPermission
                 returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
                 hasFailure = true;
             } catch (SRMAuthorizationException e) {
-                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                      e.getMessage());
                 hasFailure = true;
             } catch (SRMException e) {
                 LOGGER.warn(e.toString());
@@ -102,17 +99,16 @@ public class SrmCheckPermission
             permissions[i] = new TSURLPermissionReturn(surls[i], returnStatus, pm);
         }
         return new SrmCheckPermissionResponse(
-                ReturnStatuses.getSummaryReturnStatus(hasFailure, hasSuccess),
-                new ArrayOfTSURLPermissionReturn(permissions));
+              ReturnStatuses.getSummaryReturnStatus(hasFailure, hasSuccess),
+              new ArrayOfTSURLPermissionReturn(permissions));
     }
 
-    public static final SrmCheckPermissionResponse getFailedResponse(String error)
-    {
+    public static final SrmCheckPermissionResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmCheckPermissionResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmCheckPermissionResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         TReturnStatus status = new TReturnStatus(statusCode, error);
         SrmCheckPermissionResponse response = new SrmCheckPermissionResponse();
         response.setReturnStatus(status);

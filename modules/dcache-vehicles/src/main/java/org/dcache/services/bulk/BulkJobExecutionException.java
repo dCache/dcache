@@ -59,15 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-public class BulkJobExecutionException extends BulkServiceException
-{
-    public BulkJobExecutionException(String message)
-    {
+public class BulkJobExecutionException extends BulkServiceException {
+
+    public BulkJobExecutionException(String message) {
         super(message);
     }
 
-    public BulkJobExecutionException(String message, Throwable cause)
-    {
+    public BulkJobExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
 }

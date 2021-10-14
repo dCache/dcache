@@ -59,32 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.space;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
@@ -94,13 +68,34 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
-
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.space.LinkGroupInfo;
 import org.dcache.restful.providers.space.SpaceToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the SpaceManager.</p>
@@ -111,9 +106,10 @@ import org.dcache.restful.providers.space.SpaceToken;
 @Api(value = "spacemanager", authorizations = {@Authorization("basicAuth")})
 @Path("/space")
 public final class SpaceManagerResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerResources.class);
     private final static String FORBIDDEN = "Spacemanager info only accessible to "
-                                                + "admin users.";
+          + "admin users.";
     @Inject
     @Named("spacemanager-stub")
     private CellStub spacemanagerStub;
@@ -122,59 +118,59 @@ public final class SpaceManagerResources {
 
     @GET
     @ApiOperation("Get information about link groups."
-                    + " Results sorted lexicographically by link group name.")
+          + " Results sorted lexicographically by link group name.")
     @ApiResponses({
-        @ApiResponse(code = 400, message = "Bad Request Error"),
-        @ApiResponse(code = 404, message = "DCache not configured for space management."),
-        @ApiResponse(code = 500, message = "Internal Server Error")
+          @ApiResponse(code = 400, message = "Bad Request Error"),
+          @ApiResponse(code = 404, message = "DCache not configured for space management."),
+          @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Path("/linkgroups")
     @Produces(MediaType.APPLICATION_JSON)
     public List<LinkGroupInfo> getLinkGroups(@ApiParam(value = "The name of the link group.")
-                                      @QueryParam("name") String name,
-                                      @ApiParam(value = "The id of the link group.")
-                                      @QueryParam("id") Long id,
-                                      @ApiParam(value = "Whether the link group allows online access latency.")
-                                      @QueryParam("onlineAllowed") Boolean onlineAllowed,
-                                      @ApiParam(value = "Whether the link group allows nearline access latency.")
-                                      @QueryParam("nearlineAllowed") Boolean nearlineAllowed,
-                                      @ApiParam(value = "Whether the link group allows replica retention policy.")
-                                      @QueryParam("replicaAllowed") Boolean replicaAllowed,
-                                      @ApiParam(value = "Whether the link group allows output retention policy.")
-                                      @QueryParam("outputAllowed") Boolean outputAllowed,
-                                      @ApiParam(value = "Whether the link group allows custodial retention policy.")
-                                      @QueryParam("custodialAllowed") Boolean custodialAllowed,
-                                      @ApiParam(value = "VO group associated with the link.")
-                                      @QueryParam("voGroup") String voGroup,
-                                      @ApiParam(value = "VO role associated with the link.")
-                                      @QueryParam("voRole") String voRole,
-                                      @ApiParam(value = "Minimum amount of space (in bytes) still available via the link.")
-                                      @QueryParam("minAvailableSpace") Long minAvailableSpace) {
+    @QueryParam("name") String name,
+          @ApiParam(value = "The id of the link group.")
+          @QueryParam("id") Long id,
+          @ApiParam(value = "Whether the link group allows online access latency.")
+          @QueryParam("onlineAllowed") Boolean onlineAllowed,
+          @ApiParam(value = "Whether the link group allows nearline access latency.")
+          @QueryParam("nearlineAllowed") Boolean nearlineAllowed,
+          @ApiParam(value = "Whether the link group allows replica retention policy.")
+          @QueryParam("replicaAllowed") Boolean replicaAllowed,
+          @ApiParam(value = "Whether the link group allows output retention policy.")
+          @QueryParam("outputAllowed") Boolean outputAllowed,
+          @ApiParam(value = "Whether the link group allows custodial retention policy.")
+          @QueryParam("custodialAllowed") Boolean custodialAllowed,
+          @ApiParam(value = "VO group associated with the link.")
+          @QueryParam("voGroup") String voGroup,
+          @ApiParam(value = "VO role associated with the link.")
+          @QueryParam("voRole") String voRole,
+          @ApiParam(value = "Minimum amount of space (in bytes) still available via the link.")
+          @QueryParam("minAvailableSpace") Long minAvailableSpace) {
         if (!spaceReservationEnabled) {
             throw new NotFoundException();
         }
 
         Predicate<LinkGroup> filter = getLinkGroupFilter(name,
-                                                         id,
-                                                         onlineAllowed,
-                                                         nearlineAllowed,
-                                                         replicaAllowed,
-                                                         outputAllowed,
-                                                         custodialAllowed,
-                                                         voGroup,
-                                                         voRole,
-                                                         minAvailableSpace);
+              id,
+              onlineAllowed,
+              nearlineAllowed,
+              replicaAllowed,
+              outputAllowed,
+              custodialAllowed,
+              voGroup,
+              voRole,
+              minAvailableSpace);
 
         try {
             GetLinkGroupsMessage reply
-                = spacemanagerStub.sendAndWait(new GetLinkGroupsMessage());
+                  = spacemanagerStub.sendAndWait(new GetLinkGroupsMessage());
 
             return reply.getLinkGroups()
-                        .stream()
-                        .sorted(Comparator.comparing(LinkGroup::getName))
-                        .filter(filter)
-                        .map(LinkGroupInfo::new)
-                        .collect(Collectors.toList());
+                  .stream()
+                  .sorted(Comparator.comparing(LinkGroup::getName))
+                  .filter(filter)
+                  .map(LinkGroupInfo::new)
+                  .collect(Collectors.toList());
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
@@ -183,55 +179,55 @@ public final class SpaceManagerResources {
 
     @GET
     @ApiOperation("Get information about space tokens.  "
-                    + "Results sorted by token id.")
+          + "Results sorted by token id.")
     @ApiResponses({
-        @ApiResponse(code = 404, message = "DCache not configured for space management."),
-        @ApiResponse(code = 500, message = "Internal Server Error")
+          @ApiResponse(code = 404, message = "DCache not configured for space management."),
+          @ApiResponse(code = 500, message = "Internal Server Error")
     })
     @Path("/tokens")
     @Produces(MediaType.APPLICATION_JSON)
     public List<SpaceToken> getTokensForGroup(@ApiParam(value = "The id of the space token.")
-                                              @QueryParam("id") Long id,
-                                              @ApiParam(value = "VO group associated with the token.")
-                                              @QueryParam("voGroup") String voGroup,
-                                              @ApiParam(value = "VO role associated with the token.")
-                                              @QueryParam("voRole") String voRole,
-                                              @ApiParam(value = "Access Latency associated with the token.")
-                                              @QueryParam("accessLatency") String accessLatency,
-                                              @ApiParam(value = "Retention Policy associated with the token.")
-                                              @QueryParam("retentionPolicy") String retentionPolicy,
-                                              @ApiParam(value = "Id of link group to which token belongs.")
-                                              @QueryParam("groupId") Long groupId,
-                                              @ApiParam(value = "State of the token.")
-                                              @QueryParam("state") String state,
-                                              @ApiParam(value = "Minimum size (in bytes) of token.")
-                                              @QueryParam("minSize") Long minSize,
-                                              @ApiParam(value = "Minimum amount of space (in bytes) still free for token.")
-                                              @QueryParam("minFreeSpace") Long minFreeSpace) {
+    @QueryParam("id") Long id,
+          @ApiParam(value = "VO group associated with the token.")
+          @QueryParam("voGroup") String voGroup,
+          @ApiParam(value = "VO role associated with the token.")
+          @QueryParam("voRole") String voRole,
+          @ApiParam(value = "Access Latency associated with the token.")
+          @QueryParam("accessLatency") String accessLatency,
+          @ApiParam(value = "Retention Policy associated with the token.")
+          @QueryParam("retentionPolicy") String retentionPolicy,
+          @ApiParam(value = "Id of link group to which token belongs.")
+          @QueryParam("groupId") Long groupId,
+          @ApiParam(value = "State of the token.")
+          @QueryParam("state") String state,
+          @ApiParam(value = "Minimum size (in bytes) of token.")
+          @QueryParam("minSize") Long minSize,
+          @ApiParam(value = "Minimum amount of space (in bytes) still free for token.")
+          @QueryParam("minFreeSpace") Long minFreeSpace) {
         if (!spaceReservationEnabled) {
             throw new NotFoundException();
         }
 
         Predicate<Space> filter = getSpaceFilter(id,
-                                                 voGroup,
-                                                 voRole,
-                                                 accessLatency,
-                                                 retentionPolicy,
-                                                 groupId,
-                                                 state,
-                                                 minSize,
-                                                 minFreeSpace);
+              voGroup,
+              voRole,
+              accessLatency,
+              retentionPolicy,
+              groupId,
+              state,
+              minSize,
+              minFreeSpace);
 
         try {
             GetSpaceTokensMessage reply
-                = spacemanagerStub.sendAndWait(new GetSpaceTokensMessage());
+                  = spacemanagerStub.sendAndWait(new GetSpaceTokensMessage());
 
             return reply.getSpaceTokenSet()
-                        .stream()
-                        .sorted(Comparator.comparing(Space::getId))
-                        .filter(filter)
-                        .map(SpaceToken::new)
-                        .collect(Collectors.toList());
+                  .stream()
+                  .sorted(Comparator.comparing(Space::getId))
+                  .filter(filter)
+                  .map(SpaceToken::new)
+                  .collect(Collectors.toList());
         } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             LOGGER.warn(Exceptions.meaningfulMessage(ex));
             throw new InternalServerErrorException(ex);
@@ -239,15 +235,15 @@ public final class SpaceManagerResources {
     }
 
     private Predicate<LinkGroup> getLinkGroupFilter(String name,
-                                                    Long id,
-                                                    Boolean onlineAllowed,
-                                                    Boolean nearlineAllowed,
-                                                    Boolean replicaAllowed,
-                                                    Boolean outputAllowed,
-                                                    Boolean custodialAllowed,
-                                                    String voGroup,
-                                                    String voRole,
-                                                    Long minAvailableSpace) {
+          Long id,
+          Boolean onlineAllowed,
+          Boolean nearlineAllowed,
+          Boolean replicaAllowed,
+          Boolean outputAllowed,
+          Boolean custodialAllowed,
+          String voGroup,
+          String voRole,
+          Long minAvailableSpace) {
         Predicate<LinkGroup> predicate = group -> true;
 
         if (name != null) {
@@ -280,16 +276,16 @@ public final class SpaceManagerResources {
 
         if (voGroup != null) {
             predicate = predicate.and(group -> Stream.of(group.getVOs())
-                                                     .map(VOInfo::getVoGroup)
-                                                     .collect(Collectors.toSet())
-                                                     .contains(voGroup));
+                  .map(VOInfo::getVoGroup)
+                  .collect(Collectors.toSet())
+                  .contains(voGroup));
         }
 
         if (voRole != null) {
             predicate = predicate.and(group -> Stream.of(group.getVOs())
-                                                     .map(VOInfo::getVoRole)
-                                                     .collect(Collectors.toSet())
-                                                     .contains(voRole));
+                  .map(VOInfo::getVoRole)
+                  .collect(Collectors.toSet())
+                  .contains(voRole));
         }
 
         if (minAvailableSpace != null) {
@@ -300,14 +296,14 @@ public final class SpaceManagerResources {
     }
 
     private Predicate<Space> getSpaceFilter(Long id,
-                                            String voGroup,
-                                            String voRole,
-                                            String accessLatency,
-                                            String retentionPolicy,
-                                            Long groupId,
-                                            String state,
-                                            Long minSize,
-                                            Long minFreeSpace) {
+          String voGroup,
+          String voRole,
+          String accessLatency,
+          String retentionPolicy,
+          Long groupId,
+          String state,
+          Long minSize,
+          Long minFreeSpace) {
         Predicate<Space> predicate = space -> true;
 
         if (id != null) {
@@ -324,12 +320,13 @@ public final class SpaceManagerResources {
 
         if (accessLatency != null) {
             predicate = predicate.and(space -> AccessLatency.valueOf(accessLatency.toUpperCase())
-                                == space.getAccessLatency());
+                  == space.getAccessLatency());
         }
 
         if (retentionPolicy != null) {
-            predicate = predicate.and(space -> RetentionPolicy.valueOf(retentionPolicy.toUpperCase())
-                                == space.getRetentionPolicy());
+            predicate = predicate.and(
+                  space -> RetentionPolicy.valueOf(retentionPolicy.toUpperCase())
+                        == space.getRetentionPolicy());
         }
 
         if (groupId != null) {
@@ -346,7 +343,7 @@ public final class SpaceManagerResources {
 
         if (minFreeSpace != null) {
             predicate = predicate.and(space -> space.getAllocatedSpaceInBytes()
-                                - space.getUsedSizeInBytes() >= minFreeSpace);
+                  - space.getUsedSizeInBytes() >= minFreeSpace);
         }
 
         return predicate;

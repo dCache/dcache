@@ -59,48 +59,45 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Initialization mechanism for resilience maps.
  *
  * <p>Initialize loads the maps in order. Makes sure all incomplete
- *    operations are reloaded from the checkpoint file before starting
- *    the operations map.</p>
+ * operations are reloaded from the checkpoint file before starting the operations map.</p>
  *
  * <p>Waits to receive the pool monitor via notification from PoolManager;
- *    if it does not get one within the designated timeout interval,
- *    it sends an alarm.</p>
+ * if it does not get one within the designated timeout interval, it sends an alarm.</p>
  */
 public final class MapInitializer implements Runnable {
+
     private static final String INIT_ALARM
-                    = "Did not receive pool monitor update within %s %s; "
-                    + "resilience has failed to start.";
+          = "Did not receive pool monitor update within %s %s; "
+          + "resilience has failed to start.";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger( MapInitializer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MapInitializer.class);
 
-    private PoolInfoMap              poolInfoMap;
-    private FileOperationMap         fileOperationMap;
-    private PoolOperationMap         poolOperationMap;
-    private MessageGuard             messageGuard;
-    private PoolMonitor              poolMonitor;
-    private PoolInfoChangeHandler    poolInfoChangeHandler;
+    private PoolInfoMap poolInfoMap;
+    private FileOperationMap fileOperationMap;
+    private PoolOperationMap poolOperationMap;
+    private MessageGuard messageGuard;
+    private PoolMonitor poolMonitor;
+    private PoolInfoChangeHandler poolInfoChangeHandler;
     private ScheduledExecutorService initService;
 
-    private Long                     initialized;
-    private String                   initError;
-    private long                     initDelay;
-    private TimeUnit                 initDelayUnit;
+    private Long initialized;
+    private String initError;
+    private long initDelay;
+    private TimeUnit initDelayUnit;
 
     public synchronized String getInitError() {
         return initError;
@@ -147,17 +144,17 @@ public final class MapInitializer implements Runnable {
         LOGGER.info("Waiting for pool monitor refresh notification.");
 
         try {
-             waitForPoolMonitor();
+            waitForPoolMonitor();
         } catch (InterruptedException e) {
-            LOGGER.trace( "Wait for pool monitor was interrupted; "
-                            + "quitting without initializing.");
+            LOGGER.trace("Wait for pool monitor was interrupted; "
+                  + "quitting without initializing.");
             return;
         }
 
         if (poolMonitor == null) {
             initError = String.format(INIT_ALARM,
-                                      poolInfoChangeHandler.getRefreshTimeout(),
-                                      poolInfoChangeHandler.getRefreshTimeoutUnit());
+                  poolInfoChangeHandler.getRefreshTimeout(),
+                  poolInfoChangeHandler.getRefreshTimeoutUnit());
             /*
              *  An alarm will already have been sent by the change handler.
              */
@@ -233,12 +230,12 @@ public final class MapInitializer implements Runnable {
     }
 
     public void setPoolInfoChangeHandler(
-                    PoolInfoChangeHandler poolInfoChangeHandler) {
+          PoolInfoChangeHandler poolInfoChangeHandler) {
         this.poolInfoChangeHandler = poolInfoChangeHandler;
     }
 
     public void setPoolOperationMap(
-                    PoolOperationMap poolOperationMap) {
+          PoolOperationMap poolOperationMap) {
         this.poolOperationMap = poolOperationMap;
     }
 
@@ -248,10 +245,10 @@ public final class MapInitializer implements Runnable {
     }
 
     private synchronized void waitForPoolMonitor()
-                    throws InterruptedException {
+          throws InterruptedException {
         if (poolMonitor == null) {
             long waitForMonitor = poolInfoChangeHandler.getRefreshTimeoutUnit()
-                .toMillis(poolInfoChangeHandler.getRefreshTimeout());
+                  .toMillis(poolInfoChangeHandler.getRefreshTimeout());
             wait(waitForMonitor);
         }
     }

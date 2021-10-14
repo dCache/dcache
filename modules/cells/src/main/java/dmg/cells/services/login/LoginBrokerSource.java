@@ -22,11 +22,10 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /**
- * Source of login broker information. Login broker information describes the features
- * of a door.
+ * Source of login broker information. Login broker information describes the features of a door.
  */
-public interface LoginBrokerSource
-{
+public interface LoginBrokerSource {
+
     Collection<LoginBrokerInfo> doors();
 
     Map<String, Collection<LoginBrokerInfo>> readDoorsByProtocol();

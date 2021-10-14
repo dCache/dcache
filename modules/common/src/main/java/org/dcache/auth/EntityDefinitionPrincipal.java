@@ -22,39 +22,35 @@ import java.security.Principal;
 
 /**
  * The principal that defines what kind of entity has authenticated.
+ *
  * @since 2.14
  */
-public class EntityDefinitionPrincipal implements Principal, Serializable
-{
+public class EntityDefinitionPrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final EntityDefinition _definition;
 
-    public EntityDefinitionPrincipal(EntityDefinition definition)
-    {
+    public EntityDefinitionPrincipal(EntityDefinition definition) {
         _definition = definition;
     }
 
-    public EntityDefinition getDefinition()
-    {
+    public EntityDefinition getDefinition() {
         return _definition;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _definition.getName();
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _definition.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -63,12 +59,11 @@ public class EntityDefinitionPrincipal implements Principal, Serializable
             return false;
         }
 
-        return _definition == ((EntityDefinitionPrincipal)other)._definition;
+        return _definition == ((EntityDefinitionPrincipal) other)._definition;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

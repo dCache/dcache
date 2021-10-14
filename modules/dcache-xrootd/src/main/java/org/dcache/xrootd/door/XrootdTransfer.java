@@ -1,24 +1,20 @@
 package org.dcache.xrootd.door;
 
-import javax.security.auth.Subject;
-
-import java.io.Serializable;
-import java.net.InetSocketAddress;
-import java.util.UUID;
-
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.io.Serializable;
+import java.net.InetSocketAddress;
+import java.util.UUID;
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
-public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
-{
+public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
+
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
@@ -64,17 +60,16 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         return info;
     }
 
-    private XrootdProtocolInfo createXrootdProtocolInfo()
-    {
+    private XrootdProtocolInfo createXrootdProtocolInfo() {
         InetSocketAddress client = getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
-                                      XrootdProtocol.PROTOCOL_VERSION_MAJOR,
-                                      XrootdProtocol.PROTOCOL_VERSION_MINOR,
-                                      client,
-                                      new CellPath(getCellName(), getDomainName()),
-                                      getPnfsId(),
-                                      _fileHandle,
-                                      _uuid,
-                                      _doorAddress);
+              XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+              XrootdProtocol.PROTOCOL_VERSION_MINOR,
+              client,
+              new CellPath(getCellName(), getDomainName()),
+              getPnfsId(),
+              _fileHandle,
+              _uuid,
+              _doorAddress);
     }
 }

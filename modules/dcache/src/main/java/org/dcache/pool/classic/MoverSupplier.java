@@ -23,5 +23,6 @@ import org.dcache.pool.movers.Mover;
 
 @FunctionalInterface
 public interface MoverSupplier {
+
     Mover<?> createMover() throws CacheException;
 }

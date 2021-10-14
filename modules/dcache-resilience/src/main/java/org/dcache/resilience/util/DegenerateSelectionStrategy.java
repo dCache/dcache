@@ -59,22 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.dcache.pool.migration.PoolSelectionStrategy;
 
 /**
  * <p>Simply returns the single member of the list.</p>
  *
  * <p>The reason for its existence is so that the resilience handler can
- *      preselect the source and target pools, but still make use of the
- *      migration module {@link org.dcache.pool.migration.Task}, which
- *      requires an implementation of {@link PoolSelectionStrategy}
- *      to be provided.</p>
+ * preselect the source and target pools, but still make use of the migration module {@link
+ * org.dcache.pool.migration.Task}, which requires an implementation of {@link
+ * PoolSelectionStrategy} to be provided.</p>
  */
 public final class DegenerateSelectionStrategy implements PoolSelectionStrategy {
+
     @Nullable
     @Override
     public PoolManagerPoolInformation select(List<PoolManagerPoolInformation> pools) {

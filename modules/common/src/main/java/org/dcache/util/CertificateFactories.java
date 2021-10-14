@@ -1,23 +1,20 @@
 package org.dcache.util;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-public class CertificateFactories
-{
+public class CertificateFactories {
+
     public static final String X_509 = "X.509";
 
-    static
-    {
+    static {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private CertificateFactories()
-    {
+    private CertificateFactories() {
     }
 
     /**
@@ -25,14 +22,15 @@ public class CertificateFactories
      *
      * @throws RuntimeException if the factory could not be instantiated
      */
-    public static CertificateFactory newX509CertificateFactory()
-    {
+    public static CertificateFactory newX509CertificateFactory() {
         try {
             return CertificateFactory.getInstance(X_509, BouncyCastleProvider.PROVIDER_NAME);
         } catch (CertificateException e) {
-            throw new RuntimeException("Failed to create X.509 certificate factory: " + e.getMessage(), e);
+            throw new RuntimeException(
+                  "Failed to create X.509 certificate factory: " + e.getMessage(), e);
         } catch (NoSuchProviderException e) {
-            throw new RuntimeException("Failed to load bouncy castle provider: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to load bouncy castle provider: " + e.getMessage(),
+                  e);
         }
     }
 }

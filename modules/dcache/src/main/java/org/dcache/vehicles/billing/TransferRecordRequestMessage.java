@@ -60,18 +60,17 @@ documents or software obtained from this server.
 package org.dcache.vehicles.billing;
 
 import com.google.common.base.Strings;
+import diskCacheV111.util.PnfsId;
 import java.util.Date;
 import java.util.function.Predicate;
-
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
  * <p>Requests read, write or p2p records for a given pnfsId.</p>
  */
 public final class TransferRecordRequestMessage
-                extends RecordRequestMessage<TransferRecord> {
+      extends RecordRequestMessage<TransferRecord> {
+
     private static final long serialVersionUID = 2933007122109458801L;
 
     private final String door;       // initiator for read and write
@@ -80,16 +79,16 @@ public final class TransferRecordRequestMessage
     private final String clientHost;
 
     public TransferRecordRequestMessage(PnfsId pnfsId,
-                                        Date before,
-                                        Date after,
-                                        Type type,
-                                        String door,
-                                        String clientPool,
-                                        String pool,
-                                        String clientHost,
-                                        int limit,
-                                        int offset,
-                                        String sort) {
+          Date before,
+          Date after,
+          Type type,
+          String door,
+          String clientPool,
+          String pool,
+          String clientHost,
+          int limit,
+          int offset,
+          String sort) {
         super(pnfsId, before, after, type, limit, offset, sort);
         this.door = door;
         this.clientPool = clientPool;
@@ -100,23 +99,23 @@ public final class TransferRecordRequestMessage
     @Override
     public Predicate<TransferRecord> filter() {
         Predicate<TransferRecord> matchesDoor =
-                        (record) -> door == null
-                                        || Strings.nullToEmpty(record.getInitiator())
-                                                  .contains(door);
+              (record) -> door == null
+                    || Strings.nullToEmpty(record.getInitiator())
+                    .contains(door);
         Predicate<TransferRecord> matchesTarget =
-                        (record) -> clientPool == null
-                                        || Strings.nullToEmpty(record.getInitiator())
-                                                  .contains(clientPool);
+              (record) -> clientPool == null
+                    || Strings.nullToEmpty(record.getInitiator())
+                    .contains(clientPool);
         Predicate<TransferRecord> matchesServer =
-                        (record) -> pool == null
-                                        || Strings.nullToEmpty(record.getCellName())
-                                                  .contains(pool);
+              (record) -> pool == null
+                    || Strings.nullToEmpty(record.getCellName())
+                    .contains(pool);
         Predicate<TransferRecord> matchesClient =
-                        (record) -> clientHost == null
-                                        || Strings.nullToEmpty(record.getClient())
-                                                  .contains(clientHost);
+              (record) -> clientHost == null
+                    || Strings.nullToEmpty(record.getClient())
+                    .contains(clientHost);
         return matchesDoor.and(matchesServer)
-                          .and(matchesTarget)
-                          .and(matchesClient);
+              .and(matchesTarget)
+              .and(matchesClient);
     }
 }

@@ -22,7 +22,7 @@ import java.io.Serializable;
 /**
  * Requests the receiver to reply with LoginBrokerInfo.
  */
-public class LoginBrokerInfoRequest implements Serializable
-{
+public class LoginBrokerInfoRequest implements Serializable {
+
     private static final long serialVersionUID = -2576631790553309824L;
 }

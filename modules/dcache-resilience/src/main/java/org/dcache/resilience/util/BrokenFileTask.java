@@ -60,19 +60,19 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.resilience.handlers.FileOperationHandler;
 
 /**
  * <p>Simple wrapper for calling the {@link FileOperationHandler ) method.</p>
  */
 public final class BrokenFileTask extends ErrorAwareTask {
-    private final PnfsId               pnfsId;
-    private final String               pool;
+
+    private final PnfsId pnfsId;
+    private final String pool;
     private final FileOperationHandler handler;
 
     public BrokenFileTask(PnfsId pnfsId, String pool,
-                          FileOperationHandler handler) {
+          FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.handler = handler;

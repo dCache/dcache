@@ -59,35 +59,35 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
+import static junit.framework.TestCase.assertNull;
+
 import com.google.gson.GsonBuilder;
+import java.util.Random;
 import org.junit.After;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
-
-import static junit.framework.TestCase.assertNull;
-
 abstract class HistogramModelTest {
+
     protected static final Logger LOGGER = LoggerFactory.getLogger(
-                    HistogramModelTest.class);
+          HistogramModelTest.class);
     protected static final Random RANDOM = new Random(
-                    System.currentTimeMillis());
+          System.currentTimeMillis());
 
     protected HistogramModel model;
-    protected Exception      error;
-    protected String         serialized1;
-    protected String         serialized2;
+    protected Exception error;
+    protected String serialized1;
+    protected String serialized2;
 
     @After
     public void printDiagnostics() {
         if (model != null) {
             LOGGER.info(new GsonBuilder().setPrettyPrinting()
-                                         .disableHtmlEscaping()
-                                         .create().toJson(model));
+                  .disableHtmlEscaping()
+                  .create().toJson(model));
             LOGGER.info(new GsonBuilder().setPrettyPrinting()
-                                         .disableHtmlEscaping()
-                                         .create().toJson(model.toHistogram()));
+                  .disableHtmlEscaping()
+                  .create().toJson(model.toHistogram()));
         }
     }
 

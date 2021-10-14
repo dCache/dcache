@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,8 @@ package org.dcache.ftp.client.exception;
 /**
  * Indicates that the reply received from server failed to parse.
  */
-public class FTPReplyParseException extends FTPException
-{
+public class FTPReplyParseException extends FTPException {
+
     private static final long serialVersionUID = -1666767510302111418L;
 
     //public static final int UNSPECIFIED = 0;
@@ -31,30 +31,29 @@ public class FTPReplyParseException extends FTPException
 
     static {
         codeExplained = new String[]{
-                "Unspecified exception.",
-                "Reply string too short.",
-                "First 3 characters are not digits.",
-                "Unexpected 4th character.",
-                "Reply message unparsable"
+              "Unspecified exception.",
+              "Reply string too short.",
+              "First 3 characters are not digits.",
+              "Unexpected 4th character.",
+              "Reply message unparsable"
         };
     }
 
     @Override
-    public String getCodeExplanation(int code)
-    {
+    public String getCodeExplanation(int code) {
 
-        if (codeExplained.length > code)
+        if (codeExplained.length > code) {
             return codeExplained[code];
-        else return "";
+        } else {
+            return "";
+        }
     }
 
-    public FTPReplyParseException(int code)
-    {
+    public FTPReplyParseException(int code) {
         super(code);
     }
 
-    public FTPReplyParseException(int code, String message)
-    {
+    public FTPReplyParseException(int code, String message) {
         super(code, message);
     }
 

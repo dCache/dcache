@@ -18,12 +18,10 @@
  */
 package org.dcache.pool.repository.ceph;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 import com.google.common.primitives.Longs;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import diskCacheV111.util.PnfsId;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -35,7 +33,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 import jnr.constants.platform.Errno;
-
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.rados4j.IoCtx;
@@ -45,8 +42,8 @@ import org.dcache.rados4j.RadosException;
 import org.dcache.rados4j.Rbd;
 import org.dcache.rados4j.RbdImage;
 import org.dcache.rados4j.RbdImageInfo;
-
-import static org.dcache.util.ByteUnit.KiB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A CEPH based implementation of {@link FileStore}.
@@ -104,7 +101,7 @@ public class CephFileStore implements FileStore {
     @Override
     public BasicFileAttributeView getFileAttributeView(PnfsId id) throws IOException {
         String imageName = toImageName(id);
-        try(RbdImage image = rbd.openReadOnly(imageName)) {
+        try (RbdImage image = rbd.openReadOnly(imageName)) {
 
             final RbdImageInfo imageInfo = image.stat();
 
@@ -177,14 +174,16 @@ public class CephFileStore implements FileStore {
                     };
                 }
 
-                private void setTimeToXattr(String image, String attr, FileTime time) throws RadosException {
+                private void setTimeToXattr(String image, String attr, FileTime time)
+                      throws RadosException {
                     ctx.setXattr(toObjName(image),
-                            attr,
-                            Longs.toByteArray(time.toMillis()));
+                          attr,
+                          Longs.toByteArray(time.toMillis()));
                 }
 
                 @Override
-                public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
+                public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime,
+                      FileTime createTime) throws IOException {
 
                     if (lastModifiedTime != null) {
                         setTimeToXattr(imageName, LAST_MODIFICATION_TIME_ATTR, lastModifiedTime);
@@ -212,8 +211,8 @@ public class CephFileStore implements FileStore {
         try {
             rbd.create(imageName, 0);
             ctx.setXattr(toObjName(imageName),
-                    CREATION_TIME_ATTR,
-                    Longs.toByteArray(System.currentTimeMillis()));
+                  CREATION_TIME_ATTR,
+                  Longs.toByteArray(System.currentTimeMillis()));
         } catch (RadosException e) {
             throwIfMappable(e, "Failed to create file: " + imageName);
             throw e;
@@ -239,7 +238,8 @@ public class CephFileStore implements FileStore {
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> ioMode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> ioMode)
+          throws IOException {
         String imageName = toImageName(id);
         try {
             return new CephRepositoryChannel(rbd, imageName, ioMode);
@@ -253,9 +253,9 @@ public class CephFileStore implements FileStore {
     public Set<PnfsId> index() throws IOException {
         try {
             return rbd.list()
-                    .stream()
-                    .map(this::toPnfsId)
-                    .collect(Collectors.toSet());
+                  .stream()
+                  .map(this::toPnfsId)
+                  .collect(Collectors.toSet());
         } catch (RadosException e) {
             throwIfMappable(e, "Failed to get list of images");
             throw e;
@@ -305,6 +305,7 @@ public class CephFileStore implements FileStore {
 
     /**
      * Returns object name corresponding to specified RBD image.
+     *
      * @param image name.
      */
     private String toObjName(String img) {
@@ -334,7 +335,7 @@ public class CephFileStore implements FileStore {
 
         Errno err = Errno.valueOf(Math.abs(e.getErrorCode()));
 
-        switch(err) {
+        switch (err) {
             case ENOENT:
                 throw new NoSuchFileException(msg + " : " + e.getMessage());
         }

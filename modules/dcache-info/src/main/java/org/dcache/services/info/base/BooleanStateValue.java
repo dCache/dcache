@@ -1,20 +1,18 @@
 package org.dcache.services.info.base;
 
 /**
- * Extends the abstract StateValue class to allow storage of boolean values
- * within dCache state.
+ * Extends the abstract StateValue class to allow storage of boolean values within dCache state.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class BooleanStateValue extends StateValue
-{
+public class BooleanStateValue extends StateValue {
+
     private final boolean _storage;
 
     /**
      * Create a new Ephemeral Boolean StateValue.
      */
-    public BooleanStateValue(boolean value)
-    {
+    public BooleanStateValue(boolean value) {
         this(value, false);
     }
 
@@ -22,68 +20,61 @@ public class BooleanStateValue extends StateValue
     /**
      * Create a new Boolean StateValue that is either Immortal or Ephemeral.
      */
-    public BooleanStateValue(boolean value, boolean isImmortal)
-    {
+    public BooleanStateValue(boolean value, boolean isImmortal) {
         super(isImmortal);
         _storage = value;
     }
 
     /**
-     * Create a new BooleanStateValue with given value.  This
-     * StateValue should expire after a certain time has elapsed.
-     * @param value the value to store
+     * Create a new BooleanStateValue with given value.  This StateValue should expire after a
+     * certain time has elapsed.
+     *
+     * @param value    the value to store
      * @param duration the lifetime of this metric, in seconds.
      */
-    public BooleanStateValue(boolean value, long duration)
-    {
+    public BooleanStateValue(boolean value, long duration) {
         super(duration);
         _storage = value;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return Boolean.toString(_storage);
     }
 
-    public boolean getValue()
-    {
+    public boolean getValue() {
         return _storage;
     }
 
     @Override
-    public String getTypeName()
-    {
+    public String getTypeName() {
         return "boolean";
     }
 
 
     /**
-     *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
-     *  actual implementation and StateVisitor interface for more details.
+     * Leaf-node specific support for the Visitor pattern.  See StateValue for inherited actual
+     * implementation and StateVisitor interface for more details.
      */
     @Override
-    public void acceptVisitor(StatePath path, StateVisitor visitor)
-    {
+    public void acceptVisitor(StatePath path, StateVisitor visitor) {
         visitor.visitBoolean(path, this);
     }
 
     /**
-     *  Override the default hashCode() method, to honour the hashCode() / equals() contract.
+     * Override the default hashCode() method, to honour the hashCode() / equals() contract.
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _storage ? 1 : 0;
     }
 
 
     /**
-     *  Override the default equals() method.
+     * Override the default equals() method.
      */
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (!(other instanceof BooleanStateValue)) {
             return false;
         }

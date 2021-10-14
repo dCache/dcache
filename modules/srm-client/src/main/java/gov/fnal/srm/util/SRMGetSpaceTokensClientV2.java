@@ -82,11 +82,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 import eu.emi.security.authn.x509.X509Credential;
-
 import java.io.IOException;
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ISRM;
@@ -94,21 +93,19 @@ import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-import static org.dcache.srm.util.Credentials.checkValid;
+public class SRMGetSpaceTokensClientV2 extends SRMClient {
 
-public class SRMGetSpaceTokensClientV2 extends SRMClient  {
     private java.net.URI srmURL;
     private X509Credential credential;
     private ISRM srmv2;
 
     public SRMGetSpaceTokensClientV2(Configuration configuration,
-                                     java.net.URI url) {
+          java.net.URI url) {
         super(configuration);
-        srmURL=url;
+        srmURL = url;
         try {
             credential = getCredential();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             credential = null;
             System.err.println("Couldn't getGssCredential.");
         }
@@ -118,15 +115,15 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
     public void connect() throws Exception {
 
         srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+              getCredential(),
+              configuration.getRetry_timeout(),
+              configuration.getRetry_num(),
+              doDelegation,
+              fullDelegation,
+              gss_expected_name,
+              configuration.getWebservice_path(),
+              configuration.getX509_user_trusted_certificates(),
+              configuration.getTransport());
     }
 
     @Override
@@ -138,31 +135,31 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
             request.setUserSpaceTokenDescription(tokenDescription);
             SrmGetSpaceTokensResponse response = srmv2.srmGetSpaceTokens(request);
 
-
-            if ( response == null ) {
+            if (response == null) {
                 throw new IOException(" null SrmGetSpaceTokensResponse");
             }
 
-            TReturnStatus rs     = response.getReturnStatus();
-            if ( rs == null) {
+            TReturnStatus rs = response.getReturnStatus();
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("SrmGetSpaceTokens failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+                throw new IOException(
+                      "SrmGetSpaceTokens failed, unexpected or failed return status : " +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
             }
-            if( response.getArrayOfSpaceTokens() == null || response.getArrayOfSpaceTokens().getStringArray() ==null) {
+            if (response.getArrayOfSpaceTokens() == null
+                  || response.getArrayOfSpaceTokens().getStringArray() == null) {
                 throw new IOException("SrmGetSpaceTokens returned null array of space tokens");
             }
-            String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
+            String[] spaceTokens = response.getArrayOfSpaceTokens().getStringArray();
             System.out.println("Space Reservation Tokens:");
             for (String spaceToken : spaceTokens) {
 
                 System.out.println(spaceToken);
             }
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

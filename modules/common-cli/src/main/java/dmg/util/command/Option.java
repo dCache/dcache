@@ -10,8 +10,8 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Option
-{
+public @interface Option {
+
     /**
      * Name of the option.
      */
@@ -21,28 +21,22 @@ public @interface Option
      * Help string used to display the usage screen.
      *
      * <p>
-     * If this value is empty, the option will not be displayed
-     * in the usage screen.
+     * If this value is empty, the option will not be displayed in the usage screen.
      */
     String usage() default "";
 
     /**
-     * Used on the usage screen as a meta variable to represent the
-     * value of this option.
+     * Used on the usage screen as a meta variable to represent the value of this option.
      */
     String metaVar() default "";
 
     /**
-     * Used on the usage screen to describe the syntax of the value
-     * of the option.
-     *
+     * Used on the usage screen to describe the syntax of the value of the option.
+     * <p>
      * Use the following syntax:
-     *
-     *    []         optional
-     *    |          alternation
-     *    ...        repetition
-     *    UPPERCASE  value
-     *
+     * <p>
+     * []         optional |          alternation ...        repetition UPPERCASE  value
+     * <p>
      * Any other symbol is considered a literal.
      */
     String valueSpec() default "";

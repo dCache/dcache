@@ -1,5 +1,11 @@
 package org.dcache.gplazma.plugins;
 
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.DATATYPE_STRING;
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.ID_ATTRIBUTE_ACTION_ID;
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.ID_ATTRIBUTE_PROFILE_ID;
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.ID_ATTRIBUTE_RESOURCE_ID;
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.ID_ATTRIBUTE_SUBJECT_ID;
+
 import org.glite.authz.common.model.Action;
 import org.glite.authz.common.model.Attribute;
 import org.glite.authz.common.model.Environment;
@@ -8,18 +14,17 @@ import org.glite.authz.common.model.Resource;
 import org.glite.authz.common.model.Subject;
 import org.glite.authz.pep.profile.AuthorizationProfile;
 
-import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.*;
-
 public class ArgusPepRequestFactory {
 
     /**
-     * @param dn DN of the subject
+     * @param dn         DN of the subject
      * @param resourceId id of the resource to be accessed
-     * @param actionId id of the action to be performed on the resource
-     * @param profile id of the access profile (i.e. WN/CE)
+     * @param actionId   id of the action to be performed on the resource
+     * @param profile    id of the access profile (i.e. WN/CE)
      * @return a glite authz request to be sent to a PEPd
      */
-    public static Request create(String dn, String resourceId, String actionId, AuthorizationProfile profile) {
+    public static Request create(String dn, String resourceId, String actionId,
+          AuthorizationProfile profile) {
 
         Action action = new Action();
 

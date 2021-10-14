@@ -17,26 +17,37 @@ public class PnfsFlagMessage extends PnfsMessage {
         SETNOOVERWRITE
     }
 
-   private final String _flagName ;
-   private final FlagOperation _operation ;
-   private String _value;
+    private final String _flagName;
+    private final FlagOperation _operation;
+    private String _value;
 
-   private static final long serialVersionUID = 8848728352446647852L;
+    private static final long serialVersionUID = 8848728352446647852L;
 
-   public PnfsFlagMessage( PnfsId pnfsId , String flag , FlagOperation operation ){
-      super( pnfsId ) ;
-      _flagName  = flag ;
-      _operation = operation ;
-      setReplyRequired(true);
-   }
-   public FlagOperation getOperation(){ return _operation ; }
-   public String getFlagName(){ return _flagName ; }
-   public void setValue( String value ){ _value = value  ; }
-   public String getValue(){ return _value ; }
+    public PnfsFlagMessage(PnfsId pnfsId, String flag, FlagOperation operation) {
+        super(pnfsId);
+        _flagName = flag;
+        _operation = operation;
+        setReplyRequired(true);
+    }
+
+    public FlagOperation getOperation() {
+        return _operation;
+    }
+
+    public String getFlagName() {
+        return _flagName;
+    }
+
+    public void setValue(String value) {
+        _value = value;
+    }
+
+    public String getValue() {
+        return _value;
+    }
 
     @Override
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return super.invalidates(message) && _operation != FlagOperation.GET;
     }
 }

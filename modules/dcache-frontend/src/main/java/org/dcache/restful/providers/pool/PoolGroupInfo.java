@@ -59,15 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.io.Serializable;
-import java.util.Map;
-
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
-
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
+import java.util.Map;
 import org.dcache.cells.json.CellData;
 import org.dcache.util.histograms.Histogram;
 
@@ -77,14 +74,15 @@ import org.dcache.util.histograms.Histogram;
  */
 @ApiModel(description = "Container for all metadata requests pertaining to a pool group.")
 public class PoolGroupInfo implements Serializable {
+
     private static final long serialVersionUID = 9147099707348977674L;
 
     @ApiModelProperty("Histogram data for the mover "
-                    + "activity statistics on the pools of the group.")
+          + "activity statistics on the pools of the group.")
     private Histogram[] groupQueueStat;
 
     @ApiModelProperty("Histogram data for the file lifetime statistics"
-                    + " on the pools of the group.")
+          + " on the pools of the group.")
     private Histogram[] groupFileStat;
 
     @ApiModelProperty("Aggregated space data for pools in the group.")
@@ -117,12 +115,12 @@ public class PoolGroupInfo implements Serializable {
     }
 
     public void setCellDataForPools(
-                    Map<String, CellData> cellDataForPools) {
+          Map<String, CellData> cellDataForPools) {
         this.cellDataForPools = cellDataForPools;
     }
 
     public void setCostDataForPools(
-                    Map<String, PoolCostData> costDataForPools) {
+          Map<String, PoolCostData> costDataForPools) {
         this.costDataForPools = costDataForPools;
     }
 
@@ -135,7 +133,7 @@ public class PoolGroupInfo implements Serializable {
     }
 
     public void setGroupSpaceData(
-                    PoolSpaceData groupSpaceData) {
+          PoolSpaceData groupSpaceData) {
         this.groupSpaceData = groupSpaceData;
     }
 }

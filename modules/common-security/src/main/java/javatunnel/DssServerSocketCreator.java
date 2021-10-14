@@ -17,25 +17,23 @@
  */
 package javatunnel;
 
-import org.dcache.dss.DssContextFactory;
-import org.dcache.util.Args;
-
-import javax.net.ServerSocketFactory;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import javax.net.ServerSocketFactory;
+import org.dcache.dss.DssContextFactory;
+import org.dcache.util.Args;
 
-public class DssServerSocketCreator extends ServerSocketFactory
-{
+public class DssServerSocketCreator extends ServerSocketFactory {
+
     private final DssContextFactory factory;
 
-    public DssServerSocketCreator(String arguments) throws Throwable
-    {
+    public DssServerSocketCreator(String arguments) throws Throwable {
         Args args = new Args(arguments);
-        Class<? extends DssContextFactory> factory = Class.forName(args.argv(0)).asSubclass(DssContextFactory.class);
+        Class<? extends DssContextFactory> factory = Class.forName(args.argv(0))
+              .asSubclass(DssContextFactory.class);
         args.shift();
         Constructor<? extends DssContextFactory> cc = factory.getConstructor(String.class);
         try {
@@ -46,28 +44,24 @@ public class DssServerSocketCreator extends ServerSocketFactory
     }
 
     @Override
-    public ServerSocket createServerSocket(int port) throws IOException
-    {
+    public ServerSocket createServerSocket(int port) throws IOException {
         return new DssServerSocket(port, factory);
     }
 
     @Override
-    public ServerSocket createServerSocket() throws IOException
-    {
+    public ServerSocket createServerSocket() throws IOException {
         return new DssServerSocket(factory);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog)
-            throws IOException
-    {
+          throws IOException {
         return new DssServerSocket(port, backlog, factory);
     }
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog, InetAddress ifAddress)
-            throws IOException
-    {
+          throws IOException {
         return new DssServerSocket(port, backlog, ifAddress, factory);
     }
 }

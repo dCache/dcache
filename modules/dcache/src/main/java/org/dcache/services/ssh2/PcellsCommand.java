@@ -2,12 +2,21 @@ package org.dcache.services.ssh2;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.admin.LegacyAdminShell;
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.message.GetLinkGroupsMessage;
+import diskCacheV111.services.space.message.GetSpaceTokensMessage;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IoJobInfo;
+import dmg.cells.applets.login.DomainObjectFrame;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerSource;
+import dmg.util.CommandException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -22,33 +31,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.admin.LegacyAdminShell;
-import diskCacheV111.services.space.LinkGroup;
-import diskCacheV111.services.space.Space;
-import diskCacheV111.services.space.message.GetLinkGroupsMessage;
-import diskCacheV111.services.space.message.GetSpaceTokensMessage;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.IoJobInfo;
-
-import dmg.cells.applets.login.DomainObjectFrame;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.services.login.LoginBrokerSource;
-import dmg.util.CommandException;
-
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.command.Command;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.TransferCollector;
 import org.dcache.util.TransferCollector.Transfer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class PcellsCommand implements Command, Runnable
-{
+public class PcellsCommand implements Command, Runnable {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(PcellsCommand.class);
+          LoggerFactory.getLogger(PcellsCommand.class);
 
     private final CellEndpoint _endpoint;
     private final CellStub _spaceManager;
@@ -67,11 +63,10 @@ public class PcellsCommand implements Command, Runnable
     private volatile List<Transfer> _transfers = Collections.emptyList();
 
     public PcellsCommand(CellEndpoint endpoint,
-                         CellStub spaceManager,
-                         CellStub poolManager,
-                         CellStub pnfsManager,
-                         LoginBrokerSource loginBrokerSource)
-    {
+          CellStub spaceManager,
+          CellStub poolManager,
+          CellStub pnfsManager,
+          LoginBrokerSource loginBrokerSource) {
         _endpoint = endpoint;
         _spaceManager = spaceManager;
         _poolManager = poolManager;
@@ -81,32 +76,27 @@ public class PcellsCommand implements Command, Runnable
     }
 
     @Override
-    public void setErrorStream(OutputStream err)
-    {
+    public void setErrorStream(OutputStream err) {
         // we don't use the error stream
     }
 
     @Override
-    public void setExitCallback(ExitCallback callback)
-    {
+    public void setExitCallback(ExitCallback callback) {
         _exitCallback = callback;
     }
 
     @Override
-    public void setInputStream(InputStream in)
-    {
+    public void setInputStream(InputStream in) {
         _in = in;
     }
 
     @Override
-    public void setOutputStream(OutputStream out)
-    {
+    public void setOutputStream(OutputStream out) {
         _out = out;
     }
 
     @Override
-    public void start(Environment env) throws IOException
-    {
+    public void start(Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
         _shell = new LegacyAdminShell(user, _endpoint, "");
         _adminShellThread = new Thread(this);
@@ -115,8 +105,7 @@ public class PcellsCommand implements Command, Runnable
     }
 
     @Override
-    public void destroy()
-    {
+    public void destroy() {
         if (_adminShellThread != null) {
             _adminShellThread.interrupt();
         }
@@ -146,37 +135,47 @@ public class PcellsCommand implements Command, Runnable
                             result = _shell.executeCommand(frame.getPayload().toString());
                         } else {
                             switch (frame.getDestination()) {
-                            case "PnfsManager":
-                                result = _shell.executeCommand(_pnfsManager.getDestinationPath(), frame.getPayload());
-                                break;
-                            case "PoolManager":
-                                result = _shell.executeCommand(_poolManager.getDestinationPath(), frame.getPayload());
-                                break;
-                            case "SrmSpaceManager":
-                                if (frame.getPayload().equals("ls -l")) {
-                                    result = listSpaceReservations();
-                                } else {
-                                    result = _shell.executeCommand(_spaceManager.getDestinationPath(), frame.getPayload());
-                                }
-                                break;
-                            case "TransferObserver":
-                                if (frame.getPayload().equals("ls iolist")) {
-                                    result = listTransfers(_transfers);
-                                } else {
-                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                }
-                                break;
-                            case "LoginBroker":
-                                String cmd = frame.getPayload().toString();
-                                if (cmd.startsWith("ls") && cmd.contains("-binary")) {
-                                    result = _loginBrokerSource.doors().toArray(LoginBrokerInfo[]::new);
-                                } else {
-                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                }
-                                break;
-                            default:
-                                result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                break;
+                                case "PnfsManager":
+                                    result = _shell.executeCommand(
+                                          _pnfsManager.getDestinationPath(), frame.getPayload());
+                                    break;
+                                case "PoolManager":
+                                    result = _shell.executeCommand(
+                                          _poolManager.getDestinationPath(), frame.getPayload());
+                                    break;
+                                case "SrmSpaceManager":
+                                    if (frame.getPayload().equals("ls -l")) {
+                                        result = listSpaceReservations();
+                                    } else {
+                                        result = _shell.executeCommand(
+                                              _spaceManager.getDestinationPath(),
+                                              frame.getPayload());
+                                    }
+                                    break;
+                                case "TransferObserver":
+                                    if (frame.getPayload().equals("ls iolist")) {
+                                        result = listTransfers(_transfers);
+                                    } else {
+                                        result = _shell.executeCommand(
+                                              new CellPath(frame.getDestination()),
+                                              frame.getPayload());
+                                    }
+                                    break;
+                                case "LoginBroker":
+                                    String cmd = frame.getPayload().toString();
+                                    if (cmd.startsWith("ls") && cmd.contains("-binary")) {
+                                        result = _loginBrokerSource.doors()
+                                              .toArray(LoginBrokerInfo[]::new);
+                                    } else {
+                                        result = _shell.executeCommand(
+                                              new CellPath(frame.getDestination()),
+                                              frame.getPayload());
+                                    }
+                                    break;
+                                default:
+                                    result = _shell.executeCommand(
+                                          new CellPath(frame.getDestination()), frame.getPayload());
+                                    break;
                             }
                         }
                     } catch (CommandException e) {
@@ -214,11 +213,13 @@ public class PcellsCommand implements Command, Runnable
         }
     }
 
-    private String listSpaceReservations() throws CacheException, InterruptedException, NoRouteToCellException
-    {
+    private String listSpaceReservations()
+          throws CacheException, InterruptedException, NoRouteToCellException {
         /* Query information from space manager. */
-        Collection<Space> spaces = _spaceManager.sendAndWait(new GetSpaceTokensMessage()).getSpaceTokenSet();
-        Collection<LinkGroup> groups = _spaceManager.sendAndWait(new GetLinkGroupsMessage()).getLinkGroups();
+        Collection<Space> spaces = _spaceManager.sendAndWait(new GetSpaceTokensMessage())
+              .getSpaceTokenSet();
+        Collection<LinkGroup> groups = _spaceManager.sendAndWait(new GetLinkGroupsMessage())
+              .getLinkGroups();
 
         /* Build pcells compatible list. */
         StringBuilder out = new StringBuilder();
@@ -229,48 +230,44 @@ public class PcellsCommand implements Command, Runnable
         }
         out.append("total number of reservations: ").append(spaces.size()).append('\n');
         out.append("total number of bytes reserved: ")
-                .append(spaces.stream().mapToLong(Space::getSizeInBytes).sum()).append('\n');
+              .append(spaces.stream().mapToLong(Space::getSizeInBytes).sum()).append('\n');
 
         out.append("\nLinkGroups:\n");
         for (LinkGroup group : groups) {
             out.append(group).append('\n');
         }
         out.append("total number of linkGroups: ").
-                append(groups.size()).append('\n');
+              append(groups.size()).append('\n');
         out.append("total number of bytes reservable: ").
-                append(groups.stream().mapToLong(LinkGroup::getAvailableSpace).sum()).append('\n');
+              append(groups.stream().mapToLong(LinkGroup::getAvailableSpace).sum()).append('\n');
         out.append("total number of bytes reserved  : ").
-                append(groups.stream().mapToLong(LinkGroup::getReservedSpace).sum()).append('\n');
+              append(groups.stream().mapToLong(LinkGroup::getReservedSpace).sum()).append('\n');
 
         return out.toString();
     }
 
-    private void updateTransfers()
-    {
+    private void updateTransfers() {
         Futures.addCallback(_collector.collectTransfers(),
-                            new FutureCallback<List<Transfer>>()
-                            {
-                                @Override
-                                public void onSuccess(List<Transfer> result)
-                                {
-                                    result.sort(new TransferCollector.ByDoorAndSequence());
-                                    _transfers = result;
-                                    _scheduler.schedule(PcellsCommand.this::updateTransfers, 2, TimeUnit.MINUTES);
-                                }
+              new FutureCallback<List<Transfer>>() {
+                  @Override
+                  public void onSuccess(List<Transfer> result) {
+                      result.sort(new TransferCollector.ByDoorAndSequence());
+                      _transfers = result;
+                      _scheduler.schedule(PcellsCommand.this::updateTransfers, 2, TimeUnit.MINUTES);
+                  }
 
-                                @Override
-                                public void onFailure(Throwable t)
-                                {
-                                    LOGGER.error("Possible bug detected. Please contact support@dcache.org.", t);
-                                    _scheduler.schedule(PcellsCommand.this::updateTransfers, 30, TimeUnit.SECONDS);
-                                }
-                            }, _executor);
+                  @Override
+                  public void onFailure(Throwable t) {
+                      LOGGER.error("Possible bug detected. Please contact support@dcache.org.", t);
+                      _scheduler.schedule(PcellsCommand.this::updateTransfers, 30,
+                            TimeUnit.SECONDS);
+                  }
+              }, _executor);
     }
 
-    private String listTransfers(List<Transfer> transfers)
-    {
+    private String listTransfers(List<Transfer> transfers) {
         long now = System.currentTimeMillis();
-        StringBuilder sb  = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
         for (Transfer io : transfers) {
             List<String> args = new ArrayList<>();
@@ -292,11 +289,13 @@ public class PcellsCommand implements Command, Runnable
             } else {
                 args.add(mover.getStatus());
                 if (mover.getStartTime() > 0L) {
-                    long transferTime     = mover.getTransferTime();
+                    long transferTime = mover.getTransferTime();
                     long bytesTransferred = mover.getBytesTransferred();
                     args.add(String.valueOf(transferTime));
                     args.add(String.valueOf(bytesTransferred));
-                    args.add(String.valueOf(transferTime > 0 ? ((double) bytesTransferred / (double) transferTime) : 0));
+                    args.add(String.valueOf(
+                          transferTime > 0 ? ((double) bytesTransferred / (double) transferTime)
+                                : 0));
                     args.add(String.valueOf(now - mover.getStartTime()));
                 }
             }

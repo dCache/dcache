@@ -17,66 +17,58 @@
  */
 package org.dcache.gridsite;
 
+import static com.google.common.base.CharMatcher.JAVA_LETTER_OR_DIGIT;
+import static com.google.common.base.CharMatcher.anyOf;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.gridsite.Utilities.assertThat;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-
 import org.dcache.delegation.gridsite2.DelegationException;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.CharMatcher.JAVA_LETTER_OR_DIGIT;
-import static com.google.common.base.CharMatcher.anyOf;
-import static org.dcache.gridsite.Utilities.assertThat;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
- * The identity of a delegated credential.  A delegated credential, whether
- * completed or on-going, has a unique identity.  This is based on the
- * requesting user's DN plus a delegation-ID.
+ * The identity of a delegated credential.  A delegated credential, whether completed or on-going,
+ * has a unique identity.  This is based on the requesting user's DN plus a delegation-ID.
  */
-public class DelegationIdentity
-{
+public class DelegationIdentity {
+
     private static final HashFunction HASH_FUNCTION = Hashing.goodFastHash(32);
     private final String _dn;
     private final String _delegationId;
 
     private static final CharMatcher VALID_DELEGATION_ID_CHARACTERS =
-            JAVA_LETTER_OR_DIGIT.or(anyOf("-_(){}[]?!%$^&*'#@~="));
+          JAVA_LETTER_OR_DIGIT.or(anyOf("-_(){}[]?!%$^&*'#@~="));
 
-    public DelegationIdentity(String dn, String delegationId) throws DelegationException
-    {
+    public DelegationIdentity(String dn, String delegationId) throws DelegationException {
         _dn = requireNonNull(dn);
         _delegationId = requireNonNull(delegationId);
 
         assertThat(VALID_DELEGATION_ID_CHARACTERS.matchesAllOf(delegationId),
-                "delegationID \"" + delegationId + "\" is not valid");
+              "delegationID \"" + delegationId + "\" is not valid");
     }
 
-    public String getDn()
-    {
+    public String getDn() {
         return _dn;
     }
 
-    public String getDelegationId()
-    {
+    public String getDelegationId() {
         return _delegationId;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return HASH_FUNCTION.hashString(_dn + _delegationId, UTF_8).asInt();
     }
 
     @Override
-    public boolean equals(Object otherRaw)
-    {
+    public boolean equals(Object otherRaw) {
         if (otherRaw == this) {
             return true;
         }
 
-        if(!(otherRaw instanceof DelegationIdentity)) {
+        if (!(otherRaw instanceof DelegationIdentity)) {
             return false;
         }
 
@@ -85,8 +77,7 @@ public class DelegationIdentity
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "[" + _dn + ";" + _delegationId + "]";
     }
 }

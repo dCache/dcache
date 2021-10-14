@@ -1,6 +1,6 @@
 package dmg.cells.nucleus;
 
-public interface CellTunnel
-{
+public interface CellTunnel {
+
     CellTunnelInfo getCellTunnelInfo();
 } 

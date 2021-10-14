@@ -59,57 +59,52 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Callable;
-
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
 
+import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Executes a {@link Callable} object in a loop controlled by an
- * {@link IBackoffAlgorithm} implementation which provides the logic for
- * determining how long of a wait should be executed between passes, or
- * whether the thread should quit, when the call status is FAILURE.
+ * Executes a {@link Callable} object in a loop controlled by an {@link IBackoffAlgorithm}
+ * implementation which provides the logic for determining how long of a wait should be executed
+ * between passes, or whether the thread should quit, when the call status is FAILURE.
  */
-public class BackoffController
-{
+public class BackoffController {
+
     private static final Logger logger =
-            LoggerFactory.getLogger(BackoffController.class);
+          LoggerFactory.getLogger(BackoffController.class);
 
     private final IBackoffAlgorithmFactory factory;
 
-    public BackoffController(IBackoffAlgorithmFactory factory)
-    {
+    public BackoffController(IBackoffAlgorithmFactory factory) {
         this.factory = factory;
     }
 
     public IBackoffAlgorithm.Status call(Callable<IBackoffAlgorithm.Status> callable)
-                    throws Exception
-    {
+          throws Exception {
         IBackoffAlgorithm algorithm = factory.getAlgorithm();
 
         while (true) {
             switch (callable.call()) {
-            case SUCCESS:
-                 return SUCCESS;
+                case SUCCESS:
+                    return SUCCESS;
 
-            case FAILURE:
-                long wait = algorithm.getWaitDuration();
+                case FAILURE:
+                    long wait = algorithm.getWaitDuration();
 
-                if (wait == IBackoffAlgorithm.NO_WAIT) {
-                    logger.trace("algorithm returned NO_WAIT");
-                    return FAILURE;
-                }
+                    if (wait == IBackoffAlgorithm.NO_WAIT) {
+                        logger.trace("algorithm returned NO_WAIT");
+                        return FAILURE;
+                    }
 
-                handleWait(wait);
+                    handleWait(wait);
             }
         }
     }
 
-    protected void handleWait(long wait) throws InterruptedException
-    {
+    protected void handleWait(long wait) throws InterruptedException {
         Thread.sleep(wait);
     }
 }

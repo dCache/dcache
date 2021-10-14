@@ -17,17 +17,18 @@
  */
 package org.dcache.gplazma.util;
 
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
 import java.util.Optional;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+public class JsonWebTokenTest {
 
-public class JsonWebTokenTest
-{
     /* HEADER:
         {
             "kid": "rsa1",
@@ -43,53 +44,55 @@ public class JsonWebTokenTest
         }
     */
     private static final String VALID_JWT = "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNT"
-            + "YifQ.eyJzdWIiOiJlYTFhM2U1Ny0yMTU1LTQ4OTUtOWRjNy03N2MzMjgyYWE3MWI"
-            + "iLCJpc3MiOiJodHRwczpcL1wvaWFtLmV4dHJlbWUtZGF0YWNsb3VkLmV1XC8iLCJ"
-            + "leHAiOjE1NTIyOTg0MTcsImlhdCI6MTU1MjI5NDgxNywianRpIjoiY2M5YjZhNWM"
-            + "tODI0MC00NTVjLTk4ZGItNzgxM2MyYWJjZWZjIn0.Rmc16S2Y-Eae8zLXQJq-_C4"
-            + "xsV9SikWpbn9J2lRVBKGEBp_8UvZgv6CdTfvhaRS7JBmAioc_ubLFqh2sBt478xg"
-            + "jBFVEiSol5uAMtdxjZSxFZeVCRPXPbgvQLpHIo9jhpWl-YfC18wW_Js9grL8IcZf"
-            + "b87_sT-dtXL_ctFHvmic";
+          + "YifQ.eyJzdWIiOiJlYTFhM2U1Ny0yMTU1LTQ4OTUtOWRjNy03N2MzMjgyYWE3MWI"
+          + "iLCJpc3MiOiJodHRwczpcL1wvaWFtLmV4dHJlbWUtZGF0YWNsb3VkLmV1XC8iLCJ"
+          + "leHAiOjE1NTIyOTg0MTcsImlhdCI6MTU1MjI5NDgxNywianRpIjoiY2M5YjZhNWM"
+          + "tODI0MC00NTVjLTk4ZGItNzgxM2MyYWJjZWZjIn0.Rmc16S2Y-Eae8zLXQJq-_C4"
+          + "xsV9SikWpbn9J2lRVBKGEBp_8UvZgv6CdTfvhaRS7JBmAioc_ubLFqh2sBt478xg"
+          + "jBFVEiSol5uAMtdxjZSxFZeVCRPXPbgvQLpHIo9jhpWl-YfC18wW_Js9grL8IcZf"
+          + "b87_sT-dtXL_ctFHvmic";
 
     @Test
-    public void shouldIdentifyValidJwt()
-    {
+    public void shouldIdentifyValidJwt() {
         boolean isValid = JsonWebToken.isCompatibleFormat(VALID_JWT);
 
         assertTrue(isValid);
     }
 
     @Test
-    public void shouldIdentifyJwtWithTooFewDots()
-    {
+    public void shouldIdentifyJwtWithTooFewDots() {
         boolean isValid = JsonWebToken.isCompatibleFormat(
-                "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQeyJzdWIiOiJlYTFhM2U1Ny" // Missing dot here
-                + "0yMTU1LTQ4OTUtOWRjNy03N2MzMjgyYWE3MWIiLCJpc3MiOiJodHRwczpcL"
-                + "1wvaWFtLmV4dHJlbWUtZGF0YWNsb3VkLmV1XC8iLCJleHAiOjE1NTIyOTg0"
-                + "MTcsImlhdCI6MTU1MjI5NDgxNywianRpIjoiY2M5YjZhNWMtODI0MC00NTV"
-                + "jLTk4ZGItNzgxM2MyYWJjZWZjIn0.Rmc16S2Y-Eae8zLXQJq-_C4xsV9Sik"
-                + "Wpbn9J2lRVBKGEBp_8UvZgv6CdTfvhaRS7JBmAioc_ubLFqh2sBt478xgjB"
-                + "FVEiSol5uAMtdxjZSxFZeVCRPXPbgvQLpHIo9jhpWl-YfC18wW_Js9grL8I"
-                + "cZfb87_sT-dtXL_ctFHvmic");
+              "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQeyJzdWIiOiJlYTFhM2U1Ny" // Missing dot here
+                    + "0yMTU1LTQ4OTUtOWRjNy03N2MzMjgyYWE3MWIiLCJpc3MiOiJodHRwczpcL"
+                    + "1wvaWFtLmV4dHJlbWUtZGF0YWNsb3VkLmV1XC8iLCJleHAiOjE1NTIyOTg0"
+                    + "MTcsImlhdCI6MTU1MjI5NDgxNywianRpIjoiY2M5YjZhNWMtODI0MC00NTV"
+                    + "jLTk4ZGItNzgxM2MyYWJjZWZjIn0.Rmc16S2Y-Eae8zLXQJq-_C4xsV9Sik"
+                    + "Wpbn9J2lRVBKGEBp_8UvZgv6CdTfvhaRS7JBmAioc_ubLFqh2sBt478xgjB"
+                    + "FVEiSol5uAMtdxjZSxFZeVCRPXPbgvQLpHIo9jhpWl-YfC18wW_Js9grL8I"
+                    + "cZfb87_sT-dtXL_ctFHvmic");
 
         assertFalse(isValid);
     }
 
 
     @Test
-    public void shouldParseValidJwt() throws Exception
-    {
+    public void shouldParseValidJwt() throws Exception {
         JsonWebToken jwt = new JsonWebToken(VALID_JWT);
 
         assertThat(jwt.getKeyIdentifier(), is(equalTo("rsa1")));
 
-        assertThat(jwt.getPayloadString("sub"), is(equalTo(Optional.of("ea1a3e57-2155-4895-9dc7-77c3282aa71b"))));
-        assertThat(jwt.getPayloadString("iss"), is(equalTo(Optional.of("https://iam.extreme-datacloud.eu/"))));
-        assertThat(jwt.getPayloadString("jti"), is(equalTo(Optional.of("cc9b6a5c-8240-455c-98db-7813c2abcefc"))));
+        assertThat(jwt.getPayloadString("sub"),
+              is(equalTo(Optional.of("ea1a3e57-2155-4895-9dc7-77c3282aa71b"))));
+        assertThat(jwt.getPayloadString("iss"),
+              is(equalTo(Optional.of("https://iam.extreme-datacloud.eu/"))));
+        assertThat(jwt.getPayloadString("jti"),
+              is(equalTo(Optional.of("cc9b6a5c-8240-455c-98db-7813c2abcefc"))));
         assertThat(jwt.getPayloadString("nothere"), is(equalTo(Optional.empty())));
 
-        assertThat(jwt.getPayloadInstant("exp"), is(equalTo(Optional.of(Instant.parse("2019-03-11T10:00:17Z")))));
-        assertThat(jwt.getPayloadInstant("iat"), is(equalTo(Optional.of(Instant.parse("2019-03-11T09:00:17Z")))));
+        assertThat(jwt.getPayloadInstant("exp"),
+              is(equalTo(Optional.of(Instant.parse("2019-03-11T10:00:17Z")))));
+        assertThat(jwt.getPayloadInstant("iat"),
+              is(equalTo(Optional.of(Instant.parse("2019-03-11T09:00:17Z")))));
         assertThat(jwt.getPayloadInstant("nothere"), is(equalTo(Optional.empty())));
     }
 }

@@ -59,11 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ExecutorService;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
@@ -71,6 +66,7 @@ import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import java.util.concurrent.ExecutorService;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
@@ -83,37 +79,38 @@ import org.dcache.resilience.util.MessageGuard.Status;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.vehicles.CorruptFileMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Processes external messages in order to trigger file operations.
- *      Also handles internal callbacks indicated the change of
- *      pool status/mode.</p>
+ * Also handles internal callbacks indicated the change of pool status/mode.</p>
  */
 public final class ResilienceMessageHandler implements CellMessageReceiver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-                    ResilienceMessageHandler.class);
-    private static final Logger ACTIVITY_LOGGER =
-                    LoggerFactory.getLogger("org.dcache.resilience-log");
 
-    private MessageGuard         messageGuard;
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          ResilienceMessageHandler.class);
+    private static final Logger ACTIVITY_LOGGER =
+          LoggerFactory.getLogger("org.dcache.resilience-log");
+
+    private MessageGuard messageGuard;
     private FileOperationHandler fileOperationHandler;
     private PoolOperationHandler poolOperationHandler;
-    private PoolInfoMap          poolInfoMap;
-    private OperationStatistics  counters;
-    private ExecutorService      updateService;
+    private PoolInfoMap poolInfoMap;
+    private OperationStatistics counters;
+    private ExecutorService updateService;
 
     /**
      * <p>Pool status changes are detected internally during the
-     *      comparison of pool monitor states.  The change is rerouted
-     *      here as a loopback to conform with the way external file updates
-     *      are handled.</p>
+     * comparison of pool monitor states.  The change is rerouted here as a loopback to conform with
+     * the way external file updates are handled.</p>
      *
      * <p>Pools that have not yet been fully initialized are skipped.</p>
      */
     public void handleInternalMessage(PoolStateUpdate update) {
         if (!messageGuard.isEnabled()) {
             LOGGER.trace("Ignoring pool state update "
-                            + "because message guard is disabled.");
+                  + "because message guard is disabled.");
             return;
         }
 
@@ -128,9 +125,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(CorruptFileMessage message) {
         ACTIVITY_LOGGER.info("Received notice that file {} on pool {} is corrupt.",
-                             message.getPnfsId(), message.getPool());
+              message.getPnfsId(), message.getPool());
         if (messageGuard.getStatus("CorruptFileMessage", message)
-                        == Status.DISABLED) {
+              == Status.DISABLED) {
             return;
         }
         handleBrokenFile(message);
@@ -138,9 +135,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(PnfsAddCacheLocationMessage message) {
         ACTIVITY_LOGGER.info("Received notice that pool {} received file {}.",
-                             message.getPoolName(), message.getPnfsId());
+              message.getPoolName(), message.getPnfsId());
         if (messageGuard.getStatus("PnfsAddCacheLocationMessage", message)
-                        != Status.EXTERNAL) {
+              != Status.EXTERNAL) {
             return;
         }
         handleAddCacheLocation(message);
@@ -148,9 +145,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(PnfsClearCacheLocationMessage message) {
         ACTIVITY_LOGGER.info("Received notice that pool {} cleared file {}.",
-                             message.getPoolName(), message.getPnfsId());
+              message.getPoolName(), message.getPnfsId());
         if (messageGuard.getStatus("PnfsClearCacheLocationMessage", message)
-                        != Status.EXTERNAL) {
+              != Status.EXTERNAL) {
             return;
         }
         handleClearCacheLocation(message);
@@ -158,17 +155,17 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(PoolMigrationCopyFinishedMessage message) {
         ACTIVITY_LOGGER.info("Received notice that transfer {} of file "
-                                             + "{} from {} has finished.",
-                             message.getUUID(), message.getPnfsId(), message.getPool());
+                    + "{} from {} has finished.",
+              message.getUUID(), message.getPnfsId(), message.getPool());
         fileOperationHandler.handleMigrationCopyFinished(message);
     }
 
     public void messageArrived(CellMessage message, PoolMgrSelectReadPoolMsg reply) {
         ACTIVITY_LOGGER.info("Received notice that file {} has been staged to pool {}",
-                             reply.getPool(),
-                             reply.getPnfsId());
+              reply.getPool(),
+              reply.getPnfsId());
         if (messageGuard.getStatus("PoolMgrSelectReadPoolMsg", message)
-                        == Status.DISABLED) {
+              == Status.DISABLED) {
             return;
         }
         handleStagingRetry(reply);
@@ -176,9 +173,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
 
     public void messageArrived(PnfsSetFileAttributes message) {
         ACTIVITY_LOGGER.info("Received notice that qos for file {} has changed.",
-                             message.getPnfsId());
+              message.getPnfsId());
         if (messageGuard.getStatus("FileQoSMessage", message)
-                        == Status.DISABLED) {
+              == Status.DISABLED) {
             return;
         }
         handleQoSModification(message);
@@ -192,9 +189,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
         } else if (message instanceof PnfsAddCacheLocationMessage) {
             handleAddCacheLocation((PnfsAddCacheLocationMessage) message);
         } else if (message instanceof PoolMgrSelectReadPoolMsg) {
-            handleStagingRetry((PoolMgrSelectReadPoolMsg)message);
+            handleStagingRetry((PoolMgrSelectReadPoolMsg) message);
         } else if (message instanceof PnfsSetFileAttributes) {
-            handleQoSModification((PnfsSetFileAttributes)message);
+            handleQoSModification((PnfsSetFileAttributes) message);
         }
     }
 
@@ -207,7 +204,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
     }
 
     public void setFileOperationHandler(
-                    FileOperationHandler fileOperationHandler) {
+          FileOperationHandler fileOperationHandler) {
         this.fileOperationHandler = fileOperationHandler;
     }
 
@@ -226,21 +223,21 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
     private void handleAddCacheLocation(PnfsAddCacheLocationMessage message) {
         counters.incrementMessage(MessageType.ADD_CACHE_LOCATION.name());
         updatePnfsLocation(new FileUpdate(message.getPnfsId(), message.getPoolName(),
-                                          MessageType.ADD_CACHE_LOCATION, true));
+              MessageType.ADD_CACHE_LOCATION, true));
     }
 
     private void handleBrokenFile(CorruptFileMessage message) {
         counters.incrementMessage(MessageType.CORRUPT_FILE.name());
         new BrokenFileTask(message.getPnfsId(), message.getPool(),
-                           fileOperationHandler).submit();
+              fileOperationHandler).submit();
     }
 
     private void handleClearCacheLocation(PnfsClearCacheLocationMessage message) {
         counters.incrementMessage(MessageType.CLEAR_CACHE_LOCATION.name());
         updatePnfsLocation(new FileUpdate(message.getPnfsId(),
-                                          message.getPoolName(),
-                                          MessageType.CLEAR_CACHE_LOCATION,
-                                          false));
+              message.getPoolName(),
+              MessageType.CLEAR_CACHE_LOCATION,
+              false));
     }
 
     private void handleQoSModification(PnfsSetFileAttributes message) {
@@ -250,12 +247,12 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
          * as we will refresh during processing.
          */
         updatePnfsLocation(new FileUpdate(message.getPnfsId(), null,
-                                          MessageType.QOS_MODIFIED, true));
+              MessageType.QOS_MODIFIED, true));
     }
 
     private void handleStagingRetry(PoolMgrSelectReadPoolMsg reply) {
         updateService.submit(() -> {
-                fileOperationHandler.handleStagingReply(reply);
+            fileOperationHandler.handleStagingReply(reply);
         });
     }
 
@@ -265,7 +262,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
                 fileOperationHandler.handleLocationUpdate(data);
             } catch (CacheException e) {
                 LOGGER.error("Error in verification of location update data {}: {}",
-                             data, new ExceptionMessage(e));
+                      data, new ExceptionMessage(e));
             }
         });
     }

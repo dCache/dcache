@@ -1,14 +1,12 @@
 package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableList;
-
 import java.net.UnknownHostException;
 
 /**
- * Pulled out of the PoolSelectionUnit implementation. An abstraction
- * layer between the command-line and the actual implementation which
- * allows for extension of the behavior.
- *
+ * Pulled out of the PoolSelectionUnit implementation. An abstraction layer between the command-line
+ * and the actual implementation which allows for extension of the behavior.
+ * <p>
  * Created by arossi on 2/19/15.
  */
 public interface PoolSelectionUnitAccess {
@@ -32,14 +30,14 @@ public interface PoolSelectionUnitAccess {
     void createPoolGroup(String name, boolean isResilient);
 
     void createUnit(String name, boolean isNet, boolean isStore,
-                    boolean isDcache, boolean isProtocol);
+          boolean isDcache, boolean isProtocol);
 
     void createUnitGroup(String name);
 
     String dumpSetup();
 
     String listLinkGroups(boolean isLongOutput,
-                    ImmutableList<String> linkGroups);
+          ImmutableList<String> linkGroups);
 
     Object listLinkXml(boolean isX, boolean resolve, String linkName);
 
@@ -48,17 +46,17 @@ public interface PoolSelectionUnitAccess {
     String listPool(boolean more, boolean detail, ImmutableList<String> globs);
 
     String listPoolGroups(boolean more, boolean detail,
-                    ImmutableList<String> groups);
+          ImmutableList<String> groups);
 
     Object listPoolGroupXml(String groupName);
 
     Object listPoolXml(String poolName);
 
     String listPoolLinks(boolean more, boolean detail,
-                    ImmutableList<String> links);
+          ImmutableList<String> links);
 
     String listUnitGroups(boolean more, boolean detail,
-                    ImmutableList<String> unitGroups);
+          ImmutableList<String> unitGroups);
 
     Object listUnitGroupXml(String groupName);
 
@@ -69,11 +67,11 @@ public interface PoolSelectionUnitAccess {
     String matchUnits(String netUnitName, ImmutableList<String> units);
 
     String matchLinkGroups(String linkGroup, String op, String storeUnit,
-                    String dCacheUnit, String netUnit, String protocolUnit);
+          String dCacheUnit, String netUnit, String protocolUnit);
 
     PoolPreferenceLevel[] matchLinkGroupsXml(String linkGroup, String op,
-                    String storeUnit, String dCacheUnit, String netUnit,
-                    String protocolUnit);
+          String storeUnit, String dCacheUnit, String netUnit,
+          String protocolUnit);
 
     String netMatch(String hostAddress) throws UnknownHostException;
 
@@ -106,17 +104,17 @@ public interface PoolSelectionUnitAccess {
     String setPoolEnabled(String poolName);
 
     void setLink(String linkName, String readPref, String writePref,
-                    String cachePref, String p2pPref, String section);
+          String cachePref, String p2pPref, String section);
 
     void setLinkGroup(String linkGroupName, String custodial,
-                    String nearline, String online, String output,
-                    String replica);
+          String nearline, String online, String output,
+          String replica);
 
     String setRegex(String onOff);
 
     void setStorageUnit(String storageUnitKey,
-                        Integer required,
-                        String[] onlyOneCopyPer);
+          Integer required,
+          String[] onlyOneCopyPer);
 
     void unlink(String linkName, String poolName);
 }

@@ -20,8 +20,8 @@ package dmg.util.command;
 /**
  * Interface of classes that can generate help output for annotated commands.
  */
-public interface AnnotatedCommandHelpPrinter
-{
+public interface AnnotatedCommandHelpPrinter {
+
     String getHelpHint(Command command, Class<?> clazz);
 
     String getHelp(Object command);

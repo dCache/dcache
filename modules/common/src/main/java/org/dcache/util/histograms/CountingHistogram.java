@@ -59,13 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Preconditions;
+import java.util.ArrayList;
 import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Maintains a histogram data set which consists of a fixed number
@@ -75,11 +75,12 @@ import static java.util.Objects.requireNonNull;
  * when new values are to be computed.</p>
  */
 public class CountingHistogram extends HistogramModel {
+
     private static final String UNSUPPORTED_UPDATE =
-                    "update not supported on this histogram type: "
-                                    + CountingHistogram.class;
+          "update not supported on this histogram type: "
+                + CountingHistogram.class;
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(CountingHistogram.class);
+          = LoggerFactory.getLogger(CountingHistogram.class);
 
     public CountingHistogram() {
     }
@@ -92,13 +93,13 @@ public class CountingHistogram extends HistogramModel {
     public void configure() {
         requireNonNull(data, "no values set.");
         requireNonNull(binCount,
-                                   "bin count must be defined.");
+              "bin count must be defined.");
         Preconditions.checkArgument(binCount > 1,
-                                    "bin count must be > 1.");
+              "bin count must be > 1.");
         requireNonNull(binUnit,
-                                   "bin unit must be defined.");
+              "bin unit must be defined.");
         Preconditions.checkArgument(binUnit > 0,
-                                    "bin unit must be > 0.");
+              "bin unit must be > 0.");
 
         computeBinSizeFromWidthAndUnit();
 
@@ -125,7 +126,7 @@ public class CountingHistogram extends HistogramModel {
          */
         Double min = FastMath.min(0.0D, metadata.getMinValue().orElse(0.0D));
 
-        double maxIndex = max == null ? binCount - 1 : FastMath.floor((max-min) / binSize);
+        double maxIndex = max == null ? binCount - 1 : FastMath.floor((max - min) / binSize);
         binWidth = (int) FastMath.ceil(maxIndex / (binCount - 1));
 
         /**
@@ -139,12 +140,12 @@ public class CountingHistogram extends HistogramModel {
         long[] histogram = new long[binCount];
 
         LOGGER.debug("Preparing to compute bin values from dataset; "
-                                     + "bin size {}, bin count {}, "
-                                     + "min value {}, max value {}, max index.",
-                        binSize, binCount, min, max, maxIndex);
+                    + "bin size {}, bin count {}, "
+                    + "min value {}, max value {}, max index.",
+              binSize, binCount, min, max, maxIndex);
 
         for (Double d : data) {
-            ++histogram[(int) FastMath.floor((d-min) / binSize)];
+            ++histogram[(int) FastMath.floor((d - min) / binSize)];
         }
 
         data = new ArrayList<>();
@@ -156,17 +157,17 @@ public class CountingHistogram extends HistogramModel {
         lowestBin = min;
         setHighestFromLowest();
         int computedCount = (int) binSize == 0 ?
-                        binCount :
-                        (int) FastMath.ceil((highestBin - lowestBin) / binSize) + 1;
+              binCount :
+              (int) FastMath.ceil((highestBin - lowestBin) / binSize) + 1;
 
         if (computedCount > binCount) {
             throw new RuntimeException("bin count " + binCount
-                                                       + " is less than "
-                                                       + computedCount
-                                                       + ", computed from bin "
-                                                       + "width, highest and "
-                                                       + "lowest bin values; "
-                                                       + "this is a bug.");
+                  + " is less than "
+                  + computedCount
+                  + ", computed from bin "
+                  + "width, highest and "
+                  + "lowest bin values; "
+                  + "this is a bug.");
         }
     }
 }

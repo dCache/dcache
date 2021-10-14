@@ -18,16 +18,14 @@
 package org.dcache.pool.migration;
 
 import java.util.concurrent.ScheduledExecutorService;
-
 import org.dcache.cells.CellStub;
 
 /**
- * Migration task parameters that do not pertain to an individual file.
- * These parameters are often in common for many tasks (e.g. all tasks
- * thar belong to a single Job).
+ * Migration task parameters that do not pertain to an individual file. These parameters are often
+ * in common for many tasks (e.g. all tasks thar belong to a single Job).
  */
-public class TaskParameters
-{
+public class TaskParameters {
+
     /**
      * Generic communication stub to talk to a destination pool.
      */
@@ -59,14 +57,13 @@ public class TaskParameters
     public final RefreshablePoolList poolList;
 
     /**
-     * Whether the job is eager. Eager jobs proceed by creating new replicas if
-     * existing replicas are inaccessible.
+     * Whether the job is eager. Eager jobs proceed by creating new replicas if existing replicas
+     * are inaccessible.
      */
     public final boolean isEager;
 
     /**
-     * Wether the job will only copy meta data to existing replicas or create
-     * new replicas.
+     * Wether the job will only copy meta data to existing replicas or create new replicas.
      */
     public final boolean isMetaOnly;
 
@@ -76,8 +73,8 @@ public class TaskParameters
     public final boolean computeChecksumOnUpdate;
 
     /**
-     * Whether the migration job overrides the mode of the source pool, that is,
-     * whether to allow migration even if the source pool is disabled.
+     * Whether the migration job overrides the mode of the source pool, that is, whether to allow
+     * migration even if the source pool is disabled.
      */
     public final boolean forceSourceMode;
 
@@ -91,11 +88,11 @@ public class TaskParameters
      */
     public final int replicas;
 
-    public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager, ScheduledExecutorService executor,
-                          PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
-                          boolean isMetaOnly, boolean computeChecksumOnUpdate, boolean forceSourceMode,
-                          boolean maintainAtime, int replicas)
-    {
+    public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager,
+          ScheduledExecutorService executor,
+          PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
+          boolean isMetaOnly, boolean computeChecksumOnUpdate, boolean forceSourceMode,
+          boolean maintainAtime, int replicas) {
         this.pool = pool;
         this.pnfs = pnfs;
         this.pinManager = pinManager;

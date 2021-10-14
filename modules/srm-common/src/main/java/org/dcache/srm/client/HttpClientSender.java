@@ -33,6 +33,18 @@
  */
 package org.dcache.srm.client;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import javax.net.ssl.HostnameVerifier;
+import javax.xml.soap.MimeHeader;
+import javax.xml.soap.MimeHeaders;
+import javax.xml.soap.SOAPException;
 import org.apache.axis.AxisFault;
 import org.apache.axis.Constants;
 import org.apache.axis.Message;
@@ -76,46 +88,29 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
+import org.dcache.ssl.SslContextFactory;
+import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.xml.soap.MimeHeader;
-import javax.xml.soap.MimeHeaders;
-import javax.xml.soap.SOAPException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-
-import org.dcache.ssl.SslContextFactory;
-import org.dcache.util.Version;
-
 /**
  * This class provides Apache Commons's HTTP components client support for Axis 1.
- *
+ * <p>
  * Based on org.apache.axis.transport.http.CommonsHTTPSender. Use in combination with
- * HttpClientTransport.  In contrast to the transport, the handler is only instantiated
- * once and cannot maintain state for a particular connection.
+ * HttpClientTransport.  In contrast to the transport, the handler is only instantiated once and
+ * cannot maintain state for a particular connection.
  *
- * @author Davanum Srinivas (dims@yahoo.com)
- * History: By Chandra Talluri
- *          Modifications done for maintaining sessions. Cookies needed to be set on
- *          HttpState not on MessageContext, since ttpMethodBase overwrites the cookies
- *          from HttpState. Also we need to setCookiePolicy on HttpState to
- *          CookiePolicy.COMPATIBILITY else it is defaulting to RFC2109Spec and adding
- *          Version information to it and tomcat server not recognizing it
- *
- *          By Gerd Behrmann (behrmann@ndgf.org)
- *          Ported to Apache Common's HTTP components client. Does not support HTTP proxies.
+ * @author Davanum Srinivas (dims@yahoo.com) History: By Chandra Talluri Modifications done for
+ * maintaining sessions. Cookies needed to be set on HttpState not on MessageContext, since
+ * ttpMethodBase overwrites the cookies from HttpState. Also we need to setCookiePolicy on HttpState
+ * to CookiePolicy.COMPATIBILITY else it is defaulting to RFC2109Spec and adding Version information
+ * to it and tomcat server not recognizing it
+ * <p>
+ * By Gerd Behrmann (behrmann@ndgf.org) Ported to Apache Common's HTTP components client. Does not
+ * support HTTP proxies.
  */
-public class HttpClientSender extends BasicHandler
-{
+public class HttpClientSender extends BasicHandler {
+
     protected static final Logger LOGGER = LoggerFactory.getLogger(HttpClientSender.class);
 
     public static final Version VERSION = Version.of(HttpClientSender.class);
@@ -130,56 +125,46 @@ public class HttpClientSender extends BasicHandler
     protected SslContextFactory sslContextFactory;
     protected HostnameVerifier hostnameVerifier;
 
-    public String[] getSupportedProtocols()
-    {
+    public String[] getSupportedProtocols() {
         return supportedProtocols;
     }
 
-    public void setSupportedProtocols(String[] supportedProtocols)
-    {
+    public void setSupportedProtocols(String[] supportedProtocols) {
         this.supportedProtocols = supportedProtocols;
     }
 
-    public String[] getSupportedCipherSuites()
-    {
+    public String[] getSupportedCipherSuites() {
         return supportedCipherSuites;
     }
 
-    public void setSupportedCipherSuites(String[] supportedCipherSuites)
-    {
+    public void setSupportedCipherSuites(String[] supportedCipherSuites) {
         this.supportedCipherSuites = supportedCipherSuites;
     }
 
-    public SslContextFactory getSslContextFactory()
-    {
+    public SslContextFactory getSslContextFactory() {
         return sslContextFactory;
     }
 
-    public void setSslContextFactory(SslContextFactory sslContextFactory)
-    {
+    public void setSslContextFactory(SslContextFactory sslContextFactory) {
         this.sslContextFactory = sslContextFactory;
     }
 
-    public HostnameVerifier getHostnameVerifier()
-    {
+    public HostnameVerifier getHostnameVerifier() {
         return hostnameVerifier;
     }
 
-    public void setHostnameVerifier(HostnameVerifier hostnameVerifier)
-    {
+    public void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
         this.hostnameVerifier = hostnameVerifier;
     }
 
     @Override
-    public void init()
-    {
+    public void init() {
         clientProperties = CommonsHTTPClientPropertiesFactory.create();
         httpClient = createHttpClient(createConnectionManager());
     }
 
     @Override
-    public void cleanup()
-    {
+    public void cleanup() {
         try {
             httpClient.close();
             httpClient = null;
@@ -189,26 +174,25 @@ public class HttpClientSender extends BasicHandler
     }
 
     /**
-     * Creates the registries of socket factories to be used to establish connection to SOAP servers.
+     * Creates the registries of socket factories to be used to establish connection to SOAP
+     * servers.
      */
-    protected Registry<ConnectionSocketFactory> createSocketFactoryRegistry()
-    {
+    protected Registry<ConnectionSocketFactory> createSocketFactoryRegistry() {
         return RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("http", PlainConnectionSocketFactory.getSocketFactory())
-                .register("https", new FlexibleCredentialSSLConnectionSocketFactory(sslContextFactory,
-                                                                 supportedProtocols,
-                                                                 supportedCipherSuites,
-                                                                 hostnameVerifier))
-                .build();
+              .register("http", PlainConnectionSocketFactory.getSocketFactory())
+              .register("https", new FlexibleCredentialSSLConnectionSocketFactory(sslContextFactory,
+                    supportedProtocols,
+                    supportedCipherSuites,
+                    hostnameVerifier))
+              .build();
     }
 
     /**
      * Creates the connection manager to be used to manage connections to SOAP servers.
      */
-    protected PoolingHttpClientConnectionManager createConnectionManager()
-    {
+    protected PoolingHttpClientConnectionManager createConnectionManager() {
         PoolingHttpClientConnectionManager cm =
-                new PoolingHttpClientConnectionManager(createSocketFactoryRegistry());
+              new PoolingHttpClientConnectionManager(createSocketFactoryRegistry());
         cm.setMaxTotal(clientProperties.getMaximumTotalConnections());
         cm.setDefaultMaxPerRoute(clientProperties.getMaximumConnectionsPerHost());
         SocketConfig.Builder socketOptions = SocketConfig.custom();
@@ -222,22 +206,21 @@ public class HttpClientSender extends BasicHandler
     /**
      * Creates the HttpClient used to submit SOAP requests.
      */
-    protected CloseableHttpClient createHttpClient(PoolingHttpClientConnectionManager connectionManager)
-    {
+    protected CloseableHttpClient createHttpClient(
+          PoolingHttpClientConnectionManager connectionManager) {
         return HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .setUserAgent("dCache/" + VERSION.getVersion())
-                .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
-                .build();
+              .setConnectionManager(connectionManager)
+              .setUserAgent("dCache/" + VERSION.getVersion())
+              .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
+              .build();
     }
 
     /**
      * Creates the HttpContext for a particular call to a SOAP server.
-     *
+     * <p>
      * Called once per session.
      */
-    protected HttpClientContext createHttpContext(MessageContext msgContext, URI uri)
-    {
+    protected HttpClientContext createHttpContext(MessageContext msgContext, URI uri) {
         HttpClientContext context = new HttpClientContext(new BasicHttpContext());
         // if UserID is not part of the context, but is in the URL, use
         // the one in the URL.
@@ -262,24 +245,25 @@ public class HttpClientSender extends BasicHandler
                 String domain = userID.substring(0, domainIndex);
                 String user = userID.substring(domainIndex + 1);
                 credsProvider.setCredentials(AuthScope.ANY,
-                                             new NTCredentials(user, passwd, NetworkUtils.getLocalHostname(), domain));
+                      new NTCredentials(user, passwd, NetworkUtils.getLocalHostname(), domain));
             } else {
-                credsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userID, passwd));
+                credsProvider.setCredentials(AuthScope.ANY,
+                      new UsernamePasswordCredentials(userID, passwd));
             }
             context.setCredentialsProvider(credsProvider);
         }
-        context.setAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, msgContext.getProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS));
+        context.setAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS,
+              msgContext.getProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS));
         return context;
     }
 
     /**
      * Creates a HttpRequest encoding a particular SOAP call.
-     *
+     * <p>
      * Called once per SOAP call.
      */
     protected HttpUriRequest createHttpRequest(MessageContext msgContext, URI url)
-            throws AxisFault
-    {
+          throws AxisFault {
         boolean posting = true;
         // If we're SOAP 1.2, allow the web method to be set from the
         // MessageContext.
@@ -299,7 +283,8 @@ public class HttpClientSender extends BasicHandler
         }
 
         Message msg = msgContext.getRequestMessage();
-        request.addHeader(HTTPConstants.HEADER_CONTENT_TYPE, msg.getContentType(msgContext.getSOAPConstants()));
+        request.addHeader(HTTPConstants.HEADER_CONTENT_TYPE,
+              msg.getContentType(msgContext.getSOAPConstants()));
         request.addHeader(HTTPConstants.HEADER_SOAP_ACTION, "\"" + action + "\"");
 
         String httpVersion = msgContext.getStrProp(MessageContext.HTTP_TRANSPORT_VERSION);
@@ -316,7 +301,8 @@ public class HttpClientSender extends BasicHandler
                 // HEADER_CONTENT_TYPE and HEADER_SOAP_ACTION are already set.
                 // Let's not duplicate them.
                 String name = mimeHeader.getName();
-                if (!name.equals(HTTPConstants.HEADER_CONTENT_TYPE) && !name.equals(HTTPConstants.HEADER_SOAP_ACTION)) {
+                if (!name.equals(HTTPConstants.HEADER_CONTENT_TYPE) && !name.equals(
+                      HTTPConstants.HEADER_SOAP_ACTION)) {
                     request.addHeader(name, mimeHeader.getValue());
                 }
             }
@@ -324,16 +310,18 @@ public class HttpClientSender extends BasicHandler
 
         boolean isChunked = false;
         boolean isExpectContinueEnabled = false;
-        Map<?,?> userHeaderTable = (Map) msgContext.getProperty(HTTPConstants.REQUEST_HEADERS);
+        Map<?, ?> userHeaderTable = (Map) msgContext.getProperty(HTTPConstants.REQUEST_HEADERS);
         if (userHeaderTable != null) {
-            for (Map.Entry<?,?> me : userHeaderTable.entrySet()) {
+            for (Map.Entry<?, ?> me : userHeaderTable.entrySet()) {
                 Object keyObj = me.getKey();
                 if (keyObj != null) {
                     String key = keyObj.toString().trim();
                     String value = me.getValue().toString().trim();
                     if (key.equalsIgnoreCase(HTTPConstants.HEADER_EXPECT)) {
-                        isExpectContinueEnabled = value.equalsIgnoreCase(HTTPConstants.HEADER_EXPECT_100_Continue);
-                    } else if (key.equalsIgnoreCase(HTTPConstants.HEADER_TRANSFER_ENCODING_CHUNKED)) {
+                        isExpectContinueEnabled = value.equalsIgnoreCase(
+                              HTTPConstants.HEADER_EXPECT_100_Continue);
+                    } else if (key.equalsIgnoreCase(
+                          HTTPConstants.HEADER_TRANSFER_ENCODING_CHUNKED)) {
                         isChunked = JavaUtils.isTrue(value);
                     } else {
                         request.addHeader(key, value);
@@ -346,16 +334,19 @@ public class HttpClientSender extends BasicHandler
         // optionally set a timeout for the request
         if (msgContext.getTimeout() != 0) {
             /* ISSUE: these are not the same, but MessageContext has only one definition of timeout */
-            config.setSocketTimeout(msgContext.getTimeout()).setConnectTimeout(msgContext.getTimeout());
+            config.setSocketTimeout(msgContext.getTimeout())
+                  .setConnectTimeout(msgContext.getTimeout());
         } else if (clientProperties.getConnectionPoolTimeout() != 0) {
             config.setConnectTimeout(clientProperties.getConnectionPoolTimeout());
         }
-        config.setContentCompressionEnabled(msgContext.isPropertyTrue(HTTPConstants.MC_ACCEPT_GZIP));
+        config.setContentCompressionEnabled(
+              msgContext.isPropertyTrue(HTTPConstants.MC_ACCEPT_GZIP));
         config.setExpectContinueEnabled(isExpectContinueEnabled);
         request.setConfig(config.build());
 
         if (request instanceof HttpPost) {
-            HttpEntity requestEntity = new MessageEntity(request, msgContext.getRequestMessage(), isChunked);
+            HttpEntity requestEntity = new MessageEntity(request, msgContext.getRequestMessage(),
+                  isChunked);
             if (msgContext.isPropertyTrue(HTTPConstants.MC_GZIP_REQUEST)) {
                 requestEntity = new GzipCompressingEntity(requestEntity);
             }
@@ -368,31 +359,34 @@ public class HttpClientSender extends BasicHandler
     /**
      * Extracts the SOAP response from an HttpResponse.
      */
-    protected Message extractResponse(MessageContext msgContext, HttpResponse response) throws IOException
-    {
+    protected Message extractResponse(MessageContext msgContext, HttpResponse response)
+          throws IOException {
         int returnCode = response.getStatusLine().getStatusCode();
         HttpEntity entity = response.getEntity();
         if (entity != null && returnCode > 199 && returnCode < 300) {
             // SOAP return is OK - so fall through
-        } else if (entity != null && msgContext.getSOAPConstants() == SOAPConstants.SOAP12_CONSTANTS) {
+        } else if (entity != null
+              && msgContext.getSOAPConstants() == SOAPConstants.SOAP12_CONSTANTS) {
             // For now, if we're SOAP 1.2, fall through, since the range of
             // valid result codes is much greater
         } else if (entity != null && returnCode > 499 && returnCode < 600 &&
-                   Objects.equals(getMimeType(entity), "text/xml")) {
+              Objects.equals(getMimeType(entity), "text/xml")) {
             // SOAP Fault should be in here - so fall through
         } else {
             String statusMessage = response.getStatusLine().getReasonPhrase();
-            AxisFault fault = new AxisFault("HTTP", "(" + returnCode + ")" + statusMessage, null, null);
+            AxisFault fault = new AxisFault("HTTP", "(" + returnCode + ")" + statusMessage, null,
+                  null);
             fault.setFaultDetailString("Return code: " + String.valueOf(returnCode) +
-                                       (entity == null ? "" : "\n" + EntityUtils.toString(entity)));
-            fault.addFaultDetail(Constants.QNAME_FAULTDETAIL_HTTPERRORCODE, String.valueOf(returnCode));
+                  (entity == null ? "" : "\n" + EntityUtils.toString(entity)));
+            fault.addFaultDetail(Constants.QNAME_FAULTDETAIL_HTTPERRORCODE,
+                  String.valueOf(returnCode));
             throw fault;
         }
 
         Header contentLocation = response.getFirstHeader(HttpHeaders.CONTENT_LOCATION);
         Message outMsg = new Message(entity.getContent(), false,
-                                     Objects.toString(ContentType.get(entity), null),
-                                     (contentLocation == null) ? null : contentLocation.getValue());
+              Objects.toString(ContentType.get(entity), null),
+              (contentLocation == null) ? null : contentLocation.getValue());
         // Transfer HTTP headers of HTTP message to MIME headers of SOAP message
         MimeHeaders responseMimeHeaders = outMsg.getMimeHeaders();
         for (Header responseHeader : response.getAllHeaders()) {
@@ -402,24 +396,24 @@ public class HttpClientSender extends BasicHandler
         return outMsg;
     }
 
-    private static String getMimeType(HttpEntity entity)
-    {
+    private static String getMimeType(HttpEntity entity) {
         ContentType contentType = ContentType.get(entity);
         return (contentType == null) ? null : contentType.getMimeType();
     }
 
     /**
-     * Sends the request SOAP message and then reads the response SOAP message back from the SOAP server.
+     * Sends the request SOAP message and then reads the response SOAP message back from the SOAP
+     * server.
      */
     @Override
-    public void invoke(MessageContext msgContext) throws AxisFault
-    {
+    public void invoke(MessageContext msgContext) throws AxisFault {
         try {
             URI uri = new URI(msgContext.getStrProp(MessageContext.TRANS_URL));
 
             HttpClientContext context;
             if (msgContext.getMaintainSession()) {
-                context = (HttpClientContext) msgContext.getProperty(HttpClientTransport.TRANSPORT_HTTP_CONTEXT);
+                context = (HttpClientContext) msgContext.getProperty(
+                      HttpClientTransport.TRANSPORT_HTTP_CONTEXT);
                 if (context == null) {
                     context = createHttpContext(msgContext, uri);
                     msgContext.setProperty(HttpClientTransport.TRANSPORT_HTTP_CONTEXT, context);
@@ -447,32 +441,28 @@ public class HttpClientSender extends BasicHandler
         }
     }
 
-    protected static class MessageEntity extends AbstractHttpEntity
-    {
+    protected static class MessageEntity extends AbstractHttpEntity {
+
         private final HttpRequestBase method;
         private final Message message;
 
-        public MessageEntity(HttpRequestBase method, Message message, boolean httpChunkStream)
-        {
+        public MessageEntity(HttpRequestBase method, Message message, boolean httpChunkStream) {
             this.message = message;
             this.method = method;
             setChunked(httpChunkStream);
         }
 
-        protected boolean isContentLengthNeeded()
-        {
+        protected boolean isContentLengthNeeded() {
             return method.getProtocolVersion().equals(HttpVersion.HTTP_1_0) || !isChunked();
         }
 
         @Override
-        public boolean isRepeatable()
-        {
+        public boolean isRepeatable() {
             return true;
         }
 
         @Override
-        public long getContentLength()
-        {
+        public long getContentLength() {
             if (isContentLengthNeeded()) {
                 try {
                     return message.getContentLength();
@@ -483,14 +473,12 @@ public class HttpClientSender extends BasicHandler
         }
 
         @Override
-        public InputStream getContent() throws IOException, UnsupportedOperationException
-        {
+        public InputStream getContent() throws IOException, UnsupportedOperationException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void writeTo(OutputStream outstream) throws IOException
-        {
+        public void writeTo(OutputStream outstream) throws IOException {
             try {
                 message.writeTo(outstream);
             } catch (SOAPException e) {
@@ -499,8 +487,7 @@ public class HttpClientSender extends BasicHandler
         }
 
         @Override
-        public boolean isStreaming()
-        {
+        public boolean isStreaming() {
             return false;
         }
     }

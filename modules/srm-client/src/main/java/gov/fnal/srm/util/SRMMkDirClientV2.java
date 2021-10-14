@@ -81,9 +81,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmMkdirRequest;
@@ -91,9 +92,8 @@ import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
 public class SRMMkDirClientV2 extends SRMClient {
+
     private X509Credential cred;
     private java.net.URI surl;
     private String surl_string;
@@ -101,12 +101,11 @@ public class SRMMkDirClientV2 extends SRMClient {
 
     public SRMMkDirClientV2(Configuration configuration, java.net.URI surl, String surl_string) {
         super(configuration);
-        this.surl      = surl;
-        this.surl_string=surl_string;
+        this.surl = surl;
+        this.surl_string = surl_string;
         try {
             cred = getCredential();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             cred = null;
             System.err.println("Couldn't getGssCredential.");
         }
@@ -116,15 +115,15 @@ public class SRMMkDirClientV2 extends SRMClient {
     public void connect() throws Exception {
         java.net.URI srmUrl = surl;
         isrm = new SRMClientV2(srmUrl,
-                               getCredential(),
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
+              getCredential(),
+              configuration.getRetry_timeout(),
+              configuration.getRetry_num(),
+              doDelegation,
+              fullDelegation,
+              gss_expected_name,
+              configuration.getWebservice_path(),
+              configuration.getX509_user_trusted_certificates(),
+              configuration.getTransport());
     }
 
     @Override
@@ -134,9 +133,9 @@ public class SRMMkDirClientV2 extends SRMClient {
         req.setSURL(new URI(surl_string));
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmMkdirResponse resp = isrm.srmMkdir(req);
-        TReturnStatus rs   = resp.getReturnStatus();
+        TReturnStatus rs = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-            TStatusCode rc  = rs.getStatusCode();
+            TStatusCode rc = rs.getStatusCode();
             StringBuilder sb = new StringBuilder();
             sb.append("Return code: ").append(rc.toString()).append("\n");
             sb.append("Explanation: ").append(rs.getExplanation()).append("\n");

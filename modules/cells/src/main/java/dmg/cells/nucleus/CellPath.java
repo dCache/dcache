@@ -1,7 +1,10 @@
 package dmg.cells.nucleus;
 
-import com.google.common.collect.Lists;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
+import com.google.common.collect.Lists;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -12,16 +15,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-
 /**
- * The CellPath is an abstraction of the path a CellMessage is
- * assumed to travel. The path consists of a defined sequence of
- * cell hops and a current position. The last hop which might
- * as well be the only one, is called the FinalDestination.
- * At any point a new Cell Hop can be added in two ways :
+ * The CellPath is an abstraction of the path a CellMessage is assumed to travel. The path consists
+ * of a defined sequence of cell hops and a current position. The last hop which might as well be
+ * the only one, is called the FinalDestination. At any point a new Cell Hop can be added in two
+ * ways :
  * <ul>
  * <li>At the end of the sequence. The added Cell becomes the
  * new FinalDestination.
@@ -37,57 +35,48 @@ import static java.util.stream.Collectors.toList;
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
  */
-public final class CellPath implements Cloneable, Serializable
-{
+public final class CellPath implements Cloneable, Serializable {
+
     private static final long serialVersionUID = -4922955783102747577L;
 
     private final List<CellAddressCore> _list;
     private int _position;
 
-    private CellPath(int position, List<CellAddressCore> list)
-    {
+    private CellPath(int position, List<CellAddressCore> list) {
         checkArgument(position >= 0 && position <= list.size());
         _position = position;
         _list = list;
     }
 
-    protected CellPath()
-    {
+    protected CellPath() {
         this(0, new ArrayList<>());
     }
 
-    public CellPath(String path)
-    {
+    public CellPath(String path) {
         this(0, streamOfPath(path).collect(toList()));
     }
 
-    public CellPath(CellAddressCore... address)
-    {
+    public CellPath(CellAddressCore... address) {
         this(0, Lists.newArrayList(address));
     }
 
-    public CellPath(CellPath path, CellAddressCore... addresses)
-    {
+    public CellPath(CellPath path, CellAddressCore... addresses) {
         this(0, Stream.concat(path._list.stream(), Stream.of(addresses)).collect(toList()));
     }
 
-    public CellPath(String cellName, String domainName)
-    {
+    public CellPath(String cellName, String domainName) {
         this(new CellAddressCore(cellName, domainName));
     }
 
-    public synchronized int hops()
-    {
+    public synchronized int hops() {
         return _list.size();
     }
 
-    public synchronized void add(CellAddressCore core)
-    {
+    public synchronized void add(CellAddressCore core) {
         _list.add(core);
     }
 
-    public synchronized void add(CellPath addr)
-    {
+    public synchronized void add(CellPath addr) {
         _list.addAll(addr._list);
     }
 
@@ -96,27 +85,23 @@ public final class CellPath implements Cloneable, Serializable
      *
      * @param path The added cell travel path.
      */
-    public synchronized void add(String path)
-    {
+    public synchronized void add(String path) {
         streamOfPath(path).forEachOrdered(this::add);
     }
 
     @Override
-    public synchronized CellPath clone()
-    {
+    public synchronized CellPath clone() {
         return new CellPath(_position, new ArrayList<>(_list));
     }
 
     /**
      * Adds a cell path &lt;path&gt; at the current position.
      */
-    public synchronized void insert(CellPath path)
-    {
+    public synchronized void insert(CellPath path) {
         _list.addAll(_position, path._list);
     }
 
-    public synchronized void insert(CellAddressCore address)
-    {
+    public synchronized void insert(CellAddressCore address) {
         _list.add(_position, address);
     }
 
@@ -125,8 +110,7 @@ public final class CellPath implements Cloneable, Serializable
      *
      * @return true if the path was not at the last position before the call, false otherwise.
      */
-    public synchronized boolean next()
-    {
+    public synchronized boolean next() {
         int size = _list.size();
         if (_position < size) {
             _position++;
@@ -136,13 +120,11 @@ public final class CellPath implements Cloneable, Serializable
 
     /**
      * Returns a new path that is the reverse of this path.
-     *
-     * The new path will have been collapsed such that only cells are
-     * addressed. Domain addresses will have been stripped, except if
-     * followed by a local (not fully qualified) address.
+     * <p>
+     * The new path will have been collapsed such that only cells are addressed. Domain addresses
+     * will have been stripped, except if followed by a local (not fully qualified) address.
      */
-    public synchronized CellPath revert()
-    {
+    public synchronized CellPath revert() {
         CellPath path = new CellPath();
         Iterator<CellAddressCore> iterator = Lists.reverse(_list).iterator();
         if (iterator.hasNext()) {
@@ -159,52 +141,43 @@ public final class CellPath implements Cloneable, Serializable
         return path;
     }
 
-    public synchronized boolean isFinalDestination()
-    {
+    public synchronized boolean isFinalDestination() {
         return _position >= _list.size();
     }
 
-    public synchronized boolean isFirstDestination()
-    {
+    public synchronized boolean isFirstDestination() {
         return _position == 0;
     }
 
-    public synchronized CellAddressCore getCurrent()
-    {
+    public synchronized CellAddressCore getCurrent() {
         return (_position >= _list.size()) ? null : _list.get(_position);
     }
 
-    public synchronized CellAddressCore getSourceAddress()
-    {
+    public synchronized CellAddressCore getSourceAddress() {
         return _list.get(0);
     }
 
-    public synchronized CellAddressCore getDestinationAddress()
-    {
+    public synchronized CellAddressCore getDestinationAddress() {
         return _list.get(_list.size() - 1);
     }
 
-    synchronized void replaceCurrent(CellAddressCore core)
-    {
+    synchronized void replaceCurrent(CellAddressCore core) {
         if (_position < _list.size()) {
             _list.set(_position, core);
         }
     }
 
-    public String getCellName()
-    {
+    public String getCellName() {
         CellAddressCore core = getCurrent();
         return core == null ? null : core.getCellName();
     }
 
-    public String getCellDomainName()
-    {
+    public String getCellDomainName() {
         CellAddressCore core = getCurrent();
         return core == null ? null : core.getCellDomainName();
     }
 
-    public synchronized String toSmallString()
-    {
+    public synchronized String toSmallString() {
         int size = _list.size();
         if (size == 0) {
             return "[empty]";
@@ -227,32 +200,28 @@ public final class CellPath implements Cloneable, Serializable
         }
 
         return "[...(" + _position + ")...:" +
-               core +
-               "...(" + (size - _position - 1) + ")...]";
+              core +
+              "...(" + (size - _position - 1) + ")...]";
     }
 
     /**
      * Returns the cell path as a colon separated list of addresses. This is the same format
      * accepted by the string constructor of CellPath.
      */
-    public String toAddressString()
-    {
+    public String toAddressString() {
         return _list.stream().map(CellAddressCore::toString).collect(joining(":"));
     }
 
-    public List<CellAddressCore> getAddresses()
-    {
+    public List<CellAddressCore> getAddresses() {
         return Collections.unmodifiableList(_list);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return toFullString();
     }
 
-    public synchronized String toFullString()
-    {
+    public synchronized String toFullString() {
         int size = _list.size();
         if (size == 0) {
             return "[empty]";
@@ -288,8 +257,7 @@ public final class CellPath implements Cloneable, Serializable
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (obj == this) {
             return true;
         }
@@ -309,31 +277,27 @@ public final class CellPath implements Cloneable, Serializable
     }
 
     @Override
-    public synchronized int hashCode()
-    {
+    public synchronized int hashCode() {
         /* Beware that equals only takes the list of addresses into account.
          */
         return _list.hashCode();
     }
 
-    private static Stream<CellAddressCore> streamOfPath(String path)
-    {
+    private static Stream<CellAddressCore> streamOfPath(String path) {
         checkArgument(!path.isEmpty());
         return Stream.of(path.split(":")).map(CellAddressCore::new);
     }
 
-    public boolean contains(CellAddressCore address)
-    {
+    public boolean contains(CellAddressCore address) {
         return _list.contains(address);
     }
 
     /**
      * Writes CellPath to a data output stream.
-     *
+     * <p>
      * This is the raw encoding used by tunnels since release 3.0.
      */
-    public void writeTo(DataOutput out) throws IOException
-    {
+    public void writeTo(DataOutput out) throws IOException {
         out.writeInt(_list.size());
         out.writeInt(_position);
         for (CellAddressCore cellAddressCore : _list) {
@@ -344,11 +308,10 @@ public final class CellPath implements Cloneable, Serializable
 
     /**
      * Reads CellPath from a data input stream.
-     *
+     * <p>
      * This is the raw encoding used by tunnels since release 3.0.
      */
-    public static CellPath createFrom(DataInput in) throws IOException
-    {
+    public static CellPath createFrom(DataInput in) throws IOException {
         int len = in.readInt();
         int position = in.readInt();
         ArrayList<CellAddressCore> list = new ArrayList<>(len);

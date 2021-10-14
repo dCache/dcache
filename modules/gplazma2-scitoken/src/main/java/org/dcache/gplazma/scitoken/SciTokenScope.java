@@ -17,34 +17,36 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import com.google.common.collect.ImmutableMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.auth.attributes.Activity.DELETE;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.MANAGE;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.auth.attributes.Activity.UPDATE_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
+import static org.dcache.gplazma.scitoken.InvalidScopeException.checkScopeValid;
 
+import com.google.common.collect.ImmutableMap;
+import diskCacheV111.util.FsPath;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
-import diskCacheV111.util.FsPath;
-
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
-
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.auth.attributes.Activity.*;
-import static org.dcache.gplazma.scitoken.InvalidScopeException.checkScopeValid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A Scope represents one of the space-separated list of allowed operations
- * contained within the SciToken "scope" claim.
+ * A Scope represents one of the space-separated list of allowed operations contained within the
+ * SciToken "scope" claim.
  */
-public class SciTokenScope implements AuthorisationSupplier
-{
-    public enum Operation
-    {
+public class SciTokenScope implements AuthorisationSupplier {
+
+    public enum Operation {
         READ(LIST, READ_METADATA, DOWNLOAD),
         WRITE(LIST, READ_METADATA, UPLOAD, MANAGE, DELETE, UPDATE_METADATA),
         QUEUE,
@@ -52,20 +54,19 @@ public class SciTokenScope implements AuthorisationSupplier
 
         private final EnumSet<Activity> allowedActivities;
 
-        private Operation(Activity... allowedActivities)
-        {
+        private Operation(Activity... allowedActivities) {
             this.allowedActivities = allowedActivities.length == 0
-                    ? EnumSet.noneOf(Activity.class)
-                    : EnumSet.copyOf(asList(allowedActivities));
+                  ? EnumSet.noneOf(Activity.class)
+                  : EnumSet.copyOf(asList(allowedActivities));
         }
     }
 
     private static final String SCITOKEN_SCOPE_PREFIX = "https://scitokens.org/v1/authz/";
-    private static final Map<String,Operation> OPERATIONS_BY_LABEL;
+    private static final Map<String, Operation> OPERATIONS_BY_LABEL;
     private static final Logger LOGGER = LoggerFactory.getLogger(SciTokenScope.class);
 
     static {
-        ImmutableMap.Builder<String,Operation> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Operation> builder = ImmutableMap.builder();
         Arrays.stream(Operation.values()).forEach(o -> builder.put(o.toString().toLowerCase(), o));
         OPERATIONS_BY_LABEL = builder.build();
     }
@@ -73,15 +74,13 @@ public class SciTokenScope implements AuthorisationSupplier
     private final Operation operation;
     private final String path;
 
-    SciTokenScope(Operation operation, String path)
-    {
+    SciTokenScope(Operation operation, String path) {
         this.operation = requireNonNull(operation);
         this.path = requireNonNull(path);
         LOGGER.debug("SciTokenScope created: op={} path={}", operation, path);
     }
 
-    public SciTokenScope(String scope) throws InvalidScopeException
-    {
+    public SciTokenScope(String scope) throws InvalidScopeException {
         String withoutPrefix = withoutPrefix(scope);
 
         int colon = withoutPrefix.indexOf(':');
@@ -93,44 +92,40 @@ public class SciTokenScope implements AuthorisationSupplier
         if (colon == -1) {
             path = "/";
         } else {
-            path = withoutPrefix.substring(colon+1);
+            path = withoutPrefix.substring(colon + 1);
             checkScopeValid(path.startsWith("/"), "Path does not start with /");
         }
 
         LOGGER.debug("SciTokenScope created from scope \"{}\": op={} path={}",
-                scope, operation, path);
+              scope, operation, path);
     }
 
-    public static boolean isSciTokenScope(String scope)
-    {
+    public static boolean isSciTokenScope(String scope) {
         String withoutPrefix = withoutPrefix(scope);
         int colon = withoutPrefix.indexOf(':');
         String operation = colon == -1 ? withoutPrefix : withoutPrefix.substring(0, colon);
 
-        return (colon == -1 || withoutPrefix.substring(colon+1).startsWith("/"))
-                && OPERATIONS_BY_LABEL.keySet().contains(operation);
+        return (colon == -1 || withoutPrefix.substring(colon + 1).startsWith("/"))
+              && OPERATIONS_BY_LABEL.keySet().contains(operation);
     }
 
-    private static String withoutPrefix(String scope)
-    {
+    private static String withoutPrefix(String scope) {
         return scope.startsWith(SCITOKEN_SCOPE_PREFIX)
-                ? scope.substring(SCITOKEN_SCOPE_PREFIX.length()) : scope;
+              ? scope.substring(SCITOKEN_SCOPE_PREFIX.length()) : scope;
     }
 
     @Override
-    public Optional<Authorisation> authorisation(FsPath prefix)
-    {
+    public Optional<Authorisation> authorisation(FsPath prefix) {
         FsPath absPath = prefix.resolve(path.substring(1));
         LOGGER.debug("SciTokenScope authorising {} with prefix \"{}\" to path {}",
-                operation.allowedActivities, prefix, absPath);
+              operation.allowedActivities, prefix, absPath);
         return operation.allowedActivities.isEmpty()
-                ? Optional.empty()
-                : Optional.of(new Authorisation(operation.allowedActivities, absPath));
+              ? Optional.empty()
+              : Optional.of(new Authorisation(operation.allowedActivities, absPath));
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (!(other instanceof SciTokenScope)) {
             return false;
         }

@@ -19,15 +19,14 @@ package org.dcache.xrootd.plugins;
 
 import java.util.Properties;
 
-public class XrootdTLSHandlerProvider implements ChannelHandlerProvider
-{
+public class XrootdTLSHandlerProvider implements ChannelHandlerProvider {
+
     public static final String PLUGIN = "ssl-handler";
     public static final String CLIENT_PLUGIN = "ssl-client-handler";
 
     @Override
     public ChannelHandlerFactory createFactory(String plugin, Properties properties)
-                    throws Exception
-    {
+          throws Exception {
         if (plugin.equals(PLUGIN)) {
             return new XrootdTLSHandlerFactory(properties, true);
         } else if (plugin.equals(CLIENT_PLUGIN)) {

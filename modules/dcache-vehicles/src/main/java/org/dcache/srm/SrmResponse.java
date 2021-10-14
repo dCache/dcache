@@ -23,25 +23,22 @@ import java.io.Serializable;
 /**
  * SRM 2.2 response between frontend and backend.
  */
-public class SrmResponse implements Serializable
-{
+public class SrmResponse implements Serializable {
+
     private static final long serialVersionUID = -6879368676630818805L;
     private final String id;
     private final Object response;
 
-    public SrmResponse(String id, Object response)
-    {
+    public SrmResponse(String id, Object response) {
         this.id = id;
         this.response = response;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public Object getResponse()
-    {
+    public Object getResponse() {
         return response;
     }
 }

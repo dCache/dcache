@@ -59,26 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.UUID;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import java.util.UUID;
 import org.dcache.resilience.util.MessageGuard.Status;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class MessageGuardTest {
+
     class MessageReceiver implements CellMessageReceiver {
+
         void messageArrived(CellMessage msg) {
             CDC.setMessageContext(msg);
         }

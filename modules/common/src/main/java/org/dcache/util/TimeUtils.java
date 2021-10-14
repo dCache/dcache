@@ -1,8 +1,17 @@
 package org.dcache.util;
 
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.util.Strings.toThreeSigFig;
 
+import com.google.common.collect.ImmutableMap;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,27 +26,23 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.concurrent.TimeUnit.*;
-import static org.dcache.util.Strings.toThreeSigFig;
+import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 
 /**
- * Utility classes for dealing with time and durations, mostly with pretty-
- * printing them for human consumption.
+ * Utility classes for dealing with time and durations, mostly with pretty- printing them for human
+ * consumption.
  */
-public class TimeUtils
-{
+public class TimeUtils {
+
     public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd' 'HH:mm:ss.SSS";
 
     /**
      * <p>Compares time units such that the larger unit is
-     *      ordered before the smaller.</p>
+     * ordered before the smaller.</p>
      */
     public static class DecreasingTimeUnitComparator
-                    implements Comparator<TimeUnit>
-    {
+          implements Comparator<TimeUnit> {
+
         @Override
         public int compare(TimeUnit unit1, TimeUnit unit2) {
             if (unit1 == null) {
@@ -69,15 +74,14 @@ public class TimeUtils
      * <p>The parsed out dimensions are held in an internal map.</p>
      *
      * <p>There can be gaps between the various time dimensions, but it
-     *    is understood that successive calls to parse should be
-     *    strictly decreasing. Calls to compute a larger unit than
-     *    the current unit will throw an exception.</p>
+     * is understood that successive calls to parse should be strictly decreasing. Calls to compute
+     * a larger unit than the current unit will throw an exception.</p>
      *
      * <p>The dimensions can be recomputed by calling clear(), but
-     *    the original duration given to the parser is fixed.</p>
+     * the original duration given to the parser is fixed.</p>
      */
-    public static class DurationParser
-    {
+    public static class DurationParser {
+
         private final Map<TimeUnit, Long> durations;
         private final Long duration;
         private final TimeUnit durationUnit;
@@ -87,9 +91,9 @@ public class TimeUtils
 
         public DurationParser(Long duration, TimeUnit durationUnit) {
             this.duration = requireNonNull(duration,
-                            "duration was null");
+                  "duration was null");
             this.durationUnit = requireNonNull(durationUnit,
-                            "durationUnit was null");
+                  "durationUnit was null");
             durations = new HashMap<>();
             remainder = durationUnit.toNanos(duration);
         }
@@ -122,11 +126,11 @@ public class TimeUtils
 
         public long get(TimeUnit unit) {
             Long duration = durations.get(unit);
-            return duration == null ? 0L: duration;
+            return duration == null ? 0L : duration;
         }
 
         private void checkStrictlyDecreasing(TimeUnit next)
-                        throws IllegalStateException {
+              throws IllegalStateException {
             /*
              * Because this is a decreasing order comparator,
              * it returns -1 when the first element is larger than the
@@ -134,14 +138,14 @@ public class TimeUtils
              */
             if (comparator.compare(next, current) <= 0) {
                 throw new IllegalStateException(next + " is not strictly "
-                                + "smaller than " + current);
+                      + "smaller than " + current);
             }
         }
     }
 
     /**
      * <p>Returns a given duration broken down into constituent units of all
-     *    dimensions and formatted according to the duration format string.</p>
+     * dimensions and formatted according to the duration format string.</p>
      *
      * <p>The format markers are:</p>
      *
@@ -162,25 +166,23 @@ public class TimeUtils
      *    not contain any other placeholders than the ones above and cannot
      *    be combined with normal string formatting.</p>
      */
-    public static class DurationFormatter
-    {
+    public static class DurationFormatter {
+
         private final String format;
         private DurationParser durations;
 
-        public DurationFormatter(String format)
-        {
+        public DurationFormatter(String format) {
             requireNonNull(format,
-                            "Format string must be specified.");
+                  "Format string must be specified.");
             this.format = format;
         }
 
-        public String format(long duration, TimeUnit unit)
-        {
+        public String format(long duration, TimeUnit unit) {
             requireNonNull(unit,
-                            "Duration time unit must be specified.");
+                  "Duration time unit must be specified.");
             TimeUnit[] sortedDimensions = getSortedDimensions();
             durations = new DurationParser(duration, unit);
-            for (TimeUnit dimension: sortedDimensions) {
+            for (TimeUnit dimension : sortedDimensions) {
                 durations.parse(dimension);
             }
             StringBuilder builder = new StringBuilder();
@@ -218,7 +220,7 @@ public class TimeUtils
                                 break;
                             default:
                                 throw new IllegalArgumentException(
-                                                "No such formatting symbol " + c);
+                                      "No such formatting symbol " + c);
                         }
                         break;
                     default:
@@ -236,8 +238,8 @@ public class TimeUtils
                 switch (sequence[c]) {
                     case '%':
                         c = handlePlaceholder(++c,
-                                        sequence,
-                                        builder);
+                              sequence,
+                              builder);
                         break;
                     default:
                         builder.append(sequence[c]);
@@ -245,14 +247,13 @@ public class TimeUtils
             }
         }
 
-        private int handlePlaceholder(int c, char[] sequence, StringBuilder builder)
-        {
+        private int handlePlaceholder(int c, char[] sequence, StringBuilder builder) {
             switch (sequence[c]) {
                 case 'D':
                     builder.append(durations.get(TimeUnit.DAYS));
                     break;
                 case 'H':
-                    if (sequence[c+1] == 'H') {
+                    if (sequence[c + 1] == 'H') {
                         ++c;
                         builder.append(leadingZero(durations.get(TimeUnit.HOURS)));
                     } else {
@@ -260,7 +261,7 @@ public class TimeUtils
                     }
                     break;
                 case 'm':
-                    if (sequence[c+1] == 'm') {
+                    if (sequence[c + 1] == 'm') {
                         ++c;
                         builder.append(leadingZero(durations.get(TimeUnit.MINUTES)));
                     } else {
@@ -268,7 +269,7 @@ public class TimeUtils
                     }
                     break;
                 case 's':
-                    if (sequence[c+1] == 's') {
+                    if (sequence[c + 1] == 's') {
                         ++c;
                         builder.append(leadingZero(durations.get(TimeUnit.SECONDS)));
                     } else {
@@ -280,12 +281,12 @@ public class TimeUtils
                     break;
                 case 'N':
                     builder.append(durations.get(TimeUnit.MILLISECONDS))
-                           .append(durations.get(TimeUnit.MICROSECONDS))
-                           .append(durations.get(TimeUnit.NANOSECONDS));
+                          .append(durations.get(TimeUnit.MICROSECONDS))
+                          .append(durations.get(TimeUnit.NANOSECONDS));
                     break;
                 default:
                     throw new IllegalArgumentException
-                                    ("No such formatting symbol " + c);
+                          ("No such formatting symbol " + c);
             }
 
             return c;
@@ -300,8 +301,7 @@ public class TimeUtils
         }
     }
 
-    public enum TimeUnitFormat
-    {
+    public enum TimeUnitFormat {
         /**
          * Display time-units in a short format.
          */
@@ -313,53 +313,49 @@ public class TimeUtils
         LONG
     }
 
-    private static final ImmutableMap<TimeUnit,String> SHORT_TIMEUNIT_NAMES =
-            ImmutableMap.<TimeUnit,String>builder().
-                    put(NANOSECONDS, "ns").
-                    put(MICROSECONDS, "\u00B5s"). // U+00B5 is Unicode for microsymbol
-                    put(MILLISECONDS, "ms").
-                    put(SECONDS, "s").
-                    put(MINUTES, "min").
-                    put(HOURS, "hours").
-                    put(DAYS, "days").
-                    build();
+    private static final ImmutableMap<TimeUnit, String> SHORT_TIMEUNIT_NAMES =
+          ImmutableMap.<TimeUnit, String>builder().
+                put(NANOSECONDS, "ns").
+                put(MICROSECONDS, "\u00B5s"). // U+00B5 is Unicode for microsymbol
+                put(MILLISECONDS, "ms").
+                put(SECONDS, "s").
+                put(MINUTES, "min").
+                put(HOURS, "hours").
+                put(DAYS, "days").
+                build();
 
-    private static final ImmutableMap<TimeUnit,String> LONG_TIMEUNIT_NAMES =
-            ImmutableMap.<TimeUnit,String>builder().
-                    put(NANOSECONDS, "nanoseconds").
-                    put(MICROSECONDS, "microseconds").
-                    put(MILLISECONDS, "milliseconds").
-                    put(SECONDS, "seconds").
-                    put(MINUTES, "minutes").
-                    put(HOURS, "hours").
-                    put(DAYS, "days").
-                    build();
+    private static final ImmutableMap<TimeUnit, String> LONG_TIMEUNIT_NAMES =
+          ImmutableMap.<TimeUnit, String>builder().
+                put(NANOSECONDS, "nanoseconds").
+                put(MICROSECONDS, "microseconds").
+                put(MILLISECONDS, "milliseconds").
+                put(SECONDS, "seconds").
+                put(MINUTES, "minutes").
+                put(HOURS, "hours").
+                put(DAYS, "days").
+                build();
 
     private static final DecreasingTimeUnitComparator comparator
-                    = new DecreasingTimeUnitComparator();
+          = new DecreasingTimeUnitComparator();
 
-    private TimeUtils()
-    {
+    private TimeUtils() {
         // Prevent instantiation.
     }
 
-    public static CharSequence duration(long duration, TimeUnit units, TimeUnitFormat unitFormat)
-    {
+    public static CharSequence duration(long duration, TimeUnit units, TimeUnitFormat unitFormat) {
         return appendDuration(new StringBuilder(), duration, units, unitFormat);
     }
 
     /**
-     * @see DurationFormatter
-     *
      * @param duration to be expressed
-     * @param unit of the duration
-     * @param format as specified above.
+     * @param unit     of the duration
+     * @param format   as specified above.
      * @return formatted string
+     * @see DurationFormatter
      */
     public static String getFormattedDuration(long duration,
-                                              TimeUnit unit,
-                                              String format)
-    {
+          TimeUnit unit,
+          String format) {
         return new DurationFormatter(format).format(duration, unit);
     }
 
@@ -371,15 +367,13 @@ public class TimeUtils
     }
 
     /**
-     * Provide a short, simple human understandable string describing the
-     * supplied duration.  The duration is a non-negative value.  The output is
-     * appended to the supplied StringBuilder and has the form
-     * {@code <number> <space> <units>}, where {@code <number>}
-     * is an integer and {@code <units>} is defined by the value of unitFormat.
+     * Provide a short, simple human understandable string describing the supplied duration.  The
+     * duration is a non-negative value.  The output is appended to the supplied StringBuilder and
+     * has the form {@code <number> <space> <units>}, where {@code <number>} is an integer and
+     * {@code <units>} is defined by the value of unitFormat.
      */
     public static StringBuilder appendDuration(StringBuilder sb, Duration duration,
-                    TimeUnitFormat unitFormat)
-    {
+          TimeUnitFormat unitFormat) {
         // FIXME: this method is a wrapper around the overloaded method
         // with (long,TimeUnit) arguments.  These two methods should be
         // rewritten so they are the other way around: the method with
@@ -389,69 +383,63 @@ public class TimeUtils
     }
 
     /**
-     * Provide a short, simple human understandable string describing the
-     * supplied duration.  The duration is a non-negative value.  The output is
-     * appended to the supplied StringBuilder and has the form
-     * {@code <number> <space> <units>}, where {@code <number>}
-     * is an integer and {@code <units>} is defined by the value of unitFormat.
+     * Provide a short, simple human understandable string describing the supplied duration.  The
+     * duration is a non-negative value.  The output is appended to the supplied StringBuilder and
+     * has the form {@code <number> <space> <units>}, where {@code <number>} is an integer and
+     * {@code <units>} is defined by the value of unitFormat.
      */
     public static StringBuilder appendDuration(StringBuilder sb, long duration,
-                    TimeUnit units, TimeUnitFormat unitFormat)
-    {
+          TimeUnit units, TimeUnitFormat unitFormat) {
         checkArgument(duration >= 0);
 
-        Map<TimeUnit,String> unitsFormat = (unitFormat == TimeUnitFormat.SHORT)
-                ? SHORT_TIMEUNIT_NAMES : LONG_TIMEUNIT_NAMES;
+        Map<TimeUnit, String> unitsFormat = (unitFormat == TimeUnitFormat.SHORT)
+              ? SHORT_TIMEUNIT_NAMES : LONG_TIMEUNIT_NAMES;
 
         TimeUnit targetUnit = displayUnitFor(duration, units);
         return sb.append(targetUnit.convert(duration, units)).append(' ').
-                    append(unitsFormat.get(targetUnit));
+              append(unitsFormat.get(targetUnit));
     }
 
 
-    public static TimeUnit displayUnitFor(long duration, TimeUnit units)
-    {
+    public static TimeUnit displayUnitFor(long duration, TimeUnit units) {
         if (units == NANOSECONDS && duration < MICROSECONDS.toNanos(2)) {
             return NANOSECONDS;
         }
 
         if (units.toMicros(duration) < MILLISECONDS.toMicros(2) &&
-                units.compareTo(MICROSECONDS) <= 0) {
+              units.compareTo(MICROSECONDS) <= 0) {
             return MICROSECONDS;
         }
 
         long durationInMillis = units.toMillis(duration);
 
         if (durationInMillis < SECONDS.toMillis(2) &&
-                units.compareTo(MILLISECONDS) <= 0) {
+              units.compareTo(MILLISECONDS) <= 0) {
             return MILLISECONDS;
         } else if (durationInMillis < MINUTES.toMillis(2) &&
-                units.compareTo(SECONDS) <= 0) {
+              units.compareTo(SECONDS) <= 0) {
             return SECONDS;
         } else if (durationInMillis < HOURS.toMillis(2) &&
-                units.compareTo(MINUTES) <= 0) {
+              units.compareTo(MINUTES) <= 0) {
             return MINUTES;
         } else if (durationInMillis < DAYS.toMillis(2) &&
-                units.compareTo(HOURS) <= 0) {
+              units.compareTo(HOURS) <= 0) {
             return HOURS;
         } else {
             return DAYS;
         }
     }
 
-    private static double seconds(Duration duration)
-    {
+    private static double seconds(Duration duration) {
         return duration.getSeconds() + duration.getNano() / 1_000_000_000.0;
     }
 
-    private static String convert(Duration duration, ChronoUnit unit, String name)
-    {
+    private static String convert(Duration duration, ChronoUnit unit, String name) {
         double value = seconds(duration) / seconds(unit.getDuration());
         return toThreeSigFig(value, 2000) + " " + name;
     }
 
-    private static Optional<String> inUnits(Duration duration, ChronoUnit unit, String name)
-    {
+    private static Optional<String> inUnits(Duration duration, ChronoUnit unit, String name) {
         Duration cutoff = unit.getDuration().multipliedBy(2);
         if (duration.compareTo(cutoff) >= 0) {
             return Optional.of(convert(duration, unit, name));
@@ -460,8 +448,7 @@ public class TimeUtils
         }
     }
 
-    public static Optional<String> describe(Duration duration)
-    {
+    public static Optional<String> describe(Duration duration) {
         if (duration.isZero()) {
             return Optional.empty();
         }
@@ -488,15 +475,13 @@ public class TimeUtils
         return value;
     }
 
-    public static String describeDuration(double duration, TimeUnit units)
-    {
+    public static String describeDuration(double duration, TimeUnit units) {
         TimeUnit targetUnits = displayUnitFor(Math.round(duration), units);
         double scaledDuration = convert(duration, units, targetUnits);
         return toThreeSigFig(scaledDuration, 2000) + " " + SHORT_TIMEUNIT_NAMES.get(targetUnits);
     }
 
-    public static String describeDuration(StatisticalSummary duration, TimeUnit units)
-    {
+    public static String describeDuration(StatisticalSummary duration, TimeUnit units) {
         double min = duration.getMin();
         double max = duration.getMax();
 
@@ -514,27 +499,26 @@ public class TimeUtils
                 double scaledSem = convert(sem, units, targetUnits);
 
                 meanDescription = "(" + toThreeSigFig(scaledMean, 2000, scaledSem) + ") "
-                        + SHORT_TIMEUNIT_NAMES.get(targetUnits);
+                      + SHORT_TIMEUNIT_NAMES.get(targetUnits);
             }
 
             double sd = duration.getStandardDeviation();
 
             return " min. " + describeDuration(min, units)
-                        + ", mean " + meanDescription
-                        + ", SD " + describeDuration(sd, units)
-                        + ", max. " + describeDuration(max, units);
+                  + ", mean " + meanDescription
+                  + ", SD " + describeDuration(sd, units)
+                  + ", max. " + describeDuration(max, units);
         }
     }
 
-    private static double convert(double source, TimeUnit sourceUnits, TimeUnit targetUnits)
-    {
+    private static double convert(double source, TimeUnit sourceUnits, TimeUnit targetUnits) {
         return source / sourceUnits.convert(1, targetUnits);
     }
 
 
     /**
-     * Returns a description of some point in time using some reference point.
-     * The appended text is {@code <timestamp> <space> <open-parenth> <integer>
+     * Returns a description of some point in time using some reference point. The appended text is
+     * {@code <timestamp> <space> <open-parenth> <integer>
      * <space> <time-unit-word> <space> <relation> <close-parenth>}.  Here are
      * two examples:
      * <pre>
@@ -542,20 +526,18 @@ public class TimeUtils
      * 2014-04-21 02:40:32.965 (3 hours in the future)
      * </pre>
      */
-    public static CharSequence relativeTimestamp(long when, long current)
-    {
+    public static CharSequence relativeTimestamp(long when, long current) {
         return appendRelativeTimestamp(new StringBuilder(), when, current);
     }
 
-    public static CharSequence relativeTimestamp(Instant when)
-    {
+    public static CharSequence relativeTimestamp(Instant when) {
         return appendRelativeTimestamp(new StringBuilder(), when.toEpochMilli(),
-                System.currentTimeMillis(), TimeUnitFormat.SHORT);
+              System.currentTimeMillis(), TimeUnitFormat.SHORT);
     }
 
     /**
-     * Append a description of some point in time using some reference point.
-     * The appended text is {@code <timestamp> <space> <open-parenth> <integer>
+     * Append a description of some point in time using some reference point. The appended text is
+     * {@code <timestamp> <space> <open-parenth> <integer>
      * <space> <time-unit-word> <space> <relation> <close-parenth>}.  Here are
      * two examples:
      * <pre>
@@ -564,14 +546,12 @@ public class TimeUtils
      * </pre>
      */
     public static StringBuilder appendRelativeTimestamp(StringBuilder sb,
-            long when, long current)
-    {
+          long when, long current) {
         return appendRelativeTimestamp(sb, when, current, TimeUnitFormat.LONG);
     }
 
     public static StringBuilder appendRelativeTimestamp(StringBuilder sb,
-            long when, long current, TimeUnitFormat format)
-    {
+          long when, long current, TimeUnitFormat format) {
         checkArgument(when > 0);
         checkArgument(current > 0);
 
@@ -591,14 +571,12 @@ public class TimeUtils
         return sb;
     }
 
-    public static long getMillis(Properties properties, String key)
-    {
+    public static long getMillis(Properties properties, String key) {
         return TimeUnit.valueOf(properties.getProperty(key + ".unit")).toMillis(
-                Long.parseLong(properties.getProperty(key)));
+              Long.parseLong(properties.getProperty(key)));
     }
 
-    public static Duration durationOf(long value, TimeUnit unit)
-    {
+    public static Duration durationOf(long value, TimeUnit unit) {
         return Duration.of(value, unit.toChronoUnit());
     }
 }

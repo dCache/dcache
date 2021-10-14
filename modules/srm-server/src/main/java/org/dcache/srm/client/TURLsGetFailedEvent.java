@@ -93,40 +93,43 @@ package org.dcache.srm.client;
 import java.beans.PropertyChangeEvent;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class TURLsGetFailedEvent extends PropertyChangeEvent {
+
     final String requestId;
     final String fileRequestId;
 
     private static final long serialVersionUID = -8572112632044518674L;
 
-    public TURLsGetFailedEvent(TurlGetterPutter getterPutter,String SURL,Object reason,String requestId,String fileRequestId)  {
-        super(getterPutter, "TURL",SURL, reason);
+    public TURLsGetFailedEvent(TurlGetterPutter getterPutter, String SURL, Object reason,
+          String requestId, String fileRequestId) {
+        super(getterPutter, "TURL", SURL, reason);
         this.requestId = requestId;
         this.fileRequestId = fileRequestId;
     }
 
     public String getSURL() {
-        return (String)getOldValue();
+        return (String) getOldValue();
     }
 
     public String getReason() {
         return (String) getNewValue();
     }
 
-    /** Getter for property fileRequestId.
-     * @return Value of property fileRequestId.
+    /**
+     * Getter for property fileRequestId.
      *
+     * @return Value of property fileRequestId.
      */
     public String getFileRequestId() {
         return fileRequestId;
     }
 
-    /** Getter for property requestId.
-     * @return Value of property requestId.
+    /**
+     * Getter for property requestId.
      *
+     * @return Value of property requestId.
      */
     public String getRequestId() {
         return requestId;

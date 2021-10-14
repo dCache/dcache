@@ -17,28 +17,27 @@
  */
 package org.dcache.pool.statistics;
 
+import static org.dcache.util.TimeUtils.describe;
+
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-import static org.dcache.util.TimeUtils.describe;
-
 
 /**
- * An immutable snapshot of statistics describing the channel usage in a
- * particular direction: either read- or write operations.
+ * An immutable snapshot of statistics describing the channel usage in a particular direction:
+ * either read- or write operations.
  */
-public class DirectedIoStatistics
-{
+public class DirectedIoStatistics {
+
     private final SnapshotStatistics _statistics;
     private final Duration _idle;
     private final Duration _active;
     private final Instant _firstAccess;
     private final Instant _latestAccess;
 
-    public DirectedIoStatistics()
-    {
+    public DirectedIoStatistics() {
         _idle = Duration.ZERO;
         _active = Duration.ZERO;
         _firstAccess = null;
@@ -47,9 +46,8 @@ public class DirectedIoStatistics
     }
 
     public DirectedIoStatistics(Duration idle, Duration active,
-            Instant firstAccess, Instant latestAccess,
-            LiveStatistics statistics)
-    {
+          Instant firstAccess, Instant latestAccess,
+          LiveStatistics statistics) {
         _idle = idle;
         _active = active;
         _firstAccess = firstAccess;
@@ -60,32 +58,29 @@ public class DirectedIoStatistics
     /**
      * The collection of statistics gathered about IO operations.
      */
-    public SnapshotStatistics statistics()
-    {
+    public SnapshotStatistics statistics() {
         return _statistics;
     }
 
     /**
      * Time spent with no IO requests of this type (read or write).
      */
-    public Duration idle()
-    {
+    public Duration idle() {
         return _idle;
     }
 
     /**
-     * Time spent with at least one active IO request of this type (read or
-     * write).
+     * Time spent with at least one active IO request of this type (read or write).
      */
-    public Duration active()
-    {
+    public Duration active() {
         return _active;
     }
 
-    public void getInfo(PrintWriter pw)
-    {
-        pw.println("First request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_firstAccess)));
-        pw.println("Latest request: " + org.dcache.util.Strings.describe(Optional.ofNullable(_latestAccess)));
+    public void getInfo(PrintWriter pw) {
+        pw.println("First request: " + org.dcache.util.Strings.describe(
+              Optional.ofNullable(_firstAccess)));
+        pw.println("Latest request: " + org.dcache.util.Strings.describe(
+              Optional.ofNullable(_latestAccess)));
         pw.println("Active: " + describe(_active).orElse("never active"));
         pw.println("Idle: " + describe(_idle).orElse("never idle"));
         _statistics.getInfo(pw);

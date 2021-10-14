@@ -61,12 +61,12 @@ package org.dcache.restful.providers.billing;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.Map;
 
 @ApiModel(description = "A full listing of available time "
-                                + "series data according to types.")
+      + "series data according to types.")
 public final class BillingDataGrid {
+
     @ApiModelProperty("Mapping of identifier to entry.")
     private Map<String, BillingDataGridEntry> dataGrid;
 

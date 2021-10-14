@@ -10,13 +10,12 @@
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
+import static org.dcache.srm.util.Credentials.checkValid;
 
+import eu.emi.security.authn.x509.X509Credential;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Calendar;
-import java.util.Date;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
@@ -26,20 +25,18 @@ import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
 import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-import static org.dcache.srm.util.Credentials.checkValid;
+public class SRMGetRequestTokensClientV2 extends SRMClient {
 
-public class SRMGetRequestTokensClientV2 extends SRMClient  {
     private URI srmURL;
     private X509Credential credential;
     private ISRM srmv2;
 
     public SRMGetRequestTokensClientV2(Configuration configuration, URI url) {
         super(configuration);
-        srmURL=url;
+        srmURL = url;
         try {
             credential = getCredential();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             credential = null;
             System.err.println("Couldn't getGssCredential.");
         }
@@ -48,15 +45,15 @@ public class SRMGetRequestTokensClientV2 extends SRMClient  {
     @Override
     public void connect() throws Exception {
         srmv2 = new SRMClientV2(srmURL,
-                                getCredential(),
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                doDelegation,
-                                fullDelegation,
-                                gss_expected_name,
-                                configuration.getWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                configuration.getTransport());
+              getCredential(),
+              configuration.getRetry_timeout(),
+              configuration.getRetry_num(),
+              doDelegation,
+              fullDelegation,
+              gss_expected_name,
+              configuration.getWebservice_path(),
+              configuration.getX509_user_trusted_certificates(),
+              configuration.getTransport());
     }
 
     @Override
@@ -67,37 +64,36 @@ public class SRMGetRequestTokensClientV2 extends SRMClient  {
             request.setUserRequestDescription(configuration.getUserRequestDescription());
             SrmGetRequestTokensResponse response = srmv2.srmGetRequestTokens(request);
 
-            if ( response == null ) {
+            if (response == null) {
                 throw new IOException(" null SrmGetRequestTokensResponse ");
             }
             TReturnStatus rs = response.getReturnStatus();
-            if ( rs == null) {
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("srmGetRequestTokens failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+                throw new IOException(
+                      "srmGetRequestTokens failed, unexpected or failed return status : " +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
             }
-            if (response.getArrayOfRequestTokens()!=null) {
+            if (response.getArrayOfRequestTokens() != null) {
                 ArrayOfTRequestTokenReturn tokens = response.getArrayOfRequestTokens();
-                if (tokens.getTokenArray()!=null) {
+                if (tokens.getTokenArray() != null) {
                     TRequestTokenReturn tokenArray[] = tokens.getTokenArray();
                     for (TRequestTokenReturn aTokenArray : tokenArray) {
                         String token = aTokenArray.getRequestToken();
                         Calendar date = aTokenArray.getCreatedAtTime();
                         System.out
-                                .println("Request token=" + ((token != null ? token : "null")) + " Created=" + ((date != null) ? date : "null"));
+                              .println("Request token=" + ((token != null ? token : "null"))
+                                    + " Created=" + ((date != null) ? date : "null"));
                     }
-                }
-                else {
+                } else {
                     System.err.println("Couldn't get list of request tokens");
                 }
-            }
-            else {
+            } else {
                 System.err.println("No request tokens found");
             }
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             say(e.toString());
 
         }

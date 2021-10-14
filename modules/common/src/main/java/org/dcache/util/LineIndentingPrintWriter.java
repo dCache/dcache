@@ -21,30 +21,27 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * An implementation of PrintWriter that indents each line by some prefix.  Any
- * empty lines are left empty; i.e., there is no indent.
+ * An implementation of PrintWriter that indents each line by some prefix.  Any empty lines are left
+ * empty; i.e., there is no indent.
  */
-public class LineIndentingPrintWriter extends PrintWriter
-{
+public class LineIndentingPrintWriter extends PrintWriter {
+
     private final String prefix;
     private boolean isLineStart = true;
 
-    public LineIndentingPrintWriter(Writer inner, String prefix)
-    {
+    public LineIndentingPrintWriter(Writer inner, String prefix) {
         super(inner);
         this.prefix = prefix;
     }
 
     @Override
-    public void println()
-    {
+    public void println() {
         super.println();
         isLineStart = true;
     }
 
     @Override
-    public void write(int c)
-    {
+    public void write(int c) {
         if (c == '\n') {
             isLineStart = true;
         } else {
@@ -57,35 +54,33 @@ public class LineIndentingPrintWriter extends PrintWriter
     }
 
     @Override
-    public void write(char cbuf[], int off, int len)
-    {
+    public void write(char cbuf[], int off, int len) {
         int curr = off;
         int index = indexOf(cbuf, '\n', curr);
-        while (index != -1 && index <= off+len) {
+        while (index != -1 && index <= off + len) {
             if (isLineStart) {
                 isLineStart = false;
                 super.write(prefix, 0, prefix.length());
             }
             int count = 1 + index - curr; // +1 to include '\n'
             super.write(cbuf, curr, count);
-            curr = index+1;
+            curr = index + 1;
             index = indexOf(cbuf, '\n', curr);
             isLineStart = true;
         }
 
-        if (curr < off+len) {
+        if (curr < off + len) {
             if (isLineStart) {
                 isLineStart = false;
                 super.write(prefix, 0, prefix.length());
             }
-            super.write(cbuf, curr, off+len-curr);
+            super.write(cbuf, curr, off + len - curr);
         }
     }
 
-    private int indexOf(char buf[], char c, int off)
-    {
+    private int indexOf(char buf[], char c, int off) {
         for (int i = off; i < buf.length; i++) {
-            if (buf [i] == c) {
+            if (buf[i] == c) {
                 return i;
             }
         }
@@ -93,34 +88,32 @@ public class LineIndentingPrintWriter extends PrintWriter
     }
 
     @Override
-    public void write(String str)
-    {
+    public void write(String str) {
         write(str, 0, str.length());
     }
 
     @Override
-    public void write(String str, int off, int len)
-    {
+    public void write(String str, int off, int len) {
         int curr = off;
         int index = str.indexOf('\n', curr);
-        while (index != -1 && index <= off+len) {
+        while (index != -1 && index <= off + len) {
             if (isLineStart) {
                 isLineStart = false;
                 super.write(prefix, 0, prefix.length());
             }
             int count = 1 + index - curr; // +1 to include '\n'
             super.write(str, curr, count);
-            curr = index+1;
+            curr = index + 1;
             index = str.indexOf('\n', curr);
             isLineStart = true;
         }
 
-        if (curr < off+len) {
+        if (curr < off + len) {
             if (isLineStart) {
                 isLineStart = false;
                 super.write(prefix, 0, prefix.length());
             }
-            super.write(str, curr, off+len-curr);
+            super.write(str, curr, off + len - curr);
         }
     }
 }

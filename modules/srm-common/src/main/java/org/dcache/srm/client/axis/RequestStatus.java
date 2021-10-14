@@ -1,13 +1,14 @@
 /**
  * RequestStatus.java
- *
- * This file was auto-generated from WSDL
- * by the Apache Axis 1.3 Oct 05, 2005 (05:23:37 EDT) WSDL2Java emitter.
+ * <p>
+ * This file was auto-generated from WSDL by the Apache Axis 1.3 Oct 05, 2005 (05:23:37 EDT)
+ * WSDL2Java emitter.
  */
 
 package org.dcache.srm.client.axis;
 
-public class RequestStatus  implements java.io.Serializable {
+public class RequestStatus implements java.io.Serializable {
+
     private static final long serialVersionUID = 6807473468454397410L;
     private int requestId;
 
@@ -33,32 +34,32 @@ public class RequestStatus  implements java.io.Serializable {
     }
 
     public RequestStatus(
-           int requestId,
-           java.lang.String type,
-           java.lang.String state,
-           java.util.Calendar submitTime,
-           java.util.Calendar startTime,
-           java.util.Calendar finishTime,
-           int estTimeToStart,
-           org.dcache.srm.client.axis.RequestFileStatus[] fileStatuses,
-           java.lang.String errorMessage,
-           int retryDeltaTime) {
-           this.requestId = requestId;
-           this.type = type;
-           this.state = state;
-           this.submitTime = submitTime;
-           this.startTime = startTime;
-           this.finishTime = finishTime;
-           this.estTimeToStart = estTimeToStart;
-           this.fileStatuses = fileStatuses;
-           this.errorMessage = errorMessage;
-           this.retryDeltaTime = retryDeltaTime;
+          int requestId,
+          java.lang.String type,
+          java.lang.String state,
+          java.util.Calendar submitTime,
+          java.util.Calendar startTime,
+          java.util.Calendar finishTime,
+          int estTimeToStart,
+          org.dcache.srm.client.axis.RequestFileStatus[] fileStatuses,
+          java.lang.String errorMessage,
+          int retryDeltaTime) {
+        this.requestId = requestId;
+        this.type = type;
+        this.state = state;
+        this.submitTime = submitTime;
+        this.startTime = startTime;
+        this.finishTime = finishTime;
+        this.estTimeToStart = estTimeToStart;
+        this.fileStatuses = fileStatuses;
+        this.errorMessage = errorMessage;
+        this.retryDeltaTime = retryDeltaTime;
     }
 
 
     /**
      * Gets the requestId value for this RequestStatus.
-     * 
+     *
      * @return requestId
      */
     public int getRequestId() {
@@ -68,7 +69,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the requestId value for this RequestStatus.
-     * 
+     *
      * @param requestId
      */
     public void setRequestId(int requestId) {
@@ -78,7 +79,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the type value for this RequestStatus.
-     * 
+     *
      * @return type
      */
     public java.lang.String getType() {
@@ -88,7 +89,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the type value for this RequestStatus.
-     * 
+     *
      * @param type
      */
     public void setType(java.lang.String type) {
@@ -98,7 +99,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the state value for this RequestStatus.
-     * 
+     *
      * @return state
      */
     public java.lang.String getState() {
@@ -108,7 +109,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the state value for this RequestStatus.
-     * 
+     *
      * @param state
      */
     public void setState(java.lang.String state) {
@@ -118,7 +119,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the submitTime value for this RequestStatus.
-     * 
+     *
      * @return submitTime
      */
     public java.util.Calendar getSubmitTime() {
@@ -128,7 +129,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the submitTime value for this RequestStatus.
-     * 
+     *
      * @param submitTime
      */
     public void setSubmitTime(java.util.Calendar submitTime) {
@@ -138,7 +139,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the startTime value for this RequestStatus.
-     * 
+     *
      * @return startTime
      */
     public java.util.Calendar getStartTime() {
@@ -148,7 +149,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the startTime value for this RequestStatus.
-     * 
+     *
      * @param startTime
      */
     public void setStartTime(java.util.Calendar startTime) {
@@ -158,7 +159,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the finishTime value for this RequestStatus.
-     * 
+     *
      * @return finishTime
      */
     public java.util.Calendar getFinishTime() {
@@ -168,7 +169,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the finishTime value for this RequestStatus.
-     * 
+     *
      * @param finishTime
      */
     public void setFinishTime(java.util.Calendar finishTime) {
@@ -178,7 +179,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the estTimeToStart value for this RequestStatus.
-     * 
+     *
      * @return estTimeToStart
      */
     public int getEstTimeToStart() {
@@ -188,7 +189,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the estTimeToStart value for this RequestStatus.
-     * 
+     *
      * @param estTimeToStart
      */
     public void setEstTimeToStart(int estTimeToStart) {
@@ -198,7 +199,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the fileStatuses value for this RequestStatus.
-     * 
+     *
      * @return fileStatuses
      */
     public org.dcache.srm.client.axis.RequestFileStatus[] getFileStatuses() {
@@ -208,7 +209,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the fileStatuses value for this RequestStatus.
-     * 
+     *
      * @param fileStatuses
      */
     public void setFileStatuses(org.dcache.srm.client.axis.RequestFileStatus[] fileStatuses) {
@@ -218,7 +219,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the errorMessage value for this RequestStatus.
-     * 
+     *
      * @return errorMessage
      */
     public java.lang.String getErrorMessage() {
@@ -228,7 +229,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the errorMessage value for this RequestStatus.
-     * 
+     *
      * @param errorMessage
      */
     public void setErrorMessage(java.lang.String errorMessage) {
@@ -238,7 +239,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Gets the retryDeltaTime value for this RequestStatus.
-     * 
+     *
      * @return retryDeltaTime
      */
     public int getRetryDeltaTime() {
@@ -248,7 +249,7 @@ public class RequestStatus  implements java.io.Serializable {
 
     /**
      * Sets the retryDeltaTime value for this RequestStatus.
-     * 
+     *
      * @param retryDeltaTime
      */
     public void setRetryDeltaTime(int retryDeltaTime) {
@@ -256,6 +257,7 @@ public class RequestStatus  implements java.io.Serializable {
     }
 
     private java.lang.Object __equalsCalc;
+
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof RequestStatus)) {
             return false;
@@ -269,36 +271,37 @@ public class RequestStatus  implements java.io.Serializable {
         }
         __equalsCalc = obj;
         boolean _equals;
-        _equals = true && 
-            this.requestId == other.getRequestId() &&
-            ((this.type==null && other.getType()==null) || 
-             (this.type!=null &&
-              this.type.equals(other.getType()))) &&
-            ((this.state==null && other.getState()==null) || 
-             (this.state!=null &&
-              this.state.equals(other.getState()))) &&
-            ((this.submitTime==null && other.getSubmitTime()==null) || 
-             (this.submitTime!=null &&
-              this.submitTime.equals(other.getSubmitTime()))) &&
-            ((this.startTime==null && other.getStartTime()==null) || 
-             (this.startTime!=null &&
-              this.startTime.equals(other.getStartTime()))) &&
-            ((this.finishTime==null && other.getFinishTime()==null) || 
-             (this.finishTime!=null &&
-              this.finishTime.equals(other.getFinishTime()))) &&
-            this.estTimeToStart == other.getEstTimeToStart() &&
-            ((this.fileStatuses==null && other.getFileStatuses()==null) || 
-             (this.fileStatuses!=null &&
-              java.util.Arrays.equals(this.fileStatuses, other.getFileStatuses()))) &&
-            ((this.errorMessage==null && other.getErrorMessage()==null) || 
-             (this.errorMessage!=null &&
-              this.errorMessage.equals(other.getErrorMessage()))) &&
-            this.retryDeltaTime == other.getRetryDeltaTime();
+        _equals = true &&
+              this.requestId == other.getRequestId() &&
+              ((this.type == null && other.getType() == null) ||
+                    (this.type != null &&
+                          this.type.equals(other.getType()))) &&
+              ((this.state == null && other.getState() == null) ||
+                    (this.state != null &&
+                          this.state.equals(other.getState()))) &&
+              ((this.submitTime == null && other.getSubmitTime() == null) ||
+                    (this.submitTime != null &&
+                          this.submitTime.equals(other.getSubmitTime()))) &&
+              ((this.startTime == null && other.getStartTime() == null) ||
+                    (this.startTime != null &&
+                          this.startTime.equals(other.getStartTime()))) &&
+              ((this.finishTime == null && other.getFinishTime() == null) ||
+                    (this.finishTime != null &&
+                          this.finishTime.equals(other.getFinishTime()))) &&
+              this.estTimeToStart == other.getEstTimeToStart() &&
+              ((this.fileStatuses == null && other.getFileStatuses() == null) ||
+                    (this.fileStatuses != null &&
+                          java.util.Arrays.equals(this.fileStatuses, other.getFileStatuses()))) &&
+              ((this.errorMessage == null && other.getErrorMessage() == null) ||
+                    (this.errorMessage != null &&
+                          this.errorMessage.equals(other.getErrorMessage()))) &&
+              this.retryDeltaTime == other.getRetryDeltaTime();
         __equalsCalc = null;
         return _equals;
     }
 
     private boolean __hashCodeCalc;
+
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;
@@ -323,12 +326,12 @@ public class RequestStatus  implements java.io.Serializable {
         }
         _hashCode += getEstTimeToStart();
         if (getFileStatuses() != null) {
-            for (int i=0;
-                 i<java.lang.reflect.Array.getLength(getFileStatuses());
-                 i++) {
+            for (int i = 0;
+                  i < java.lang.reflect.Array.getLength(getFileStatuses());
+                  i++) {
                 java.lang.Object obj = java.lang.reflect.Array.get(getFileStatuses(), i);
                 if (obj != null &&
-                    !obj.getClass().isArray()) {
+                      !obj.getClass().isArray()) {
                     _hashCode += obj.hashCode();
                 }
             }
@@ -343,68 +346,79 @@ public class RequestStatus  implements java.io.Serializable {
 
     // Type metadata
     private static org.apache.axis.description.TypeDesc typeDesc =
-        new org.apache.axis.description.TypeDesc(RequestStatus.class, true);
+          new org.apache.axis.description.TypeDesc(RequestStatus.class, true);
 
     static {
-        typeDesc.setXmlType(new javax.xml.namespace.QName("http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestStatus"));
+        typeDesc.setXmlType(new javax.xml.namespace.QName(
+              "http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestStatus"));
         org.apache.axis.description.ElementDesc elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("requestId");
         elemField.setXmlName(new javax.xml.namespace.QName("", "requestId"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("type");
         elemField.setXmlName(new javax.xml.namespace.QName("", "type"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("state");
         elemField.setXmlName(new javax.xml.namespace.QName("", "state"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("submitTime");
         elemField.setXmlName(new javax.xml.namespace.QName("", "submitTime"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("startTime");
         elemField.setXmlName(new javax.xml.namespace.QName("", "startTime"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("finishTime");
         elemField.setXmlName(new javax.xml.namespace.QName("", "finishTime"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "dateTime"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("estTimeToStart");
         elemField.setXmlName(new javax.xml.namespace.QName("", "estTimeToStart"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("fileStatuses");
         elemField.setXmlName(new javax.xml.namespace.QName("", "fileStatuses"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestFileStatus"));
+        elemField.setXmlType(new javax.xml.namespace.QName(
+              "http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestFileStatus"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("errorMessage");
         elemField.setXmlName(new javax.xml.namespace.QName("", "errorMessage"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("retryDeltaTime");
         elemField.setXmlName(new javax.xml.namespace.QName("", "retryDeltaTime"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
     }
@@ -420,24 +434,24 @@ public class RequestStatus  implements java.io.Serializable {
      * Get Custom Serializer
      */
     public static org.apache.axis.encoding.Serializer getSerializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
-           javax.xml.namespace.QName _xmlType) {
-        return 
-          new  org.apache.axis.encoding.ser.BeanSerializer(
-            _javaType, _xmlType, typeDesc);
+          java.lang.String mechType,
+          java.lang.Class _javaType,
+          javax.xml.namespace.QName _xmlType) {
+        return
+              new org.apache.axis.encoding.ser.BeanSerializer(
+                    _javaType, _xmlType, typeDesc);
     }
 
     /**
      * Get Custom Deserializer
      */
     public static org.apache.axis.encoding.Deserializer getDeserializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
-           javax.xml.namespace.QName _xmlType) {
-        return 
-          new  org.apache.axis.encoding.ser.BeanDeserializer(
-            _javaType, _xmlType, typeDesc);
+          java.lang.String mechType,
+          java.lang.Class _javaType,
+          javax.xml.namespace.QName _xmlType) {
+        return
+              new org.apache.axis.encoding.ser.BeanDeserializer(
+                    _javaType, _xmlType, typeDesc);
     }
 
 }

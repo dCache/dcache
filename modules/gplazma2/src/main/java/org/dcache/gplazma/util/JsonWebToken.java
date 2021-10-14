@@ -17,14 +17,11 @@
  */
 package org.dcache.gplazma.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -38,17 +35,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A JsonWebToken is a bearer token with three parts: a header, a payload and
- * a signature.  This class provides access to well-known header claims, the
- * ability to verify the signature, and a flexible mechanism to extract
- * information from the payload.
+ * A JsonWebToken is a bearer token with three parts: a header, a payload and a signature.  This
+ * class provides access to well-known header claims, the ability to verify the signature, and a
+ * flexible mechanism to extract information from the payload.
  */
-public class JsonWebToken
-{
+public class JsonWebToken {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonWebToken.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -63,14 +60,12 @@ public class JsonWebToken
     private final byte[] unsignedToken;
     private final byte[] signature;
 
-    public static boolean isCompatibleFormat(String token)
-    {
+    public static boolean isCompatibleFormat(String token) {
         List<String> elements = Splitter.on('.').limit(3).splitToList(token);
         return elements.size() == 3 && elements.stream().allMatch(JsonWebToken::isBase64Encoded);
     }
 
-    private static boolean isBase64Encoded(String data)
-    {
+    private static boolean isBase64Encoded(String data) {
         try {
             Base64.getUrlDecoder().decode(data);
             return true;
@@ -79,19 +74,16 @@ public class JsonWebToken
         }
     }
 
-    private JsonNode decodeToJson(String encoded) throws IOException
-    {
+    private JsonNode decodeToJson(String encoded) throws IOException {
         String data = new String(decodeToBytes(encoded), StandardCharsets.UTF_8);
         return mapper.readValue(data, JsonNode.class);
     }
 
-    private static byte[] decodeToBytes(String data)
-    {
+    private static byte[] decodeToBytes(String data) {
         return Base64.getUrlDecoder().decode(data);
     }
 
-    public JsonWebToken(String token) throws IOException
-    {
+    public JsonWebToken(String token) throws IOException {
         int lastDot = token.lastIndexOf('.');
         checkArgument(lastDot > 0, "Missing '.' in JWT");
         unsignedToken = token.substring(0, lastDot).getBytes(StandardCharsets.US_ASCII);
@@ -108,20 +100,17 @@ public class JsonWebToken
         signature = decodeToBytes(elements.get(2));
     }
 
-    private String getOptionalString(JsonNode object, String key)
-    {
+    private String getOptionalString(JsonNode object, String key) {
         JsonNode node = object.get(key);
         return node == null ? null : node.textValue();
     }
 
     @Nullable
-    public String getKeyIdentifier()
-    {
+    public String getKeyIdentifier() {
         return kid;
     }
 
-    public boolean isSignedBy(PublicKey key)
-    {
+    public boolean isSignedBy(PublicKey key) {
         try {
             Signature signature = getSignature();
             signature.initVerify(key);
@@ -133,61 +122,56 @@ public class JsonWebToken
         }
     }
 
-    private Signature getSignature() throws GeneralSecurityException
-    {
+    private Signature getSignature() throws GeneralSecurityException {
         switch (alg) {
-        case "RS256":
-            return Signature.getInstance("SHA256withRSA", "BC");
-        default:
-            throw new NoSuchAlgorithmException("Unknown JWT alg " + alg);
+            case "RS256":
+                return Signature.getInstance("SHA256withRSA", "BC");
+            default:
+                throw new NoSuchAlgorithmException("Unknown JWT alg " + alg);
         }
     }
 
-    public Optional<Instant> getPayloadInstant(String key)
-    {
+    public Optional<Instant> getPayloadInstant(String key) {
         return Optional.ofNullable(payload.get(key))
-                .filter(JsonNode::isIntegralNumber)
-                .map(JsonNode::asLong)
-                .map(Instant::ofEpochSecond);
+              .filter(JsonNode::isIntegralNumber)
+              .map(JsonNode::asLong)
+              .map(Instant::ofEpochSecond);
     }
 
-    public Optional<String> getPayloadString(String key)
-    {
+    public Optional<String> getPayloadString(String key) {
         return Optional.ofNullable(payload.get(key))
-                .filter(JsonNode::isTextual)
-                .map(JsonNode::textValue);
+              .filter(JsonNode::isTextual)
+              .map(JsonNode::textValue);
     }
 
     /**
-     * A node is either absent, a JSON String, or a JSON Array with JSON String
-     * elements. If absent then an empty List is returned.  If present and a
-     * JSON String then a List containing only that value is returned.  If
-     * present and a JSON Array then a List containing all textual elements is
-     * returned; all non-textual elements are ignored.  If the value is not a
-     * JSON String or a JSON array then an empty List is returned.
+     * A node is either absent, a JSON String, or a JSON Array with JSON String elements. If absent
+     * then an empty List is returned.  If present and a JSON String then a List containing only
+     * that value is returned.  If present and a JSON Array then a List containing all textual
+     * elements is returned; all non-textual elements are ignored.  If the value is not a JSON
+     * String or a JSON array then an empty List is returned.
+     *
      * @param key the ID of the element to return
      * @return a List of Strings, which may be empty.
      */
-    public List<String> getPayloadStringOrArray(String key)
-    {
+    public List<String> getPayloadStringOrArray(String key) {
         return Optional.ofNullable(payload.get(key))
-                .filter(n -> n.isArray() || n.isTextual())
-                .map(JsonWebToken::toStringList)
-                .orElse(Collections.emptyList());
+              .filter(n -> n.isArray() || n.isTextual())
+              .map(JsonWebToken::toStringList)
+              .orElse(Collections.emptyList());
     }
 
-    private static List<String> toStringList(JsonNode node)
-    {
+    private static List<String> toStringList(JsonNode node) {
         if (node.isArray()) {
             return StreamSupport.stream(node.spliterator(), false)
-                    .filter(JsonNode::isTextual) // Non text array elements are simply ignored
-                    .map(JsonNode::textValue)
-                    .collect(Collectors.toList());
-        } else  if (node.isTextual()) {
+                  .filter(JsonNode::isTextual) // Non text array elements are simply ignored
+                  .map(JsonNode::textValue)
+                  .collect(Collectors.toList());
+        } else if (node.isTextual()) {
             return Collections.singletonList(node.textValue());
         } else {
             throw new RuntimeException("Unable to convert node " + node
-                    + " to List<String>");
+                  + " to List<String>");
         }
     }
 }

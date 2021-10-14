@@ -17,40 +17,34 @@
  */
 package org.dcache.srm.scheduler.strategy;
 
-import javax.annotation.Nonnull;
-
 import java.util.ServiceLoader;
-
+import javax.annotation.Nonnull;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.JobDiscriminator;
 
-public class ForwardingJobDiscriminator implements JobDiscriminator
-{
+public class ForwardingJobDiscriminator implements JobDiscriminator {
+
     private final ServiceLoader<JobDiscriminator> discriminators =
-            ServiceLoader.load(JobDiscriminator.class);
+          ServiceLoader.load(JobDiscriminator.class);
     protected final JobDiscriminator discriminator;
 
-    public ForwardingJobDiscriminator(String key)
-    {
+    public ForwardingJobDiscriminator(String key) {
         this.discriminator = getDiscriminator(key);
     }
 
     @Nonnull
     @Override
-    public String getKey()
-    {
+    public String getKey() {
         return discriminator.getKey();
     }
 
     @Nonnull
     @Override
-    public String getDiscriminatingValue(Job job)
-    {
+    public String getDiscriminatingValue(Job job) {
         return discriminator.getDiscriminatingValue(job);
     }
 
-    protected JobDiscriminator getDiscriminator(String key)
-    {
+    protected JobDiscriminator getDiscriminator(String key) {
         for (JobDiscriminator discriminator : discriminators) {
             if (discriminator.getKey().equals(key)) {
                 return discriminator;

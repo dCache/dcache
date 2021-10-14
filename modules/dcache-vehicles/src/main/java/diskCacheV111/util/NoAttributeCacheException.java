@@ -18,18 +18,15 @@
 package diskCacheV111.util;
 
 /**
- * An attempt was made to modify an existing extended attribute only that
- * attribute does not exist.
+ * An attempt was made to modify an existing extended attribute only that attribute does not exist.
  */
-public class NoAttributeCacheException extends CacheException
-{
-    public NoAttributeCacheException(String message)
-    {
+public class NoAttributeCacheException extends CacheException {
+
+    public NoAttributeCacheException(String message) {
         this(message, null);
     }
 
-    public NoAttributeCacheException(String message, Throwable cause)
-    {
+    public NoAttributeCacheException(String message, Throwable cause) {
         super(NO_ATTRIBUTE, message, cause);
     }
 }

@@ -90,6 +90,7 @@ package org.dcache.srm.util;
 
 //import java.util.HashMap;
 //import java.util.StringTokenizer;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -97,16 +98,14 @@ import java.util.Iterator;
 import java.util.Vector;
 
 /**
- * A command line arguments parser, 
- * ArgParser.java, Thr May 30 10:32:35 2002
+ * A command line arguments parser, ArgParser.java, Thr May 30 10:32:35 2002
  *
  * @author Timur Perelmutov
- * @author CD/ISD 
- * @version 	0.9, 27 May 2002
+ * @author CD/ISD
+ * @version 0.9, 27 May 2002
  */
 
-public class ArgParser
-{
+public class ArgParser {
     //
     // private constants
     //
@@ -119,49 +118,42 @@ public class ArgParser
     //
     // private fields
     //
-    
+
     private final Hashtable<String, ArgOption> general_options = new Hashtable<>(); //these are parsed general options
     private final Hashtable<String, ArgOption> command_options = new Hashtable<>();         // and parsed  command options
-                                       // typed by user in command line after 
-                                       // command
+    // typed by user in command line after
+    // command
     private String[] argv;            // these are original arguments
     private final Hashtable<String, ArgOption> option_list =
-        new Hashtable<>();          //the list of possible options
+          new Hashtable<>();          //the list of possible options
     private String command_name; // the command name 
-                                 //(first non optional argument)
-    private final Collection<String> arguments=new Vector<>();// the vector of nonoptional arguments
+    //(first non optional argument)
+    private final Collection<String> arguments = new Vector<>();// the vector of nonoptional arguments
     private String[] commands;
-    
+
     private boolean parsed;
     private boolean usecommand;
 
-    
-    
-/**
- * A command line argument, 
- * ArgParser.ArgOption
- *
- */ 
-    private class ArgOption
-    {
+
+    /**
+     * A command line argument, ArgParser.ArgOption
+     */
+    private class ArgOption {
+
         String command;
         String name;
         int type;
-        int min_val,max_val;
+        int min_val, max_val;
         String string_option_value;
-        int int_option_value; 
+        int int_option_value;
         String description;
-        
+
         @Override
-        protected Object clone()
-        {
+        protected Object clone() {
             ArgOption the_clone;
-            try
-            {
+            try {
                 the_clone = (ArgOption) super.clone();
-            }
-            catch(CloneNotSupportedException cnse)
-            {
+            } catch (CloneNotSupportedException cnse) {
                 the_clone = new ArgOption();
             }
             the_clone.command = this.command;
@@ -169,73 +161,59 @@ public class ArgParser
             the_clone.type = this.type;
             the_clone.min_val = this.min_val;
             the_clone.max_val = this.max_val;
-            the_clone.string_option_value=this.string_option_value;
+            the_clone.string_option_value = this.string_option_value;
             the_clone.int_option_value = int_option_value;
             the_clone.description = this.description;
             return the_clone;
         }
-        
-        ArgOption copy()
-        {
+
+        ArgOption copy() {
             return (ArgOption) clone();
         }
     }
 
-    private  ArgParser()
-    {
+    private ArgParser() {
     }
+
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
-    
-    public ArgParser(String[] argv,String[] commands)
-    {
+
+    public ArgParser(String[] argv, String[] commands) {
         this.argv = argv;
-        if(commands != null && commands.length>0)
-        {
-          this.commands = commands;
-          usecommand = true;
+        if (commands != null && commands.length > 0) {
+            this.commands = commands;
+            usecommand = true;
         }
     }
-    
-    public ArgParser(String[] argv)
-    {
+
+    public ArgParser(String[] argv) {
         this.argv = argv;
         usecommand = false;
     }
-    
+
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
     public void addIntegerOption(String command, String name, String description,
-                                 int min_value, int max_value) 
-                                 throws IllegalArgumentException  
-    {
-        if(!usecommand && command != null)
-        {
-             throw new IllegalArgumentException(" try to specify a command option for an unexisting command "+ command);
+          int min_value, int max_value)
+          throws IllegalArgumentException {
+        if (!usecommand && command != null) {
+            throw new IllegalArgumentException(
+                  " try to specify a command option for an unexisting command " + command);
         }
-        if(parsed)
-        {
-             throw new IllegalArgumentException("command line has been already parsed");
+        if (parsed) {
+            throw new IllegalArgumentException("command line has been already parsed");
         }
         ArgOption option = new ArgOption();
         option.command = command;
@@ -244,52 +222,40 @@ public class ArgParser
         option.max_val = max_value;
         option.type = INT_OPTION_TYPE;
         option.description = description;
-        if(command==null)
-        {
-          option_list.put(name,option);
-        }
-        else
-        {
+        if (command == null) {
+            option_list.put(name, option);
+        } else {
             //System.out.println("put("+name+",{"+option.command+","+option.name+"})");
-            option_list.put(command+" "+name,option);
+            option_list.put(command + " " + name, option);
         }
     }
 
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
     public void addStringOption(String command, String name, String description)
-                               throws IllegalArgumentException  
-    {
-        if(!usecommand && command != null)
-        {
-             throw new IllegalArgumentException(" try to specify a command option for an unexisting command "+ command);
+          throws IllegalArgumentException {
+        if (!usecommand && command != null) {
+            throw new IllegalArgumentException(
+                  " try to specify a command option for an unexisting command " + command);
         }
-        if(parsed)
-        {
-             throw new IllegalArgumentException("command line has been already parsed");
+        if (parsed) {
+            throw new IllegalArgumentException("command line has been already parsed");
         }
         ArgOption option = new ArgOption();
         option.command = command;
         option.name = name;
         option.type = STRING_OPTION_TYPE;
         option.description = description;
-        if(command==null)
-        {
-          option_list.put(name,option);
-        }
-        else
-        {
-            option_list.put(command+" "+name,option);
+        if (command == null) {
+            option_list.put(name, option);
+        } else {
+            option_list.put(command + " " + name, option);
             //System.out.println("put("+name+",{"+option.command+","+option.name+"})");
         }
     }
@@ -297,57 +263,44 @@ public class ArgParser
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
     public void addVoidOption(String command, String name, String description)
-                              throws IllegalArgumentException  
-    {
-        if(!usecommand && command != null)
-        {
-             throw new IllegalArgumentException(" try to specify a command option for an unexisting command "+ command);
+          throws IllegalArgumentException {
+        if (!usecommand && command != null) {
+            throw new IllegalArgumentException(
+                  " try to specify a command option for an unexisting command " + command);
         }
-        if(parsed)
-        {
-             throw new IllegalArgumentException("command line has been already parsed");
+        if (parsed) {
+            throw new IllegalArgumentException("command line has been already parsed");
         }
         ArgOption option = new ArgOption();
         option.command = command;
         option.name = name;
         option.type = VOID_OPTION_TYPE;
         option.description = description;
-        
-        if(command==null)
-        {
-          option_list.put(name,option);
-        }
-        else
-        {
-          //System.out.println("put("+name+",{"+option.command+","+option.name+"})");
-           option_list.put(command+" "+name,option);
+
+        if (command == null) {
+            option_list.put(name, option);
+        } else {
+            //System.out.println("put("+name+",{"+option.command+","+option.name+"})");
+            option_list.put(command + " " + name, option);
         }
     }
 
     /**
      * Parses the command line and checks it validity </p>
      *
-     * @throws IllegalArgumentException
-     *                when command line contains invalid 
-     *                option or invalid command or no command at all.
-     *              
+     * @throws IllegalArgumentException when command line contains invalid option or invalid command
+     *                                  or no command at all.
      */
-    
-    public void parse() throws IllegalArgumentException
-    {
-        if(parsed)
-        {
-             throw new IllegalArgumentException("command line has been already parsed");
+
+    public void parse() throws IllegalArgumentException {
+        if (parsed) {
+            throw new IllegalArgumentException("command line has been already parsed");
         }
         String option_name;
         String option_value;
@@ -358,7 +311,7 @@ public class ArgParser
                 int equals_index = arg.indexOf('=');
                 if (equals_index == 0) {
                     throw new IllegalArgumentException("command line parse exception, " +
-                            "invalid option: " + arg);
+                          "invalid option: " + arg);
                 }
                 if (equals_index > 0) {
 
@@ -378,25 +331,25 @@ public class ArgParser
                 } else {
                     //System.out.println("geting option by key = "+command_name+" "+option_name);
                     option = option_list
-                            .get(this.command_name + " " + option_name);
+                          .get(this.command_name + " " + option_name);
                 }
 
                 if (option == null) {
                     throw new IllegalArgumentException("command line parse exception, " +
-                            "unrecognized option: " + arg);
+                          "unrecognized option: " + arg);
 
                 }
                 if (general_option && option.command != null) {
                     throw new IllegalArgumentException("command line parse exception, " +
-                            "missplased command " +
-                            option.command +
-                            " option: " + arg);
+                          "missplased command " +
+                          option.command +
+                          " option: " + arg);
 
                 }
 
                 if (!general_option && option.command == null) {
                     throw new IllegalArgumentException("command line parse exception, " +
-                            "missplased general option: " + arg);
+                          "missplased general option: " + arg);
 
                 }
 
@@ -405,7 +358,7 @@ public class ArgParser
                 if (new_option.type == STRING_OPTION_TYPE) {
                     if (option_value == null || option_value.equals("")) {
                         throw new IllegalArgumentException("command line parse exception, " +
-                                "option value is not specified: " + arg);
+                              "option value is not specified: " + arg);
                     }
 
                     new_option.string_option_value = option_value;
@@ -413,30 +366,30 @@ public class ArgParser
                 } else if (new_option.type == INT_OPTION_TYPE) {
                     if (option_value == null) {
                         throw new IllegalArgumentException("command line parse exception, " +
-                                "option value is not specified: " + arg);
+                              "option value is not specified: " + arg);
                     }
 
                     try {
                         new_option.int_option_value = Integer
-                                .parseInt(option_value);
+                              .parseInt(option_value);
                     } catch (NumberFormatException nfe) {
                         throw new IllegalArgumentException("command line parse exception, " +
-                                "invalid option value: " + arg +
-                                "\n error:" + nfe.getMessage());
+                              "invalid option value: " + arg +
+                              "\n error:" + nfe.getMessage());
                     }
                     if (new_option.int_option_value < new_option.min_val ||
-                            new_option.int_option_value > new_option.max_val) {
+                          new_option.int_option_value > new_option.max_val) {
                         throw new IllegalArgumentException("command line parse exception, " +
-                                "invalid option value: " + arg +
-                                "\n error: value is outside range [" +
-                                new_option.min_val + "," + new_option.max_val + "]");
+                              "invalid option value: " + arg +
+                              "\n error: value is outside range [" +
+                              new_option.min_val + "," + new_option.max_val + "]");
                     }
                 }
                 if (general_option) {
                     general_options.put(option_name, new_option);
                 } else {
                     command_options
-                            .put(command_name + " " + option_name, new_option);
+                          .put(command_name + " " + option_name, new_option);
                 }
             }//if (argv[i].charAt(0) == '-')
             else {
@@ -449,7 +402,7 @@ public class ArgParser
                     }
                     if (this.command_name == null) {
                         throw new IllegalArgumentException("command line parse exception, " +
-                                "invalid command name: " + arg);
+                              "invalid command name: " + arg);
                     }
                     general_option = false;
                 } else {
@@ -457,10 +410,9 @@ public class ArgParser
                 }
             }
         }
-        if(this.command_name == null && usecommand )
-        {
-            throw new IllegalArgumentException("command line parse exception, "+
-                            "command name not specified ");
+        if (this.command_name == null && usecommand) {
+            throw new IllegalArgumentException("command line parse exception, " +
+                  "command name not specified ");
         }
         parsed = true;
     } //public void parse()
@@ -468,256 +420,198 @@ public class ArgParser
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
 
-    public boolean isOptionSet( String command,String name) throws IllegalArgumentException
-    {
-        if(!parsed)
-        {
-             throw new IllegalArgumentException("command line hasn't been parsed yet");
+    public boolean isOptionSet(String command, String name) throws IllegalArgumentException {
+        if (!parsed) {
+            throw new IllegalArgumentException("command line hasn't been parsed yet");
         }
-        
-        if(command == null)
-        {
+
+        if (command == null) {
             return general_options.containsKey(name);
-        }
-        else
-        {
-            return command_options.containsKey(command+" "+name);
+        } else {
+            return command_options.containsKey(command + " " + name);
         }
     }
-    
+
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
-    private ArgOption getOption(String command,String name) throws IllegalArgumentException
-    {
-        if(!parsed)
-        {
-             throw new IllegalArgumentException("command line hasn't been parsed yet");
+    private ArgOption getOption(String command, String name) throws IllegalArgumentException {
+        if (!parsed) {
+            throw new IllegalArgumentException("command line hasn't been parsed yet");
         }
         ArgOption option;
-        if(command == null)
-        {
+        if (command == null) {
             option = general_options.get(name);
-            if(option == null)
-            {
-              throw new IllegalArgumentException("option "+name+" is not set");
+            if (option == null) {
+                throw new IllegalArgumentException("option " + name + " is not set");
             }
-        }
-        else
-        {
-            option = command_options.get(command+" "+name);
-            if(option == null)
-            {
-              throw new IllegalArgumentException("option "+name+" for command "+command+" is not set");
+        } else {
+            option = command_options.get(command + " " + name);
+            if (option == null) {
+                throw new IllegalArgumentException(
+                      "option " + name + " for command " + command + " is not set");
             }
         }
         return option;
     }
-       
-    /**
-     * Description </p>
-     *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
-     * @return return value description
-     *
-     * @throws Exception
-     *                when
-     */
-    public String stringOptionValue( String command, String name) throws IllegalArgumentException
-    {
-        ArgOption option = getOption(command,name);
-        if(option.type != STRING_OPTION_TYPE)
-        {
-            throw new IllegalArgumentException("option is not a string option");
-        }
-        return option.string_option_value;
-    }  
 
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
-    public int intOptionValue(String command, String name) throws IllegalArgumentException
-    {
-        ArgOption option = getOption(command,name);
-        if(option.type != INT_OPTION_TYPE)
-        {
+    public String stringOptionValue(String command, String name) throws IllegalArgumentException {
+        ArgOption option = getOption(command, name);
+        if (option.type != STRING_OPTION_TYPE) {
             throw new IllegalArgumentException("option is not a string option");
         }
-        return option.int_option_value;
-    }  
-    
-    public String getCommand() throws IllegalArgumentException
-    {
-        if(!parsed)
-        {
-             throw new IllegalArgumentException("command line hasn't been parsed yet");
-        }
-        return command_name;
+        return option.string_option_value;
     }
-    
+
     /**
      * Description </p>
      *
-     * @param  param1
-     *         param1 description
-     * @param  param2
-     *         param2 description
+     * @param param1 param1 description
+     * @param param2 param2 description
      * @return return value description
-     *
-     * @throws Exception
-     *                when
+     * @throws Exception when
      */
-    public String[] getCommandArguments() throws IllegalArgumentException
-    {
-        if(!parsed)
-        {
-             throw new IllegalArgumentException("command line hasn't been parsed yet");
+    public int intOptionValue(String command, String name) throws IllegalArgumentException {
+        ArgOption option = getOption(command, name);
+        if (option.type != INT_OPTION_TYPE) {
+            throw new IllegalArgumentException("option is not a string option");
+        }
+        return option.int_option_value;
+    }
+
+    public String getCommand() throws IllegalArgumentException {
+        if (!parsed) {
+            throw new IllegalArgumentException("command line hasn't been parsed yet");
+        }
+        return command_name;
+    }
+
+    /**
+     * Description </p>
+     *
+     * @param param1 param1 description
+     * @param param2 param2 description
+     * @return return value description
+     * @throws Exception when
+     */
+    public String[] getCommandArguments() throws IllegalArgumentException {
+        if (!parsed) {
+            throw new IllegalArgumentException("command line hasn't been parsed yet");
         }
 
         return arguments.toArray(String[]::new);
     }
-    
-  /**
-   * Description </p>
-   *
-   * @param  param1
-   *         param1 description
-   * @param  param2
-   *         param2 description
-   * @return return value description
-   *
-   * @throws Exception
-   *                when
-   */
-  public String usage()
-  {
-    
-    StringBuffer sb = new StringBuffer();
-    sb.append("Usage: srm [general-options] ");
-    if(commands!=null)
-    {
-        sb.append("command [command-options-and-arguments]\n");
-    }
-    sb.append("  where general-options are:\n");
-    String[] keys= new String[option_list.size()];
-      Iterator<String> iterator = option_list.keySet().iterator();
-    int i = 0;
-    while(iterator.hasNext())
-    {
-      keys[i++] = iterator.next();
-    }
-    
-    Arrays.sort(keys);
-    for(i=0;i<keys.length;++i)
-    {
-      String key = keys[i];
-      if(key.indexOf (' ')==-1)
-      {
-        ArgOption option = option_list.get(key);
-        optionToSB(sb,option);
-      }
-    }
-    
-    if(commands != null)
-    {
-        sb.append("  command :\n");
 
-        for(i = 0;i<commands.length;++i)
-        {
-          sb.append("    ").append(commands[i]).append('\n');
+    /**
+     * Description </p>
+     *
+     * @param param1 param1 description
+     * @param param2 param2 description
+     * @return return value description
+     * @throws Exception when
+     */
+    public String usage() {
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("Usage: srm [general-options] ");
+        if (commands != null) {
+            sb.append("command [command-options-and-arguments]\n");
         }
-        sb.append("--help-command <command-name> for command details"); 
-    }
+        sb.append("  where general-options are:\n");
+        String[] keys = new String[option_list.size()];
+        Iterator<String> iterator = option_list.keySet().iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            keys[i++] = iterator.next();
+        }
+
+        Arrays.sort(keys);
+        for (i = 0; i < keys.length; ++i) {
+            String key = keys[i];
+            if (key.indexOf(' ') == -1) {
+                ArgOption option = option_list.get(key);
+                optionToSB(sb, option);
+            }
+        }
+
+        if (commands != null) {
+            sb.append("  command :\n");
+
+            for (i = 0; i < commands.length; ++i) {
+                sb.append("    ").append(commands[i]).append('\n');
+            }
+            sb.append("--help-command <command-name> for command details");
+        }
         return sb.toString();
-  }
-
-  public String usage(String command)
-  {
-    int i =0;
-    for(;i<commands.length;++i)
-    {
-      if(commands[i].equals(command))
-      {
-        break;
-      }
-    }
-    if(i == commands.length)
-    {
-      return "unknown comand "+command+ ", srm --help for felp";
     }
 
-    StringBuffer sb = new StringBuffer();
-    sb.append(command);
-    sb.append(" usage: srm [general-options] ").append(command)
-            .append(" [options-and-arguments]\n");
-    sb.append("  where options-and-arguments are:\n");
-      for (Object o : option_list.keySet()) {
-          String key = (String) o;
-          if (key.indexOf(' ') != -1 &&
+    public String usage(String command) {
+        int i = 0;
+        for (; i < commands.length; ++i) {
+            if (commands[i].equals(command)) {
+                break;
+            }
+        }
+        if (i == commands.length) {
+            return "unknown comand " + command + ", srm --help for felp";
+        }
+
+        StringBuffer sb = new StringBuffer();
+        sb.append(command);
+        sb.append(" usage: srm [general-options] ").append(command)
+              .append(" [options-and-arguments]\n");
+        sb.append("  where options-and-arguments are:\n");
+        for (Object o : option_list.keySet()) {
+            String key = (String) o;
+            if (key.indexOf(' ') != -1 &&
                   key.startsWith(command + ' ')) {
-              ArgOption option = option_list.get(key);
-              if (option == null) {
-                  // shoul never happen
-                  //throw new IllegalArgumentException("option for the key \""+key +"\" is null");
-                  sb.append("ERROR: option for the key \"").append(key)
+                ArgOption option = option_list.get(key);
+                if (option == null) {
+                    // shoul never happen
+                    //throw new IllegalArgumentException("option for the key \""+key +"\" is null");
+                    sb.append("ERROR: option for the key \"").append(key)
                           .append("\" is null");
-              } else {
-                  optionToSB(sb, option);
-              }
-          }
-      }
-    return sb.toString();
-  }
-  
-  private static void optionToSB(StringBuffer sb, ArgOption option)
-  {
-      sb.append("      -").append(option.name);
-      if(option.type == INT_OPTION_TYPE)
-      {
-        sb.append("=<int-value> where ").append(option.min_val);
-        sb.append(" is less than <int-value>, and <int-value> is less thavin ").append(option.max_val);
-      }
-      else if(option.type == STRING_OPTION_TYPE)
-      {
-        sb.append("=<string-value>");
-      }
+                } else {
+                    optionToSB(sb, option);
+                }
+            }
+        }
+        return sb.toString();
+    }
 
-      if(option.description != null && 
-         !option.description.equalsIgnoreCase("description"))
-      {    
-        sb.append("\n\t\t").append(option.description);
-      }
-      sb.append('\n');
-  }
+    private static void optionToSB(StringBuffer sb, ArgOption option) {
+        sb.append("      -").append(option.name);
+        if (option.type == INT_OPTION_TYPE) {
+            sb.append("=<int-value> where ").append(option.min_val);
+            sb.append(" is less than <int-value>, and <int-value> is less thavin ")
+                  .append(option.max_val);
+        } else if (option.type == STRING_OPTION_TYPE) {
+            sb.append("=<string-value>");
+        }
+
+        if (option.description != null &&
+              !option.description.equalsIgnoreCase("description")) {
+            sb.append("\n\t\t").append(option.description);
+        }
+        sb.append('\n');
+    }
 }

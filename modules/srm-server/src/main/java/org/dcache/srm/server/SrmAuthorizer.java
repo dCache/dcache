@@ -65,13 +65,9 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import eu.emi.security.authn.x509.X509Credential;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.ac.VOMSACValidator;
-
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
-
 import org.dcache.auth.FQAN;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
@@ -81,23 +77,23 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Axis;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.ac.VOMSACValidator;
 
 
 /**
- * The SrmAUthorizer provides helper methods that mediates access to
- * RequestCredentialStorage.
+ * The SrmAUthorizer provides helper methods that mediates access to RequestCredentialStorage.
  */
-public class SrmAuthorizer
-{
+public class SrmAuthorizer {
+
     private final RequestCredentialStorage storage;
     private final SRMAuthorization authorization;
     private final boolean isClientDNSLookup;
     private final VOMSACValidator validator;
 
     public SrmAuthorizer(SRMAuthorization authorization,
-                         RequestCredentialStorage storage, boolean isClientDNSLookup,
-                         VOMSACValidator validator)
-    {
+          RequestCredentialStorage storage, boolean isClientDNSLookup,
+          VOMSACValidator validator) {
         this.isClientDNSLookup = isClientDNSLookup;
         this.authorization = authorization;
         this.storage = storage;
@@ -105,59 +101,55 @@ public class SrmAuthorizer
     }
 
     /**
-     * Obtain the SRMUser object if the user is authorized to use the
-     * back-end system.  Throws SRMAuthorizationException if the user is
-     * not authorized.
+     * Obtain the SRMUser object if the user is authorized to use the back-end system.  Throws
+     * SRMAuthorizationException if the user is not authorized.
      */
     public SRMUser getRequestUser()
-            throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException
-    {
+          throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException {
         X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
-                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+              new SRMAuthenticationException("Client's certificate chain is missing from request"));
         return authorization.authorize(certificates, Axis.getRemoteAddress());
     }
 
     /**
-     * Check whether the current user is authorized to use the SRM without
-     * mapping that user.
+     * Check whether the current user is authorized to use the SRM without mapping that user.
+     *
      * @return true if the user can use the SRM.
      */
     public boolean isUserAuthorized() throws SRMInternalErrorException,
-            SRMAuthenticationException
-    {
+          SRMAuthenticationException {
         X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
-                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+              new SRMAuthenticationException("Client's certificate chain is missing from request"));
         return authorization.isAuthorized(certificates, Axis.getRemoteAddress());
     }
 
 
     /**
-     * Obtain a RequestCredential containing the delegated credential for the
-     * current user with the specified role (primary FQAN).  If an existing
-     * delegated credential already exists then this method will use the "best"
-     * available credential, where best is the credential that will remain valid
-     * for the longest.  The method ensures the best credential is saved in
-     * the storage.
+     * Obtain a RequestCredential containing the delegated credential for the current user with the
+     * specified role (primary FQAN).  If an existing delegated credential already exists then this
+     * method will use the "best" available credential, where best is the credential that will
+     * remain valid for the longest.  The method ensures the best credential is saved in the
+     * storage.
      */
-    public RequestCredential getRequestCredential() throws SRMAuthenticationException
-    {
+    public RequestCredential getRequestCredential() throws SRMAuthenticationException {
         X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
-                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+              new SRMAuthenticationException("Client's certificate chain is missing from request"));
 
         String dn = Axis.getDN().orElseThrow(() ->
-                new SRMAuthenticationException("Failed to resolve DN"));
+              new SRMAuthenticationException("Failed to resolve DN"));
 
         X509Credential credential = Axis.getDelegatedCredential().orElse(null);
         FQAN role = getPrimary(validator.validate(certificates));
 
-        RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, Objects.toString(role, null), storage);
+        RequestCredential requestCredential = RequestCredential.newRequestCredential(dn,
+              Objects.toString(role, null), storage);
         requestCredential.keepBestDelegatedCredential(credential);
         requestCredential.saveCredential();
         return requestCredential;
     }
 
-    private FQAN getPrimary(List<VOMSAttribute> attributes)
-    {
-        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
+    private FQAN getPrimary(List<VOMSAttribute> attributes) {
+        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new)
+              .orElse(null);
     }
 }

@@ -17,19 +17,17 @@
  */
 package org.dcache.webdav;
 
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.stringtemplate.v4.STGroup;
 
-import java.io.IOException;
-
 /**
- * This is a simple wrapper to allow support auto reloading of a
- * template-group.
+ * This is a simple wrapper to allow support auto reloading of a template-group.
  */
-public class AutoReloadingTemplate extends ReloadableTemplate
-{
+public class AutoReloadingTemplate extends ReloadableTemplate {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AutoReloadingTemplate.class);
     private static final long CHECK_PERIOD = 1_000;
 
@@ -37,14 +35,12 @@ public class AutoReloadingTemplate extends ReloadableTemplate
     private long _lastChecked;
 
     public AutoReloadingTemplate(Resource resource)
-            throws IOException
-    {
+          throws IOException {
         super(resource);
     }
 
     @Override
-    protected synchronized STGroup getTemplateGroup()
-    {
+    protected synchronized STGroup getTemplateGroup() {
         if (System.currentTimeMillis() - _lastChecked > CHECK_PERIOD) {
             try {
                 long lastModified = getResource().lastModified();

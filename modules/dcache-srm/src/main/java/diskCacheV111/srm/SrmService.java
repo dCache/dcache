@@ -63,18 +63,16 @@ exporting documents or software obtained from this server.
  */
 package diskCacheV111.srm;
 
+import static com.google.common.collect.Iterables.getFirst;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.Objects.requireNonNull;
+
+import diskCacheV111.srm.dcache.DcacheUserManager;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessageReceiver;
 import eu.emi.security.authn.x509.X509Credential;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
-import org.apache.zookeeper.CreateMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.security.auth.Subject;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -82,41 +80,39 @@ import java.security.KeyStoreException;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateEncodingException;
 import java.util.Objects;
-
-import diskCacheV111.srm.dcache.DcacheUserManager;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessageReceiver;
-
+import javax.security.auth.Subject;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SrmRequest;
-import org.dcache.srm.SrmResponse;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SrmRequest;
+import org.dcache.srm.SrmResponse;
 import org.dcache.srm.handler.CredentialAwareHandler;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.collect.Iterables.getFirst;
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * SRM 2.2 backend message processor.
- *
+ * <p>
  * Receives requests from SRM frontends.
  */
-public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
-{
+public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, CellIdentityAware,
+      CellLifeCycleAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmService.class);
 
     private SRM srm;
@@ -129,99 +125,91 @@ public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, C
     private String id;
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         this.client = client;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         this.address = address;
     }
 
     @Required
-    public void setSrmId(String id)
-    {
+    public void setSrmId(String id) {
         this.id = requireNonNull(id);
     }
 
     @Required
-    public void setStorage(AbstractStorageElement storage)
-    {
+    public void setStorage(AbstractStorageElement storage) {
         this.storage = storage;
     }
 
     @Required
-    public void setSrm(SRM srm)
-    {
+    public void setSrm(SRM srm) {
         this.srm = srm;
     }
 
     @Required
-    public void setRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage)
-    {
+    public void setRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage) {
         this.requestCredentialStorage = requestCredentialStorage;
     }
 
     @Required
-    public void setUserManager(DcacheUserManager userManager)
-    {
+    public void setUserManager(DcacheUserManager userManager) {
         this.userManager = userManager;
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         String path = getZooKeeperBackendPath(this.id);
-        byte[] data =  address.toString().getBytes(US_ASCII);
+        byte[] data = address.toString().getBytes(US_ASCII);
         node = new PersistentNode(client, CreateMode.EPHEMERAL, false, path, data);
         node.start();
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         if (node != null) {
             CloseableUtils.closeQuietly(node);
         }
     }
 
-    public SrmResponse messageArrived(SrmRequest request) throws SRMException
-    {
+    public SrmResponse messageArrived(SrmRequest request) throws SRMException {
         try {
-            CertPath certPath = getFirst(request.getSubject().getPublicCredentials(CertPath.class), null);
+            CertPath certPath = getFirst(request.getSubject().getPublicCredentials(CertPath.class),
+                  null);
             LoginReply login = new LoginReply(request.getSubject(), request.getLoginAttributes());
             SRMUser user = userManager.persist(certPath, login);
 
             String requestName = request.getRequestName();
             Class<?> requestClass = request.getRequest().getClass();
             String capitalizedRequestName =
-                    Character.toUpperCase(requestName.charAt(0))+
-                    requestName.substring(1);
+                  Character.toUpperCase(requestName.charAt(0)) +
+                        requestName.substring(1);
             LOGGER.debug("About to call {} handler", requestName);
             Constructor<?> handlerConstructor;
             Object handler;
             Method handleGetResponseMethod;
 
             try {
-                Class<?> handlerClass = Class.forName("org.dcache.srm.handler." + capitalizedRequestName);
+                Class<?> handlerClass = Class.forName(
+                      "org.dcache.srm.handler." + capitalizedRequestName);
                 handlerConstructor =
-                        handlerClass.getConstructor(SRMUser.class,
-                        requestClass,
-                        AbstractStorageElement.class,
-                        SRM.class,
-                        String.class);
+                      handlerClass.getConstructor(SRMUser.class,
+                            requestClass,
+                            AbstractStorageElement.class,
+                            SRM.class,
+                            String.class);
                 handler = handlerConstructor.newInstance(user,
-                                                         request.getRequest(),
-                                                         storage,
-                                                         srm,
-                                                         request.getRemoteHost());
+                      request.getRequest(),
+                      storage,
+                      srm,
+                      request.getRemoteHost());
 
                 if (handler instanceof CredentialAwareHandler) {
                     CredentialAwareHandler credentialAware = (CredentialAwareHandler) handler;
                     RequestCredential requestCredential =
-                            saveRequestCredential(request.getSubject(), request.getCredential());
+                          saveRequestCredential(request.getSubject(), request.getCredential());
                     credentialAware.setCredential(requestCredential);
                 }
 
@@ -240,23 +228,23 @@ public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, C
             throw new SRMInternalErrorException("Failed to process certificate chain.", e);
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
             LOGGER.error("Please report this failure to support@dcache.org", e);
-            throw new SRMInternalErrorException("Internal error (server log contains additional information)");
+            throw new SRMInternalErrorException(
+                  "Internal error (server log contains additional information)");
         }
     }
 
-    private RequestCredential saveRequestCredential(Subject subject, X509Credential credential)
-    {
+    private RequestCredential saveRequestCredential(Subject subject, X509Credential credential) {
         String dn = Subjects.getDn(subject);
         FQAN fqan = Subjects.getPrimaryFqan(subject);
         RequestCredential requestCredential =
-                RequestCredential.newRequestCredential(dn, Objects.toString(fqan, null), requestCredentialStorage);
+              RequestCredential.newRequestCredential(dn, Objects.toString(fqan, null),
+                    requestCredentialStorage);
         requestCredential.keepBestDelegatedCredential(credential);
         requestCredential.saveCredential();
         return requestCredential;
     }
 
-    public static String getZooKeeperBackendPath(String id)
-    {
+    public static String getZooKeeperBackendPath(String id) {
         return ZKPaths.makePath("/dcache/srm/backends", id);
     }
 }

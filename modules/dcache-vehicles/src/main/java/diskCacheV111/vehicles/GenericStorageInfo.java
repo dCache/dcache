@@ -1,5 +1,9 @@
 package diskCacheV111.vehicles;
 
+import static java.util.stream.Collectors.toMap;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -10,14 +14,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-
-import static java.util.stream.Collectors.toMap;
-
 public class GenericStorageInfo
-    implements StorageInfo
-{
+      implements StorageInfo {
+
     private static final long serialVersionUID = 2089636591513548893L;
 
     /*
@@ -153,9 +152,8 @@ public class GenericStorageInfo
     }
 
     /**
-     *
-     * @return true if locations list is not empty or ( legacy case )
-     * if value was explicit set by setIsStored(true)
+     * @return true if locations list is not empty or ( legacy case ) if value was explicit set by
+     * setIsStored(true)
      */
     @Override
     public boolean isStored() {
@@ -206,7 +204,7 @@ public class GenericStorageInfo
      */
     @Override
     @Deprecated
-    public void setIsStored( boolean isStored) {
+    public void setIsStored(boolean isStored) {
         _isStored = isStored;
     }
 
@@ -219,26 +217,26 @@ public class GenericStorageInfo
         RetentionPolicy rp = getLegacyRetentionPolicy();
         StringBuilder sb = new StringBuilder();
         sb.append("size=").append(getLegacySize()).append(";new=").append(
-                isCreatedOnly()).append(";stored=").append(isStored()).append(
-                ";sClass=").append(sc == null ? "-" : sc).append(";cClass=")
-                .append(cc == null ? "-" : cc).append(";hsm=").append(
-                        hsm == null ? "-" : hsm).append(";accessLatency=")
-                        .append(ac == null ? "-" : ac.toString()).append(
-                        ";retentionPolicy=").append(
-                                rp == null ? "-" : rp.toString()).append(';');
+                    isCreatedOnly()).append(";stored=").append(isStored()).append(
+                    ";sClass=").append(sc == null ? "-" : sc).append(";cClass=")
+              .append(cc == null ? "-" : cc).append(";hsm=").append(
+                    hsm == null ? "-" : hsm).append(";accessLatency=")
+              .append(ac == null ? "-" : ac.toString()).append(
+                    ";retentionPolicy=").append(
+                    rp == null ? "-" : rp.toString()).append(';');
 
         /*
          * FIXME: extra checks are needed to read old SI files
          */
-        if( _keyHash != null ) {
+        if (_keyHash != null) {
             for (Map.Entry<String, String> entry : _keyHash.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 sb.append(key).append('=').append(value).append(';');
             }
         }
-        if( _locations != null ) {
-            for(URI location : _locations ) {
+        if (_locations != null) {
+            for (URI location : _locations) {
                 sb.append(location).append(';');
             }
         }
@@ -247,34 +245,34 @@ public class GenericStorageInfo
 
     @Override
     public int hashCode() {
-        Set<URI> ourLocations = new HashSet<>( locations());
+        Set<URI> ourLocations = new HashSet<>(locations());
 
         return getLegacyAccessLatency().hashCode() ^
-        getLegacyRetentionPolicy().hashCode() ^
-        ourLocations.hashCode() ^
-        (int) getLegacySize() ^
-        getStorageClass().hashCode() ^
-        (isStored() ? 1 << 0 : 0) ^
-        (isCreatedOnly() ? 1 << 1 : 0);
+              getLegacyRetentionPolicy().hashCode() ^
+              ourLocations.hashCode() ^
+              (int) getLegacySize() ^
+              getStorageClass().hashCode() ^
+              (isStored() ? 1 << 0 : 0) ^
+              (isCreatedOnly() ? 1 << 1 : 0);
     }
 
     @Override
-    public boolean equals( Object o) {
+    public boolean equals(Object o) {
 
-        if ( o == this) {
+        if (o == this) {
             return true;
         }
 
-        if( !( o instanceof GenericStorageInfo )) {
+        if (!(o instanceof GenericStorageInfo)) {
             return false;
         }
 
-        GenericStorageInfo other = (GenericStorageInfo)o;
+        GenericStorageInfo other = (GenericStorageInfo) o;
 
-        if ( !other.getLegacyAccessLatency().equals( this.getLegacyAccessLatency()) ) {
+        if (!other.getLegacyAccessLatency().equals(this.getLegacyAccessLatency())) {
             return false;
         }
-        if ( !other.getLegacyRetentionPolicy().equals( this.getLegacyRetentionPolicy()) ) {
+        if (!other.getLegacyRetentionPolicy().equals(this.getLegacyRetentionPolicy())) {
             return false;
         }
 
@@ -284,10 +282,10 @@ public class GenericStorageInfo
          * GenericStorageInfo must have at least one instance of the URI.  Having more than one
          * is OK.
          */
-        Set<URI> ourLocations = new HashSet<>( locations());
-        Set<URI> otherLocations = new HashSet<>( other.locations());
+        Set<URI> ourLocations = new HashSet<>(locations());
+        Set<URI> otherLocations = new HashSet<>(other.locations());
 
-        if( ! otherLocations.equals( ourLocations)) {
+        if (!otherLocations.equals(ourLocations)) {
             return false;
         }
 
@@ -295,16 +293,16 @@ public class GenericStorageInfo
          *  If two GenericStorageInfo objects have location URIs specified then we ignore any
          *  BitfieldId values.
          */
-        if( this.locations().isEmpty()) {
-            if ( other.getBitfileId() != null && this.getBitfileId() != null  &&
-                    ! other.getBitfileId().equals(this.getBitfileId() )) {
+        if (this.locations().isEmpty()) {
+            if (other.getBitfileId() != null && this.getBitfileId() != null &&
+                  !other.getBitfileId().equals(this.getBitfileId())) {
                 return false;
             }
 
-            if ( other.getBitfileId() != null && this.getBitfileId() == null  ) {
+            if (other.getBitfileId() != null && this.getBitfileId() == null) {
                 return false;
             }
-            if ( other.getBitfileId() == null && this.getBitfileId() != null  ) {
+            if (other.getBitfileId() == null && this.getBitfileId() != null) {
                 return false;
             }
         }
@@ -321,17 +319,17 @@ public class GenericStorageInfo
             return false;
         }
 
-        if (other.getLegacySize() != this.getLegacySize() ) {
+        if (other.getLegacySize() != this.getLegacySize()) {
             return false;
         }
         if (!Objects.equals(other.getStorageClass(), this.getStorageClass())) {
             return false;
         }
 
-        if (other.isStored() != this.isStored() ) {
+        if (other.isStored() != this.isStored()) {
             return false;
         }
-        if (other.isCreatedOnly() != this.isCreatedOnly() ) {
+        if (other.isCreatedOnly() != this.isCreatedOnly()) {
             return false;
         }
 
@@ -340,20 +338,20 @@ public class GenericStorageInfo
 
 
     /**
-     * Allow pre 1.8 storage info to be read. Allows old persistent storage info
-     * objects on pools to be read.
+     * Allow pre 1.8 storage info to be read. Allows old persistent storage info objects on pools to
+     * be read.
      */
     Object readResolve() {
 
-        if(_accessLatency == null ) {
-            _accessLatency =  AccessLatency.NEARLINE;
+        if (_accessLatency == null) {
+            _accessLatency = AccessLatency.NEARLINE;
         }
 
-        if(_retentionPolicy == null ) {
+        if (_retentionPolicy == null) {
             _retentionPolicy = RetentionPolicy.CUSTODIAL;
         }
 
-        if(_locations == null ) {
+        if (_locations == null) {
             _locations = new ArrayList<>();
         }
 
@@ -362,8 +360,7 @@ public class GenericStorageInfo
     }
 
     @Override
-    public GenericStorageInfo clone()
-    {
+    public GenericStorageInfo clone() {
         try {
             GenericStorageInfo copy = (GenericStorageInfo) super.clone();
             copy._keyHash = new HashMap<>(_keyHash);
@@ -371,7 +368,7 @@ public class GenericStorageInfo
             return copy;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Failed to clone storage info: " +
-                                       e.getMessage());
+                  e.getMessage());
         }
     }
 
@@ -381,11 +378,10 @@ public class GenericStorageInfo
      * @param storeUnit
      * @param cacheClass
      * @return StorageInfo
-     * @throws IllegalArgumentException if store unit format do not match to
-     * x:y@z or equal to '*'
+     * @throws IllegalArgumentException if store unit format do not match to x:y@z or equal to '*'
      */
     public static StorageInfo valueOf(String storeUnit, String cacheClass)
-            throws IllegalArgumentException {
+          throws IllegalArgumentException {
         StorageInfo si;
 
         if (storeUnit.equals("*")) {
@@ -394,7 +390,8 @@ public class GenericStorageInfo
 
             String[] unitParts = storeUnit.split("@");
             if (unitParts.length != 2) {
-                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + '>');
+                throw new IllegalArgumentException(
+                      "Invalid format: expected<x:y@z> got <" + storeUnit + '>');
             }
             si = new GenericStorageInfo(unitParts[1], unitParts[0]);
         }
@@ -411,8 +408,7 @@ public class GenericStorageInfo
     }
 
     @Override
-    public AccessLatency getLegacyAccessLatency()
-    {
+    public AccessLatency getLegacyAccessLatency() {
         return _accessLatency;
     }
 
@@ -422,8 +418,7 @@ public class GenericStorageInfo
     }
 
     @Override
-    public RetentionPolicy getLegacyRetentionPolicy()
-    {
+    public RetentionPolicy getLegacyRetentionPolicy() {
         return _retentionPolicy;
     }
 
@@ -438,11 +433,11 @@ public class GenericStorageInfo
     }
 
     private void readObject(java.io.ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
         if (_keyHash != null) {
-            _keyHash = _keyHash.entrySet().stream().collect(toMap(e -> e.getKey().intern(), e -> e.getValue()));
+            _keyHash = _keyHash.entrySet().stream()
+                  .collect(toMap(e -> e.getKey().intern(), e -> e.getValue()));
         }
         if (_storageClass != null) {
             _storageClass = _storageClass.intern();

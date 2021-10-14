@@ -19,8 +19,26 @@
  */
 package org.dcache.gplazma.plugins;
 
-import com.google.common.collect.Sets;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_AUTH;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_BINDDN;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_BINDPW;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_GROUP_MEMBER;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_GROUP_TREE;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_ORG;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_PEOPLE_TREE;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_TRY_UID_MAPPING;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_URL;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_FILTER;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_HOME;
+import static org.dcache.gplazma.plugins.Ldap.LDAP_USER_ROOT;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -30,11 +48,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.PasswordCredential;
@@ -45,10 +58,9 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.ldap4testing.EmbeddedServer;
-
-import static org.dcache.gplazma.plugins.Ldap.*;
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  *
@@ -79,7 +91,8 @@ public class LdapTest {
     @Before
     public void setUp() throws IOException {
 
-        InputStream initLdiff = ClassLoader.getSystemResourceAsStream("org/dcache/gplazma/plugins/ldap/init.ldif");
+        InputStream initLdiff = ClassLoader.getSystemResourceAsStream(
+              "org/dcache/gplazma/plugins/ldap/init.ldif");
         ldapServer = new EmbeddedServer(0, initLdiff);
         ldapServer.start();
 
@@ -141,7 +154,7 @@ public class LdapTest {
         assertThat("expected GID not found", principals, hasItem(ACTOR_GID_PRINCIPAL));
     }
 
-    @Test(expected=AuthenticationException.class)
+    @Test(expected = AuthenticationException.class)
     public void shouldThrowExceptionForNonExisting() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(NON_EXISTING_PRINCIPAL);
         plugin.map(principals);
@@ -165,7 +178,8 @@ public class LdapTest {
     }
 
     @Test
-    public void shouldReturnSetContaningGroupNameOnReverseMapping() throws NoSuchPrincipalException {
+    public void shouldReturnSetContaningGroupNameOnReverseMapping()
+          throws NoSuchPrincipalException {
         Set<Principal> rmap = plugin.reverseMap(new GidPrincipal(1001, false));
         assertThat("Expceted principal not found", rmap, hasItem(ACTOR_GROUP_PRINCIPAL));
     }
@@ -202,15 +216,16 @@ public class LdapTest {
         Set<Principal> principals = new HashSet<>();
 
         plugin.authenticate(Collections.emptySet(),
-                Collections.<Object>singleton(new PasswordCredential("kermit", "kermitTheFrog")),
-                principals);
+              Collections.<Object>singleton(new PasswordCredential("kermit", "kermitTheFrog")),
+              principals);
 
         assertThat("Expected principal not found", principals, hasItem(KERMIT_PRINCIPAL));
     }
 
 
     @Test
-    public void shouldNotGrowNumberOfThreadMoreThanOne() throws AuthenticationException, NoSuchPrincipalException {
+    public void shouldNotGrowNumberOfThreadMoreThanOne()
+          throws AuthenticationException, NoSuchPrincipalException {
         Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL);
 
         Map<Thread, StackTraceElement[]> threadsBefore = Thread.getAllStackTraces();

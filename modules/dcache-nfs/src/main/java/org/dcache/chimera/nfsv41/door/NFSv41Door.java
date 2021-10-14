@@ -1,33 +1,14 @@
 package org.dcache.chimera.nfsv41.door;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
-import org.apache.curator.utils.ZKPaths;
-import org.apache.zookeeper.CreateMode;
+import static dmg.util.CommandException.checkCommand;
+import static java.util.stream.Collectors.toList;
+import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
+
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.core.KafkaTemplate;
-
-import javax.security.auth.Subject;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
+import diskCacheV111.namespace.EventNotifier;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -40,7 +21,6 @@ import diskCacheV111.vehicles.Pool;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -54,33 +34,49 @@ import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.annotation.concurrent.GuardedBy;
+import javax.security.auth.Subject;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.chimera.ChimeraFsException;
@@ -92,24 +88,23 @@ import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
-import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
 import org.dcache.nfs.InetAddressMatcher;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.BadLayoutException;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
-import org.dcache.nfs.status.BadLayoutException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoMatchingLayoutException;
-import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.status.ServerFaultException;
 import org.dcache.nfs.status.StaleException;
 import org.dcache.nfs.status.UnknownLayoutTypeException;
-import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -119,6 +114,7 @@ import org.dcache.nfs.v4.ClientRecoveryStore;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
+import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSServerV41;
@@ -126,69 +122,62 @@ import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.NFSv4StateHandler;
-import org.dcache.nfs.v4.Stateids;
-import org.dcache.nfs.v4.xdr.clientid4;
-import org.dcache.nfs.v4.xdr.device_addr4;
-import org.dcache.nfs.v4.xdr.deviceid4;
-import org.dcache.nfs.v4.xdr.layout4;
-import org.dcache.nfs.v4.xdr.layoutiomode4;
-import org.dcache.nfs.v4.xdr.layouttype4;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
-import org.dcache.nfs.v4.xdr.nfs_fh4;
-import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
-import org.dcache.nfs.v4.xdr.length4;
+import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.ff.ff_ioerr4;
 import org.dcache.nfs.v4.ff.ff_layoutreturn4;
 import org.dcache.nfs.v4.ff.flex_files_prot;
-import org.dcache.nfs.v4.xdr.GETDEVICELIST4args;
 import org.dcache.nfs.v4.xdr.GETDEVICEINFO4args;
+import org.dcache.nfs.v4.xdr.GETDEVICELIST4args;
 import org.dcache.nfs.v4.xdr.LAYOUTCOMMIT4args;
 import org.dcache.nfs.v4.xdr.LAYOUTERROR4args;
 import org.dcache.nfs.v4.xdr.LAYOUTGET4args;
 import org.dcache.nfs.v4.xdr.LAYOUTRETURN4args;
 import org.dcache.nfs.v4.xdr.LAYOUTSTATS4args;
-import org.dcache.nfs.v4.xdr.layoutreturn_type4;
+import org.dcache.nfs.v4.xdr.clientid4;
+import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.device_error4;
+import org.dcache.nfs.v4.xdr.deviceid4;
+import org.dcache.nfs.v4.xdr.layout4;
+import org.dcache.nfs.v4.xdr.layoutiomode4;
+import org.dcache.nfs.v4.xdr.layoutreturn_type4;
+import org.dcache.nfs.v4.xdr.layouttype4;
+import org.dcache.nfs.v4.xdr.length4;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.offset4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
-import org.dcache.pool.assumption.Assumptions;
-import org.dcache.util.FireAndForgetTask;
-import org.dcache.util.Glob;
-import org.dcache.util.CDCScheduledExecutorServiceDecorator;
-import org.dcache.util.NDC;
-import org.dcache.util.RedirectedTransfer;
-import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicy;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.oncrpc4j.rpc.OncRpcProgram;
 import org.dcache.oncrpc4j.rpc.OncRpcSvc;
 import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
 import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
-
-import static java.util.stream.Collectors.toList;
-
-
-import javax.annotation.concurrent.GuardedBy;
-
-import diskCacheV111.namespace.EventNotifier;
-
-import org.dcache.auth.attributes.Restrictions;
-import org.dcache.nfs.vfs.VirtualFileSystem;
-
-import static dmg.util.CommandException.checkCommand;
-import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
+import org.dcache.pool.assumption.Assumptions;
+import org.dcache.poolmanager.PoolManagerStub;
+import org.dcache.util.CDCScheduledExecutorServiceDecorator;
+import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.Glob;
+import org.dcache.util.NDC;
+import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicy;
+import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
 public class NFSv41Door extends AbstractCellComponent implements
-        NFSv41DeviceManager, CellCommandListener,
-        CellMessageReceiver, CellInfoProvider, CuratorFrameworkAware {
+      NFSv41DeviceManager, CellCommandListener,
+      CellMessageReceiver, CellInfoProvider, CuratorFrameworkAware {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
@@ -214,23 +203,23 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final Map<stateid4, NfsTransfer> _transfers = new ConcurrentHashMap<>();
 
     /**
-     * Maximal time the NFS request will blocked before we reply with
-     * NFSERR_DELAY. The usual timeout for NFS operations is 30s. Nevertheless,
-     * as client's other requests will blocked as well, we try to block as short
-     * as we can. The rule for interactive users: never block longer than 10s.
+     * Maximal time the NFS request will blocked before we reply with NFSERR_DELAY. The usual
+     * timeout for NFS operations is 30s. Nevertheless, as client's other requests will blocked as
+     * well, we try to block as short as we can. The rule for interactive users: never block longer
+     * than 10s.
      */
     private static final long NFS_REQUEST_BLOCKING = TimeUnit.SECONDS.toMillis(3);
 
     /**
-     * A time diration that Transfer class will wait before retrying a request to
-     * a pool or pool manager.
+     * A time diration that Transfer class will wait before retrying a request to a pool or pool
+     * manager.
      */
     private static final long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(10);
 
     /**
-     * How long stage request can hang around. As the tape system can be broken,
-     * stage request may stay in a restore queue for a number of days.
-     *
+     * How long stage request can hang around. As the tape system can be broken, stage request may
+     * stay in a restore queue for a number of days.
+     * <p>
      * One week (7 days) is good enough to cover most of the public holidays.
      */
     private static final long STAGE_REQUEST_TIMEOUT = TimeUnit.DAYS.toMillis(7);
@@ -271,7 +260,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * RPC service
      */
-    private  OncRpcSvc _rpcService;
+    private OncRpcSvc _rpcService;
 
     private StrategyIdMapper _idMapper;
 
@@ -286,20 +275,21 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private ProxyIoFactory _proxyIoFactory;
 
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
+    };
 
     /**
      * Retry policy used for accessing files.
      */
     private static final TransferRetryPolicy READ_POOL_SELECTION_RETRY_POLICY =
-        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
+          new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
 
     /**
-     * Retry policy used selecting write pools. Effectively, we don't retry
-     * write request and propagate error to the clients, who decide retry of fail.
+     * Retry policy used selecting write pools. Effectively, we don't retry write request and
+     * propagate error to the clients, who decide retry of fail.
      */
     private static final TransferRetryPolicy WRITE_POOL_SELECTION_RETRY_POLICY
-            = new TransferRetryPolicy(1, NFS_REQUEST_BLOCKING, NFS_REQUEST_BLOCKING);
+          = new TransferRetryPolicy(1, NFS_REQUEST_BLOCKING, NFS_REQUEST_BLOCKING);
 
     private VfsCacheConfig _vfsCacheConfig;
 
@@ -307,7 +297,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      * {@link ExecutorService} used to issue call-backs to the client.
      */
     private final ScheduledExecutorService _callbackExecutor =
-            new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setNameFormat("callback-%d").build()));
+          new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1,
+                new ThreadFactoryBuilder().setNameFormat("callback-%d").build()));
 
     /**
      * Exception thrown by transfer if accessed after mover have finished.
@@ -347,17 +338,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         _enableRpcsecGss = enable;
     }
 
-    public void setIdMapper(StrategyIdMapper idMapper)    {
+    public void setIdMapper(StrategyIdMapper idMapper) {
         _idMapper = idMapper;
     }
 
-    public void setPoolStub(CellStub stub)
-    {
+    public void setPoolStub(CellStub stub) {
         _poolStub = stub;
     }
 
-    public void setPoolManagerStub(PoolManagerStub stub)
-    {
+    public void setPoolManagerStub(PoolManagerStub stub) {
         _poolManagerStub = stub;
     }
 
@@ -366,11 +355,13 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private JdbcFs _fileFileSystemProvider;
+
     public void setFileSystemProvider(JdbcFs fs) {
         _fileFileSystemProvider = fs;
     }
 
     private ExportFile _exportFile;
+
     public void setExportFile(ExportFile export) {
         _exportFile = export;
     }
@@ -404,7 +395,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Autowired(required = false)
     public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
-       _kafkaSender = kafkaTemplate::sendDefault;
+        _kafkaSender = kafkaTemplate::sendDefault;
     }
 
     @Autowired(required = false)
@@ -431,16 +422,14 @@ public class NFSv41Door extends AbstractCellComponent implements
         _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
 
-
-
         MountServer ms = new MountServer(_exportFile, _vfs);
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
-                .withPort(_port)
-                .withTCP()
-                .withAutoPublish()
-                .withWorkerThreadIoStrategy()
-                .withRpcService(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+              .withPort(_port)
+              .withTCP()
+              .withAutoPublish()
+              .withWorkerThreadIoStrategy()
+              .withRpcService(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
 
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
@@ -450,40 +439,42 @@ public class NFSv41Door extends AbstractCellComponent implements
             switch (version) {
                 case V3:
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
-                    oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    oncRpcSvcBuilder.withRpcService(
+                          new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
                     _loginBrokerPublisher.setTags(Collections.emptyList());
                     break;
                 case V41:
                     final NFSv41DeviceManager _dm = this;
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
                     _executor = new StatsDecoratedOperationExecutor(
-                            new DoorOperationFactory(
-                            _proxyIoFactory,
-                            _chimeraVfs,
-                            _fileFileSystemProvider,
-                            _manageGids ? Optional.of(_idMapper)
-                                    : Optional.empty(),
-                            _accessLogMode)
+                          new DoorOperationFactory(
+                                _proxyIoFactory,
+                                _chimeraVfs,
+                                _fileFileSystemProvider,
+                                _manageGids ? Optional.of(_idMapper)
+                                      : Optional.empty(),
+                                _accessLogMode)
                     );
 
                     int stateHandlerId = getOrCreateId(ZK_DOORS_PATH,
-                            getCellName() + "@" + getCellDomainName(),
-                            "state-handler-id");
+                          getCellName() + "@" + getCellDomainName(),
+                          "state-handler-id");
 
                     NFSv4StateHandler stateHandler = new NFSv4StateHandler(
-                            NFSv4Defaults.NFS4_LEASE_TIME,
-                            stateHandlerId,
-                            _clientStore);
+                          NFSv4Defaults.NFS4_LEASE_TIME,
+                          stateHandlerId,
+                          _clientStore);
 
                     _nfs4 = new NFSServerV41.Builder()
-                            .withStateHandler(stateHandler)
-                            .withDeviceManager(_dm)
-                            .withExportTable(_exportFile)
-                            .withVfs(_vfs)
-                            .withOperationExecutor(_executor)
-                            .build();
+                          .withStateHandler(stateHandler)
+                          .withDeviceManager(_dm)
+                          .withExportTable(_exportFile)
+                          .withVfs(_vfs)
+                          .withOperationExecutor(_executor)
+                          .build();
 
-                    oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+                    oncRpcSvcBuilder.withRpcService(
+                          new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     updateLbPaths();
                     break;
                 default:
@@ -494,9 +485,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         // Supported layout drivers
         _supportedDrivers = new EnumMap<>(layouttype4.class);
         _supportedDrivers.put(layouttype4.LAYOUT4_FLEX_FILES,
-                new FlexFileLayoutDriver(4, 1,
-                        flex_files_prot.FF_FLAGS_NO_IO_THRU_MDS,
-                        new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
+              new FlexFileLayoutDriver(4, 1,
+                    flex_files_prot.FF_FLAGS_NO_IO_THRU_MDS,
+                    new utf8str_mixed("17"), new utf8str_mixed("17"), this::logLayoutErrors));
         _supportedDrivers.put(layouttype4.LAYOUT4_NFSV4_1_FILES, new NfsV41FileLayoutDriver());
 
         _rpcService = oncRpcSvcBuilder.build();
@@ -519,7 +510,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      * and NFSv4.1 device id. Finally, notify waiting request that we have got
      * the reply for LAYOUTGET
      */
-    public void messageArrived(PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+    public void messageArrived(
+          PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
 
         String poolName = message.getPoolName();
         long verifier = message.getVerifier();
@@ -530,21 +522,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
-        NfsTransfer transfer = _transfers.get(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+        NfsTransfer transfer = _transfers.get(
+              new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         /*
          * We got a notification for a transfer which was not
          * started by us.
          *
          * Door reboot.
          */
-        if(transfer != null) {
+        if (transfer != null) {
             transfer.redirect(device);
         }
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
 
-        NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
+        NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo) transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = protocolInfo.stateId();
 
@@ -561,10 +554,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         transfer.finished(transferFinishedMessage);
         Serializable error = transferFinishedMessage.getErrorObject();
-        transfer.notifyBilling(transferFinishedMessage.getReturnCode(), error == null? "" : error.toString());
+        transfer.notifyBilling(transferFinishedMessage.getReturnCode(),
+              error == null ? "" : error.toString());
 
         // Ensure that we do not kill re-started transfer
-        if(transfer.getId() == transferFinishedMessage.getId()) {
+        if (transfer.getId() == transferFinishedMessage.getId()) {
             if (transfer.isWrite()) {
                 /*
                  * Inject poison to ensure that any other attempt to re-use
@@ -579,7 +573,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> messageArrived(DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+    public DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> messageArrived(
+          DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
         stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
 
@@ -591,7 +586,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             isValid = true;
         } catch (BadStateidException e) {
         } catch (ChimeraNFSException e) {
-            _log.warn("Unexpected NFS exception: {}", e.getMessage() );
+            _log.warn("Unexpected NFS exception: {}", e.getMessage());
         }
         message.setIsValid(isValid);
         return message;
@@ -622,13 +617,14 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     @Override
-    public device_addr4 getDeviceInfo(CompoundContext context, GETDEVICEINFO4args args) throws ChimeraNFSException {
+    public device_addr4 getDeviceInfo(CompoundContext context, GETDEVICEINFO4args args)
+          throws ChimeraNFSException {
 
         layouttype4 layoutType = layouttype4.valueOf(args.gdia_layout_type);
         LayoutDriver layoutDriver = getLayoutDriver(layoutType);
 
         PoolDS ds = _poolDeviceMap.getByDeviceId(args.gdia_device_id);
-        if( ds == null) {
+        if (ds == null) {
             return null;
         }
 
@@ -637,30 +633,30 @@ public class NFSv41Door extends AbstractCellComponent implements
         // Site must take care that private IP space is not visible to site external clients.
         InetAddress clientAddress = context.getRemoteSocketAddress().getAddress();
         InetSocketAddress[] usableAddresses = Stream.of(ds.getDeviceAddr())
-                .filter(a -> !a.getAddress().isLoopbackAddress() || clientAddress.isLoopbackAddress())
-                .filter(a -> !a.getAddress().isLinkLocalAddress() || clientAddress.isLinkLocalAddress())
-                // due to bug in linux kernel we need to filter out IPv6 addresses if client connected
-                // with IPv4.
-                // REVISIT: remove this workaround as soon as RHEL 7.5 is released.
-                .filter(a -> clientAddress.getAddress().length >= a.getAddress().getAddress().length)
-                .toArray(InetSocketAddress[]::new);
+              .filter(a -> !a.getAddress().isLoopbackAddress() || clientAddress.isLoopbackAddress())
+              .filter(
+                    a -> !a.getAddress().isLinkLocalAddress() || clientAddress.isLinkLocalAddress())
+              // due to bug in linux kernel we need to filter out IPv6 addresses if client connected
+              // with IPv4.
+              // REVISIT: remove this workaround as soon as RHEL 7.5 is released.
+              .filter(a -> clientAddress.getAddress().length >= a.getAddress().getAddress().length)
+              .toArray(InetSocketAddress[]::new);
 
         return layoutDriver.getDeviceAddress(usableAddresses);
     }
 
     /**
      * ask pool manager for a file
-     *
-     * On successful reply from pool manager corresponding O request will be sent
-     * to the pool to start a NFS mover.
+     * <p>
+     * On successful reply from pool manager corresponding O request will be sent to the pool to
+     * start a NFS mover.
      *
      * @throws ChimeraNFSException in case of NFS friendly errors ( like ACCESS )
-     * @throws IOException in case of any other errors
+     * @throws IOException         in case of any other errors
      */
     @Override
     public Layout layoutGet(CompoundContext context, LAYOUTGET4args args)
-            throws IOException {
-
+          throws IOException {
 
         Inode nfsInode = context.currentInode();
         layouttype4 layoutType = layouttype4.valueOf(args.loga_layout_type);
@@ -688,7 +684,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             final NFS4State layoutStateId;
 
             // serialize all requests by the same stateid
-            synchronized(openStateId) {
+            synchronized (openStateId) {
 
                 if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
                     /*
@@ -697,25 +693,27 @@ public class NFSv41Door extends AbstractCellComponent implements
                     throw new LayoutUnavailableException("special DOT file");
                 }
 
-                final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
+                final InetSocketAddress remote = context.getRpcCall().getTransport()
+                      .getRemoteSocketAddress();
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                            new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
-                            nfsInode.toNfsHandle()
-                        );
+                      new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                      nfsInode.toNfsHandle()
+                );
 
                 NfsTransfer transfer = _transfers.get(openStateId.stateid());
                 if (transfer == null) {
                     Transfer.initSession(false, false);
                     NDC.push(pnfsId.toString());
-                    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+                    NDC.push(
+                          context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
 
                     transfer = args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW ?
 
-                            new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
-                            context.getRpcCall().getCredential().getSubject())
-                            :
-                            new ReadTransfer(_pnfsHandler, client, openStateId, nfsInode,
-                            context.getRpcCall().getCredential().getSubject());
+                          new WriteTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                                context.getRpcCall().getCredential().getSubject())
+                          :
+                                new ReadTransfer(_pnfsHandler, client, openStateId, nfsInode,
+                                      context.getRpcCall().getCredential().getSubject());
 
                     transfer.setProtocolInfo(protocolInfo);
                     transfer.setCellAddress(getCellAddress());
@@ -745,12 +743,13 @@ public class NFSv41Door extends AbstractCellComponent implements
                         }
                     });
 
-                     _transfers.put(openStateId.stateid(), transfer);
+                    _transfers.put(openStateId.stateid(), transfer);
                 } else {
                     // keep debug context in sync
                     transfer.restoreSession();
                     NDC.push(pnfsId.toString());
-                    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+                    NDC.push(
+                          context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
                 }
 
                 layoutStateId = transfer.getStateid();
@@ -763,7 +762,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = args.loga_iomode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
+            layout.lo_content = layoutDriver.getLayoutContent(stateid,
+                  NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), devices);
 
             layoutStateId.bumpSeqid();
             if (args.loga_iomode == layoutiomode4.LAYOUTIOMODE4_RW) {
@@ -792,7 +792,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         } catch (InterruptedException e) {
             throw new LayoutTryLaterException(e.getMessage(), e);
         } finally {
-             cdcContext.close();
+            cdcContext.close();
         }
 
     }
@@ -800,9 +800,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public List<deviceid4> getDeviceList(CompoundContext context, GETDEVICELIST4args args) {
         return _poolDeviceMap.getDevices()
-                .stream()
-                .map(PoolDS::getDeviceId)
-                .collect(toList());
+              .stream()
+              .map(PoolDS::getDeviceId)
+              .collect(toList());
     }
 
     private void logLayoutErrors(CompoundContext context, ff_layoutreturn4 lr) {
@@ -810,12 +810,15 @@ public class NFSv41Door extends AbstractCellComponent implements
             for (device_error4 de : ioerr.ffie_errors) {
                 PoolDS ds = _poolDeviceMap.getByDeviceId(de.de_deviceid);
                 String pool = ds == null ? "an unknown pool" : ("pool " + ds.getName());
-                _log.error("Client reports error {} on {} for op {}", nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
+                _log.error("Client reports error {} on {} for op {}",
+                      nfsstat.toString(de.de_status), pool, nfs_opnum4.toString(de.de_opnum));
 
                 // rise an alarm when client can't connect to the pool
                 if (de.de_status == nfsstat.NFSERR_NXIO) {
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED, pool),
-                            "Client failed to connect to {}", pool);
+                    _log.error(
+                          AlarmMarkerFactory.getMarker(PredefinedAlarm.CLIENT_CONNECTION_REJECTED,
+                                pool),
+                          "Client failed to connect to {}", pool);
                 }
             }
         }
@@ -831,7 +834,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         if (args.lora_layoutreturn.lr_returntype == layoutreturn_type4.LAYOUTRETURN4_FILE) {
             layouttype4 layoutType = layouttype4.valueOf(args.lora_layout_type);
-            final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.lora_layoutreturn.lr_layout.lrf_stateid);
+            final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context,
+                  args.lora_layoutreturn.lr_layout.lrf_stateid);
 
             final NFS4Client client;
             if (context.getMinorversion() > 0) {
@@ -845,9 +849,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             final NFS4State openState = layoutState.getOpenState();
 
             _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
-                    openState.stateid());
+                  openState.stateid());
 
-            getLayoutDriver(layoutType).acceptLayoutReturnData(context, args.lora_layoutreturn.lr_layout.lrf_body);
+            getLayoutDriver(layoutType).acceptLayoutReturnData(context,
+                  args.lora_layoutreturn.lr_layout.lrf_body);
 
             NfsTransfer transfer = _transfers.get(openState.stateid());
             if (transfer != null) {
@@ -859,7 +864,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Override
-    public OptionalLong layoutCommit(CompoundContext context, LAYOUTCOMMIT4args args) throws IOException {
+    public OptionalLong layoutCommit(CompoundContext context, LAYOUTCOMMIT4args args)
+          throws IOException {
 
         final stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, args.loca_stateid);
         final NFS4Client client = context.getStateHandler().getClientIdByStateId(stateid);
@@ -869,7 +875,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         Inode nfsInode = context.currentInode();
 
-        _log.debug("Committing layout by stateid: {}, open-state: {}", stateid, openState.stateid());
+        _log.debug("Committing layout by stateid: {}, open-state: {}", stateid,
+              openState.stateid());
 
         if (args.loca_last_write_offset.no_newoffset) {
             long currentSize = _chimeraVfs.getattr(nfsInode).getSize();
@@ -919,7 +926,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         if (_nfs4 != null) {
             pw.printf("  IO queue                : %s\n", _ioQueue);
             pw.printf("  Supported Layout types  : %s\n", _supportedDrivers.keySet());
-            pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
+            pw.printf("  Number of NFSv4 clients : %d\n",
+                  _nfs4.getStateHandler().getClients().size());
             pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getDevices().size());
             pw.printf("  Active transfers        : %d\n", _transfers.values().size());
             pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
@@ -928,51 +936,50 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public void setCuratorFramework(CuratorFramework client) {
-	_curator = client;
+        _curator = client;
     }
 
     /**
-     * Get from zookeeper a instance wide unique ID associated with this door. If id
-     * doesn't exist, then a global counter is used to assign one and store for
-     * the next time.
-     * @param base The root of the zookeeper tree to use.
-     * @param identifier The system wide identifier for this service.
-     * @param storeName Path where service id is stored.
-     * @return newly created or stored id for this door.
-     * @throws Exception
+     * Get from zookeeper a instance wide unique ID associated with this door. If id doesn't exist,
+     * then a global counter is used to assign one and store for the next time.
      *
-     * REVISIT: this logic can be used by other components as well.
+     * @param base       The root of the zookeeper tree to use.
+     * @param identifier The system wide identifier for this service.
+     * @param storeName  Path where service id is stored.
+     * @return newly created or stored id for this door.
+     * @throws Exception REVISIT: this logic can be used by other components as well.
      */
     private int getOrCreateId(String base, String identifier, String storeName) throws Exception {
-	String doorNode = ZKPaths.makePath(base, identifier);
+        String doorNode = ZKPaths.makePath(base, identifier);
 
-	int stateMgrId;
-	InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(_curator, base);
-	lock.acquire();
-	try {
-	    String idNode = ZKPaths.makePath(doorNode, storeName);
-	    org.apache.zookeeper.data.Stat zkStat = _curator.checkExists().forPath(idNode);
-	    if (zkStat == null || zkStat.getDataLength() == 0) {
+        int stateMgrId;
+        InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(_curator, base);
+        lock.acquire();
+        try {
+            String idNode = ZKPaths.makePath(doorNode, storeName);
+            org.apache.zookeeper.data.Stat zkStat = _curator.checkExists().forPath(idNode);
+            if (zkStat == null || zkStat.getDataLength() == 0) {
 
                 // use parent's change version as desired counter
                 org.apache.zookeeper.data.Stat parentStat = _curator.setData()
-                        .forPath(base);
+                      .forPath(base);
                 stateMgrId = parentStat.getVersion();
 
-		_curator.create()
-			.orSetData()
-			.creatingParentContainersIfNeeded()
-			.withMode(CreateMode.PERSISTENT)
-			.forPath(idNode, Integer.toString(stateMgrId).getBytes(StandardCharsets.US_ASCII));
-	    } else {
-		byte[] data = _curator.getData().forPath(idNode);
-		stateMgrId = Integer.parseInt(new String(data, StandardCharsets.US_ASCII));
-	    }
+                _curator.create()
+                      .orSetData()
+                      .creatingParentContainersIfNeeded()
+                      .withMode(CreateMode.PERSISTENT)
+                      .forPath(idNode,
+                            Integer.toString(stateMgrId).getBytes(StandardCharsets.US_ASCII));
+            } else {
+                byte[] data = _curator.getData().forPath(idNode);
+                stateMgrId = Integer.parseInt(new String(data, StandardCharsets.US_ASCII));
+            }
 
-	} finally {
-	    lock.release();
-	}
-	return stateMgrId;
+        } finally {
+            lock.release();
+        }
+        return stateMgrId;
     }
 
     @Command(name = "kill mover", hint = "Kill mover on the pool.")
@@ -987,7 +994,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public String call() {
             PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover,
-                    "killed by door 'kill mover' command");
+                  "killed by door 'kill mover' command");
             message.setReplyRequired(false);
             _poolStub.notify(new CellPath(pool), message);
             return "Done.";
@@ -1022,28 +1029,28 @@ public class NFSv41Door extends AbstractCellComponent implements
                 exports = _exportFile.exports();
             }
             return exports
-                    .map(Object::toString)
-                    .collect(Collectors.joining("\n"));
+                  .map(Object::toString)
+                  .collect(Collectors.joining("\n"));
         }
     }
 
     @Command(name = "kill client", hint = "kill NFS client and it's sessions",
-    description = "With this command, dCache responds to " +
-            "this specific client as if it was " +
-            "restarted. All other NFS clients are " +
-            "unaffected." +
-            "\n\n" +
-            "One use of this command is for an admin " +
-            "to allow dCache to recover from a client " +
-            "that is itself trying to recover from a " +
-            "(perceived) error in dCache response, but " +
-            "is failing to do so. Such behaviour can " +
-            "result in the client becoming stuck." +
-            "\n\n" +
-            "This command should not be necessary " +
-            "under normal circumstances; please " +
-            "contact dCache support if you make " +
-            "continued use of it.")
+          description = "With this command, dCache responds to " +
+                "this specific client as if it was " +
+                "restarted. All other NFS clients are " +
+                "unaffected." +
+                "\n\n" +
+                "One use of this command is for an admin " +
+                "to allow dCache to recover from a client " +
+                "that is itself trying to recover from a " +
+                "(perceived) error in dCache response, but " +
+                "is failing to do so. Such behaviour can " +
+                "result in the client becoming stuck." +
+                "\n\n" +
+                "This command should not be necessary " +
+                "under normal circumstances; please " +
+                "contact dCache support if you make " +
+                "continued use of it.")
     public class KillClientCmd implements Callable<String> {
 
         @Argument(required = false, metaVar = "clientid")
@@ -1062,7 +1069,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Command(name = "show clients", hint = "show active NFSv4 clients",
-            description = "Show NFSv4 clients and corresponding sessions.")
+          description = "Show NFSv4 clients and corresponding sessions.")
     public class ShowClientsCmd implements Callable<String> {
 
         @Argument(required = false, metaVar = "host", usage = "address/netmask|pattern")
@@ -1075,31 +1082,31 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
 
             Predicate<InetAddress> clientMatcher =
-		    host == null ? c -> true: InetAddressMatcher.forPattern(host);
+                  host == null ? c -> true : InetAddressMatcher.forPattern(host);
 
             StringBuilder sb = new StringBuilder();
             _nfs4.getStateHandler().getClients()
-                    .stream()
-                    .filter(c -> clientMatcher.test(c.getRemoteAddress().getAddress()))
-                    .forEach(c -> {
-                        sb.append("    ").append(c).append("\n");
-                        for (NFSv41Session session : c.sessions()) {
-                            sb.append("        ")
-                                    .append(session)
-                                    .append(" max slot: ")
-                                    .append(session.getHighestSlot())
-                                    .append("/")
-                                    .append(session.getHighestUsedSlot())
-                                    .append("\n");
-                        }
-                    });
+                  .stream()
+                  .filter(c -> clientMatcher.test(c.getRemoteAddress().getAddress()))
+                  .forEach(c -> {
+                      sb.append("    ").append(c).append("\n");
+                      for (NFSv41Session session : c.sessions()) {
+                          sb.append("        ")
+                                .append(session)
+                                .append(" max slot: ")
+                                .append(session.getHighestSlot())
+                                .append("/")
+                                .append(session.getHighestUsedSlot())
+                                .append("\n");
+                      }
+                  });
             return sb.toString();
         }
     }
 
     @Command(name = "show pools", hint = "show pools to pNFS device mapping",
-            description = "Show pools as pNFS devices, including id mapping and "
-             + "known IP addresses.")
+          description = "Show pools as pNFS devices, including id mapping and "
+                + "known IP addresses.")
     public class ShowPoolsCmd implements Callable<String> {
 
         @Argument(required = false, metaVar = "pool")
@@ -1108,20 +1115,20 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public String call() throws IOException {
             return _poolDeviceMap.getDevices()
-                    .stream()
-                    .filter(p -> pool == null ? true : p.getName().equals(pool))
-                    .map(Object::toString)
-                    .collect(Collectors.joining("\n"));
+                  .stream()
+                  .filter(p -> pool == null ? true : p.getName().equals(pool))
+                  .map(Object::toString)
+                  .collect(Collectors.joining("\n"));
         }
     }
 
     @Command(name = "show transfers", hint = "show active transfers",
-            description = "Show active transfers excluding proxy-io.")
+          description = "Show active transfers excluding proxy-io.")
     public class ShowTransfersCmd implements Callable<String> {
 
         @Option(name = "pool", usage = "An optional pool for filtering."
-                + "  Specifying an empty string selects only transfers where no"
-                + " pool has been selected. Glob pattern matching is supported.")
+              + "  Specifying an empty string selects only transfers where no"
+              + " pool has been selected. Glob pattern matching is supported.")
         Glob pool;
 
         @Option(name = "client", usage = "An optional client for filtering. Glob pattern matching is supported.")
@@ -1134,17 +1141,18 @@ public class NFSv41Door extends AbstractCellComponent implements
         public String call() throws IOException {
 
             return _transfers.values()
-                    .stream()
-                    .filter(d -> pool == null ? true : pool.matches(d.getPool() == null ? "" : d.getPool().getName()))
-                    .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
-                    .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
-                    .map(Object::toString)
-                    .collect(Collectors.joining("\n"));
+                  .stream()
+                  .filter(d -> pool == null ? true
+                        : pool.matches(d.getPool() == null ? "" : d.getPool().getName()))
+                  .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
+                  .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
+                  .map(Object::toString)
+                  .collect(Collectors.joining("\n"));
         }
     }
 
     @Command(name = "show proxyio", hint = "show proxy-io transfers",
-            description = "Show active proxy-io transfers.")
+          description = "Show active proxy-io transfers.")
     public class ShowProxyIoTransfersCmd implements Callable<String> {
 
         @Override
@@ -1195,7 +1203,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public String toString() {
             return String.format("%s: DS: %s, InetAddress: %s",
-                    _name, _deviceId, Arrays.toString(_socketAddress));
+                  _name, _deviceId, Arrays.toString(_socketAddress));
         }
     }
 
@@ -1203,14 +1211,14 @@ public class NFSv41Door extends AbstractCellComponent implements
     private class ReadTransfer extends NfsTransfer {
 
         public ReadTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
-                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+              Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
             super(pnfs, client, openStateId, nfsInode, ioSubject);
         }
 
         @Override
         deviceid4[] selectDataServers(long timeout) throws
-                InterruptedException, ExecutionException,
-                TimeoutException, CacheException, ChimeraNFSException {
+              InterruptedException, ExecutionException,
+              TimeoutException, CacheException, ChimeraNFSException {
 
             if (isFirstAttempt()) {
                 readNameSpaceEntry(false);
@@ -1267,14 +1275,14 @@ public class NFSv41Door extends AbstractCellComponent implements
     private class WriteTransfer extends NfsTransfer {
 
         public WriteTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
-                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+              Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
             super(pnfs, client, openStateId, nfsInode, ioSubject);
         }
 
         @Override
         deviceid4[] selectDataServers(long timeout) throws
-                InterruptedException, ExecutionException,
-                TimeoutException, CacheException, ChimeraNFSException {
+              InterruptedException, ExecutionException,
+              TimeoutException, CacheException, ChimeraNFSException {
 
             if (isFirstAttempt()) {
                 readNameSpaceEntry(true);
@@ -1288,7 +1296,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
 
                 // REVISIT: this have to go into Transfer class.
-                if (getFileAttributes().isDefined(FileAttribute.LOCATIONS) && !getFileAttributes().getLocations().isEmpty()) {
+                if (getFileAttributes().isDefined(FileAttribute.LOCATIONS)
+                      && !getFileAttributes().getLocations().isEmpty()) {
 
                     /*
                      * If we need to start a write-mover for a file which already has
@@ -1302,7 +1311,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                          * can't by multiple locations, unless some something
                          * went wrong!
                          */
-                        throw new ServerFaultException("multiple locations for: " + getPnfsId() + " : " + locations);
+                        throw new ServerFaultException(
+                              "multiple locations for: " + getPnfsId() + " : " + locations);
                     }
                     String location = locations.iterator().next();
                     _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
@@ -1311,7 +1321,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
                 } else {
                     _log.debug("looking a write pool for {}", getPnfsId());
-                    _redirectFuture = selectPoolAndStartMoverAsync(WRITE_POOL_SELECTION_RETRY_POLICY);
+                    _redirectFuture = selectPoolAndStartMoverAsync(
+                          WRITE_POOL_SELECTION_RETRY_POLICY);
                 }
             }
 
@@ -1333,8 +1344,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final NFS4Client _client;
 
         NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
-                Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  null);
+              Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject, null);
 
             _nfsInode = nfsInode;
 
@@ -1354,17 +1365,20 @@ public class NFSv41Door extends AbstractCellComponent implements
                 status = "idle";
             }
 
-            return String.format("    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s], redirected=%b",
-                    DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                            .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
-                    getPnfsId(),
-                    this.getClass().getSimpleName(),
-                    getMoverId(),
-                    Optional.ofNullable(getPool()).map(Pool::getName).orElse("N/A"),
-                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
-                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress(),
-                    status,
-                    getRedirect() != null);
+            return String.format(
+                  "    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s], redirected=%b",
+                  DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                        .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()),
+                              timeZone)),
+                  getPnfsId(),
+                  this.getClass().getSimpleName(),
+                  getMoverId(),
+                  Optional.ofNullable(getPool()).map(Pool::getName).orElse("N/A"),
+                  ((NFS4ProtocolInfo) getProtocolInfoForPool()).stateId(),
+                  ((NFS4ProtocolInfo) getProtocolInfoForPool()).getSocketAddress().getAddress()
+                        .getHostAddress(),
+                  status,
+                  getRedirect() != null);
         }
 
         Inode getInode() {
@@ -1372,8 +1386,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         /**
-         * Returns an array of pNFS devices to be used for this transfer.
-         * If array have more than one element, then mirror IO is desired.
+         * Returns an array of pNFS devices to be used for this transfer. If array have more than
+         * one element, then mirror IO is desired.
          *
          * @param timeout time in milliseconds to block before error is returned.
          * @return an array of pNFS devices.
@@ -1385,8 +1399,8 @@ public class NFSv41Door extends AbstractCellComponent implements
          */
         @GuardedBy("nfsState")
         deviceid4[] getPoolDataServers(long timeout) throws
-                InterruptedException, ExecutionException,
-                TimeoutException, CacheException, ChimeraNFSException {
+              InterruptedException, ExecutionException,
+              TimeoutException, CacheException, ChimeraNFSException {
 
             ChimeraNFSException error = _errorHolder.get();
             if (error != null) {
@@ -1405,7 +1419,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             try {
                 return selectDataServers(timeout);
             } catch (InterruptedException | ExecutionException
-                    | TimeoutException | CacheException | ChimeraNFSException e) {
+                  | TimeoutException | CacheException | ChimeraNFSException e) {
 
                 // failed without any pool has been selected.
                 // Depending on the error client may re-try the requests.
@@ -1418,8 +1432,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         /**
-         * Indicates whatever this is a first attempt to get a data servers or
-         * a retry.
+         * Indicates whatever this is a first attempt to get a data servers or a retry.
+         *
          * @return true is this is a first attempt to get a data servers.
          */
         protected boolean isFirstAttempt() {
@@ -1427,8 +1441,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         abstract deviceid4[] selectDataServers(long timeout) throws
-                InterruptedException, ExecutionException,
-                TimeoutException, CacheException, ChimeraNFSException;
+              InterruptedException, ExecutionException,
+              TimeoutException, CacheException, ChimeraNFSException;
 
         /**
          * Retry transfer.
@@ -1503,10 +1517,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             } catch (FileNotFoundCacheException e) {
                 // REVISIT: remove when pool will stop sending this exception
                 _log.info("File removed while being opened: {}@{} : {}",
-                        getMoverId(), getPool(), e.getMessage());
+                      getMoverId(), getPool(), e.getMessage());
             } catch (CacheException | InterruptedException e) {
                 _log.info("Failed to kill mover: {}@{} : {}",
-                        getMoverId(), getPool(), e.getMessage());
+                      getMoverId(), getPool(), e.getMessage());
                 throw new NfsIoException(e.getMessage(), e);
             } finally {
                 cdcContext.close();
@@ -1514,10 +1528,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         /**
-         * Set a {@link ChimeraNFSException} which will be thrown when
-         * {@link #getPoolDataServer(long)} is called. An existing object will
-         * not be replaced. This method is used to enforce error condition on an
-         * attempt to select a pool.
+         * Set a {@link ChimeraNFSException} which will be thrown when {@link
+         * #getPoolDataServer(long)} is called. An existing object will not be replaced. This method
+         * is used to enforce error condition on an attempt to select a pool.
+         *
          * @param e exception to be thrown.
          * @return {@code true} if new exception is set.
          */
@@ -1534,9 +1548,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         /**
-         * Recall file layout from the client. As re-calling is an async action.
-         * call executed in dedicated {@code executorService}. If client can't return
-         * layout right away, then recall will we re-scheduled.
+         * Recall file layout from the client. As re-calling is an async action. call executed in
+         * dedicated {@code executorService}. If client can't return layout right away, then recall
+         * will we re-scheduled.
          *
          * @param executorService executor service to use.
          */
@@ -1566,7 +1580,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             _stateid.bumpSeqid();
 
             _log.info("Recalling layout from {}", _client);
-            executorService.submit(new FireAndForgetTask(new LayoutRecallTask(this, executorService)));
+            executorService.submit(
+                  new FireAndForgetTask(new LayoutRecallTask(this, executorService)));
         }
 
         /**
@@ -1584,15 +1599,13 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         @Override
-        public String getTransferPath()
-        {
+        public String getTransferPath() {
             // no difference for nfs
             return this.getBillingPath();
         }
 
         @Override
-        public synchronized String getBillingPath()
-        {
+        public synchronized String getBillingPath() {
             /*
              * NFS door doesn't know the path and expects that namespace will populate it as a part of storage info.
              */
@@ -1611,6 +1624,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     @Command(name = "get children", hint = "Get door's children associated with transfers.")
     public class GetDoorChildrenCmd implements Callable<Serializable> {
+
         @Option(name = "binary", usage = "returns binary object instead of string form")
         boolean isBinary;
 
@@ -1618,7 +1632,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         public Serializable call() {
             if (isBinary) {
                 String[] children = new String[]{NFSv41Door.this.getCellName()};
-                return new LoginManagerChildrenInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName(), children);
+                return new LoginManagerChildrenInfo(NFSv41Door.this.getCellName(),
+                      NFSv41Door.this.getCellDomainName(), children);
             } else {
                 return NFSv41Door.this.getCellName();
             }
@@ -1627,6 +1642,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Command(name = "get door info", hint = "Provide information about the door and current transfers.")
     public class GetDoorInfoCmd implements Callable<Serializable> {
+
         @Option(name = "binary", usage = "returns binary object instead of string form")
         boolean isBinary;
 
@@ -1634,11 +1650,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         public Serializable call() {
 
             List<IoDoorEntry> entries = _transfers.values()
-                    .stream()
-                    .map(Transfer::getIoDoorEntry)
-                    .collect(toList());
+                  .stream()
+                  .map(Transfer::getIoDoorEntry)
+                  .collect(toList());
 
-            IoDoorInfo doorInfo = new IoDoorInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName());
+            IoDoorInfo doorInfo = new IoDoorInfo(NFSv41Door.this.getCellName(),
+                  NFSv41Door.this.getCellDomainName());
             doorInfo.setProtocol("NFSV4.1", "0");
             doorInfo.setOwner("");
             doorInfo.setProcess("");
@@ -1647,7 +1664,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    @Command(name="stats", hint = "Show nfs requests statstics.")
+    @Command(name = "stats", hint = "Show nfs requests statstics.")
     public class NfsStatsCmd implements Callable<String> {
 
         @Option(name = "c", usage = "clear current statistics values")
@@ -1672,7 +1689,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Argument(metaVar = "pool")
         String pool;
 
-        @Option (name = "recall", usage = "recall layouts pointing to this device.")
+        @Option(name = "recall", usage = "recall layouts pointing to this device.")
         boolean recall;
 
         @Override
@@ -1686,9 +1703,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             // FIXME: we should wait for all inuse layouts being released
             if (recall) {
                 _transfers.values().stream()
-                        .filter(t -> t.getRedirect() != null)
-                        .filter(t -> pool.equals(t.getPool().getName()))
-                        .forEach(t -> t.recallLayout(_callbackExecutor));
+                      .filter(t -> t.getRedirect() != null)
+                      .filter(t -> pool.equals(t.getPool().getName()))
+                      .forEach(t -> t.recallLayout(_callbackExecutor));
             }
 
             _nfs4.getStateHandler().getClients().forEach(c -> {
@@ -1719,7 +1736,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Command(name = "transfer retry", hint = "retry transfer for given open state.",
-        description = "Retry pool selection or mover creation for a given transfer. "
+          description = "Retry pool selection or mover creation for a given transfer. "
                 + "this can be necessary if components involved in selection "
                 + "process were restarted before a reply was deliverd to the door.")
     public class TransferRetryCmd implements Callable<String> {
@@ -1739,8 +1756,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Command(name = "transfer forget", hint = "remove transfer for a given open state.",
-        description = "Remove transfer from the list of active transfers. If client retry the"
-            + "request, then a new transfer will be created.")
+          description = "Remove transfer from the list of active transfers. If client retry the"
+                + "request, then a new transfer will be created.")
     public class TransferForgetCmd implements Callable<String> {
 
         @Argument(metaVar = "stateid", usage = "nfs open state id assosiated with the transfer.")
@@ -1765,28 +1782,31 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     /**
      * Handle pool disable.
+     *
      * @param pool name of the disabled pool.
      * @return number of affected transfers.
      */
     private synchronized long recallLayouts(String pool) {
 
         return _transfers.values().stream()
-                .filter(t -> t.getPool() != null)
-                .filter(t -> pool.equals(t.getPool().getName()))
-                .filter(t -> t.getClient().getMinorVersion() > 0)
-                .peek(t -> {
-                    t.recallLayout(_callbackExecutor);
-                })
-                .count();
+              .filter(t -> t.getPool() != null)
+              .filter(t -> pool.equals(t.getPool().getName()))
+              .filter(t -> t.getClient().getMinorVersion() > 0)
+              .peek(t -> {
+                  t.recallLayout(_callbackExecutor);
+              })
+              .count();
     }
 
     private void updateLbPaths() {
-        List<String> exportPaths = _exportFile.exports().map(FsExport::getPath).distinct().collect(toList());
+        List<String> exportPaths = _exportFile.exports().map(FsExport::getPath).distinct()
+              .collect(toList());
         _loginBrokerPublisher.setReadPaths(exportPaths);
         _loginBrokerPublisher.setWritePaths(exportPaths);
     }
 
-    private LayoutDriver getLayoutDriver(layouttype4 layoutType) throws BadLayoutException, UnknownLayoutTypeException {
+    private LayoutDriver getLayoutDriver(layouttype4 layoutType)
+          throws BadLayoutException, UnknownLayoutTypeException {
 
         LayoutDriver layoutDriver = _supportedDrivers.get(layoutType);
         if (layoutDriver == null) {
@@ -1808,7 +1828,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public void run() {
             try {
-                transfer.getClient().getCB().cbLayoutRecallFile(new nfs_fh4(transfer.getInode().toNfsHandle()), transfer.getStateid().stateid());
+                transfer.getClient().getCB()
+                      .cbLayoutRecallFile(new nfs_fh4(transfer.getInode().toNfsHandle()),
+                            transfer.getStateid().stateid());
             } catch (NoMatchingLayoutException e) {
                 /**
                  * In case of "forgetful client model", nfs client will return

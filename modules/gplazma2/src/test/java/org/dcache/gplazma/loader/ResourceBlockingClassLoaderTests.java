@@ -1,13 +1,16 @@
 package org.dcache.gplazma.loader;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ResourceBlockingClassLoaderTests {
 
@@ -19,7 +22,7 @@ public class ResourceBlockingClassLoaderTests {
     @Before
     public void setUp() {
         _resourceLoader = new Utf8DataClassLoader(RESOURCE_PATH);
-        _resourceLoader.addResource( "<?xml version='1.0'?><data/>");
+        _resourceLoader.addResource("<?xml version='1.0'?><data/>");
 
         _blockingLoader = new ResourceBlockingClassLoader(_resourceLoader);
     }
@@ -32,15 +35,15 @@ public class ResourceBlockingClassLoaderTests {
 
     @Test
     public void testSetBlocking() {
-        _blockingLoader.setIsBlocking( true);
+        _blockingLoader.setIsBlocking(true);
         assertTrue(_blockingLoader.getIsBlocking());
         assertCannotGetData();
     }
 
     @Test
     public void testSetBlockingThenNonblocking() {
-        _blockingLoader.setIsBlocking( true);
-        _blockingLoader.setIsBlocking( false);
+        _blockingLoader.setIsBlocking(true);
+        _blockingLoader.setIsBlocking(false);
         assertFalse(_blockingLoader.getIsBlocking());
         assertCanGetData();
     }

@@ -20,11 +20,14 @@ package dmg.cells.nucleus;
 /**
  * Role of a domain in multi-rooted star topologies.
  */
-public enum CellDomainRole
-{
-    /** Core domains form a fully connected mesh and are the roots of the topology. */
+public enum CellDomainRole {
+    /**
+     * Core domains form a fully connected mesh and are the roots of the topology.
+     */
     CORE,
 
-    /** Satellite domains connect to all core domains. */
+    /**
+     * Satellite domains connect to all core domains.
+     */
     SATELLITE
 }

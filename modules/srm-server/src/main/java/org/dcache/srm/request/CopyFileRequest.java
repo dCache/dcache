@@ -72,15 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.CheckedFuture;
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
 import java.util.Objects;
-
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMException;
@@ -92,11 +90,12 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+public final class CopyFileRequest extends FileRequest<CopyRequest> implements
+      DelegatedCredentialAware {
 
-public final class CopyFileRequest extends FileRequest<CopyRequest> implements DelegatedCredentialAware
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(CopyFileRequest.class);
 
     private final URI sourceSurl;
@@ -114,17 +113,16 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     //these are used if the transfer is performed in the pull mode for
     // storage of the space reservation related info
     private final String spaceReservationId;
-    private final ImmutableMap<String,String> extraInfo;
+    private final ImmutableMap<String, String> extraInfo;
     private final Long credentialId;
 
     public CopyFileRequest(long requestId,
-                           Long requestCredentalId,
-                           URI sourceSurl,
-                           URI destinationSurl,
-                           String spaceToken,
-                           long lifetime,
-                           ImmutableMap<String,String> extraInfo)
-    {
+          Long requestCredentalId,
+          URI sourceSurl,
+          URI destinationSurl,
+          String spaceToken,
+          long lifetime,
+          ImmutableMap<String, String> extraInfo) {
         super(requestId, lifetime);
         LOGGER.debug("CopyFileRequest");
         this.sourceSurl = sourceSurl;
@@ -136,38 +134,36 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     /**
-     * restore constructore, used for restoring the existing
-     * file request from the database
+     * restore constructore, used for restoring the existing file request from the database
      */
     public CopyFileRequest(long id,
-            Long nextJobId,
-            JobStorage<CopyFileRequest> jobStorage,
-            long creationTime,
-            long lifetime,
-            int stateId,
-            String scheduelerId,
-            long schedulerTimeStamp,
-            int numberOfRetries,
-            long lastStateTransitionTime,
-            JobHistory[] jobHistoryArray,
-            long requestId,
-            Long requestCredentalId,
-            String statusCodeString,
-            String sourceSurl,
-            String destinationSurl,
-            String sourceTurl,
-            String destinationTurl,
-            String localSourcePath,
-            String localDestinationPath,
-            long size,
-            String fromFileId,
-            String toFileId,
-            String remoteRequestId,
-            String remoteFileId,
-            String spaceReservationId,
-            String transferId,
-            ImmutableMap<String,String> extraInfo)
-    {
+          Long nextJobId,
+          JobStorage<CopyFileRequest> jobStorage,
+          long creationTime,
+          long lifetime,
+          int stateId,
+          String scheduelerId,
+          long schedulerTimeStamp,
+          int numberOfRetries,
+          long lastStateTransitionTime,
+          JobHistory[] jobHistoryArray,
+          long requestId,
+          Long requestCredentalId,
+          String statusCodeString,
+          String sourceSurl,
+          String destinationSurl,
+          String sourceTurl,
+          String destinationTurl,
+          String localSourcePath,
+          String localDestinationPath,
+          long size,
+          String fromFileId,
+          String toFileId,
+          String remoteRequestId,
+          String remoteFileId,
+          String spaceReservationId,
+          String transferId,
+          ImmutableMap<String, String> extraInfo) {
         super(id, nextJobId, creationTime, lifetime, stateId,
               scheduelerId, schedulerTimeStamp, numberOfRetries,
               lastStateTransitionTime, jobHistoryArray,
@@ -197,26 +193,22 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    public Long getCredentialId()
-    {
+    public Long getCredentialId() {
         return credentialId;
     }
 
-    private void done()
-    {
+    private void done() {
         LOGGER.debug("done");
     }
 
-    public ImmutableMap<String,String> getExtraInfo()
-    {
+    public ImmutableMap<String, String> getExtraInfo() {
         return extraInfo;
     }
 
     /**
      * The source location if remote, null otherwise.
      */
-    public URI getSourceTurl()
-    {
+    public URI getSourceTurl() {
         rlock();
         try {
             return sourceTurl;
@@ -228,8 +220,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * Set the source location; implies the source is remote.
      */
-    protected void setSourceTurl(URI location)
-    {
+    protected void setSourceTurl(URI location) {
         wlock();
         try {
             this.sourceTurl = location;
@@ -241,8 +232,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * The destination location if remote, null otherwise.
      */
-    public URI getDestinationTurl()
-    {
+    public URI getDestinationTurl() {
         rlock();
         try {
             return destinationTurl;
@@ -254,8 +244,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * Set the destination location; implies the source is remote.
      */
-    protected void setDestinationTurl(URI location)
-    {
+    protected void setDestinationTurl(URI location) {
         wlock();
         try {
             this.destinationTurl = location;
@@ -264,11 +253,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    /** Getter for property size.
+    /**
+     * Getter for property size.
+     *
      * @return Value of property size.
      */
-    public long getSize()
-    {
+    public long getSize() {
         rlock();
         try {
             return size;
@@ -277,11 +267,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    /** Setter for property size.
+    /**
+     * Setter for property size.
+     *
      * @param size New value of property size.
      */
-    protected void setSize(long size)
-    {
+    protected void setSize(long size) {
         rlock();
         try {
             this.size = size;
@@ -293,8 +284,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    public void toString(StringBuilder sb, String padding, boolean longformat)
-    {
+    public void toString(StringBuilder sb, String padding, boolean longformat) {
         sb.append(padding);
         if (padding.isEmpty()) {
             sb.append("Copy ");
@@ -304,10 +294,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         if (longformat) {
             sb.append(" source=");
             appendPathSurlAndTurl(sb, getLocalSourcePath(), getSourceSurl(),
-                    getSourceTurl());
+                  getSourceTurl());
             sb.append(" destination=");
             appendPathSurlAndTurl(sb, getLocalDestinationPath(),
-                    getDestinationSurl(), getDestinationTurl());
+                  getDestinationSurl(), getDestinationTurl());
             sb.append('\n');
             TStatusCode status = getStatusCode();
             if (status != null) {
@@ -319,8 +309,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     private static void appendPathSurlAndTurl(StringBuilder sb,
-            String path, URI surl, URI turl)
-    {
+          String path, URI surl, URI turl) {
         if (path != null) {
             sb.append(path);
         } else {
@@ -338,8 +327,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * The absolute path of the source if local, or null if remote.
      */
-    public String getLocalSourcePath()
-    {
+    public String getLocalSourcePath() {
         rlock();
         try {
             return localSourcePath;
@@ -351,8 +339,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * Set the absolute path of source; implies the source is local.
      */
-    protected void setLocalSourcePath(String path)
-    {
+    protected void setLocalSourcePath(String path) {
         wlock();
         try {
             this.localSourcePath = path;
@@ -364,8 +351,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * The absolute path of the destination if local, or null.
      */
-    public String getLocalDestinationPath()
-    {
+    public String getLocalDestinationPath() {
         rlock();
         try {
             return localDestinationPath;
@@ -377,8 +363,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * Set the absolute path of destination; implies the destination is local.
      */
-    protected void setLocalDestinationPath(String path)
-    {
+    protected void setLocalDestinationPath(String path) {
         wlock();
         try {
             this.localDestinationPath = path;
@@ -387,12 +372,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    /** Getter for property toFileId.
-     * @return Value of property toFileId.
+    /**
+     * Getter for property toFileId.
      *
+     * @return Value of property toFileId.
      */
-    private String getDestinationFileId()
-    {
+    private String getDestinationFileId() {
         rlock();
         try {
             return destinationFileId;
@@ -401,12 +386,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    /** Setter for property toFileId.
-     * @param id New value of property toFileId.
+    /**
+     * Setter for property toFileId.
      *
+     * @param id New value of property toFileId.
      */
-    private void setDestinationFileId(String id)
-    {
+    private void setDestinationFileId(String id) {
         wlock();
         try {
             destinationFileId = id;
@@ -415,17 +400,16 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException
-    {
+    private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException {
         LOGGER.debug("copying from local to local");
-        FileMetaData fmd ;
+        FileMetaData fmd;
         try {
             fmd = getStorage().getFileMetaData(getUser(), getSourceSurl(), true);
         } catch (SRMException srme) {
             try {
                 setStateAndStatusCode(State.FAILED,
-                                      srme.getMessage(),
-                                      TStatusCode.SRM_INVALID_PATH);
+                      srme.getMessage(),
+                      TStatusCode.SRM_INVALID_PATH);
             } catch (IllegalStateTransition ist) {
                 LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
@@ -436,15 +420,15 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
             LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
-            CheckedFuture<String,? extends SRMException> future =
-                    getStorage().prepareToPut(
-                            getUser(),
-                            getDestinationSurl(),
-                            size,
-                            Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
-                            Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
-                            getSpaceReservationId(),
-                            getContainerRequest().isOverwrite());
+            CheckedFuture<String, ? extends SRMException> future =
+                  getStorage().prepareToPut(
+                        getUser(),
+                        getDestinationSurl(),
+                        size,
+                        Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
+                        Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
+                        getSpaceReservationId(),
+                        getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), directExecutor());
             LOGGER.debug("callbacks.waitResult()");
             return;
@@ -454,29 +438,30 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
         try {
             getStorage().localCopy(getUser(), getSourceSurl(), getDestinationFileId());
-            getStorage().putDone(getUser(), getDestinationFileId(), getDestinationSurl(), getContainerRequest().isOverwrite());
+            getStorage().putDone(getUser(), getDestinationFileId(), getDestinationSurl(),
+                  getContainerRequest().isOverwrite());
             setStateToDone();
         } catch (SRMException e) {
-            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(), e.getMessage());
+            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(),
+                  e.getMessage());
             throw e;
         }
     }
 
     private void runRemoteToLocalCopy() throws IllegalStateTransition,
-            SRMException
-    {
+          SRMException {
         LOGGER.debug("copying from remote to local");
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
             LOGGER.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
-            CheckedFuture<String,? extends SRMException> future =
-                    getStorage().prepareToPut(
-                            getUser(), getDestinationSurl(), size,
-                            Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
-                            Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
-                            getSpaceReservationId(),
-                            getContainerRequest().isOverwrite());
+            CheckedFuture<String, ? extends SRMException> future =
+                  getStorage().prepareToPut(
+                        getUser(), getDestinationSurl(), size,
+                        Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
+                        Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
+                        getSpaceReservationId(),
+                        getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), directExecutor());
             LOGGER.debug("callbacks.waitResult");
             return;
@@ -487,21 +472,22 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             addHistoryEvent("started remote transfer, waiting completion");
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId()) {
                 @Override
-                public void copyComplete()
-                {
+                public void copyComplete() {
                     try {
                         getStorage().putDone(
-                                getUser(),
-                                getDestinationFileId(),
-                                getDestinationSurl(),
-                                getContainerRequest().isOverwrite());
+                              getUser(),
+                              getDestinationFileId(),
+                              getDestinationSurl(),
+                              getContainerRequest().isOverwrite());
                         super.copyComplete();
                     } catch (SRMException e) {
                         copyFailed(e);
                     }
                 }
             };
-            setTransferId(getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(), getUser(), credential.getId(), extraInfo, copycallbacks));
+            setTransferId(
+                  getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(),
+                        getUser(), credential.getId(), extraInfo, copycallbacks));
             saveJob(true);
         } else {
             // transfer id is not null and we are scheduled
@@ -509,15 +495,15 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
             getStorage().killRemoteTransfer(getTransferId());
             SRMException transferError = getTransferError();
-            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(), transferError.getMessage());
+            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(),
+                  transferError.getMessage());
             setDestinationFileId(null);
             setTransferId(null);
             throw transferError;
         }
     }
 
-    private void setStateToDone()
-    {
+    private void setStateToDone() {
         if (!getState().isFinal()) {
             try {
                 setState(State.DONE, "completed");
@@ -529,13 +515,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 }
             } catch (IllegalStateTransition ist) {
                 LOGGER.error("Failed to set copy file request state to DONE: {}",
-                        ist.getMessage());
+                      ist.getMessage());
             }
         }
     }
 
-    private void setStateToFailed(String error)
-    {
+    private void setStateToFailed(String error) {
         if (!getState().isFinal()) {
             try {
                 setState(State.FAILED, error);
@@ -547,18 +532,19 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 }
             } catch (IllegalStateTransition ist) {
                 LOGGER.error("Failed to set copy file request state to FAILED: {}",
-                        ist.getMessage());
+                      ist.getMessage());
             }
         }
     }
 
-    private void runLocalToRemoteCopy() throws SRMException, IllegalStateTransition
-    {
+    private void runLocalToRemoteCopy() throws SRMException, IllegalStateTransition {
         if (getTransferId() == null) {
             LOGGER.debug("copying using storage.putToRemoteTURL");
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-            setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
+            setTransferId(
+                  getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(),
+                        getUser(), credential.getId(), extraInfo, copycallbacks));
             addHistoryEvent("Transferring file.");
             saveJob(true);
         } else {
@@ -571,8 +557,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    public void run() throws SRMException, IllegalStateTransition
-    {
+    public void run() throws SRMException, IllegalStateTransition {
         LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
@@ -589,8 +574,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         if (newState.isFinal()) {
             if (getTransferId() != null && newState != State.DONE) {
                 getStorage().killRemoteTransfer(getTransferId());
@@ -599,7 +583,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                     try {
                         Exception transferError = getTransferError();
                         getStorage().abortPut(null, toFileId, getDestinationSurl(),
-                                              (transferError == null) ? null : transferError.getMessage());
+                              (transferError == null) ? null : transferError.getMessage());
                     } catch (SRMException e) {
                         LOGGER.error("Failed to abort copy: {}", e.getMessage());
                     }
@@ -619,31 +603,29 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    public boolean isTouchingSurl(URI surl)
-    {
+    public boolean isTouchingSurl(URI surl) {
         return surl.equals(getSourceSurl()) || surl.equals(getDestinationSurl());
     }
 
-    private void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId)
-    {
+    private void remoteFileRequestDone(URI SURL, String remoteRequestId, String remoteFileId) {
         try {
             LOGGER.debug("setting remote file status to Done, SURL={} " +
-                    "remoteRequestId={} remoteFileId={}", SURL,
-                    remoteRequestId, remoteFileId);
+                        "remoteRequestId={} remoteFileId={}", SURL,
+                  remoteRequestId, remoteFileId);
             getContainerRequest().remoteFileRequestDone(SURL.toString(),
-                    remoteRequestId, remoteFileId);
+                  remoteRequestId, remoteFileId);
         } catch (Exception e) {
             LOGGER.error("set remote file status to done failed, surl={}, " +
-                    "requestId={}, fileId={}", SURL, remoteRequestId, remoteFileId);
+                  "requestId={}, fileId={}", SURL, remoteRequestId, remoteFileId);
         }
     }
 
-    /** Getter for property remoteFileId.
-     * @return Value of property remoteFileId.
+    /**
+     * Getter for property remoteFileId.
      *
+     * @return Value of property remoteFileId.
      */
-    public String getRemoteFileId()
-    {
+    public String getRemoteFileId() {
         rlock();
         try {
             return remoteFileId;
@@ -652,12 +634,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    /** Getter for property remoteRequestId.
-     * @return Value of property remoteRequestId.
+    /**
+     * Getter for property remoteRequestId.
      *
+     * @return Value of property remoteRequestId.
      */
-    public String getRemoteRequestId()
-    {
+    public String getRemoteRequestId() {
         rlock();
         try {
             return remoteRequestId;
@@ -665,28 +647,31 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             runlock();
         }
     }
+
     /**
      * Getter for property from_surl.
+     *
      * @return Value of property from_surl.
      */
-    public URI getSourceSurl()
-    {
+    public URI getSourceSurl() {
         return sourceSurl;
     }
+
     /**
      * Getter for property to_surl.
+     *
      * @return Value of property to_surl.
      */
-    public URI getDestinationSurl()
-    {
+    public URI getDestinationSurl() {
         return destinationSurl;
     }
+
     /**
      * Setter for property remoteRequestId.
+     *
      * @param remoteRequestId New value of property remoteRequestId.
      */
-    protected void setRemoteRequestId(String remoteRequestId)
-    {
+    protected void setRemoteRequestId(String remoteRequestId) {
         wlock();
         try {
             this.remoteRequestId = remoteRequestId;
@@ -694,12 +679,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             wunlock();
         }
     }
+
     /**
      * Setter for property remoteFileId.
+     *
      * @param remoteFileId New value of property remoteFileId.
      */
-    protected void setRemoteFileId(String remoteFileId)
-    {
+    protected void setRemoteFileId(String remoteFileId) {
         wlock();
         try {
             this.remoteFileId = remoteFileId;
@@ -707,20 +693,20 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             wunlock();
         }
     }
+
     /**
      * Getter for property spaceReservationId.
+     *
      * @return Value of property spaceReservationId.
      */
-    public String getSpaceReservationId()
-    {
+    public String getSpaceReservationId() {
         return spaceReservationId;
     }
 
     /**
      * @param transferId the transferId to set
      */
-    private void setTransferId(String transferId)
-    {
+    private void setTransferId(String transferId) {
         wlock();
         try {
             this.transferId = transferId;
@@ -732,8 +718,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * @return the transferError
      */
-    private SRMException getTransferError()
-    {
+    private SRMException getTransferError() {
         rlock();
         try {
             return transferError;
@@ -745,8 +730,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * @param transferError the transferError to set
      */
-    private void setTransferError(SRMException transferError)
-    {
+    private void setTransferError(SRMException transferError) {
         wlock();
         try {
             this.transferError = transferError;
@@ -755,20 +739,19 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    private static class PutCallbacks implements Runnable
-    {
+    private static class PutCallbacks implements Runnable {
+
         private final long fileRequestJobId;
         private final CheckedFuture<String, ? extends SRMException> future;
 
-        public PutCallbacks(long fileRequestJobId, CheckedFuture<String, ? extends SRMException> future)
-        {
+        public PutCallbacks(long fileRequestJobId,
+              CheckedFuture<String, ? extends SRMException> future) {
             this.fileRequestJobId = fileRequestJobId;
             this.future = future;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 CopyFileRequest fr = Job.getJob(fileRequestJobId, CopyFileRequest.class);
                 try {
@@ -782,9 +765,9 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
-                            State.FAILED,
-                            e.getMessage(),
-                            e.getStatusCode());
+                          State.FAILED,
+                          e.getMessage(),
+                          e.getStatusCode());
                 }
             } catch (IllegalStateTransition e) {
                 LOGGER.error("Illegal State Transition: {}", e.getMessage());
@@ -794,24 +777,21 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    private static class TheCopyCallbacks implements CopyCallbacks
-    {
+    private static class TheCopyCallbacks implements CopyCallbacks {
+
         private final long fileRequestJobId;
 
-        public TheCopyCallbacks(long fileRequestJobId)
-        {
+        public TheCopyCallbacks(long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
         private CopyFileRequest getCopyFileRequest()
-                throws SRMInvalidRequestException
-        {
+              throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, CopyFileRequest.class);
         }
 
         @Override
-        public void copyComplete()
-        {
+        public void copyComplete() {
             try {
                 CopyFileRequest copyFileRequest = getCopyFileRequest();
                 LOGGER.debug("copy succeeded");
@@ -822,8 +802,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
 
         @Override
-        public void copyFailed(SRMException e)
-        {
+        public void copyFailed(SRMException e) {
             CopyFileRequest copyFileRequest;
             try {
                 copyFileRequest = getCopyFileRequest();
@@ -841,8 +820,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    public TCopyRequestFileStatus getTCopyRequestFileStatus() throws SRMInvalidRequestException
-    {
+    public TCopyRequestFileStatus getTCopyRequestFileStatus() throws SRMInvalidRequestException {
         TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
         copyRequestFileStatus.setFileSize(new UnsignedLong(size));
         copyRequestFileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
@@ -872,60 +850,54 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     @Override
-    protected TReturnStatus getReturnStatus()
-    {
+    protected TReturnStatus getReturnStatus() {
         String description = latestHistoryEvent();
         TStatusCode statusCode = getStatusCode();
         if (statusCode != null) {
             return new TReturnStatus(statusCode, description);
         }
         switch (getState()) {
-        case DONE:
-            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-        case READY:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
-        case TRANSFERRING:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
-        case FAILED:
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
-        case CANCELED:
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
-        case QUEUED:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
-        case INPROGRESS:
-        case RQUEUED:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
-        default:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+            case DONE:
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+            case READY:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+            case TRANSFERRING:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+            case QUEUED:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+            case INPROGRESS:
+            case RQUEUED:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+            default:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         }
     }
 
     /**
      * Getter for property transferId.
+     *
      * @return Value of property transferId.
      */
-    public String getTransferId()
-    {
+    public String getTransferId() {
         return transferId;
     }
 
     /**
-     *
-     *
-     * @param newLifetime  new lifetime in millis
-     *  -1 stands for infinite lifetime
-     * @return int lifetime left in millis
-     *  -1 stands for infinite lifetime
+     * @param newLifetime new lifetime in millis -1 stands for infinite lifetime
+     * @return int lifetime left in millis -1 stands for infinite lifetime
      */
     @Override
-    public long extendLifetime(long newLifetime) throws SRMException
-    {
+    public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
         if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
-        if (requestLifetime <newLifetime) {
+        if (requestLifetime < newLifetime) {
             newLifetime = requestLifetime;
         }
         if (remainingLifetime >= newLifetime) {

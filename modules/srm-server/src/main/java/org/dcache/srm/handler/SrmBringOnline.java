@@ -1,13 +1,14 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.collect.Iterables.any;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
@@ -25,16 +26,13 @@ import org.dcache.srm.v2_2.SrmBringOnlineResponse;
 import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.collect.Iterables.any;
-import static java.util.Arrays.asList;
+public class SrmBringOnline {
 
-public class SrmBringOnline
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmBringOnline.class);
+          LoggerFactory.getLogger(SrmBringOnline.class);
 
     private final SrmBringOnlineRequest request;
     private final AbstractStorageElement storage;
@@ -45,11 +43,10 @@ public class SrmBringOnline
     private final String clientHost;
 
     public SrmBringOnline(SRMUser user,
-                          SrmBringOnlineRequest request,
-                          AbstractStorageElement storage,
-                          SRM srm,
-                          String clientHost)
-    {
+          SrmBringOnlineRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.srm = requireNonNull(srm);
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
@@ -58,8 +55,7 @@ public class SrmBringOnline
         this.configuration = srm.getConfiguration();
     }
 
-    public SrmBringOnlineResponse getResponse()
-    {
+    public SrmBringOnlineResponse getResponse() {
         if (response == null) {
             try {
                 response = srmBringOnline();
@@ -76,37 +72,39 @@ public class SrmBringOnline
     }
 
     private SrmBringOnlineResponse srmBringOnline()
-            throws SRMInvalidRequestException, SRMInternalErrorException, SRMNotSupportedException
-    {
+          throws SRMInvalidRequestException, SRMInternalErrorException, SRMNotSupportedException {
         String[] protocols = getProtocols(request);
         String clientHost = getClientNetwork(request).orElse(this.clientHost);
         TGetFileRequest[] fileRequests = getFileRequests(request);
         URI[] surls = getSurls(fileRequests);
-        long requestTime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(), configuration.getBringOnlineLifetime());
+        long requestTime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(),
+              configuration.getBringOnlineLifetime());
         long desiredLifetimeInSeconds = getDesiredLifetime(request, requestTime);
 
         if (protocols != null && protocols.length > 0) {
             String[] supportedProtocols = storage.supportedGetProtocols();
             boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
             if (!isAnyProtocolSupported) {
-                throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+                throw new SRMNotSupportedException(
+                      "Protocol(s) not supported: " + Arrays.toString(protocols));
             }
         }
 
         BringOnlineRequest r =
-                new BringOnlineRequest(
-                        srm.getSrmId(),
-                        user,
-                        surls,
-                        protocols,
-                        requestTime,
-                        desiredLifetimeInSeconds,
-                        configuration.getBringOnlineMaxPollPeriod(),
-                        request.getUserRequestDescription(),
-                        clientHost);
+              new BringOnlineRequest(
+                    srm.getSrmId(),
+                    user,
+                    surls,
+                    protocols,
+                    requestTime,
+                    desiredLifetimeInSeconds,
+                    configuration.getBringOnlineMaxPollPeriod(),
+                    request.getUserRequestDescription(),
+                    clientHost);
         try (JDC ignored = r.applyJdc()) {
             srm.acceptNewJob(r);
-            return r.getSrmBringOnlineResponse(configuration.getBringOnlineSwitchToAsynchronousModeDelay());
+            return r.getSrmBringOnlineResponse(
+                  configuration.getBringOnlineSwitchToAsynchronousModeDelay());
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
         } catch (IllegalStateTransition e) {
@@ -114,17 +112,16 @@ public class SrmBringOnline
         }
     }
 
-    private static long getDesiredLifetime(SrmBringOnlineRequest request, long requestTime)
-    {
+    private static long getDesiredLifetime(SrmBringOnlineRequest request, long requestTime) {
         if (request.getDesiredLifeTime() == null
-                || request.getDesiredLifeTime() == 0) {
+              || request.getDesiredLifeTime() == 0) {
             return TimeUnit.MILLISECONDS.toSeconds(requestTime);
         }
         return (long) request.getDesiredLifeTime();
     }
 
-    private static URI[] getSurls(TGetFileRequest[] fileRequests) throws SRMInvalidRequestException
-    {
+    private static URI[] getSurls(TGetFileRequest[] fileRequests)
+          throws SRMInvalidRequestException {
         URI[] surls = new URI[fileRequests.length];
         for (int i = 0; i < fileRequests.length; ++i) {
             TGetFileRequest fileRequest = fileRequests[i];
@@ -132,15 +129,16 @@ public class SrmBringOnline
                 throw new SRMInvalidRequestException("file request #" + (i + 1) + " is null");
             }
             if (fileRequest.getSourceSURL() == null) {
-                throw new SRMInvalidRequestException("can't get surl of file request #" + (i + 1) + "  null");
+                throw new SRMInvalidRequestException(
+                      "can't get surl of file request #" + (i + 1) + "  null");
             }
             surls[i] = URI.create(fileRequest.getSourceSURL().toString());
         }
         return surls;
     }
 
-    private static TGetFileRequest[] getFileRequests(SrmBringOnlineRequest request) throws SRMInvalidRequestException
-    {
+    private static TGetFileRequest[] getFileRequests(SrmBringOnlineRequest request)
+          throws SRMInvalidRequestException {
         TGetFileRequest[] fileRequests = null;
         if (request.getArrayOfFileRequests() != null) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
@@ -151,38 +149,36 @@ public class SrmBringOnline
         return fileRequests;
     }
 
-    private static String[] getProtocols(SrmBringOnlineRequest request)
-    {
+    private static String[] getProtocols(SrmBringOnlineRequest request) {
         String[] protocols = null;
         if (request.getTransferParameters() != null &&
-                request.getTransferParameters().getArrayOfTransferProtocols() != null) {
-            protocols = request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
+              request.getTransferParameters().getArrayOfTransferProtocols() != null) {
+            protocols = request.getTransferParameters().getArrayOfTransferProtocols()
+                  .getStringArray();
         }
         return Tools.trimStringArray(protocols);
     }
 
-    private static Optional<String> getClientNetwork(SrmBringOnlineRequest request)
-    {
+    private static Optional<String> getClientNetwork(SrmBringOnlineRequest request) {
         if (request.getTransferParameters() != null &&
-                request.getTransferParameters().getArrayOfClientNetworks() != null) {
+              request.getTransferParameters().getArrayOfClientNetworks() != null) {
             String[] clientNetworks =
-                    request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
+                  request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
             if (clientNetworks != null &&
-                    clientNetworks.length > 0 &&
-                    clientNetworks[0] != null) {
+                  clientNetworks.length > 0 &&
+                  clientNetworks[0] != null) {
                 return Optional.of(clientNetworks[0]);
             }
         }
         return Optional.empty();
     }
 
-    public static final SrmBringOnlineResponse getFailedResponse(String error)
-    {
+    public static final SrmBringOnlineResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmBringOnlineResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmBringOnlineResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         SrmBringOnlineResponse srmBringOnlineResponse = new SrmBringOnlineResponse();
         srmBringOnlineResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmBringOnlineResponse;

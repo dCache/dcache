@@ -19,7 +19,6 @@ package org.dcache.srm.scheduler.strategy;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
-
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
@@ -28,28 +27,28 @@ import org.dcache.srm.scheduler.spi.TransferStrategy;
 
 /**
  * Provides a fair share transfer strategy.
- *
- * Allows TURLs to be handed out according to a fair share of the ready slots. A client is entitled to
- * its share by having requests in READY or RQUEUED. This strategy may leave transfer slots unused as
- * a result of one client having requests in RQUEUED without readying them. In other words, if a client
- * has requests in RQUEUED, this strategy will try to keep the client's fair share available.
+ * <p>
+ * Allows TURLs to be handed out according to a fair share of the ready slots. A client is entitled
+ * to its share by having requests in READY or RQUEUED. This strategy may leave transfer slots
+ * unused as a result of one client having requests in RQUEUED without readying them. In other
+ * words, if a client has requests in RQUEUED, this strategy will try to keep the client's fair
+ * share available.
  */
-public class FairShareTransferStrategy extends ForwardingJobDiscriminator implements TransferStrategy, StateChangeListener
-{
+public class FairShareTransferStrategy extends ForwardingJobDiscriminator implements
+      TransferStrategy, StateChangeListener {
+
     private final Multiset<String> rqueued = ConcurrentHashMultiset.create();
     private final Multiset<String> ready = ConcurrentHashMultiset.create();
     private final Scheduler scheduler;
 
-    public FairShareTransferStrategy(Scheduler scheduler, String discriminator)
-    {
+    public FairShareTransferStrategy(Scheduler scheduler, String discriminator) {
         super(discriminator);
         this.scheduler = scheduler;
         scheduler.addStateChangeListener(this);
     }
 
     @Override
-    public void stateChanged(Job job, State oldState, State newState)
-    {
+    public void stateChanged(Job job, State oldState, State newState) {
         if (oldState == State.RQUEUED && newState != State.RQUEUED) {
             rqueued.remove(getDiscriminatingValue(job));
         } else if (oldState != State.RQUEUED && newState == State.RQUEUED) {
@@ -63,8 +62,7 @@ public class FairShareTransferStrategy extends ForwardingJobDiscriminator implem
     }
 
     @Override
-    public boolean canTransfer(Job job)
-    {
+    public boolean canTransfer(Job job) {
         int readySize = ready.size();
         int queuedSize = rqueued.size();
         int max = scheduler.getMaxReadyJobs();
@@ -88,8 +86,9 @@ public class FairShareTransferStrategy extends ForwardingJobDiscriminator implem
          */
         int count = ready.count(getDiscriminatingValue(job));
         int aheadOfJob = ready.entrySet().stream()
-                .mapToInt(e -> Math.min(rqueued.count(e.getElement()), Math.max(0, count - e.getCount())))
-                .sum();
+              .mapToInt(
+                    e -> Math.min(rqueued.count(e.getElement()), Math.max(0, count - e.getCount())))
+              .sum();
 
         return readySize + aheadOfJob < max;
     }

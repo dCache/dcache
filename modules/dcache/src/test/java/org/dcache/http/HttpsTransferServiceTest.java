@@ -17,19 +17,17 @@
  */
 package org.dcache.http;
 
-import org.junit.Test;
-
-import java.net.URI;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-public class HttpsTransferServiceTest
-{
+import java.net.URI;
+import org.junit.Test;
+
+public class HttpsTransferServiceTest {
+
     @Test
-    public void shouldReturnIPv4AddressAsIPv4Address()
-    {
+    public void shouldReturnIPv4AddressAsIPv4Address() {
         URI url = URI.create("https://192.168.1.1:8443/path/to/file");
 
         String host = HttpsTransferService.getHost(url);
@@ -38,8 +36,7 @@ public class HttpsTransferServiceTest
     }
 
     @Test
-    public void shouldReturnIPv6AddressWithoutBrackets()
-    {
+    public void shouldReturnIPv6AddressWithoutBrackets() {
         URI url = URI.create("https://[2001:638:700:20d6::1:3a]:8443/path/to/file");
 
         String host = HttpsTransferService.getHost(url);

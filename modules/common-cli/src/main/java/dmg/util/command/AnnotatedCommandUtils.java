@@ -22,45 +22,38 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
-
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 
-public class AnnotatedCommandUtils
-{
-    private static final Function<Field,Integer> GET_ARGUMENT_INDEX =
-            new Function<Field,Integer>()
-            {
-                @Override
-                public Integer apply(Field field)
-                {
-                    return field.getAnnotation(Argument.class).index();
-                }
-            };
-    private static final Function<Field,String> GET_NAME =
-            new Function<Field,String>()
-            {
-                @Override
-                public String apply(Field field)
-                {
-                    Option option = field.getAnnotation(Option.class);
-                    return option != null ? option.name() : String.valueOf(Character.MAX_VALUE);
-                }
-            };
+public class AnnotatedCommandUtils {
 
-    private AnnotatedCommandUtils()
-    {
+    private static final Function<Field, Integer> GET_ARGUMENT_INDEX =
+          new Function<Field, Integer>() {
+              @Override
+              public Integer apply(Field field) {
+                  return field.getAnnotation(Argument.class).index();
+              }
+          };
+    private static final Function<Field, String> GET_NAME =
+          new Function<Field, String>() {
+              @Override
+              public String apply(Field field) {
+                  Option option = field.getAnnotation(Option.class);
+                  return option != null ? option.name() : String.valueOf(Character.MAX_VALUE);
+              }
+          };
+
+    private AnnotatedCommandUtils() {
     }
 
     /**
      * Returns the option fields grouped by category of a given command class.
      */
-    public static Multimap<String,Field> getOptionsByCategory(Class<?> clazz)
-    {
-        Multimap<String,Field> options =
-                TreeMultimap.create(Ordering.natural(),
-                        Ordering.natural().onResultOf(GET_NAME));
+    public static Multimap<String, Field> getOptionsByCategory(Class<?> clazz) {
+        Multimap<String, Field> options =
+              TreeMultimap.create(Ordering.natural(),
+                    Ordering.natural().onResultOf(GET_NAME));
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
@@ -79,8 +72,7 @@ public class AnnotatedCommandUtils
     /**
      * Returns the arguments fields of a given command class.
      */
-    public static List<Field> getArguments(Class<?> clazz)
-    {
+    public static List<Field> getArguments(Class<?> clazz) {
         List<Field> arguments = Lists.newArrayList();
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
@@ -90,7 +82,7 @@ public class AnnotatedCommandUtils
             }
         }
         Collections.sort(arguments, Ordering.natural()
-                .onResultOf(GET_ARGUMENT_INDEX));
+              .onResultOf(GET_ARGUMENT_INDEX));
         return arguments;
     }
 }

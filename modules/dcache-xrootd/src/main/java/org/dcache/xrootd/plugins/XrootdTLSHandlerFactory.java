@@ -17,33 +17,28 @@
  */
 package org.dcache.xrootd.plugins;
 
+import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.ssl.SslHandler;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
 import java.io.File;
 import java.util.List;
 import java.util.Properties;
-
-import dmg.cells.nucleus.CDC;
-
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.xrootd.plugins.tls.SSLHandlerFactory;
 
 /**
- *  Provides an SSLHandler constructed from the SSLContext established
- *  via properties.  Each handler has a separate SSLEngine.  The handler
- *  is always constructed in startTls mode, as it should not be added
- *  to the pipeline until ready to send the last unprotected response
- *  (server) or initiate the TLS handshake (client).
+ * Provides an SSLHandler constructed from the SSLContext established via properties.  Each handler
+ * has a separate SSLEngine.  The handler is always constructed in startTls mode, as it should not
+ * be added to the pipeline until ready to send the last unprotected response (server) or initiate
+ * the TLS handshake (client).
  */
-public class XrootdTLSHandlerFactory extends SSLHandlerFactory
-{
+public class XrootdTLSHandlerFactory extends SSLHandlerFactory {
+
     public static final String SERVER_TLS = "tls";
     public static final String CLIENT_TLS = "tls-client";
 
@@ -55,38 +50,33 @@ public class XrootdTLSHandlerFactory extends SSLHandlerFactory
     private static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
 
     public static SSLHandlerFactory getHandlerFactory(String name,
-                                                      List<ChannelHandlerFactory> list)
-    {
+          List<ChannelHandlerFactory> list) {
         return (SSLHandlerFactory) list.stream()
-                                       .filter(h -> name.equalsIgnoreCase(h.getName()))
-                                       .findFirst().orElse(null);
+              .filter(h -> name.equalsIgnoreCase(h.getName()))
+              .findFirst().orElse(null);
     }
 
     private final boolean startTls;
     private final String name;
 
-    public XrootdTLSHandlerFactory(Properties properties, boolean startTls) throws Exception
-    {
+    public XrootdTLSHandlerFactory(Properties properties, boolean startTls) throws Exception {
         super(properties);
         this.startTls = startTls;
         name = startTls ? SERVER_TLS : CLIENT_TLS;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Creates and configures Netty SSLHandler for the xrootd pipeline.";
     }
 
     @Override
-    public ChannelHandler createHandler()
-    {
+    public ChannelHandler createHandler() {
         SSLEngine engine = sslContext.createSSLEngine();
         return new SslHandler(engine, startTls);
     }
@@ -95,28 +85,27 @@ public class XrootdTLSHandlerFactory extends SSLHandlerFactory
      *  Called by the contructor.
      */
     @Override
-    protected SSLContext buildContext(Properties properties) throws Exception
-    {
+    protected SSLContext buildContext(Properties properties) throws Exception {
         File serviceKey = new File(properties.getProperty(SERVICE_KEY));
         File serviceCert = new File(properties.getProperty(SERVICE_CERT));
         File serviceCaCerts = new File(properties.getProperty(SERVICE_CACERTS));
         NamespaceCheckingMode namespaceMode =
-                        NamespaceCheckingMode.valueOf(properties.getProperty(NAMESPACE_MODE));
+              NamespaceCheckingMode.valueOf(properties.getProperty(NAMESPACE_MODE));
         CrlCheckingMode crlMode
-                        = CrlCheckingMode.valueOf(properties.getProperty(CRL_MODE));
+              = CrlCheckingMode.valueOf(properties.getProperty(CRL_MODE));
         OCSPCheckingMode ocspMode
-                        = OCSPCheckingMode.valueOf(properties.getProperty(OCSP_MODE));
+              = OCSPCheckingMode.valueOf(properties.getProperty(OCSP_MODE));
 
         return CanlContextFactory.custom()
-                                 .withCertificatePath(serviceCert.toPath())
-                                 .withKeyPath(serviceKey.toPath())
-                                 .withCertificateAuthorityPath(serviceCaCerts.toPath())
-                                 .withCrlCheckingMode(crlMode)
-                                 .withOcspCheckingMode(ocspMode)
-                                 .withNamespaceMode(namespaceMode)
-                                 .withLazy(false)
-                                 .withLoggingContext(new CDC()::restore)
-                                 .buildWithCaching()
-                                 .call();
+              .withCertificatePath(serviceCert.toPath())
+              .withKeyPath(serviceKey.toPath())
+              .withCertificateAuthorityPath(serviceCaCerts.toPath())
+              .withCrlCheckingMode(crlMode)
+              .withOcspCheckingMode(ocspMode)
+              .withNamespaceMode(namespaceMode)
+              .withLazy(false)
+              .withLoggingContext(new CDC()::restore)
+              .buildWithCaching()
+              .call();
     }
 }

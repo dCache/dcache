@@ -17,63 +17,62 @@
  */
 package org.dcache.chimera.namespace;
 
-import org.junit.Test;
+import static com.google.common.base.Preconditions.checkState;
+import static diskCacheV111.util.AccessLatency.ONLINE;
+import static diskCacheV111.util.RetentionPolicy.REPLICA;
+import static org.dcache.chimera.namespace.FsInodeBuilder.aFile;
+import static org.dcache.chimera.namespace.InodeStorageInformationMatcher.matchesAnInodeStorageInformation;
+import static org.dcache.util.StorageInfoBuilder.aStorageInfo;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.chimera.FsInode;
+import org.junit.Test;
 
-import static com.google.common.base.Preconditions.checkState;
-import static diskCacheV111.util.RetentionPolicy.REPLICA;
-import static diskCacheV111.util.AccessLatency.ONLINE;
-import static org.dcache.util.StorageInfoBuilder.aStorageInfo;
-import static org.dcache.chimera.namespace.FsInodeBuilder.aFile;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.dcache.chimera.namespace.InodeStorageInformationMatcher.matchesAnInodeStorageInformation;
+public class ChimeraEnstoreStorageInfoExtractorTest {
 
-public class ChimeraEnstoreStorageInfoExtractorTest
-{
     private ChimeraEnstoreStorageInfoExtractor extractor;
 
     @Test
-    public void shouldAcceptFlushUpdateWithLocation() throws Exception
-    {
+    public void shouldAcceptFlushUpdateWithLocation() throws Exception {
         given(anExtractor().withDefaultAccessLatency(ONLINE).withDefaultRetentionPolicy(REPLICA));
         FsInode inode = aFile().build();
         StorageInfo info = aStorageInfo()
-                        .withIsSetAddLocation()
-                        .withHsm("enstore-instance")
-                        .withKey("store", "store-group")
-                        .withKey("group", "store-subgroup")
-                        .withLocation("enstore://enstore-instance/specific-ID")
-                        .build();
+              .withIsSetAddLocation()
+              .withHsm("enstore-instance")
+              .withKey("store", "store-group")
+              .withKey("group", "store-subgroup")
+              .withLocation("enstore://enstore-instance/specific-ID")
+              .build();
 
         extractor.setStorageInfo(inode, info);
 
         verify(inode.getFs()).addInodeLocation(inode, 0, "enstore://enstore-instance/specific-ID");
         verify(inode.getFs()).setStorageInfo(eq(inode), argThat(matchesAnInodeStorageInformation()
-                        .withHsm("enstore-instance")
-                        .withInode(inode)
-                        .withStorageGroup("store-group")
-                        .withStorageSubgroup("store-subgroup")));
+              .withHsm("enstore-instance")
+              .withInode(inode)
+              .withStorageGroup("store-group")
+              .withStorageSubgroup("store-subgroup")));
     }
 
     @Test
-    public void shouldIgnoreFlushUpdateWithoutLocation() throws Exception
-    {
+    public void shouldIgnoreFlushUpdateWithoutLocation() throws Exception {
         given(anExtractor().withDefaultAccessLatency(ONLINE).withDefaultRetentionPolicy(REPLICA));
         FsInode inode = aFile().build();
         StorageInfo info = aStorageInfo()
-                        .withIsSetAddLocation()
-                        .withHsm("enstore-instance")
-                        .withKey("store", "store-group")
-                        .withKey("group", "store-subgroup")
-                        // Note: NO locations.
-                        .build();
+              .withIsSetAddLocation()
+              .withHsm("enstore-instance")
+              .withKey("store", "store-group")
+              .withKey("group", "store-subgroup")
+              // Note: NO locations.
+              .build();
 
         extractor.setStorageInfo(inode, info);
 
@@ -81,39 +80,34 @@ public class ChimeraEnstoreStorageInfoExtractorTest
         verify(inode.getFs(), never()).setStorageInfo(any(), any());
     }
 
-    private void given(ExtractorBuilder builder)
-    {
+    private void given(ExtractorBuilder builder) {
         extractor = builder.build();
     }
 
-    public ExtractorBuilder anExtractor()
-    {
+    public ExtractorBuilder anExtractor() {
         return new ExtractorBuilder();
     }
 
-    private static class ExtractorBuilder
-    {
+    private static class ExtractorBuilder {
+
         private AccessLatency defaultAccessLatency;
         private RetentionPolicy defaultRetentionPolicy;
 
-        public ExtractorBuilder withDefaultAccessLatency(AccessLatency latency)
-        {
+        public ExtractorBuilder withDefaultAccessLatency(AccessLatency latency) {
             defaultAccessLatency = latency;
             return this;
         }
 
-        public ExtractorBuilder withDefaultRetentionPolicy(RetentionPolicy policy)
-        {
+        public ExtractorBuilder withDefaultRetentionPolicy(RetentionPolicy policy) {
             defaultRetentionPolicy = policy;
             return this;
         }
 
-        public ChimeraEnstoreStorageInfoExtractor build()
-        {
+        public ChimeraEnstoreStorageInfoExtractor build() {
             checkState(defaultAccessLatency != null, "defaultAccessLatency not set");
             checkState(defaultRetentionPolicy != null, "defaultRetentionPolicy not set");
             return new ChimeraEnstoreStorageInfoExtractor(defaultAccessLatency,
-                    defaultRetentionPolicy);
+                  defaultRetentionPolicy);
         }
     }
 }

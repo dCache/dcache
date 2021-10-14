@@ -60,15 +60,12 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import com.google.gson.GsonBuilder;
-
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
-
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.services.bulk.BulkRequest;
@@ -78,23 +75,21 @@ import org.dcache.services.bulk.NamespaceHandlerAware;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  Acts as a shallow container for a list of targets which
- *  may not be associated with each other via a common parent.
- *  Immediate wrapper for a BulkRequest.
+ * Acts as a shallow container for a list of targets which may not be associated with each other via
+ * a common parent. Immediate wrapper for a BulkRequest.
  */
 public class BulkRequestJob extends MultipleTargetJob
-                implements NamespaceHandlerAware
-{
+      implements NamespaceHandlerAware {
+
     protected static final Set<FileAttribute> REQUIRED_ATTRIBUTES
-                    = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
-                                                             FileAttribute.TYPE));
+          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.TYPE));
 
     private PnfsHandler pnfsHandler;
 
     public BulkRequestJob(BulkJobKey key,
-                          BulkRequest request,
-                          TargetType targetType)
-    {
+          BulkRequest request,
+          TargetType targetType) {
         /*
          *  Top-level job has no parent.
          */
@@ -103,25 +98,22 @@ public class BulkRequestJob extends MultipleTargetJob
     }
 
     @Override
-    protected void doOnCancellation()
-    {
-       /*
-        *  We do not need to call the completion handler
-        *  because this job is never added to the parent-child map,
-        *  and that method relies on the parent key, which for
-        *  this kind of job is null.
-        */
+    protected void doOnCancellation() {
+        /*
+         *  We do not need to call the completion handler
+         *  because this job is never added to the parent-child map,
+         *  and that method relies on the parent key, which for
+         *  this kind of job is null.
+         */
     }
 
     @Override
-    public void setNamespaceHandler(PnfsHandler pnfsHandler)
-    {
+    public void setNamespaceHandler(PnfsHandler pnfsHandler) {
         this.pnfsHandler = pnfsHandler;
     }
 
     @Override
-    protected void doRun()
-    {
+    protected void doRun() {
         LOGGER.trace("RequestJob, doRun() called ...");
 
         /*
@@ -133,7 +125,7 @@ public class BulkRequestJob extends MultipleTargetJob
             GsonBuilder builder = new GsonBuilder();
             targets = builder.create().fromJson(target, String[].class);
         } else {
-            targets = new String[] { target };
+            targets = new String[]{target};
         }
 
         String prefix = request.getTargetPrefix();
@@ -145,8 +137,8 @@ public class BulkRequestJob extends MultipleTargetJob
             LOGGER.debug("RequestJob, path {}.", path);
             try {
                 FileAttributes attributes
-                                = pnfsHandler.getFileAttributes(path,
-                                                                REQUIRED_ATTRIBUTES);
+                      = pnfsHandler.getFileAttributes(path,
+                      REQUIRED_ATTRIBUTES);
                 if (attributes.getFileType() == FileType.DIR) {
                     handleDirectory(t, attributes);
                 } else if (attributes.getFileType() != FileType.SPECIAL) {
@@ -154,12 +146,12 @@ public class BulkRequestJob extends MultipleTargetJob
                 }
             } catch (CacheException | BulkServiceException e) {
                 LOGGER.error("RequestJob, path {}, error {}.",
-                             path, e.toString());
+                      path, e.toString());
                 try {
                     submissionHandler.abortRequestTarget(request.getId(), t, e);
                 } catch (BulkServiceException e1) {
                     LOGGER.error("RequestJob, could not abort {}: {}.",
-                                 t, e1.toString());
+                          t, e1.toString());
                 }
             }
 
@@ -176,69 +168,65 @@ public class BulkRequestJob extends MultipleTargetJob
         LOGGER.trace("{}, RequestJob, doRun() exiting ...", target);
     }
 
-    protected void postCompletion()
-    {
+    protected void postCompletion() {
         completionHandler.requestProcessingFinished(key.getJobId());
     }
 
     private void handleDirectory(String target, FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          throws BulkServiceException {
         LOGGER.trace("RequestJob, handleDirectory() called for {}.",
-                     target);
+              target);
 
         Depth expand = request.getExpandDirectories();
         switch (expand) {
             case ALL:
             case TARGETS:
                 LOGGER.debug("RequestJob, expand {},"
-                                             + " submitting directory {}"
-                                             + " for expansion.",
-                            expand, target);
+                            + " submitting directory {}"
+                            + " for expansion.",
+                      expand, target);
                 submitTargetExpansionJob(target,
-                                         attributes);
+                      attributes);
                 break;
             case NONE:
             default:
                 if (targetType != TargetType.FILE) {
                     LOGGER.debug("RequestJob, expand NONE, directory {} "
-                                                 + "included as target.",
-                                 target);
+                                + "included as target.",
+                          target);
                     submitSingleTargetJob(target, key, attributes);
                 }
                 LOGGER.debug("RequestJob, expand NONE, directory {} "
-                                             + "not included as target, skipping.",
-                             target);
+                            + "not included as target, skipping.",
+                      target);
         }
 
         LOGGER.trace("RequestJob, handleDirectory() for {} exiting ...",
-                     target);
+              target);
     }
 
     private void handleFile(String target,
-                            FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          FileAttributes attributes)
+          throws BulkServiceException {
         LOGGER.trace("RequestJob handleFile() called for {}.",
-                     target);
+              target);
 
-        switch(targetType)
-        {
+        switch (targetType) {
             case BOTH:
             case FILE:
                 LOGGER.debug("RequestJob, file {} included"
-                                             + " as target.",
-                             target);
+                            + " as target.",
+                      target);
                 submitSingleTargetJob(target, key, attributes);
                 break;
             default:
                 LOGGER.debug("RequestJob, file {} "
-                                             + "not included"
-                                             + " as target, skipping.",
-                             target);
+                            + "not included"
+                            + " as target, skipping.",
+                      target);
         }
 
         LOGGER.trace("RequestJob, handleFile() for {} exiting ...",
-                     target);
+              target);
     }
 }

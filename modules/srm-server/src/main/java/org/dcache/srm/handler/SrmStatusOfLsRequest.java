@@ -1,5 +1,7 @@
 package org.dcache.srm.handler;
 
+import static java.util.Objects.requireNonNull;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -12,24 +14,20 @@ import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
+public class SrmStatusOfLsRequest {
 
-public class SrmStatusOfLsRequest
-{
     private final SrmStatusOfLsRequestRequest request;
     private SrmStatusOfLsRequestResponse response;
 
     public SrmStatusOfLsRequest(SRMUser user,
-                                SrmStatusOfLsRequestRequest request,
-                                AbstractStorageElement storage,
-                                SRM srm,
-                                String clientHost)
-    {
+          SrmStatusOfLsRequestRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
     }
 
-    public SrmStatusOfLsRequestResponse getResponse()
-    {
+    public SrmStatusOfLsRequestResponse getResponse() {
         if (response == null) {
             try {
                 response = srmStatusOfLsRequest();
@@ -40,21 +38,19 @@ public class SrmStatusOfLsRequest
         return response;
     }
 
-    private SrmStatusOfLsRequestResponse srmStatusOfLsRequest() throws SRMInvalidRequestException
-    {
+    private SrmStatusOfLsRequestResponse srmStatusOfLsRequest() throws SRMInvalidRequestException {
         LsRequest lsRequest = Request.getRequest(request.getRequestToken(), LsRequest.class);
         try (JDC ignored = lsRequest.applyJdc()) {
             return lsRequest.getSrmStatusOfLsRequestResponse();
         }
     }
 
-    public static final SrmStatusOfLsRequestResponse getFailedResponse(String error)
-    {
+    public static final SrmStatusOfLsRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmStatusOfLsRequestResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmStatusOfLsRequestResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         SrmStatusOfLsRequestResponse srmStatusOfLsRequestResponse = new SrmStatusOfLsRequestResponse();
         srmStatusOfLsRequestResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmStatusOfLsRequestResponse;

@@ -1,31 +1,21 @@
 package org.dcache.http;
 
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.reverse;
+import static java.util.Arrays.asList;
+
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
-import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.security.UserAuthentication;
-import org.eclipse.jetty.server.Authentication;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.UserIdentity;
-import org.eclipse.jetty.server.handler.HandlerWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
-import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -35,11 +25,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.LoginNamePrincipal;
@@ -49,28 +40,29 @@ import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.CertificateFactories;
-import org.dcache.util.NetLoggerBuilder;
-
-import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.reverse;
-import static java.util.Arrays.asList;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.security.UserAuthentication;
+import org.eclipse.jetty.server.Authentication;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.UserIdentity;
+import org.eclipse.jetty.server.handler.HandlerWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthenticationHandler extends HandlerWrapper {
 
     private final static Logger LOG = LoggerFactory.getLogger(AuthenticationHandler.class);
     public static final String X509_CERTIFICATE_ATTRIBUTE =
-            "javax.servlet.request.X509Certificate";
+          "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
-            "org.dcache.subject";
+          "org.dcache.subject";
     public static final String DCACHE_RESTRICTION_ATTRIBUTE =
-            "org.dcache.restriction";
+          "org.dcache.restriction";
     public static final String DCACHE_LOGIN_ATTRIBUTES =
-            "org.dcache.login";
+          "org.dcache.login";
     private static final String AUTH_HANDLER_ATTRIBUTE = "org.dcache.authentication-handler";
     private static final String X509_SUBJECT_ATTRIBUTE = "org.dcache.x509-subject";
     public static final String BEARER_TOKEN_QUERY_KEY = "authz";
@@ -91,21 +83,20 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
     /**
-     * Provide the identity of the user, based solely on their X.509 certificate
-     * (if supplied).  If the user was already authenticated based on their
-     * X.509 certificate then this method simply returned that existing Subject,
-     * otherwise the X.509 certificate chain is authenticated and that result
-     * returned.
+     * Provide the identity of the user, based solely on their X.509 certificate (if supplied).  If
+     * the user was already authenticated based on their X.509 certificate then this method simply
+     * returned that existing Subject, otherwise the X.509 certificate chain is authenticated and
+     * that result returned.
+     *
      * @param request the HTTP request to process
+     * @return a Subject based on the users X.509 certificate or null if the user provided no X.509
+     * certificate
      * @throws PermissionDeniedCacheException if the user could not be logged in
-     * @throws CacheException some other problem with the X.509-based login
-     * @throws IllegalArgumentException X.509 authentication is not supported
-     * @return a Subject based on the users X.509 certificate or null if the
-     * user provided no X.509 certificate
+     * @throws CacheException                 some other problem with the X.509-based login
+     * @throws IllegalArgumentException       X.509 authentication is not supported
      */
     public static Subject getX509Identity(HttpServletRequest request)
-            throws CacheException
-    {
+          throws CacheException {
         Subject dCacheUser = Subject.getSubject(AccessController.getContext());
         if (dCacheUser != null && Subjects.getDn(dCacheUser) != null) {
             return dCacheUser;
@@ -117,17 +108,17 @@ public class AuthenticationHandler extends HandlerWrapper {
 
         Object existingX509Subject = request.getAttribute(X509_SUBJECT_ATTRIBUTE);
         if (existingX509Subject instanceof Subject) {
-            return (Subject)existingX509Subject;
+            return (Subject) existingX509Subject;
         }
 
-        AuthenticationHandler handler = (AuthenticationHandler)request.getAttribute(AUTH_HANDLER_ATTRIBUTE);
+        AuthenticationHandler handler = (AuthenticationHandler) request.getAttribute(
+              AUTH_HANDLER_ATTRIBUTE);
         Subject x509Subject = handler.x509Login(request);
         request.setAttribute(X509_SUBJECT_ATTRIBUTE, x509Subject);
         return x509Subject;
     }
 
-    private Subject x509Login(HttpServletRequest request) throws CacheException
-    {
+    private Subject x509Login(HttpServletRequest request) throws CacheException {
         Subject suppliedIdentity = new Subject();
         addX509ChainToSubject(request, suppliedIdentity);
         addOriginToSubject(request, suppliedIdentity);
@@ -135,8 +126,9 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse servletResponse)
-            throws IOException, ServletException {
+    public void handle(String target, Request baseRequest, HttpServletRequest request,
+          HttpServletResponse servletResponse)
+          throws IOException, ServletException {
         if (isStarted() && !baseRequest.isHandled()) {
             AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
             try {
@@ -149,7 +141,8 @@ public class AuthenticationHandler extends HandlerWrapper {
 
                 LoginReply login = _loginStrategy.login(suppliedIdentity);
                 Subject authnIdentity = login.getSubject();
-                Restriction restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
+                Restriction restriction = Restrictions.concat(_doorRestriction,
+                      login.getRestriction());
 
                 request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, authnIdentity);
                 request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
@@ -157,14 +150,16 @@ public class AuthenticationHandler extends HandlerWrapper {
                 request.setAttribute(AUTH_HANDLER_ATTRIBUTE, this);
 
                 /* Process the request as the authenticated user.*/
-                Exception problem = Subject.doAs(authnIdentity, (PrivilegedAction<Exception>) () -> {
-                    try {
-                        AuthenticationHandler.super.handle(target, baseRequest, request, response);
-                    } catch (IOException | ServletException e) {
-                        return e;
-                    }
-                    return null;
-                });
+                Exception problem = Subject.doAs(authnIdentity,
+                      (PrivilegedAction<Exception>) () -> {
+                          try {
+                              AuthenticationHandler.super.handle(target, baseRequest, request,
+                                    response);
+                          } catch (IOException | ServletException e) {
+                              return e;
+                          }
+                          return null;
+                      });
                 if (problem != null) {
                     Throwables.throwIfInstanceOf(problem, IOException.class);
                     Throwables.throwIfInstanceOf(problem, ServletException.class);
@@ -172,7 +167,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 }
             } catch (PermissionDeniedCacheException e) {
                 LOG.info("Login failed for {} on {}: {}", request.getMethod(),
-                        request.getPathInfo(), e.getMessage());
+                      request.getPathInfo(), e.getMessage());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
                 baseRequest.setHandled(true);
             } catch (CacheException e) {
@@ -184,67 +179,70 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
     private void addSpnegoCredentialsToSubject(Request baseRequest,
-                                               HttpServletRequest request,
-                                               Subject subject)
-    {
+          HttpServletRequest request,
+          Subject subject) {
         if (_isSpnegoAuthenticationEnabled) {
             Authentication spnegoAuth = baseRequest.getAuthentication();
             if (spnegoAuth instanceof Authentication.Deferred) {
-                Authentication spnegoUser = ((Authentication.Deferred) spnegoAuth).authenticate(request);
+                Authentication spnegoUser = ((Authentication.Deferred) spnegoAuth).authenticate(
+                      request);
                 if (spnegoUser instanceof UserAuthentication) {
                     UserIdentity identity = ((UserAuthentication) spnegoUser).getUserIdentity();
-                    subject.getPrincipals().add(new KerberosPrincipal(identity.getUserPrincipal().getName()));
+                    subject.getPrincipals()
+                          .add(new KerberosPrincipal(identity.getUserPrincipal().getName()));
                 }
             }
         }
     }
 
     private void addX509ChainToSubject(HttpServletRequest request, Subject subject)
-            throws CacheException {
+          throws CacheException {
         Object object = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
         if (object instanceof X509Certificate[]) {
             try {
-                subject.getPublicCredentials().add(_cf.generateCertPath(asList((X509Certificate[]) object)));
+                subject.getPublicCredentials()
+                      .add(_cf.generateCertPath(asList((X509Certificate[]) object)));
             } catch (CertificateException e) {
-                throw new CacheException("Failed to generate X.509 certificate path: " + e.getMessage(), e);
+                throw new CacheException(
+                      "Failed to generate X.509 certificate path: " + e.getMessage(), e);
             }
         }
     }
 
-    private void addQueryBearerTokenToSubject(HttpServletRequest request, Subject subject) throws PermissionDeniedCacheException
-    {
+    private void addQueryBearerTokenToSubject(HttpServletRequest request, Subject subject)
+          throws PermissionDeniedCacheException {
         String[] bearerTokens = request.getParameterMap().get(BEARER_TOKEN_QUERY_KEY);
         if (bearerTokens != null) {
             if (!_acceptBearerTokenUnencrypted && !request.isSecure()) {
-                throw new PermissionDeniedCacheException("not allowed to send pre-authorized URL unencrypted");
+                throw new PermissionDeniedCacheException(
+                      "not allowed to send pre-authorized URL unencrypted");
             }
             Set<Object> credentials = subject.getPrivateCredentials();
             Arrays.stream(bearerTokens)
-                    .map(BearerTokenCredential::new)
-                    .forEach(credentials::add);
+                  .map(BearerTokenCredential::new)
+                  .forEach(credentials::add);
         }
     }
 
     private void addXForwardForAddresses(ImmutableList.Builder<InetAddress> addresses,
-            HttpServletRequest request)
-    {
+          HttpServletRequest request) {
         String xff = nullToEmpty(request.getHeader("X-Forwarded-For"));
-        List<String> ids = newArrayList(Splitter.on(',').trimResults().omitEmptyStrings().split(xff));
+        List<String> ids = newArrayList(
+              Splitter.on(',').trimResults().omitEmptyStrings().split(xff));
         reverse(ids).stream().
-                map(id -> {
-                        try {
-                            return InetAddresses.forString(id);
-                        } catch (IllegalArgumentException e) {
-                            LOG.warn("Fail to parse \"{}\" in X-Forwarded-For " +
-                                    "header \"{}\": {}", id, xff, e.getMessage());
-                            return UNKNOWN_ADDRESS;
-                        }
-                    }).
-                forEach(addresses::add);
+              map(id -> {
+                  try {
+                      return InetAddresses.forString(id);
+                  } catch (IllegalArgumentException e) {
+                      LOG.warn("Fail to parse \"{}\" in X-Forwarded-For " +
+                            "header \"{}\": {}", id, xff, e.getMessage());
+                      return UNKNOWN_ADDRESS;
+                  }
+              }).
+              forEach(addresses::add);
     }
 
-    private void addOriginToSubject(HttpServletRequest request, Subject subject)
-    {
+    private void addOriginToSubject(HttpServletRequest request, Subject subject) {
         ImmutableList.Builder<InetAddress> addresses = ImmutableList.builder();
 
         String address = request.getRemoteAddr();
@@ -264,8 +262,8 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
 
-
-    private void addAuthCredentialsToSubject(HttpServletRequest request, Subject subject) throws PermissionDeniedCacheException {
+    private void addAuthCredentialsToSubject(HttpServletRequest request, Subject subject)
+          throws PermissionDeniedCacheException {
         Optional<AuthInfo> optional = parseAuthenticationHeader(request);
         if (optional.isPresent()) {
             AuthInfo info = optional.get();
@@ -276,40 +274,46 @@ public class AuthenticationHandler extends HandlerWrapper {
                     }
 
                     try {
-                        byte[] bytes = Base64.getDecoder().decode(info.getData().getBytes(StandardCharsets.US_ASCII));
+                        byte[] bytes = Base64.getDecoder()
+                              .decode(info.getData().getBytes(StandardCharsets.US_ASCII));
                         String credential = new String(bytes, StandardCharsets.UTF_8);
                         int colon = credential.indexOf(":");
                         if (colon >= 0) {
                             String user = credential.substring(0, colon);
                             int lastHash = user.lastIndexOf('#');
-                            if (lastHash != -1 && lastHash < (user.length()-1)) {
+                            if (lastHash != -1 && lastHash < (user.length() - 1)) {
                                 Splitter.on(',')
-                                        .trimResults()
-                                        .omitEmptyStrings()
-                                        .split(user.substring(lastHash+1))
-                                        .forEach(r -> subject.getPrincipals().add(new DesiredRole(r)));
+                                      .trimResults()
+                                      .omitEmptyStrings()
+                                      .split(user.substring(lastHash + 1))
+                                      .forEach(
+                                            r -> subject.getPrincipals().add(new DesiredRole(r)));
                                 user = user.substring(0, lastHash);
                             }
                             String password = credential.substring(colon + 1);
-                            subject.getPrivateCredentials().add(new PasswordCredential(user, password));
+                            subject.getPrivateCredentials()
+                                  .add(new PasswordCredential(user, password));
                         } else {
                             subject.getPrincipals().add(new LoginNamePrincipal(credential));
                         }
                     } catch (IllegalArgumentException e) {
-                        LOG.warn("Authentication Data in the header received is not Base64 encoded {}",
-                                request.getHeader("Authorization"));
+                        LOG.warn(
+                              "Authentication Data in the header received is not Base64 encoded {}",
+                              request.getHeader("Authorization"));
                     }
                     break;
                 case "BEARER":
                     if (!_acceptBearerTokenUnencrypted && !request.isSecure()) {
-                        throw new PermissionDeniedCacheException("not allowed to send bearer token unencrypted");
+                        throw new PermissionDeniedCacheException(
+                              "not allowed to send bearer token unencrypted");
                     }
 
                     try {
-                        subject.getPrivateCredentials().add(new BearerTokenCredential(info.getData()));
+                        subject.getPrivateCredentials()
+                              .add(new BearerTokenCredential(info.getData()));
                     } catch (IllegalArgumentException e) {
                         LOG.info("Bearer Token in invalid {}",
-                                request.getHeader("Authorization"));
+                              request.getHeader("Authorization"));
                     }
                     break;
                 default:
@@ -355,6 +359,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     private class AuthHandlerResponse extends HttpServletResponseWrapper {
 
         private final boolean suppressWWWAuthenticate;
+
         public AuthHandlerResponse(HttpServletResponse response, HttpServletRequest request) {
             super(response);
             suppressWWWAuthenticate = request.getHeader("Suppress-WWW-Authenticate") != null;
@@ -389,14 +394,17 @@ public class AuthenticationHandler extends HandlerWrapper {
                 if (_isSpnegoAuthenticationEnabled) {
                     // Firefox always defaults to the first available authentication mechanism
                     // Conversely, Chrome and Safari choose the strongest mechanism
-                    setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), HttpHeader.NEGOTIATE.asString());
-                    addHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                    setHeader(HttpHeader.WWW_AUTHENTICATE.asString(),
+                          HttpHeader.NEGOTIATE.asString());
+                    addHeader(HttpHeader.WWW_AUTHENTICATE.asString(),
+                          "Basic realm=\"" + getRealm() + "\"");
                 } else {
                     if (suppressWWWAuthenticate) {
                         setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), null);
                         addHeader("Suppress-WWW-Authenticate", "suppressed");
                     } else {
-                        setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                        setHeader(HttpHeader.WWW_AUTHENTICATE.asString(),
+                              "Basic realm=\"" + getRealm() + "\"");
                     }
                 }
             }
@@ -405,22 +413,20 @@ public class AuthenticationHandler extends HandlerWrapper {
 
 
     private class AuthInfo {
+
         private final String _scheme;
         private final String _data;
 
-        AuthInfo(String scheme, String data)
-        {
+        AuthInfo(String scheme, String data) {
             _scheme = scheme;
             _data = data;
         }
 
-        public String getScheme()
-        {
+        public String getScheme() {
             return _scheme;
         }
 
-        public String getData()
-        {
+        public String getData() {
             return _data;
         }
     }
@@ -438,7 +444,8 @@ public class AuthenticationHandler extends HandlerWrapper {
         }
 
         int space = header.indexOf(" ");
-        String authScheme = space >= 0 ? header.substring(0, space).toUpperCase() : HttpServletRequest.BASIC_AUTH;
+        String authScheme =
+              space >= 0 ? header.substring(0, space).toUpperCase() : HttpServletRequest.BASIC_AUTH;
         String authData = space >= 0 ? header.substring(space + 1) : header;
         return Optional.of(new AuthInfo(authScheme, authData));
     }

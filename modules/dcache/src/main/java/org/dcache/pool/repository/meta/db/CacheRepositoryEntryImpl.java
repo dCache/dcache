@@ -1,12 +1,25 @@
 package org.dcache.pool.repository.meta.db;
 
+import static com.google.common.collect.Iterables.elementsEqual;
+import static com.google.common.collect.Iterables.filter;
+import static org.dcache.pool.repository.ReplicaState.BROKEN;
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.DESTROYED;
+import static org.dcache.pool.repository.ReplicaState.NEW;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.REMOVED;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.net.URI;
@@ -16,42 +29,31 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfos;
-
 import org.dcache.namespace.FileAttribute;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.collect.Iterables.elementsEqual;
-import static com.google.common.collect.Iterables.filter;
-import static org.dcache.pool.repository.ReplicaState.*;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
-public class CacheRepositoryEntryImpl implements ReplicaRecord
-{
+public class CacheRepositoryEntryImpl implements ReplicaRecord {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
+          LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
 
     // Reusable list for the common case
     private static final ImmutableList<StickyRecord> SYSTEM_STICKY =
-            ImmutableList.of(new StickyRecord("system", -1));
+          ImmutableList.of(new StickyRecord("system", -1));
 
     private final PnfsId _pnfsId;
     private final AbstractBerkeleyDBReplicaStore _repository;
-    private  long _creationTime;
+    private long _creationTime;
 
     /**
      * Sticky records held by the file.
@@ -62,27 +64,28 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     private long _lastAccess;
 
-    private int  _linkCount;
+    private int _linkCount;
 
     private long _size;
-    private  FileStore _fileStore;
+    private FileStore _fileStore;
     // cached storage info
     private SoftReference<StorageInfo> _storageInfoCache = new SoftReference<>(null);
 
 
-    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, FileStore fileStore)
-    {
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId,
+          FileStore fileStore) {
         _repository = repository;
         _pnfsId = pnfsId;
         _state = NEW;
         _sticky = ImmutableList.of();
-        _creationTime =   System.currentTimeMillis();
+        _creationTime = System.currentTimeMillis();
         _lastAccess = _creationTime;
         _fileStore = fileStore;
     }
 
-    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, ReplicaState state,
-                                    Collection<StickyRecord> sticky, FileStore filestore) throws IOException {
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId,
+          ReplicaState state,
+          Collection<StickyRecord> sticky, FileStore filestore) throws IOException {
         _repository = repository;
         _pnfsId = pnfsId;
         _state = state;
@@ -119,28 +122,31 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
                 _size = size.longValue();
             }
 
-
             if (accessTimeInfo != null) {
                 if (accessTimeInfo.getLastAccessTime() != null) {
                     _lastAccess = accessTimeInfo.getLastAccessTime();
 
                 } else {
-                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes().lastAccessTime().toMillis();
+                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes()
+                          .lastAccessTime().toMillis();
                 }
 
                 if (accessTimeInfo.getCreationTime() != null) {
                     _creationTime = accessTimeInfo.getCreationTime();
 
                 } else {
-                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes().creationTime().toMillis();
+                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes()
+                          .creationTime().toMillis();
                 }
 
             } else {
 
                 try {
                     AccessTimeInfo accessTimeInfoNew = new AccessTimeInfo();
-                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes().lastAccessTime().toMillis();
-                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes().creationTime().toMillis();
+                    _lastAccess = _fileStore.getFileAttributeView(pnfsId).readAttributes()
+                          .lastAccessTime().toMillis();
+                    _creationTime = _fileStore.getFileAttributeView(pnfsId).readAttributes()
+                          .creationTime().toMillis();
                     accessTimeInfoNew.setLastAccessTime(_lastAccess);
                     accessTimeInfoNew.setCreationTime(_creationTime);
                     _repository.getAccessTimeInfo().put(pnfsId.toString(), accessTimeInfoNew);
@@ -152,14 +158,13 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
     }
 
-    private void setStickyRecords(Iterable<StickyRecord> records)
-    {
-        _sticky = elementsEqual(records, SYSTEM_STICKY) ? SYSTEM_STICKY : ImmutableList.copyOf(records);
+    private void setStickyRecords(Iterable<StickyRecord> records) {
+        _sticky =
+              elementsEqual(records, SYSTEM_STICKY) ? SYSTEM_STICKY : ImmutableList.copyOf(records);
     }
 
     @Override
-    public synchronized int decrementLinkCount()
-    {
+    public synchronized int decrementLinkCount() {
         if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already zero");
         }
@@ -168,8 +173,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public synchronized int incrementLinkCount()
-    {
+    public synchronized int incrementLinkCount() {
         ReplicaState state = getState();
         if (state == REMOVED || state == DESTROYED) {
             throw new IllegalStateException("Entry is marked as removed");
@@ -180,31 +184,28 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
 
     @Override
-    public synchronized int getLinkCount()
-    {
+    public synchronized int getLinkCount() {
         return _linkCount;
     }
 
     @Override
-    public synchronized long getCreationTime()
-    {
+    public synchronized long getCreationTime() {
         return _creationTime;
     }
 
     @Override
-    public synchronized long getLastAccessTime()
-    {
+    public synchronized long getLastAccessTime() {
         return _lastAccess;
     }
 
     @Override
-    public synchronized void setLastAccessTime(long time) throws CacheException
-    {
+    public synchronized void setLastAccessTime(long time) throws CacheException {
         try {
             _repository.setLastModifiedTime(_pnfsId, time);
 
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time for " + _pnfsId + ": " + e.toString(), e);
+            throw new DiskErrorCacheException(
+                  "Failed to set modification time for " + _pnfsId + ": " + e.toString(), e);
         }
         _lastAccess = time;
     }
@@ -214,10 +215,10 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         try {
 
             // use cached value only for file in 'trusted state'
-            return _state == CACHED || _state == PRECIOUS ? _size: _fileStore
-                    .getFileAttributeView(_pnfsId)
-                    .readAttributes()
-                    .size();
+            return _state == CACHED || _state == PRECIOUS ? _size : _fileStore
+                  .getFileAttributeView(_pnfsId)
+                  .readAttributes()
+                  .size();
 
         } catch (IOException e) {
             _log.error("Failed to read file size: {}", e.toString());
@@ -225,8 +226,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         }
     }
 
-    private synchronized StorageInfo getStorageInfo()
-    {
+    private synchronized StorageInfo getStorageInfo() {
         StorageInfo si = _storageInfoCache.get();
         if (si == null) {
             si = _repository.getStorageInfoMap().get(_pnfsId.toString());
@@ -236,8 +236,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes() throws CacheException
-    {
+    public synchronized FileAttributes getFileAttributes() throws CacheException {
         try {
 
             FileAttributes attributes = FileAttributes.ofPnfsId(_pnfsId);
@@ -249,7 +248,9 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             return attributes;
         } catch (EnvironmentFailureException e) {
             if (!_repository.isValid()) {
-                throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+                throw new DiskErrorCacheException(
+                      "Meta data lookup failed and a pool restart is required: " + e.getMessage(),
+                      e);
             }
             throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         } catch (OperationFailureException e) {
@@ -272,7 +273,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             }
 
             //TODO check should there be separate methods
-            if (attributes.isDefined(FileAttribute.ACCESS_TIME) && attributes.isDefined(FileAttribute.CREATION_TIME)) {
+            if (attributes.isDefined(FileAttribute.ACCESS_TIME) && attributes.isDefined(
+                  FileAttribute.CREATION_TIME)) {
                 AccessTimeInfo accessTimeInfo = new AccessTimeInfo();
                 accessTimeInfo.setLastAccessTime(attributes.getAccessTime());
                 accessTimeInfo.setCreationTime(attributes.getCreationTime());
@@ -284,7 +286,9 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
 
         } catch (EnvironmentFailureException e) {
             if (!_repository.isValid()) {
-                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+                throw new DiskErrorCacheException(
+                      "Meta data update failed and a pool restart is required: " + e.getMessage(),
+                      e);
             }
             throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         } catch (OperationFailureException e) {
@@ -294,41 +298,36 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public synchronized PnfsId getPnfsId()
-    {
+    public synchronized PnfsId getPnfsId() {
         return _pnfsId;
     }
 
     @Override
-    public synchronized ReplicaState getState()
-    {
+    public synchronized ReplicaState getState() {
         return _state;
     }
 
     @Override
-    public synchronized boolean isSticky()
-    {
+    public synchronized boolean isSticky() {
         return !_sticky.isEmpty();
     }
 
     @Override
-    public synchronized URI getReplicaUri()
-    {
+    public synchronized URI getReplicaUri() {
         return _repository.getUri(_pnfsId);
     }
 
     @Override
-    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
-    {
+    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException {
         return _repository.openChannel(_pnfsId, mode);
     }
 
     @Override
-    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
-    {
+    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException {
         return update("removing expired sticky", r -> {
             long now = System.currentTimeMillis();
-            List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, s -> !s.isValidAt(now)));
+            List<StickyRecord> removed = Lists.newArrayList(
+                  filter(_sticky, s -> !s.isValidAt(now)));
             if (!removed.isEmpty()) {
                 setStickyRecords(ImmutableList.copyOf(filter(_sticky, s -> s.isValidAt(now))));
             }
@@ -336,14 +335,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         });
     }
 
-    public synchronized Collection<StickyRecord> stickyRecords()
-    {
+    public synchronized Collection<StickyRecord> stickyRecords() {
         return _sticky;
     }
 
     @Override
-    public synchronized <T> T update(String why, Update<T> update) throws CacheException
-    {
+    public synchronized <T> T update(String why, Update<T> update) throws CacheException {
         AtomicReference<T> result = new AtomicReference<>();
         ReplicaState state = _state;
         ImmutableList<StickyRecord> sticky = _sticky;
@@ -358,7 +355,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
             _sticky = sticky;
             if (e instanceof EnvironmentFailureException && !_repository.isValid()) {
                 throw new DiskErrorCacheException(
-                        "Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+                      "Meta data update failed and a pool restart is required: " + e.getMessage(),
+                      e);
             }
             Throwables.propagateIfPossible(e, CacheException.class);
             throw new CacheException("Meta data update failed: " + e.getMessage(), e);
@@ -366,15 +364,16 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         return result.get();
     }
 
-    private synchronized void storeState() throws CacheException
-    {
+    private synchronized void storeState() throws CacheException {
         try {
 
-
-            _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
+            _repository.getStateMap()
+                  .put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
         } catch (EnvironmentFailureException e) {
             if (!_repository.isValid()) {
-                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+                throw new DiskErrorCacheException(
+                      "Meta data update failed and a pool restart is required: " + e.getMessage(),
+                      e);
             }
             throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         } catch (OperationFailureException e) {
@@ -383,15 +382,15 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId,
-                                          FileStore fileStore) throws IOException
-    {
+          FileStore fileStore) throws IOException {
         try {
             String id = pnfsId.toString();
 
             CacheRepositoryEntryState state = repository.getStateMap().get(id);
 
             if (state != null) {
-                return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(), state.stickyRecords(), fileStore);
+                return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(),
+                      state.stickyRecords(), fileStore);
             } else {
                 // no state info. Ether file doesn't exists or it't broken.
                 // provoke FileNotFound
@@ -406,26 +405,28 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
              * result of us changing the layout of serialized classes.
              */
             if (!(e.getCause() instanceof ClassNotFoundException) &&
-                !(e.getCause() instanceof ClassCastException)) {
+                  !(e.getCause() instanceof ClassCastException)) {
                 throw e;
             }
             _log.warn(e.toString());
         }
-        return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(),  fileStore);
+        return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(),
+              fileStore);
     }
 
-    private class UpdatableRecordImpl implements UpdatableRecord
-    {
+    private class UpdatableRecordImpl implements UpdatableRecord {
+
         private boolean _stateModified;
 
         @Override
-        public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
-        {
+        public boolean setSticky(String owner, long expire, boolean overwrite)
+              throws CacheException {
             if (_state == REMOVED) {
                 throw new CacheException("Entry in removed state");
             }
             Predicate<StickyRecord> subsumes =
-                    r -> r.owner().equals(owner) && (r.expire() == expire || !overwrite && r.isValidAt(expire));
+                  r -> r.owner().equals(owner) && (r.expire() == expire
+                        || !overwrite && r.isValidAt(expire));
             if (_sticky.stream().anyMatch(subsumes)) {
                 return false;
             }
@@ -438,8 +439,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         }
 
         @Override
-        public Void setState(ReplicaState state) throws CacheException
-        {
+        public Void setState(ReplicaState state) throws CacheException {
             if (_state != state) {
                 if (_state.isMutable() && !state.isMutable()) {
                     try {
@@ -456,31 +456,26 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         }
 
         @Override
-        public Void setFileAttributes(FileAttributes attributes) throws CacheException
-        {
+        public Void setFileAttributes(FileAttributes attributes) throws CacheException {
             return CacheRepositoryEntryImpl.this.setFileAttributes(attributes);
         }
 
         @Override
-        public FileAttributes getFileAttributes() throws CacheException
-        {
+        public FileAttributes getFileAttributes() throws CacheException {
             return CacheRepositoryEntryImpl.this.getFileAttributes();
         }
 
         @Override
-        public ReplicaState getState()
-        {
+        public ReplicaState getState() {
             return CacheRepositoryEntryImpl.this.getState();
         }
 
         @Override
-        public int getLinkCount()
-        {
+        public int getLinkCount() {
             return CacheRepositoryEntryImpl.this.getLinkCount();
         }
 
-        public void save() throws CacheException
-        {
+        public void save() throws CacheException {
             if (_stateModified) {
                 storeState();
             }

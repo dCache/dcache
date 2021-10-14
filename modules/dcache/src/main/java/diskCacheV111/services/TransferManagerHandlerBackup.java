@@ -12,37 +12,39 @@ package diskCacheV111.services;
 
 
 public class TransferManagerHandlerBackup {
-	private String pnfsPath;
-	boolean store;
-	boolean created;
-	private String          pnfsIdString;
-	private String          remoteUrl;
-	transient boolean locked;
-	private String pool;
-	private int state;
-	private long id;
-	private Integer moverId;
-	private long creationTime;
-	private long lifeTime;
-	private Long credentialId;
 
-	private TransferManagerHandlerBackup() {
-	}
-	public TransferManagerHandlerBackup(TransferManagerHandler handler) {
+    private String pnfsPath;
+    boolean store;
+    boolean created;
+    private String pnfsIdString;
+    private String remoteUrl;
+    transient boolean locked;
+    private String pool;
+    private int state;
+    private long id;
+    private Integer moverId;
+    private long creationTime;
+    private long lifeTime;
+    private Long credentialId;
 
-		creationTime = handler.getCreationTime();
-		lifeTime     = handler.getLifeTime();
-		id           = handler.getId();
-		pnfsPath     = handler.getPnfsPath();
-		pnfsIdString = handler.getPnfsIdString();
-		pool         = handler.getPool().getName();
-		store        = handler.getStore();
-		created      = handler.getCreated();
-		locked       = handler.getLocked();
-		remoteUrl    = handler.getRemoteUrl();
-		moverId      = handler.getMoverId();
-		state        = handler.getState();
-		credentialId = handler.getCredentialId();
+    private TransferManagerHandlerBackup() {
+    }
 
-	}
+    public TransferManagerHandlerBackup(TransferManagerHandler handler) {
+
+        creationTime = handler.getCreationTime();
+        lifeTime = handler.getLifeTime();
+        id = handler.getId();
+        pnfsPath = handler.getPnfsPath();
+        pnfsIdString = handler.getPnfsIdString();
+        pool = handler.getPool().getName();
+        store = handler.getStore();
+        created = handler.getCreated();
+        locked = handler.getLocked();
+        remoteUrl = handler.getRemoteUrl();
+        moverId = handler.getMoverId();
+        state = handler.getState();
+        credentialId = handler.getCredentialId();
+
+    }
 }

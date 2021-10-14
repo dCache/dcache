@@ -17,31 +17,30 @@
  */
 package org.dcache.restful.interceptors;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
+public class LimitedTeeOutputStreamTest {
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.*;
-
-public class LimitedTeeOutputStreamTest
-{
     private ByteArrayOutputStream out;
     private ByteArrayOutputStream branch;
     private LimitedTeeOutputStream tee;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         out = new ByteArrayOutputStream();
         branch = new ByteArrayOutputStream();
     }
 
     @Test
-    public void shouldBeInitiallyEmpty()
-    {
+    public void shouldBeInitiallyEmpty() {
         given(limitedTee().withLimit(10));
 
         assertThat(out.size(), equalTo(0));
@@ -50,8 +49,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllSubLimitInputWithByteArray() throws Exception
-    {
+    public void shouldTeeAllSubLimitInputWithByteArray() throws Exception {
         byte[] testData = "Test data".getBytes(UTF_8);
         assert testData.length == 9;
 
@@ -65,8 +63,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllSubLimitInputWithByte() throws Exception
-    {
+    public void shouldTeeAllSubLimitInputWithByte() throws Exception {
         byte[] testData = "Test data".getBytes(UTF_8);
         assert testData.length == 9;
 
@@ -82,8 +79,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllSubLimitInputWithByteArrayRange() throws Exception
-    {
+    public void shouldTeeAllSubLimitInputWithByteArrayRange() throws Exception {
         byte[] testData = "Test data".getBytes(UTF_8);
         assert testData.length == 9;
 
@@ -97,8 +93,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllLimitInputWithByteArray() throws Exception
-    {
+    public void shouldTeeAllLimitInputWithByteArray() throws Exception {
         byte[] testData = "Test data!".getBytes(UTF_8);
         assert testData.length == 10;
 
@@ -112,8 +107,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllLimitInputWithByte() throws Exception
-    {
+    public void shouldTeeAllLimitInputWithByte() throws Exception {
         byte[] testData = "Test data!".getBytes(UTF_8);
         assert testData.length == 10;
 
@@ -129,8 +123,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTeeAllLimitInputWithByteArrayRange() throws Exception
-    {
+    public void shouldTeeAllLimitInputWithByteArrayRange() throws Exception {
         byte[] testData = "Test data!".getBytes(UTF_8);
         assert testData.length == 10;
 
@@ -144,8 +137,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTruncateBranchWithLargeByteArrayInput() throws Exception
-    {
+    public void shouldTruncateBranchWithLargeByteArrayInput() throws Exception {
         byte[] testData = "My test data!".getBytes(UTF_8);
         assert testData.length == 13;
 
@@ -159,8 +151,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTruncateBranchWithLargeSingleByteInput() throws Exception
-    {
+    public void shouldTruncateBranchWithLargeSingleByteInput() throws Exception {
         byte[] testData = "My test data!".getBytes(UTF_8);
         assert testData.length == 13;
 
@@ -176,8 +167,7 @@ public class LimitedTeeOutputStreamTest
     }
 
     @Test
-    public void shouldTruncateBranchWithLargeSingleByteArrayOffsetInput() throws Exception
-    {
+    public void shouldTruncateBranchWithLargeSingleByteArrayOffsetInput() throws Exception {
         byte[] testData = "My test data!".getBytes(UTF_8);
         assert testData.length == 13;
 
@@ -190,28 +180,24 @@ public class LimitedTeeOutputStreamTest
         assertTrue(tee.isBranchTruncated());
     }
 
-    private void given(LimitedTeeBuilder builder)
-    {
+    private void given(LimitedTeeBuilder builder) {
         tee = builder.build();
     }
 
-    private LimitedTeeBuilder limitedTee()
-    {
+    private LimitedTeeBuilder limitedTee() {
         return new LimitedTeeBuilder();
     }
 
-    private class LimitedTeeBuilder
-    {
+    private class LimitedTeeBuilder {
+
         private long limit;
 
-        LimitedTeeBuilder withLimit(long value)
-        {
+        LimitedTeeBuilder withLimit(long value) {
             limit = value;
             return this;
         }
 
-        LimitedTeeOutputStream build()
-        {
+        LimitedTeeOutputStream build() {
             return new LimitedTeeOutputStream(out, branch, limit);
         }
     }

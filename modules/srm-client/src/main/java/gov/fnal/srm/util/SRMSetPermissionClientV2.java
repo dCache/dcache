@@ -81,9 +81,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
 import org.dcache.srm.v2_2.ISRM;
@@ -95,9 +96,8 @@ import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.util.Credentials.checkValid;
-
 public class SRMSetPermissionClientV2 extends SRMClient {
+
     //
     // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
     // dCache SRM ignores this value and uses group id it retrieves from
@@ -111,14 +111,13 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     private ISRM isrm;
 
     public SRMSetPermissionClientV2(Configuration configuration,
-                                    java.net.URI surl, String surl_string) {
+          java.net.URI surl, String surl_string) {
         super(configuration);
-        this.surl       = surl;
+        this.surl = surl;
         this.surl_string = surl_string;
         try {
             cred = getCredential();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             cred = null;
             System.err.println("Couldn't getGssCredential.");
         }
@@ -128,15 +127,15 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     public void connect() throws Exception {
         java.net.URI srmUrl = surl;
         isrm = new SRMClientV2(srmUrl,
-                               getCredential(),
-                               configuration.getRetry_timeout(),
-                               configuration.getRetry_num(),
-                               doDelegation,
-                               fullDelegation,
-                               gss_expected_name,
-                               configuration.getWebservice_path(),
-                               configuration.getX509_user_trusted_certificates(),
-                               configuration.getTransport());
+              getCredential(),
+              configuration.getRetry_timeout(),
+              configuration.getRetry_num(),
+              doDelegation,
+              fullDelegation,
+              gss_expected_name,
+              configuration.getWebservice_path(),
+              configuration.getX509_user_trusted_certificates(),
+              configuration.getTransport());
     }
 
     @Override
@@ -148,43 +147,42 @@ public class SRMSetPermissionClientV2 extends SRMClient {
         TPermissionType type = TPermissionType.fromString(configuration.getSetPermissionType());
         req.setPermissionType(type);
         TPermissionMode mode = null;
-        if ( configuration.getSetOwnerPermissionMode() != null ) {
+        if (configuration.getSetOwnerPermissionMode() != null) {
             mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
         }
         req.setOwnerPermission(mode);
         ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
         TGroupPermission grouppermissions[] = null;
-        if ( configuration.getSetGroupPermissionMode()!=null ) {
-            grouppermissions = new  TGroupPermission[1];
+        if (configuration.getSetGroupPermissionMode() != null) {
+            grouppermissions = new TGroupPermission[1];
             grouppermissions[0] = new TGroupPermission();
-            grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
+            grouppermissions[0].setMode(
+                  TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
             grouppermissions[0].setGroupID(DEFAULT_DUMMY_GROUP_ID);
         }
         arrayOfGroupPermissions.setGroupPermissionArray(grouppermissions);
         req.setArrayOfGroupPermissions(arrayOfGroupPermissions);
         TPermissionMode other = null;
-        if ( configuration.getSetOtherPermissionMode()!=null) {
+        if (configuration.getSetOtherPermissionMode() != null) {
             other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
         }
         req.setOtherPermission(other);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
         try {
-            TReturnStatus rs   = resp.getReturnStatus();
+            TReturnStatus rs = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                TStatusCode rc  = rs.getStatusCode();
+                TStatusCode rc = rs.getStatusCode();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Return code: ").append(rc.toString()).append("\n");
                 sb.append("Explanation: ").append(rs.getExplanation())
-                        .append("\n");
+                      .append("\n");
                 System.out.println(sb.toString());
                 System.exit(1);
-            }
-            else {
+            } else {
                 System.exit(0);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

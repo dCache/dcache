@@ -60,9 +60,9 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 /**
- *  <p>Used to identify messages dealt with by the resilience system.  The first
- *      three are received from external sources, the latter two are internal
- *      notifications based on pool monitor updates.</p>
+ * <p>Used to identify messages dealt with by the resilience system.  The first
+ * three are received from external sources, the latter two are internal notifications based on pool
+ * monitor updates.</p>
  */
 public enum MessageType {
     CORRUPT_FILE,

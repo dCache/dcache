@@ -17,38 +17,34 @@
  */
 package org.dcache.dss;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import java.io.IOException;
+import java.util.Objects;
+import javax.security.auth.Subject;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 
-import javax.security.auth.Subject;
-
-import java.io.IOException;
-import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * DssContext that wraps a GssContext.
  */
-public abstract class GssDssContext implements DssContext
-{
+public abstract class GssDssContext implements DssContext {
+
     protected final GSSContext context;
-    protected final MessageProp prop =  new MessageProp(true);
+    protected final MessageProp prop = new MessageProp(true);
 
     private Subject subject;
     private GSSName principal;
     private boolean isUninitialized = true;
 
-    public GssDssContext(GSSContext context) throws GSSException
-    {
+    public GssDssContext(GSSContext context) throws GSSException {
         this.context = context;
     }
 
     @Override
-    public byte[] init(byte[] token) throws IOException
-    {
+    public byte[] init(byte[] token) throws IOException {
         checkState(!isEstablished());
         try {
             if (isUninitialized) {
@@ -67,8 +63,7 @@ public abstract class GssDssContext implements DssContext
     }
 
     @Override
-    public byte[] accept(byte[] token) throws IOException
-    {
+    public byte[] accept(byte[] token) throws IOException {
         checkState(!isEstablished());
         try {
             isUninitialized = false;
@@ -84,8 +79,7 @@ public abstract class GssDssContext implements DssContext
     }
 
     @Override
-    public byte[] wrap(byte[] data, int offset, int len) throws IOException
-    {
+    public byte[] wrap(byte[] data, int offset, int len) throws IOException {
         checkState(isEstablished());
         try {
             return context.wrap(data, offset, len, prop);
@@ -95,8 +89,7 @@ public abstract class GssDssContext implements DssContext
     }
 
     @Override
-    public byte[] unwrap(byte[] token) throws IOException
-    {
+    public byte[] unwrap(byte[] token) throws IOException {
         checkState(isEstablished());
         try {
             return context.unwrap(token, 0, token.length, prop);
@@ -107,8 +100,7 @@ public abstract class GssDssContext implements DssContext
 
 
     @Override
-    public long maxApplicationSize()
-    {
+    public long maxApplicationSize() {
         // REVISIT: currently, we do not place any limits on how long an
         // encrypted token may be.
         return Long.MAX_VALUE;
@@ -116,20 +108,17 @@ public abstract class GssDssContext implements DssContext
 
 
     @Override
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 
     @Override
-    public String getPeerName()
-    {
+    public String getPeerName() {
         return Objects.toString(principal, null);
     }
 
     @Override
-    public boolean isEstablished()
-    {
+    public boolean isEstablished() {
         return context.isEstablished();
     }
 

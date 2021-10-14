@@ -60,11 +60,12 @@ documents or software obtained from this server.
 package org.dcache.services.collector;
 
 import com.google.common.base.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.concurrent.GuardedBy;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ServiceUnavailableException;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -76,29 +77,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ServiceUnavailableException;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.util.command.Option;
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.util.collector.CellMessagingCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Services which collect and cache data from other services should extend
  * this class and implement their specific service interface.</p>
  *
  * <p>Here is provided a common framework for initializing, resetting
- * and shutting down the thread which calls the collector(s) and
- * builds the cache(s).  This includes two admin shell commands
- * for checking current status and for resetting the timeout.</p>
+ * and shutting down the thread which calls the collector(s) and builds the cache(s).  This includes
+ * two admin shell commands for checking current status and for resetting the timeout.</p>
  */
 public abstract class CellDataCollectingService<D, C extends CellMessagingCollector<D>>
-                implements Runnable, CellCommandListener, CellInfoProvider, CellLifeCycleAware
-{
+      implements Runnable, CellCommandListener, CellInfoProvider, CellLifeCycleAware {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(CellDataCollectingService.class);
+          = LoggerFactory.getLogger(CellDataCollectingService.class);
 
     /**
      * <p>Should be applied to all admin commands with time range parameters.</p>
@@ -123,12 +120,13 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
 
     /**
      * <p>This class should be subclassed in order to provide the
-     * correct command annotation and to distinguish it from
-     * other similar commands in the same domain.</p>
+     * correct command annotation and to distinguish it from other similar commands in the same
+     * domain.</p>
      *
      * <p>Interrupts thread to run update immediately.</p>
      */
     protected abstract class RefreshCommand implements Callable<String> {
+
         @Override
         public String call() {
             CellDataCollectingService.this.interrupt();
@@ -139,17 +137,18 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
 
     /**
      * <p>This class should be subclassed in order to provide the
-     * correct command annotation and to distinguish it from
-     * other similar commands in the same domain.</p>
+     * correct command annotation and to distinguish it from other similar commands in the same
+     * domain.</p>
      */
     protected abstract class SetTimeoutCommand implements Callable<String> {
+
         @Option(name = "timeout",
-                        usage = "Length of timeout interval; must be >= 10 seconds.")
+              usage = "Length of timeout interval; must be >= 10 seconds.")
         Long timeout;
 
         @Option(name = "unit",
-                        valueSpec = "SECONDS|MINUTES|HOURS",
-                        usage = "Timeout interval unit (default is SECONDS).")
+              valueSpec = "SECONDS|MINUTES|HOURS",
+              usage = "Timeout interval unit (default is SECONDS).")
         TimeUnit unit = TimeUnit.SECONDS;
 
         @Override
@@ -159,8 +158,8 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
             synchronized (CellDataCollectingService.this) {
                 if (timeout != null) {
                     Preconditions.checkArgument(unit.toSeconds(timeout) >= 10L,
-                                                "Update time must "
-                                                                + "exceed 10 seconds");
+                          "Update time must "
+                                + "exceed 10 seconds");
 
                     CellDataCollectingService.this.timeout = timeout;
                     CellDataCollectingService.this.timeoutUnit = unit;
@@ -172,7 +171,7 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
                      */
                     collector.reset(timeout / 2, timeoutUnit);
                     response = "Update time set to "
-                                    + unit.toSeconds(timeout) + " seconds";
+                          + unit.toSeconds(timeout) + " seconds";
                 }
             }
             return response;
@@ -181,7 +180,7 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
 
     protected C collector;
 
-    protected long     timeout     = 30;
+    protected long timeout = 30;
     protected TimeUnit timeoutUnit = TimeUnit.SECONDS;
 
     private ScheduledExecutorService executorService;
@@ -232,25 +231,25 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
         } catch (IllegalStateException e) {
             Throwable t = e.getCause();
             LOGGER.info("Could not run collection: {}, {}.",
-                        e.getMessage(),
-                        t == null ? "" : t.toString());
+                  e.getMessage(),
+                  t == null ? "" : t.toString());
         } catch (ServiceUnavailableException e) {
             Throwable t = e.getCause();
             LOGGER.debug("Could not run collection: {}, {}.",
-                        e.getMessage(),
-                        t == null ? "" : t.toString());
+                  e.getMessage(),
+                  t == null ? "" : t.toString());
         } catch (CacheException e) {
             Throwable t = e.getCause();
             LOGGER.info("Could not run collection: {}, {}.",
-                        e.getMessage(),
-                        t == null ? "" : t.toString());
+                  e.getMessage(),
+                  t == null ? "" : t.toString());
         } catch (RuntimeException ee) {
             Thread thisThread = Thread.currentThread();
             thisThread.getUncaughtExceptionHandler()
-                      .uncaughtException(thisThread, ee);
+                  .uncaughtException(thisThread, ee);
             LOGGER.error("Uncaught runtime exception in update; this is most "
-                                         + "likely a bug.  No further collection "
-                                         + "has been scheduled.");
+                  + "likely a bug.  No further collection "
+                  + "has been scheduled.");
             return;
         }
 
@@ -288,7 +287,7 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
 
     /**
      * <p>The implementation may need to reconfigure data structures if
-     *    timing settings are changed.</p>
+     * timing settings are changed.</p>
      */
     @GuardedBy("this")
     protected void configure() {
@@ -315,14 +314,14 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
                 LOGGER.trace("Collection was interrupted.");
             } catch (ExecutionException e) {
                 LOGGER.error("Interrupt of collector failed: {} : {}.",
-                             e.getMessage(), e.getCause());
+                      e.getMessage(), e.getCause());
             }
         }
     }
 
     private void scheduleNext(long delay, TimeUnit unit) {
         nextCollection = executorService.schedule(this,
-                                                  delay,
-                                                  unit);
+              delay,
+              unit);
     }
 }

@@ -1,14 +1,11 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.vehicles.ProtocolInfo;
-import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.pool.movers.MoverProtocolMover;
-import org.dcache.pool.repository.ForwardingRepositoryChannel;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.vehicles.FileAttributes;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
@@ -16,11 +13,13 @@ import java.nio.file.OpenOption;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertFalse;
+import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverProtocolMover;
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
+import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.vehicles.FileAttributes;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AbstractMoverProtocolTransferServiceTest {
 
@@ -117,7 +116,8 @@ public class AbstractMoverProtocolTransferServiceTest {
     private static class ThreadInterruptingMover implements MoverProtocol {
 
         @Override
-        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile, ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
+        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile,
+              ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
             Thread.currentThread().interrupt();
         }
 
@@ -140,7 +140,8 @@ public class AbstractMoverProtocolTransferServiceTest {
     private static class InterruptedIOThrowingMover implements MoverProtocol {
 
         @Override
-        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile, ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
+        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile,
+              ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
             // IO is interrupted, flag is set and  InterruptedIOException is thrown
             Thread.currentThread().interrupt();
             throw new InterruptedIOException();
@@ -165,7 +166,8 @@ public class AbstractMoverProtocolTransferServiceTest {
     private static class InterruptedThrowingMover implements MoverProtocol {
 
         @Override
-        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile, ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
+        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile,
+              ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
             throw new InterruptedException();
         }
 
@@ -188,7 +190,8 @@ public class AbstractMoverProtocolTransferServiceTest {
     private static class ThreadBlockingMover implements MoverProtocol {
 
         @Override
-        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile, ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
+        public void runIO(FileAttributes fileAttributes, RepositoryChannel diskFile,
+              ProtocolInfo protocol, Set<? extends OpenOption> access) throws Exception {
             Thread.sleep(5000);
         }
 
@@ -209,6 +212,7 @@ public class AbstractMoverProtocolTransferServiceTest {
     }
 
     private static class BlockingCompletionHandler implements CompletionHandler<Void, Void> {
+
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
         private volatile Throwable t;
 

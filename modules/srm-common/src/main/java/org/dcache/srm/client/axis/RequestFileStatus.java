@@ -1,13 +1,15 @@
 /**
  * RequestFileStatus.java
- *
- * This file was auto-generated from WSDL
- * by the Apache Axis 1.3 Oct 05, 2005 (05:23:37 EDT) WSDL2Java emitter.
+ * <p>
+ * This file was auto-generated from WSDL by the Apache Axis 1.3 Oct 05, 2005 (05:23:37 EDT)
+ * WSDL2Java emitter.
  */
 
 package org.dcache.srm.client.axis;
 
-public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData  implements java.io.Serializable {
+public class RequestFileStatus extends org.dcache.srm.client.axis.FileMetaData implements
+      java.io.Serializable {
+
     private static final long serialVersionUID = 557616496634925886L;
     private java.lang.String state;
 
@@ -27,34 +29,34 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
     }
 
     public RequestFileStatus(
-           java.lang.String SURL,
-           long size,
-           java.lang.String owner,
-           java.lang.String group,
-           int permMode,
-           java.lang.String checksumType,
-           java.lang.String checksumValue,
-           boolean isPinned,
-           boolean isPermanent,
-           boolean isCached,
-           java.lang.String state,
-           int fileId,
-           java.lang.String TURL,
-           int estSecondsToStart,
-           java.lang.String sourceFilename,
-           java.lang.String destFilename,
-           int queueOrder) {
+          java.lang.String SURL,
+          long size,
+          java.lang.String owner,
+          java.lang.String group,
+          int permMode,
+          java.lang.String checksumType,
+          java.lang.String checksumValue,
+          boolean isPinned,
+          boolean isPermanent,
+          boolean isCached,
+          java.lang.String state,
+          int fileId,
+          java.lang.String TURL,
+          int estSecondsToStart,
+          java.lang.String sourceFilename,
+          java.lang.String destFilename,
+          int queueOrder) {
         super(
-            SURL,
-            size,
-            owner,
-            group,
-            permMode,
-            checksumType,
-            checksumValue,
-            isPinned,
-            isPermanent,
-            isCached);
+              SURL,
+              size,
+              owner,
+              group,
+              permMode,
+              checksumType,
+              checksumValue,
+              isPinned,
+              isPermanent,
+              isCached);
         this.state = state;
         this.fileId = fileId;
         this.TURL = TURL;
@@ -67,7 +69,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the state value for this RequestFileStatus.
-     * 
+     *
      * @return state
      */
     public java.lang.String getState() {
@@ -77,7 +79,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the state value for this RequestFileStatus.
-     * 
+     *
      * @param state
      */
     public void setState(java.lang.String state) {
@@ -87,7 +89,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the fileId value for this RequestFileStatus.
-     * 
+     *
      * @return fileId
      */
     public int getFileId() {
@@ -97,7 +99,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the fileId value for this RequestFileStatus.
-     * 
+     *
      * @param fileId
      */
     public void setFileId(int fileId) {
@@ -107,7 +109,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the TURL value for this RequestFileStatus.
-     * 
+     *
      * @return TURL
      */
     public java.lang.String getTURL() {
@@ -117,7 +119,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the TURL value for this RequestFileStatus.
-     * 
+     *
      * @param TURL
      */
     public void setTURL(java.lang.String TURL) {
@@ -127,7 +129,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the estSecondsToStart value for this RequestFileStatus.
-     * 
+     *
      * @return estSecondsToStart
      */
     public int getEstSecondsToStart() {
@@ -137,7 +139,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the estSecondsToStart value for this RequestFileStatus.
-     * 
+     *
      * @param estSecondsToStart
      */
     public void setEstSecondsToStart(int estSecondsToStart) {
@@ -147,7 +149,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the sourceFilename value for this RequestFileStatus.
-     * 
+     *
      * @return sourceFilename
      */
     public java.lang.String getSourceFilename() {
@@ -157,7 +159,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the sourceFilename value for this RequestFileStatus.
-     * 
+     *
      * @param sourceFilename
      */
     public void setSourceFilename(java.lang.String sourceFilename) {
@@ -167,7 +169,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the destFilename value for this RequestFileStatus.
-     * 
+     *
      * @return destFilename
      */
     public java.lang.String getDestFilename() {
@@ -177,7 +179,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the destFilename value for this RequestFileStatus.
-     * 
+     *
      * @param destFilename
      */
     public void setDestFilename(java.lang.String destFilename) {
@@ -187,7 +189,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Gets the queueOrder value for this RequestFileStatus.
-     * 
+     *
      * @return queueOrder
      */
     public int getQueueOrder() {
@@ -197,7 +199,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     /**
      * Sets the queueOrder value for this RequestFileStatus.
-     * 
+     *
      * @param queueOrder
      */
     public void setQueueOrder(int queueOrder) {
@@ -205,6 +207,7 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
     }
 
     private java.lang.Object __equalsCalc;
+
     public synchronized boolean equals(java.lang.Object obj) {
         if (!(obj instanceof RequestFileStatus)) {
             return false;
@@ -218,27 +221,28 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
         }
         __equalsCalc = obj;
         boolean _equals;
-        _equals = super.equals(obj) && 
-            ((this.state==null && other.getState()==null) || 
-             (this.state!=null &&
-              this.state.equals(other.getState()))) &&
-            this.fileId == other.getFileId() &&
-            ((this.TURL==null && other.getTURL()==null) || 
-             (this.TURL!=null &&
-              this.TURL.equals(other.getTURL()))) &&
-            this.estSecondsToStart == other.getEstSecondsToStart() &&
-            ((this.sourceFilename==null && other.getSourceFilename()==null) || 
-             (this.sourceFilename!=null &&
-              this.sourceFilename.equals(other.getSourceFilename()))) &&
-            ((this.destFilename==null && other.getDestFilename()==null) || 
-             (this.destFilename!=null &&
-              this.destFilename.equals(other.getDestFilename()))) &&
-            this.queueOrder == other.getQueueOrder();
+        _equals = super.equals(obj) &&
+              ((this.state == null && other.getState() == null) ||
+                    (this.state != null &&
+                          this.state.equals(other.getState()))) &&
+              this.fileId == other.getFileId() &&
+              ((this.TURL == null && other.getTURL() == null) ||
+                    (this.TURL != null &&
+                          this.TURL.equals(other.getTURL()))) &&
+              this.estSecondsToStart == other.getEstSecondsToStart() &&
+              ((this.sourceFilename == null && other.getSourceFilename() == null) ||
+                    (this.sourceFilename != null &&
+                          this.sourceFilename.equals(other.getSourceFilename()))) &&
+              ((this.destFilename == null && other.getDestFilename() == null) ||
+                    (this.destFilename != null &&
+                          this.destFilename.equals(other.getDestFilename()))) &&
+              this.queueOrder == other.getQueueOrder();
         __equalsCalc = null;
         return _equals;
     }
 
     private boolean __hashCodeCalc;
+
     public synchronized int hashCode() {
         if (__hashCodeCalc) {
             return 0;
@@ -266,50 +270,58 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
 
     // Type metadata
     private static org.apache.axis.description.TypeDesc typeDesc =
-        new org.apache.axis.description.TypeDesc(RequestFileStatus.class, true);
+          new org.apache.axis.description.TypeDesc(RequestFileStatus.class, true);
 
     static {
-        typeDesc.setXmlType(new javax.xml.namespace.QName("http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestFileStatus"));
+        typeDesc.setXmlType(new javax.xml.namespace.QName(
+              "http://www.themindelectric.com/package/diskCacheV111.srm/", "RequestFileStatus"));
         org.apache.axis.description.ElementDesc elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("state");
         elemField.setXmlName(new javax.xml.namespace.QName("", "state"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("fileId");
         elemField.setXmlName(new javax.xml.namespace.QName("", "fileId"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("TURL");
         elemField.setXmlName(new javax.xml.namespace.QName("", "TURL"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("estSecondsToStart");
         elemField.setXmlName(new javax.xml.namespace.QName("", "estSecondsToStart"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("sourceFilename");
         elemField.setXmlName(new javax.xml.namespace.QName("", "sourceFilename"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("destFilename");
         elemField.setXmlName(new javax.xml.namespace.QName("", "destFilename"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
         elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
         elemField = new org.apache.axis.description.ElementDesc();
         elemField.setFieldName("queueOrder");
         elemField.setXmlName(new javax.xml.namespace.QName("", "queueOrder"));
-        elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
+        elemField.setXmlType(
+              new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "int"));
         elemField.setNillable(false);
         typeDesc.addFieldDesc(elemField);
     }
@@ -325,24 +337,24 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
      * Get Custom Serializer
      */
     public static org.apache.axis.encoding.Serializer getSerializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
-           javax.xml.namespace.QName _xmlType) {
-        return 
-          new  org.apache.axis.encoding.ser.BeanSerializer(
-            _javaType, _xmlType, typeDesc);
+          java.lang.String mechType,
+          java.lang.Class _javaType,
+          javax.xml.namespace.QName _xmlType) {
+        return
+              new org.apache.axis.encoding.ser.BeanSerializer(
+                    _javaType, _xmlType, typeDesc);
     }
 
     /**
      * Get Custom Deserializer
      */
     public static org.apache.axis.encoding.Deserializer getDeserializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
-           javax.xml.namespace.QName _xmlType) {
-        return 
-          new  org.apache.axis.encoding.ser.BeanDeserializer(
-            _javaType, _xmlType, typeDesc);
+          java.lang.String mechType,
+          java.lang.Class _javaType,
+          javax.xml.namespace.QName _xmlType) {
+        return
+              new org.apache.axis.encoding.ser.BeanDeserializer(
+                    _javaType, _xmlType, typeDesc);
     }
 
 }

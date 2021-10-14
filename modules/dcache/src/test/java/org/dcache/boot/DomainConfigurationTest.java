@@ -1,66 +1,63 @@
 package org.dcache.boot;
 
-import dmg.cells.nucleus.MsgSerializerJos;
-import dmg.cells.nucleus.SerializationHandler;
-import org.apache.curator.framework.CuratorFramework;
-import com.google.common.base.Throwables;
-import org.apache.curator.framework.listen.Listenable;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
+import static org.junit.Assert.assertEquals;
 
+import com.google.common.base.Throwables;
+import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.SerializationHandler;
+import dmg.cells.nucleus.SystemCell;
+import dmg.util.CommandException;
+import dmg.util.Formats;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.Optional;
 import java.util.Properties;
-
-import dmg.cells.nucleus.CellShell;
-import dmg.cells.nucleus.SystemCell;
-import dmg.util.CommandException;
-import dmg.util.Formats;
-
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.listen.Listenable;
 import org.dcache.util.configuration.ConfigurationProperties;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
+public class DomainConfigurationTest {
 
-public class DomainConfigurationTest
-{
     private final static Optional<String> NO_ZONE = Optional.empty();
     private final static String DOMAIN_NAME = "domain";
     private final static String SERVICE1_NAME = "service1";
     private final static String SERVICE2_NAME = "service2";
 
     private final static String DEFAULTS =
-        "dcache.domain.service.uri=classpath:/org/dcache/boot/empty.batch\n" +
-        "a=1\n" +
-        "b=${a}\n" +
-        "c=2\n";
+          "dcache.domain.service.uri=classpath:/org/dcache/boot/empty.batch\n" +
+                "a=1\n" +
+                "b=${a}\n" +
+                "c=2\n";
 
     private final static String CONFIGURATION =
-        "a=2\n" +
-        "c=1\n";
+          "a=2\n" +
+                "c=1\n";
 
     private final static String SERVICE1_CONFIG =
-        "a=3\n" +
-        "c=4\n";
+          "a=3\n" +
+                "c=4\n";
 
     private final static String SERVICE2_CONFIG =
-        "a=3\n" +
-        "b=2\n" +
-        "c=5\n";
+          "a=3\n" +
+                "b=2\n" +
+                "c=5\n";
 
     private final static SystemCell system;
 
     static {
         CuratorFramework mockCurator = Mockito.mock(CuratorFramework.class);
         Mockito.when(mockCurator.getConnectionStateListenable())
-                .thenReturn(Mockito.mock(Listenable.class));
+              .thenReturn(Mockito.mock(Listenable.class));
         Mockito.when(mockCurator.getCuratorListenable())
-                .thenReturn(Mockito.mock(Listenable.class));
+              .thenReturn(Mockito.mock(Listenable.class));
         Mockito.when(mockCurator.getUnhandledErrorListenable())
-                .thenReturn(Mockito.mock(Listenable.class));
-        system = SystemCell.create(DOMAIN_NAME, mockCurator, NO_ZONE, SerializationHandler.Serializer.JOS);
+              .thenReturn(Mockito.mock(Listenable.class));
+        system = SystemCell.create(DOMAIN_NAME, mockCurator, NO_ZONE,
+              SerializationHandler.Serializer.JOS);
 
         try {
             system.start().get();
@@ -72,15 +69,14 @@ public class DomainConfigurationTest
 
     private static final String SOURCE = "source";
     private static final LineNumberReader EMPTY_READER =
-            new LineNumberReader(new StringReader(""));
+          new LineNumberReader(new StringReader(""));
 
     private ConfigurationProperties defaults;
     private ConfigurationProperties configuration;
 
     @Before
     public void setup()
-        throws IOException
-    {
+          throws IOException {
         defaults = new ConfigurationProperties(new Properties());
         defaults.load(new StringReader(DEFAULTS));
 
@@ -88,8 +84,7 @@ public class DomainConfigurationTest
         configuration.load(new StringReader(CONFIGURATION));
     }
 
-    public void assertPropertyEquals(String expected, String variable, CellShell shell)
-    {
+    public void assertPropertyEquals(String expected, String variable, CellShell shell) {
         String value = shell.getReplacement(variable);
         if (value != null) {
             value = Formats.replaceKeywords(value, shell);
@@ -99,8 +94,7 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithDefaults()
-            throws CommandException, IOException
-    {
+          throws CommandException, IOException {
         Domain domain = new Domain(DOMAIN_NAME, defaults);
         ConfigurationProperties service = domain.createService(SOURCE, EMPTY_READER, SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
@@ -123,8 +117,7 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithConfiguration()
-            throws CommandException, IOException
-    {
+          throws CommandException, IOException {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
         ConfigurationProperties service = domain.createService(SOURCE, EMPTY_READER, SERVICE1_NAME);
@@ -148,12 +141,12 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithPerServiceConfiguration()
-        throws CommandException, IOException
-    {
+          throws CommandException, IOException {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
         ConfigurationProperties service =
-                domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)), SERVICE1_NAME);
+              domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)),
+                    SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);
@@ -162,7 +155,8 @@ public class DomainConfigurationTest
         assertPropertyEquals(DOMAIN_NAME, "dcache.domain.name", shell);
         assertPropertyEquals(SERVICE1_NAME, "dcache.domain.service", shell);
 
-        service = domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE2_CONFIG)), SERVICE2_NAME);
+        service = domain.createService(SOURCE,
+              new LineNumberReader(new StringReader(SERVICE2_CONFIG)), SERVICE2_NAME);
         shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);
@@ -174,12 +168,12 @@ public class DomainConfigurationTest
 
     @Test
     public void testWithRuntimeOverrides()
-        throws CommandException, IOException
-    {
+          throws CommandException, IOException {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
         ConfigurationProperties service =
-                domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)), SERVICE1_NAME);
+              domain.createService(SOURCE, new LineNumberReader(new StringReader(SERVICE1_CONFIG)),
+                    SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("3", "a", shell);

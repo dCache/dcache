@@ -60,25 +60,22 @@ documents or software obtained from this server.
 package org.dcache.resilience;
 
 import com.google.common.collect.ImmutableList;
-
+import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnitV2;
+import diskCacheV111.poolManager.StorageUnit;
+import diskCacheV111.pools.PoolV2Mode;
+import dmg.cells.nucleus.CellAddressCore;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Predicate;
-
-import diskCacheV111.poolManager.PoolPreferenceLevel;
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnitV2;
-import diskCacheV111.poolManager.StorageUnit;
-import diskCacheV111.pools.PoolV2Mode;
-
-import dmg.cells.nucleus.CellAddressCore;
-
 import org.dcache.vehicles.FileAttributes;
 
 final class TestSelectionUnit implements PoolSelectionUnit {
+
     PoolSelectionUnitV2 psu;
 
     @Override
@@ -98,13 +95,13 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public SelectionLink getLinkByName(String linkName)
-                    throws NoSuchElementException {
+          throws NoSuchElementException {
         return psu.getLinkByName(linkName);
     }
 
     @Override
     public SelectionLinkGroup getLinkGroupByName(String linkGroupName)
-                    throws NoSuchElementException {
+          throws NoSuchElementException {
         return psu.getLinkGroupByName(linkGroupName);
     }
 
@@ -120,7 +117,7 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public Collection<SelectionLink> getLinksPointingToPoolGroup(
-                    String poolGroup) throws NoSuchElementException {
+          String poolGroup) throws NoSuchElementException {
         return psu.getLinksPointingToPoolGroup(poolGroup);
     }
 
@@ -141,8 +138,8 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public boolean updatePool(String poolName, CellAddressCore address, String hostName,
-                              long serialId, PoolV2Mode mode,
-                              Set<String> hsmInstances, Map<String,String> tags) {
+          long serialId, PoolV2Mode mode,
+          Set<String> hsmInstances, Map<String, String> tags) {
         return psu.updatePool(poolName, address, hostName, serialId, mode, hsmInstances, tags);
     }
 
@@ -163,7 +160,7 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
-                    throws NoSuchElementException {
+          throws NoSuchElementException {
         return psu.getPoolsByPoolGroup(poolGroup);
     }
 
@@ -194,9 +191,9 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
     @Override
     public PoolPreferenceLevel[] match(DirectionType type, String net,
-                                       String protocol, FileAttributes fileAttributes,
-                                       String linkGroup,
-                                       Predicate<String> exclude) {
+          String protocol, FileAttributes fileAttributes,
+          String linkGroup,
+          Predicate<String> exclude) {
         return psu.match(type, net, protocol, fileAttributes, linkGroup, exclude);
     }
 
@@ -204,20 +201,20 @@ final class TestSelectionUnit implements PoolSelectionUnit {
         StringBuilder builder = new StringBuilder();
         builder.append("UNITS:\n");
         psu.getSelectionUnits().values().stream().forEach(
-                        (u) -> builder.append("\t").append(u).append("\n"));
+              (u) -> builder.append("\t").append(u).append("\n"));
         builder.append("UNIT GROUPS:\n");
         psu.getUnitGroups().values().stream().forEach(
-                        (u) -> builder.append("\t").append(u).append("\n"));
+              (u) -> builder.append("\t").append(u).append("\n"));
         builder.append("LINKS:\n");
         psu.getLinks().values().stream().forEach(
-                        (u) -> builder.append("\t").append(u).append("\n"));
+              (u) -> builder.append("\t").append(u).append("\n"));
         builder.append("POOL GROUPS:\n");
         psu.getPoolGroups().values().stream().forEach(
-                        (u) -> builder.append("\t").append(u.getName()).append(
-                                        "\t").append(u).append("\n"));
+              (u) -> builder.append("\t").append(u.getName()).append(
+                    "\t").append(u).append("\n"));
         builder.append("POOLS:\n");
         psu.getPools().values().stream().forEach(
-                        (u) -> builder.append("\t").append(u).append("\n"));
+              (u) -> builder.append("\t").append(u).append("\n"));
         return builder.toString();
     }
 
@@ -250,10 +247,10 @@ final class TestSelectionUnit implements PoolSelectionUnit {
         for (int i = 0; i < TestData.LINKS.length; ++i) {
             String link = TestData.LINKS[i][0];
             psu.createLink(link, ImmutableList.of(TestData.LINKS[i][1],
-                            TestData.LINKS[i][2], TestData.LINKS[i][3]));
+                  TestData.LINKS[i][2], TestData.LINKS[i][3]));
             psu.setLink(link, TestData.LINKS_SET[i][0],
-                            TestData.LINKS_SET[i][1], TestData.LINKS_SET[i][2],
-                            TestData.LINKS_SET[i][3], TestData.LINKS_SET[i][4]);
+                  TestData.LINKS_SET[i][1], TestData.LINKS_SET[i][2],
+                  TestData.LINKS_SET[i][3], TestData.LINKS_SET[i][4]);
             for (String toAdd : TestData.LINKS_ADD[i]) {
                 psu.addLink(link, toAdd);
             }
@@ -266,8 +263,8 @@ final class TestSelectionUnit implements PoolSelectionUnit {
             psu.createPoolGroup(name, "-resilient".equals(TestData.POOL_GROUPS[i][1]));
             String prefix = name.substring(0, name.indexOf("-"));
             psu.getAllDefinedPools(false).stream().filter(
-                            (p) -> p.getName().startsWith(prefix)).forEach(
-                            (p) -> psu.addToPoolGroup(name, p.getName()));
+                  (p) -> p.getName().startsWith(prefix)).forEach(
+                  (p) -> psu.addToPoolGroup(name, p.getName()));
         }
     }
 
@@ -280,7 +277,7 @@ final class TestSelectionUnit implements PoolSelectionUnit {
                 psu.setActive(pool, true);
                 psu.setPoolEnabled(pool);
                 psu.getPool(pool).setPoolMode(
-                                new PoolV2Mode(PoolV2Mode.ENABLED));
+                      new PoolV2Mode(PoolV2Mode.ENABLED));
             }
         }
     }
@@ -292,9 +289,9 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
         for (int i = 0; i < TestData.UNIT_GROUPS_ADD.length; ++i) {
             psu.addToUnitGroup(TestData.UNIT_GROUPS_ADD[i][0],
-                            TestData.UNIT_GROUPS_ADD[i][1],
-                            Boolean.parseBoolean(
-                                            TestData.UNIT_GROUPS_ADD[i][2]));
+                  TestData.UNIT_GROUPS_ADD[i][1],
+                  Boolean.parseBoolean(
+                        TestData.UNIT_GROUPS_ADD[i][2]));
         }
     }
 
@@ -309,11 +306,11 @@ final class TestSelectionUnit implements PoolSelectionUnit {
 
         for (int i = 0; i < TestData.STORAGE_UNITS.length; ++i) {
             psu.createUnit(TestData.STORAGE_UNITS[i], false, true, false,
-                            false);
+                  false);
             if (TestData.STORAGE_UNITS_SET[i] != null) {
                 psu.setStorageUnit(TestData.STORAGE_UNITS[i],
-                                Integer.parseInt(TestData.STORAGE_UNITS_SET[i][0]),
-                                TestData.STORAGE_UNITS_SET[i][1].split("[,]"));
+                      Integer.parseInt(TestData.STORAGE_UNITS_SET[i][0]),
+                      TestData.STORAGE_UNITS_SET[i][1].split("[,]"));
             }
         }
     }

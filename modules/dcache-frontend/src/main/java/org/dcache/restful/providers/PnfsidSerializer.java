@@ -62,14 +62,12 @@ package org.dcache.restful.providers;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
-import java.io.IOException;
-
 import diskCacheV111.util.PnfsId;
+import java.io.IOException;
 
 /**
  * <p>PnfsId is now an "empty" object, so we enforce consistent
- *    representation of it as a string.</p>
+ * representation of it as a string.</p>
  */
 public class PnfsidSerializer extends StdSerializer<PnfsId> {
 
@@ -79,8 +77,8 @@ public class PnfsidSerializer extends StdSerializer<PnfsId> {
 
     @Override
     public void serialize(PnfsId pnfsId, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider)
-                    throws IOException {
+          SerializerProvider serializerProvider)
+          throws IOException {
         jsonGenerator.writeString(pnfsId.toString());
     }
 }

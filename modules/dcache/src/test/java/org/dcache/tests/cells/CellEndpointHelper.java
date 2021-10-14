@@ -17,34 +17,31 @@
  */
 package org.dcache.tests.cells;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.Executor;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Arrays.asList;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.SerializationException;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Arrays.asList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Helper class to mock a CellEndpoint. To be used with CellStubHelper.
  */
-public class CellEndpointHelper implements CellEndpoint
-{
+public class CellEndpointHelper implements CellEndpoint {
+
     private volatile CellStubHelper _test;
     private CellAddressCore _address;
 
-    public CellEndpointHelper(CellAddressCore address)
-    {
+    public CellEndpointHelper(CellAddressCore address) {
         _address = address;
     }
 
-    public void execute(CellStubHelper test) throws Exception
-    {
+    public void execute(CellStubHelper test) throws Exception {
         _test = test;
         try {
             test.run();
@@ -61,8 +58,7 @@ public class CellEndpointHelper implements CellEndpoint
 
     @Override
     public void sendMessage(CellMessage envelope, SendFlag... flags)
-            throws SerializationException
-    {
+          throws SerializationException {
         if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
             envelope.addSourceAddress(_address);
         }
@@ -71,9 +67,8 @@ public class CellEndpointHelper implements CellEndpoint
 
     @Override
     public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor,
-                            long timeout, SendFlag... flags)
-            throws SerializationException
-    {
+          long timeout, SendFlag... flags)
+          throws SerializationException {
         if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
             envelope.addSourceAddress(_address);
         }
@@ -87,8 +82,7 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
-    public Map<String, Object> getDomainContext()
-    {
+    public Map<String, Object> getDomainContext() {
         return Collections.emptyMap();
     }
 }

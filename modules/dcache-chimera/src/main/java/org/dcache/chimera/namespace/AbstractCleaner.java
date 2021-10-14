@@ -18,35 +18,30 @@
  */
 package org.dcache.chimera.namespace;
 
-import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import javax.sql.DataSource;
-
+import dmg.cells.nucleus.CellPath;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import dmg.cells.nucleus.CellPath;
+import javax.sql.DataSource;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.HAServiceLeadershipManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- *
  * Abstract base class representing common properties for DiskCleaner and HsmCleaner.
- *
  */
-public abstract class AbstractCleaner implements LeaderLatchListener
-{
+public abstract class AbstractCleaner implements LeaderLatchListener {
 
     private static final Logger _log =
-            LoggerFactory.getLogger(DiskCleaner.class);
+          LoggerFactory.getLogger(DiskCleaner.class);
 
     protected ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
@@ -58,8 +53,7 @@ public abstract class AbstractCleaner implements LeaderLatchListener
     private DataSource _dataSource;
 
     /**
-     * Set PoolInformationBase from which the request tracker learns
-     * about available pools.
+     * Set PoolInformationBase from which the request tracker learns about available pools.
      */
     protected PoolInformationBase _pools;
     protected JdbcTemplate _db;
@@ -68,12 +62,13 @@ public abstract class AbstractCleaner implements LeaderLatchListener
     protected TimeUnit _refreshIntervalUnit;
 
     /**
-     * Time period that cleaner have to wait before deleted file is
-     * removed by cleaner.
+     * Time period that cleaner have to wait before deleted file is removed by cleaner.
      */
     protected Duration _gracePeriod;
 
-    /** Manager for a Cleaner's HA group membership and leadership state changes */
+    /**
+     * Manager for a Cleaner's HA group membership and leadership state changes
+     */
     protected HAServiceLeadershipManager _haServiceLeadershipManager;
 
     @Required
@@ -82,48 +77,41 @@ public abstract class AbstractCleaner implements LeaderLatchListener
     }
 
     @Required
-    public void setExecutor(ScheduledExecutorService executor)
-    {
+    public void setExecutor(ScheduledExecutorService executor) {
         _executor = executor;
     }
 
     @Required
-    public void setPoolStub(CellStub stub)
-    {
+    public void setPoolStub(CellStub stub) {
         _poolStub = stub;
     }
 
     @Required
-    public void setPoolInformationBase(PoolInformationBase pools)
-    {
+    public void setPoolInformationBase(PoolInformationBase pools) {
         _pools = pools;
     }
 
     @Required
-    public void setDataSource(DataSource dataSource)
-    {
+    public void setDataSource(DataSource dataSource) {
         _dataSource = dataSource;
         _db = new JdbcTemplate(_dataSource);
     }
 
     @Required
-    public void setReportRemove(String[] reportRemove)
-    {
+    public void setReportRemove(String[] reportRemove) {
         _deleteNotificationTargets = Arrays.stream(reportRemove)
-                .filter(t -> !t.isEmpty())
-                .map(CellPath::new)
-                .toArray(CellPath[]::new);
+              .filter(t -> !t.isEmpty())
+              .map(CellPath::new)
+              .toArray(CellPath[]::new);
     }
 
     @Required
-    public void setRefreshInterval(long refreshInterval)
-    {
+    public void setRefreshInterval(long refreshInterval) {
         _refreshInterval = refreshInterval;
     }
 
     @Required
-    public void setRefreshIntervalUnit(TimeUnit refreshIntervalUnit)
-    {
+    public void setRefreshIntervalUnit(TimeUnit refreshIntervalUnit) {
         _refreshIntervalUnit = refreshIntervalUnit;
     }
 
@@ -136,18 +124,18 @@ public abstract class AbstractCleaner implements LeaderLatchListener
 
     private void scheduleCleanerTask() {
         _cleanerTask = _executor.scheduleWithFixedDelay(() -> {
-            try {
-                AbstractCleaner.this.runDelete();
-            } catch (InterruptedException e) {
-                _log.info("Cleaner was interrupted");
-            } catch (DataAccessException e) {
-                _log.error("Database failure: {}", e.getMessage());
-            } catch (IllegalStateException e) {
-                _log.error("Illegal state: {}", e.getMessage());
-            }
+                  try {
+                      AbstractCleaner.this.runDelete();
+                  } catch (InterruptedException e) {
+                      _log.info("Cleaner was interrupted");
+                  } catch (DataAccessException e) {
+                      _log.error("Database failure: {}", e.getMessage());
+                  } catch (IllegalStateException e) {
+                      _log.error("Illegal state: {}", e.getMessage());
+                  }
 
-        }, _refreshInterval, _refreshInterval,
-        _refreshIntervalUnit);
+              }, _refreshInterval, _refreshInterval,
+              _refreshIntervalUnit);
     }
 
     private void cancelCleanerTask() {

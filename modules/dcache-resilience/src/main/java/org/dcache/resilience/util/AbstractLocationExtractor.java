@@ -61,29 +61,27 @@ package org.dcache.resilience.util;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * <p>Implementation of the {@link PoolTagConstraintDiscriminator} which returns
- *      a list containing the pools or locations with zero weight.  The weights
- *      are computed in terms of the sum of the size of the value partitions
- *      to which they belong.  For instance, if pool1 has tag1 with value A and
- *      tag2 with value X, and A is shared by 3 other pools and X by 2, then
- *      pool1 has a weight of 5.</p>
+ * a list containing the pools or locations with zero weight.  The weights are computed in terms of
+ * the sum of the size of the value partitions to which they belong.  For instance, if pool1 has
+ * tag1 with value A and tag2 with value X, and A is shared by 3 other pools and X by 2, then pool1
+ * has a weight of 5.</p>
  *
  * <p>The use case envisaged here is as follows:  the component has a set
- *      of available locations from which it must choose one or more for
- *      replication. First, it will add the tags of all current replica locations
- *      to the seenTags map. It will then run getCandidateLocations() on the
- *      list one or more times, each time picking a location from the returned
- *      list using some selection algorithm, removing this location from the
- *      available list and adding its tags to the seenTags map, and finally
- *      passing the modified available list in to any further iteration.</p>
+ * of available locations from which it must choose one or more for replication. First, it will add
+ * the tags of all current replica locations to the seenTags map. It will then run
+ * getCandidateLocations() on the list one or more times, each time picking a location from the
+ * returned list using some selection algorithm, removing this location from the available list and
+ * adding its tags to the seenTags map, and finally passing the modified available list in to any
+ * further iteration.</p>
  */
 public abstract class AbstractLocationExtractor extends PoolTagConstraintDiscriminator {
+
     protected final Multimap<String, String> seenTags = HashMultimap.create();
 
     protected AbstractLocationExtractor(Collection<String> onlyOneCopyPer) {
@@ -92,7 +90,7 @@ public abstract class AbstractLocationExtractor extends PoolTagConstraintDiscrim
 
     /**
      * <p>Add tag names and values for the location/pool
-     *      to the map of seen tags.</p>
+     * to the map of seen tags.</p>
      *
      * @param location which has been selected.
      */
@@ -117,7 +115,7 @@ public abstract class AbstractLocationExtractor extends PoolTagConstraintDiscrim
     @Override
     public Collection<String> getCandidateLocations(Collection<String> locations) {
         return locations.stream().filter((l) -> checkPartitionConstraints(l) == 0)
-                        .collect(Collectors.toList());
+              .collect(Collectors.toList());
     }
 
     public void reset() {
@@ -126,9 +124,8 @@ public abstract class AbstractLocationExtractor extends PoolTagConstraintDiscrim
 
     /**
      * @param location to examine
-     * @return the number of tags whose values match values already
-     *          stored in the seenTags map –– that is, of locations/pools
-     *          which either already exist or have been selected.
+     * @return the number of tags whose values match values already stored in the seenTags map ––
+     * that is, of locations/pools which either already exist or have been selected.
      */
     private int checkPartitionConstraints(String location) {
         Map<String, String> tags = getPoolTagsFor(location);

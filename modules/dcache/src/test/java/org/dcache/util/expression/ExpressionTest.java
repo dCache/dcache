@@ -1,44 +1,40 @@
 package org.dcache.util.expression;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
 
-import static org.junit.Assert.assertEquals;
+public class ExpressionTest {
 
-public class ExpressionTest
-{
     private SymbolTable symbols;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         symbols = new SymbolTable();
         symbols.put("number", 1.0);
     }
 
-    private Expression createExpression(String s)
-    {
+    private Expression createExpression(String s) {
         ExpressionParser parser =
-            Parboiled.createParser(ExpressionParser.class);
+              Parboiled.createParser(ExpressionParser.class);
         ParsingResult<Expression> result =
-            new BasicParseRunner(parser.Top()).run(s);
+              new BasicParseRunner(parser.Top()).run(s);
         return result.resultValue;
     }
 
     private Expression createCheckedExpression(String s)
-        throws TypeMismatchException, UnknownIdentifierException
-    {
+          throws TypeMismatchException, UnknownIdentifierException {
         Expression expression = createExpression(s);
         expression.check(symbols);
         return expression;
     }
 
     private Object evaluate(String s)
-        throws TypeMismatchException, UnknownIdentifierException
-    {
+          throws TypeMismatchException, UnknownIdentifierException {
         Expression expression = createExpression(s);
         expression.check(symbols);
         return expression.evaluate(symbols);
@@ -46,8 +42,7 @@ public class ExpressionTest
 
     @Test
     public void testLiterals()
-        throws Exception
-    {
+          throws Exception {
         assertEquals(-1.0, evaluate("-1"));
         assertEquals(1.0, evaluate("1"));
         assertEquals(1.1, evaluate("1.1"));
@@ -71,8 +66,7 @@ public class ExpressionTest
 
     @Test
     public void testOperators()
-        throws Exception
-    {
+          throws Exception {
         assertEquals(2.0, evaluate("1+1"));
         assertEquals(0.0, evaluate("1-1"));
         assertEquals(4.0, evaluate("2*2"));
@@ -121,80 +115,69 @@ public class ExpressionTest
         assertEquals(false, evaluate("not true"));
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerIfCondition()
-        throws Exception
-    {
+          throws Exception {
         evaluate("1 ? 2 :3");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerIfValues()
-        throws Exception
-    {
+          throws Exception {
         evaluate("true ? 2 : false");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerNumberEqualsString()
-        throws Exception
-    {
+          throws Exception {
         evaluate("2.1 == '1'");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerNumberAndNumber()
-        throws Exception
-    {
+          throws Exception {
         evaluate("2.1 and 1");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerNotNumber()
-        throws Exception
-    {
+          throws Exception {
         evaluate("not 2.1");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerUminusString()
-        throws Exception
-    {
+          throws Exception {
         evaluate("-'bla'");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerBooleanLEBoolean()
-        throws Exception
-    {
+          throws Exception {
         evaluate("true <= true");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerNumberPlusBoolean()
-        throws Exception
-    {
+          throws Exception {
         evaluate("1+false");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerNumberPlusString()
-        throws Exception
-    {
+          throws Exception {
         evaluate("1+'one'");
     }
 
-    @Test(expected=TypeMismatchException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testTypeCheckerMatchNumber()
-        throws Exception
-    {
+          throws Exception {
         evaluate("1 =~ 2");
     }
 
     @Test
     public void testIdentifierWithTrailingSpace()
-        throws Exception
-    {
+          throws Exception {
         assertEquals(1.0, evaluate("number "));
     }
 }

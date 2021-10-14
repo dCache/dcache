@@ -37,7 +37,7 @@ public class ACLException extends Exception {
         return _action;
     }
 
-    public String toString(){
+    public String toString() {
         return "ACLException: " + getMessage();
     }
 

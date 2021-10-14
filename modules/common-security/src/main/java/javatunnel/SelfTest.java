@@ -4,10 +4,6 @@
 
 package javatunnel;
 
-import org.dcache.dss.KerberosDssContextFactory;
-
-import javax.net.ServerSocketFactory;
-
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,11 +11,12 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import javax.net.ServerSocketFactory;
+import org.dcache.dss.KerberosDssContextFactory;
 
 class SelfTest {
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
 
         int port = 1717;
         String host = "localhost";
@@ -35,6 +32,7 @@ class SelfTest {
 
         private final String _host;
         private final int _port;
+
         Sender(String host, int port) {
             super("Sender");
             _port = port;
@@ -42,7 +40,7 @@ class SelfTest {
         }
 
         @Override
-        public void     run() {
+        public void run() {
             OutputStream out;
             InputStream in;
             Socket s;
@@ -50,14 +48,15 @@ class SelfTest {
             DataInputStream is;
 
             try {
-                s = new DssSocket( _host, _port, new KerberosDssContextFactory("tigran@DESY.DE", "nfs/anahit.desy.de@DESY.DE"));
+                s = new DssSocket(_host, _port, new KerberosDssContextFactory("tigran@DESY.DE",
+                      "nfs/anahit.desy.de@DESY.DE"));
                 Thread.sleep(20000);
-                out  = s.getOutputStream();
-                in  =  s.getInputStream();
+                out = s.getOutputStream();
+                in = s.getInputStream();
 
                 os = new PrintStream(out);
                 is = new DataInputStream(in);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 System.out.println(e);
                 return;
             }
@@ -65,13 +64,13 @@ class SelfTest {
             while (!Thread.interrupted()) {
                 try {
 
-                    System.out.println(" Sender to reciver : " +  "Hello tunnel" );
+                    System.out.println(" Sender to reciver : " + "Hello tunnel");
                     os.println("Hello tunnel");
 
-                    System.out.println(" Sender Got : " +  is.readLine() );
+                    System.out.println(" Sender Got : " + is.readLine());
 
                     Thread.sleep(2000);
-                }  catch(Exception e) {
+                } catch (Exception e) {
                     System.out.println(e);
                     e.printStackTrace();
                     break;
@@ -85,13 +84,14 @@ class SelfTest {
     private static class Reciever extends Thread {
 
         private final int _port;
+
         Reciever(int port) {
             super("Reciever");
             _port = port;
         }
 
         @Override
-        public void     run() {
+        public void run() {
 
             ServerSocket server;
             Socket s;
@@ -106,19 +106,19 @@ class SelfTest {
                 ServerSocketFactory factory = new DssServerSocketCreator(initArgs);
 
                 server = factory.createServerSocket();
-                server.bind(new InetSocketAddress( _port ) );
+                server.bind(new InetSocketAddress(_port));
                 s = server.accept();
                 ((TunnelSocket) s).verify();
 
-                DssSocket ts = (DssSocket)s;
-                System.out.println( ts.getSubject() );
+                DssSocket ts = (DssSocket) s;
+                System.out.println(ts.getSubject());
 
-                   out  = s.getOutputStream();
-                   in  =  s.getInputStream();
+                out = s.getOutputStream();
+                in = s.getInputStream();
                 os = new PrintStream(out);
                 is = new DataInputStream(in);
 
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 System.out.println(e);
                 e.printStackTrace();
                 return;
@@ -126,13 +126,12 @@ class SelfTest {
             while (!Thread.interrupted()) {
                 try {
 
+                    System.out.println(" RECIVER Got : " + is.readLine());
 
-                    System.out.println(" RECIVER Got : " +  is.readLine());
-
-                    System.out.println(" RECIVER to sender : " +  "What?!" );
+                    System.out.println(" RECIVER to sender : " + "What?!");
                     os.println("What?!");
 
-                } catch(Exception e) {
+                } catch (Exception e) {
                     System.out.println(e);
                     e.printStackTrace();
                     break;

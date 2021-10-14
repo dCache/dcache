@@ -29,9 +29,8 @@ public class InodeId {
     private InodeId() { /**/ }
 
     /**
-     *  generates new inode id
-     *  format 0-3  - fsid
-     *         4-35 - inode id
+     * generates new inode id format 0-3  - fsid 4-35 - inode id
+     *
      * @param fsId
      * @return
      */
@@ -40,16 +39,18 @@ public class InodeId {
         UUID newId = UUID.randomUUID();
 
         String idString = digits((long) fsId >> 32, 4) +
-                          digits(newId.getMostSignificantBits() >> 32, 8) +
-                          digits(newId.getMostSignificantBits() >> 16, 4) +
-                          digits(newId.getMostSignificantBits(), 4) +
-                          digits(newId.getLeastSignificantBits() >> 48, 4) +
-                          digits(newId.getLeastSignificantBits(), 12);
+              digits(newId.getMostSignificantBits() >> 32, 8) +
+              digits(newId.getMostSignificantBits() >> 16, 4) +
+              digits(newId.getMostSignificantBits(), 4) +
+              digits(newId.getLeastSignificantBits() >> 48, 4) +
+              digits(newId.getLeastSignificantBits(), 12);
 
         return idString.toUpperCase();
     }
 
-    /** Returns val represented by the specified number of hex digits. */
+    /**
+     * Returns val represented by the specified number of hex digits.
+     */
     private static String digits(long val, int digits) {
         long hi = 1L << (digits * 4);
         return Long.toHexString(hi | (val & (hi - 1))).substring(1);

@@ -16,39 +16,31 @@
  */
 package org.dcache.chimera;
 
+import java.util.EnumSet;
+import javax.sql.DataSource;
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.RsType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-
-import java.util.EnumSet;
-
-import org.dcache.acl.enums.AceFlags;
-import org.dcache.acl.enums.RsType;
-
 /**
  * Oracle specific SQL driver
- *
- *
  */
 class OracleFsSqlDriver extends FsSqlDriver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OracleFsSqlDriver.class);
 
     /**
-     *  this is a utility class which is issues SQL queries on database
-     *
+     * this is a utility class which is issues SQL queries on database
      */
-    protected OracleFsSqlDriver(DataSource dataSource) throws ChimeraFsException
-    {
+    protected OracleFsSqlDriver(DataSource dataSource) throws ChimeraFsException {
         super(dataSource);
         LOGGER.info("Running Oracle specific Driver");
     }
 
     /**
-     *
-     * return the path associated with inode, starting from root of the tree.
-     * in case of hard link, one of the possible paths is returned
+     * return the path associated with inode, starting from root of the tree. in case of hard link,
+     * one of the possible paths is returned
      *
      * @param inode
      * @return
@@ -59,30 +51,33 @@ class OracleFsSqlDriver extends FsSqlDriver {
             return "/";
         }
         return _jdbc.query(
-                "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs) start with ichild=? CONNECT BY  ichild = PRIOR iparent ORDER BY deep DESC",
-                rs -> {
-                    StringBuilder sb = new StringBuilder();
-                    while (rs.next()) {
-                        sb.append('/').append(rs.getString("iname"));
-                    }
-                    return sb.toString();
-                },
-                inode.ino());
+              "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs) start with ichild=? CONNECT BY  ichild = PRIOR iparent ORDER BY deep DESC",
+              rs -> {
+                  StringBuilder sb = new StringBuilder();
+                  while (rs.next()) {
+                      sb.append('/').append(rs.getString("iname"));
+                  }
+                  return sb.toString();
+              },
+              inode.ino());
     }
 
     @Override
-    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
-        int msk = EnumSet.complementOf(mask).stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask,
+          EnumSet<AceFlags> flags) {
+        int msk = EnumSet.complementOf(mask).stream().mapToInt(AceFlags::getValue)
+              .reduce(0, (a, b) -> a | b);
         int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
-        _jdbc.update("INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
-                     "SELECT ?, ?, type, BITAND(flags, ?), access_msk, who, who_id, ace_order " +
-                     "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
-                     ps -> {
-                         ps.setLong(1, inode.ino());
-                         ps.setInt(2, type.getValue());
-                         ps.setInt(3, msk);
-                         ps.setLong(4, source.ino());
-                         ps.setInt(5, flgs);
-                     });
+        _jdbc.update(
+              "INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
+                    "SELECT ?, ?, type, BITAND(flags, ?), access_msk, who, who_id, ace_order " +
+                    "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
+              ps -> {
+                  ps.setLong(1, inode.ino());
+                  ps.setInt(2, type.getValue());
+                  ps.setInt(3, msk);
+                  ps.setLong(4, source.ino());
+                  ps.setInt(5, flgs);
+              });
     }
 }

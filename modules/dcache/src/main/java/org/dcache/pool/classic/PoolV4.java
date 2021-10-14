@@ -2,6 +2,10 @@
 
 package org.dcache.pool.classic;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -10,40 +14,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.RateLimiter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.core.KafkaTemplate;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.nio.channels.CompletionHandler;
-import java.nio.file.OpenOption;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -75,7 +45,6 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
@@ -93,7 +62,32 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.channels.CompletionHandler;
+import java.nio.file.OpenOption;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
@@ -128,16 +122,19 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.stream.Collectors.toList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
 public class PoolV4
-    extends AbstractCellComponent
-    implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
-                PoolDataBeanProvider<PoolDataDetails>, ZoneAware, ThreadCreator
-{
+      extends AbstractCellComponent
+      implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider,
+      CellLifeCycleAware, CellInfoProvider,
+      PoolDataBeanProvider<PoolDataDetails>, ZoneAware, ThreadCreator {
+
     private static final int DUP_REQ_NONE = 0;
     private static final int DUP_REQ_IGNORE = 1;
     private static final int DUP_REQ_REFRESH = 2;
@@ -150,7 +147,9 @@ public class PoolV4
 
     public static final String ZONE_TAG = "zone";
 
-    /** These are tags that may not be set by an admin. */
+    /**
+     * These are tags that may not be set by an admin.
+     */
     private static final Set<String> RESERVED_TAGS = ImmutableSet.of(ZONE_TAG);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolV4.class);
@@ -158,8 +157,7 @@ public class PoolV4
     private String _poolName;
 
     /**
-     * pool start time identifier.
-     * used by PoolManager to recognize pool restarts
+     * pool start time identifier. used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
     private static final CellVersion VERSION = new CellVersion(Version.of(PoolV4.class));
@@ -167,8 +165,8 @@ public class PoolV4
     private volatile boolean _reportOnRemovals;
     private volatile boolean _suppressHsmLoad;
     private boolean _cleanPreciousFiles;
-    private String     _poolStatusMessage = "OK";
-    private int        _poolStatusCode;
+    private String _poolStatusMessage = "OK";
+    private int _poolStatusCode;
 
     private PnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
@@ -185,7 +183,7 @@ public class PoolV4
 
     private final PoolManagerPingThread _pingThread = new PoolManagerPingThread();
     private HsmFlushController _flushingThread;
-    private IoQueueManager _ioQueue ;
+    private IoQueueManager _ioQueue;
     private HsmSet _hsmSet;
     private NearlineStorageHandler _storageHandler;
     private int _p2pFileMode = P2P_CACHED;
@@ -219,13 +217,13 @@ public class PoolV4
 
     private boolean _enableHsmFlag;
 
-    private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {};
+    private Consumer<RemoveFileInfoMessage> _kafkaSender = (s) -> {
+    };
 
     private ThreadFactory _threadFactory;
 
 
-    protected void assertNotRunning(String error)
-    {
+    protected void assertNotRunning(String error) {
         checkState(!_running, error);
     }
 
@@ -237,34 +235,29 @@ public class PoolV4
     }
 
     @Required
-    public void setPoolName(String name)
-    {
+    public void setPoolName(String name) {
         assertNotRunning("Cannot change pool name after initialisation");
         _poolName = name;
     }
 
     @Required
-    public void setBaseDir(String baseDir)
-    {
+    public void setBaseDir(String baseDir) {
         assertNotRunning("Cannot change base dir after initialisation");
         _baseDir = baseDir;
     }
 
     @Required
-    public void setVersion(int version)
-    {
+    public void setVersion(int version) {
         _version = version;
     }
 
     @Required
-    public void setReplicationNotificationDestination(String address)
-    {
+    public void setReplicationNotificationDestination(String address) {
         _replicationManager = (!address.isEmpty()) ? new CellPath(address) : null;
     }
 
     @Required
-    public void setReplicationIp(String address)
-    {
+    public void setReplicationIp(String address) {
         if (!address.isEmpty()) {
             _replicationIp = InetAddresses.forString(address);
         } else {
@@ -278,35 +271,29 @@ public class PoolV4
     }
 
     @Required
-    public void setAllowCleaningPreciousFiles(boolean allow)
-    {
+    public void setAllowCleaningPreciousFiles(boolean allow) {
         _cleanPreciousFiles = allow;
     }
 
     @Required
-    public void setVolatile(boolean isVolatile)
-    {
+    public void setVolatile(boolean isVolatile) {
         _isVolatile = isVolatile;
     }
 
-    public boolean isVolatile()
-    {
+    public boolean isVolatile() {
         return _isVolatile;
     }
 
     @Required
-    public void setHasTapeBackend(boolean hasTapeBackend)
-    {
+    public void setHasTapeBackend(boolean hasTapeBackend) {
         _hasTapeBackend = hasTapeBackend;
     }
 
-    public boolean getHasTapeBackend()
-    {
+    public boolean getHasTapeBackend() {
         return _hasTapeBackend;
     }
 
-    public void setP2PMode(String mode)
-    {
+    public void setP2PMode(String mode) {
         if (mode == null) {
             _p2pFileMode = P2P_CACHED;
         } else if (mode.equals("precious")) {
@@ -318,8 +305,7 @@ public class PoolV4
         }
     }
 
-    public void setDuplicateRequestMode(String mode)
-    {
+    public void setDuplicateRequestMode(String mode) {
         if (mode == null || mode.equals("none")) {
             _dupRequest = DUP_REQ_NONE;
         } else if (mode.equals("ignore")) {
@@ -332,97 +318,84 @@ public class PoolV4
     }
 
     @Required
-    public void setExecutor(Executor executor)
-    {
+    public void setExecutor(Executor executor) {
         _executor = executor;
     }
 
     @Required
-    public void setPoolUpDestination(String name)
-    {
+    public void setPoolUpDestination(String name) {
         _poolupDestination = name;
     }
 
     @Required
-    public void setBillingStub(CellStub stub)
-    {
+    public void setBillingStub(CellStub stub) {
         assertNotRunning("Cannot set billing stub after initialization");
         _billingStub = stub;
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfs)
-    {
+    public void setPnfsHandler(PnfsHandler pnfs) {
         assertNotRunning("Cannot set PNFS handler after initialization");
         _pnfs = pnfs;
     }
 
     @Required
-    public void setRepository(Repository repository)
-    {
+    public void setRepository(Repository repository) {
         assertNotRunning("Cannot set repository after initialization");
         _repository = repository;
     }
 
     @Required
-    public void setAccount(Account account)
-    {
+    public void setAccount(Account account) {
         assertNotRunning("Cannot set account after initialization");
         _account = account;
     }
 
     @Required
-    public void setStorageQueue(StorageClassContainer queue)
-    {
+    public void setStorageQueue(StorageClassContainer queue) {
         assertNotRunning("Cannot set storage queue after initialization");
         _storageQueue = queue;
     }
 
     @Required
-    public void setStorageHandler(NearlineStorageHandler handler)
-    {
+    public void setStorageHandler(NearlineStorageHandler handler) {
         assertNotRunning("Cannot set storage handler after initialization");
         _storageHandler = handler;
     }
 
     @Required
-    public void setHSMSet(HsmSet set)
-    {
+    public void setHSMSet(HsmSet set) {
         assertNotRunning("Cannot set HSM set after initialization");
         _hsmSet = set;
     }
 
     @Required
-    public void setFlushController(HsmFlushController controller)
-    {
+    public void setFlushController(HsmFlushController controller) {
         assertNotRunning("Cannot set flushing controller after initialization");
         _flushingThread = controller;
     }
 
     @Required
-    public void setPPClient(P2PClient client)
-    {
+    public void setPPClient(P2PClient client) {
         assertNotRunning("Cannot set P2P client after initialization");
         _p2pClient = client;
     }
 
     @Required
-    public void setReplicaStatePolicy(ReplicaStatePolicy replicaStatePolicy)
-    {
+    public void setReplicaStatePolicy(ReplicaStatePolicy replicaStatePolicy) {
         assertNotRunning("Cannot set replica state policy after initialization");
         _replicaStatePolicy = replicaStatePolicy;
     }
 
     @Required
-    public void setTags(String tags)
-    {
-        Map<String,String> newTags = Splitter.on(' ')
-                .omitEmptyStrings()
-                .trimResults()
-                .withKeyValueSeparator('=')
-                .split(tags);
+    public void setTags(String tags) {
+        Map<String, String> newTags = Splitter.on(' ')
+              .omitEmptyStrings()
+              .trimResults()
+              .withKeyValueSeparator('=')
+              .split(tags);
 
-        newTags.forEach(((key,value) -> {
+        newTags.forEach(((key, value) -> {
             if (RESERVED_TAGS.contains(key)) {
                 LOGGER.warn("Skipping reserved tag: {}={}", key, value);
             } else {
@@ -433,15 +406,13 @@ public class PoolV4
     }
 
     @Required
-    public void setIoQueueManager(IoQueueManager ioQueueManager)
-    {
+    public void setIoQueueManager(IoQueueManager ioQueueManager) {
         assertNotRunning("Cannot set I/O queue manager after initialization");
         _ioQueue = ioQueueManager;
     }
 
     @Required
-    public void setPoolMode(PoolV2Mode mode)
-    {
+    public void setPoolMode(PoolV2Mode mode) {
         _poolMode = mode;
     }
 
@@ -450,32 +421,27 @@ public class PoolV4
     }
 
     @Required
-    public void setTransferServices(TransferServices transferServices)
-    {
+    public void setTransferServices(TransferServices transferServices) {
         assertNotRunning("Cannot set transfer services after initialization");
         _transferServices = transferServices;
     }
 
     @Required
-    public void setEnableHsmFlag(boolean enable)
-    {
+    public void setEnableHsmFlag(boolean enable) {
         _enableHsmFlag = enable;
     }
 
     @Override
-    public void setZone(Optional<String> zone)
-    {
+    public void setZone(Optional<String> zone) {
         zone.ifPresent(z -> _tags.put(ZONE_TAG, z));
     }
 
     @Override
-    public void setThreadFactory(ThreadFactory factory)
-    {
+    public void setThreadFactory(ThreadFactory factory) {
         _threadFactory = factory;
     }
 
-    public void init()
-    {
+    public void init() {
         assertNotRunning("Cannot initialize several times");
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
 
@@ -495,48 +461,46 @@ public class PoolV4
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
         _threadFactory.newThread(() -> {
-                int mode;
-                try {
-                    _repository.init();
-                    disablePool(PoolV2Mode.DISABLED_RDONLY_REPOSITORY_LOADING, 1, "Loading...");
-                    _repository.load();
-                    enablePool(PoolV2Mode.ENABLED);
-                    _flushingThread.start();
-                } catch (RuntimeException e) {
-                    LOGGER.error(AlarmMarkerFactory.getMarker
-                                    (PredefinedAlarm.POOL_DISABLED, _poolName),
-                                     "Pool {} initialization failed, repository "
-                                     + "reported a problem."
-                                     + "Please report this to support@dcache.org.",
-                                 _poolName, e);
-                    LOGGER.warn("Pool not enabled {}", _poolName);
-                    disablePool(PoolV2Mode.DISABLED_DEAD
-                                    | PoolV2Mode.DISABLED_STRICT,
-                                    666, "Init failed: " + e.getMessage());
-                } catch (Throwable e) {
-                    LOGGER.error(AlarmMarkerFactory.getMarker
-                                    (PredefinedAlarm.POOL_DISABLED, _poolName),
-                                     "Pool {} initialization failed, repository "
-                                     + "reported a problem ({}).",
-                                 _poolName, e.getMessage());
-                    LOGGER.warn("Pool not enabled {}", _poolName);
-                    disablePool(PoolV2Mode.DISABLED_DEAD
-                                    | PoolV2Mode.DISABLED_STRICT,
-                                    666, "Init failed: " + e.getMessage());
-                }
+            int mode;
+            try {
+                _repository.init();
+                disablePool(PoolV2Mode.DISABLED_RDONLY_REPOSITORY_LOADING, 1, "Loading...");
+                _repository.load();
+                enablePool(PoolV2Mode.ENABLED);
+                _flushingThread.start();
+            } catch (RuntimeException e) {
+                LOGGER.error(AlarmMarkerFactory.getMarker
+                            (PredefinedAlarm.POOL_DISABLED, _poolName),
+                      "Pool {} initialization failed, repository "
+                            + "reported a problem."
+                            + "Please report this to support@dcache.org.",
+                      _poolName, e);
+                LOGGER.warn("Pool not enabled {}", _poolName);
+                disablePool(PoolV2Mode.DISABLED_DEAD
+                            | PoolV2Mode.DISABLED_STRICT,
+                      666, "Init failed: " + e.getMessage());
+            } catch (Throwable e) {
+                LOGGER.error(AlarmMarkerFactory.getMarker
+                            (PredefinedAlarm.POOL_DISABLED, _poolName),
+                      "Pool {} initialization failed, repository "
+                            + "reported a problem ({}).",
+                      _poolName, e.getMessage());
+                LOGGER.warn("Pool not enabled {}", _poolName);
+                disablePool(PoolV2Mode.DISABLED_DEAD
+                            | PoolV2Mode.DISABLED_STRICT,
+                      666, "Init failed: " + e.getMessage());
+            }
 
-                LOGGER.info("Repository finished");
-            }).start();
+            LOGGER.info("Repository finished");
+        }).start();
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         _flushingThread.stop();
         _pingThread.stop();
 
@@ -544,51 +508,50 @@ public class PoolV4
          * No need for alarm here.
          */
         disablePool(PoolV2Mode.DISABLED_DEAD
-                        | PoolV2Mode.DISABLED_STRICT, 666, "Shutdown");
+              | PoolV2Mode.DISABLED_STRICT, 666, "Shutdown");
     }
 
     /**
      * Called by subsystems upon serious faults.
      */
     @Override
-    public void faultOccurred(FaultEvent event)
-    {
+    public void faultOccurred(FaultEvent event) {
         Throwable cause = event.getCause();
         String poolState;
         PredefinedAlarm alarm;
         switch (event.getAction()) {
-        case READONLY:
-            poolState = "Pool read-only: ";
-            disablePool(PoolV2Mode.DISABLED_RDONLY,
-                            99, poolState + event.getMessage());
-            alarm = null;
-            break;
+            case READONLY:
+                poolState = "Pool read-only: ";
+                disablePool(PoolV2Mode.DISABLED_RDONLY,
+                      99, poolState + event.getMessage());
+                alarm = null;
+                break;
 
-        case DISABLED:
-            poolState = "Pool disabled: ";
-            disablePool(PoolV2Mode.DISABLED_STRICT, 99, poolState + event.getMessage());
-            alarm = PredefinedAlarm.POOL_DISABLED;
-            break;
+            case DISABLED:
+                poolState = "Pool disabled: ";
+                disablePool(PoolV2Mode.DISABLED_STRICT, 99, poolState + event.getMessage());
+                alarm = PredefinedAlarm.POOL_DISABLED;
+                break;
 
-        default:
-            poolState = "Pool restart required: ";
-            disablePool(PoolV2Mode.DISABLED_STRICT
+            default:
+                poolState = "Pool restart required: ";
+                disablePool(PoolV2Mode.DISABLED_STRICT
                             | PoolV2Mode.DISABLED_DEAD,
-                            666, poolState + event.getMessage());
-            alarm = PredefinedAlarm.POOL_DEAD;
-            break;
+                      666, poolState + event.getMessage());
+                alarm = PredefinedAlarm.POOL_DEAD;
+                break;
         }
 
         if (alarm != null) {
             if (cause != null) {
                 LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
-                             "Pool: {}, fault occurred in {}: {}. {}, cause: {}",
-                             _poolName, event.getSource(), event.getMessage(), poolState,
-                             cause.toString());
+                      "Pool: {}, fault occurred in {}: {}. {}, cause: {}",
+                      _poolName, event.getSource(), event.getMessage(), poolState,
+                      cause.toString());
             } else {
                 LOGGER.error(AlarmMarkerFactory.getMarker(alarm, _poolName),
-                             "Pool: {}, fault occurred in {}: {}. {}",
-                             _poolName, event.getSource(), event.getMessage(), poolState);
+                      "Pool: {}, fault occurred in {}: {}. {}",
+                      _poolName, event.getSource(), event.getMessage(), poolState);
             }
         }
     }
@@ -596,11 +559,10 @@ public class PoolV4
     /**
      * Sets the h-flag in PNFS.
      */
-    private class HFlagMaintainer extends AbstractStateChangeListener
-    {
+    private class HFlagMaintainer extends AbstractStateChangeListener {
+
         @Override
-        public void stateChanged(StateChangeEvent event)
-        {
+        public void stateChanged(StateChangeEvent event) {
             if (event.getOldState() == ReplicaState.FROM_CLIENT) {
                 PnfsId id = event.getPnfsId();
                 if (_hasTapeBackend) {
@@ -615,11 +577,10 @@ public class PoolV4
     /**
      * Interface between the repository and the StorageQueueContainer.
      */
-    private class RepositoryLoader extends AbstractStateChangeListener
-    {
+    private class RepositoryLoader extends AbstractStateChangeListener {
+
         @Override
-        public void stateChanged(StateChangeEvent event)
-        {
+        public void stateChanged(StateChangeEvent event) {
             PnfsId id = event.getPnfsId();
             ReplicaState from = event.getOldState();
             ReplicaState to = event.getNewState();
@@ -654,15 +615,14 @@ public class PoolV4
     }
 
     private class NotifyBillingOnRemoveListener
-        extends AbstractStateChangeListener
-    {
+          extends AbstractStateChangeListener {
+
         @Override
-        public void stateChanged(StateChangeEvent event)
-        {
+        public void stateChanged(StateChangeEvent event) {
             if (_reportOnRemovals && event.getNewState() == ReplicaState.REMOVED) {
                 CacheEntry entry = event.getNewEntry();
                 RemoveFileInfoMessage msg =
-                    new RemoveFileInfoMessage(getCellAddress(), entry.getPnfsId());
+                      new RemoveFileInfoMessage(getCellAddress(), entry.getPnfsId());
                 msg.setFileSize(entry.getReplicaSize());
                 msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
                 msg.setSubject(Subjects.ROOT);
@@ -675,8 +635,7 @@ public class PoolV4
     }
 
     @Override
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
         pw.println("set breakeven " + _breakEven);
@@ -685,16 +644,15 @@ public class PoolV4
             pw.println("pool suppress hsmload on");
         }
         pw.println("set duplicate request "
-                + ((_dupRequest == DUP_REQ_NONE)
-                ? "none"
-                : (_dupRequest == DUP_REQ_IGNORE)
-                ? "ignore"
-                      : "refresh"));
+              + ((_dupRequest == DUP_REQ_NONE)
+              ? "none"
+              : (_dupRequest == DUP_REQ_IGNORE)
+                    ? "ignore"
+                    : "refresh"));
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         PoolCellInfo poolinfo = new PoolCellInfo(info);
         poolinfo.setPoolCostInfo(getPoolCostInfo());
         poolinfo.setTagMap(_tags);
@@ -708,8 +666,7 @@ public class PoolV4
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         getDataObject().print(pw);
     }
 
@@ -724,11 +681,16 @@ public class PoolV4
 
         Duplicates duplicates;
         switch (_dupRequest) {
-            case DUP_REQ_IGNORE: duplicates = Duplicates.IGNORED; break;
-            case DUP_REQ_REFRESH: duplicates = Duplicates.REFRESHED; break;
+            case DUP_REQ_IGNORE:
+                duplicates = Duplicates.IGNORED;
+                break;
+            case DUP_REQ_REFRESH:
+                duplicates = Duplicates.REFRESHED;
+                break;
             case DUP_REQ_NONE:
             default:
-                duplicates = Duplicates.NONE; break;
+                duplicates = Duplicates.NONE;
+                break;
         }
 
         info.setDuplicateRequests(duplicates);
@@ -747,9 +709,9 @@ public class PoolV4
             info.setLargeFileStore(Lsf.PRECIOUS);
         }
 
-        info.setPingHeartbeatInSecs( _pingThread.getHeartbeat());
+        info.setPingHeartbeatInSecs(_pingThread.getHeartbeat());
         info.setP2pFileMode(_p2pFileMode == P2P_PRECIOUS ?
-                                            P2PMode.PRECIOUS : P2PMode.CACHED);
+              P2PMode.PRECIOUS : P2PMode.CACHED);
         info.setPoolMode(_poolMode.toString());
         if (_poolMode.isDisabled()) {
             info.setPoolStatusCode(_poolStatusCode);
@@ -775,8 +737,8 @@ public class PoolV4
     //
     //
 
-    public Mover<?> createMover(CellMessage envelop, PoolIoFileMessage message) throws CacheException
-    {
+    public Mover<?> createMover(CellMessage envelop, PoolIoFileMessage message)
+          throws CacheException {
         CellPath source = envelop.getSourcePath().revert();
         FileAttributes attributes = message.getFileAttributes();
         PnfsId pnfsId = attributes.getPnfsId();
@@ -786,26 +748,27 @@ public class PoolV4
         ReplicaDescriptor handle;
         try {
             if (message instanceof PoolAcceptFileMessage) {
-                OptionalLong maximumSize = ((PoolAcceptFileMessage)message).getMaximumSize();
+                OptionalLong maximumSize = ((PoolAcceptFileMessage) message).getMaximumSize();
                 List<StickyRecord> stickyRecords =
-                        _replicaStatePolicy.getStickyRecords(attributes);
+                      _replicaStatePolicy.getStickyRecords(attributes);
                 ReplicaState targetState =
-                        _replicaStatePolicy.getTargetState(attributes);
+                      _replicaStatePolicy.getTargetState(attributes);
                 handle = _repository.createEntry(attributes,
-                                                 ReplicaState.FROM_CLIENT,
-                                                 targetState,
-                                                 stickyRecords,
-                                                 moverFactory.getChannelCreateOptions(),
-                                                 maximumSize);
+                      ReplicaState.FROM_CLIENT,
+                      targetState,
+                      stickyRecords,
+                      moverFactory.getChannelCreateOptions(),
+                      maximumSize);
             } else {
                 Set<? extends OpenOption> openFlags =
-                        message.isPool2Pool()
-                                ? EnumSet.of(Repository.OpenFlags.NOATIME)
-                                : EnumSet.noneOf(Repository.OpenFlags.class);
+                      message.isPool2Pool()
+                            ? EnumSet.of(Repository.OpenFlags.NOATIME)
+                            : EnumSet.noneOf(Repository.OpenFlags.class);
                 handle = _repository.openEntry(pnfsId, openFlags);
             }
         } catch (FileNotInCacheException e) {
-            throw new FileNotInCacheException("File " + pnfsId + " does not exist in " + _poolName, e);
+            throw new FileNotInCacheException("File " + pnfsId + " does not exist in " + _poolName,
+                  e);
         } catch (FileInCacheException e) {
             throw new FileInCacheException("File " + pnfsId + " already exists in " + _poolName, e);
         }
@@ -817,24 +780,26 @@ public class PoolV4
         }
     }
 
-    private int queueIoRequest(CellMessage envelope, PoolIoFileMessage message) throws CacheException
-    {
+    private int queueIoRequest(CellMessage envelope, PoolIoFileMessage message)
+          throws CacheException {
         message.getAssumption().check(_poolInfo);
 
         String queueName = message.getIoQueueName();
         String doorUniqueId = envelope.getSourceAddress().toString() + message.getId();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId,
+                  () -> createMover(envelope, message), IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.getOrCreateMover(IoQueueManager.P2P_QUEUE_NAME, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(IoQueueManager.P2P_QUEUE_NAME, doorUniqueId,
+                  () -> createMover(envelope, message), IoPriority.HIGH);
         } else {
-            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.REGULAR);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId,
+                  () -> createMover(envelope, message), IoPriority.REGULAR);
         }
     }
 
-    private void ioFile(CellMessage envelope, PoolIoFileMessage message)
-    {
+    private void ioFile(CellMessage envelope, PoolIoFileMessage message) {
         try {
             message.setMoverId(queueIoRequest(envelope, message));
             message.setSucceeded();
@@ -855,7 +820,7 @@ public class PoolV4
         } catch (RuntimeException e) {
             LOGGER.error("Please report the following stack-trace to <support@dcache.org>", e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                              "Failed to enqueue mover: " + e.getMessage());
+                  "Failed to enqueue mover: " + e.getMessage());
         }
         envelope.revertDirection();
         sendMessage(envelope);
@@ -866,29 +831,27 @@ public class PoolV4
     // replication on data arrived
     //
     private class ReplicationHandler
-        extends AbstractStateChangeListener
-    {
+          extends AbstractStateChangeListener {
+
         @Override
-        public void stateChanged(StateChangeEvent event)
-        {
+        public void stateChanged(StateChangeEvent event) {
             ReplicaState from = event.getOldState();
             ReplicaState to = event.getNewState();
 
             if (to == ReplicaState.CACHED || to == ReplicaState.PRECIOUS) {
                 switch (from) {
-                case FROM_CLIENT:
-                    initiateReplication(event.getPnfsId(), "write");
-                    break;
-                case FROM_STORE:
-                    initiateReplication(event.getPnfsId(), "restore");
-                    break;
+                    case FROM_CLIENT:
+                        initiateReplication(event.getPnfsId(), "write");
+                        break;
+                    case FROM_STORE:
+                        initiateReplication(event.getPnfsId(), "restore");
+                        break;
                 }
             }
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             if (_replicationManager != null) {
                 return "{Mgr=" + _replicationManager + ",Host=" + _replicationIp + "}";
             } else {
@@ -896,8 +859,7 @@ public class PoolV4
             }
         }
 
-        private void initiateReplication(PnfsId id, String source)
-        {
+        private void initiateReplication(PnfsId id, String source) {
             if (_replicationManager != null) {
                 try {
                     _initiateReplication(_repository.getEntry(id), source);
@@ -910,16 +872,15 @@ public class PoolV4
             }
         }
 
-        private void _initiateReplication(CacheEntry entry, String source)
-        {
+        private void _initiateReplication(CacheEntry entry, String source) {
             FileAttributes attributes = entry.getFileAttributes().clone();
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.getStorageInfo().setKey("replication.source", source);
 
             PoolMgrReplicateFileMsg req =
-                new PoolMgrReplicateFileMsg(attributes,
-                                            new DCapProtocolInfo("DCap", 3, 0,
-                                                    new InetSocketAddress(_replicationIp, 2222)));
+                  new PoolMgrReplicateFileMsg(attributes,
+                        new DCapProtocolInfo("DCap", 3, 0,
+                              new InetSocketAddress(_replicationIp, 2222)));
             req.setReplyRequired(false);
             sendMessage(new CellMessage(_replicationManager, req));
         }
@@ -931,49 +892,46 @@ public class PoolV4
     // interface to the HsmRestoreHandler
     //
     private class ReplyToPoolFetch
-        extends DelayedReply
-        implements CompletionHandler<Void, PnfsId>
-    {
+          extends DelayedReply
+          implements CompletionHandler<Void, PnfsId> {
+
         private final PoolFetchFileMessage _message;
 
-        private ReplyToPoolFetch(PoolFetchFileMessage message)
-        {
+        private ReplyToPoolFetch(PoolFetchFileMessage message) {
             _message = message;
         }
 
         @Override
-        public void completed(Void result, PnfsId pnfsId)
-        {
+        public void completed(Void result, PnfsId pnfsId) {
             _message.setSucceeded();
             reply(_message);
         }
 
         @Override
-        public void failed(Throwable exc, PnfsId pnfsId)
-        {
+        public void failed(Throwable exc, PnfsId pnfsId) {
             if (exc instanceof CacheException) {
                 CacheException ce = (CacheException) exc;
                 int errorCode = ce.getRc();
                 switch (errorCode) {
-                case CacheException.FILE_IN_CACHE:
-                    LOGGER.info("Pool already contains replica");
-                    _message.setSucceeded();
-                    break;
-                case CacheException.ERROR_IO_DISK:
-                case 41:
-                case 42:
-                case 43:
-                    disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce.getMessage());
-                    LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                                                              _poolName),
-                                 "Error encountered during fetch of {}",
-                                 pnfsId,
-                                 ce.getMessage());
-                    _message.setFailed(errorCode, ce.getMessage());
-                    break;
-                default:
-                    _message.setFailed(errorCode, ce.getMessage());
-                    break;
+                    case CacheException.FILE_IN_CACHE:
+                        LOGGER.info("Pool already contains replica");
+                        _message.setSucceeded();
+                        break;
+                    case CacheException.ERROR_IO_DISK:
+                    case 41:
+                    case 42:
+                    case 43:
+                        disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce.getMessage());
+                        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                                    _poolName),
+                              "Error encountered during fetch of {}",
+                              pnfsId,
+                              ce.getMessage());
+                        _message.setFailed(errorCode, ce.getMessage());
+                        break;
+                    default:
+                        _message.setFailed(errorCode, ce.getMessage());
+                        break;
                 }
             } else {
                 _message.setFailed(1000, exc);
@@ -983,19 +941,17 @@ public class PoolV4
     }
 
     private static class CompanionFileAvailableCallback
-        extends DelayedReply
-        implements CacheFileAvailable
-    {
+          extends DelayedReply
+          implements CacheFileAvailable {
+
         private final Pool2PoolTransferMsg _message;
 
-        private CompanionFileAvailableCallback(Pool2PoolTransferMsg message)
-        {
+        private CompanionFileAvailableCallback(Pool2PoolTransferMsg message) {
             _message = message;
         }
 
         @Override
-        public void cacheFileAvailable(PnfsId pnfsId, Throwable error)
-        {
+        public void cacheFileAvailable(PnfsId pnfsId, Throwable error) {
             if (_message.getReplyRequired()) {
                 if (error == null) {
                     _message.setSucceeded();
@@ -1012,8 +968,7 @@ public class PoolV4
         }
     }
 
-    public PoolMoverKillMessage messageArrived(PoolMoverKillMessage kill)
-    {
+    public PoolMoverKillMessage messageArrived(PoolMoverKillMessage kill) {
         if (kill.isReply()) {
             return null;
         }
@@ -1021,7 +976,8 @@ public class PoolV4
         try {
             int id = kill.getMoverId();
             MoverRequestScheduler js = _ioQueue.getQueueByJobId(id)
-                    .orElseThrow(() -> new NoSuchElementException("Id doesn't belong to any known scheduler."));
+                  .orElseThrow(() -> new NoSuchElementException(
+                        "Id doesn't belong to any known scheduler."));
             String explanation = kill.getExplanation();
             LOGGER.info("Killing mover {}: {}", id, explanation);
             if (!js.cancel(id, explanation)) {
@@ -1036,16 +992,15 @@ public class PoolV4
     }
 
     public void messageArrived(CellMessage envelope, PoolIoFileMessage msg)
-        throws CacheException
-    {
+          throws CacheException {
         if (msg.isReply()) {
             return;
         }
 
         if ((msg instanceof PoolAcceptFileMessage
-             && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
-            || (msg instanceof PoolDeliverFileMessage
-                && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
+              && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
+              || (msg instanceof PoolDeliverFileMessage
+              && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
             if (!msg.isForceSourceMode()) {
                 LOGGER.warn("PoolIoFileMessage request rejected due to {}", _poolMode);
@@ -1058,8 +1013,7 @@ public class PoolV4
     }
 
     public DelayedReply messageArrived(Pool2PoolTransferMsg msg)
-        throws CacheException, IOException, InterruptedException
-    {
+          throws CacheException, IOException, InterruptedException {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             LOGGER.warn("Pool2PoolTransferMsg request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
@@ -1068,7 +1022,7 @@ public class PoolV4
         String poolName = msg.getPoolName();
         FileAttributes fileAttributes = msg.getFileAttributes();
         CompanionFileAvailableCallback callback =
-                new CompanionFileAvailableCallback(msg);
+              new CompanionFileAvailableCallback(msg);
 
         ReplicaState targetState = ReplicaState.CACHED;
         int fileMode = msg.getDestinationFileStatus();
@@ -1077,19 +1031,18 @@ public class PoolV4
                 targetState = ReplicaState.PRECIOUS;
             }
         } else if (!_hasTapeBackend && !_isVolatile
-                   && (_p2pFileMode == P2P_PRECIOUS)) {
+              && (_p2pFileMode == P2P_PRECIOUS)) {
             targetState = ReplicaState.PRECIOUS;
         }
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
         _p2pClient.newCompanion(poolName, fileAttributes,
-                                targetState, stickyRecords, callback, false, null);
+              targetState, stickyRecords, callback, false, null);
         return callback;
     }
 
     public Object messageArrived(PoolFetchFileMessage msg)
-        throws CacheException
-    {
+          throws CacheException {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             LOGGER.warn("PoolFetchFileMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
@@ -1102,41 +1055,38 @@ public class PoolV4
         FileAttributes fileAttributes = msg.getFileAttributes();
         String hsm = _hsmSet.getInstanceName(fileAttributes);
         LOGGER.info("Pool {} asked to fetch file {} (hsm={})",
-                    _poolName, fileAttributes.getPnfsId(), hsm);
+              _poolName, fileAttributes.getPnfsId(), hsm);
         ReplyToPoolFetch reply = new ReplyToPoolFetch(msg);
         _storageHandler.stage(hsm, fileAttributes, reply);
         return reply;
     }
 
-    private static class RemoveFileReply extends DelayedReply implements CompletionHandler<Void,URI>
-    {
+    private static class RemoveFileReply extends DelayedReply implements
+          CompletionHandler<Void, URI> {
+
         private final PoolRemoveFilesFromHSMMessage msg;
         private final Collection<URI> succeeded;
         private final Collection<URI> failed;
 
-        private RemoveFileReply(PoolRemoveFilesFromHSMMessage msg)
-        {
+        private RemoveFileReply(PoolRemoveFilesFromHSMMessage msg) {
             this.msg = msg;
             succeeded = new ArrayList<>(msg.getFiles().size());
             failed = new ArrayList<>();
         }
 
         @Override
-        public void completed(Void nil, URI uri)
-        {
+        public void completed(Void nil, URI uri) {
             succeeded.add(uri);
             sendIfFinished();
         }
 
         @Override
-        public void failed(Throwable exc, URI uri)
-        {
+        public void failed(Throwable exc, URI uri) {
             failed.add(uri);
             sendIfFinished();
         }
 
-        private void sendIfFinished()
-        {
+        private void sendIfFinished() {
             if (succeeded.size() + failed.size() >= msg.getFiles().size()) {
                 msg.setResult(succeeded, failed);
                 msg.setSucceeded();
@@ -1146,8 +1096,7 @@ public class PoolV4
     }
 
     public Reply messageArrived(PoolRemoveFilesFromHSMMessage msg)
-        throws CacheException
-    {
+          throws CacheException {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
@@ -1163,16 +1112,14 @@ public class PoolV4
     }
 
     public PoolCheckFreeSpaceMessage
-        messageArrived(PoolCheckFreeSpaceMessage msg)
-    {
+    messageArrived(PoolCheckFreeSpaceMessage msg) {
         msg.setFreeSpace(_account.getFree());
         msg.setSucceeded();
         return msg;
     }
 
     public Reply messageArrived(CellMessage envelope, PoolRemoveFilesMessage msg)
-            throws CacheException
-    {
+          throws CacheException {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
             LOGGER.warn("PoolRemoveFilesMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
@@ -1181,39 +1128,36 @@ public class PoolV4
         String why = envelope.getSourceAddress() + " [" + msg.getDiagnosticContext() + "]";
 
         List<ListenableFutureTask<String>> tasks = Stream.of(msg.getFiles())
-                .map(file -> ListenableFutureTask.create(() -> remove(file, why))).collect(toList());
+              .map(file -> ListenableFutureTask.create(() -> remove(file, why))).collect(toList());
         tasks.forEach(_executor::execute);
         MessageReply<PoolRemoveFilesMessage> reply = new MessageReply<>();
         Futures.addCallback(Futures.allAsList(tasks),
-                            new FutureCallback<List<String>>()
-                            {
-                                @Override
-                                public void onSuccess(List<String> files)
-                                {
-                                    String[] replyList = files.stream().filter(Objects::nonNull).toArray(String[]::new);
-                                    if (replyList.length > 0) {
-                                        msg.setFailed(1, replyList);
-                                    } else {
-                                        msg.setSucceeded();
-                                    }
-                                    reply.reply(msg);
-                                }
+              new FutureCallback<List<String>>() {
+                  @Override
+                  public void onSuccess(List<String> files) {
+                      String[] replyList = files.stream().filter(Objects::nonNull)
+                            .toArray(String[]::new);
+                      if (replyList.length > 0) {
+                          msg.setFailed(1, replyList);
+                      } else {
+                          msg.setSucceeded();
+                      }
+                      reply.reply(msg);
+                  }
 
-                                @Override
-                                public void onFailure(Throwable t)
-                                {
-                                    reply.fail(msg, t);
-                                }
-                            });
+                  @Override
+                  public void onFailure(Throwable t) {
+                      reply.fail(msg, t);
+                  }
+              });
         return reply;
     }
 
-    private String remove(String file, String why) throws CacheException, InterruptedException
-    {
+    private String remove(String file, String why) throws CacheException, InterruptedException {
         try {
             PnfsId pnfsId = new PnfsId(file);
             if (!_cleanPreciousFiles && _hasTapeBackend
-                && (_repository.getState(pnfsId) == ReplicaState.PRECIOUS)) {
+                  && (_repository.getState(pnfsId) == ReplicaState.PRECIOUS)) {
                 LOGGER.error("Replica {} kept (precious)", file);
                 return file;
             } else {
@@ -1227,40 +1171,41 @@ public class PoolV4
     }
 
     public PoolModifyPersistencyMessage messageArrived(CellMessage envelope,
-            PoolModifyPersistencyMessage msg)
-    {
+          PoolModifyPersistencyMessage msg) {
         try {
             PnfsId pnfsId = msg.getPnfsId();
             switch (_repository.getState(pnfsId)) {
-            case PRECIOUS:
-                if (msg.isCached()) {
-                    _repository.setState(pnfsId, ReplicaState.CACHED, "At request of " + envelope.getSourceAddress());
-                }
-                msg.setSucceeded();
-                break;
+                case PRECIOUS:
+                    if (msg.isCached()) {
+                        _repository.setState(pnfsId, ReplicaState.CACHED,
+                              "At request of " + envelope.getSourceAddress());
+                    }
+                    msg.setSucceeded();
+                    break;
 
-            case CACHED:
-                if (msg.isPrecious()) {
-                    _repository.setState(pnfsId, ReplicaState.PRECIOUS, "At request of " + envelope.getSourceAddress());
-                }
-                msg.setSucceeded();
-                break;
+                case CACHED:
+                    if (msg.isPrecious()) {
+                        _repository.setState(pnfsId, ReplicaState.PRECIOUS,
+                              "At request of " + envelope.getSourceAddress());
+                    }
+                    msg.setSucceeded();
+                    break;
 
-            case FROM_CLIENT:
-            case FROM_POOL:
-            case FROM_STORE:
-                msg.setFailed(101, "File still transient: " + pnfsId);
-                break;
+                case FROM_CLIENT:
+                case FROM_POOL:
+                case FROM_STORE:
+                    msg.setFailed(101, "File still transient: " + pnfsId);
+                    break;
 
-            case BROKEN:
-                msg.setFailed(101, "File is broken: " + pnfsId);
-                break;
+                case BROKEN:
+                    msg.setFailed(101, "File is broken: " + pnfsId);
+                    break;
 
-            case NEW:
-            case REMOVED:
-            case DESTROYED:
-                msg.setFailed(101, "File does not exist: " + pnfsId);
-                break;
+                case NEW:
+                case REMOVED:
+                case DESTROYED:
+                    msg.setFailed(101, "File does not exist: " + pnfsId);
+                    break;
             }
         } catch (Exception e) { //FIXME
             msg.setFailed(100, e);
@@ -1268,38 +1213,37 @@ public class PoolV4
         return msg;
     }
 
-    public PoolModifyModeMessage messageArrived(PoolModifyModeMessage msg)
-    {
+    public PoolModifyModeMessage messageArrived(PoolModifyModeMessage msg) {
         PoolV2Mode mode = msg.getPoolMode();
         boolean isRepositoryLoading =
-            _poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING);
+              _poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING);
         if (mode != null) {
             if (mode.isEnabled()) {
                 if (isRepositoryLoading) {
                     msg.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                                  "The pool repository is loading, cannot enable pool");
+                          "The pool repository is loading, cannot enable pool");
                     return msg;
                 }
                 enablePool(mode.getMode());
             } else {
                 int targetMode = (mode.getMode() & ~PoolV2Mode.REPOSITORY_LOADING) |
-                    (_poolMode.getMode() & PoolV2Mode.REPOSITORY_LOADING);
-                    /**
-                       if Repository is loading only two states are allowd -
-                       PoolV2Mode.DISABLED_STRICT or PoolV2Mode.DISABLED_RDONLY
-                     */
+                      (_poolMode.getMode() & PoolV2Mode.REPOSITORY_LOADING);
+                /**
+                 if Repository is loading only two states are allowd -
+                 PoolV2Mode.DISABLED_STRICT or PoolV2Mode.DISABLED_RDONLY
+                 */
                 if (isRepositoryLoading &&
-                    !((targetMode & PoolV2Mode.DISABLED_STRICT) ==
-                      PoolV2Mode.DISABLED_STRICT) &&
-                    !((targetMode & PoolV2Mode.DISABLED_RDONLY) ==
-                      PoolV2Mode.DISABLED_RDONLY)) {
+                      !((targetMode & PoolV2Mode.DISABLED_STRICT) ==
+                            PoolV2Mode.DISABLED_STRICT) &&
+                      !((targetMode & PoolV2Mode.DISABLED_RDONLY) ==
+                            PoolV2Mode.DISABLED_RDONLY)) {
                     msg.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                                  "The pool repository is loading, pool cannot be set to " +
-                                  mode + " state");
+                          "The pool repository is loading, pool cannot be set to " +
+                                mode + " state");
                     return msg;
                 }
                 disablePool(targetMode, msg.getStatusCode(),
-                            msg.getStatusMessage());
+                      msg.getStatusMessage());
             }
         }
         msg.setSucceeded();
@@ -1307,69 +1251,67 @@ public class PoolV4
     }
 
     public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
-        throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
             LOGGER.warn("PoolSetStickyMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
         _repository.setSticky(msg.getPnfsId(),
-                msg.getOwner(),
-                msg.isSticky()
-                        ? msg.getLifeTime()
-                        : 0,
-                true);
+              msg.getOwner(),
+              msg.isSticky()
+                    ? msg.getLifeTime()
+                    : 0,
+              true);
         msg.setSucceeded();
         return msg;
     }
 
     public CacheRepositoryEntryInfo getCacheRepositoryEntryInfo(PnfsId pnfsid)
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         CacheEntry entry = _repository.getEntry(pnfsid);
         int bitmask;
         switch (entry.getState()) {
-        case PRECIOUS:
-            bitmask = 1 << CacheRepositoryEntryInfo.PRECIOUS_BIT;
-            break;
-        case CACHED:
-            bitmask = 1 << CacheRepositoryEntryInfo.CACHED_BIT;
-            break;
-        case FROM_CLIENT:
-            bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMCLIENT_BIT;
-            break;
-        case FROM_POOL:
-        case FROM_STORE:
-            bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMSTORE_BIT;
-            break;
-        case BROKEN:
-            bitmask = 1 << CacheRepositoryEntryInfo.BAD_BIT;
-            break;
-        case REMOVED:
-            bitmask = 1 << CacheRepositoryEntryInfo.REMOVED_BIT;
-            break;
-        default:
-            throw new IllegalArgumentException("Bug. An entry should never be in " + entry.getState());
+            case PRECIOUS:
+                bitmask = 1 << CacheRepositoryEntryInfo.PRECIOUS_BIT;
+                break;
+            case CACHED:
+                bitmask = 1 << CacheRepositoryEntryInfo.CACHED_BIT;
+                break;
+            case FROM_CLIENT:
+                bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMCLIENT_BIT;
+                break;
+            case FROM_POOL:
+            case FROM_STORE:
+                bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMSTORE_BIT;
+                break;
+            case BROKEN:
+                bitmask = 1 << CacheRepositoryEntryInfo.BAD_BIT;
+                break;
+            case REMOVED:
+                bitmask = 1 << CacheRepositoryEntryInfo.REMOVED_BIT;
+                break;
+            default:
+                throw new IllegalArgumentException(
+                      "Bug. An entry should never be in " + entry.getState());
         }
         if (entry.isSticky()) {
-            bitmask |= 1<< CacheRepositoryEntryInfo.STICKY_BIT;
+            bitmask |= 1 << CacheRepositoryEntryInfo.STICKY_BIT;
         }
         return new CacheRepositoryEntryInfo(entry.getPnfsId(), bitmask,
-                                            entry.getLastAccessTime(),
-                                            entry.getCreationTime(),
-                                            entry.getReplicaSize());
+              entry.getLastAccessTime(),
+              entry.getCreationTime(),
+              entry.getReplicaSize());
     }
 
     /**
      * Partially or fully disables normal operation of this pool.
      */
     private synchronized void disablePool(int mode,
-                                          int errorCode, String errorString)
-    {
+          int errorCode, String errorString) {
         _poolStatusCode = errorCode;
         _poolStatusMessage =
-            (errorString == null) ? "Requested by operator" : errorString;
+              (errorString == null) ? "Requested by operator" : errorString;
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage();
@@ -1377,11 +1319,9 @@ public class PoolV4
     }
 
     /**
-     * Fully enables this pool. The status code is set to 0 and the
-     * status message is cleared.
+     * Fully enables this pool. The status code is set to 0 and the status message is cleared.
      */
-    private synchronized void enablePool(int mode)
-    {
+    private synchronized void enablePool(int mode) {
         _poolMode.setMode(mode);
         _poolStatusCode = 0;
         _poolStatusMessage = "OK";
@@ -1390,29 +1330,25 @@ public class PoolV4
         LOGGER.warn("Pool mode changed to {}", _poolMode);
     }
 
-    private class PoolManagerPingThread implements Runnable
-    {
+    private class PoolManagerPingThread implements Runnable {
+
         private final Thread _worker;
         private int _heartbeat = HEARTBEAT;
 
-        private PoolManagerPingThread()
-        {
+        private PoolManagerPingThread() {
             _worker = new Thread(this, "ping");
         }
 
-        public void start()
-        {
+        public void start() {
             _worker.start();
         }
 
-        public void stop()
-        {
+        public void stop() {
             _worker.interrupt();
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             LOGGER.debug("Ping thread started");
             try {
                 while (!Thread.interrupted()) {
@@ -1426,79 +1362,73 @@ public class PoolV4
             }
         }
 
-        public void setHeartbeat(int seconds)
-        {
+        public void setHeartbeat(int seconds) {
             _heartbeat = seconds;
         }
 
-        public int getHeartbeat()
-        {
+        public int getHeartbeat() {
             return _heartbeat;
         }
 
-        public synchronized void sendPoolManagerMessage()
-        {
+        public synchronized void sendPoolManagerMessage() {
             send(getPoolManagerMessage());
         }
 
-        private CellMessage getPoolManagerMessage()
-        {
+        private CellMessage getPoolManagerMessage() {
             boolean disabled =
-                _poolMode.getMode() == PoolV2Mode.DISABLED ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
+                  _poolMode.getMode() == PoolV2Mode.DISABLED ||
+                        _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
             PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
             PoolManagerPoolUpMessage poolManagerMessage =
-                new PoolManagerPoolUpMessage(_poolName, _serialId,
-                                             _poolMode, info);
+                  new PoolManagerPoolUpMessage(_poolName, _serialId,
+                        _poolMode, info);
 
             poolManagerMessage.setHostName(NetworkUtils.getCanonicalHostName());
             poolManagerMessage.setTagMap(_tags);
             if (_hsmSet != null) {
                 poolManagerMessage.setHsmInstances(new TreeSet<>(_hsmSet
-                        .getHsmInstances()));
+                      .getHsmInstances()));
             }
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
 
             return new CellMessage(new CellPath(_poolupDestination),
-                                   poolManagerMessage);
+                  poolManagerMessage);
         }
 
-        private void send(CellMessage msg)
-        {
+        private void send(CellMessage msg) {
             sendMessage(msg);
         }
     }
 
-    public PoolCostInfo getPoolCostInfo()
-    {
+    public PoolCostInfo getPoolCostInfo() {
         return new PoolCostInfo(IoQueueManager.DEFAULT_QUEUE, _poolInfo);
     }
 
     @AffectsSetup
     @Command(name = "set breakeven", hint = "set the space cost value of a week old file for this pool",
-            description = "Set the breakeven parameter which is used within the space " +
-                    "cost calculation scheme. This calculation is relevant for determining " +
-                    "this pool space availability and selection for storing a file. The set " +
-                    "parameter specifies the impact of the age of the least recently used " +
-                    "(LRU) file on space cost.\n\n" +
-                    "If the LRU file is one week old, the space cost will be equal to " +
-                    "(1 + costForMinute), where costForMinute =  breakeven parameter * 7 * 24 * 60. " +
-                    "Note that, if the breakeven parameter of a pool is set to equal or greater " +
-                    "than 1.0, the default value of " + DEFAULT_BREAK_EVEN + " is used.")
-    public class SetBreakevenCommand implements Callable<String>
-    {
+          description = "Set the breakeven parameter which is used within the space " +
+                "cost calculation scheme. This calculation is relevant for determining " +
+                "this pool space availability and selection for storing a file. The set " +
+                "parameter specifies the impact of the age of the least recently used " +
+                "(LRU) file on space cost.\n\n" +
+                "If the LRU file is one week old, the space cost will be equal to " +
+                "(1 + costForMinute), where costForMinute =  breakeven parameter * 7 * 24 * 60. " +
+                "Note that, if the breakeven parameter of a pool is set to equal or greater " +
+                "than 1.0, the default value of " + DEFAULT_BREAK_EVEN + " is used.")
+    public class SetBreakevenCommand implements Callable<String> {
+
         @Argument(usage = "Specify the breakeven value. This value has to be greater than or " +
-                "equal zero")
+              "equal zero")
         double parameter = _breakEven;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
-            checkArgument(parameter >= 0, "The breakeven parameter must be greater than or equal to zero.");
+        public String call() throws IllegalArgumentException {
+            checkArgument(parameter >= 0,
+                  "The breakeven parameter must be greater than or equal to zero.");
 
-            if (parameter >= 1){
+            if (parameter >= 1) {
                 parameter = DEFAULT_BREAK_EVEN;
             }
             _breakEven = parameter;
@@ -1507,27 +1437,25 @@ public class PoolV4
 
     }
 
-    public double getBreakEven()
-    {
+    public double getBreakEven() {
         return _breakEven;
     }
 
     @AffectsSetup
     @Command(name = "set mover cost factor", hint = "set the selectivity of this pool by movers",
-            description = "The mover cost factor controls how much the number of movers " +
-                    "affects proportional pool selection.\n\n" +
-                    "Intuitively, for every 1/f movers, where f is the mover cost " +
-                    "factor, the probability of choosing this pools is halved. When " +
-                    "set to zero, the number of movers does not affect pool selection.")
-    public class SetMoverCostFactorCommand implements Callable<String>
-    {
+          description = "The mover cost factor controls how much the number of movers " +
+                "affects proportional pool selection.\n\n" +
+                "Intuitively, for every 1/f movers, where f is the mover cost " +
+                "factor, the probability of choosing this pools is halved. When " +
+                "set to zero, the number of movers does not affect pool selection.")
+    public class SetMoverCostFactorCommand implements Callable<String> {
+
         @Argument(usage = "Specify the cost factor value. This value " +
-                "must be greater than or equal to 0.0.", required = false)
+              "must be greater than or equal to 0.0.", required = false)
         double value = _moverCostFactor;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             checkArgument(value > 0, "Mover cost factor must be larger than or equal to 0.0");
 
             _moverCostFactor = value;
@@ -1539,40 +1467,37 @@ public class PoolV4
     //
     // the hybrid inventory part
     //
-    private class HybridInventory implements Runnable
-    {
+    private class HybridInventory implements Runnable {
+
         private boolean _activate = true;
 
-        public HybridInventory(boolean activate)
-        {
+        public HybridInventory(boolean activate) {
             _activate = activate;
             new Thread(this, "HybridInventory").start();
         }
 
-        private void addCacheLocation(PnfsId id)
-        {
+        private void addCacheLocation(PnfsId id) {
             try {
                 _pnfs.addCacheLocation(id);
             } catch (FileNotFoundCacheException e) {
                 try {
-                    _repository.setState(id, ReplicaState.REMOVED, "PnfsManager claimed file not found during 'pnfs register' command");
+                    _repository.setState(id, ReplicaState.REMOVED,
+                          "PnfsManager claimed file not found during 'pnfs register' command");
                     LOGGER.info("File not found in PNFS; removed {}", id);
                 } catch (InterruptedException | CacheException f) {
                     LOGGER.error("File not found in PNFS, but failed to remove {}: {}", id, f);
                 }
             } catch (CacheException e) {
-                LOGGER.error("Cache location was not registered for {}: {}", id , e.getMessage());
+                LOGGER.error("Cache location was not registered for {}: {}", id, e.getMessage());
             }
         }
 
-        private void clearCacheLocation(PnfsId id)
-        {
+        private void clearCacheLocation(PnfsId id) {
             _pnfs.clearCacheLocation(id);
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             _hybridCurrent = 0;
 
             long startTime, stopTime;
@@ -1589,18 +1514,18 @@ public class PoolV4
                 }
                 try {
                     switch (_repository.getState(pnfsid)) {
-                    case PRECIOUS:
-                    case CACHED:
-                    case BROKEN:
-                        _hybridCurrent++;
-                        if (_activate) {
-                            addCacheLocation(pnfsid);
-                        } else {
-                            clearCacheLocation(pnfsid);
-                        }
-                        break;
-                    default:
-                        break;
+                        case PRECIOUS:
+                        case CACHED:
+                        case BROKEN:
+                            _hybridCurrent++;
+                            if (_activate) {
+                                addCacheLocation(pnfsid);
+                            } else {
+                                clearCacheLocation(pnfsid);
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 } catch (CacheException e) {
                     LOGGER.warn(e.getMessage());
@@ -1614,19 +1539,18 @@ public class PoolV4
             }
 
             LOGGER.info("Replica {} finished. {} replicas processed in {} msec",
-                    (_activate ? "registration" : "deregistration" ),
-                    _hybridCurrent,
-                    (stopTime-startTime));
+                  (_activate ? "registration" : "deregistration"),
+                  _hybridCurrent,
+                  (stopTime - startTime));
         }
     }
 
     private void startHybridInventory(boolean register)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive) {
                 throw new IllegalArgumentException(
-                        "Hybrid inventory still active");
+                      "Hybrid inventory still active");
             }
             _hybridInventoryActive = true;
             new HybridInventory(register);
@@ -1634,57 +1558,54 @@ public class PoolV4
     }
 
     @Command(name = "pnfs register",
-            hint = "add file locations in namespace",
-            description = "Record all the file replicas in this pool with the namespace. " +
-                    "This is achieved by registering all file replicas in this pool into " +
-                    "the namespace, provided they have not been registered. If the replica " +
-                    "is unknown to the namespace then local copy is removed.\n\n" +
-                    "By default, dCache synchronously update the namespace whenever " +
-                    "a file is uploaded or removed from the pool.")
-    public class PnfsRegisterCommand implements Callable<String>
-    {
+          hint = "add file locations in namespace",
+          description = "Record all the file replicas in this pool with the namespace. " +
+                "This is achieved by registering all file replicas in this pool into " +
+                "the namespace, provided they have not been registered. If the replica " +
+                "is unknown to the namespace then local copy is removed.\n\n" +
+                "By default, dCache synchronously update the namespace whenever " +
+                "a file is uploaded or removed from the pool.")
+    public class PnfsRegisterCommand implements Callable<String> {
+
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             startHybridInventory(true);
             return "";
         }
     }
 
     @Command(name = "pnfs unregister",
-            hint = "remove file locations from namespace",
-            description = "Unregister all file replicas of this pool from the namespace.")
-    public class PnfsUnregisterCommand implements Callable<String>
-    {
+          hint = "remove file locations from namespace",
+          description = "Unregister all file replicas of this pool from the namespace.")
+    public class PnfsUnregisterCommand implements Callable<String> {
+
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             startHybridInventory(false);
             return "";
         }
     }
 
     @Command(name = "pf", hint = "return the path of a file",
-            description = "Get the path corresponding to a particular file by specifying " +
-                    "the pnfsid. In case of hard links, one of the possible path is returned. " +
-                    "The pnfsid is the internal identifier of the file within dCache. This is " +
-                    "unique within a single dCache instance and globally unique with a very " +
-                    "high probability.")
-    public class PfCommand implements Callable<String>
-    {
+          description = "Get the path corresponding to a particular file by specifying " +
+                "the pnfsid. In case of hard links, one of the possible path is returned. " +
+                "The pnfsid is the internal identifier of the file within dCache. This is " +
+                "unique within a single dCache instance and globally unique with a very " +
+                "high probability.")
+    public class PfCommand implements Callable<String> {
+
         @Argument(usage = "Specify the pnfsid of the file.")
         PnfsId pnfsId;
 
         @Override
-        public String call() throws CacheException, IllegalArgumentException
-        {
+        public String call() throws CacheException, IllegalArgumentException {
             return _pnfs.getPathByPnfsId(pnfsId).toString();
         }
     }
 
     @Command(name = "set replication")
-    class SetReplicationCommand implements Callable<String>
-    {
+    class SetReplicationCommand implements Callable<String> {
+
         @Option(name = "off")
         boolean off;
 
@@ -1695,8 +1616,7 @@ public class PoolV4
         String host;
 
         @Override
-        public String call()
-        {
+        public String call() {
             if (off) {
                 setReplicationNotificationDestination("");
             } else if (mgr != null) {
@@ -1711,23 +1631,23 @@ public class PoolV4
 
     @Command(name = "pool suppress hsmload")
     @AffectsSetup
-    class SetPoolSuppressCommand implements Callable<String>
-    {
+    class SetPoolSuppressCommand implements Callable<String> {
+
         @Argument(valueSpec = "on|off")
         String mode;
 
         @Override
-        public String call() throws CommandSyntaxException
-        {
+        public String call() throws CommandSyntaxException {
             switch (mode) {
-            case "on":
-                _suppressHsmLoad = true;
-                break;
-            case "off":
-                _suppressHsmLoad = false;
-                break;
-            default:
-                throw new CommandSyntaxException("Illegal syntax : pool suppress hsmload on|off");
+                case "on":
+                    _suppressHsmLoad = true;
+                    break;
+                case "off":
+                    _suppressHsmLoad = false;
+                    break;
+                default:
+                    throw new CommandSyntaxException(
+                          "Illegal syntax : pool suppress hsmload on|off");
             }
 
             return "hsm load suppression switched : " + (_suppressHsmLoad ? "on" : "off");
@@ -1735,35 +1655,35 @@ public class PoolV4
     }
 
     @AffectsSetup
-    @Command(name="set duplicate request")
+    @Command(name = "set duplicate request")
     class SetDuplicateRequestCommand implements Callable<String> {
+
         @Argument(valueSpec = "none|ignore|refresh")
         String mode;
 
         @Override
-        public String call() throws CommandSyntaxException
-        {
+        public String call() throws CommandSyntaxException {
             switch (mode) {
-            case "none":
-                _dupRequest = DUP_REQ_NONE;
-                break;
-            case "ignore":
-                _dupRequest = DUP_REQ_IGNORE;
-                break;
-            case "refresh":
-                _dupRequest = DUP_REQ_REFRESH;
-                break;
-            default:
-                throw new CommandSyntaxException("Not Found : ",
-                                                 "Usage : pool duplicate request none|ignore|refresh");
+                case "none":
+                    _dupRequest = DUP_REQ_NONE;
+                    break;
+                case "ignore":
+                    _dupRequest = DUP_REQ_IGNORE;
+                    break;
+                case "refresh":
+                    _dupRequest = DUP_REQ_REFRESH;
+                    break;
+                default:
+                    throw new CommandSyntaxException("Not Found : ",
+                          "Usage : pool duplicate request none|ignore|refresh");
             }
             return "";
         }
     }
 
     @Command(name = "pool disable")
-    class PoolDisableCommand implements Callable<String>
-    {
+    class PoolDisableCommand implements Callable<String> {
+
         @Option(name = "fetch", usage = "disallows fetch (transfer to client)")
         boolean fetch;
 
@@ -1792,8 +1712,7 @@ public class PoolV4
         String errorMessage = "Operator intervention";
 
         @Override
-        public String call()
-        {
+        public String call() {
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
                 return "The pool is dead and a restart is required to enable it";
             }
@@ -1825,14 +1744,14 @@ public class PoolV4
             }
 
             if ((modeBits & PoolV2Mode.REPOSITORY_LOADING) ==
-                PoolV2Mode.REPOSITORY_LOADING &&
-                !((modeBits & PoolV2Mode.DISABLED_STRICT) ==
-                  PoolV2Mode.DISABLED_STRICT) &&
-                !((modeBits & PoolV2Mode.DISABLED_RDONLY) ==
-                  PoolV2Mode.DISABLED_RDONLY)) {
+                  PoolV2Mode.REPOSITORY_LOADING &&
+                  !((modeBits & PoolV2Mode.DISABLED_STRICT) ==
+                        PoolV2Mode.DISABLED_STRICT) &&
+                  !((modeBits & PoolV2Mode.DISABLED_RDONLY) ==
+                        PoolV2Mode.DISABLED_RDONLY)) {
                 PoolV2Mode mode = new PoolV2Mode(modeBits);
                 return "The pool repository is loading, pool cannot be set to " +
-                    mode + " state";
+                      mode + " state";
             }
 
             disablePool(modeBits, errorCode, errorMessage);
@@ -1842,18 +1761,17 @@ public class PoolV4
     }
 
     @Command(name = "pool enable")
-    class PoolEnableCommand implements Callable<String>
-    {
+    class PoolEnableCommand implements Callable<String> {
+
         @Override
-        public String call() throws CommandException
-        {
+        public String call() throws CommandException {
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
                 throw new
-                    CommandException("The pool is dead and a restart is required to enable it");
+                      CommandException("The pool is dead and a restart is required to enable it");
             }
             if (_poolMode.isDisabled(PoolV2Mode.REPOSITORY_LOADING)) {
                 throw new
-                    CommandException("The pool repository is loading, cannot enable the pool");
+                      CommandException("The pool repository is loading, cannot enable the pool");
             }
 
             enablePool(PoolV2Mode.ENABLED);
@@ -1863,23 +1781,22 @@ public class PoolV4
 
     @AffectsSetup
     @Command(name = "set report remove")
-    class SetReportRemoveCommand implements Callable<String>
-    {
+    class SetReportRemoveCommand implements Callable<String> {
+
         @Argument(valueSpec = "on|off")
         String onoff;
 
         @Override
-        public String call() throws CommandSyntaxException
-        {
+        public String call() throws CommandSyntaxException {
             switch (onoff) {
-            case "on":
-                _reportOnRemovals = true;
-                break;
-            case "off":
-                _reportOnRemovals = false;
-                break;
-            default:
-                throw new CommandSyntaxException("Invalid value : " + onoff);
+                case "on":
+                    _reportOnRemovals = true;
+                    break;
+                case "off":
+                    _reportOnRemovals = false;
+                    break;
+                default:
+                    throw new CommandSyntaxException("Invalid value : " + onoff);
             }
             return "";
         }
@@ -1887,22 +1804,21 @@ public class PoolV4
 
     @AffectsSetup
     @Command(name = "set heartbeat",
-            hint = "set time interval for sending this pool cost info",
-            description = "Set the regular time interval at which this pool " +
-                    "sent it cost information to the pool manager. The sent " +
-                    "pool cost information are stored and will be use for load " +
-                    "balancing and pool selection. However, this time interval " +
-                    "is not guaranteed to be exact since this operation is limited " +
-                    "by the underlying OS where this pool reside.")
-    public class SetHeartbeatCommand implements Callable<String>
-    {
+          hint = "set time interval for sending this pool cost info",
+          description = "Set the regular time interval at which this pool " +
+                "sent it cost information to the pool manager. The sent " +
+                "pool cost information are stored and will be use for load " +
+                "balancing and pool selection. However, this time interval " +
+                "is not guaranteed to be exact since this operation is limited " +
+                "by the underlying OS where this pool reside.")
+    public class SetHeartbeatCommand implements Callable<String> {
+
         @Argument(usage = "Specify the time interval in seconds. This " +
-                "value has to be a positive integer.")
+              "value has to be a positive integer.")
         int value = HEARTBEAT;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             checkArgument(value > 0, "The heartbeat value must be a positive integer.");
             _pingThread.setHeartbeat(value);
 
@@ -1910,75 +1826,67 @@ public class PoolV4
         }
     }
 
-    private static PoolCostInfo.NamedPoolQueueInfo toNamedPoolQueueInfo(MoverRequestScheduler queue)
-    {
+    private static PoolCostInfo.NamedPoolQueueInfo toNamedPoolQueueInfo(
+          MoverRequestScheduler queue) {
         return queue.getQueueInfo();
     }
 
     /**
      * Provides access to various performance metrics of the pool.
      */
-    private class PoolInfo implements Assumption.Pool
-    {
+    private class PoolInfo implements Assumption.Pool {
+
         @Override
-        public String name()
-        {
+        public String name() {
             return _poolName;
         }
 
         @Override
-        public PoolCostInfo.PoolSpaceInfo space()
-        {
+        public PoolCostInfo.PoolSpaceInfo space() {
             SpaceRecord space = _repository.getSpaceRecord();
-            return new PoolCostInfo.PoolSpaceInfo(space.getTotalSpace(), space.getFreeSpace(), space.getPreciousSpace(),
-                                                  space.getRemovableSpace(), space.getLRU(), _breakEven, space.getGap());
+            return new PoolCostInfo.PoolSpaceInfo(space.getTotalSpace(), space.getFreeSpace(),
+                  space.getPreciousSpace(),
+                  space.getRemovableSpace(), space.getLRU(), _breakEven, space.getGap());
         }
 
         @Override
-        public double moverCostFactor()
-        {
+        public double moverCostFactor() {
             return _moverCostFactor;
         }
 
         @Override
-        public PoolCostInfo.NamedPoolQueueInfo getMoverQueue(String name)
-        {
+        public PoolCostInfo.NamedPoolQueueInfo getMoverQueue(String name) {
             return toNamedPoolQueueInfo(_ioQueue.getQueueByNameOrDefault(name));
         }
 
         @Override
-        public Collection<PoolCostInfo.NamedPoolQueueInfo> movers()
-        {
+        public Collection<PoolCostInfo.NamedPoolQueueInfo> movers() {
             return _ioQueue.queues().stream()
-                    .filter(q -> !q.getName().equals(IoQueueManager.P2P_QUEUE_NAME))
-                    .map(PoolV4::toNamedPoolQueueInfo)
-                    .collect(toList());
+                  .filter(q -> !q.getName().equals(IoQueueManager.P2P_QUEUE_NAME))
+                  .map(PoolV4::toNamedPoolQueueInfo)
+                  .collect(toList());
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo p2PClient()
-        {
+        public PoolCostInfo.PoolQueueInfo p2PClient() {
             int active = _p2pClient.getActiveJobs();
             return new PoolCostInfo.PoolQueueInfo(active, 0, 0, 0, active);
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo p2pServer()
-        {
+        public PoolCostInfo.PoolQueueInfo p2pServer() {
             return toNamedPoolQueueInfo(_ioQueue.getPoolToPoolQueue());
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo restore()
-        {
+        public PoolCostInfo.PoolQueueInfo restore() {
             int active = _storageHandler.getActiveFetchJobs();
             int queued = _storageHandler.getFetchQueueSize();
             return new PoolCostInfo.PoolQueueInfo(active, 0, queued, 0, active + queued);
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo store()
-        {
+        public PoolCostInfo.PoolQueueInfo store() {
             int active = _storageHandler.getActiveStoreJobs();
             int queued = _storageHandler.getStoreQueueSize();
             return new PoolCostInfo.PoolQueueInfo(active, 0, queued, 0, active + queued);

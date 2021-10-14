@@ -18,50 +18,46 @@
  */
 package org.dcache.gplazma.roles;
 
-import org.junit.Test;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
 import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.PrincipalSetMaker;
+import org.junit.Test;
 
-import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+public class RolesPluginTest {
 
-public class RolesPluginTest
-{
-    private class PluginAssertion
-    {
+    private class PluginAssertion {
+
         Long adminGid;
         Long observerGid;
 
-        public PluginAssertion withAdminGid(long gid)
-        {
+        public PluginAssertion withAdminGid(long gid) {
             adminGid = gid;
             return this;
         }
 
-        public PluginAssertion withObserverGid(long gid)
-        {
+        public PluginAssertion withObserverGid(long gid) {
             observerGid = gid;
             return this;
         }
 
-        public void realise()
-        {
+        public void realise() {
             Properties p = new Properties();
             if (adminGid != null) {
                 p.setProperty(RolesPlugin.ADMIN_GID_PROPERTY_NAME,
-                              Long.toString(adminGid));
+                      Long.toString(adminGid));
             }
             if (observerGid != null) {
                 p.setProperty(RolesPlugin.OBSERVER_GID_PROPERTY_NAME,
-                              Long.toString(observerGid));
+                      Long.toString(observerGid));
             }
             plugin = new RolesPlugin(p);
         }
@@ -71,8 +67,7 @@ public class RolesPluginTest
     Set<Object> attributes;
 
     @Test
-    public void testUndefinedRoles() throws Exception
-    {
+    public void testUndefinedRoles() throws Exception {
         given(rolesPlugin());
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(0));
@@ -84,8 +79,7 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testNonAdminNoDesiredRoleLogin() throws Exception
-    {
+    public void testNonAdminNoDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000));
@@ -95,8 +89,7 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testAdminByPrimaryGidNoDesiredRoleLogin() throws Exception
-    {
+    public void testAdminByPrimaryGidNoDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10));
@@ -106,8 +99,7 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testAdminByNonPrimaryGidNoDesiredRoleLogin() throws Exception
-    {
+    public void testAdminByNonPrimaryGidNoDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withGid(10));
@@ -117,8 +109,7 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testObserverByNonPrimaryGidNoDesiredRoleLogin() throws Exception
-    {
+    public void testObserverByNonPrimaryGidNoDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withGid(10));
@@ -128,29 +119,26 @@ public class RolesPluginTest
         assertThat(attributes, hasItem(new UnassertedRole("observer")));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void testNonAdminDesiredRoleLogin() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void testNonAdminDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withDesiredRole("admin"));
     }
 
-    @Test(expected=AuthenticationException.class)
-    public void testNonObserverDesiredRoleLogin() throws Exception
-    {
+    @Test(expected = AuthenticationException.class)
+    public void testNonObserverDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(0).withDesiredRole("observer"));
     }
 
     @Test
-    public void testAdminAndObserverRolesWithSameGid() throws Exception
-    {
+    public void testAdminAndObserverRolesWithSameGid() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(0));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000)
-                                                  .withGid(0));
+              .withGid(0));
 
         assertThat(attributes, hasItem(new UnassertedRole("admin")));
         assertThat(attributes, hasItem(new UnassertedRole("observer")));
@@ -159,12 +147,11 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testDesiredAdminWithObserverRolesWithSameGid() throws Exception
-    {
+    public void testDesiredAdminWithObserverRolesWithSameGid() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(0));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000)
-                                                  .withGid(0).withDesiredRole("admin"));
+              .withGid(0).withDesiredRole("admin"));
 
         assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
         assertThat(attributes, hasItem(new UnassertedRole("observer")));
@@ -173,12 +160,11 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testDesiredObserverWithAdminRolesWithSameGid() throws Exception
-    {
+    public void testDesiredObserverWithAdminRolesWithSameGid() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(0));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000)
-                                                  .withGid(0).withDesiredRole("observer"));
+              .withGid(0).withDesiredRole("observer"));
 
         assertThat(attributes, not(hasItem(new UnassertedRole("observer"))));
         assertThat(attributes, hasItem(new UnassertedRole("admin")));
@@ -187,8 +173,7 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testAdminByPrimaryGidDesiredRoleLogin() throws Exception
-    {
+    public void testAdminByPrimaryGidDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10).withDesiredRole("admin"));
@@ -198,13 +183,12 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testObserverByPrimaryGidDesiredAdminRoleLogin() throws Exception
-    {
+    public void testObserverByPrimaryGidDesiredAdminRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10)
-                                                  .withGid(0).withGid(1000)
-                                                  .withDesiredRole("admin"));
+              .withGid(0).withGid(1000)
+              .withDesiredRole("admin"));
 
         assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
         assertThat(attributes, hasItem(new Role("admin")));
@@ -213,13 +197,12 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testObserverByPrimaryGidDesiredObserverRoleLogin() throws Exception
-    {
+    public void testObserverByPrimaryGidDesiredObserverRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10)
-                                                  .withGid(0).withGid(1000)
-                                                  .withDesiredRole("observer"));
+              .withGid(0).withGid(1000)
+              .withDesiredRole("observer"));
 
         assertThat(attributes, not(hasItem(new Role("admin"))));
         assertThat(attributes, hasItem(new UnassertedRole("admin")));
@@ -228,13 +211,12 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testObserverByGidDesiredObserverRoleLogin() throws Exception
-    {
+    public void testObserverByGidDesiredObserverRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000)
-                                                  .withGid(0).withGid(10)
-                                                  .withDesiredRole("observer"));
+              .withGid(0).withGid(10)
+              .withDesiredRole("observer"));
 
         assertThat(attributes, not(hasItem(new Role("admin"))));
         assertThat(attributes, hasItem(new UnassertedRole("admin")));
@@ -243,13 +225,12 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testObserverByGidDesiredAdminRoleLogin() throws Exception
-    {
+    public void testObserverByGidDesiredAdminRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(0).withObserverGid(10));
 
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000)
-                                                  .withGid(0).withGid(10)
-                                                  .withDesiredRole("admin"));
+              .withGid(0).withGid(10)
+              .withDesiredRole("admin"));
 
         assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
         assertThat(attributes, hasItem(new Role("admin")));
@@ -258,30 +239,27 @@ public class RolesPluginTest
     }
 
     @Test
-    public void testAdminByNonPrimaryGidDesiredRoleLogin() throws Exception
-    {
+    public void testAdminByNonPrimaryGidDesiredRoleLogin() throws Exception {
         given(rolesPlugin().withAdminGid(10));
 
-        whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withGid(10).withDesiredRole("admin"));
+        whenInvokingSessionWith(
+              aSetOfPrincipals().withPrimaryGid(1000).withGid(10).withDesiredRole("admin"));
 
         assertThat(attributes, hasItem(new Role("admin")));
         assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
     }
 
     private void whenInvokingSessionWith(PrincipalSetMaker principals)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         attributes = new HashSet<>();
         plugin.session(principals.build(), attributes);
     }
 
-    private void given(PluginAssertion assertion)
-    {
+    private void given(PluginAssertion assertion) {
         assertion.realise();
     }
 
-    private PluginAssertion rolesPlugin()
-    {
+    private PluginAssertion rolesPlugin() {
         return new PluginAssertion();
     }
 }

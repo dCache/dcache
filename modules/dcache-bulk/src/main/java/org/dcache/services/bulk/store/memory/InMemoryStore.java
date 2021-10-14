@@ -59,32 +59,29 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.memory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.dcache.services.bulk.BulkStorageException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Provides read-write locks and definitions of load and save.
+ * Provides read-write locks and definitions of load and save.
  */
-abstract class InMemoryStore
-{
-    protected static final Logger        LOGGER
-                    = LoggerFactory.getLogger(InMemoryStore.class);
+abstract class InMemoryStore {
 
-    protected final        ReadWriteLock lock   = new ReentrantReadWriteLock(true);
-    protected final        Lock          write  = lock.writeLock();
-    protected final        Lock          read   = lock.readLock();
+    protected static final Logger LOGGER
+          = LoggerFactory.getLogger(InMemoryStore.class);
+
+    protected final ReadWriteLock lock = new ReentrantReadWriteLock(true);
+    protected final Lock write = lock.writeLock();
+    protected final Lock read = lock.readLock();
 
     /**
      * Support for interfaces requiring load and save.
      */
-    public void save() throws BulkStorageException
-    {
+    public void save() throws BulkStorageException {
         throw new BulkStorageException("Not supported for in-memory storage.");
     }
 }

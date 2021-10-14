@@ -65,27 +65,25 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.request;
+
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-
 import org.dcache.util.SqlGlob;
 
 /**
  * A simple in-memory credential store.
  */
 public class HashtableRequestCredentialStorage
-        implements RequestCredentialStorage
-{
+      implements RequestCredentialStorage {
+
     private final Map<Long, RequestCredential> store = new ConcurrentHashMap<>();
 
     @Override
-    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob)
-    {
+    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob) {
         Pattern name = nameGlob.toGlob().toPattern();
         Pattern role = roleGlob != null ? roleGlob.toGlob().toPattern() : null;
         long bestRemainingLifetime = 0;
@@ -93,13 +91,13 @@ public class HashtableRequestCredentialStorage
 
         for (RequestCredential credential : store.values()) {
             if (!name.matcher(credential.getCredentialName()).matches() ||
-                    (role == null && credential.getRole() != null) ||
-                    (role != null && !role.matcher(credential.getRole()).matches())) {
+                  (role == null && credential.getRole() != null) ||
+                  (role != null && !role.matcher(credential.getRole()).matches())) {
                 continue;
             }
 
             long remainingLifetime =
-                    credential.getDelegatedCredentialRemainingLifetime();
+                  credential.getDelegatedCredentialRemainingLifetime();
 
             if (remainingLifetime > bestRemainingLifetime) {
                 bestCredential = credential;
@@ -113,64 +111,55 @@ public class HashtableRequestCredentialStorage
     /**
      * Predicate for matching a specified name and role.
      */
-    private class IsMatching implements Predicate<RequestCredential>
-    {
+    private class IsMatching implements Predicate<RequestCredential> {
+
         final String name;
         final String role;
 
-        public IsMatching(String name, String role)
-        {
+        public IsMatching(String name, String role) {
             this.name = name;
             this.role = role;
         }
 
         @Override
-        public boolean apply(RequestCredential credential)
-        {
+        public boolean apply(RequestCredential credential) {
             String credName = credential.getCredentialName();
             String credRole = credential.getRole();
             return credName.equals(name) && Objects.equal(role, credRole);
         }
     }
 
-    private Predicate<RequestCredential> isMatching(String name, String role)
-    {
+    private Predicate<RequestCredential> isMatching(String name, String role) {
         return new IsMatching(name, role);
     }
 
     @Override
-    public RequestCredential getRequestCredential(Long requestCredentialId)
-    {
+    public RequestCredential getRequestCredential(Long requestCredentialId) {
         return store.get(requestCredentialId);
     }
 
     @Override
-    public void saveRequestCredential(RequestCredential requestCredential)
-    {
+    public void saveRequestCredential(RequestCredential requestCredential) {
         store.put(requestCredential.getId(), requestCredential);
     }
 
     @Override
-    public RequestCredential getRequestCredential (String name, String role)
-    {
+    public RequestCredential getRequestCredential(String name, String role) {
         return Iterables.find(store.values(), isMatching(name, role), null);
     }
 
     @Override
-    public RequestCredential getRequestCredential(String name)
-    {
+    public RequestCredential getRequestCredential(String name) {
         return Iterables.find(store.values(), c -> c.getCredentialName().equals(name), null);
     }
 
     @Override
-    public boolean hasRequestCredential(String name, String role)
-    {
+    public boolean hasRequestCredential(String name, String role) {
         return getRequestCredential(name, role) != null;
     }
 
     @Override
-    public boolean deleteRequestCredential(String name, String role)
-    {
+    public boolean deleteRequestCredential(String name, String role) {
         return Iterables.removeIf(store.values(), isMatching(name, role));
     }
 }

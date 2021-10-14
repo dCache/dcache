@@ -20,22 +20,19 @@ package org.dcache.srm;
 
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
-
-import javax.security.auth.Subject;
-
 import java.io.Serializable;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Set;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.LoginAttribute;
 
 /**
  * SRM 2.2 request between frontend and backend.
  */
-public class SrmRequest implements Serializable
-{
+public class SrmRequest implements Serializable {
+
     private static final long serialVersionUID = 3243716549100597476L;
 
     private final Subject subject;
@@ -46,9 +43,9 @@ public class SrmRequest implements Serializable
     private final X509Certificate[] credentialChain;
     private final PrivateKey credentialKey;
 
-    public SrmRequest(Subject subject, Set<LoginAttribute> loginAttributes, X509Credential credential,
-                      String remoteHost, String requestName, Object request)
-    {
+    public SrmRequest(Subject subject, Set<LoginAttribute> loginAttributes,
+          X509Credential credential,
+          String remoteHost, String requestName, Object request) {
         this.subject = subject;
         this.loginAttributes = loginAttributes;
         this.remoteHost = remoteHost;
@@ -58,35 +55,29 @@ public class SrmRequest implements Serializable
         this.credentialChain = (credential == null) ? null : credential.getCertificateChain();
     }
 
-    public String getRequestName()
-    {
+    public String getRequestName() {
         return requestName;
     }
 
-    public Object getRequest()
-    {
+    public Object getRequest() {
         return request;
     }
 
-    public String getRemoteHost()
-    {
+    public String getRemoteHost() {
         return remoteHost;
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 
-    public X509Credential getCredential() throws KeyStoreException
-    {
+    public X509Credential getCredential() throws KeyStoreException {
         return (credentialKey == null || credentialChain == null)
-               ? null
-               : new KeyAndCertCredential(credentialKey, credentialChain);
+              ? null
+              : new KeyAndCertCredential(credentialKey, credentialChain);
     }
 
-    public Set<LoginAttribute> getLoginAttributes()
-    {
+    public Set<LoginAttribute> getLoginAttributes() {
         return loginAttributes;
     }
 }

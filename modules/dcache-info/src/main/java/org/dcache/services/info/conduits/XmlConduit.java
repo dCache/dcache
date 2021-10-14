@@ -1,89 +1,86 @@
 package org.dcache.services.info.conduits;
 
 import com.google.common.net.InetAddresses;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-
 import org.dcache.services.info.serialisation.StateSerialiser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Information Exporter class.<br>
- * This class is instantiated by the <code>InfoCollector</code> to send
- * over a plain TCP socket a <code>Schema</code> object that carries out
- * dynamic information from dCache.<br><br>
- * Also this class is independent from the particular implementation of
- * Schema used. As matter of fact, this class serialises a generic Schema
- * object over a socket. It's a job of the client to know what particular
- * implementation of Schema was sent.<br><br>
- * Note that client needs only to know the specializing class of the Schema.
+ * Information Exporter class.<br> This class is instantiated by the <code>InfoCollector</code> to
+ * send over a plain TCP socket a <code>Schema</code> object that carries out dynamic information
+ * from dCache.<br><br> Also this class is independent from the particular implementation of Schema
+ * used. As matter of fact, this class serialises a generic Schema object over a socket. It's a job
+ * of the client to know what particular implementation of Schema was sent.<br><br> Note that client
+ * needs only to know the specializing class of the Schema.
  */
-public class XmlConduit extends AbstractThreadedConduit
-{
+public class XmlConduit extends AbstractThreadedConduit {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(XmlConduit.class);
 
-    /** TCP port that the server listens on */
+    /**
+     * TCP port that the server listens on
+     */
     private int _port;
 
-    /** TCP backlog */
+    /**
+     * TCP backlog
+     */
     private int _backlog;
 
-    /** IP address to bind to */
+    /**
+     * IP address to bind to
+     */
     private String _bindAddress;
 
-    /** Server Socket reference */
+    /**
+     * Server Socket reference
+     */
     private ServerSocket _svr_skt;
 
-    /** Our serialiser for the current dCache state */
+    /**
+     * Our serialiser for the current dCache state
+     */
     private StateSerialiser _serialiser;
 
     @Required
-    public void setSerialiser(StateSerialiser serialiser)
-    {
+    public void setSerialiser(StateSerialiser serialiser) {
         _serialiser = serialiser;
     }
 
     @Required
-    public void setPort(int port)
-    {
+    public void setPort(int port) {
         _port = port;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return _port;
     }
 
     @Required
-    public void setBacklog(int backlog)
-    {
+    public void setBacklog(int backlog) {
         _backlog = backlog;
     }
 
-    public int getBacklog()
-    {
+    public int getBacklog() {
         return _backlog;
     }
 
     @Required
-    public void setBindAddress(String address)
-    {
+    public void setBindAddress(String address) {
         _bindAddress = address;
     }
 
-    public String getBindAddress()
-    {
+    public String getBindAddress() {
         return _bindAddress;
     }
 
     @Override
-    public void enable()
-    {
+    public void enable() {
         try {
             _svr_skt = new ServerSocket(_port, _backlog, InetAddresses.forString(_bindAddress));
         } catch (IOException e) {
@@ -98,8 +95,7 @@ public class XmlConduit extends AbstractThreadedConduit
 
 
     @Override
-    void triggerBlockingActivityToReturn()
-    {
+    void triggerBlockingActivityToReturn() {
         if (_svr_skt == null) {
             return;
         }
@@ -115,12 +111,11 @@ public class XmlConduit extends AbstractThreadedConduit
 
 
     /**
-     * Wait for an incoming connection to the listening socket.  When
-     * one is received, send it the XML serialisation of our current state.
+     * Wait for an incoming connection to the listening socket.  When one is received, send it the
+     * XML serialisation of our current state.
      */
     @Override
-    void blockingActivity()
-    {
+    void blockingActivity() {
         Socket skt = null;
 
         try {
@@ -133,7 +128,7 @@ public class XmlConduit extends AbstractThreadedConduit
             Thread.currentThread().interrupt();
             return;
         } catch (SecurityException e) {
-            LOGGER.error ("accept() failed for security reasons", e);
+            LOGGER.error("accept() failed for security reasons", e);
             return;
         }
 

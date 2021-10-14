@@ -1,22 +1,20 @@
 package diskCacheV111.vehicles;
 
-import java.io.Serializable;
-
-import diskCacheV111.pools.PoolCostInfo;
-
 import static java.util.Objects.requireNonNull;
 
+import diskCacheV111.pools.PoolCostInfo;
+import java.io.Serializable;
+
 public class PoolManagerPoolInformation
-    implements Serializable
-{
+      implements Serializable {
+
     private static final long serialVersionUID = -279163439475487756L;
 
     private final String _name;
     private final double _cpuCost;
     private final PoolCostInfo _poolCostInfo;
 
-    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo, double cpuCost)
-    {
+    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo, double cpuCost) {
         _name = name;
         _poolCostInfo = requireNonNull(poolCostInfo);
         _cpuCost = cpuCost;
@@ -26,25 +24,21 @@ public class PoolManagerPoolInformation
         this(name, poolCostInfo, 0.0);
     }
 
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
-    public double getCpuCost()
-    {
+    public double getCpuCost() {
         return _cpuCost;
     }
 
-    public PoolCostInfo getPoolCostInfo()
-    {
+    public PoolCostInfo getPoolCostInfo() {
         return _poolCostInfo;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return String.format("[name=%s;cpu=%f;cost=%s]",
-                             _name, _cpuCost, _poolCostInfo);
+              _name, _cpuCost, _poolCostInfo);
     }
 }

@@ -60,30 +60,28 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import dmg.cells.nucleus.CDC;
+import java.io.Serializable;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.UUID;
-
-import dmg.cells.nucleus.CDC;
-
 /**
  * <p>Used to check whether the incoming message carries the replication
- *      handler session id. This is necessary to distinguish messages
- *      which require handling from those which do not.</p>
+ * handler session id. This is necessary to distinguish messages which require handling from those
+ * which do not.</p>
  *
  * <p>Also stores messages which arrive during the DISABLED state, and
- *      provides them on a one-time-basis to the caller,
- *      when re-enabled.</p>
+ * provides them on a one-time-basis to the caller, when re-enabled.</p>
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class MessageGuard {
+
     private static final String RESILIENCE_KEY = "RESILIENCE-";
 
     @VisibleForTesting
-    static final String RESILIENCE_ID  = RESILIENCE_KEY + UUID.randomUUID();
+    static final String RESILIENCE_ID = RESILIENCE_KEY + UUID.randomUUID();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageGuard.class);
 
@@ -98,8 +96,8 @@ public class MessageGuard {
     }
 
     private BackloggedMessageHandler backlogHandler;
-    private boolean                  enabled = false;
-    private boolean                  dropMessages = false;
+    private boolean enabled = false;
+    private boolean dropMessages = false;
 
     /**
      * @param message       informative statement for logging purposes.
@@ -108,7 +106,7 @@ public class MessageGuard {
      */
     public Status getStatus(String message, Object messageObject) {
         LOGGER.trace("**** acceptMessage **** {}: {} -- {}.", message,
-                     messageObject, enabled);
+              messageObject, enabled);
 
         String session = CDC.getSession();
         LOGGER.trace("{} – session {}", message, session);
@@ -116,7 +114,7 @@ public class MessageGuard {
         synchronized (backlogHandler) {
             if (!enabled) {
                 if (!dropMessages && !isResilientSession(session)
-                                  && messageObject instanceof Serializable) {
+                      && messageObject instanceof Serializable) {
                     backlogHandler.saveToBacklog((Serializable) messageObject);
                 }
                 LOGGER.trace("{}: {}.", message, Status.DISABLED);
@@ -126,7 +124,7 @@ public class MessageGuard {
 
         if (isResilientSession(session)) {
             LOGGER.trace("{} originated within the replication system ({}).",
-                            message, RESILIENCE_ID);
+                  message, RESILIENCE_ID);
             return Status.REPLICA;
         }
 

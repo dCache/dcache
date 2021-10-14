@@ -17,23 +17,20 @@
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
-import org.apache.sshd.server.session.ServerSession;
-
+import diskCacheV111.admin.UserAdminShell;
+import dmg.cells.nucleus.CDC;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.session.ServerSession;
 
-import diskCacheV111.admin.UserAdminShell;
+public class ShellCommand implements Command, SessionAware {
 
-import dmg.cells.nucleus.CDC;
-
-public class ShellCommand implements Command, SessionAware
-{
     private final File historyFile;
     private final int historySize;
     private final boolean useColor;
@@ -46,8 +43,7 @@ public class ShellCommand implements Command, SessionAware
     private Command delegate;
     private String sessionId;
 
-    public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
-    {
+    public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell) {
         this.historyFile = historyFile;
         this.historySize = historySize;
         this.useColor = useColor;
@@ -55,32 +51,27 @@ public class ShellCommand implements Command, SessionAware
     }
 
     @Override
-    public void setInputStream(InputStream in)
-    {
+    public void setInputStream(InputStream in) {
         this.in = in;
     }
 
     @Override
-    public void setOutputStream(OutputStream out)
-    {
+    public void setOutputStream(OutputStream out) {
         this.out = out;
     }
 
     @Override
-    public void setErrorStream(OutputStream err)
-    {
+    public void setErrorStream(OutputStream err) {
         this.err = err;
     }
 
     @Override
-    public void setExitCallback(ExitCallback callback)
-    {
+    public void setExitCallback(ExitCallback callback) {
         this.callback = callback;
     }
 
     @Override
-    public void start(Environment env) throws IOException
-    {
+    public void start(Environment env) throws IOException {
         try (CDC ignored = new CDC()) {
             CDC.setSession(sessionId);
             if (env.getEnv().get(Environment.ENV_TERM) != null) {
@@ -97,16 +88,14 @@ public class ShellCommand implements Command, SessionAware
     }
 
     @Override
-    public void destroy() throws Exception
-    {
+    public void destroy() throws Exception {
         if (delegate != null) {
             delegate.destroy();
         }
     }
 
     @Override
-    public void setSession(ServerSession session)
-    {
+    public void setSession(ServerSession session) {
         sessionId = Sessions.connectionId(session);
         shell.setSession(sessionId);
     }

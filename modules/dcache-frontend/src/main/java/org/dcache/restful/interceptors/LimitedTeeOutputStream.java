@@ -17,29 +17,27 @@
  */
 package org.dcache.restful.interceptors;
 
-import org.apache.commons.io.output.ProxyOutputStream;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.IOException;
 import java.io.OutputStream;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.apache.commons.io.output.ProxyOutputStream;
 
 /**
- * A TeeOutputStream that limits the {@literal branch} OutputStream to
- * a maximum size.  The {@link #isBranchTruncated()} method describes whether
- * the branch OutputStream has been truncated.
+ * A TeeOutputStream that limits the {@literal branch} OutputStream to a maximum size.  The {@link
+ * #isBranchTruncated()} method describes whether the branch OutputStream has been truncated.
+ *
  * @see org.apache.commons.io.output.TeeOutputStream
  */
-public class LimitedTeeOutputStream extends ProxyOutputStream
-{
+public class LimitedTeeOutputStream extends ProxyOutputStream {
+
     private final long limit;
     private boolean isBranchTruncated;
     protected final OutputStream branch;
     private long count;
     private int writeToBranch;
 
-    public LimitedTeeOutputStream(OutputStream out, OutputStream branch, long limit)
-    {
+    public LimitedTeeOutputStream(OutputStream out, OutputStream branch, long limit) {
         super(out);
         this.branch = branch;
         checkArgument(limit > 0, "Limit must be a positive value");
@@ -47,8 +45,7 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    public synchronized void write(byte[] b) throws IOException
-    {
+    public synchronized void write(byte[] b) throws IOException {
         super.write(b);
         if (writeToBranch > 0) {
             branch.write(b, 0, writeToBranch);
@@ -56,8 +53,7 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException
-    {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
         super.write(b, off, len);
         if (writeToBranch > 0) {
             branch.write(b, off, writeToBranch);
@@ -65,8 +61,7 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    public synchronized void write(int b) throws IOException
-    {
+    public synchronized void write(int b) throws IOException {
         super.write(b);
         if (writeToBranch > 0) {
             branch.write(b);
@@ -74,15 +69,13 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    public void flush() throws IOException
-    {
+    public void flush() throws IOException {
         super.flush();
         branch.flush();
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         try {
             super.close();
         } finally {
@@ -91,9 +84,8 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    protected void beforeWrite(int n)
-    {
-        writeToBranch = (int) Math.min(limit-count, n);
+    protected void beforeWrite(int n) {
+        writeToBranch = (int) Math.min(limit - count, n);
 
         if (writeToBranch < n) {
             isBranchTruncated = true;
@@ -101,16 +93,14 @@ public class LimitedTeeOutputStream extends ProxyOutputStream
     }
 
     @Override
-    protected void afterWrite(int n) throws IOException
-    {
+    protected void afterWrite(int n) throws IOException {
         count += writeToBranch;
     }
 
     /**
      * Whether the copied output to branch has been limited.
      */
-    public boolean isBranchTruncated()
-    {
+    public boolean isBranchTruncated() {
         return isBranchTruncated;
     }
 }

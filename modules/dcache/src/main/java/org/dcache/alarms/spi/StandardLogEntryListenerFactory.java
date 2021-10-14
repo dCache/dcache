@@ -59,11 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.spi;
 
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.Map;
-
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Factory for creating and configuring listeners which require
@@ -72,7 +70,8 @@ import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
  * <p>Included in the injection are the alarm type priorities.</p>
  */
 public class StandardLogEntryListenerFactory
-                extends BaseLogEntryListenerFactory<StandardLogEntryListener> {
+      extends BaseLogEntryListenerFactory<StandardLogEntryListener> {
+
     /**
      * <p>Map is injected after being built using
      * a {@link org.dcache.util.configuration.ConfigurationMapFactoryBean}.</p>

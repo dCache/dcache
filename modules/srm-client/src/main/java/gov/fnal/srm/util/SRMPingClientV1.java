@@ -73,12 +73,15 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMPingClientV1 extends SRMClient {
+
     java.net.URI srmurl;
-    /** Creates a new instance of SRMGetClient */
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
     public SRMPingClientV1(Configuration configuration, java.net.URI srmurl) {
         super(configuration);
         this.srmurl = srmurl;
@@ -93,13 +96,11 @@ public class SRMPingClientV1 extends SRMClient {
     public void start() throws Exception {
         try {
             boolean result = srm.ping();
-            dsay(" srm ping returned = "+result);
-        }
-        catch(Exception ioe) {
-            if(configuration.isDebug()) {
+            dsay(" srm ping returned = " + result);
+        } catch (Exception ioe) {
+            if (configuration.isDebug()) {
                 ioe.printStackTrace();
-            }
-            else {
+            } else {
                 esay(ioe.toString());
             }
             throw ioe;

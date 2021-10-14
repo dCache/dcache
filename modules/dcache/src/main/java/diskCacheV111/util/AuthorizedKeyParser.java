@@ -10,30 +10,26 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 
 /**
- * {@link AuthorizedKeyParser} creates a {@link PublicKey} representation of a
- * string representation that could originate from e.g. a authorized_keys file.
+ * {@link AuthorizedKeyParser} creates a {@link PublicKey} representation of a string representation
+ * that could originate from e.g. a authorized_keys file.
  *
  * @author bernardt
- *
  */
 
 public class AuthorizedKeyParser {
+
     private byte[] bytes;
     private int pos;
 
     /**
-     *
-     * @param Takes
-     *            a line of a key file - keyLine
-     * @return It then returns a {@link PublicKey} representation of either the
-     *         RSA or DSA key.
-     * @throws NoSuchAlgorithmException
-     *             if algorithm is not known (known are RSA, DSA)
+     * @param Takes a line of a key file - keyLine
+     * @return It then returns a {@link PublicKey} representation of either the RSA or DSA key.
+     * @throws NoSuchAlgorithmException if algorithm is not known (known are RSA, DSA)
      * @throws InvalidKeySpecException
      */
     public PublicKey decodePublicKey(String keyLine)
-    throws IllegalArgumentException, InvalidKeySpecException,
-    NoSuchAlgorithmException {
+          throws IllegalArgumentException, InvalidKeySpecException,
+          NoSuchAlgorithmException {
         bytes = null;
         pos = 0;
 
@@ -51,22 +47,22 @@ public class AuthorizedKeyParser {
 
         String type = decodeType();
         switch (type) {
-        case "ssh-rsa": {
-            BigInteger e = decodeBigInt();
-            BigInteger m = decodeBigInt();
-            RSAPublicKeySpec spec = new RSAPublicKeySpec(m, e);
-            return KeyFactory.getInstance("RSA").generatePublic(spec);
-        }
-        case "ssh-dss": {
-            BigInteger p = decodeBigInt();
-            BigInteger q = decodeBigInt();
-            BigInteger g = decodeBigInt();
-            BigInteger y = decodeBigInt();
-            DSAPublicKeySpec spec = new DSAPublicKeySpec(y, p, q, g);
-            return KeyFactory.getInstance("DSA").generatePublic(spec);
-        }
-        default:
-            throw new IllegalArgumentException("unknown type " + type);
+            case "ssh-rsa": {
+                BigInteger e = decodeBigInt();
+                BigInteger m = decodeBigInt();
+                RSAPublicKeySpec spec = new RSAPublicKeySpec(m, e);
+                return KeyFactory.getInstance("RSA").generatePublic(spec);
+            }
+            case "ssh-dss": {
+                BigInteger p = decodeBigInt();
+                BigInteger q = decodeBigInt();
+                BigInteger g = decodeBigInt();
+                BigInteger y = decodeBigInt();
+                DSAPublicKeySpec spec = new DSAPublicKeySpec(y, p, q, g);
+                return KeyFactory.getInstance("DSA").generatePublic(spec);
+            }
+            default:
+                throw new IllegalArgumentException("unknown type " + type);
         }
     }
 
@@ -79,7 +75,7 @@ public class AuthorizedKeyParser {
 
     private int decodeInt() {
         return ((bytes[pos++] & 0xFF) << 24) | ((bytes[pos++] & 0xFF) << 16)
-        | ((bytes[pos++] & 0xFF) << 8) | (bytes[pos++] & 0xFF);
+              | ((bytes[pos++] & 0xFF) << 8) | (bytes[pos++] & 0xFF);
     }
 
     private BigInteger decodeBigInt() {

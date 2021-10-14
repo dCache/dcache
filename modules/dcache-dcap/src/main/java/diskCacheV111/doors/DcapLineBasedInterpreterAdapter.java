@@ -18,21 +18,17 @@
  */
 package diskCacheV111.doors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.io.PrintWriter;
-import java.net.InetAddress;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
-
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.poolmanager.PoolManagerHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class to turn the DCapDoorInterpreterV3 into a LineBasedInterpreter interface.
@@ -41,10 +37,11 @@ import org.dcache.poolmanager.PoolManagerHandler;
  * @see DCapDoorInterpreterV3
  */
 public class DcapLineBasedInterpreterAdapter
-        extends DCapDoorInterpreterV3
-        implements LineBasedInterpreter
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(DcapLineBasedInterpreterAdapter.class);
+      extends DCapDoorInterpreterV3
+      implements LineBasedInterpreter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          DcapLineBasedInterpreterAdapter.class);
 
     private final InetAddress clientAddress;
 
@@ -56,17 +53,17 @@ public class DcapLineBasedInterpreterAdapter
 
     private boolean hasExited;
 
-    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine,
-                                           DcapDoorSettings settings, PoolManagerHandler handler)
-    {
-        super(endpoint, myAddress, settings, new PrintWriter(engine.getWriter(), true), engine.getSubject(), engine.getInetAddress(), handler);
+    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress,
+          StreamEngine engine,
+          DcapDoorSettings settings, PoolManagerHandler handler) {
+        super(endpoint, myAddress, settings, new PrintWriter(engine.getWriter(), true),
+              engine.getSubject(), engine.getInetAddress(), handler);
         clientAddress = engine.getInetAddress();
         subject = engine.getSubject();
     }
 
     @Override
-    public void execute(String cmd) throws CommandExitException
-    {
+    public void execute(String cmd) throws CommandExitException {
         LOGGER.info("Executing command: {}", cmd);
 
         commandCounter++;
@@ -95,8 +92,7 @@ public class DcapLineBasedInterpreterAdapter
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         close();
         if (hasExited) {
             println("0 0 server byebye");
@@ -106,14 +102,12 @@ public class DcapLineBasedInterpreterAdapter
     }
 
     @Override
-    public void messagingClosed()
-    {
+    public void messagingClosed() {
         shutdownKafka();
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("         User  : " + Subjects.getDisplayName(subject));
         pw.println("         Host  : " + clientAddress);
         pw.println(" Last Command  : " + lastCommand);

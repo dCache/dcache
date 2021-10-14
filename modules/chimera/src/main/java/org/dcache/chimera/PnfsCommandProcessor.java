@@ -27,14 +27,14 @@ public class PnfsCommandProcessor {
         int begin = 0;
         int deep = 0;
 
-        for(int i = 0; i < command.length(); i++) {
+        for (int i = 0; i < command.length(); i++) {
 
             char c = command.charAt(i);
-            switch(c) {
+            switch (c) {
                 case '(':
                     deep++;
                     if (deep == 1) {
-                        begin = i+1;
+                        begin = i + 1;
                     }
                     break;
                 case ')':
@@ -46,6 +46,6 @@ public class PnfsCommandProcessor {
             }
         }
 
-        return list.isEmpty() ? new String[] {command} : list.toArray(String[]::new);
+        return list.isEmpty() ? new String[]{command} : list.toArray(String[]::new);
     }
 }

@@ -61,7 +61,6 @@ package org.dcache.services.bulk;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,27 +68,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *  Groups requests by failure type, which is the canonical name of the
- *  associated Throwable class.
+ * Groups requests by failure type, which is the canonical name of the associated Throwable class.
  */
-public class BulkFailures implements Serializable
-{
+public class BulkFailures implements Serializable {
+
     private static final long serialVersionUID = 8533779422283110521L;
 
     private Map<String, List<String>> failures;
 
-    public Map<String, List<String>> getFailures()
-    {
+    public Map<String, List<String>> getFailures() {
         return failures;
     }
 
-    public void setFailures(Map<String, List<String>> failures)
-    {
+    public void setFailures(Map<String, List<String>> failures) {
         this.failures = failures;
     }
 
-    public void put(String path, Throwable e)
-    {
+    public void put(String path, Throwable e) {
         Throwable cause = Throwables.getRootCause(e);
 
         if (failures == null) {
@@ -98,28 +93,26 @@ public class BulkFailures implements Serializable
 
         String clzz = cause.getClass().getCanonicalName();
         List<String> paths
-                        = failures.computeIfAbsent(clzz,
-                                                   k -> new ArrayList<>());
+              = failures.computeIfAbsent(clzz,
+              k -> new ArrayList<>());
         paths.add(path + " : " + cause.getMessage());
     }
 
-    public int count()
-    {
+    public int count() {
         if (failures == null) {
             return 0;
         }
         return failures.values().stream().mapToInt(List::size).sum();
     }
 
-    public Map<String, List<String>> cloneFailures()
-    {
+    public Map<String, List<String>> cloneFailures() {
         Map<String, List<String>> map = new ConcurrentHashMap<>();
         if (failures != null) {
             failures.entrySet().stream()
-                    .forEach(entry -> {
-                        map.put(entry.getKey(),
-                                ImmutableList.copyOf(entry.getValue()));
-                    });
+                  .forEach(entry -> {
+                      map.put(entry.getKey(),
+                            ImmutableList.copyOf(entry.getValue()));
+                  });
         }
         return map;
     }

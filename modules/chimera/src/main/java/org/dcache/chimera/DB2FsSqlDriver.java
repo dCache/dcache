@@ -16,15 +16,12 @@
  */
 package org.dcache.chimera;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-
 import java.util.EnumSet;
-
+import javax.sql.DataSource;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.RsType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -35,11 +32,9 @@ class DB2FsSqlDriver extends FsSqlDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(DB2FsSqlDriver.class);
 
     /**
-     *  this is a utility class which issues SQL queries on database
-     *
+     * this is a utility class which issues SQL queries on database
      */
-    protected DB2FsSqlDriver(DataSource dataSource) throws ChimeraFsException
-    {
+    protected DB2FsSqlDriver(DataSource dataSource) throws ChimeraFsException {
         super(dataSource);
         LOGGER.info("Running DB2 specific Driver");
     }
@@ -50,18 +45,20 @@ class DB2FsSqlDriver extends FsSqlDriver {
     }
 
     @Override
-    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask,
+          EnumSet<AceFlags> flags) {
         int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
         int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
-        _jdbc.update("INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
-                     "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
-                     "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
-                     ps -> {
-                         ps.setLong(1, inode.ino());
-                         ps.setInt(2, type.getValue());
-                         ps.setInt(3, msk);
-                         ps.setLong(4, source.ino());
-                         ps.setInt(5, flgs);
-                     });
+        _jdbc.update(
+              "INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
+                    "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
+                    "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
+              ps -> {
+                  ps.setLong(1, inode.ino());
+                  ps.setInt(2, type.getValue());
+                  ps.setInt(3, msk);
+                  ps.setLong(4, source.ino());
+                  ps.setInt(5, flgs);
+              });
     }
 }

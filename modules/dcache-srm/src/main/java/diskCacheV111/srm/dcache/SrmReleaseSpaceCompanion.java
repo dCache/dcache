@@ -66,86 +66,77 @@ documents or software obtained from this server.
 
 package diskCacheV111.srm.dcache;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.services.space.SpaceException;
+import diskCacheV111.services.space.message.Release;
+import dmg.cells.nucleus.CellPath;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-
-import diskCacheV111.services.space.SpaceException;
-import diskCacheV111.services.space.message.Release;
-
-import dmg.cells.nucleus.CellPath;
-
+import javax.security.auth.Subject;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.util.Exceptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class SrmReleaseSpaceCompanion
-        extends AbstractMessageCallback<Release>
-{
+      extends AbstractMessageCallback<Release> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmReleaseSpaceCompanion.class);
 
     private final SrmReleaseSpaceCallback callback;
 
-    private SrmReleaseSpaceCompanion(SrmReleaseSpaceCallback callback)
-    {
+    private SrmReleaseSpaceCompanion(SrmReleaseSpaceCallback callback) {
         this.callback = callback;
     }
 
     @Override
-    public void failure(int rc, Object error)
-    {
-        if (error instanceof SQLException && Objects.equals(((SQLException) error).getSQLState(), "02000")) {
+    public void failure(int rc, Object error) {
+        if (error instanceof SQLException && Objects.equals(((SQLException) error).getSQLState(),
+              "02000")) {
             callback.invalidRequest("No such space");
         } else if (error instanceof SpaceException) {
             SpaceException se = (SpaceException) error;
             callback.failed(se.getMessage());
         } else {
             String message = error instanceof Exception
-                    ? Exceptions.messageOrClassName((Exception)error)
-                    : String.valueOf(error);
+                  ? Exceptions.messageOrClassName((Exception) error)
+                  : String.valueOf(error);
             LOGGER.error("Space Release Failed rc: {} error: {}", rc, message);
             callback.failed("Failed to release space: " + message);
         }
     }
 
     @Override
-    public void noroute(CellPath path)
-    {
+    public void noroute(CellPath path) {
         LOGGER.error("No route to {}", path);
         callback.internalError("Space manager is unavailable");
     }
 
     @Override
-    public void success(Release releaseResponse)
-    {
+    public void success(Release releaseResponse) {
         callback.success(
-                Long.toString(releaseResponse.getSpaceToken()),
-                releaseResponse.getRemainingSizeInBytes());
+              Long.toString(releaseResponse.getSpaceToken()),
+              releaseResponse.getRemainingSizeInBytes());
     }
 
     @Override
-    public void timeout(String error)
-    {
+    public void timeout(String error) {
         LOGGER.error(error);
         callback.internalError("Space manager timeout");
     }
 
     public static void releaseSpace(
-            Subject subject,
-            String spaceToken,
-            Long spaceToReleaseInBytes,
-            SrmReleaseSpaceCallback callback,
-            CellStub spaceManagerStub,
-            Executor executor)
-    {
-        LOGGER.trace("SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
-                subject.getPrincipals(), spaceToken, spaceToReleaseInBytes);
+          Subject subject,
+          String spaceToken,
+          Long spaceToReleaseInBytes,
+          SrmReleaseSpaceCallback callback,
+          CellStub spaceManagerStub,
+          Executor executor) {
+        LOGGER.trace(
+              "SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
+              subject.getPrincipals(), spaceToken, spaceToReleaseInBytes);
         try {
             long token = Long.parseLong(spaceToken);
             SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(callback);

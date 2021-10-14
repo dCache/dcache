@@ -17,72 +17,68 @@
  */
 package org.dcache.ftp.door;
 
+import diskCacheV111.util.ConfigurationException;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-
 import java.io.File;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.ConfigurationException;
-
 import org.dcache.dss.ServerGsiEngineDssContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.Crypto;
 import org.dcache.util.Option;
 
-public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
-{
-    @Option(name="service-key", required=true)
+public class GsiFtpInterpreterFactory extends FtpInterpreterFactory {
+
+    @Option(name = "service-key", required = true)
     protected File service_key;
 
-    @Option(name="service-cert", required=true)
+    @Option(name = "service-cert", required = true)
     protected File service_cert;
 
-    @Option(name="service-trusted-certs", required=true)
+    @Option(name = "service-trusted-certs", required = true)
     protected File service_trusted_certs;
 
-    @Option(name="cipher-flags", required=true)
+    @Option(name = "cipher-flags", required = true)
     protected String cipherFlags;
 
-    @Option(name="namespace-mode", required=true)
+    @Option(name = "namespace-mode", required = true)
     protected NamespaceCheckingMode namespaceMode;
 
-    @Option(name="crl-mode", required=true)
+    @Option(name = "crl-mode", required = true)
     protected CrlCheckingMode crlMode;
 
-    @Option(name="ocsp-mode", required=true)
+    @Option(name = "ocsp-mode", required = true)
     protected OCSPCheckingMode ocspMode;
 
-    @Option(name="key-cache-lifetime", required=true)
+    @Option(name = "key-cache-lifetime", required = true)
     private long keyCacheLifetime;
 
-    @Option(name="key-cache-lifetime-unit", required=true)
+    @Option(name = "key-cache-lifetime-unit", required = true)
     private TimeUnit keyCacheLifetimeUnit;
 
     private ServerGsiEngineDssContextFactory dssContextFactory;
 
     @Override
-    public void configure(Args args) throws ConfigurationException
-    {
+    public void configure(Args args) throws ConfigurationException {
         super.configure(args);
         try {
             dssContextFactory = getDssContextFactory();
         } catch (Exception e) {
-            throw new ConfigurationException("Failed to create security context:" + e.getMessage(), e);
+            throw new ConfigurationException("Failed to create security context:" + e.getMessage(),
+                  e);
         }
     }
 
     @Override
-    protected AbstractFtpDoorV1 createInterpreter()
-    {
+    protected AbstractFtpDoorV1 createInterpreter() {
         return new GsiFtpDoorV1(dssContextFactory);
     }
 
-    protected ServerGsiEngineDssContextFactory getDssContextFactory() throws Exception
-    {
-        return new ServerGsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
-                                              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags),
-                                              namespaceMode, crlMode, ocspMode, keyCacheLifetime, keyCacheLifetimeUnit);
+    protected ServerGsiEngineDssContextFactory getDssContextFactory() throws Exception {
+        return new ServerGsiEngineDssContextFactory(service_key, service_cert,
+              service_trusted_certs,
+              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags),
+              namespaceMode, crlMode, ocspMode, keyCacheLifetime, keyCacheLifetimeUnit);
     }
 }

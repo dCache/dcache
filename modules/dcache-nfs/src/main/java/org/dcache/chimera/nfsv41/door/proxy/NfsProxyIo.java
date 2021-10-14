@@ -9,9 +9,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import org.dcache.util.NetworkUtils;
-
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.v4.CompoundBuilder;
@@ -20,18 +17,17 @@ import org.dcache.nfs.v4.xdr.COMPOUND4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.WRITE4resok;
 import org.dcache.nfs.v4.xdr.clientid4;
-import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.sequenceid4;
 import org.dcache.nfs.v4.xdr.sessionid4;
-import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.state_protect_how4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
-import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.OncRpcSvc;
 import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
@@ -39,6 +35,8 @@ import org.dcache.oncrpc4j.rpc.RpcAuth;
 import org.dcache.oncrpc4j.rpc.RpcAuthTypeUnix;
 import org.dcache.oncrpc4j.rpc.RpcCall;
 import org.dcache.oncrpc4j.rpc.RpcTransport;
+import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
+import org.dcache.util.NetworkUtils;
 
 /**
  * A {@link ProxyIoAdapter} which proxies requests to an other NFSv4.1 server.
@@ -57,8 +55,8 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private static final String IMPL_NAME = "proxyio-nfs-client";
 
     /**
-     * How long we wait for an IO request. The typical NFS client will wait
-     * 30 sec. We will use a shorter timeout to avoid retry.
+     * How long we wait for an IO request. The typical NFS client will wait 30 sec. We will use a
+     * shorter timeout to avoid retry.
      */
     private static final int IO_TIMEOUT = 15;
     private static final TimeUnit IO_TIMEOUT_UNIT = TimeUnit.SECONDS;
@@ -81,16 +79,17 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private final RpcTransport transport;
     private final ScheduledExecutorService sessionThread;
 
-    public NfsProxyIo(InetSocketAddress poolAddress,  InetSocketAddress remoteClient, Inode inode, stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
+    public NfsProxyIo(InetSocketAddress poolAddress, InetSocketAddress remoteClient, Inode inode,
+          stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
         this.remoteClient = remoteClient;
         rpcsvc = new OncRpcSvcBuilder()
-                .withClientMode()
-                .withPort(0)
-                .withIpProtocolType(IpProtocolType.TCP)
-                .withIoStrategy(IoStrategy.SAME_THREAD)
-                .withServiceName("proxy-io-rpc-selector-" + poolAddress.getAddress().getHostAddress())
-                .withSelectorThreadPoolSize(1)
-                .build();
+              .withClientMode()
+              .withPort(0)
+              .withIpProtocolType(IpProtocolType.TCP)
+              .withIoStrategy(IoStrategy.SAME_THREAD)
+              .withServiceName("proxy-io-rpc-selector-" + poolAddress.getAddress().getHostAddress())
+              .withSelectorThreadPoolSize(1)
+              .build();
 
         try {
             rpcsvc.start();
@@ -101,13 +100,14 @@ public class NfsProxyIo implements ProxyIoAdapter {
         }
 
         RpcAuth credential = new RpcAuthTypeUnix(ROOT_UID, ROOT_GID, ROOT_GIDS,
-                (int) (System.currentTimeMillis() / 1000),
-                NetworkUtils.getCanonicalHostName());
+              (int) (System.currentTimeMillis() / 1000),
+              NetworkUtils.getCanonicalHostName());
         client = new RpcCall(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4, credential, transport);
         sessionThread = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder()
-                .setNameFormat("proxy-nfs-session-" + poolAddress.getAddress().getHostAddress() + "-%d")
-                .build()
+              new ThreadFactoryBuilder()
+                    .setNameFormat(
+                          "proxy-nfs-session-" + poolAddress.getAddress().getHostAddress() + "-%d")
+                    .build()
         );
 
         exchange_id();
@@ -121,11 +121,11 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
         int needToRead = dst.remaining();
         COMPOUND4args args = new CompoundBuilder()
-                .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
-                .withPutfh(fh)
-                .withRead(dst.remaining(), position, stateid)
-                .withTag("pNFS read")
-                .build();
+              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
+              .withPutfh(fh)
+              .withRead(dst.remaining(), position, stateid)
+              .withTag("pNFS read")
+              .build();
         COMPOUND4res compound4res = sendCompound(args);
         READ4resok res = compound4res.resarray.get(2).opread.resok4;
         dst.put(res.data);
@@ -133,29 +133,31 @@ public class NfsProxyIo implements ProxyIoAdapter {
     }
 
     @Override
-    public synchronized VirtualFileSystem.WriteResult write(ByteBuffer src, long position) throws IOException {
+    public synchronized VirtualFileSystem.WriteResult write(ByteBuffer src, long position)
+          throws IOException {
 
         byte[] data = new byte[src.remaining()];
         src.get(data);
 
         COMPOUND4args args = new CompoundBuilder()
-                .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
-                .withPutfh(fh)
-                .withWrite(position, data, stateid)
-                .withTag("pNFS write")
-                .build();
+              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
+              .withPutfh(fh)
+              .withWrite(position, data, stateid)
+              .withTag("pNFS write")
+              .build();
 
         COMPOUND4res compound4res = sendCompound(args);
         WRITE4resok res = compound4res.resarray.get(2).opwrite.resok4;
-        return new VirtualFileSystem.WriteResult(VirtualFileSystem.StabilityLevel.fromStableHow(res.committed), res.count.value);
+        return new VirtualFileSystem.WriteResult(
+              VirtualFileSystem.StabilityLevel.fromStableHow(res.committed), res.count.value);
     }
 
     @Override
     public String toString() {
         return String.format("    OS=%s, cl=[%s], pool=[%s]",
-                stateid,
-                remoteClient.getAddress().getHostAddress(),
-                transport.getRemoteSocketAddress().getAddress().getHostAddress());
+              stateid,
+              remoteClient.getAddress().getHostAddress(),
+              transport.getRemoteSocketAddress().getAddress().getHostAddress());
     }
 
     @Override
@@ -172,17 +174,17 @@ public class NfsProxyIo implements ProxyIoAdapter {
             rpcsvc.stop();
         }
     }
+
     /**
      * Call remote procedure nfsProcCompound.
      *
-     * @param arg parameter (of type COMPOUND4args) to the remote procedure
-     * call.
+     * @param arg parameter (of type COMPOUND4args) to the remote procedure call.
      * @return Result from remote procedure call (of type COMPOUND4res).
      * @throws OncRpcException if an ONC/RPC error occurs.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException     if an I/O error occurs.
      */
     public COMPOUND4res nfsProcCompound(COMPOUND4args arg)
-            throws OncRpcException, IOException {
+          throws OncRpcException, IOException {
         COMPOUND4res result = new COMPOUND4res();
 
         try {
@@ -199,7 +201,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
     }
 
     private COMPOUND4res sendCompound(COMPOUND4args compound4args)
-            throws OncRpcException, IOException {
+          throws OncRpcException, IOException {
 
         COMPOUND4res compound4res = nfsProcCompound(compound4args);
         processSequence(compound4res);
@@ -210,9 +212,10 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private synchronized void exchange_id() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-                .withExchangeId(IMPL_DOMAIN, IMPL_NAME, UUID.randomUUID().toString(), 0, state_protect_how4.SP4_NONE)
-                .withTag("exchange_id")
-                .build();
+              .withExchangeId(IMPL_DOMAIN, IMPL_NAME, UUID.randomUUID().toString(), 0,
+                    state_protect_how4.SP4_NONE)
+              .withTag("exchange_id")
+              .build();
 
         COMPOUND4res compound4res = sendCompound(args);
 
@@ -220,7 +223,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
         _sequenceID = compound4res.resarray.get(0).opexchange_id.eir_resok4.eir_sequenceid;
 
         if ((compound4res.resarray.get(0).opexchange_id.eir_resok4.eir_flags.value
-                & nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS) == 0) {
+              & nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS) == 0) {
             throw new IOException("remote server is not a DS");
         }
     }
@@ -228,9 +231,9 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private synchronized void create_session() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-                .withCreatesession(_clientIdByServer, _sequenceID)
-                .withTag("create_session")
-                .build();
+              .withCreatesession(_clientIdByServer, _sequenceID)
+              .withTag("create_session")
+              .build();
 
         COMPOUND4res compound4res = sendCompound(args);
 
@@ -238,13 +241,13 @@ public class NfsProxyIo implements ProxyIoAdapter {
         _sequenceID.value = 0;
 
         sessionThread.scheduleAtFixedRate(() -> {
-            try {
-                this.sequence();
-            } catch (IOException ex) {
-                //
-            }
-        },
-                60, 60, TimeUnit.SECONDS);
+                  try {
+                      this.sequence();
+                  } catch (IOException ex) {
+                      //
+                  }
+              },
+              60, 60, TimeUnit.SECONDS);
     }
 
     public void processSequence(COMPOUND4res compound4res) {
@@ -258,18 +261,18 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private synchronized void sequence() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-                .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
-                .withTag("sequence")
-                .build();
+              .withSequence(false, _sessionid, _sequenceID.value, SLOT_ID, MAX_SLOT_ID)
+              .withTag("sequence")
+              .build();
         COMPOUND4res compound4res = sendCompound(args);
     }
 
     private synchronized void destroy_session() throws OncRpcException, IOException {
 
         COMPOUND4args args = new CompoundBuilder()
-                .withDestroysession(_sessionid)
-                .withTag("destroy_session")
-                .build();
+              .withDestroysession(_sessionid)
+              .withTag("destroy_session")
+              .build();
 
         COMPOUND4res compound4res = sendCompound(args);
     }

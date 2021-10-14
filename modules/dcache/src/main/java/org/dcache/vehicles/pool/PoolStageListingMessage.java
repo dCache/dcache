@@ -63,11 +63,12 @@ package org.dcache.vehicles.pool;
  * <p>Request for listings corresponding to rh ls.</p>
  */
 public final class PoolStageListingMessage extends PoolNearlineListingMessage {
+
     private static final long serialVersionUID = -4114100368908443917L;
 
     public PoolStageListingMessage(int offset, int limit, String pnfsid,
-                                   String state, String storageClass,
-                                   String sort) {
+          String state, String storageClass,
+          String sort) {
         super(offset, limit, pnfsid, state, storageClass, sort);
     }
 }

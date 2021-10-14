@@ -1,11 +1,9 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
@@ -19,13 +17,13 @@ import org.dcache.srm.v2_2.SrmLsRequest;
 import org.dcache.srm.v2_2.SrmLsResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmLs {
 
-public class SrmLs
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmLs.class);
+          LoggerFactory.getLogger(SrmLs.class);
 
     private final int maxNumOfLevels;
     private final Configuration configuration;
@@ -37,11 +35,10 @@ public class SrmLs
     private final int max_results_num;
 
     public SrmLs(SRMUser user,
-                 SrmLsRequest request,
-                 AbstractStorageElement storage,
-                 SRM srm,
-                 String clientHost)
-    {
+          SrmLsRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.max_results_num = srm.getConfiguration().getMaxNumberOfLsEntries();
@@ -51,8 +48,7 @@ public class SrmLs
         this.srm = requireNonNull(srm);
     }
 
-    public SrmLsResponse getResponse()
-    {
+    public SrmLsResponse getResponse() {
         if (response == null) {
             try {
                 response = srmLs();
@@ -66,8 +62,7 @@ public class SrmLs
         return response;
     }
 
-    private SrmLsResponse srmLs() throws SRMInvalidRequestException, SRMInternalErrorException
-    {
+    private SrmLsResponse srmLs() throws SRMInvalidRequestException, SRMInternalErrorException {
         int numOfLevels = Math.min(getNumOfLevels(request), maxNumOfLevels);
         int offset = getOffset(request);
         int count = getCount(request);
@@ -75,16 +70,16 @@ public class SrmLs
         URI[] surls = getSurls(request);
 
         LsRequest r = new LsRequest(srm.getSrmId(),
-                user,
-                surls,
-                TimeUnit.HOURS.toMillis(1),
-                configuration.getLsMaxPollPeriod(),
-                clientHost,
-                count,
-                offset,
-                numOfLevels,
-                longFormat,
-                max_results_num);
+              user,
+              surls,
+              TimeUnit.HOURS.toMillis(1),
+              configuration.getLsMaxPollPeriod(),
+              clientHost,
+              count,
+              offset,
+              numOfLevels,
+              longFormat,
+              max_results_num);
         try (JDC ignored = r.applyJdc()) {
             srm.acceptNewJob(r);
             return r.getSrmLsResponse(configuration.getLsSwitchToAsynchronousModeDelay());
@@ -95,28 +90,25 @@ public class SrmLs
         }
     }
 
-    private static URI[] getSurls(SrmLsRequest request) throws SRMInvalidRequestException
-    {
+    private static URI[] getSurls(SrmLsRequest request) throws SRMInvalidRequestException {
         if (request.getArrayOfSURLs() == null ||
-                request.getArrayOfSURLs().getUrlArray() == null ||
-                request.getArrayOfSURLs().getUrlArray().length == 0) {
+              request.getArrayOfSURLs().getUrlArray() == null ||
+              request.getArrayOfSURLs().getUrlArray().length == 0) {
             throw new SRMInvalidRequestException("empty list of paths");
         }
         org.apache.axis.types.URI[] urls = request.getArrayOfSURLs().getUrlArray();
         URI[] surls = new URI[urls.length];
-        for (int i = 0 ; i < urls.length; i++) {
+        for (int i = 0; i < urls.length; i++) {
             surls[i] = URI.create(urls[i].toString());
         }
         return surls;
     }
 
-    private static boolean getFullDetailedList(SrmLsRequest request)
-    {
+    private static boolean getFullDetailedList(SrmLsRequest request) {
         return (request.getFullDetailedList() != null) && request.getFullDetailedList();
     }
 
-    private static int getCount(SrmLsRequest request) throws SRMInvalidRequestException
-    {
+    private static int getCount(SrmLsRequest request) throws SRMInvalidRequestException {
         int count = request.getCount() != null ? request.getCount() : Integer.MAX_VALUE;
         if (count < 0) {
             throw new SRMInvalidRequestException("count value less than 0, disallowed");
@@ -124,8 +116,7 @@ public class SrmLs
         return count;
     }
 
-    private static int getOffset(SrmLsRequest request) throws SRMInvalidRequestException
-    {
+    private static int getOffset(SrmLsRequest request) throws SRMInvalidRequestException {
         int offset = request.getOffset() != null ? request.getOffset() : 0;
         if (offset < 0) {
             throw new SRMInvalidRequestException("offset value less than 0, disallowed ");
@@ -133,8 +124,7 @@ public class SrmLs
         return offset;
     }
 
-    private static int getNumOfLevels(SrmLsRequest request) throws SRMInvalidRequestException
-    {
+    private static int getNumOfLevels(SrmLsRequest request) throws SRMInvalidRequestException {
         // The SRM specification is not clear, but
         // probably intends that zero (0) means "no
         // recursion", one (1) means "current
@@ -148,21 +138,20 @@ public class SrmLs
             // The spec doesn't say what to do in case of negative
             // values, so filter 'em out...
             if (numOfLevels < 0) {
-                throw new SRMInvalidRequestException("Recursion depth must be non-negative: " + numOfLevels);
+                throw new SRMInvalidRequestException(
+                      "Recursion depth must be non-negative: " + numOfLevels);
             }
             return numOfLevels;
         }
         return 1;
     }
 
-    public static final SrmLsResponse getFailedResponse(String error)
-    {
+    public static final SrmLsResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
     public static final SrmLsResponse getFailedResponse(String error,
-                                                        TStatusCode statusCode)
-    {
+          TStatusCode statusCode) {
         SrmLsResponse response = new SrmLsResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

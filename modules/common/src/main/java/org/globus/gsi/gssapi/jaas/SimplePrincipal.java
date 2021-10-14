@@ -19,35 +19,31 @@ import java.security.Principal;
 
 /**
  * Simple string-based principal.
+ *
  * @since 2.14
  */
 public class SimplePrincipal
-        implements Principal, Serializable
-{
+      implements Principal, Serializable {
+
     private static final long serialVersionUID = 1495389510845512535L;
     private String name;
 
-    public SimplePrincipal()
-    {
+    public SimplePrincipal() {
     }
 
-    public SimplePrincipal(String name)
-    {
+    public SimplePrincipal(String name) {
         this.name = name;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         return (this.name == null) ? 0 : this.name.hashCode();
     }
 
-    public boolean equals(Object another)
-    {
+    public boolean equals(Object another) {
         if (!(another instanceof Principal)) {
             return false;
         }
@@ -55,8 +51,7 @@ public class SimplePrincipal
         return this.name == null ? anotherName == null : this.name.equals(anotherName);
     }
 
-    public String toString()
-    {
+    public String toString() {
         return getName();
     }
 

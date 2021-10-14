@@ -17,69 +17,61 @@
  */
 package org.dcache.util;
 
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+public class QualityValueTest {
 
-public class QualityValueTest
-{
     @Test
-    public void shouldParseWithSpaceQValue()
-    {
+    public void shouldParseWithSpaceQValue() {
         QualityValue qvalue = QualityValue.of("audio/*; q=0.2");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(0.2)));
     }
 
     @Test
-    public void shouldParseWithOneQValue()
-    {
+    public void shouldParseWithOneQValue() {
         QualityValue qvalue = QualityValue.of("audio/*;q=1");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(1.0)));
     }
 
     @Test
-    public void shouldParseWithOnePointQValue()
-    {
+    public void shouldParseWithOnePointQValue() {
         QualityValue qvalue = QualityValue.of("audio/*;q=1.");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(1.0)));
     }
 
     @Test
-    public void shouldParseWithOnePointZeroQValue()
-    {
+    public void shouldParseWithOnePointZeroQValue() {
         QualityValue qvalue = QualityValue.of("audio/*;q=1.0");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(1.0)));
     }
 
     @Test
-    public void shouldParseWithOnePointZeroZeroQValue()
-    {
+    public void shouldParseWithOnePointZeroZeroQValue() {
         QualityValue qvalue = QualityValue.of("audio/*;q=1.00");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(1.0)));
     }
 
     @Test
-    public void shouldParseWithOnePointZeroZeroZeroQValue()
-    {
+    public void shouldParseWithOnePointZeroZeroZeroQValue() {
         QualityValue qvalue = QualityValue.of("audio/*;q=1.000");
         assertThat(qvalue.value(), is(equalTo("audio/*")));
         assertThat(qvalue.quality(), is(equalTo(1.0)));
     }
 
     @Test
-    public void shouldParseWithoutQValue()
-    {
+    public void shouldParseWithoutQValue() {
         QualityValue qvalue = QualityValue.of("audio/basic");
 
         assertThat(qvalue.value(), is(equalTo("audio/basic")));
@@ -87,8 +79,7 @@ public class QualityValueTest
     }
 
     @Test
-    public void shouldOrderByQuality()
-    {
+    public void shouldOrderByQuality() {
         QualityValue qvalue1 = QualityValue.of("value1;q=1");
         QualityValue qvalue2 = QualityValue.of("value2;q=0.5");
         List<QualityValue> expected = Arrays.asList(qvalue1, qvalue2);
@@ -98,8 +89,7 @@ public class QualityValueTest
     }
 
     @Test
-    public void shouldOrderByQualityWhenReversed()
-    {
+    public void shouldOrderByQualityWhenReversed() {
         QualityValue qvalue1 = QualityValue.of("value1;q=0.5");
         QualityValue qvalue2 = QualityValue.of("value2;q=1");
         List<QualityValue> expected = Arrays.asList(qvalue2, qvalue1);

@@ -59,48 +59,44 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import com.google.common.base.Throwables;
-import org.junit.Before;
-import org.junit.Test;
+import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
+import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
+import com.google.common.base.Throwables;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.Callable;
-
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
-
-import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
-import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test the BackoffController behaves correctly.
- *
- * For each unit-test, the target (the Callable) and the algorithm
- * (IBackoffAlgorithm) are preprogrammed to give a fixed number responses.  If
- * any additional requests are made to either then the unit-test will fail.
+ * <p>
+ * For each unit-test, the target (the Callable) and the algorithm (IBackoffAlgorithm) are
+ * preprogrammed to give a fixed number responses.  If any additional requests are made to either
+ * then the unit-test will fail.
  */
-public class BackoffControllerTest
-{
+public class BackoffControllerTest {
+
     private IBackoffAlgorithmFactory factory;
     private Deque<Status> targetReplies;
     private List<Long> observedDelays;
     private Status status;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         targetReplies = new ArrayDeque<>();
         observedDelays = new ArrayList<>();
     }
 
     @Test
-    public void shouldNotRetryWhenSuccessful()
-    {
+    public void shouldNotRetryWhenSuccessful() {
         givenTargetThatReplies(SUCCESS);
         given(anAlgorithmThatSuggests());
 
@@ -111,8 +107,7 @@ public class BackoffControllerTest
     }
 
     @Test
-    public void shouldFailIfTargetFailsAndAlgorithmIsAlwaysFail()
-    {
+    public void shouldFailIfTargetFailsAndAlgorithmIsAlwaysFail() {
         givenTargetThatReplies(FAILURE);
         given(anAlgorithmThatSuggests().fail());
 
@@ -123,8 +118,7 @@ public class BackoffControllerTest
     }
 
     @Test
-    public void shouldSucceedIfTargetFailsOnceWithOneSecondDelayAlgorithm()
-    {
+    public void shouldSucceedIfTargetFailsOnceWithOneSecondDelayAlgorithm() {
         givenTargetThatReplies(FAILURE, SUCCESS);
         given(anAlgorithmThatSuggests().delayFor(1000L));
 
@@ -135,8 +129,7 @@ public class BackoffControllerTest
     }
 
     @Test
-    public void shouldFailIfTargetFailsOnceWithSingleRetryAlgorithm()
-    {
+    public void shouldFailIfTargetFailsOnceWithSingleRetryAlgorithm() {
         givenTargetThatReplies(FAILURE, FAILURE);
         given(anAlgorithmThatSuggests().delayFor(1000L).fail());
 
@@ -147,8 +140,7 @@ public class BackoffControllerTest
     }
 
     @Test
-    public void shouldSucceedIfTargetFailsTwiceThenSucceedsWithTwoRetryAlgorithm()
-    {
+    public void shouldSucceedIfTargetFailsTwiceThenSucceedsWithTwoRetryAlgorithm() {
         givenTargetThatReplies(FAILURE, FAILURE, SUCCESS);
         given(anAlgorithmThatSuggests().delayFor(1000L).delayFor(2000L));
 
@@ -158,17 +150,14 @@ public class BackoffControllerTest
         assertThat(status, is(SUCCESS));
     }
 
-    private void givenTargetThatReplies(Status ...returns)
-    {
+    private void givenTargetThatReplies(Status... returns) {
         targetReplies.addAll(Arrays.asList(returns));
     }
 
-    private void whenBackoffControllerIsCalled()
-    {
+    private void whenBackoffControllerIsCalled() {
         BackoffController controller = new BackoffController(factory) {
             @Override
-            protected void handleWait(long wait)
-            {
+            protected void handleWait(long wait) {
                 observedDelays.add(wait);
             }
         };
@@ -181,37 +170,32 @@ public class BackoffControllerTest
         }
     }
 
-    private void given(AlgorithmFactoryBuilder builder)
-    {
+    private void given(AlgorithmFactoryBuilder builder) {
         factory = builder.build();
     }
 
-    private AlgorithmFactoryBuilder anAlgorithmThatSuggests()
-    {
+    private AlgorithmFactoryBuilder anAlgorithmThatSuggests() {
         return new AlgorithmFactoryBuilder();
     }
 
     /**
      * Fluent interface for building an IBackoffAlgorithmFactory.
      */
-    private static class AlgorithmFactoryBuilder
-    {
+    private static class AlgorithmFactoryBuilder {
+
         private final List<Long> delays = new ArrayList<>();
 
-        AlgorithmFactoryBuilder delayFor(long duration)
-        {
+        AlgorithmFactoryBuilder delayFor(long duration) {
             delays.add(duration);
             return this;
         }
 
-        AlgorithmFactoryBuilder fail()
-        {
+        AlgorithmFactoryBuilder fail() {
             delays.add(IBackoffAlgorithm.NO_WAIT);
             return this;
         }
 
-        IBackoffAlgorithmFactory build()
-        {
+        IBackoffAlgorithmFactory build() {
             return () -> () -> delays.remove(0);
         }
     }

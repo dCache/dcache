@@ -64,22 +64,23 @@ import com.google.common.collect.ComparisonChain;
 /**
  * <p>Consolidated view information from billing and door info.</p>
  */
-public final class TransferRecord extends RecordEntry implements Comparable<TransferRecord>{
-    private String  initiator;
-    private String  client;
-    private Long    transfersize;
+public final class TransferRecord extends RecordEntry implements Comparable<TransferRecord> {
+
+    private String initiator;
+    private String client;
+    private Long transfersize;
     private Integer mappeduid;
     private Integer mappedgid;
-    private String  fqan;
-    private String  owner;
+    private String fqan;
+    private String owner;
 
     public int compareTo(TransferRecord entry) {
         return ComparisonChain.start()
-                              .compare(datestamp, entry.datestamp)
-                              .compare(type, entry.type)
-                              .compare(cellname, entry.cellname)
-                              .compare(initiator, entry.initiator)
-                              .result();
+              .compare(datestamp, entry.datestamp)
+              .compare(type, entry.type)
+              .compare(cellname, entry.cellname)
+              .compare(initiator, entry.initiator)
+              .result();
     }
 
     public String getClient() {

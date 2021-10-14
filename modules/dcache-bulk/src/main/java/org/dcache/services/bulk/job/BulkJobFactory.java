@@ -60,93 +60,83 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import com.google.common.collect.ImmutableMap;
-
+import dmg.cells.nucleus.CellLifeCycleAware;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
-
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
 
 /**
- *  Creates jobs on the basis of activity mappings.
- *
- *  For each activity (such as pinning, deletion, etc.), there must be
- *  an SPI provider which creates the correct class of job and
- *  also returns the properly constructed request and expansion job for this
- *  activity.
+ * Creates jobs on the basis of activity mappings.
+ * <p>
+ * For each activity (such as pinning, deletion, etc.), there must be an SPI provider which creates
+ * the correct class of job and also returns the properly constructed request and expansion job for
+ * this activity.
  */
-public class BulkJobFactory implements CellLifeCycleAware
-{
+public class BulkJobFactory implements CellLifeCycleAware {
+
     private final Map<String, BulkJobProvider> providers
-                    = Collections.synchronizedMap(new HashMap<>());
+          = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         ServiceLoader<BulkJobProvider> serviceLoader
-                        = ServiceLoader.load(BulkJobProvider.class);
+              = ServiceLoader.load(BulkJobProvider.class);
         for (BulkJobProvider provider : serviceLoader) {
             providers.put(provider.getActivity(), provider);
         }
     }
 
-    public Map<String, BulkJobProvider> getProviders()
-    {
+    public Map<String, BulkJobProvider> getProviders() {
         return ImmutableMap.copyOf(providers);
     }
 
     public BulkRequestJob createRequestJob(BulkRequest request)
-                    throws BulkServiceException
-    {
+          throws BulkServiceException {
         String activity = request.getActivity();
         BulkJobProvider provider = providers.get(activity);
         if (provider == null) {
             throw new BulkServiceException("cannot create BulkRequestJob; "
-                                                           + "no such activity: "
-                                                           + activity);
+                  + "no such activity: "
+                  + activity);
         }
         return provider.createRequestJob(request);
     }
 
     public TargetExpansionJob createTargetExpansionJob(BulkJobKey parentKey,
-                                                       BulkRequest request)
-                    throws BulkServiceException
-    {
+          BulkRequest request)
+          throws BulkServiceException {
         String activity = request.getActivity();
         BulkJobProvider provider = providers.get(activity);
         if (provider == null) {
             throw new BulkServiceException("cannot create TargetExpansionJob; "
-                                                           + "no such activity: "
-                                                           + activity);
+                  + "no such activity: "
+                  + activity);
         }
         return provider.createExpansionJob(parentKey, request);
     }
 
     public SingleTargetJob createSingleTargetJob(BulkJobKey parentKey,
-                                                 String activity)
-                    throws BulkServiceException
-    {
+          String activity)
+          throws BulkServiceException {
         return createSingleTargetJob(null, parentKey, activity);
     }
 
     public SingleTargetJob createSingleTargetJob(BulkJobKey key,
-                                                 BulkJobKey parentKey,
-                                                 String activity)
-                    throws BulkServiceException
-    {
+          BulkJobKey parentKey,
+          String activity)
+          throws BulkServiceException {
         BulkJobProvider provider = providers.get(activity);
         if (provider == null) {
             throw new BulkServiceException("cannot create SingleTargetJob; "
-                                                           + "no such activity: "
-                                                           + activity);
+                  + "no such activity: "
+                  + activity);
         }
 
         return provider.createJob(key == null ? BulkJobKey.newKey(parentKey.getRequestId())
-                                              : key,
-                                  parentKey);
+                    : key,
+              parentKey);
     }
 }
