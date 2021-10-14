@@ -1,16 +1,13 @@
 package org.dcache.services.httpd.handlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import dmg.util.HttpException;
+import dmg.util.HttpRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.FileNameMap;
@@ -18,21 +15,21 @@ import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.Arrays;
-
-import dmg.util.HttpException;
-import dmg.util.HttpRequest;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.util.StandardHttpRequest;
-
-import static javax.servlet.http.HttpServletResponse.*;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides HTML or .css content from static file.
  *
  * @author arossi
  */
-public class PathHandler extends AbstractHandler
-{
+public class PathHandler extends AbstractHandler {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PathHandler.class);
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
@@ -45,9 +42,8 @@ public class PathHandler extends AbstractHandler
 
     @Override
     public void handle(String target, Request baseRequest,
-                    HttpServletRequest request, HttpServletResponse response)
-                    throws IOException
-    {
+          HttpServletRequest request, HttpServletResponse response)
+          throws IOException {
         try {
             HttpRequest proxy = new StandardHttpRequest(request, response);
             sendFile(path, proxy);
@@ -55,7 +51,7 @@ public class PathHandler extends AbstractHandler
             throw e;
         } catch (HttpException e) {
             LOGGER.debug("Failing request {}: {} {}", request, e.getErrorCode(),
-                    e.getMessage());
+                  e.getMessage());
             response.setStatus(e.getErrorCode(), e.getMessage());
         } catch (URISyntaxException e) {
             LOGGER.debug("Failing request {}: {}", request, e.getMessage());
@@ -64,8 +60,7 @@ public class PathHandler extends AbstractHandler
     }
 
 
-    private void sendFile(File base, HttpRequest proxy) throws HttpException, IOException
-    {
+    private void sendFile(File base, HttpRequest proxy) throws HttpException, IOException {
         String filename;
         String[] tokens = proxy.getRequestTokens();
         if (tokens.length < 2) {
@@ -75,7 +70,7 @@ public class PathHandler extends AbstractHandler
         }
         final File f = base.isFile() ? base : new File(base, filename);
         if (!f.getCanonicalFile().getAbsolutePath().startsWith(
-                        base.getCanonicalFile().getAbsolutePath())) {
+              base.getCanonicalFile().getAbsolutePath())) {
             throw new HttpException(SC_FORBIDDEN, "Forbidden");
         }
 

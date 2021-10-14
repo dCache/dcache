@@ -66,84 +66,86 @@ import org.dcache.qos.data.QoSAction;
 import org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler;
 
 /**
- *  Provides the adjuster corresponding to the adjustment activity to the task.
- *  Injects the necessary endpoints, handlers and executors.
+ * Provides the adjuster corresponding to the adjustment activity to the task. Injects the necessary
+ * endpoints, handlers and executors.
  */
 public final class QoSAdjusterFactory {
-  private CellStub pinManager;
-  private CellStub pools;
 
-  /**
-   *  Should be CDC-preserving so as to pass on the QOS session id.
-   */
-  private ScheduledExecutorService scheduledExecutor;
-  private QoSAdjustTaskCompletionHandler completionHandler;
+    private CellStub pinManager;
+    private CellStub pools;
 
-  public QoSAdjusterBuilder newBuilder() {
-    return new QoSAdjusterBuilder();
-  }
+    /**
+     * Should be CDC-preserving so as to pass on the QOS session id.
+     */
+    private ScheduledExecutorService scheduledExecutor;
+    private QoSAdjustTaskCompletionHandler completionHandler;
 
-  public void setPinManager(CellStub pinManager) {
-    this.pinManager = pinManager;
-  }
-
-  public void setPools(CellStub pools) {
-    this.pools = pools;
-  }
-
-  public void setCompletionHandler(QoSAdjustTaskCompletionHandler completionHandler) {
-    this.completionHandler = completionHandler;
-  }
-
-  public void setScheduledExecutor(ScheduledExecutorService scheduledExecutor) {
-    this.scheduledExecutor = scheduledExecutor;
-  }
-
-  public class QoSAdjusterBuilder {
-    private QoSAction action;
-
-    private QoSAdjusterBuilder() {
+    public QoSAdjusterBuilder newBuilder() {
+        return new QoSAdjusterBuilder();
     }
 
-    public QoSAdjusterBuilder of(QoSAction action) {
-      this.action = Objects.requireNonNull(action);
-      return this;
+    public void setPinManager(CellStub pinManager) {
+        this.pinManager = pinManager;
     }
 
-    public QoSAdjuster build() {
-      switch (action) {
-        case COPY_REPLICA:
-          CopyAdjuster copyAdjuster = new CopyAdjuster();
-          copyAdjuster.completionHandler = completionHandler;
-          copyAdjuster.executorService = scheduledExecutor;
-          copyAdjuster.pinManager = pinManager;
-          copyAdjuster.pools = pools;
-          return copyAdjuster;
-        case FLUSH:
-          FlushAdjuster flushAdjuster = new FlushAdjuster();
-          flushAdjuster.completionHandler = completionHandler;
-          flushAdjuster.executorService = scheduledExecutor;
-          flushAdjuster.pinManager = pinManager;
-          flushAdjuster.pools = pools;
-          return flushAdjuster;
-        case WAIT_FOR_STAGE:
-          StagingAdjuster stagingAdjuster = new StagingAdjuster();
-          stagingAdjuster.completionHandler = completionHandler;
-          stagingAdjuster.executorService = scheduledExecutor;
-          stagingAdjuster.pinManager = pinManager;
-          return stagingAdjuster;
-        case CACHE_REPLICA:
-        case PERSIST_REPLICA:
-        case UNSET_PRECIOUS_REPLICA:
-          ReplicaStateAdjuster stateAdjuster = new ReplicaStateAdjuster();
-          stateAdjuster.completionHandler = completionHandler;
-          stateAdjuster.executorService = scheduledExecutor;
-          stateAdjuster.pools = pools;
-          return stateAdjuster;
-        default:
-          throw new IllegalStateException("QoSAdjuster action of unknown type " + action
-              + ".  This is a bug.");
-      }
+    public void setPools(CellStub pools) {
+        this.pools = pools;
     }
-  }
+
+    public void setCompletionHandler(QoSAdjustTaskCompletionHandler completionHandler) {
+        this.completionHandler = completionHandler;
+    }
+
+    public void setScheduledExecutor(ScheduledExecutorService scheduledExecutor) {
+        this.scheduledExecutor = scheduledExecutor;
+    }
+
+    public class QoSAdjusterBuilder {
+
+        private QoSAction action;
+
+        private QoSAdjusterBuilder() {
+        }
+
+        public QoSAdjusterBuilder of(QoSAction action) {
+            this.action = Objects.requireNonNull(action);
+            return this;
+        }
+
+        public QoSAdjuster build() {
+            switch (action) {
+                case COPY_REPLICA:
+                    CopyAdjuster copyAdjuster = new CopyAdjuster();
+                    copyAdjuster.completionHandler = completionHandler;
+                    copyAdjuster.executorService = scheduledExecutor;
+                    copyAdjuster.pinManager = pinManager;
+                    copyAdjuster.pools = pools;
+                    return copyAdjuster;
+                case FLUSH:
+                    FlushAdjuster flushAdjuster = new FlushAdjuster();
+                    flushAdjuster.completionHandler = completionHandler;
+                    flushAdjuster.executorService = scheduledExecutor;
+                    flushAdjuster.pinManager = pinManager;
+                    flushAdjuster.pools = pools;
+                    return flushAdjuster;
+                case WAIT_FOR_STAGE:
+                    StagingAdjuster stagingAdjuster = new StagingAdjuster();
+                    stagingAdjuster.completionHandler = completionHandler;
+                    stagingAdjuster.executorService = scheduledExecutor;
+                    stagingAdjuster.pinManager = pinManager;
+                    return stagingAdjuster;
+                case CACHE_REPLICA:
+                case PERSIST_REPLICA:
+                case UNSET_PRECIOUS_REPLICA:
+                    ReplicaStateAdjuster stateAdjuster = new ReplicaStateAdjuster();
+                    stateAdjuster.completionHandler = completionHandler;
+                    stateAdjuster.executorService = scheduledExecutor;
+                    stateAdjuster.pools = pools;
+                    return stateAdjuster;
+                default:
+                    throw new IllegalStateException("QoSAdjuster action of unknown type " + action
+                          + ".  This is a bug.");
+            }
+        }
+    }
 }

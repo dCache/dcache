@@ -17,15 +17,14 @@
  */
 package javatunnel.token;
 
-import org.dcache.dss.DssContext;
+import static org.dcache.util.ByteUnit.KiB;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import org.dcache.dss.DssContext;
 
-import static org.dcache.util.ByteUnit.KiB;
+public class WrappingOutputStream extends OutputStream {
 
-public class WrappingOutputStream extends OutputStream
-{
     private static final int ARRAYMAXLEN = KiB.toBytes(4);
 
     private final TokenWriter out;
@@ -33,16 +32,14 @@ public class WrappingOutputStream extends OutputStream
     private final byte[] buffer = new byte[ARRAYMAXLEN];
     private int pos;
 
-    public WrappingOutputStream(TokenWriter out, DssContext context)
-    {
+    public WrappingOutputStream(TokenWriter out, DssContext context) {
         this.out = out;
         this.context = context;
     }
 
     @Override
-    public void write(int b) throws IOException
-    {
-        buffer[pos] = (byte)b;
+    public void write(int b) throws IOException {
+        buffer[pos] = (byte) b;
         ++pos;
         if (pos >= ARRAYMAXLEN) {
             flush();
@@ -50,15 +47,13 @@ public class WrappingOutputStream extends OutputStream
     }
 
     @Override
-    public void flush() throws IOException
-    {
+    public void flush() throws IOException {
         out.write(context.wrap(buffer, 0, pos));
         pos = 0;
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         out.close();
     }
 }

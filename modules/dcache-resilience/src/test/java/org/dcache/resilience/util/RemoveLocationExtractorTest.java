@@ -1,20 +1,19 @@
 package org.dcache.resilience.util;
 
-import com.google.common.collect.ImmutableList;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableList;
+import diskCacheV111.util.CacheException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
 import org.dcache.resilience.TestBase;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class RemoveLocationExtractorTest extends TestBase {
+
     private String pool;
     private Collection<String> onlyOneCopyPer;
     private FileAttributes attributes;
@@ -29,7 +28,7 @@ public final class RemoveLocationExtractorTest extends TestBase {
 
     @Test
     public void selectedPoolsShouldMonotonicallyDescreaseInWeightWhenContinuouslyRemoved()
-                    throws CacheException {
+          throws CacheException {
         givenAFileWithAReplicaOnAllResilientPools();
         givenTagConstraintsOn("hostname", "rack");
         givenThePoolInfoForThisFile();
@@ -87,12 +86,12 @@ public final class RemoveLocationExtractorTest extends TestBase {
 
     private Collection<String> allAvailablePools() {
         return memberPools().stream().map((i) -> poolInfoMap.getPool(i)).collect(
-                        Collectors.toSet());
+              Collectors.toSet());
     }
 
     private Collection<Integer> memberPools() {
         return poolInfoMap.getPoolsOfGroup(poolInfoMap.getResilientPoolGroup(
-                        poolInfoMap.getPoolIndex(pool)));
+              poolInfoMap.getPoolIndex(pool)));
     }
 
     private void andThenAPoolIsRandomlySelectedAndRemoved() {
@@ -101,7 +100,7 @@ public final class RemoveLocationExtractorTest extends TestBase {
     }
 
     private void givenAFileWithAReplicaOnAllResilientPools()
-                    throws CacheException {
+          throws CacheException {
         loadFilesWithExcessLocations();
         attributes = aFileWithAReplicaOnAllResilientPools();
     }
@@ -109,7 +108,7 @@ public final class RemoveLocationExtractorTest extends TestBase {
     private void givenNoTagConstraints() {
     }
 
-    private void givenTagConstraintsOn(String ... keys) {
+    private void givenTagConstraintsOn(String... keys) {
         onlyOneCopyPer = ImmutableList.copyOf(keys);
     }
 
@@ -130,7 +129,7 @@ public final class RemoveLocationExtractorTest extends TestBase {
         return getPoolsWithTag("rack", "r0");
     }
 
-    private Collection<String> getPoolsWithTag(final String tag, final String ... values) {
+    private Collection<String> getPoolsWithTag(final String tag, final String... values) {
         return memberPools().stream().filter((p) -> {
             Map<String, String> tagMap = poolInfoMap.getTags(p);
             if (tagMap.isEmpty()) {

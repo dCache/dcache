@@ -17,6 +17,7 @@
  */
 package org.dcache.util;
 
+import dmg.cells.nucleus.CDC;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -25,39 +26,34 @@ import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.AttributeKey;
-
 import java.net.SocketAddress;
-
-import dmg.cells.nucleus.CDC;
 
 
 /**
- * This class wraps some ChannelDuplexHandler and ensures that, if the Netty
- * Channel has a specific key then the value of this key is used as the CDC
- * session.  This class is really a hack to work-around that CDC is a
- * thread-local value that is not propagated when Netty schedules tasks outside
- * of the event loop.  Such scheduled tasks current happen in the pool, as the
- * response to a CloseRequest is delayed until after the mover has closed.
- * There seems to be no easy way to propagate the CDC within Netty scheduled
- * tasks.
+ * This class wraps some ChannelDuplexHandler and ensures that, if the Netty Channel has a specific
+ * key then the value of this key is used as the CDC session.  This class is really a hack to
+ * work-around that CDC is a thread-local value that is not propagated when Netty schedules tasks
+ * outside of the event loop.  Such scheduled tasks current happen in the pool, as the response to a
+ * CloseRequest is delayed until after the mover has closed. There seems to be no easy way to
+ * propagate the CDC within Netty scheduled tasks.
  */
 @Sharable
-public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, ChannelInboundHandler
-{
-    public static final AttributeKey<String> SESSION = AttributeKey.newInstance("org.dcache.cells.cdc.session");
+public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler,
+      ChannelInboundHandler {
+
+    public static final AttributeKey<String> SESSION = AttributeKey.newInstance(
+          "org.dcache.cells.cdc.session");
 
     private final ChannelDuplexHandler _inner;
 
-    public ChannelCdcSessionHandlerWrapper(ChannelDuplexHandler inner)
-    {
+    public ChannelCdcSessionHandlerWrapper(ChannelDuplexHandler inner) {
         _inner = inner;
     }
 
     /**
      * Bind a particular session value to this channel.
      */
-    public static void bindSessionToChannel(Channel channel, String session)
-    {
+    public static void bindSessionToChannel(Channel channel, String session) {
         channel.attr(SESSION).set(session);
     }
 
@@ -66,8 +62,8 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
      */
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception
-    {
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise)
+          throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.bind(ctx, localAddress, promise);
         }
@@ -75,56 +71,50 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
 
     @Override
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress,
-            SocketAddress localAddress, ChannelPromise promise) throws Exception
-    {
+          SocketAddress localAddress, ChannelPromise promise) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.connect(ctx, remoteAddress, localAddress, promise);
         }
     }
 
     @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception
-    {
+    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.disconnect(ctx, promise);
         }
     }
 
     @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception
-    {
+    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.close(ctx, promise);
         }
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception
-    {
+    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.deregister(ctx, promise);
         }
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception
-    {
+    public void read(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.read(ctx);
         }
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception
-    {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+          throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.write(ctx, msg, promise);
         }
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception
-    {
+    public void flush(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.flush(ctx);
         }
@@ -135,64 +125,56 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
      */
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelRegistered(ctx);
         }
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelUnregistered(ctx);
         }
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelActive(ctx);
         }
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelInactive(ctx);
         }
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
-    {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelRead(ctx, msg);
         }
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelReadComplete(ctx);
         }
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
-    {
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.userEventTriggered(ctx, evt);
         }
     }
 
     @Override
-    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.channelWritabilityChanged(ctx);
         }
@@ -200,8 +182,7 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
 
     @Override
     @SuppressWarnings("deprecation")
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
-    {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.exceptionCaught(ctx, cause);
         }
@@ -209,23 +190,20 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
 
 
     @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception
-    {
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.handlerAdded(ctx);
         }
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
-    {
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         try (AutoCloseable oldCdc = withCdcSession(ctx)) {
             _inner.handlerRemoved(ctx);
         }
     }
 
-    private AutoCloseable withCdcSession(ChannelHandlerContext ctx)
-    {
+    private AutoCloseable withCdcSession(ChannelHandlerContext ctx) {
         if (CDC.getSession() == null) {
             String session = ctx.channel().attr(SESSION).get();
             if (session != null) {
@@ -234,6 +212,7 @@ public class ChannelCdcSessionHandlerWrapper implements ChannelOutboundHandler, 
                 return captured;
             }
         }
-        return () -> {};
+        return () -> {
+        };
     }
 }

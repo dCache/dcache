@@ -17,6 +17,15 @@
  */
 package org.dcache.ssl;
 
+import static eu.emi.security.authn.x509.ValidationErrorCategory.CRL;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.NAMESPACE;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.NAME_CONSTRAINT;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.OCSP;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.X509_BASIC;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.X509_CHAIN;
+import static org.dcache.util.Callables.memoizeFromFiles;
+import static org.dcache.util.Callables.memoizeWithExpiration;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
@@ -36,15 +45,6 @@ import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.SSLException;
-
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -53,65 +53,59 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManager;
 import org.dcache.util.CachingCertificateValidator;
-
-import static eu.emi.security.authn.x509.ValidationErrorCategory.*;
-import static org.dcache.util.Callables.memoizeFromFiles;
-import static org.dcache.util.Callables.memoizeWithExpiration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * SslContextFactory based on the CANL library. Uses the builder pattern to
- * create immutable instances.
+ * SslContextFactory based on the CANL library. Uses the builder pattern to create immutable
+ * instances.
  * <p/>
- *
- * Implements the SslContextFactory which allows specifying either Java or Native (OpenSSL)
- * as implementation.
+ * <p>
+ * Implements the SslContextFactory which allows specifying either Java or Native (OpenSSL) as
+ * implementation.
  */
-public class CanlContextFactory implements SslContextFactory
-{
+public class CanlContextFactory implements SslContextFactory {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CanlContextFactory.class);
 
     private static final EnumSet<ValidationErrorCategory> VALIDATION_ERRORS_TO_LOG =
-            EnumSet.of(NAMESPACE, X509_BASIC, X509_CHAIN, NAME_CONSTRAINT, CRL, OCSP);
+          EnumSet.of(NAMESPACE, X509_BASIC, X509_CHAIN, NAME_CONSTRAINT, CRL, OCSP);
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final TrustManager[] trustManagers;
     private final boolean startTls;
 
-    private static final AutoCloseable NOOP = new AutoCloseable()
-    {
+    private static final AutoCloseable NOOP = new AutoCloseable() {
         @Override
-        public void close() throws Exception
-        {
+        public void close() throws Exception {
         }
     };
 
-    protected CanlContextFactory(boolean startTls, TrustManager... trustManagers)
-    {
+    protected CanlContextFactory(boolean startTls, TrustManager... trustManagers) {
         this.startTls = startTls;
         this.trustManagers = trustManagers;
     }
 
-    public static CanlContextFactory createDefault()
-    {
+    public static CanlContextFactory createDefault() {
         return new Builder().build();
     }
 
-    public static Builder custom()
-    {
+    public static Builder custom() {
         return new Builder();
     }
 
-    public TrustManager[] getTrustManagers()
-    {
+    public TrustManager[] getTrustManagers() {
         return trustManagers;
     }
 
     @Override
     public <T> T getContext(Class<T> type, X509Credential credential)
-        throws GeneralSecurityException
-    {
+          throws GeneralSecurityException {
         if (type.isAssignableFrom(SSLContext.class)) {
             return (T) getJavaSSLContext(credential);
         } else if (type.isAssignableFrom(SslContext.class)) {
@@ -122,14 +116,13 @@ public class CanlContextFactory implements SslContextFactory
     }
 
     private SSLContext getJavaSSLContext(X509Credential credential)
-            throws GeneralSecurityException
-    {
+          throws GeneralSecurityException {
         KeyManager[] keyManagers;
         if (credential == null) {
             keyManagers = null;
         } else {
             keyManagers = new KeyManager[1];
-            keyManagers [0] = credential.getKeyManager();
+            keyManagers[0] = credential.getKeyManager();
         }
         SSLContext context = SSLContext.getInstance("TLS");
         context.init(keyManagers, trustManagers, secureRandom);
@@ -137,164 +130,152 @@ public class CanlContextFactory implements SslContextFactory
     }
 
     private SslContext getNettySslContext(X509Credential credential)
-        throws GeneralSecurityException
-    {
+          throws GeneralSecurityException {
         KeyManager keyManager = credential == null ? null : credential.getKeyManager();
         SslContextBuilder builder = startTls ? SslContextBuilder.forServer(keyManager)
-            : SslContextBuilder.forClient();
+              : SslContextBuilder.forClient();
         try {
             return builder.trustManager(trustManagers[0]).startTls(startTls).build();
         } catch (SSLException e) {
-            throw new GeneralSecurityException("Could not get Netty SSL context: " + e.getMessage());
+            throw new GeneralSecurityException(
+                  "Could not get Netty SSL context: " + e.getMessage());
         }
     }
 
-    public static class Builder
-    {
-        private Path certificateAuthorityPath = FileSystems.getDefault().getPath("/etc/grid-security/certificates");
+    public static class Builder {
+
+        private Path certificateAuthorityPath = FileSystems.getDefault()
+              .getPath("/etc/grid-security/certificates");
         private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;
         private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
         private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
         private long certificateAuthorityUpdateInterval = 600000;
         private boolean lazyMode = true;
         private Path keyPath = FileSystems.getDefault().getPath("/etc/grid-security/hostkey.pem");
-        private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
+        private Path certificatePath = FileSystems.getDefault()
+              .getPath("/etc/grid-security/hostcert.pem");
         private long credentialUpdateInterval = 1;
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
         private Supplier<AutoCloseable> loggingContextSupplier = () -> NOOP;
         private long validationCacheLifetime = 300000;
         private boolean startTls = true; // default/server mode
 
-        private Builder()
-        {
+        private Builder() {
         }
 
-        public Builder startTls(boolean startTls)
-        {
+        public Builder startTls(boolean startTls) {
             this.startTls = startTls;
             return this;
         }
 
-        public Builder withCertificateAuthorityPath(Path certificateAuthorityPath)
-        {
+        public Builder withCertificateAuthorityPath(Path certificateAuthorityPath) {
             this.certificateAuthorityPath = certificateAuthorityPath;
             return this;
         }
 
-        public Builder withCertificateAuthorityPath(String certificateAuthorityPath)
-        {
-            return withCertificateAuthorityPath(FileSystems.getDefault().getPath(certificateAuthorityPath));
+        public Builder withCertificateAuthorityPath(String certificateAuthorityPath) {
+            return withCertificateAuthorityPath(
+                  FileSystems.getDefault().getPath(certificateAuthorityPath));
         }
 
-        public Builder withCertificateAuthorityUpdateInterval(long interval)
-        {
+        public Builder withCertificateAuthorityUpdateInterval(long interval) {
             this.certificateAuthorityUpdateInterval = interval;
             return this;
         }
 
-        public Builder withCertificateAuthorityUpdateInterval(long interval, TimeUnit unit)
-        {
+        public Builder withCertificateAuthorityUpdateInterval(long interval, TimeUnit unit) {
             this.certificateAuthorityUpdateInterval = unit.toMillis(interval);
             return this;
         }
 
-        public Builder withCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-        {
+        public Builder withCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
             this.crlCheckingMode = crlCheckingMode;
             return this;
         }
 
-        public Builder withOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-        {
+        public Builder withOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
             this.ocspCheckingMode = ocspCheckingMode;
             return this;
         }
 
-        public Builder withNamespaceMode(NamespaceCheckingMode namespaceMode)
-        {
+        public Builder withNamespaceMode(NamespaceCheckingMode namespaceMode) {
             this.namespaceMode = namespaceMode;
             return this;
         }
 
-        public Builder withLazy(boolean lazyMode)
-        {
+        public Builder withLazy(boolean lazyMode) {
             this.lazyMode = lazyMode;
             return this;
         }
 
-        public Builder withKeyPath(Path keyPath)
-        {
+        public Builder withKeyPath(Path keyPath) {
             this.keyPath = keyPath;
             return this;
         }
 
-        public Builder withCertificatePath(Path certificatePath)
-        {
+        public Builder withCertificatePath(Path certificatePath) {
             this.certificatePath = certificatePath;
             return this;
         }
 
-        public Builder withCredentialUpdateInterval(long duration, TimeUnit unit)
-        {
+        public Builder withCredentialUpdateInterval(long duration, TimeUnit unit) {
             this.credentialUpdateInterval = duration;
             this.credentialUpdateIntervalUnit = unit;
             return this;
         }
 
-        public Builder withLoggingContext(Supplier<AutoCloseable> contextSupplier)
-        {
+        public Builder withLoggingContext(Supplier<AutoCloseable> contextSupplier) {
             this.loggingContextSupplier = contextSupplier;
             return this;
         }
 
-        public Builder withValidationCacheLifetime(long millis)
-        {
+        public Builder withValidationCacheLifetime(long millis) {
             this.validationCacheLifetime = millis;
             return this;
         }
 
-        public Builder withValidationCacheLifetime(long duration, TimeUnit unit)
-        {
+        public Builder withValidationCacheLifetime(long duration, TimeUnit unit) {
             this.validationCacheLifetime = unit.toMillis(duration);
             return this;
         }
 
-        public CanlContextFactory build()
-        {
+        public CanlContextFactory build() {
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
             ValidatorParams validatorParams =
-                    new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
-                                        ProxySupport.ALLOW);
+                  new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
+                        ProxySupport.ALLOW);
             X509CertChainValidator v =
-                    new CachingCertificateValidator(
-                            new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
-                                                          certificateAuthorityUpdateInterval,
-                                                          validatorParams, lazyMode),
-                            validationCacheLifetime);
-            v.addUpdateListener(new StoreUpdateListener()
-            {
+                  new CachingCertificateValidator(
+                        new OpensslCertChainValidator(certificateAuthorityPath.toString(), true,
+                              namespaceMode,
+                              certificateAuthorityUpdateInterval,
+                              validatorParams, lazyMode),
+                        validationCacheLifetime);
+            v.addUpdateListener(new StoreUpdateListener() {
                 @Override
-                public void loadingNotification(String location, String type, Severity level, Exception cause)
-                {
+                public void loadingNotification(String location, String type, Severity level,
+                      Exception cause) {
                     try (AutoCloseable ignored = loggingContextSupplier.get()) {
                         switch (level) {
-                        case ERROR:
-                            if (cause != null) {
-                                LOGGER.error("Error loading {} from {}: {}", type, location, cause.getMessage());
-                            } else {
-                                LOGGER.error("Error loading {} from {}.", type, location);
-                            }
-                            break;
-                        case WARNING:
-                            if (cause != null) {
-                                LOGGER.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
-                            } else {
-                                LOGGER.warn("Problem loading {} from {}.", type, location);
-                            }
-                            break;
-                        case NOTIFICATION:
-                            LOGGER.debug("Reloaded {} from {}.", type, location);
-                            break;
+                            case ERROR:
+                                if (cause != null) {
+                                    LOGGER.error("Error loading {} from {}: {}", type, location,
+                                          cause.getMessage());
+                                } else {
+                                    LOGGER.error("Error loading {} from {}.", type, location);
+                                }
+                                break;
+                            case WARNING:
+                                if (cause != null) {
+                                    LOGGER.warn("Problem loading {} from {}: {}", type, location,
+                                          cause.getMessage());
+                                } else {
+                                    LOGGER.warn("Problem loading {} from {}.", type, location);
+                                }
+                                break;
+                            case NOTIFICATION:
+                                LOGGER.debug("Reloaded {} from {}.", type, location);
+                                break;
                         }
                     } catch (Exception e) {
                         Throwables.throwIfUnchecked(e);
@@ -305,8 +286,11 @@ public class CanlContextFactory implements SslContextFactory
             v.addValidationListener((ValidationError error) -> {
                 if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
                     X509Certificate[] chain = error.getChain();
-                    String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
-                    LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
+                    String subject =
+                          (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal()
+                                .getName() : "";
+                    LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject,
+                          error);
                 }
                 return false;
             });
@@ -316,13 +300,13 @@ public class CanlContextFactory implements SslContextFactory
         public <T> Callable<T> buildWithCaching(Class<T> contextType) throws Exception {
             final CanlContextFactory factory = build();
             PEMCredential credential
-                = new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
+                  = new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
             Callable newContext = () -> factory.getContext(contextType, credential);
             return (Callable<T>) memoizeWithExpiration(memoizeFromFiles(newContext,
-                                                                        keyPath,
-                                                                        certificatePath),
-                                                        credentialUpdateInterval,
-                                                        credentialUpdateIntervalUnit);
+                        keyPath,
+                        certificatePath),
+                  credentialUpdateInterval,
+                  credentialUpdateIntervalUnit);
         }
     }
 }

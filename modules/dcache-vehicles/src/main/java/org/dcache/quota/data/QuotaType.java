@@ -60,5 +60,5 @@ documents or software obtained from this server.
 package org.dcache.quota.data;
 
 public enum QuotaType {
-  USER, GROUP
+    USER, GROUP
 }

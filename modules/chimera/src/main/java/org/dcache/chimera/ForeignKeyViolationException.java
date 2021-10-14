@@ -19,17 +19,15 @@ package org.dcache.chimera;
 
 import org.springframework.dao.DataIntegrityViolationException;
 
-public class ForeignKeyViolationException extends DataIntegrityViolationException
-{
+public class ForeignKeyViolationException extends DataIntegrityViolationException {
+
     private static final long serialVersionUID = 5003417901540979046L;
 
-    public ForeignKeyViolationException(String msg)
-    {
+    public ForeignKeyViolationException(String msg) {
         super(msg);
     }
 
-    public ForeignKeyViolationException(String msg, Throwable cause)
-    {
+    public ForeignKeyViolationException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }

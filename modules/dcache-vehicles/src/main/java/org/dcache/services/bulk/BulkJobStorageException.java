@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-public class BulkJobStorageException extends BulkStorageException
-{
+public class BulkJobStorageException extends BulkStorageException {
+
     private static final long serialVersionUID = 251391972577123690L;
 
-    public BulkJobStorageException(String message)
-    {
+    public BulkJobStorageException(String message) {
         super(message);
     }
 
-    public BulkJobStorageException(String message, Throwable cause)
-    {
+    public BulkJobStorageException(String message, Throwable cause) {
         super(message, cause);
     }
 }

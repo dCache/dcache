@@ -66,6 +66,7 @@ import diskCacheV111.vehicles.Message;
  * <p>Message set to communicate a broken file discovered on a pool.</p>
  */
 public class CorruptFileMessage extends Message {
+
     private static final long serialVersionUID = -4511551458967449314L;
 
     private final String pool;
@@ -86,6 +87,6 @@ public class CorruptFileMessage extends Message {
 
     public String toString() {
         return String.format("%s: (pnfsid %s) (pool %s) – %s", getMessageName(),
-                        pnfsId, pool, super.toString());
+              pnfsId, pool, super.toString());
     }
 }

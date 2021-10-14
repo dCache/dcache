@@ -1,21 +1,28 @@
 package org.dcache.gplazma.plugins;
 
+import static eu.emi.security.authn.x509.helpers.CertificateHelpers.getExtensionBytes;
+import static org.dcache.auth.EntityDefinition.HOST;
+import static org.dcache.auth.EntityDefinition.PERSON;
+import static org.dcache.auth.EntityDefinition.ROBOT;
+import static org.dcache.auth.LoA.IGTF_AP_CLASSIC;
+import static org.dcache.auth.LoA.IGTF_AP_EXPERIMENTAL;
+import static org.dcache.auth.LoA.IGTF_AP_IOTA;
+import static org.dcache.auth.LoA.IGTF_AP_MICS;
+import static org.dcache.auth.LoA.IGTF_AP_SGCS;
+import static org.dcache.auth.LoA.IGTF_AP_SLCS;
+import static org.dcache.auth.LoA.IGTF_LOA_ASPEN;
+import static org.dcache.auth.LoA.IGTF_LOA_BIRCH;
+import static org.dcache.auth.LoA.IGTF_LOA_CEDAR;
+import static org.dcache.auth.LoA.IGTF_LOA_DOGWOOD;
+import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.PolicyInformation;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
@@ -39,7 +46,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntityDefinition;
 import org.dcache.auth.EntityDefinitionPrincipal;
@@ -50,91 +62,85 @@ import org.dcache.auth.Origin;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
 import org.dcache.gplazma.util.IGTFInfoDirectory;
-
-import static eu.emi.security.authn.x509.helpers.CertificateHelpers.getExtensionBytes;
-import static org.dcache.auth.EntityDefinition.*;
-import static org.dcache.auth.LoA.*;
-import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Extracts GlobusPrincipals from any X509Certificate certificate
- * chain in the public credentials.
- *
- * The certificate is not validated (ie no CRL checks and no CA
- * signature check). It is assumed that the door did this check
- * already.
+ * Extracts GlobusPrincipals from any X509Certificate certificate chain in the public credentials.
+ * <p>
+ * The certificate is not validated (ie no CRL checks and no CA signature check). It is assumed that
+ * the door did this check already.
  */
-public class X509Plugin implements GPlazmaAuthenticationPlugin
-{
+public class X509Plugin implements GPlazmaAuthenticationPlugin {
+
     private static final Logger LOG = LoggerFactory.getLogger(X509Plugin.class);
     private static final String OID_CERTIFICATE_POLICIES = "2.5.29.32";
     private static final String OID_ANY_POLICY = "2.5.29.32";
     private static final String OID_EKU_TLS_SERVER = "1.3.6.1.5.5.7.3.1";
-    private static final DERSequence ANY_POLICY = new DERSequence(new ASN1ObjectIdentifier(OID_ANY_POLICY));
-    private static final Map<String,LoA> LOA_POLICIES = ImmutableMap.<String,LoA>builder()
-            /*
-             * IGTF LoA.  This encapsulates the LoA corresponding to existing
-             * Authentication Policies (APs) described below.
-             */
-            .put("1.2.840.113612.5.2.5.1", IGTF_LOA_ASPEN)
-            .put("1.2.840.113612.5.2.5.2", IGTF_LOA_BIRCH)
-            .put("1.2.840.113612.5.2.5.3", IGTF_LOA_CEDAR)
-            .put("1.2.840.113612.5.2.5.4", IGTF_LOA_DOGWOOD)
-            /*
-             * IGTF Authentication-Policy.  Amongst other things, this defines
-             * how the user was identified to the Certificate Authority, which
-             * includes an element of LoA.
-             */
-            .put("1.2.840.113612.5.2.2.1", IGTF_AP_CLASSIC)
-            .put("1.2.840.113612.5.2.2.2", IGTF_AP_SGCS)
-            .put("1.2.840.113612.5.2.2.3", IGTF_AP_SLCS)
-            .put("1.2.840.113612.5.2.2.4", IGTF_AP_EXPERIMENTAL)
-            .put("1.2.840.113612.5.2.2.5", IGTF_AP_MICS)
-            .put("1.2.840.113612.5.2.2.6", IGTF_AP_IOTA)
-            .build();
+    private static final DERSequence ANY_POLICY = new DERSequence(
+          new ASN1ObjectIdentifier(OID_ANY_POLICY));
+    private static final Map<String, LoA> LOA_POLICIES = ImmutableMap.<String, LoA>builder()
+          /*
+           * IGTF LoA.  This encapsulates the LoA corresponding to existing
+           * Authentication Policies (APs) described below.
+           */
+          .put("1.2.840.113612.5.2.5.1", IGTF_LOA_ASPEN)
+          .put("1.2.840.113612.5.2.5.2", IGTF_LOA_BIRCH)
+          .put("1.2.840.113612.5.2.5.3", IGTF_LOA_CEDAR)
+          .put("1.2.840.113612.5.2.5.4", IGTF_LOA_DOGWOOD)
+          /*
+           * IGTF Authentication-Policy.  Amongst other things, this defines
+           * how the user was identified to the Certificate Authority, which
+           * includes an element of LoA.
+           */
+          .put("1.2.840.113612.5.2.2.1", IGTF_AP_CLASSIC)
+          .put("1.2.840.113612.5.2.2.2", IGTF_AP_SGCS)
+          .put("1.2.840.113612.5.2.2.3", IGTF_AP_SLCS)
+          .put("1.2.840.113612.5.2.2.4", IGTF_AP_EXPERIMENTAL)
+          .put("1.2.840.113612.5.2.2.5", IGTF_AP_MICS)
+          .put("1.2.840.113612.5.2.2.6", IGTF_AP_IOTA)
+          .build();
 
     private static final int SHORTEST_LOA_POLICY_OID = LOA_POLICIES.keySet().stream()
-            .mapToInt(String::length)
-            .min().orElse(0);
+          .mapToInt(String::length)
+          .min().orElse(0);
 
-    private static final Map<String,EntityDefinition> ENTITY_DEFINITION_POLICIES
-            = ImmutableMap.<String,EntityDefinition>builder()
-            .put("1.2.840.113612.5.2.3.3.1", ROBOT)
-            .put("1.2.840.113612.5.2.3.3.2", HOST)
-            .put("1.2.840.113612.5.2.3.3.3", PERSON)
-            .build();
+    private static final Map<String, EntityDefinition> ENTITY_DEFINITION_POLICIES
+          = ImmutableMap.<String, EntityDefinition>builder()
+          .put("1.2.840.113612.5.2.3.3.1", ROBOT)
+          .put("1.2.840.113612.5.2.3.3.2", HOST)
+          .put("1.2.840.113612.5.2.3.3.3", PERSON)
+          .build();
 
     private static final Set<LoA> IGTF_AP = EnumSet.of(IGTF_AP_CLASSIC,
-            IGTF_AP_SGCS, IGTF_AP_SLCS, IGTF_AP_EXPERIMENTAL, IGTF_AP_MICS,
-            IGTF_AP_IOTA);
+          IGTF_AP_SGCS, IGTF_AP_SLCS, IGTF_AP_EXPERIMENTAL, IGTF_AP_MICS,
+          IGTF_AP_IOTA);
 
     private static final Set<LoA> IGTF_LOA = EnumSet.of(IGTF_LOA_ASPEN,
-            IGTF_LOA_BIRCH, IGTF_LOA_CEDAR, IGTF_LOA_DOGWOOD);
+          IGTF_LOA_BIRCH, IGTF_LOA_CEDAR, IGTF_LOA_DOGWOOD);
 
     private static final Pattern ROBOT_CN_PATTERN = Pattern.compile("/CN=[rR]obot[^/\\p{Alnum}]");
     private static final Pattern CN_PATTERN = Pattern.compile("/CN=([^/]*)");
 
     private final IGTFInfoDirectory infoDirectory;
 
-    public X509Plugin(Properties properties)
-    {
+    public X509Plugin(Properties properties) {
         String path = properties.getProperty("gplazma.x509.igtf-info.path");
         infoDirectory = path == null ? null : new IGTFInfoDirectory(path);
     }
 
     @Override
     public void authenticate(Set<Object> publicCredentials,
-                             Set<Object> privateCredentials,
-                             Set<Principal> identifiedPrincipals)
-        throws AuthenticationException
-    {
+          Set<Object> privateCredentials,
+          Set<Principal> identifiedPrincipals)
+          throws AuthenticationException {
         String message = "no X.509 certificate chain";
 
         Optional<Origin> origin = identifiedPrincipals.stream()
-                .filter(Origin.class::isInstance)
-                .map(Origin.class::cast)
-                .findFirst();
+              .filter(Origin.class::isInstance)
+              .map(Origin.class::cast)
+              .findFirst();
 
         boolean found = false;
         for (Object credential : publicCredentials) {
@@ -146,7 +152,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                         ProxyChainInfo info = new ProxyChainInfo(chain);
                         InetAddress address = origin.get().getAddress();
                         if (!info.isHostAllowedAsSource(address.getAddress())) {
-                            message = "forbidden client address: " + InetAddresses.toAddrString(address);
+                            message = "forbidden client address: " + InetAddresses.toAddrString(
+                                  address);
                             continue;
                         }
                     }
@@ -169,27 +176,27 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
     private List<Principal> identifyPrincipalsFromEEC(X509Certificate eec)
-            throws AuthenticationException, CertificateParsingException
-    {
+          throws AuthenticationException, CertificateParsingException {
         Set<Principal> caPrincipals = identifyPrincipalsFromIssuer(eec);
 
         List<String> policies = listPolicies(eec);
 
         List<Principal> loaPrincipals = policies.stream()
-                .flatMap(X509Plugin::loaPrincipals)
-                .collect(Collectors.toList());
+              .flatMap(X509Plugin::loaPrincipals)
+              .collect(Collectors.toList());
 
         Collection<List<?>> san = listSubjectAlternativeNames(eec);
 
-        List<Principal> emailPrincipals = subjectAlternativeNamesWithTag(san, GeneralName.rfc822Name)
-                .filter(EmailAddressPrincipal::isValid)
-                .map(EmailAddressPrincipal::new)
-                .collect(Collectors.toList());
+        List<Principal> emailPrincipals = subjectAlternativeNamesWithTag(san,
+              GeneralName.rfc822Name)
+              .filter(EmailAddressPrincipal::isValid)
+              .map(EmailAddressPrincipal::new)
+              .collect(Collectors.toList());
 
         Principal subject = new GlobusPrincipal(eec.getSubjectX500Principal());
 
         Optional<EntityDefinition> entity = identifyEntityDefinition(eec, policies,
-                subject, san);
+              subject, san);
 
         List<Principal> principals = new ArrayList<>();
         principals.addAll(caPrincipals);
@@ -205,8 +212,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return principals;
     }
 
-    private List<Principal> filterOutErroneousLoAs(Principal subject, List<Principal> principals)
-    {
+    private List<Principal> filterOutErroneousLoAs(Principal subject, List<Principal> principals) {
         EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
 
         EnumSet<LoA> assertedIgtfAp = EnumSet.copyOf(assertedLoAs);
@@ -215,8 +221,10 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         Optional<Stream<Principal>> filteredPrincipals = Optional.empty();
         if (assertedIgtfAp.size() > 1) {
             LOG.warn("Suppressing IGTF AP principals for \"{}\" as an incompatible"
-                    + " set is asserted: {}", subject.getName(), assertedIgtfAp);
-            filteredPrincipals = Optional.of(principals.stream().filter(p -> !(p instanceof LoAPrincipal && IGTF_AP.contains(((LoAPrincipal)p).getLoA()))));
+                  + " set is asserted: {}", subject.getName(), assertedIgtfAp);
+            filteredPrincipals = Optional.of(principals.stream().filter(
+                  p -> !(p instanceof LoAPrincipal && IGTF_AP.contains(
+                        ((LoAPrincipal) p).getLoA()))));
         }
 
         EnumSet<LoA> assertedIgtfLoAs = EnumSet.copyOf(assertedLoAs);
@@ -224,30 +232,29 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
 
         if (assertedIgtfLoAs.size() > 1) {
             LOG.warn("Suppressing IGTF LoA principals for \"{}\" as an incompatible"
-                    + " set is asserted: {}", subject.getName(), assertedIgtfLoAs);
+                  + " set is asserted: {}", subject.getName(), assertedIgtfLoAs);
             filteredPrincipals = Optional.of(filteredPrincipals.orElse(principals.stream())
-                    .filter(p -> !(p instanceof LoAPrincipal && IGTF_LOA.contains(((LoAPrincipal)p).getLoA()))));
+                  .filter(p -> !(p instanceof LoAPrincipal && IGTF_LOA.contains(
+                        ((LoAPrincipal) p).getLoA()))));
         }
 
         return filteredPrincipals.map(s -> s.collect(Collectors.toList())).orElse(principals);
     }
 
-    private static EnumSet<LoA> assertedLoAs(Collection<Principal> principals)
-    {
+    private static EnumSet<LoA> assertedLoAs(Collection<Principal> principals) {
         return principals.stream().filter(LoAPrincipal.class::isInstance)
-                .map(LoAPrincipal.class::cast)
-                .map(LoAPrincipal::getLoA)
-                .collect(Collectors.toCollection(() -> EnumSet.noneOf(LoA.class)));
+              .map(LoAPrincipal.class::cast)
+              .map(LoAPrincipal::getLoA)
+              .collect(Collectors.toCollection(() -> EnumSet.noneOf(LoA.class)));
     }
 
     private Optional<EntityDefinition> identifyEntityDefinition(X509Certificate eec,
-            List<String> policies, Principal subject, Collection<List<?>> san)
-            throws CertificateParsingException
-    {
+          List<String> policies, Principal subject, Collection<List<?>> san)
+          throws CertificateParsingException {
         Set<EntityDefinition> assertedEntityDefn = policies.stream()
-                .map(ENTITY_DEFINITION_POLICIES::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(() -> EnumSet.noneOf(EntityDefinition.class)));
+              .map(ENTITY_DEFINITION_POLICIES::get)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toCollection(() -> EnumSet.noneOf(EntityDefinition.class)));
 
         if (assertedEntityDefn.size() == 1) {
             EntityDefinition entity = assertedEntityDefn.iterator().next();
@@ -265,18 +272,19 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
 
     }
 
-    /** Use heuristics to guess what kind of entity this certificate represents. */
+    /**
+     * Use heuristics to guess what kind of entity this certificate represents.
+     */
     private Optional<EntityDefinition> guessEntityDefinition(X509Certificate eec,
-            String subject, Collection<List<?>> san) throws CertificateParsingException
-    {
+          String subject, Collection<List<?>> san) throws CertificateParsingException {
         if (ROBOT_CN_PATTERN.matcher(subject).find()) {
             return Optional.of(ROBOT);
         }
 
         List<String> eku = eec.getExtendedKeyUsage();
         if (eku != null && eku.stream().anyMatch(OID_EKU_TLS_SERVER::equals)
-                && (hasSubjectAlternativeNameOfType(san, GeneralName.dNSName)
-                || hasCnWithFqdn(subject))) {
+              && (hasSubjectAlternativeNameOfType(san, GeneralName.dNSName)
+              || hasCnWithFqdn(subject))) {
             return Optional.of(HOST);
         }
 
@@ -303,7 +311,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
          */
 
         if (!hasSubjectAlternativeNameOfType(san, GeneralName.dNSName,
-                GeneralName.iPAddress, GeneralName.uniformResourceIdentifier)) {
+              GeneralName.iPAddress, GeneralName.uniformResourceIdentifier)) {
             return Optional.of(PERSON);
         }
 
@@ -311,30 +319,27 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
     private static boolean hasSubjectAlternativeNameOfType(Collection<List<?>> san,
-            int... tags)
-    {
+          int... tags) {
         return san.stream()
-                .mapToInt(n -> ((Integer) n.get(0)))
-                .anyMatch(t -> Arrays.stream(tags).anyMatch(t2 -> t2 == t));
+              .mapToInt(n -> ((Integer) n.get(0)))
+              .anyMatch(t -> Arrays.stream(tags).anyMatch(t2 -> t2 == t));
     }
 
     private static Stream<String> subjectAlternativeNamesWithTag(Collection<List<?>> san,
-            int tag)
-    {
+          int tag) {
         return san.stream()
-                .filter(n -> ((Integer) n.get(0)) == tag)
-                .map(n -> n.get(1))
-                .filter(Objects::nonNull)
-                .map(String::valueOf);
+              .filter(n -> ((Integer) n.get(0)) == tag)
+              .map(n -> n.get(1))
+              .filter(Objects::nonNull)
+              .map(String::valueOf);
     }
 
-    private static boolean hasCnWithFqdn(String subject)
-    {
+    private static boolean hasCnWithFqdn(String subject) {
         Matcher cnMatcher = CN_PATTERN.matcher(subject);
         while (cnMatcher.find()) {
             String cnValue = cnMatcher.group(1);
             if (InternetDomainName.isValid(cnValue)
-                    && InternetDomainName.from(cnValue).hasPublicSuffix()) {
+                  && InternetDomainName.from(cnValue).hasPublicSuffix()) {
                 return true;
             }
         }
@@ -342,8 +347,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
 
-    private Set<Principal> identifyPrincipalsFromIssuer(X509Certificate eec)
-    {
+    private Set<Principal> identifyPrincipalsFromIssuer(X509Certificate eec) {
         if (infoDirectory == null) {
             return Collections.emptySet();
         }
@@ -356,14 +360,13 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
     private List<String> listPolicies(X509Certificate eec)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         byte[] encoded;
         try {
             encoded = getExtensionBytes(eec, OID_CERTIFICATE_POLICIES);
         } catch (IOException e) {
             LOG.warn("Malformed policy extension {}: {}",
-                    eec.getIssuerX500Principal().getName(), e.getMessage());
+                  eec.getIssuerX500Principal().getName(), e.getMessage());
             return Collections.emptyList();
         }
 
@@ -371,7 +374,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             return Collections.emptyList();
         }
 
-        Enumeration<ASN1Encodable> asn1EncodedPolicies = ASN1Sequence.getInstance(encoded).getObjects();
+        Enumeration<ASN1Encodable> asn1EncodedPolicies = ASN1Sequence.getInstance(encoded)
+              .getObjects();
         List<String> policies = new ArrayList<>();
         while (asn1EncodedPolicies.hasMoreElements()) {
             ASN1Encodable asn1EncodedPolicy = asn1EncodedPolicies.nextElement();
@@ -386,21 +390,20 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
     private static Collection<List<?>> listSubjectAlternativeNames(X509Certificate certificate)
-            throws CertificateParsingException
-    {
+          throws CertificateParsingException {
         Collection<List<?>> names = certificate.getSubjectAlternativeNames();
         return names == null ? Collections.emptyList() : names;
     }
 
-    /** A stream of LoA principals obtained directly from a policy OID. */
-    private static Stream<LoAPrincipal> loaPrincipals(String oid)
-    {
+    /**
+     * A stream of LoA principals obtained directly from a policy OID.
+     */
+    private static Stream<LoAPrincipal> loaPrincipals(String oid) {
         Optional<LoAPrincipal> principal = loaFromOid(oid).map(LoAPrincipal::new);
         return Streams.stream(principal);
     }
 
-    private static Optional<LoA> loaFromOid(String oid)
-    {
+    private static Optional<LoA> loaFromOid(String oid) {
         LoA loa = LOA_POLICIES.get(oid);
         if (loa == null) {
             /*
@@ -418,15 +421,16 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         return Optional.ofNullable(loa);
     }
 
-    /** Add all implied LoAs, given the LoA assertions so far. */
+    /**
+     * Add all implied LoAs, given the LoA assertions so far.
+     */
     private static void addImpliedLoA(Optional<EntityDefinition> entity,
-            Collection<Principal> principals)
-    {
+          Collection<Principal> principals) {
         EnumSet<LoA> assertedLoAs = assertedLoAs(principals);
 
         LoAs.withImpliedLoA(entity, assertedLoAs).stream()
-                .filter(l -> !assertedLoAs.contains(l))
-                .map(LoAPrincipal::new)
-                .forEach(principals::add);
+              .filter(l -> !assertedLoAs.contains(l))
+              .map(LoAPrincipal::new)
+              .forEach(principals::add);
     }
 }

@@ -17,28 +17,32 @@
  */
 package org.dcache.srm.taperecallscheduling;
 
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-import org.dcache.util.TimeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.PrintWriter;
-import java.time.Duration;
-import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-public class TapeRecallSchedulingRequirementsChecker implements CellCommandListener, CellInfoProvider {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TapeRecallSchedulingRequirementsChecker.class);
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
+import java.io.PrintWriter;
+import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.dcache.util.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TapeRecallSchedulingRequirementsChecker implements CellCommandListener,
+      CellInfoProvider {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          TapeRecallSchedulingRequirementsChecker.class);
 
     public static final long NO_VALUE = -1;
-    /** time safety margin in milliseconds */
+    /**
+     * time safety margin in milliseconds
+     */
     private static final long TIME_SAFETY_MARGIN = 10;
     private static final long MIN_RELATIVE_TAPE_RECALL_PERCENTAGE = 95; // of _used_ space
 
@@ -83,7 +87,8 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     public void setMinNumberOfRequestsForTapeSelection(long number) {
-        checkArgument(number >= 0 || number == -1, "The min. number of requests for tape selection needs to be positive or -1");
+        checkArgument(number >= 0 || number == -1,
+              "The min. number of requests for tape selection needs to be positive or -1");
         configLock.writeLock().lock();
         try {
             minNumberOfRequestsForTapeSelection = number == -1 ? NO_VALUE : number;
@@ -93,7 +98,8 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     public void setMinTapeRecallPercentage(int percentage) {
-        checkArgument(percentage >= 0 && percentage <= 100, "The minimum tape recall percentage needs to be between 0 and 100");
+        checkArgument(percentage >= 0 && percentage <= 100,
+              "The minimum tape recall percentage needs to be between 0 and 100");
         configLock.writeLock().lock();
         try {
             minTapeRecallPercentage = percentage;
@@ -180,6 +186,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
 
     /**
      * If the oldest request for a tape has exceeded its max. queue lifetime.
+     *
      * @param tape the scheduling info for the tape in question
      * @return whether the tape's oldest jost is expired
      */
@@ -193,8 +200,8 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     /**
-     * @return if newest job for a tape is old enough for the tape to be selected
      * @param tape the scheduling info for the tape in question
+     * @return if newest job for a tape is old enough for the tape to be selected
      */
     public boolean isNewestTapeJobOldEnough(SchedulingInfoTape tape) {
         long minWaitingTime = minJobWaitingTime();
@@ -209,12 +216,12 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     /**
-     * Assesses if the provided absolute recall volume exceeds the configured percentage of overall tape capacity.
-     * Always returns true if more than 90 percent of the tape's used space is requested, irrespective of the
-     * overall percentage.
-     * If the tape's capacity and used space is unknown, false is returned.
+     * Assesses if the provided absolute recall volume exceeds the configured percentage of overall
+     * tape capacity. Always returns true if more than 90 percent of the tape's used space is
+     * requested, irrespective of the overall percentage. If the tape's capacity and used space is
+     * unknown, false is returned.
      *
-     * @param tape the scheduling info for the tape in question
+     * @param tape         the scheduling info for the tape in question
      * @param recallVolume Recall volume in kB
      * @return Whether the recall volume is sufficient
      */
@@ -224,17 +231,19 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
             return percentage == 0;
         }
 
-        float percentOfUsedSpace = ((float)recallVolume / (float)tape.getUsedSpace()) * 100;
+        float percentOfUsedSpace = ((float) recallVolume / (float) tape.getUsedSpace()) * 100;
         boolean recalledMostOfUsedSpace = percentOfUsedSpace >= MIN_RELATIVE_TAPE_RECALL_PERCENTAGE;
         if (recalledMostOfUsedSpace) {
-            LOGGER.info("Tape recall volume sufficient: {} of contained", String.format("%.0f%%",percentOfUsedSpace));
+            LOGGER.info("Tape recall volume sufficient: {} of contained",
+                  String.format("%.0f%%", percentOfUsedSpace));
             return true;
         }
 
-        float percentOfCapacity =((float)recallVolume / (float)tape.getCapacity()) * 100;
+        float percentOfCapacity = ((float) recallVolume / (float) tape.getCapacity()) * 100;
         boolean recallVolumeSufficient = percentOfCapacity >= percentage;
         if (recallVolumeSufficient) {
-            LOGGER.info("Tape recall volume sufficient: {} of capacity", String.format("%.0f%%",percentOfCapacity));
+            LOGGER.info("Tape recall volume sufficient: {} of capacity",
+                  String.format("%.0f%%", percentOfCapacity));
         }
         return recallVolumeSufficient;
     }
@@ -247,9 +256,9 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
         long otherArrival = second.getOldestJobArrival();
         if (oldestArrival == NO_VALUE && otherArrival == NO_VALUE) {
             return 0;
-        } else if(oldestArrival == NO_VALUE && otherArrival != NO_VALUE) {
+        } else if (oldestArrival == NO_VALUE && otherArrival != NO_VALUE) {
             return -1;
-        } else if(oldestArrival != NO_VALUE && otherArrival == NO_VALUE) {
+        } else if (oldestArrival != NO_VALUE && otherArrival == NO_VALUE) {
             return 1;
         }
         return Long.compare(oldestArrival, otherArrival);
@@ -272,20 +281,24 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     @Command(name = "trs set tape selection",
-            hint = "Changes the parameters used for selecting which and how many tapes will be activated " +
-                    "at any point in time in order for their associated requests to be forwarded " +
-                    "to the tape system for recall.")
+          hint =
+                "Changes the parameters used for selecting which and how many tapes will be activated "
+                      +
+                      "at any point in time in order for their associated requests to be forwarded "
+                      +
+                      "to the tape system for recall.")
     public class TrsSetTapeSelection implements Callable<String> {
+
         @Option(name = "active", metaVar = "count",
-                usage = "The maximum number of tapes which may be active at the same time")
+              usage = "The maximum number of tapes which may be active at the same time")
         Integer active;
 
         @Option(name = "volume", metaVar = "percent",
-                usage = "The minimum percent of a tape's capacity that needs to be requested for tape selection")
+              usage = "The minimum percent of a tape's capacity that needs to be requested for tape selection")
         Integer volume;
 
         @Option(name = "requests", metaVar = "count",
-                usage = "The minimum number of requests needed for a tape for its selection. '-1' disables this criterion")
+              usage = "The minimum number of requests needed for a tape for its selection. '-1' disables this criterion")
         Integer requests;
 
         @Override
@@ -303,7 +316,8 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
                 if (requests != null) {
                     setMinNumberOfRequestsForTapeSelection(requests);
                     sb.append("minimum number of requests per tape ");
-                    sb.append(requests == NO_VALUE ? "disabled" : " set to " + requests).append("\n");
+                    sb.append(requests == NO_VALUE ? "disabled" : " set to " + requests)
+                          .append("\n");
                 }
             } catch (IllegalArgumentException e) {
                 sb.append("Failure: ").append(e.getMessage());
@@ -314,18 +328,19 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
     }
 
     @Command(name = "trs set request stay",
-            hint = "Changes the time parameters that requests stay in the scheduler before leaving or the associated tape can be selected.")
+          hint = "Changes the time parameters that requests stay in the scheduler before leaving or the associated tape can be selected.")
     public class TrsSetTimeInQueue implements Callable<String> {
+
         @Option(name = "min", metaVar = "minutes",
-                usage = "Minimum time a request stays in the scheduler before tape selection")
+              usage = "Minimum time a request stays in the scheduler before tape selection")
         Long min;
 
         @Option(name = "max", metaVar = "minutes",
-                usage = "Maximum time a request stays in the scheduler before tape selection")
+              usage = "Maximum time a request stays in the scheduler before tape selection")
         Long max;
 
         @Option(name = "tapeinfoless", metaVar = "minutes",
-                usage = "Time a request without associated tape information stays in the scheduler")
+              usage = "Time a request without associated tape information stays in the scheduler")
         Long tapeinfoless;
 
         @Override
@@ -342,7 +357,8 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
                 }
                 if (tapeinfoless != null) {
                     setTapeinfolessJobWaitingTime(Duration.ofMinutes(tapeinfoless));
-                    sb.append("tapeinfoless job waiting time set to ").append(tapeinfoless).append(" minutes\n");
+                    sb.append("tapeinfoless job waiting time set to ").append(tapeinfoless)
+                          .append(" minutes\n");
                 }
             } catch (IllegalArgumentException e) {
                 sb.append("Failure: ").append(e.getMessage());
@@ -358,12 +374,19 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
         try {
             pw.printf("Bring online scheduler parameters:\n");
             pw.printf("    Max. active tapes: %s\n", maxActiveTapes);
-            pw.printf("    Min. recall volume percentage for tape selection: %s\n", minTapeRecallPercentage);
-            pw.printf("    Min. number of requests for tape selection: %s\n", minNumberOfRequestsForTapeSelection == NO_VALUE ? "-" : minNumberOfRequestsForTapeSelection);
-            pw.printf("    Min. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(minJobWaitingTime)).orElse("not set!"));
-            pw.printf("    Max. time requests stay in the queue: %s\n", TimeUtils.describe(Duration.ofMillis(maxJobWaitingTime)).orElse("not set!"));
-            pw.printf("    Min. time requests without tape info stay in the queue: %s\n", tapeinfolessJobWaitingTime == NO_VALUE ? "-" :
-                    TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime)).orElse("not set!"));
+            pw.printf("    Min. recall volume percentage for tape selection: %s\n",
+                  minTapeRecallPercentage);
+            pw.printf("    Min. number of requests for tape selection: %s\n",
+                  minNumberOfRequestsForTapeSelection == NO_VALUE ? "-"
+                        : minNumberOfRequestsForTapeSelection);
+            pw.printf("    Min. time requests stay in the queue: %s\n",
+                  TimeUtils.describe(Duration.ofMillis(minJobWaitingTime)).orElse("not set!"));
+            pw.printf("    Max. time requests stay in the queue: %s\n",
+                  TimeUtils.describe(Duration.ofMillis(maxJobWaitingTime)).orElse("not set!"));
+            pw.printf("    Min. time requests without tape info stay in the queue: %s\n",
+                  tapeinfolessJobWaitingTime == NO_VALUE ? "-" :
+                        TimeUtils.describe(Duration.ofMillis(tapeinfolessJobWaitingTime))
+                              .orElse("not set!"));
         } finally {
             configLock.readLock().unlock();
         }

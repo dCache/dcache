@@ -1,13 +1,9 @@
 package org.dcache.gplazma.plugins;
 
+import static org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException.checkFormat;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -24,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FQANPrincipal;
@@ -40,28 +36,27 @@ import org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException;
 import org.dcache.util.Args;
 import org.dcache.util.Exceptions;
 import org.dcache.util.NDC;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.gplazma.plugins.exceptions.GplazmaParseMapFileException.checkFormat;
+public class GplazmaMultiMapFile {
 
-public class GplazmaMultiMapFile
-{
     /**
      * Information about the principals that may be mapped.
      */
-    private enum MappablePrincipal
-    {
+    private enum MappablePrincipal {
         DISTINGUISHED_NAME("dn", GlobusPrincipal.class),
         EMAIL("email", EmailAddressPrincipal.class),
 
         GID("gid", GidPrincipal.class) {
             @Override
-            public void checkValue(String value) throws GplazmaParseMapFileException
-            {
+            public void checkValue(String value) throws GplazmaParseMapFileException {
                 try {
                     Long.parseLong(value);
                 } catch (NumberFormatException e) {
                     throw new GplazmaParseMapFileException("gid value " +
-                            value + " is not an integer: " + e.getMessage());
+                          value + " is not an integer: " + e.getMessage());
                 }
             }
         },
@@ -72,23 +67,21 @@ public class GplazmaMultiMapFile
         OIDC("oidc", OidcSubjectPrincipal.class) {
             @Override
             public Principal buildPrincipal(String value)
-                    throws GplazmaParseMapFileException
-            {
+                  throws GplazmaParseMapFileException {
                 int atIndex = value.lastIndexOf('@');
                 checkFormat(atIndex != -1, "Missing '@' in oidc principal \"%s\"",
-                        value);
+                      value);
                 String claim = value.substring(0, atIndex);
-                String op = value.substring(atIndex+1);
+                String op = value.substring(atIndex + 1);
                 return new OidcSubjectPrincipal(claim, op);
             }
 
             @Override
             public PrincipalMatcher buildMatcher(String value)
-                    throws GplazmaParseMapFileException
-            {
+                  throws GplazmaParseMapFileException {
                 int atIndex = value.lastIndexOf('@');
                 String claim = atIndex == -1 ? null : value.substring(0, atIndex);
-                String op = atIndex == -1 ? null : value.substring(atIndex+1);
+                String op = atIndex == -1 ? null : value.substring(atIndex + 1);
 
                 NDC loadingNDC = NDC.cloneNdc();
 
@@ -97,7 +90,7 @@ public class GplazmaMultiMapFile
                         return false;
                     }
 
-                    OidcSubjectPrincipal other = (OidcSubjectPrincipal)p;
+                    OidcSubjectPrincipal other = (OidcSubjectPrincipal) p;
 
                     // REVISIT the following test exists only for backwards compatibility.
                     if (other.getSubClaim().equals(value)) {
@@ -105,7 +98,7 @@ public class GplazmaMultiMapFile
                         NDC.set(loadingNDC);
                         try {
                             LOGGER.warn("Please replace \"oidc:{}\" with \"oidc:{}@{}\"",
-                                    value, other.getSubClaim(), other.getOP());
+                                  value, other.getSubClaim(), other.getOP());
                         } finally {
                             NDC.set(mappingNDC);
                         }
@@ -113,7 +106,7 @@ public class GplazmaMultiMapFile
                     }
 
                     return atIndex != -1 && other.getSubClaim().equals(claim)
-                                        && other.getOP().equals(op);
+                          && other.getOP().equals(op);
                 };
             }
         },
@@ -125,46 +118,43 @@ public class GplazmaMultiMapFile
         private final String label;
         private final Class<? extends Principal> groupType;
 
-        MappablePrincipal(String label, Class<? extends Principal> type)
-        {
+        MappablePrincipal(String label, Class<? extends Principal> type) {
             this.label = label;
             this.groupType = type;
         }
 
-        public void checkValue(String value) throws GplazmaParseMapFileException
-        {
+        public void checkValue(String value) throws GplazmaParseMapFileException {
         }
 
         public Principal buildPrincipal(String value)
-                throws GplazmaParseMapFileException
-        {
+              throws GplazmaParseMapFileException {
             try {
                 if (GroupPrincipal.class.isAssignableFrom(groupType)) {
                     List<String> parts = Splitter.on(',').splitToList(value);
                     checkFormat(parts.size() < 3,
-                            "Too many commas in \"%s\" for %s", value, label);
-                    boolean isPrimary = parts.size() == 2 ? Boolean.parseBoolean(parts.get(1)) : false;
+                          "Too many commas in \"%s\" for %s", value, label);
+                    boolean isPrimary =
+                          parts.size() == 2 ? Boolean.parseBoolean(parts.get(1)) : false;
                     return groupType.getConstructor(String.class, Boolean.TYPE)
-                            .newInstance(parts.get(0), isPrimary);
+                          .newInstance(parts.get(0), isPrimary);
                 } else {
                     return groupType.getConstructor(String.class).newInstance(value);
                 }
-            } catch (NoSuchMethodException|IllegalAccessException|InstantiationException e) {
+            } catch (NoSuchMethodException | IllegalAccessException | InstantiationException e) {
                 throw new RuntimeException("Failed to create principal: " + e);
             } catch (InvocationTargetException e) {
                 throw new GplazmaParseMapFileException("Failed to create "
-                        + label + " principal \"" + value + "\": "
-                        + Exceptions.messageOrClassName((Exception)e.getCause()));
+                      + label + " principal \"" + value + "\": "
+                      + Exceptions.messageOrClassName((Exception) e.getCause()));
             }
         }
 
         public PrincipalMatcher buildMatcher(String value)
-                throws GplazmaParseMapFileException
-        {
+              throws GplazmaParseMapFileException {
             if (GroupPrincipal.class.isAssignableFrom(groupType) && !value.contains(",")) {
                 checkValue(value);
                 return p -> groupType.isAssignableFrom(p.getClass())
-                        && p.getName().equals(value);
+                      && p.getName().equals(value);
             }
             return buildPrincipal(value)::equals;
         }
@@ -172,14 +162,15 @@ public class GplazmaMultiMapFile
 
     @FunctionalInterface
     public interface PrincipalMatcher {
+
         boolean matches(Principal principal);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GplazmaMultiMapFile.class);
-    private static final Map<String,MappablePrincipal> LABEL_TO_PRINCIPAL;
+    private static final Map<String, MappablePrincipal> LABEL_TO_PRINCIPAL;
 
     static {
-        ImmutableMap.Builder<String,MappablePrincipal> builder = ImmutableMap.<String,MappablePrincipal>builder();
+        ImmutableMap.Builder<String, MappablePrincipal> builder = ImmutableMap.<String, MappablePrincipal>builder();
         for (MappablePrincipal p : MappablePrincipal.values()) {
             builder.put(p.label, p);
         }
@@ -191,27 +182,24 @@ public class GplazmaMultiMapFile
     private Instant nextStat = Instant.now();
     private Consumer<String> warningsConsumer = LOGGER::warn;
 
-    private Map<PrincipalMatcher,Set<Principal>> map = Collections.emptyMap();
+    private Map<PrincipalMatcher, Set<Principal>> map = Collections.emptyMap();
 
-    public GplazmaMultiMapFile(Path file)
-    {
+    public GplazmaMultiMapFile(Path file) {
         this.file = file;
     }
 
-    public synchronized void setWarningConsumer(Consumer<String> consumer)
-    {
+    public synchronized void setWarningConsumer(Consumer<String> consumer) {
         warningsConsumer = consumer;
     }
 
-    public synchronized Map<PrincipalMatcher,Set<Principal>> mapping()
-            throws AuthenticationException
-    {
+    public synchronized Map<PrincipalMatcher, Set<Principal>> mapping()
+          throws AuthenticationException {
         if (!Instant.now().isBefore(nextStat)) {
             nextStat = Instant.now().plusMillis(100);
 
             try {
                 Instant mtime = Files.readAttributes(file, BasicFileAttributes.class)
-                        .lastModifiedTime().toInstant();
+                      .lastModifiedTime().toInstant();
 
                 if (!lastLoaded.equals(mtime)) {
                     lastLoaded = mtime;
@@ -227,19 +215,18 @@ public class GplazmaMultiMapFile
                     }
                 }
             } catch (IOException e) {
-                 throw new AuthenticationException("failed to read " + file + ": "
-                         + Exceptions.messageOrClassName(e));
+                throw new AuthenticationException("failed to read " + file + ": "
+                      + Exceptions.messageOrClassName(e));
             }
         }
 
         return map;
     }
 
-    private Map<PrincipalMatcher,Set<Principal>> parseMapFile() throws IOException
-    {
+    private Map<PrincipalMatcher, Set<Principal>> parseMapFile() throws IOException {
         LOGGER.debug("Reading file");
 
-        Map<PrincipalMatcher,Set<Principal>> map = new LinkedHashMap<>();
+        Map<PrincipalMatcher, Set<Principal>> map = new LinkedHashMap<>();
 
         int lineCount = 0;
         for (String line : Files.readAllLines(file)) {
@@ -252,9 +239,10 @@ public class GplazmaMultiMapFile
                     checkFormat(args.argc() > 0, "Missing predicate matcher");
                     checkFormat(args.argc() > 1, "Missing mapped principals");
                     String matcherDescription = args.argv(0);
-                    List<String> mappedPrincipalDescriptions = args.getArguments().subList(1, args.argc());
+                    List<String> mappedPrincipalDescriptions = args.getArguments()
+                          .subList(1, args.argc());
                     map.put(asMatcher(matcherDescription),
-                            asPrincipals(mappedPrincipalDescriptions));
+                          asPrincipals(mappedPrincipalDescriptions));
                 } catch (GplazmaParseMapFileException e) {
                     warningsConsumer.accept(e.getMessage());
                 } finally {
@@ -267,21 +255,19 @@ public class GplazmaMultiMapFile
     }
 
     private static PrincipalMatcher asMatcher(String description)
-            throws GplazmaParseMapFileException
-    {
+          throws GplazmaParseMapFileException {
         List<String> parts = Splitter.on(':').limit(2).splitToList(description);
         checkFormat(parts.size() == 2, "Missing ':' in \"%s\"", description);
 
         String type = parts.get(0);
         MappablePrincipal p = LABEL_TO_PRINCIPAL.get(type);
         checkFormat(p != null, "Unknown principal type \"%s\" in \"%s\"", type,
-                description);
+              description);
         return p.buildMatcher(parts.get(1));
     }
 
     private static Set<Principal> asPrincipals(List<String> descriptions)
-            throws GplazmaParseMapFileException
-    {
+          throws GplazmaParseMapFileException {
         List<String> problems = new ArrayList<>();
         Set<Principal> principals = new HashSet<>();
 
@@ -293,7 +279,7 @@ public class GplazmaMultiMapFile
                 String type = parts.get(0);
                 MappablePrincipal p = LABEL_TO_PRINCIPAL.get(type);
                 checkFormat(p != null, "Unknown principal type \"%s\" in \"%s\"",
-                        type, description);
+                      type, description);
 
                 principals.add(p.buildPrincipal(parts.get(1)));
             } catch (GplazmaParseMapFileException e) {

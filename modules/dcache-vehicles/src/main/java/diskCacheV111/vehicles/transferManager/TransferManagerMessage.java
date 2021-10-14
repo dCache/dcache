@@ -2,7 +2,6 @@ package diskCacheV111.vehicles.transferManager;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 
@@ -13,10 +12,11 @@ import org.dcache.auth.attributes.Restrictions;
  */
 
 public abstract class TransferManagerMessage extends Message {
-    public static final int TOO_MANY_TRANSFERS=1;
-    public static final int FILE_NOT_FOUND=2;
-    public static final int NO_ACCESS=2;
-    public static final int POOL_FAILURE=3;
+
+    public static final int TOO_MANY_TRANSFERS = 1;
+    public static final int FILE_NOT_FOUND = 2;
+    public static final int NO_ACCESS = 2;
+    public static final int POOL_FAILURE = 3;
 
     private static final long serialVersionUID = -5532348977012216312L;
 
@@ -35,10 +35,10 @@ public abstract class TransferManagerMessage extends Message {
     private PnfsId pnfsId;
 
     public TransferManagerMessage(
-            String pnfsPath,
-            String remoteUrl,
-            boolean store,
-            Long remoteCredentialId) {
+          String pnfsPath,
+          String remoteUrl,
+          boolean store,
+          Long remoteCredentialId) {
         this.pnfsPath = pnfsPath;
         this.remoteUrl = remoteUrl;
         this.store = store;
@@ -59,33 +59,30 @@ public abstract class TransferManagerMessage extends Message {
     public TransferManagerMessage() {
     }
 
-    public void setRestriction(Restriction restriction)
-    {
+    public void setRestriction(Restriction restriction) {
         this.restriction = (restriction != null && !Restrictions.none().equals(restriction)) ?
-                restriction : null;
+              restriction : null;
     }
 
-    public Restriction getRestriction()
-    {
+    public Restriction getRestriction() {
         return restriction == null ? Restrictions.none() : restriction;
     }
 
-    public void setPnfsId(PnfsId id)
-    {
+    public void setPnfsId(PnfsId id) {
         pnfsId = id;
     }
 
     /**
-     * The ID of the local file.  May be null to indicate the
-     * TransferManagerHandler is responsible for creating the target file
-     * for pull requests.
+     * The ID of the local file.  May be null to indicate the TransferManagerHandler is responsible
+     * for creating the target file for pull requests.
      */
-    public PnfsId getPnfsId()
-    {
+    public PnfsId getPnfsId() {
         return pnfsId;
     }
 
-    /** Getter for property store.
+    /**
+     * Getter for property store.
+     *
      * @return Value of property store.
      */
     public boolean isStore() {
@@ -93,7 +90,9 @@ public abstract class TransferManagerMessage extends Message {
     }
 
 
-    /** Getter for property pnfsPath.
+    /**
+     * Getter for property pnfsPath.
+     *
      * @return Value of property pnfsPath.
      */
     public String getPnfsPath() {
@@ -107,6 +106,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Getter for property spaceReservationId.
+     *
      * @return Value of property spaceReservationId.
      */
     public String getSpaceReservationId() {
@@ -115,6 +115,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Setter for property spaceReservationId.
+     *
      * @param spaceReservationId New value of property spaceReservationId.
      */
     public void setSpaceReservationId(String spaceReservationId) {
@@ -123,6 +124,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Getter for property size.
+     *
      * @return Value of property size.
      */
     public Long getSize() {
@@ -131,6 +133,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Setter for property size.
+     *
      * @param size New value of property size.
      */
     public void setSize(Long size) {
@@ -139,6 +142,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Getter for property spaceReservationStrict.
+     *
      * @return Value of property spaceReservationStrict.
      */
     public boolean isSpaceReservationStrict() {
@@ -147,6 +151,7 @@ public abstract class TransferManagerMessage extends Message {
 
     /**
      * Setter for property spaceReservationStrict.
+     *
      * @param spaceReservationStrict New value of property spaceReservationStrict.
      */
     public void setSpaceReservationStrict(boolean spaceReservationStrict) {

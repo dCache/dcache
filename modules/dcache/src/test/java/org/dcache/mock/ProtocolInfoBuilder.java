@@ -18,61 +18,54 @@
  */
 package org.dcache.mock;
 
+import static org.mockito.Mockito.mock;
+
 import diskCacheV111.vehicles.ProtocolInfo;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * This class builds a mock ProtocolInfo object using the builder pattern.
  */
 public class ProtocolInfoBuilder {
-  private String protocol;
-  private int majorVersion;
 
-  public static ProtocolInfoBuilder aProtocolInfo()
-  {
-    return new ProtocolInfoBuilder();
-  }
+    private String protocol;
+    private int majorVersion;
 
-  private ProtocolInfoBuilder()
-  {
-  }
+    public static ProtocolInfoBuilder aProtocolInfo() {
+        return new ProtocolInfoBuilder();
+    }
 
-  public ProtocolInfoBuilder(ProtocolInfoBuilder previous)
-  {
-    protocol = previous.protocol;
-    majorVersion = previous.majorVersion;
-  }
+    private ProtocolInfoBuilder() {
+    }
 
-  public ProtocolInfoBuilder withProtocol(String protocol)
-  {
-    this.protocol = protocol;
-    return this;
-  }
+    public ProtocolInfoBuilder(ProtocolInfoBuilder previous) {
+        protocol = previous.protocol;
+        majorVersion = previous.majorVersion;
+    }
 
-  public ProtocolInfoBuilder withMajorVersion(int version)
-  {
-    majorVersion = version;
-    return this;
-  }
+    public ProtocolInfoBuilder withProtocol(String protocol) {
+        this.protocol = protocol;
+        return this;
+    }
 
-  public IpProtocolInfoBuilder withIPAddress(String address)
-  {
-    return new IpProtocolInfoBuilder(this, address);
-  }
+    public ProtocolInfoBuilder withMajorVersion(int version) {
+        majorVersion = version;
+        return this;
+    }
 
-  public ProtocolInfo build()
-  {
-    ProtocolInfo mock = mock(ProtocolInfo.class);
-    addBehaviour(mock);
-    return mock;
-  }
+    public IpProtocolInfoBuilder withIPAddress(String address) {
+        return new IpProtocolInfoBuilder(this, address);
+    }
 
-  public void addBehaviour(ProtocolInfo mock)
-  {
-    BDDMockito.given(mock.getProtocol()).willReturn(protocol);
-    Mockito.doReturn(majorVersion).when(mock).getMajorVersion();
-  }
+    public ProtocolInfo build() {
+        ProtocolInfo mock = mock(ProtocolInfo.class);
+        addBehaviour(mock);
+        return mock;
+    }
+
+    public void addBehaviour(ProtocolInfo mock) {
+        BDDMockito.given(mock.getProtocol()).willReturn(protocol);
+        Mockito.doReturn(majorVersion).when(mock).getMajorVersion();
+    }
 }

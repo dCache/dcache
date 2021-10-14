@@ -18,27 +18,23 @@
 package org.dcache.srm.scheduler.strategy;
 
 import java.util.Map;
-
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.spi.TransferStrategy;
 import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 
-public class FirstComeFirstServedTransferStrategyProvider implements TransferStrategyProvider
-{
+public class FirstComeFirstServedTransferStrategyProvider implements TransferStrategyProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "first-come-first-served";
     }
 
     @Override
-    public void setConfiguration(Map<String, String> configuration)
-    {
+    public void setConfiguration(Map<String, String> configuration) {
     }
 
     @Override
-    public TransferStrategy createStrategy(Scheduler scheduler)
-    {
+    public TransferStrategy createStrategy(Scheduler scheduler) {
         return new FirstComeFirstServedTransferStrategy(scheduler);
     }
 }

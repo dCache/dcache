@@ -21,32 +21,28 @@ package org.dcache.mock;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 
-public abstract class PoolStatusChangedBuilder <R extends CellMessageReceiver>
-    implements Deliverable<R>
-{
+public abstract class PoolStatusChangedBuilder<R extends CellMessageReceiver>
+      implements Deliverable<R> {
+
     protected String pool;
     protected int status;
 
-    public PoolStatusChangedBuilder thatPool(String name)
-    {
-      pool = name;
-      return this;
+    public PoolStatusChangedBuilder thatPool(String name) {
+        pool = name;
+        return this;
     }
 
-    public PoolStatusChangedBuilder withStatus(int value)
-    {
-      status = value;
-      return this;
+    public PoolStatusChangedBuilder withStatus(int value) {
+        status = value;
+        return this;
     }
 
-    public PoolStatusChangedBuilder isUp()
-    {
-      return withStatus(PoolStatusChangedMessage.UP);
+    public PoolStatusChangedBuilder isUp() {
+        return withStatus(PoolStatusChangedMessage.UP);
     }
 
-    public PoolStatusChangedBuilder isDown()
-    {
-      return withStatus(PoolStatusChangedMessage.DOWN);
+    public PoolStatusChangedBuilder isDown() {
+        return withStatus(PoolStatusChangedMessage.DOWN);
     }
 
     public abstract void deliverTo(R receiver);

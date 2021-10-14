@@ -18,39 +18,36 @@
  */
 package org.dcache.mock;
 
-import diskCacheV111.poolManager.PoolMonitorV5;
-import org.dcache.poolmanager.PoolSelector;
-import org.mockito.BDDMockito;
-
 import static java.util.Objects.requireNonNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
+import diskCacheV111.poolManager.PoolMonitorV5;
+import org.dcache.poolmanager.PoolSelector;
+import org.mockito.BDDMockito;
+
 public class PoolMonitorBuilder {
-  private PoolSelector selector;
 
-  public static PoolMonitorBuilder aPoolMonitor()
-  {
-    return new PoolMonitorBuilder();
-  }
+    private PoolSelector selector;
 
-  private PoolMonitorBuilder()
-  {
-  }
+    public static PoolMonitorBuilder aPoolMonitor() {
+        return new PoolMonitorBuilder();
+    }
 
-  public PoolMonitorBuilder thatReturns(PoolSelectorBuilder builder)
-  {
-    selector = builder.build();
-    return this;
-  }
+    private PoolMonitorBuilder() {
+    }
 
-  public PoolMonitorV5 build()
-  {
-    PoolMonitorV5 monitor = mock(PoolMonitorV5.class);
+    public PoolMonitorBuilder thatReturns(PoolSelectorBuilder builder) {
+        selector = builder.build();
+        return this;
+    }
 
-    BDDMockito.given(monitor.getPoolSelector(any(), any(), any(), any()))
-        .willReturn(requireNonNull(selector));
+    public PoolMonitorV5 build() {
+        PoolMonitorV5 monitor = mock(PoolMonitorV5.class);
 
-    return monitor;
-  }
+        BDDMockito.given(monitor.getPoolSelector(any(), any(), any(), any()))
+              .willReturn(requireNonNull(selector));
+
+        return monitor;
+    }
 }

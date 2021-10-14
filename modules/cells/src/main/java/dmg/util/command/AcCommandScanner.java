@@ -3,29 +3,25 @@ package dmg.util.command;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.dcache.util.Args;
 import org.dcache.util.cli.CommandExecutor;
 import org.dcache.util.cli.CommandScanner;
 
 /**
- * Implements the legacy cell shell commands which use reflection
- * on method and field names.
+ * Implements the legacy cell shell commands which use reflection on method and field names.
  */
-public class AcCommandScanner implements CommandScanner
-{
-    private enum FieldType { HELP_HINT, FULL_HELP, ACL }
+public class AcCommandScanner implements CommandScanner {
+
+    private enum FieldType {HELP_HINT, FULL_HELP, ACL}
 
     @Override
-    public Map<List<String>, ? extends CommandExecutor> scan(Object obj)
-    {
-        Map<List<String>,AcCommandExecutor> commands = Maps.newHashMap();
+    public Map<List<String>, ? extends CommandExecutor> scan(Object obj) {
+        Map<List<String>, AcCommandExecutor> commands = Maps.newHashMap();
         scanMethods(obj, commands);
         scanFields(obj, commands);
         return commands;
@@ -34,25 +30,24 @@ public class AcCommandScanner implements CommandScanner
     /**
      * Scan for help fields: fh_(= full help) or hh_(= help hint).
      */
-    private static void scanFields(Object obj, Map<List<String>, AcCommandExecutor> commands)
-    {
-        for (Field field: obj.getClass().getFields()) {
+    private static void scanFields(Object obj, Map<List<String>, AcCommandExecutor> commands) {
+        for (Field field : obj.getClass().getFields()) {
             Iterator<String> i =
-                    Splitter.on('_').split(field.getName()).iterator();
+                  Splitter.on('_').split(field.getName()).iterator();
             FieldType helpMode;
             String helpType = i.next();
             switch (helpType) {
-            case "hh":
-                helpMode = FieldType.HELP_HINT;
-                break;
-            case "fh":
-                helpMode = FieldType.FULL_HELP;
-                break;
-            case "acl":
-                helpMode = FieldType.ACL;
-                break;
-            default:
-                continue;
+                case "hh":
+                    helpMode = FieldType.HELP_HINT;
+                    break;
+                case "fh":
+                    helpMode = FieldType.FULL_HELP;
+                    break;
+                case "acl":
+                    helpMode = FieldType.ACL;
+                    break;
+                default:
+                    continue;
             }
 
             if (!i.hasNext()) {
@@ -62,22 +57,21 @@ public class AcCommandScanner implements CommandScanner
 
             AcCommandExecutor command = getCommandExecutor(obj, commands, name);
             switch (helpMode) {
-            case FULL_HELP:
-                command.setFullHelpField(field);
-                break;
-            case HELP_HINT:
-                command.setHelpHintField(field);
-                break;
-            case ACL:
-                command.setAclField(field);
-                break;
+                case FULL_HELP:
+                    command.setFullHelpField(field);
+                    break;
+                case HELP_HINT:
+                    command.setHelpHintField(field);
+                    break;
+                case ACL:
+                    command.setAclField(field);
+                    break;
             }
         }
     }
 
-    private static void scanMethods(Object obj, Map<List<String>, AcCommandExecutor> commands)
-    {
-        for (Method method: obj.getClass().getMethods()) {
+    private static void scanMethods(Object obj, Map<List<String>, AcCommandExecutor> commands) {
+        for (Method method : obj.getClass().getMethods()) {
             Class<?>[] params = method.getParameterTypes();
             //
             // check the signature: Args args
@@ -90,7 +84,7 @@ public class AcCommandScanner implements CommandScanner
             // scan  ac_.._.._..
             //
             Iterator<String> i =
-                    Splitter.on('_').split(method.getName()).iterator();
+                  Splitter.on('_').split(method.getName()).iterator();
 
             if (!i.next().equals("ac")) {
                 continue;
@@ -136,9 +130,9 @@ public class AcCommandScanner implements CommandScanner
         }
     }
 
-    private static AcCommandExecutor getCommandExecutor(Object obj, Map<List<String>, AcCommandExecutor> commands,
-                                                        List<String> name)
-    {
+    private static AcCommandExecutor getCommandExecutor(Object obj,
+          Map<List<String>, AcCommandExecutor> commands,
+          List<String> name) {
         AcCommandExecutor command = commands.get(name);
         if (command == null) {
             command = new AcCommandExecutor(obj);

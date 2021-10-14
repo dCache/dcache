@@ -1,7 +1,6 @@
 package org.dcache.util.expression;
 
-public enum Token
-{
+public enum Token {
     AND("and"),
     DIV("/"),
     DOT("."),
@@ -34,9 +33,8 @@ public enum Token
         this.label = label;
     }
 
-    public static Token find(String label)
-    {
-        for (Token token: values()) {
+    public static Token find(String label) {
+        for (Token token : values()) {
             if (token.label.equals(label)) {
                 return token;
             }

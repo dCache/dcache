@@ -17,7 +17,6 @@
 package org.dcache.chimera;
 
 import java.nio.charset.StandardCharsets;
-
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PATHOF extends FsInode {
@@ -33,7 +32,7 @@ public class FsInode_PATHOF extends FsInode {
 
         if (_path == null) {
             try {
-                _path = (_fs.inode2path(this)+'\n').getBytes(StandardCharsets.UTF_8);
+                _path = (_fs.inode2path(this) + '\n').getBytes(StandardCharsets.UTF_8);
             } catch (ChimeraFsException e) {
                 return -1;
             }
@@ -58,7 +57,7 @@ public class FsInode_PATHOF extends FsInode {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_path == null) {
-            _path = (_fs.inode2path(this)+'\n').getBytes(StandardCharsets.UTF_8);
+            _path = (_fs.inode2path(this) + '\n').getBytes(StandardCharsets.UTF_8);
         }
 
         ret.setSize(_path.length);

@@ -19,9 +19,6 @@
 package org.dcache.srm.taperecallscheduling.tapeinfoprovider;
 
 import com.google.gson.GsonBuilder;
-import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapefileInfo;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,6 +28,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.dcache.srm.taperecallscheduling.TapeInfo;
+import org.dcache.srm.taperecallscheduling.TapefileInfo;
 
 public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
 
@@ -40,12 +39,14 @@ public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
     protected void initializeTapeInfo() {
         String filename = FILENAME_TAPES + FILEENDING;
         Optional<File> ofile = getFileIfExists(getTapeinfoDir(), filename);
-        if(ofile.isEmpty()) return;
+        if (ofile.isEmpty()) {
+            return;
+        }
 
         HashMap<String, TapeInfo> result = new HashMap<>();
 
         GsonBuilder builder = new GsonBuilder();
-        try(Reader reader = Files.newBufferedReader(Paths.get(getTapeinfoDir(), filename))) {
+        try (Reader reader = Files.newBufferedReader(Paths.get(getTapeinfoDir(), filename))) {
             Map<String, ?> mapFromJson = builder.create().fromJson(reader, Map.class);
             Map<String, Double> tapeinfo;
 
@@ -58,17 +59,21 @@ public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
                     LOGGER.error("Tapes info file line incomplete: '{}'", entry);
                     return;
                 }
-                result.put(entry.getKey(), new TapeInfo(capacity.longValue(), usedSpace.longValue()));
+                result.put(entry.getKey(),
+                      new TapeInfo(capacity.longValue(), usedSpace.longValue()));
             }
 
             setTapeInfo(result);
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Tapes info file {} could not be found and failed with error {}", filename, e.getMessage());
+            LOGGER.error("Tapes info file {} could not be found and failed with error {}", filename,
+                  e.getMessage());
         } catch (NumberFormatException e) {
-            LOGGER.error("Reading tapes info file {} failed due to wrong content with error {}", filename, e.getMessage());
+            LOGGER.error("Reading tapes info file {} failed due to wrong content with error {}",
+                  filename, e.getMessage());
         } catch (IOException e) {
-            LOGGER.error("Reading tapes info file {} failed with error {} {} {}", filename, e.getMessage(), e.getCause(), e.getStackTrace());
+            LOGGER.error("Reading tapes info file {} failed with error {} {} {}", filename,
+                  e.getMessage(), e.getCause(), e.getStackTrace());
         }
     }
 
@@ -76,12 +81,14 @@ public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
     protected void initializeTapefileInfo() {
         String filename = FILENAME_TAPEFILES + FILEENDING;
         Optional<File> ofile = getFileIfExists(getTapeinfoDir(), filename);
-        if(ofile.isEmpty()) return;
+        if (ofile.isEmpty()) {
+            return;
+        }
 
         HashMap<String, TapefileInfo> result = new HashMap<>();
 
         GsonBuilder builder = new GsonBuilder();
-        try(Reader reader = Files.newBufferedReader(Paths.get(getTapeinfoDir(), filename))) {
+        try (Reader reader = Files.newBufferedReader(Paths.get(getTapeinfoDir(), filename))) {
             Map<String, ?> mapFromJson = builder.create().fromJson(reader, Map.class);
 
             for (Map.Entry<String, ?> entry : mapFromJson.entrySet()) {
@@ -99,11 +106,14 @@ public class JsonFileTapeInfoProvider extends FilebasedTapeInfoProvider {
             setTapefileInfo(result);
 
         } catch (FileNotFoundException e) {
-            LOGGER.error("Tapefile info file {} could not be found and failed with error {}", filename, e.getMessage());
+            LOGGER.error("Tapefile info file {} could not be found and failed with error {}",
+                  filename, e.getMessage());
         } catch (NumberFormatException e) {
-            LOGGER.error("Reading tapefile info file {} failed due to wrong content with error {}", filename, e.getMessage());
+            LOGGER.error("Reading tapefile info file {} failed due to wrong content with error {}",
+                  filename, e.getMessage());
         } catch (IOException e) {
-            LOGGER.error("Reading tapefile info file {} failed with error error {} {} {}", filename, e.getMessage(), e.getCause(), e.getStackTrace());
+            LOGGER.error("Reading tapefile info file {} failed with error error {} {} {}", filename,
+                  e.getMessage(), e.getCause(), e.getStackTrace());
         }
     }
 

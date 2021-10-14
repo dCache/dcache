@@ -1,10 +1,11 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
@@ -28,16 +29,13 @@ import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLLifetimeReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.dcache.srm.handler.ReturnStatuses.*;
+public class SrmExtendFileLifeTime {
 
-public class SrmExtendFileLifeTime
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmExtendFileLifeTime.class);
+          LoggerFactory.getLogger(SrmExtendFileLifeTime.class);
 
     private final AbstractStorageElement storage;
     private final SrmExtendFileLifeTimeRequest request;
@@ -46,19 +44,17 @@ public class SrmExtendFileLifeTime
     private SrmExtendFileLifeTimeResponse response;
 
     public SrmExtendFileLifeTime(SRMUser user,
-                                 SrmExtendFileLifeTimeRequest request,
-                                 AbstractStorageElement storage,
-                                 SRM srm,
-                                 String clientHost)
-    {
+          SrmExtendFileLifeTimeRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
         this.configuration = srm.getConfiguration();
     }
 
-    public SrmExtendFileLifeTimeResponse getResponse()
-    {
+    public SrmExtendFileLifeTimeResponse getResponse() {
         if (response == null) {
             try {
                 response = extendFileLifeTime();
@@ -73,8 +69,7 @@ public class SrmExtendFileLifeTime
     }
 
     private SrmExtendFileLifeTimeResponse extendFileLifeTime()
-            throws SRMInvalidRequestException, SRMInternalErrorException
-    {
+          throws SRMInvalidRequestException, SRMInternalErrorException {
         org.apache.axis.types.URI[] surls = request.getArrayOfSURLs().getUrlArray();
         if (surls == null) {
             throw new SRMInvalidRequestException("arrayOfSURLs is required");
@@ -92,25 +87,27 @@ public class SrmExtendFileLifeTime
         Integer newFileLifetime = request.getNewFileLifeTime();
         Integer newPinLifetime = request.getNewPinLifeTime();
         if (newFileLifetime != null && newPinLifetime != null) {
-            throw new SRMInvalidRequestException("newFileLifetime and newPinLifetime must not be present at the same time");
+            throw new SRMInvalidRequestException(
+                  "newFileLifetime and newPinLifetime must not be present at the same time");
         }
         if (token == null) {
             if (newFileLifetime == null) {
-                throw new SRMInvalidRequestException("requestToken and newFileLifetime must not be absent at the same time");
+                throw new SRMInvalidRequestException(
+                      "requestToken and newFileLifetime must not be absent at the same time");
             }
             return extendSurlLifeTime(surls, newFileLifetime);
         } else {
             if (newPinLifetime == null) {
-                throw new SRMInvalidRequestException("newPinLifetime is required when requestToken is present");
+                throw new SRMInvalidRequestException(
+                      "newPinLifetime is required when requestToken is present");
             }
             return extendTurlOrPinLifeTime(token, surls, newPinLifetime);
         }
     }
 
     private SrmExtendFileLifeTimeResponse extendSurlLifeTime(org.apache.axis.types.URI[] surls,
-                                                             int newFileLifetime)
-            throws SRMInternalErrorException
-    {
+          int newFileLifetime)
+          throws SRMInternalErrorException {
         long newLifetimeInMillis = toMillis(newFileLifetime, Long.MAX_VALUE);
         int len = surls.length;
         TSURLLifetimeReturnStatus[] surlStatus = new TSURLLifetimeReturnStatus[len];
@@ -118,25 +115,25 @@ public class SrmExtendFileLifeTime
             surlStatus[i] = extendSurlLifeTime(surls[i], newLifetimeInMillis);
         }
         return new SrmExtendFileLifeTimeResponse(
-                getSummaryReturnStatus(surlStatus),
-                new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
+              getSummaryReturnStatus(surlStatus),
+              new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
     }
 
     private TSURLLifetimeReturnStatus extendSurlLifeTime(org.apache.axis.types.URI surl,
-                                                         long newLifetimeInMillis)
-            throws SRMInternalErrorException
-    {
+          long newLifetimeInMillis)
+          throws SRMInternalErrorException {
         TSURLLifetimeReturnStatus status = new TSURLLifetimeReturnStatus();
         status.setSurl(surl);
         TReturnStatus returnStatus;
         try {
             long lifetimeLeftInMillis =
-                    storage.srmExtendSurlLifetime(user, URI.create(surl.toString()), newLifetimeInMillis);
+                  storage.srmExtendSurlLifetime(user, URI.create(surl.toString()),
+                        newLifetimeInMillis);
             status.setFileLifetime(toSeconds(lifetimeLeftInMillis));
             returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (SRMInternalErrorException e) {
             throw new SRMInternalErrorException("File lifetime extension failed for SURL " +
-                    surl + ": " + e.getMessage(), e);
+                  surl + ": " + e.getMessage(), e);
         } catch (SRMException e) {
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, e.toString());
         }
@@ -144,8 +141,7 @@ public class SrmExtendFileLifeTime
         return status;
     }
 
-    private long getMaxLifetime(ContainerRequest<?> containerRequest)
-    {
+    private long getMaxLifetime(ContainerRequest<?> containerRequest) {
         long configMaximumLifetime;
         if (containerRequest instanceof CopyRequest) {
             configMaximumLifetime = configuration.getCopyLifetime();
@@ -160,66 +156,68 @@ public class SrmExtendFileLifeTime
     }
 
     private SrmExtendFileLifeTimeResponse extendTurlOrPinLifeTime(
-            String requestToken, org.apache.axis.types.URI[] surls, int newLifetime)
-            throws SRMInvalidRequestException, SRMInternalErrorException
-    {
+          String requestToken, org.apache.axis.types.URI[] surls, int newLifetime)
+          throws SRMInvalidRequestException, SRMInternalErrorException {
         ContainerRequest<?> containerRequest =
-                Request.getRequest(requestToken, ContainerRequest.class);
+              Request.getRequest(requestToken, ContainerRequest.class);
         try (JDC ignored = containerRequest.applyJdc()) {
             long maxLifetime = getMaxLifetime(containerRequest);
             long newLifetimeInMillis = toMillis(newLifetime, maxLifetime);
             int len = surls.length;
             TSURLLifetimeReturnStatus[] surlStatus = new TSURLLifetimeReturnStatus[len];
             for (int i = 0; i < len; ++i) {
-                surlStatus[i] = extendTurlOrPinLifeTime(containerRequest, surls[i], newLifetimeInMillis);
+                surlStatus[i] = extendTurlOrPinLifeTime(containerRequest, surls[i],
+                      newLifetimeInMillis);
             }
             return new SrmExtendFileLifeTimeResponse(
-                    getSummaryReturnStatus(surlStatus),
-                    new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
+                  getSummaryReturnStatus(surlStatus),
+                  new ArrayOfTSURLLifetimeReturnStatus(surlStatus));
         }
     }
 
     private TSURLLifetimeReturnStatus extendTurlOrPinLifeTime(
-            ContainerRequest<?> request, org.apache.axis.types.URI surl, long newLifetimeInMillis)
-            throws SRMInternalErrorException
-    {
+          ContainerRequest<?> request, org.apache.axis.types.URI surl, long newLifetimeInMillis)
+          throws SRMInternalErrorException {
         TSURLLifetimeReturnStatus status = new TSURLLifetimeReturnStatus();
         status.setSurl(surl);
         TReturnStatus returnStatus;
         try {
             FileRequest<?> fileRequest =
-                    request.getFileRequestBySurl(URI.create(surl.toString()));
+                  request.getFileRequestBySurl(URI.create(surl.toString()));
             long lifetimeLeftMillis =
-                    fileRequest.extendLifetime(newLifetimeInMillis);
+                  fileRequest.extendLifetime(newLifetimeInMillis);
             status.setPinLifetime(toSeconds(lifetimeLeftMillis));
             returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (SRMFileRequestNotFoundException e) {
             returnStatus = new TReturnStatus(
-                    TStatusCode.SRM_INVALID_PATH, "SURL does match any existing file request associated with the request token");
+                  TStatusCode.SRM_INVALID_PATH,
+                  "SURL does match any existing file request associated with the request token");
         } catch (SRMInvalidRequestException e) {
             returnStatus = new TReturnStatus(
-                    TStatusCode.SRM_INVALID_REQUEST, "TURL is no longer valid and cannot be extended");
+                  TStatusCode.SRM_INVALID_REQUEST,
+                  "TURL is no longer valid and cannot be extended");
         } catch (SRMReleasedException e) {
             returnStatus = new TReturnStatus(
-                    TStatusCode.SRM_RELEASED, "TURL has been released and cannot be extended");
+                  TStatusCode.SRM_RELEASED, "TURL has been released and cannot be extended");
         } catch (SRMAbortedException e) {
             returnStatus = new TReturnStatus(
-                    TStatusCode.SRM_ABORTED, "TURL has been aborted and cannot be extended");
+                  TStatusCode.SRM_ABORTED, "TURL has been aborted and cannot be extended");
         } catch (SRMInternalErrorException e) {
-            throw new SRMInternalErrorException("File lifetime extension failed for request " + request.getClientRequestId()
-                    + " with SURL " + surl + ": " + e.getMessage(), e);
+            throw new SRMInternalErrorException(
+                  "File lifetime extension failed for request " + request.getClientRequestId()
+                        + " with SURL " + surl + ": " + e.getMessage(), e);
         } catch (SRMException e) {
             LOGGER.warn("File lifetime extension failed for request {} with SURL {}: {}",
-                    request.getClientRequestId(), surl, e.getMessage());
+                  request.getClientRequestId(), surl, e.getMessage());
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE,
-                    "TURL for request " + request.getClientRequestId() + " with SURL " + surl + " cannot be extended: " + e.getMessage());
+                  "TURL for request " + request.getClientRequestId() + " with SURL " + surl
+                        + " cannot be extended: " + e.getMessage());
         }
         status.setStatus(returnStatus);
         return status;
     }
 
-    private static long toMillis(int seconds, long max)
-    {
+    private static long toMillis(int seconds, long max) {
         /* [ SRM 2.2, 1.20 ]
          *
          * o A negative value (-1) indicates “infinite (indefinite)” time.
@@ -227,8 +225,7 @@ public class SrmExtendFileLifeTime
         return (seconds >= 0) ? Math.min(SECONDS.toMillis(seconds), max) : -1;
     }
 
-    private static int toSeconds(long millis)
-    {
+    private static int toSeconds(long millis) {
         /* [ SRM 2.2, 1.20 ]
          *
          * o A negative value (-1) indicates “infinite (indefinite)” time.
@@ -236,14 +233,12 @@ public class SrmExtendFileLifeTime
         return (millis >= 0) ? (int) MILLISECONDS.toSeconds(millis) : -1;
     }
 
-    public static final SrmExtendFileLifeTimeResponse getFailedResponse(String error)
-    {
+    public static final SrmExtendFileLifeTimeResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
     public static final SrmExtendFileLifeTimeResponse getFailedResponse(
-            String error, TStatusCode statusCode)
-    {
+          String error, TStatusCode statusCode) {
         SrmExtendFileLifeTimeResponse response = new SrmExtendFileLifeTimeResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

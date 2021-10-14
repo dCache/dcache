@@ -1,8 +1,5 @@
 package org.dcache.srm.qos.lambdastation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,132 +7,135 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Properties;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LambdaStationPlugin implements QOSPlugin {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(LambdaStationPlugin.class);
-	private LambdaStationMap lambdaStationMap;
-	private String lambdaStationConf;
-	private String lambdaStationScript;
-	private AbstractStorageElement storage;
-	private final Collection<LambdaStationTicket> tickets = new ArrayList<>();
+          LoggerFactory.getLogger(LambdaStationPlugin.class);
+    private LambdaStationMap lambdaStationMap;
+    private String lambdaStationConf;
+    private String lambdaStationScript;
+    private AbstractStorageElement storage;
+    private final Collection<LambdaStationTicket> tickets = new ArrayList<>();
 
-	public LambdaStationPlugin(){}
+    public LambdaStationPlugin() {
+    }
 
-	@Override
+    @Override
     public void setSrm(SRM srm) {
         lambdaStationConf = srm.getConfiguration().getQosConfigFile();
         storage = srm.getStorage();
-		Properties properties = new Properties();
+        Properties properties = new Properties();
 
         FileInputStream fis;
-		try {
+        try {
             fis = new FileInputStream(lambdaStationConf);
-        }
-        catch(FileNotFoundException ex) {
-                LOGGER.error(ex.toString());
-                return;
+        } catch (FileNotFoundException ex) {
+            LOGGER.error(ex.toString());
+            return;
         }
         try {
             properties.load(fis);
-        } catch(IOException ex) {
-                LOGGER.error("failed to load configuration ",ex);
-                return;
+        } catch (IOException ex) {
+            LOGGER.error("failed to load configuration ", ex);
+            return;
         } finally {
             try {
                 fis.close();
             } catch (IOException ex) {
-                LOGGER.error("failed to close "+lambdaStationConf, ex);
+                LOGGER.error("failed to close " + lambdaStationConf, ex);
             }
         }
-        this.lambdaStationScript = properties.getProperty("l_station_script","/opt/d-cache/conf/l_station_script.sh");
-		this.lambdaStationMap = new LambdaStationMap(properties.getProperty("l_station_map","/opt/d-cache/conf/l_station_map.xml"));
-	}
+        this.lambdaStationScript = properties.getProperty("l_station_script",
+              "/opt/d-cache/conf/l_station_script.sh");
+        this.lambdaStationMap = new LambdaStationMap(
+              properties.getProperty("l_station_map", "/opt/d-cache/conf/l_station_map.xml"));
+    }
 
-	@Override
-        public QOSTicket createTicket(
-			String credential,
-			Long bytes,
-			String srcURL,
-			int srcPortMin,
-			int srcPortMax,
-			String srcProtocol,
-			String dstURL,
-			int dstPortMin,
-			int dstPortMax,
-			String dstProtocol) {
-		LambdaStationTicket ticket = new LambdaStationTicket(
-				credential,
-				dstURL,
-				null, // don't make it hardcoded
-				srcURL,
-				null, // don't make it hardcoded
-				600, // hardcoded travel time so far
-				lambdaStationMap);
-		ticket.bytes = bytes;
-		return ticket;
-	}
+    @Override
+    public QOSTicket createTicket(
+          String credential,
+          Long bytes,
+          String srcURL,
+          int srcPortMin,
+          int srcPortMax,
+          String srcProtocol,
+          String dstURL,
+          int dstPortMin,
+          int dstPortMax,
+          String dstProtocol) {
+        LambdaStationTicket ticket = new LambdaStationTicket(
+              credential,
+              dstURL,
+              null, // don't make it hardcoded
+              srcURL,
+              null, // don't make it hardcoded
+              600, // hardcoded travel time so far
+              lambdaStationMap);
+        ticket.bytes = bytes;
+        return ticket;
+    }
 
-	@Override
-        public void addTicket(QOSTicket qosTicket) {
-           if (qosTicket instanceof LambdaStationTicket) {
-                LambdaStationTicket ls_ticket =
-                    (LambdaStationTicket)qosTicket;
-		tickets.add(ls_ticket);
-           }
-	}
+    @Override
+    public void addTicket(QOSTicket qosTicket) {
+        if (qosTicket instanceof LambdaStationTicket) {
+            LambdaStationTicket ls_ticket =
+                  (LambdaStationTicket) qosTicket;
+            tickets.add(ls_ticket);
+        }
+    }
 
-	@Override
-        public boolean submit() {
-		boolean result = true;
-		for (LambdaStationTicket ls_ticket:tickets) {
-                    ls_ticket.OpenTicket(lambdaStationScript);
-                    result = !result ? isTicketEnabled(ls_ticket) : result;
-		}
-		return result;
-	}
+    @Override
+    public boolean submit() {
+        boolean result = true;
+        for (LambdaStationTicket ls_ticket : tickets) {
+            ls_ticket.OpenTicket(lambdaStationScript);
+            result = !result ? isTicketEnabled(ls_ticket) : result;
+        }
+        return result;
+    }
 
-	private boolean isTicketEnabled(QOSTicket qosTicket) {
-		if (qosTicket instanceof LambdaStationTicket) {
-			LambdaStationTicket	ls_ticket = (LambdaStationTicket)qosTicket;
-			boolean sEnabled = ls_ticket.srcEnabled();
-			boolean dEnabled = ls_ticket.dstEnabled();
-			LOGGER.debug("src enabled={} dst enabled={}", sEnabled, dEnabled);
-			return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
-		}
-		else {
-                    return false;
+    private boolean isTicketEnabled(QOSTicket qosTicket) {
+        if (qosTicket instanceof LambdaStationTicket) {
+            LambdaStationTicket ls_ticket = (LambdaStationTicket) qosTicket;
+            boolean sEnabled = ls_ticket.srcEnabled();
+            boolean dEnabled = ls_ticket.dstEnabled();
+            LOGGER.debug("src enabled={} dst enabled={}", sEnabled, dEnabled);
+            return sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void sayStatus(QOSTicket qosTicket) {
+        if (qosTicket instanceof LambdaStationTicket) {
+            LambdaStationTicket ls_ticket = (LambdaStationTicket) qosTicket;
+            if (isTicketEnabled(qosTicket)) {
+                Date now = new Date();
+                long t = now.getTime();
+                long time_left = ls_ticket.getActualEndTime() - t / 1000;
+                LOGGER.debug("End time={} Travel Time={} now={} expires in {}",
+                      ls_ticket.getActualEndTime(), ls_ticket.TravelTime, t, time_left);
+                // try to calculate transfer time assuming 1Gb local connection
+                long transfer_time = 0l;
+                long rate_MB = 100000000l; // 1Gb means 100MB
+                if (ls_ticket.bytes != null) {
+                    transfer_time = ls_ticket.bytes / rate_MB;
                 }
-	}
-
-	@Override
-        public void sayStatus(QOSTicket qosTicket) {
-		if (qosTicket instanceof LambdaStationTicket) {
-			LambdaStationTicket	ls_ticket = (LambdaStationTicket)qosTicket;
-			if (isTicketEnabled(qosTicket)) {
-				Date now = new Date();
-				long t = now.getTime();
-				long time_left = ls_ticket.getActualEndTime() - t/1000;
-				LOGGER.debug("End time={} Travel Time={} now={} expires in {}", ls_ticket.getActualEndTime(), ls_ticket.TravelTime, t, time_left);
-				// try to calculate transfer time assuming 1Gb local connection
-				long transfer_time = 0l;
-				long rate_MB = 100000000l; // 1Gb means 100MB
-				if (ls_ticket.bytes != null) {
-					transfer_time = ls_ticket.bytes /rate_MB;
-				}
-				long extend_time = Math.max(transfer_time, 600l);
-				if (time_left - extend_time < 0) {
-					LOGGER.debug("AM: will extend end time by {}", extend_time);
-				}
-				else {
-					LOGGER.debug("AM: no need to extend end time");
-				}
-			}
-		}
-	}
+                long extend_time = Math.max(transfer_time, 600l);
+                if (time_left - extend_time < 0) {
+                    LOGGER.debug("AM: will extend end time by {}", extend_time);
+                } else {
+                    LOGGER.debug("AM: no need to extend end time");
+                }
+            }
+        }
+    }
 }

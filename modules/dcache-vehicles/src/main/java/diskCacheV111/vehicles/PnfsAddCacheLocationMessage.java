@@ -8,11 +8,12 @@ public class PnfsAddCacheLocationMessage extends PnfsModifyCacheLocationMessage 
 
     private static final long serialVersionUID = 4683846056284598394L;
 
-    public PnfsAddCacheLocationMessage(PnfsId pnfsId, String poolName){
-	super(pnfsId,poolName);
+    public PnfsAddCacheLocationMessage(PnfsId pnfsId, String poolName) {
+        super(pnfsId, poolName);
     }
-    public String toString(){
-        return super.toString()+";adding;";
+
+    public String toString() {
+        return super.toString() + ";adding;";
     }
 }
 

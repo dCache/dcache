@@ -66,15 +66,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.ftp.door;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.dcache.util.Strings.describe;
+import static org.dcache.util.Strings.describeBandwidth;
+import static org.dcache.util.Strings.describeSize;
 
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.dcache.util.Strings.*;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
  * <p>Title: GFtpPerfMarker.java</p>
@@ -87,8 +88,8 @@ import static org.dcache.util.Strings.*;
  *
  * @author AIK
  * @version 1.0
- *
- *
+ * <p>
+ * <p>
  * $Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $
  */
 
@@ -97,6 +98,7 @@ import static org.dcache.util.Strings.*;
  * NO SYNCHRONIZATION done (yet) !!!
  */
 public class GFtpPerfMarker {
+
     private static final String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
 
     private long _timeStamp;
@@ -109,23 +111,35 @@ public class GFtpPerfMarker {
     private Instant lastUpdated = Instant.now();
 
     /** Constructor */
-    public GFtpPerfMarker( long stripeIndex, long totalStripeCount ) {
-        _timeStamp        = System.currentTimeMillis();
-        _stripeIndex      = stripeIndex;
+    public GFtpPerfMarker(long stripeIndex, long totalStripeCount) {
+        _timeStamp = System.currentTimeMillis();
+        _stripeIndex = stripeIndex;
         _totalStripeCount = totalStripeCount;
         _stripeBytesTransferred = 0;
     }
 
     // Getters
     //
+
     /** */
-    public long getTimeStamp() { return _timeStamp; }
+    public long getTimeStamp() {
+        return _timeStamp;
+    }
+
     /** */
-    public long getStripeIndex() { return _stripeIndex; }
+    public long getStripeIndex() {
+        return _stripeIndex;
+    }
+
     /** */
-    public long getstripeBytesTransferred() { return _stripeBytesTransferred; }
+    public long getstripeBytesTransferred() {
+        return _stripeBytesTransferred;
+    }
+
     /** */
-    public long getStripeCount() { return _totalStripeCount; }
+    public long getStripeCount() {
+        return _totalStripeCount;
+    }
 
     public Optional<Instant> stalledSince() {
         return _stalledSince;
@@ -133,17 +147,19 @@ public class GFtpPerfMarker {
 
     public Optional<Instant> lastUpdated() {
         return _hasBeenUpdated
-                ? Optional.of(Instant.ofEpochMilli(_timeStamp))
-                : Optional.empty();
+              ? Optional.of(Instant.ofEpochMilli(_timeStamp))
+              : Optional.empty();
     }
 
     // Setters
     //
+
     /** set Time Stamp*/
     public void setTimeStamp(long timeStamp) {
         _timeStamp = timeStamp;
         _hasBeenUpdated = true;
     }
+
     /** update Time Stamp - set current time */
     public void updateTimeStamp() {
         setTimeStamp(System.currentTimeMillis());
@@ -163,8 +179,7 @@ public class GFtpPerfMarker {
         _stripeBytesTransferred = byteCount;
     }
 
-    public SummaryStatistics getBandwidthStatistics()
-    {
+    public SummaryStatistics getBandwidthStatistics() {
         return _bandwidth.copy();
     }
 
@@ -173,7 +188,8 @@ public class GFtpPerfMarker {
         Instant now = Instant.now();
         Duration elapsed = Duration.between(lastUpdated, now);
         lastUpdated = now;
-        double elapsedSeconds = (double)elapsed.getNano() / SECONDS.getDuration().toNanos() + elapsed.getSeconds();
+        double elapsedSeconds =
+              (double) elapsed.getNano() / SECONDS.getDuration().toNanos() + elapsed.getSeconds();
         return delta / elapsedSeconds;
     }
 
@@ -192,8 +208,9 @@ public class GFtpPerfMarker {
         setStripeBytesTransferred(byteCount);
         updateTimeStamp();
     }
+
     /** increment counter stripeBytesTransferred by byteCountAdd and update timestamp */
-    public void addBytesWithTime(long byteCountAdd ) {
+    public void addBytesWithTime(long byteCountAdd) {
         setStripeBytesTransferred(_stripeBytesTransferred + byteCountAdd);
         updateTimeStamp();
     }
@@ -203,16 +220,16 @@ public class GFtpPerfMarker {
 
     /** @return String formatted according gridftp protocol extension to be sent to the ftp control line
      */
-    public String getReply(){
-        long sec =  _timeStamp/1000;
-        long hms = (_timeStamp%1000)/100; // hundreds of millisec; one digit only
+    public String getReply() {
+        long sec = _timeStamp / 1000;
+        long hms = (_timeStamp % 1000) / 100; // hundreds of millisec; one digit only
         String s =
-                "112-Perf Marker\r\n"
-                        +" Timestamp:  " +sec +"." +hms+ "\r\n"
-                        +" Stripe Index: "+_stripeIndex+"\r\n"
-                        +" Stripe Bytes Transferred: "+_stripeBytesTransferred+"\r\n"
-                        +" Total Stripe Count: "+_totalStripeCount+"\r\n"
-                        +"112 End.";
+              "112-Perf Marker\r\n"
+                    + " Timestamp:  " + sec + "." + hms + "\r\n"
+                    + " Stripe Index: " + _stripeIndex + "\r\n"
+                    + " Stripe Bytes Transferred: " + _stripeBytesTransferred + "\r\n"
+                    + " Total Stripe Count: " + _totalStripeCount + "\r\n"
+                    + "112 End.";
         /** @todo: bug in grid ftp client implementation, it check for '.' at the end,
          * '.' is not in standard/
          */
@@ -223,19 +240,18 @@ public class GFtpPerfMarker {
     }
 
     /** @return String - one line printout */
-    public String toString(){
-        long sec =  _timeStamp/1000;
-        long hms = (_timeStamp%1000); // hundreds of millisec; one digit only
-        String s = "GFtpPerfMarker: Timestamp=" +sec +"." +hms
-                +"; StripeIndex=" +_stripeIndex
-                +"; StripeBytesTransferred=" +_stripeBytesTransferred
-                +"; TotalStripeCount=" +_totalStripeCount
-                +";";
+    public String toString() {
+        long sec = _timeStamp / 1000;
+        long hms = (_timeStamp % 1000); // hundreds of millisec; one digit only
+        String s = "GFtpPerfMarker: Timestamp=" + sec + "." + hms
+              + "; StripeIndex=" + _stripeIndex
+              + "; StripeBytesTransferred=" + _stripeBytesTransferred
+              + "; TotalStripeCount=" + _totalStripeCount
+              + ";";
         return s;
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("Transferred: " + describeSize(getstripeBytesTransferred()));
         pw.println("Last updated: " + describe(lastUpdated()));
         SummaryStatistics bandwidth = getBandwidthStatistics();

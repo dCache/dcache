@@ -66,16 +66,17 @@ import java.util.Map.Entry;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.classic.ChecksumModuleV1} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.classic.ChecksumModuleV1} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class ChecksumModuleData implements Serializable {
+
     private static final long serialVersionUID = 3185378122559623926L;
     private String label;
-    private String              type;
+    private String type;
     private Map<String, String> policies;
-    private Double              throughputLimitInMibPerSec;
-    private Long                periodInHours;
+    private Double throughputLimitInMibPerSec;
+    private Long periodInHours;
 
     public String getLabel() {
         return label;
@@ -125,9 +126,9 @@ public class ChecksumModuleData implements Serializable {
                         case "SCRUB":
                             pw.print("scrub(");
                             pw.print("limit=" + throughputLimitInMibPerSec
-                                                     == null ?
-                                                     "off" :
-                                                     throughputLimitInMibPerSec);
+                                  == null ?
+                                  "off" :
+                                  throughputLimitInMibPerSec);
                             pw.print(",");
                             pw.print("period=" + periodInHours);
                             pw.print(") ");

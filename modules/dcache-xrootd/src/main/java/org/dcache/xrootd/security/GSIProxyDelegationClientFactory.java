@@ -18,26 +18,25 @@
 package org.dcache.xrootd.security;
 
 import java.util.Properties;
-
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
 import org.dcache.xrootd.plugins.authn.gsi.X509ProxyDelegationClient;
 
 /**
- * Implements factory which creates the client specific to delegation
- * and caching of X509 credentials.
+ * Implements factory which creates the client specific to delegation and caching of X509
+ * credentials.
  */
 public class GSIProxyDelegationClientFactory implements
-                ProxyDelegationClientFactory<X509ProxyDelegationClient>
-{
+      ProxyDelegationClientFactory<X509ProxyDelegationClient> {
+
     private static final String PROTOCOL = "gsi";
 
     private ProxyDelegationStore gsiDelegationProvider;
 
     @Override
     public X509ProxyDelegationClient
-        createClient(String name, Properties properties) {
-        return  PROTOCOL.equals(name) ?
-                        new GSIProxyDelegationClient(gsiDelegationProvider) : null;
+    createClient(String name, Properties properties) {
+        return PROTOCOL.equals(name) ?
+              new GSIProxyDelegationClient(gsiDelegationProvider) : null;
     }
 
     public void setProvider(ProxyDelegationStore gsiDelegationProvider) {

@@ -18,6 +18,8 @@
  */
 package org.dcache.mock;
 
+import static org.mockito.Mockito.mock;
+
 import com.google.common.net.InetAddresses;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -25,34 +27,30 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import org.mockito.BDDMockito;
 
-import static org.mockito.Mockito.mock;
-
 /**
  * This class builds a mock IpProtocolInfo object using the builder pattern.
  */
 public class IpProtocolInfoBuilder extends ProtocolInfoBuilder {
-  private static final int CLIENT_EPHEMERIAL_PORT = 1000;
-  private final InetAddress address;
 
-  public IpProtocolInfoBuilder(ProtocolInfoBuilder previous, String address)
-  {
-    super(previous);
-    this.address = InetAddresses.forString(address);
-  }
+    private static final int CLIENT_EPHEMERIAL_PORT = 1000;
+    private final InetAddress address;
 
-  @Override
-  public ProtocolInfo build()
-  {
-    IpProtocolInfo mock = mock(IpProtocolInfo.class);
-    addBehaviour(mock);
-    return mock;
-  }
+    public IpProtocolInfoBuilder(ProtocolInfoBuilder previous, String address) {
+        super(previous);
+        this.address = InetAddresses.forString(address);
+    }
 
-  public void addBehaviour(IpProtocolInfo mock)
-  {
-    super.addBehaviour(mock);
+    @Override
+    public ProtocolInfo build() {
+        IpProtocolInfo mock = mock(IpProtocolInfo.class);
+        addBehaviour(mock);
+        return mock;
+    }
 
-    InetSocketAddress client = new InetSocketAddress(address, CLIENT_EPHEMERIAL_PORT);
-    BDDMockito.given(mock.getSocketAddress()).willReturn(client);
-  }
+    public void addBehaviour(IpProtocolInfo mock) {
+        super.addBehaviour(mock);
+
+        InetSocketAddress client = new InetSocketAddress(address, CLIENT_EPHEMERIAL_PORT);
+        BDDMockito.given(mock.getSocketAddress()).willReturn(client);
+    }
 }

@@ -1,14 +1,25 @@
 package diskCacheV111.cells;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.util.ByteUnit.BYTES;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
+import diskCacheV111.util.HTMLBuilder;
+import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.UserInfo;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoJobInfo;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerSubscriber;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -22,31 +33,19 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.HTMLBuilder;
-import diskCacheV111.util.TransferInfo;
-import diskCacheV111.util.UserInfo;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.IoJobInfo;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.services.login.LoginBrokerSubscriber;
-import dmg.cells.services.login.LoginManagerChildrenInfo;
+import javax.security.auth.Subject;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.TransferCollector;
 import org.dcache.util.TransferCollector.Transfer;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.dcache.util.ByteUnit.BYTES;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransferObserverV1
-    extends CellAdapter
-    implements Runnable {
+      extends CellAdapter
+      implements Runnable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferObserverV1.class);
 
     private final CellNucleus _nucleus;
@@ -60,49 +59,50 @@ public class TransferObserverV1
     private long _processCounter;
     private final Map<String, TableEntry> _tableHash = new HashMap<>();
 
-    private static final String[] __className = { "cell",               //   0
-                    "domain",             //   1
-                    "sequence",           //   2
-                    "protocol",           //   3
-                    "uid",                //   4
-                    "gid",                //   5
-                    "vomsGroup",          //   6
-                    "process",            //   7
-                    "pnfs",               //   8
-                    "pool",               //   9
-                    "host",               //  10
-                    "status",             //  11
-                    "waiting",            //  12
-                    "state",              //  13
-                    "submitted",          //  14
-                    "time",               //  15
-                    "transferred",        //  16
-                    "speed",              //  17
-                    "running"             //  18
+    private static final String[] __className = {"cell",               //   0
+          "domain",             //   1
+          "sequence",           //   2
+          "protocol",           //   3
+          "uid",                //   4
+          "gid",                //   5
+          "vomsGroup",          //   6
+          "process",            //   7
+          "pnfs",               //   8
+          "pool",               //   9
+          "host",               //  10
+          "status",             //  11
+          "waiting",            //  12
+          "state",              //  13
+          "submitted",          //  14
+          "time",               //  15
+          "transferred",        //  16
+          "speed",              //  17
+          "running"             //  18
     };
 
-    private static final String[] __listHeader = { "Cell",               //   0
-                    "Domain",             //   1
-                    "Seq",                //   2
-                    "Prot",               //   3
-                    "UID",                //   4
-                    "GID",                //   5
-                    "VOMS Group",         //   6
-                    "Proc",               //   7
-                    "PnfsId",             //   8
-                    "Pool",               //   9
-                    "Host",               //  10
-                    "State",              //  11
-                    "Waiting",            //  12
-                    "JobState",           //  13
-                    "Submitted",          //  14
-                    "Time",               //  15
-                    "Trans.&nbsp;(KiB)",   //  16
-                    "Speed&nbsp;(KiB/s)",  //  17
-                    "Running"             //  18
+    private static final String[] __listHeader = {"Cell",               //   0
+          "Domain",             //   1
+          "Seq",                //   2
+          "Prot",               //   3
+          "UID",                //   4
+          "GID",                //   5
+          "VOMS Group",         //   6
+          "Proc",               //   7
+          "PnfsId",             //   8
+          "Pool",               //   9
+          "Host",               //  10
+          "State",              //  11
+          "Waiting",            //  12
+          "JobState",           //  13
+          "Submitted",          //  14
+          "Time",               //  15
+          "Trans.&nbsp;(KiB)",   //  16
+          "Speed&nbsp;(KiB/s)",  //  17
+          "Running"             //  18
     };
 
     private static class TableEntry {
+
         private final String _tableName;
         private final int[] _fields;
         private final String _title;
@@ -154,10 +154,11 @@ public class TransferObserverV1
     }
 
     /**
-     *   <p>Used to produce JSON representation, but also provides methods
-     *      for conversion into .txt and .html table entries.</p>
+     * <p>Used to produce JSON representation, but also provides methods
+     * for conversion into .txt and .html table entries.</p>
      */
     private static class TransferBean extends TransferInfo {
+
         private static final long serialVersionUID = 3132576086376551676L;
 
         private final long now;
@@ -172,7 +173,7 @@ public class TransferObserverV1
             domainName = transfer.door().getDomainName();
             serialId = transfer.session().getSerialId();
             setProtocol(transfer.door().getProtocolFamily(),
-                            transfer.door().getProtocolVersion());
+                  transfer.door().getProtocolVersion());
             Subject subject = transfer.session().getSubject();
             if (subject == null) {
                 setUserInfo(new UserInfo());
@@ -215,7 +216,7 @@ public class TransferObserverV1
             out.add(pool);
             out.add(replyHost);
             out.add(sessionStatus == null ? ""
-                            : sessionStatus.replace(" ", "&nbsp;"));
+                  : sessionStatus.replace(" ", "&nbsp;"));
             out.add(timeWaiting(now, true));
 
             if (moverStatus != null) {
@@ -261,12 +262,12 @@ public class TransferObserverV1
                 list.add(String.valueOf(bytesTransferred));
                 if (display) {
                     list.add(transferTime > 0 ?
-                             String.valueOf((1000 * bytesTransferred)/(1024 * transferTime))
-                                    : "-");
+                          String.valueOf((1000 * bytesTransferred) / (1024 * transferTime))
+                          : "-");
                 } else {
                     list.add(String.valueOf(transferTime > 0 ?
-                            ((double) bytesTransferred / (double) transferTime)
-                                    : 0));
+                          ((double) bytesTransferred / (double) transferTime)
+                          : 0));
                 }
                 list.add(timeRunning(now, display));
             }
@@ -335,7 +336,7 @@ public class TransferObserverV1
     public static final String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]";
 
     public synchronized String ac_table_define_$_2_3(Args args)
-                    throws NumberFormatException {
+          throws NumberFormatException {
         String tableName = args.argv(0);
         String header = args.argc() > 2 ? args.argv(2) : null;
         String[] list = args.argv(1).split(",");
@@ -384,7 +385,7 @@ public class TransferObserverV1
         long update = Long.parseLong(args.argv(0)) * 1000L;
         if (update < 10000L) {
             throw new IllegalArgumentException(
-                            "Update time must exceed 10 seconds");
+                  "Update time must exceed 10 seconds");
         }
 
         synchronized (this) {
@@ -444,14 +445,14 @@ public class TransferObserverV1
         try {
             Collection<LoginBrokerInfo> loginBrokerInfos = _collector.getLoginBrokerInfo();
             Collection<LoginManagerChildrenInfo> loginManagerInfos = _collector.collectLoginManagerInfo(
-                            TransferCollector.getLoginManagers(loginBrokerInfos)).get();
+                  TransferCollector.getLoginManagers(loginBrokerInfos)).get();
             Collection<IoDoorInfo> doorInfos = _collector.collectDoorInfo(
-                            TransferCollector.getDoors(loginManagerInfos)).get();
+                  TransferCollector.getDoors(loginManagerInfos)).get();
             Collection<IoJobInfo> movers = _collector.collectMovers(
-                            TransferCollector.getPools(doorInfos)).get();
+                  TransferCollector.getPools(doorInfos)).get();
 
             List<Transfer> transfers = TransferCollector.getTransfers(doorInfos,
-                            movers);
+                  movers);
             transfers.sort(new TransferCollector.ByDoorAndSequence());
 
             Map<String, Object> domainContext = _nucleus.getDomainContext();
@@ -460,20 +461,20 @@ public class TransferObserverV1
 
             long now = System.currentTimeMillis();
             List<TransferBean> beans = transfers
-                            .stream()
-                            .map((t) -> new TransferBean(t, now))
-                            .collect(Collectors.toList());
+                  .stream()
+                  .map((t) -> new TransferBean(t, now))
+                  .collect(Collectors.toList());
 
             domainContext.put("transfers.html", createHtmlTable(beans));
             domainContext.put("transfers.txt", createAsciiTable(beans));
             domainContext.put("transfers.json",
-                            new ObjectMapper().writerWithDefaultPrettyPrinter()
-                                              .writeValueAsString(beans));
+                  new ObjectMapper().writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(beans));
 
             synchronized (this) {
                 for (TableEntry entry : _tableHash.values()) {
                     domainContext.put(entry.getName() + ".html",
-                                    createDynamicTable(transfers, entry.getFields()));
+                          createDynamicTable(transfers, entry.getFields()));
                 }
             }
         } catch (ExecutionException e) {
@@ -493,17 +494,17 @@ public class TransferObserverV1
 
         page.addHeader("/styles/doors.css", "Doors");
         page.beginTable("sortable",
-                        "cell", "Cell",
-                        "domain", "Domain",
-                        "protocol", "Protocol",
-                        "version", "Version",
-                        "host", "Host",
-                        "port", "Port",
-                        "load", "Load");
+              "cell", "Cell",
+              "domain", "Domain",
+              "protocol", "Protocol",
+              "version", "Version",
+              "host", "Host",
+              "port", "Port",
+              "load", "Load");
 
         for (LoginBrokerInfo door : doors) {
             InetAddress address = door.getAddresses().stream().max(
-                            Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
+                  Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
             page.beginRow(null, "odd");
             page.td("cell", door.getCellName());
             page.td("domain", door.getDomainName());
@@ -570,7 +571,7 @@ public class TransferObserverV1
         page.td("uid", transfer.getUserInfo().getUid());
         page.td("gid", transfer.getUserInfo().getGid());
         page.td("vomsGroup", transfer.getUserInfo().getPrimaryVOMSGroup());
-        
+
         String tmp = transfer.getProcess();
         tmp = tmp.contains("known") ? "?" : tmp;
         page.td("process", tmp);
@@ -625,22 +626,22 @@ public class TransferObserverV1
 
         page.addHeader("/styles/transfers.css", "Active Transfers");
         page.beginTable("sortable",
-                        "door", "Door",
-                        "domain", "Domain",
-                        "sequence", "Seq",
-                        "protocol", "Prot",
-                        "uid", "UID",
-                        "gid", "GID",
-                        "vomsGroup", "VOMS Group",
-                        "process", "Proc",
-                        "pnfs", "PnfsId",
-                        "pool", "Pool",
-                        "host", "Host",
-                        "status", "Status",
-                        "waiting", "Waiting",
-                        "state", "S",
-                        "transferred", "Trans.&nbsp;(KiB)",
-                        "speed", "Speed&nbsp;(KiB/s)");
+              "door", "Door",
+              "domain", "Domain",
+              "sequence", "Seq",
+              "protocol", "Prot",
+              "uid", "UID",
+              "gid", "GID",
+              "vomsGroup", "VOMS Group",
+              "process", "Proc",
+              "pnfs", "PnfsId",
+              "pool", "Pool",
+              "host", "Host",
+              "status", "Status",
+              "waiting", "Waiting",
+              "state", "S",
+              "transferred", "Trans.&nbsp;(KiB)",
+              "speed", "Speed&nbsp;(KiB/s)");
         transfers.stream().forEach((t) -> createHtmlTableRow(page, t));
         page.endTable();
         page.addFooter(getClass().getName());

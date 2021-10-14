@@ -62,78 +62,79 @@ package org.dcache.quota.data;
 import java.io.Serializable;
 
 public class QuotaInfo implements Serializable {
-  private static final long serialVersionUID = 7929852823225812060L;
 
-  private Integer id;
-  private QuotaType type;
-  private Long custodial;
-  private Long replica;
-  private Long output;
-  private Long custodialLimit;
-  private Long replicaLimit;
-  private Long outputLimit;
+    private static final long serialVersionUID = 7929852823225812060L;
 
-  public Integer getId() {
-    return id;
-  }
+    private Integer id;
+    private QuotaType type;
+    private Long custodial;
+    private Long replica;
+    private Long output;
+    private Long custodialLimit;
+    private Long replicaLimit;
+    private Long outputLimit;
 
-  public void setId(Integer id) {
-    this.id = id;
-  }
+    public Integer getId() {
+        return id;
+    }
 
-  public QuotaType getType() {
-    return type;
-  }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-  public void setType(QuotaType type) {
-    this.type = type;
-  }
+    public QuotaType getType() {
+        return type;
+    }
 
-  public Long getCustodial() {
-    return custodial;
-  }
+    public void setType(QuotaType type) {
+        this.type = type;
+    }
 
-  public void setCustodial(Long custodial) {
-    this.custodial = custodial;
-  }
+    public Long getCustodial() {
+        return custodial;
+    }
 
-  public Long getReplica() {
-    return replica;
-  }
+    public void setCustodial(Long custodial) {
+        this.custodial = custodial;
+    }
 
-  public void setReplica(Long replica) {
-    this.replica = replica;
-  }
+    public Long getReplica() {
+        return replica;
+    }
 
-  public Long getOutput() {
-    return output;
-  }
+    public void setReplica(Long replica) {
+        this.replica = replica;
+    }
 
-  public void setOutput(Long output) {
-    this.output = output;
-  }
+    public Long getOutput() {
+        return output;
+    }
 
-  public Long getCustodialLimit() {
-    return custodialLimit;
-  }
+    public void setOutput(Long output) {
+        this.output = output;
+    }
 
-  public void setCustodialLimit(Long custodialLimit) {
-    this.custodialLimit = custodialLimit;
-  }
+    public Long getCustodialLimit() {
+        return custodialLimit;
+    }
 
-  public Long getReplicaLimit() {
-    return replicaLimit;
-  }
+    public void setCustodialLimit(Long custodialLimit) {
+        this.custodialLimit = custodialLimit;
+    }
 
-  public void setReplicaLimit(Long replicaLimit) {
-    this.replicaLimit = replicaLimit;
-  }
+    public Long getReplicaLimit() {
+        return replicaLimit;
+    }
 
-  public Long getOutputLimit() {
-    return outputLimit;
-  }
+    public void setReplicaLimit(Long replicaLimit) {
+        this.replicaLimit = replicaLimit;
+    }
 
-  public void setOutputLimit(Long outputLimit) {
-    this.outputLimit = outputLimit;
-  }
+    public Long getOutputLimit() {
+        return outputLimit;
+    }
+
+    public void setOutputLimit(Long outputLimit) {
+        this.outputLimit = outputLimit;
+    }
 }

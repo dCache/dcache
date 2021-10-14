@@ -17,37 +17,34 @@
  */
 package org.dcache.pool.migration;
 
-import java.util.Collection;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
+import java.util.Collection;
 import org.dcache.cells.CellStub;
-
-import static java.util.Objects.requireNonNull;
 
 
 public class PoolListByHsm
-        extends PoolListFromPoolManager
-{
+      extends PoolListFromPoolManager {
+
     private final CellStub _poolManager;
     private final Collection<String> _hsms;
 
-    public PoolListByHsm(CellStub poolManager, Collection<String> hsms)
-    {
+    public PoolListByHsm(CellStub poolManager, Collection<String> hsms) {
         _poolManager = requireNonNull(poolManager);
         _hsms = requireNonNull(hsms);
     }
 
     @Override
-    public void refresh()
-    {
+    public void refresh() {
         CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByHsmMessage(_hsms)),
-                this, MoreExecutors.directExecutor());
+              this, MoreExecutors.directExecutor());
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return String.format("hsm %s, %d pools",
-                _hsms, _pools.size());
+              _hsms, _pools.size());
     }
 }

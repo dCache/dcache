@@ -20,7 +20,9 @@ public class NotDirChimeraException extends ChimeraFsException {
 
     private static final long serialVersionUID = 0L;
 
-    /** Creates a new instance of NotDirChimeraException */
+    /**
+     * Creates a new instance of NotDirChimeraException
+     */
     public NotDirChimeraException() {
         super();
     }

@@ -17,31 +17,28 @@
  */
 package org.dcache.dss;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableSet;
-import eu.emi.security.authn.x509.X509Credential;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.cert.CertificateFactory;
-import java.util.Set;
-
-import org.dcache.gsi.ClientGsiEngine;
-import org.dcache.ssl.SslContextFactory;
-import org.dcache.util.CertificateFactories;
-
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.toArray;
 import static java.util.Arrays.asList;
 
-public class ClientGsiEngineDssContextFactory implements DssContextFactory
-{
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
+import eu.emi.security.authn.x509.X509Credential;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.security.cert.CertificateFactory;
+import java.util.Set;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import org.dcache.gsi.ClientGsiEngine;
+import org.dcache.ssl.SslContextFactory;
+import org.dcache.util.CertificateFactories;
+
+public class ClientGsiEngineDssContextFactory implements DssContextFactory {
+
     private final CertificateFactory cf;
     private final Set<String> bannedCiphers;
     private final Set<String> bannedProtocols;
@@ -50,10 +47,10 @@ public class ClientGsiEngineDssContextFactory implements DssContextFactory
     private final boolean isDelegationLimited;
     private final X509Credential credential;
 
-    public ClientGsiEngineDssContextFactory(SslContextFactory contextFactory, X509Credential credential,
-                                            String[] bannedCiphers,
-                                            boolean isDelegationEnabled, boolean isDelegationLimited)
-    {
+    public ClientGsiEngineDssContextFactory(SslContextFactory contextFactory,
+          X509Credential credential,
+          String[] bannedCiphers,
+          boolean isDelegationEnabled, boolean isDelegationLimited) {
         this.cf = CertificateFactories.newX509CertificateFactory();
         this.credential = credential;
         this.contextFactory = contextFactory;
@@ -64,24 +61,29 @@ public class ClientGsiEngineDssContextFactory implements DssContextFactory
     }
 
     @Override
-    public DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
-            throws IOException
-    {
+    public DssContext create(InetSocketAddress remoteSocketAddress,
+          InetSocketAddress localSocketAddress)
+          throws IOException {
         try {
             SSLEngine delegate =
-                contextFactory.getContext(SSLContext.class, credential)
-                    .createSSLEngine(remoteSocketAddress.getHostString(),
-                        remoteSocketAddress.getPort());
+                  contextFactory.getContext(SSLContext.class, credential)
+                        .createSSLEngine(remoteSocketAddress.getHostString(),
+                              remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
-            String[] cipherSuites = toArray(filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))), String.class);
-            String[] protocols = toArray(filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))), String.class);
+            String[] cipherSuites = toArray(
+                  filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))),
+                  String.class);
+            String[] protocols = toArray(
+                  filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))),
+                  String.class);
             sslParameters.setCipherSuites(cipherSuites);
             sslParameters.setProtocols(protocols);
             sslParameters.setWantClientAuth(true);
             sslParameters.setNeedClientAuth(true);
             delegate.setSSLParameters(sslParameters);
 
-            ClientGsiEngine engine = new ClientGsiEngine(delegate, credential, isDelegationEnabled, isDelegationLimited);
+            ClientGsiEngine engine = new ClientGsiEngine(delegate, credential, isDelegationEnabled,
+                  isDelegationLimited);
             return new SslEngineDssContext(engine, cf);
         } catch (Exception e) {
             Throwables.propagateIfPossible(e, IOException.class);

@@ -2,16 +2,17 @@ package org.dcache.gplazma.configuration;
 
 /**
  * Configuration that never changes
+ *
  * @author timur
  */
 public class StaticContentConfigurationLoadingStrategy
-        implements  ConfigurationLoadingStrategy {
+      implements ConfigurationLoadingStrategy {
 
 
     private final Configuration configuration;
 
     public StaticContentConfigurationLoadingStrategy(
-             Configuration configuration) {
+          Configuration configuration) {
         this.configuration = configuration;
     }
 

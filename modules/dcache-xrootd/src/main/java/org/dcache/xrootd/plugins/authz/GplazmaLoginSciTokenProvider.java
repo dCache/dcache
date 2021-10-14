@@ -63,8 +63,9 @@ import org.dcache.xrootd.plugins.authz.scitokens.AbstractSciTokenAuthzFactory;
 import org.dcache.xrootd.plugins.authz.scitokens.AbstractSciTokenAuthzProvider;
 
 public class GplazmaLoginSciTokenProvider extends AbstractSciTokenAuthzProvider {
-  @Override
-  protected AbstractSciTokenAuthzFactory getFactoryInstance() {
-    return new GplazmaLoginSciTokenAuthzFactory();
-  }
+
+    @Override
+    protected AbstractSciTokenAuthzFactory getFactoryInstance() {
+        return new GplazmaLoginSciTokenAuthzFactory();
+    }
 }

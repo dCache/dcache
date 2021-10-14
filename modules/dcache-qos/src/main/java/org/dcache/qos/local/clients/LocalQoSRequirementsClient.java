@@ -67,30 +67,33 @@ import org.dcache.qos.listeners.QoSRequirementsListener;
 import org.dcache.qos.services.engine.provider.QoSRequirementsProvider;
 
 /**
- *  A pass-through to the requirements provider.  Also calls back to verification listener.
+ * A pass-through to the requirements provider.  Also calls back to verification listener.
  */
 public final class LocalQoSRequirementsClient implements QoSRequirementsListener {
-  private QoSRequirementsProvider provider;
 
-  @Override
-  public FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update) throws QoSException {
-    return provider.fetchRequirements(update);
-  }
+    private QoSRequirementsProvider provider;
 
-  @Override
-  public void fileQoSRequirementsModified(FileQoSRequirements newRequirements) throws QoSException {
-    provider.handleModifiedRequirements(newRequirements);
-  }
+    @Override
+    public FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update)
+          throws QoSException {
+        return provider.fetchRequirements(update);
+    }
 
-  @Override
-  public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) {
-    /*
-     *   The local client is an embedded one and thus would not be used to
-     *   dispatch a cancellation request.   This is a NOP.
-     */
-  }
+    @Override
+    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements)
+          throws QoSException {
+        provider.handleModifiedRequirements(newRequirements);
+    }
 
-  public void setProvider(QoSRequirementsProvider provider) {
-    this.provider = provider;
-  }
+    @Override
+    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) {
+        /*
+         *   The local client is an embedded one and thus would not be used to
+         *   dispatch a cancellation request.   This is a NOP.
+         */
+    }
+
+    public void setProvider(QoSRequirementsProvider provider) {
+        this.provider = provider;
+    }
 }

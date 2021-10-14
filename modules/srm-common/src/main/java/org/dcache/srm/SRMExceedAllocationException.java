@@ -20,35 +20,30 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- * SRM does not have enough space for the request because the client requests
- * more than the allocated space quota for the client.
+ * SRM does not have enough space for the request because the client requests more than the
+ * allocated space quota for the client.
  */
-public class SRMExceedAllocationException extends SRMException
-{
+public class SRMExceedAllocationException extends SRMException {
+
     private static final long serialVersionUID = -2916383405078605986L;
 
-    public SRMExceedAllocationException()
-    {
+    public SRMExceedAllocationException() {
     }
 
-    public SRMExceedAllocationException(String message)
-    {
+    public SRMExceedAllocationException(String message) {
         super(message);
     }
 
-    public SRMExceedAllocationException(String message, Throwable cause)
-    {
+    public SRMExceedAllocationException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SRMExceedAllocationException(Throwable cause)
-    {
+    public SRMExceedAllocationException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_EXCEED_ALLOCATION;
     }
 }

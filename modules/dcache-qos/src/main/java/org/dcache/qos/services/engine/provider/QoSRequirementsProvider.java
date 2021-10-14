@@ -64,21 +64,22 @@ import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
 
 public interface QoSRequirementsProvider {
-  /**
-   *  Implementation-dependent response to request for file's QoS requirements.
-   *
-   *  @param update containing file pnfsid, originating type of message, and optional location
-   *                for the file source.
-   *  @return requirements, in particular the number
-   *          and distribution of persistent disk and tape replicas.
-   */
-  FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
 
-  /**
-   *  Implementation-dependent response to requested change in QoS requirements.
-   *
-   *  @param newRequirements in particular the number and distribution
-   *                         of persistent disk and tape replicas.
-   */
-  void handleModifiedRequirements(FileQoSRequirements newRequirements) throws QoSException;
+    /**
+     * Implementation-dependent response to request for file's QoS requirements.
+     *
+     * @param update containing file pnfsid, originating type of message, and optional location for
+     *               the file source.
+     * @return requirements, in particular the number and distribution of persistent disk and tape
+     * replicas.
+     */
+    FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException;
+
+    /**
+     * Implementation-dependent response to requested change in QoS requirements.
+     *
+     * @param newRequirements in particular the number and distribution of persistent disk and tape
+     *                        replicas.
+     */
+    void handleModifiedRequirements(FileQoSRequirements newRequirements) throws QoSException;
 }

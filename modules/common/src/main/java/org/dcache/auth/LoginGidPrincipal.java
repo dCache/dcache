@@ -4,54 +4,47 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * This principal represents an untrusted GID: the GID that the end-client
- * wishes to become.  Typically no checks are made that the end-user is
- * actually a member of this group; therefore it is recommended not to make
- * authorisation decisions based on this principal.
+ * This principal represents an untrusted GID: the GID that the end-client wishes to become.
+ * Typically no checks are made that the end-user is actually a member of this group; therefore it
+ * is recommended not to make authorisation decisions based on this principal.
  *
  * @see GidPrincipal
  * @since 2.1
  */
 @AuthenticationInput
-public class LoginGidPrincipal implements Principal, Serializable
-{
+public class LoginGidPrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = -719644742571312959L;
 
     private final long _gid;
 
-    public LoginGidPrincipal(long gid)
-    {
+    public LoginGidPrincipal(long gid) {
         if (gid < 0) {
             throw new IllegalArgumentException("GID must be non-negative");
         }
         _gid = gid;
     }
 
-    public LoginGidPrincipal(String gid)
-    {
+    public LoginGidPrincipal(String gid) {
         this(Long.parseLong(gid));
     }
 
-    public long getGid()
-    {
+    public long getGid() {
         return _gid;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return String.valueOf(_gid);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return (getClass().getSimpleName() + '[' + getName() + ']');
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

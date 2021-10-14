@@ -17,27 +17,27 @@
  */
 package org.dcache.chimera;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.jdbc.support.JdbcUtils;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.support.JdbcUtils;
 
 public class VirtualDirectoryStreamImpl {
+
     private static final String QUERY =
 
+          "SELECT i.*, d.iname || '-' || d.iparent  as filename, i.inumber as fileid  FROM t_inodes i JOIN t_dirs d ON  i.inumber = d.ichild WHERE d.ichild IN"
+                +
 
-            "SELECT i.*, d.iname || '-' || d.iparent  as filename, i.inumber as fileid  FROM t_inodes i JOIN t_dirs d ON  i.inumber = d.ichild WHERE d.ichild IN" +
+                "(SELECT   ichild  FROM t_dirs," +
+                " ( SELECT label_id FROM t_labels  WHERE labelname= ?) as nested " +
 
-                    "(SELECT   ichild  FROM t_dirs," +
-                    " ( SELECT label_id FROM t_labels  WHERE labelname= ?) as nested " +
-
-                    "WHERE ichild IN ( select inumber from  t_labels_ref   where label_id = nested.label_id))";
+                "WHERE ichild IN ( select inumber from  t_labels_ref   where label_id = nested.label_id))";
 
 
     private final ResultSet _resultSet;

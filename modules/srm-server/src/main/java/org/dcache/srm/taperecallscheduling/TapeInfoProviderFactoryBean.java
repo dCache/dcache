@@ -17,42 +17,38 @@
  */
 package org.dcache.srm.taperecallscheduling;
 
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import org.dcache.srm.taperecallscheduling.spi.TapeInfoProviderProvider;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-
 /**
  * Spring factory bean to create SchedulingStrategyProviders.
  */
-public class TapeInfoProviderFactoryBean implements FactoryBean<TapeInfoProviderProvider>
-{
-    private final ServiceLoader<TapeInfoProviderProvider> PROVIDERS = ServiceLoader.load(TapeInfoProviderProvider.class);
+public class TapeInfoProviderFactoryBean implements FactoryBean<TapeInfoProviderProvider> {
+
+    private final ServiceLoader<TapeInfoProviderProvider> PROVIDERS = ServiceLoader.load(
+          TapeInfoProviderProvider.class);
     private String name;
     private String tapeInfoDir;
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Required
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 
     @Required
-    public void setTapeInfoDir(String directory)
-    {
+    public void setTapeInfoDir(String directory) {
         tapeInfoDir = directory;
     }
 
     @Override
-    public TapeInfoProviderProvider getObject() throws Exception
-    {
+    public TapeInfoProviderProvider getObject() throws Exception {
         for (TapeInfoProviderProvider provider : PROVIDERS) {
             if (provider.getName().equals(name)) {
                 provider.setFileDirectory(tapeInfoDir);
@@ -63,14 +59,12 @@ public class TapeInfoProviderFactoryBean implements FactoryBean<TapeInfoProvider
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return TapeInfoProviderProvider.class;
     }
 
     @Override
-    public boolean isSingleton()
-    {
+    public boolean isSingleton() {
         return true;
     }
 }

@@ -63,22 +63,26 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.quota.data.QuotaType;
 
 public abstract class PnfsManagerQuotaMessage extends Message {
-  private static final long serialVersionUID = -5437083686879764130L;
 
-  private final Integer qid;
-  private final QuotaType type;
+    private static final long serialVersionUID = -5437083686879764130L;
 
-  protected PnfsManagerQuotaMessage(QuotaType type) {
-    this(null, type);
-  }
+    private final Integer qid;
+    private final QuotaType type;
 
-  protected PnfsManagerQuotaMessage(Integer qid, QuotaType type) {
-    this.qid = qid; this.type = type;
-  }
+    protected PnfsManagerQuotaMessage(QuotaType type) {
+        this(null, type);
+    }
 
-  public Integer getQid() {
-    return qid;
-  }
+    protected PnfsManagerQuotaMessage(Integer qid, QuotaType type) {
+        this.qid = qid;
+        this.type = type;
+    }
 
-  public QuotaType getType() { return type; }
+    public Integer getQid() {
+        return qid;
+    }
+
+    public QuotaType getType() {
+        return type;
+    }
 }

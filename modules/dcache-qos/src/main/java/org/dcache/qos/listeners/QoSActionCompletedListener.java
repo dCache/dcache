@@ -64,13 +64,14 @@ import java.io.Serializable;
 import org.dcache.qos.data.QoSAction;
 
 public interface QoSActionCompletedListener {
-  /**
-   *  Notification that a single adjustment activity for a file has completed.
-   *
-   *  @param pnfsId of the file.
-   *  @param action copying, changing the sticky bit, flushing or staging the file.
-   *  @param error  if the action failed (this will be the last error associated with the
-   *                verification operation).
-   */
-  void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error);
+
+    /**
+     * Notification that a single adjustment activity for a file has completed.
+     *
+     * @param pnfsId of the file.
+     * @param action copying, changing the sticky bit, flushing or staging the file.
+     * @param error  if the action failed (this will be the last error associated with the
+     *               verification operation).
+     */
+    void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error);
 }

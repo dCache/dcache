@@ -20,7 +20,6 @@
 package org.dcache.chimera.nfsv41.common;
 
 import java.io.IOException;
-
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.OperationExecutor;
@@ -31,9 +30,7 @@ import org.dcache.oncrpc4j.rpc.OncRpcException;
 
 
 /**
- *
- * A decorator for {@link OperationExecutor} that collects operation execution
- * statistics.
+ * A decorator for {@link OperationExecutor} that collects operation execution statistics.
  */
 public class StatsDecoratedOperationExecutor implements OperationExecutor {
 
@@ -41,16 +38,18 @@ public class StatsDecoratedOperationExecutor implements OperationExecutor {
      * Request execution gauges.
      */
     private final RequestExecutionTimeGauges<String> gauges
-            = new RequestExecutionTimeGauges<>(StatsDecoratedOperationExecutor.class.getName());
+          = new RequestExecutionTimeGauges<>(StatsDecoratedOperationExecutor.class.getName());
 
 
     private final OperationExecutor inner;
+
     public StatsDecoratedOperationExecutor(OperationExecutor inner) {
         this.inner = inner;
     }
 
     @Override
-    public nfs_resop4 execute(CompoundContext context, nfs_argop4 args) throws IOException, OncRpcException {
+    public nfs_resop4 execute(CompoundContext context, nfs_argop4 args)
+          throws IOException, OncRpcException {
 
         long t0 = System.nanoTime();
         try {

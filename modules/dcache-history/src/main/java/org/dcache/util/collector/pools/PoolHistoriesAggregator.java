@@ -59,22 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector.pools;
 
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.List;
-
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.services.history.pools.PoolTimeseriesServiceImpl;
 import org.dcache.util.histograms.CountingHistogram;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Called during the collection gathering in order to aggregate
- * pool data such as queue/mover timeseries
- * counts or the running statistics on file lifetime.</p>
+ * pool data such as queue/mover timeseries counts or the running statistics on file lifetime.</p>
  */
 public class PoolHistoriesAggregator extends PoolInfoAggregator {
+
     private PoolTimeseriesServiceImpl service;
 
     @Required

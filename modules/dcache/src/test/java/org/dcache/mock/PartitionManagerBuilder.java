@@ -18,42 +18,38 @@
  */
 package org.dcache.mock;
 
+import static java.util.Objects.requireNonNull;
+import static org.mockito.Mockito.mock;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.mockito.BDDMockito;
 
-import static java.util.Objects.requireNonNull;
-import static org.mockito.Mockito.mock;
-
 /**
- * This class builds a mock PartitionManager object using the builder
- * pattern.
+ * This class builds a mock PartitionManager object using the builder pattern.
  */
 public class PartitionManagerBuilder {
-  private Partition defaultPartition;
 
-  public static PartitionManagerBuilder aPartitionManager()
-  {
-    return new PartitionManagerBuilder();
-  }
+    private Partition defaultPartition;
 
-  private PartitionManagerBuilder()
-  {
-  }
+    public static PartitionManagerBuilder aPartitionManager() {
+        return new PartitionManagerBuilder();
+    }
 
-  public PartitionManagerBuilder withDefault(PartitionBuilder builder)
-  {
-    defaultPartition = requireNonNull(builder.build());
-    return this;
-  }
+    private PartitionManagerBuilder() {
+    }
 
-  public PartitionManager build()
-  {
-    PartitionManager manager = mock(PartitionManager.class);
+    public PartitionManagerBuilder withDefault(PartitionBuilder builder) {
+        defaultPartition = requireNonNull(builder.build());
+        return this;
+    }
 
-    BDDMockito.given(manager.getDefaultPartition())
-        .willReturn(defaultPartition);
+    public PartitionManager build() {
+        PartitionManager manager = mock(PartitionManager.class);
 
-    return manager;
-  }
+        BDDMockito.given(manager.getDefaultPartition())
+              .willReturn(defaultPartition);
+
+        return manager;
+    }
 }

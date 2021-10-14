@@ -74,11 +74,6 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
@@ -87,7 +82,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.annotation.Nonnull;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -103,37 +98,41 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * @author  timur
  */
 public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRequest> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(BringOnlineRequest.class);
-    /** array of protocols supported by client or server (copy) */
+    /**
+     * array of protocols supported by client or server (copy)
+     */
     private final String[] protocols;
     private final long desiredOnlineLifetimeInSeconds;
 
 
     public BringOnlineRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
-                              String[] protocols, long lifetime,
-                              long desiredOnlineLifetimeInSeconds,
-                              long max_update_period, String description,
-                              String client_host)
-    {
+          String[] protocols, long lifetime,
+          long desiredOnlineLifetimeInSeconds,
+          long max_update_period, String description,
+          String client_host) {
         super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   ImmutableList.Builder<BringOnlineFileRequest> requests = ImmutableList.builder();
                   Stream.of(surls).distinct()
-                          .map(surl -> new BringOnlineFileRequest(id, surl, lifetime))
-                          .forEachOrdered(requests::add);
+                        .map(surl -> new BringOnlineFileRequest(id, surl, lifetime))
+                        .forEachOrdered(requests::add);
                   return requests.build();
               });
         LOGGER.debug("constructor");
         LOGGER.debug("user = {}", user);
-        if(protocols != null) {
+        if (protocols != null) {
             int len = protocols.length;
             this.protocols = new String[len];
-            System.arraycopy(protocols,0,this.protocols,0,len);
+            System.arraycopy(protocols, 0, this.protocols, 0, len);
         } else {
             this.protocols = null;
         }
@@ -144,43 +143,41 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
      * restore constructor
      */
     public BringOnlineRequest(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            ImmutableList<BringOnlineFileRequest> fileRequests, int retryDeltaTime,
-            boolean should_updateretryDeltaTime, String description,
-            String client_host, String statusCodeString, String[] protocols)
-    {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          ImmutableList<BringOnlineFileRequest> fileRequests, int retryDeltaTime,
+          boolean should_updateretryDeltaTime, String description,
+          String client_host, String statusCodeString, String[] protocols) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
-                scheduelerId, schedulerTimeStamp, numberOfRetries,
-                lastStateTransitionTime, jobHistoryArray, fileRequests,
-                retryDeltaTime, should_updateretryDeltaTime, description,
-                client_host, statusCodeString);
+              scheduelerId, schedulerTimeStamp, numberOfRetries,
+              lastStateTransitionTime, jobHistoryArray, fileRequests,
+              retryDeltaTime, should_updateretryDeltaTime, description,
+              client_host, statusCodeString);
         this.protocols = protocols;
         this.desiredOnlineLifetimeInSeconds = 0;
     }
 
     @Nonnull
     @Override
-    public BringOnlineFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
-    {
+    public BringOnlineFileRequest getFileRequestBySurl(URI surl)
+          throws SRMFileRequestNotFoundException {
         for (BringOnlineFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
-        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException(
+              "file request for surl =" + surl + " is not found");
     }
 
     @Override
-    public Class<? extends Job> getSchedulerType()
-    {
+    public Class<? extends Job> getSchedulerType() {
         return BringOnlineFileRequest.class;
     }
 
     @Override
-    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
-    {
+    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition {
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
@@ -192,13 +189,12 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
-    {
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs) {
         // Nothing to do.
     }
 
     public String[] getProtocols() {
-        if(protocols == null) {
+        if (protocols == null) {
             return null;
         }
         String[] copy = new String[protocols.length];
@@ -207,10 +203,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     /**
-     * storage.PrepareToGet() is given this callbacks
-     * implementation
-     * it will call the method of GetCallbacks to indicate
-     * progress
+     * storage.PrepareToGet() is given this callbacks implementation it will call the method of
+     * GetCallbacks to indicate progress
      */
 
     @Override
@@ -218,11 +212,10 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         if (newState.isFinal()) {
             LOGGER.debug("Get request state changed to {}", newState);
-            for (BringOnlineFileRequest fr: getFileRequests()) {
+            for (BringOnlineFileRequest fr : getFileRequests()) {
                 fr.wlock();
                 try {
                     if (!fr.getState().isFinal()) {
@@ -241,13 +234,11 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     /**
-     * Waits for up to timeout milliseconds for the request to reach a
-     * non-queued state and then returns the current
-     * SrmBringOnlineResponse for this BringOnlineRequest.
+     * Waits for up to timeout milliseconds for the request to reach a non-queued state and then
+     * returns the current SrmBringOnlineResponse for this BringOnlineRequest.
      */
     public final SrmBringOnlineResponse getSrmBringOnlineResponse(long timeout)
-            throws InterruptedException, SRMInvalidRequestException
-    {
+          throws InterruptedException, SRMInvalidRequestException {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
          * the notification scheme is counter based. This guarantees
@@ -260,8 +251,9 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
         SrmBringOnlineResponse response = getSrmBringOnlineResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
-               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(
+              new Date())
+              && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             response = getSrmBringOnlineResponse();
         }
@@ -270,15 +262,15 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     private final SrmBringOnlineResponse getSrmBringOnlineResponse()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
 
         ArrayOfTBringOnlineRequestFileStatus arrayOfTBringOnlineRequestFileStatus =
-            new ArrayOfTBringOnlineRequestFileStatus();
-        arrayOfTBringOnlineRequestFileStatus.setStatusArray(getArrayOfTBringOnlineRequestFileStatus());
+              new ArrayOfTBringOnlineRequestFileStatus();
+        arrayOfTBringOnlineRequestFileStatus.setStatusArray(
+              getArrayOfTBringOnlineRequestFileStatus());
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
@@ -286,20 +278,19 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
 
     public final SrmStatusOfBringOnlineRequestResponse
-            getSrmStatusOfBringOnlineRequestResponse()
-            throws SRMInvalidRequestException
-    {
+    getSrmStatusOfBringOnlineRequestResponse()
+          throws SRMInvalidRequestException {
         return getSrmStatusOfBringOnlineRequestResponse(null);
     }
 
     public final SrmStatusOfBringOnlineRequestResponse
-            getSrmStatusOfBringOnlineRequestResponse(org.apache.axis.types.URI[] surls)
-            throws SRMInvalidRequestException
-    {
+    getSrmStatusOfBringOnlineRequestResponse(org.apache.axis.types.URI[] surls)
+          throws SRMInvalidRequestException {
         SrmStatusOfBringOnlineRequestResponse response =
-                new SrmStatusOfBringOnlineRequestResponse();
+              new SrmStatusOfBringOnlineRequestResponse();
         response.setReturnStatus(getTReturnStatus());
-        TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
+        TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(
+              surls);
         response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
         if (LOGGER.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
@@ -308,9 +299,10 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                 sb.append(" FileStatusCodes =");
             }
             Arrays.stream(statusArray)
-                    .map(s -> s.getStatus().getStatusCode())
-                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                    .forEach((k,v) -> sb.append(" ").append(k).append(" (").append(v).append(" times)"));
+                  .map(s -> s.getStatus().getStatusCode())
+                  .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                  .forEach((k, v) -> sb.append(" ").append(k).append(" (").append(v)
+                        .append(" times)"));
             LOGGER.debug(sb.toString());
         }
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
@@ -323,8 +315,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         List<BringOnlineFileRequest> requests = getFileRequests();
         int len = requests.size();
         TBringOnlineRequestFileStatus[] getFileStatuses = new TBringOnlineRequestFileStatus[len];
@@ -334,9 +325,9 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return getFileStatuses;
     }
 
-    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(org.apache.axis.types.URI[] surls)
-            throws SRMInvalidRequestException
-    {
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(
+          org.apache.axis.types.URI[] surls)
+          throws SRMInvalidRequestException {
         if (surls == null) {
             return getArrayOfTBringOnlineRequestFileStatus();
         }
@@ -344,20 +335,20 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         TBringOnlineRequestFileStatus[] getFileStatuses = new TBringOnlineRequestFileStatus[len];
         for (int i = 0; i < len; ++i) {
             try {
-                getFileStatuses[i] = getFileRequestBySurl(URI.create(surls[i].toString())).getTGetRequestFileStatus();
+                getFileStatuses[i] = getFileRequestBySurl(
+                      URI.create(surls[i].toString())).getTGetRequestFileStatus();
             } catch (SRMFileRequestNotFoundException e) {
                 getFileStatuses[i] = new TBringOnlineRequestFileStatus();
                 getFileStatuses[i].setSourceSURL(surls[i]);
                 getFileStatuses[i].setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
-                        "SURL does not refer to an existing known file request associated with the request token."));
+                      "SURL does not refer to an existing known file request associated with the request token."));
             }
         }
         return getFileStatuses;
     }
 
     public TSURLReturnStatus[] release()
-            throws SRMInternalErrorException
-    {
+          throws SRMInternalErrorException {
         SRMUser user = getUser();
         int len = getNumOfFileRequest();
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
@@ -370,7 +361,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                 surl = new org.apache.axis.types.URI(request.getSurlString());
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
                 throw new RuntimeException("Failed to convert Java URI to Axis URI. " +
-                        "Please report this to support@dcache.org: " + e.getMessage(), e);
+                      "Please report this to support@dcache.org: " + e.getMessage(), e);
             }
             surlReturnStatuses[i] = new TSURLReturnStatus(surl, request.release(user));
         }
@@ -379,8 +370,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     public TSURLReturnStatus[] releaseFiles(org.apache.axis.types.URI[] surls)
-            throws SRMInternalErrorException
-    {
+          throws SRMInternalErrorException {
         SRMUser user = getUser();
         int len = surls.length;
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
@@ -394,7 +384,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             } catch (SRMFileRequestNotFoundException e) {
                 String requestToken = String.valueOf(getId());
                 TReturnStatus status = BringOnlineFileRequest.unpinBySURLandRequestToken(
-                        getStorage(), user, requestToken, uri);
+                      getStorage(), user, requestToken, uri);
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, status);
             }
         }

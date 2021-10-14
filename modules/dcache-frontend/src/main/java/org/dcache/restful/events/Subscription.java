@@ -19,44 +19,37 @@
 package org.dcache.restful.events;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 import org.dcache.restful.events.spi.SelectedEventStream;
 import org.dcache.restful.util.CloseableWithTasks;
 
 /**
- * Represents a client's subscription to events of a specific type.
- * In effect, this class decorates a SelectedEventStream by adding the
- * eventType.
+ * Represents a client's subscription to events of a specific type. In effect, this class decorates
+ * a SelectedEventStream by adding the eventType.
  */
-public class Subscription extends CloseableWithTasks
-{
+public class Subscription extends CloseableWithTasks {
+
     private final String eventType;
     private final SelectedEventStream ses;
 
-    Subscription(String eventType, SelectedEventStream ses)
-    {
+    Subscription(String eventType, SelectedEventStream ses) {
         this.eventType = eventType;
         this.ses = ses;
         onClose(this::closeSelection);
     }
 
-    public String getEventType()
-    {
+    public String getEventType() {
         return eventType;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return ses.getId();
     }
 
-    public JsonNode getSelector()
-    {
+    public JsonNode getSelector() {
         return ses.selector();
     }
 
-    private void closeSelection()
-    {
+    private void closeSelection() {
         ses.close();
     }
 }

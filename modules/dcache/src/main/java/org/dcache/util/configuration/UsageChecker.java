@@ -20,15 +20,14 @@ package org.dcache.util.configuration;
 import java.util.Properties;
 
 /**
- * Strategy for deciding whether or not a particular property is a "standard"
- * property.
+ * Strategy for deciding whether or not a particular property is a "standard" property.
  */
-public interface UsageChecker
-{
+public interface UsageChecker {
+
     /**
-     * Make a decision on whether the property is standard or non-standard
-     * (admin-defined).  This allows admins to be alerted of non-standard
-     * properties, which may indicate a typo in the property name.
+     * Make a decision on whether the property is standard or non-standard (admin-defined).  This
+     * allows admins to be alerted of non-standard properties, which may indicate a typo in the
+     * property name.
      */
     boolean isStandardProperty(Properties defaults, String name);
 }

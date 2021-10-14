@@ -62,15 +62,15 @@ package org.dcache.pool.classic.json;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.util.histograms.CountingHistogram;
 
 /**
  * <p>Information delivered
- * from the {@link org.dcache.pool.classic.SpaceSweeper2} and
- * {@link org.dcache.pool.classic.NoCachedFilesSpaceSweeper}.</p>
+ * from the {@link org.dcache.pool.classic.SpaceSweeper2} and {@link
+ * org.dcache.pool.classic.NoCachedFilesSpaceSweeper}.</p>
  */
 public class SweeperData implements Serializable {
+
     private static final long serialVersionUID = 4553699563017101472L;
 
     private static final double BIN_UNIT = (double) TimeUnit.DAYS.toMillis(1);
@@ -80,7 +80,7 @@ public class SweeperData implements Serializable {
     private static final int BIN_COUNT = 61;
 
     private static final CountingHistogram DEFAULT_HISTOGRAM
-        = createDefaultHistogram();
+          = createDefaultHistogram();
 
     public static CountingHistogram createUnconfiguredLastAccessHistogram() {
         CountingHistogram histogram = new CountingHistogram();
@@ -100,10 +100,10 @@ public class SweeperData implements Serializable {
     }
 
     private CountingHistogram lastAccess;
-    private String            label;
-    private Integer           lruQueueSize;
-    private Long              lruTimestamp;
-    private Double            margin;
+    private String label;
+    private Integer lruQueueSize;
+    private Long lruTimestamp;
+    private Double margin;
 
     public SweeperData() {
         lastAccess = DEFAULT_HISTOGRAM;
@@ -129,7 +129,9 @@ public class SweeperData implements Serializable {
         return lastAccess;
     }
 
-    public Double getMargin() { return margin; }
+    public Double getMargin() {
+        return margin;
+    }
 
     public void setLabel(String label) {
         this.label = label;

@@ -68,11 +68,12 @@ import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.vehicles.CorruptFileMessage;
 
 /**
- *  Notifies on the CorruptFile topic when a broken file is discovered on a pool.
+ * Notifies on the CorruptFile topic when a broken file is discovered on a pool.
  */
 public final class BrokenFileNotifier implements StateChangeListener {
+
     private final CellStub corruptFileTopic;
-    private final String   poolName;
+    private final String poolName;
 
     public BrokenFileNotifier(CellStub corruptFileTopic, String poolName) {
         this.corruptFileTopic = corruptFileTopic;

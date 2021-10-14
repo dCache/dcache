@@ -1,5 +1,12 @@
 package diskCacheV111.poolManager;
 
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.DCACHE;
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.NET;
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.PROTOCOL;
+import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.STORE;
+import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
@@ -7,9 +14,18 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -35,33 +51,16 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.vehicles.GenericStorageInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.CommandException;
-import dmg.util.CommandSyntaxException;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
 import org.dcache.util.Args;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.Comparator.comparing;
-import static diskCacheV111.poolManager.PoolSelectionUnit.UnitType.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PoolSelectionUnitV2
-        implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
-        CellCommandListener, CellLifeCycleAware
-{
+      implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
+      CellCommandListener, CellLifeCycleAware {
+
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
     private static final String NO_NET = "<no net>";
@@ -84,9 +83,9 @@ public class PoolSelectionUnitV2
     private boolean _allPoolsActive;
 
     /**
-     * Ok, this is the critical part of PoolManager, but (!!!) the whole select
-     * path is READ-ONLY, unless we change setup. So ReadWriteLock is what we
-     * are looking for, while is a point of serialization.
+     * Ok, this is the critical part of PoolManager, but (!!!) the whole select path is READ-ONLY,
+     * unless we change setup. So ReadWriteLock is what we are looking for, while is a point of
+     * serialization.
      */
 
     private final ReentrantReadWriteLock _psuReadWriteLock = new ReentrantReadWriteLock();
@@ -126,7 +125,8 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException {
+    public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup)
+          throws NoSuchElementException {
         rlock();
         try {
             PGroup group = _pGroups.get(poolGroup);
@@ -162,9 +162,9 @@ public class PoolSelectionUnitV2
         rlock();
         try {
             return _pools.values().stream()
-                    .filter(p -> p.isEnabled() || !enabledOnly)
-                    .map(Pool::getName)
-                    .toArray(String[]::new);
+                  .filter(p -> p.isEnabled() || !enabledOnly)
+                  .map(Pool::getName)
+                  .toArray(String[]::new);
         } finally {
             runlock();
         }
@@ -176,191 +176,194 @@ public class PoolSelectionUnitV2
         rlock();
         try {
             return _pools.values().stream()
-                    .filter(Pool::isActive)
-                    .filter(Pool::isEnabled)
-                    .map(Pool::getName)
-                    .toArray(String[]::new);
+                  .filter(Pool::isActive)
+                  .filter(Pool::isEnabled)
+                  .map(Pool::getName)
+                  .toArray(String[]::new);
         } finally {
             runlock();
         }
     }
 
     @Override
-    public void beforeSetup()
-    {
+    public void beforeSetup() {
         wlock();
         _poolsFromBeforeSetup = Lists.newArrayList(_pools.values());
         clear();
     }
 
     @Override
-    public void afterSetup()
-    {
+    public void afterSetup() {
         _poolsFromBeforeSetup.stream().filter(Pool::isActive)
-                .forEach(p -> {
-                    Pool pool = _pools.get(p.getName());
-                    if (pool == null) {
-                        pool = new Pool(p.getName());
-                        _pools.put(pool.getName(), pool);
-                        PGroup group = _pGroups.get("default");
-                        if (group != null) {
-                            pool._pGroupList.put(group.getName(), group);
-                            group._poolList.put(pool.getName(), pool);
-                        }
-                    }
-                    pool.setAddress(p.getAddress());
-                    pool.setPoolMode(p.getPoolMode());
-                    pool.setHsmInstances(p.getHsmInstances());
-                    pool.setActive(true);
-                    pool.setSerialId(p.getSerialId());
-                });
+              .forEach(p -> {
+                  Pool pool = _pools.get(p.getName());
+                  if (pool == null) {
+                      pool = new Pool(p.getName());
+                      _pools.put(pool.getName(), pool);
+                      PGroup group = _pGroups.get("default");
+                      if (group != null) {
+                          pool._pGroupList.put(group.getName(), group);
+                          group._poolList.put(pool.getName(), pool);
+                      }
+                  }
+                  pool.setAddress(p.getAddress());
+                  pool.setPoolMode(p.getPoolMode());
+                  pool.setHsmInstances(p.getHsmInstances());
+                  pool.setActive(true);
+                  pool.setSerialId(p.getSerialId());
+              });
         _poolsFromBeforeSetup = null;
         wunlock();
     }
 
     @Override
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         rlock();
         try {
             pw.append("psu set regex ").println(_useRegex ? "on" : "off");
             pw.append("psu set allpoolsactive ").println(_allPoolsActive ? "on" : "off");
             pw.println();
-            _units.values().stream().sorted(comparing(Unit::getType).thenComparing(Unit::getName)).forEachOrdered(
-                    unit -> {
-                        pw.append("psu create unit ");
-                        switch (unit.getType()) {
-                        case STORE:
-                            pw.append("-store");
-                            break;
-                        case DCACHE:
-                            pw.append("-dcache");
-                            break;
-                        case PROTOCOL:
-                            pw.append("-protocol");
-                            break;
-                        case NET:
-                            pw.append("-net");
-                            break;
-                        }
-                        pw.append(" ").println(unit.getName());
-
-                        if (unit instanceof StorageUnit) {
-                            StorageUnit sunit = (StorageUnit)unit;
-                            Integer required = sunit.getRequiredCopies();
-                            if (required != null) {
-                                pw.append("psu set storage unit ")
-                                                .append(sunit.getName())
-                                                .append(" -required=")
-                                                .append(String.valueOf(required));
-                                List<String> tags = sunit.getOnlyOneCopyPer();
-                                if (!tags.isEmpty()) {
-                                    pw.append(" -onlyOneCopyPer=")
-                                                    .append(Joiner.on(",").join(tags));
-                                }
-                                pw.println();
+            _units.values().stream().sorted(comparing(Unit::getType).thenComparing(Unit::getName))
+                  .forEachOrdered(
+                        unit -> {
+                            pw.append("psu create unit ");
+                            switch (unit.getType()) {
+                                case STORE:
+                                    pw.append("-store");
+                                    break;
+                                case DCACHE:
+                                    pw.append("-dcache");
+                                    break;
+                                case PROTOCOL:
+                                    pw.append("-protocol");
+                                    break;
+                                case NET:
+                                    pw.append("-net");
+                                    break;
                             }
-                        }
-                    });
+                            pw.append(" ").println(unit.getName());
+
+                            if (unit instanceof StorageUnit) {
+                                StorageUnit sunit = (StorageUnit) unit;
+                                Integer required = sunit.getRequiredCopies();
+                                if (required != null) {
+                                    pw.append("psu set storage unit ")
+                                          .append(sunit.getName())
+                                          .append(" -required=")
+                                          .append(String.valueOf(required));
+                                    List<String> tags = sunit.getOnlyOneCopyPer();
+                                    if (!tags.isEmpty()) {
+                                        pw.append(" -onlyOneCopyPer=")
+                                              .append(Joiner.on(",").join(tags));
+                                    }
+                                    pw.println();
+                                }
+                            }
+                        });
             pw.println();
             _uGroups.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
-                    group -> {
-                        pw.append("psu create ugroup ").println(group.getName());
-                        group._unitList.values().stream().sorted(comparing(Unit::getName)).forEachOrdered(
-                                unit -> pw
+                  group -> {
+                      pw.append("psu create ugroup ").println(group.getName());
+                      group._unitList.values().stream().sorted(comparing(Unit::getName))
+                            .forEachOrdered(
+                                  unit -> pw
                                         .append("psu addto ugroup ")
                                         .append(group.getName())
                                         .append(" ")
                                         .println(unit.getName()));
-                        pw.println();
-                    });
+                      pw.println();
+                  });
             _pools.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
-                    pool -> {
-                        pw.append("psu create pool ").append(pool.getName());
-                        if (!pool.isPing()) {
-                            pw.append(" -noping");
-                        }
-                        if (!pool.isEnabled()) {
-                            pw.append(" -disabled");
-                        }
-                        if (pool.isReadOnly()) {
-                            pw.append(" -rdonly");
-                        }
-                        pw.println();
-                    });
+                  pool -> {
+                      pw.append("psu create pool ").append(pool.getName());
+                      if (!pool.isPing()) {
+                          pw.append(" -noping");
+                      }
+                      if (!pool.isEnabled()) {
+                          pw.append(" -disabled");
+                      }
+                      if (pool.isReadOnly()) {
+                          pw.append(" -rdonly");
+                      }
+                      pw.println();
+                  });
             pw.println();
             _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
-                    group -> {
-                        pw.append("psu create pgroup ").append(group.getName());
-                        if (group.isPrimary()) {
-                            pw.append(" -resilient");
-                        }
+                  group -> {
+                      pw.append("psu create pgroup ").append(group.getName());
+                      if (group.isPrimary()) {
+                          pw.append(" -resilient");
+                      }
 
-                        // don't explicitly add pools into dynamic pool groups
-                        if (group instanceof DynamicPGroup) {
-                            pw.append(" -dynamic");
-                            Map<String, String> tags = ((DynamicPGroup)group).getTags();
-                            String asOption = tags.entrySet().stream()
-                                    .map(e -> e.getKey() + "=" + e.getValue())
-                                    .collect(Collectors.joining(","));
-                            pw.append(" -tags=" + asOption);
-                            pw.println();
-                        } else {
-                            pw.println();
-                            group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
-                                    pool -> pw
+                      // don't explicitly add pools into dynamic pool groups
+                      if (group instanceof DynamicPGroup) {
+                          pw.append(" -dynamic");
+                          Map<String, String> tags = ((DynamicPGroup) group).getTags();
+                          String asOption = tags.entrySet().stream()
+                                .map(e -> e.getKey() + "=" + e.getValue())
+                                .collect(Collectors.joining(","));
+                          pw.append(" -tags=" + asOption);
+                          pw.println();
+                      } else {
+                          pw.println();
+                          group._poolList.values().stream().sorted(comparing(Pool::getName))
+                                .forEachOrdered(
+                                      pool -> pw
                                             .append("psu addto pgroup ")
                                             .append(group.getName())
                                             .append(" ")
                                             .println(pool.getName())
-                            );
-                        }
-                        pw.println();
-                    });
+                                );
+                      }
+                      pw.println();
+                  });
             _links.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
-                    link -> {
-                        pw.append("psu create link ").append(link.getName());
-                        link._uGroupList.values().stream().map(UGroup::getName).sorted().forEachOrdered(
-                                name -> pw.append(" ").append(name));
-                        pw.println();
-                        pw.append("psu set link ").append(link.getName()).append(" ")
-                                .println(link.getAttraction());
-                        link._poolList.values().stream().sorted(comparing(PoolCore::getName)).forEachOrdered(
-                                poolCore -> pw
+                  link -> {
+                      pw.append("psu create link ").append(link.getName());
+                      link._uGroupList.values().stream().map(UGroup::getName).sorted()
+                            .forEachOrdered(
+                                  name -> pw.append(" ").append(name));
+                      pw.println();
+                      pw.append("psu set link ").append(link.getName()).append(" ")
+                            .println(link.getAttraction());
+                      link._poolList.values().stream().sorted(comparing(PoolCore::getName))
+                            .forEachOrdered(
+                                  poolCore -> pw
                                         .append("psu addto link ")
                                         .append(link.getName())
                                         .append(" ")
                                         .println(poolCore.getName()));
-                        pw.println();
-                    });
+                      pw.println();
+                  });
 
             _linkGroups.values().stream().sorted(comparing(LinkGroup::getName)).forEachOrdered(
-                    linkGroup -> {
-                        pw.append("psu create linkGroup ").println(linkGroup.getName());
+                  linkGroup -> {
+                      pw.append("psu create linkGroup ").println(linkGroup.getName());
 
-                        pw.append("psu set linkGroup custodialAllowed ").append(
-                                        linkGroup.getName()).append(" ").println(
-                                        linkGroup.isCustodialAllowed());
-                        pw.append("psu set linkGroup replicaAllowed ").append(
-                                        linkGroup.getName()).append(" ").println(
-                                        linkGroup.isReplicaAllowed());
-                        pw.append("psu set linkGroup nearlineAllowed ").append(
-                                        linkGroup.getName()).append(" ").println(
-                                        linkGroup.isNearlineAllowed());
-                        pw.append("psu set linkGroup outputAllowed ").append(
-                                        linkGroup.getName()).append(" ").println(
-                                        linkGroup.isOutputAllowed());
-                        pw.append("psu set linkGroup onlineAllowed ").append(
-                                        linkGroup.getName()).append(" ").println(
-                                        linkGroup.isOnlineAllowed());
-                        linkGroup.getLinks().stream().sorted(comparing(SelectionLink::getName)).forEachOrdered(
-                                link -> pw
+                      pw.append("psu set linkGroup custodialAllowed ").append(
+                            linkGroup.getName()).append(" ").println(
+                            linkGroup.isCustodialAllowed());
+                      pw.append("psu set linkGroup replicaAllowed ").append(
+                            linkGroup.getName()).append(" ").println(
+                            linkGroup.isReplicaAllowed());
+                      pw.append("psu set linkGroup nearlineAllowed ").append(
+                            linkGroup.getName()).append(" ").println(
+                            linkGroup.isNearlineAllowed());
+                      pw.append("psu set linkGroup outputAllowed ").append(
+                            linkGroup.getName()).append(" ").println(
+                            linkGroup.isOutputAllowed());
+                      pw.append("psu set linkGroup onlineAllowed ").append(
+                            linkGroup.getName()).append(" ").println(
+                            linkGroup.isOnlineAllowed());
+                      linkGroup.getLinks().stream().sorted(comparing(SelectionLink::getName))
+                            .forEachOrdered(
+                                  link -> pw
                                         .append("psu addto linkGroup ")
                                         .append(linkGroup.getName())
                                         .append(" ")
                                         .println(link.getName()));
-                        pw.println();
-                    });
+                      pw.println();
+                  });
         } finally {
             runlock();
         }
@@ -393,12 +396,11 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private int setEnabled(Glob glob, boolean enabled)
-    {
+    private int setEnabled(Glob glob, boolean enabled) {
         wlock();
         try {
             int count = 0;
-            for (Pool pool: getPools(glob.toPattern())) {
+            for (Pool pool : getPools(glob.toPattern())) {
                 count++;
                 pool.setEnabled(enabled);
             }
@@ -425,18 +427,17 @@ public class PoolSelectionUnitV2
 
     @Override
     public boolean updatePool(String poolName, CellAddressCore address,
-                                String canonicalHostName, long serialId,
-                                PoolV2Mode mode, Set<String> hsmInstances,
-                                Map<String, String> tags)
-    {
+          String canonicalHostName, long serialId,
+          PoolV2Mode mode, Set<String> hsmInstances,
+          Map<String, String> tags) {
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
          * is considered fully disabled.
          */
         boolean disabled =
-                mode.getMode() == PoolV2Mode.DISABLED
-                || mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
-                || mode.isDisabled(PoolV2Mode.DISABLED_STRICT);
+              mode.getMode() == PoolV2Mode.DISABLED
+                    || mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+                    || mode.isDisabled(PoolV2Mode.DISABLED_STRICT);
 
         /* By convention, the serial number is set to zero when a pool
          * is disabled. This is used by the watchdog to identify, that
@@ -459,12 +460,13 @@ public class PoolSelectionUnitV2
                  * why we call it first.
                  */
                 boolean changed =
-                        pool.getSerialId() != newSerialId
-                        || pool.isActive() == disabled
-                        || (mode.getMode() != pool.getPoolMode().getMode())
-                        || !Objects.equals(pool.getHsmInstances(), hsmInstances)
-                        || !Objects.equals(pool.getAddress(), address)
-                        || !Objects.equals(pool.getCanonicalHostName(), Optional.ofNullable(canonicalHostName));
+                      pool.getSerialId() != newSerialId
+                            || pool.isActive() == disabled
+                            || (mode.getMode() != pool.getPoolMode().getMode())
+                            || !Objects.equals(pool.getHsmInstances(), hsmInstances)
+                            || !Objects.equals(pool.getAddress(), address)
+                            || !Objects.equals(pool.getCanonicalHostName(),
+                            Optional.ofNullable(canonicalHostName));
                 if (!changed) {
                     pool.setActive(!disabled);
                     return false;
@@ -501,12 +503,13 @@ public class PoolSelectionUnitV2
              */
             boolean isRestarted = pool.setSerialId(newSerialId);
             boolean changed =
-                    isRestarted
-                    || pool.isActive() == disabled
-                    || (mode.getMode() != oldMode.getMode())
-                    || !Objects.equals(pool.getHsmInstances(), hsmInstances)
-                    || !Objects.equals(pool.getAddress(), address)
-                    || !Objects.equals(pool.getCanonicalHostName(), Optional.ofNullable(canonicalHostName));
+                  isRestarted
+                        || pool.isActive() == disabled
+                        || (mode.getMode() != oldMode.getMode())
+                        || !Objects.equals(pool.getHsmInstances(), hsmInstances)
+                        || !Objects.equals(pool.getAddress(), address)
+                        || !Objects.equals(pool.getCanonicalHostName(),
+                        Optional.ofNullable(canonicalHostName));
 
             if (mode.getMode() != oldMode.getMode()) {
                 LOGGER.warn("Pool {} changed from mode {}  to {}.", poolName, oldMode, mode);
@@ -523,9 +526,9 @@ public class PoolSelectionUnitV2
             if (isRestarted && !disabled) {
                 final Pool p = pool;
                 _pGroups.values().stream()
-                        .filter(DynamicPGroup.class::isInstance)
-                        .map(DynamicPGroup.class::cast)
-                        .forEach(pg -> pg.addIfMatches(p));
+                      .filter(DynamicPGroup.class::isInstance)
+                      .map(DynamicPGroup.class::cast)
+                      .forEach(pg -> pg.addIfMatches(p));
             }
 
             return changed;
@@ -535,7 +538,7 @@ public class PoolSelectionUnitV2
     }
 
     public Map<String, Link> match(Map<String, Link> map, Unit unit,
-                    DirectionType ioType) {
+          DirectionType ioType) {
 
         Map<String, Link> newmap = match(unit, null, ioType);
         if (map == null) {
@@ -552,7 +555,7 @@ public class PoolSelectionUnitV2
     }
 
     private LinkMap match(LinkMap linkMap, Unit unit, LinkGroup linkGroup,
-                    DirectionType ioType) {
+          DirectionType ioType) {
         Map<String, Link> map = match(unit, linkGroup, ioType);
         for (Link link : map.values()) {
             linkMap.addLink(link);
@@ -561,21 +564,22 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
-                                       FileAttributes fileAttributes, String linkGroupName, Predicate<String> exclude) {
+    public PoolPreferenceLevel[] match(DirectionType type, String netUnitName,
+          String protocolUnitName,
+          FileAttributes fileAttributes, String linkGroupName, Predicate<String> exclude) {
         requireNonNull(exclude,
-                                   "Predicate argument cannot be null.");
+              "Predicate argument cannot be null.");
 
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
+        String storeUnitName = storageInfo.getStorageClass() + "@" + storageInfo.getHsm();
         String dCacheUnitName = storageInfo.getCacheClass();
 
         Map<String, String> variableMap = storageInfo.getMap();
 
-        LOGGER.debug("running match: type={} store={} dCacheUnit={} net={} protocol={} keys={} locations={} linkGroup={}",
-                        type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
-                        variableMap, storageInfo.locations(), linkGroupName);
-
+        LOGGER.debug(
+              "running match: type={} store={} dCacheUnit={} net={} protocol={} keys={} locations={} linkGroup={}",
+              type, storeUnitName, dCacheUnitName, netUnitName, protocolUnitName,
+              variableMap, storageInfo.locations(), linkGroupName);
 
         PoolPreferenceLevel[] result = null;
         rlock();
@@ -618,7 +622,7 @@ public class PoolSelectionUnitV2
                         list.add(universalCoverage);
                     } else {
                         throw new IllegalArgumentException(
-                                        "Unit not found : " + storeUnitName);
+                              "Unit not found : " + storeUnitName);
                     }
                 }
 
@@ -628,18 +632,19 @@ public class PoolSelectionUnitV2
                     int ind = storeUnitName.lastIndexOf('@');
                     if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
                         String template = "*@"
-                                        + storeUnitName.substring(ind + 1);
+                              + storeUnitName.substring(ind + 1);
                         if ((unit = _units.get(template)) == null) {
 
                             if ((unit = _units.get("*@*")) == null) {
-                                LOGGER.debug("no matching storage unit found for: {}", storeUnitName);
+                                LOGGER.debug("no matching storage unit found for: {}",
+                                      storeUnitName);
                                 throw new IllegalArgumentException(
-                                                "Unit not found : " + storeUnitName);
+                                      "Unit not found : " + storeUnitName);
                             }
                         }
                     } else {
                         throw new IllegalArgumentException(
-                                        "IllegalUnitFormat : " + storeUnitName);
+                              "IllegalUnitFormat : " + storeUnitName);
                     }
                 }
                 LOGGER.debug("matching storage unit found for: {}", storeUnitName);
@@ -649,10 +654,10 @@ public class PoolSelectionUnitV2
 
                 Unit unit = findProtocolUnit(protocolUnitName);
                 //
-                if (unit == null){
+                if (unit == null) {
                     LOGGER.debug("no matching protocol unit found for: {}", protocolUnitName);
                     throw new IllegalArgumentException("Unit not found : "
-                                    + protocolUnitName);
+                          + protocolUnitName);
                 }
                 LOGGER.debug("matching protocol unit found: {}", unit);
                 list.add(unit);
@@ -662,7 +667,7 @@ public class PoolSelectionUnitV2
                 if (unit == null) {
                     LOGGER.debug("no matching dCache unit found for: {}", dCacheUnitName);
                     throw new IllegalArgumentException("Unit not found : "
-                                    + dCacheUnitName);
+                          + dCacheUnitName);
                 }
                 LOGGER.debug("matching dCache unit found: {}", unit);
                 list.add(unit);
@@ -673,13 +678,13 @@ public class PoolSelectionUnitV2
                     if (unit == null) {
                         LOGGER.debug("no matching net unit found for: {}", netUnitName);
                         throw new IllegalArgumentException(
-                                        "Unit not matched : " + netUnitName);
+                              "Unit not matched : " + netUnitName);
                     }
                     LOGGER.debug("matching net unit found: {}", unit);
                     list.add(unit);
                 } catch (UnknownHostException uhe) {
                     throw new IllegalArgumentException(
-                                    "NetUnit not resolved : " + netUnitName);
+                          "NetUnit not resolved : " + netUnitName);
                 }
             }
             //
@@ -709,9 +714,9 @@ public class PoolSelectionUnitV2
             if (linkGroupName != null) {
                 linkGroup = _linkGroups.get(linkGroupName);
                 if (linkGroup == null) {
-                    LOGGER.debug("LinkGroup not found : {}", linkGroupName );
+                    LOGGER.debug("LinkGroup not found : {}", linkGroupName);
                     throw new IllegalArgumentException("LinkGroup not found : "
-                                    + linkGroupName);
+                          + linkGroupName);
                 }
             }
 
@@ -729,7 +734,7 @@ public class PoolSelectionUnitV2
 
                 Link link = linkIterator.next();
                 if ((link._uGroupList.size() <= fitCount)
-                                && ((variableMap == null) || link.exec(variableMap))) {
+                      && ((variableMap == null) || link.exec(variableMap))) {
 
                     sortedSet.add(link);
                 }
@@ -767,7 +772,7 @@ public class PoolSelectionUnitV2
                 case P2P:
                     for (Link link : sortedSet) {
                         int tmpPref = link.getP2pPref() < 0 ? link.getReadPref()
-                                        : link.getP2pPref();
+                              : link.getP2pPref();
                         if (tmpPref < 1) {
                             continue;
                         }
@@ -812,34 +817,38 @@ public class PoolSelectionUnitV2
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
-                            LOGGER.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
+                            LOGGER.debug("Pool: {} can read from tape? : {}", pool,
+                                  pool.canReadFromTape());
                             if (((type == DirectionType.READ && pool.canRead())
-                                            || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                            && poolCanStageFile(pool, fileAttributes))
-                                            || (type == DirectionType.WRITE && pool.canWrite())
-                                            || (type == DirectionType.P2P && pool.canWriteForP2P()))
-                                            && (_allPoolsActive || pool.isActive())) {
+                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
+                                  && poolCanStageFile(pool, fileAttributes))
+                                  || (type == DirectionType.WRITE && pool.canWrite())
+                                  || (type == DirectionType.P2P && pool.canWriteForP2P()))
+                                  && (_allPoolsActive || pool.isActive())) {
                                 if (exclude.test(pool.getName())) {
-                                    LOGGER.debug("Qualifying pool {} is on excluded host {}; skipping.",
-                                               pool.getName(),
-                                               pool.getCanonicalHostName());
+                                    LOGGER.debug(
+                                          "Qualifying pool {} is on excluded host {}; skipping.",
+                                          pool.getName(),
+                                          pool.getCanonicalHostName());
                                 } else {
                                     resultList.add(pool.getName());
                                 }
                             }
                         } else {
-                            for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
-                                LOGGER.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
+                            for (Pool pool : ((PGroup) poolCore)._poolList.values()) {
+                                LOGGER.debug("Pool: {} can read from tape? : {}", pool,
+                                      pool.canReadFromTape());
                                 if (((type == DirectionType.READ && pool.canRead())
-                                                || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                                && poolCanStageFile(pool, fileAttributes))
-                                                || (type == DirectionType.WRITE && pool.canWrite())
-                                                || (type == DirectionType.P2P && pool.canWriteForP2P()))
-                                                && (_allPoolsActive || pool.isActive())) {
+                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
+                                      && poolCanStageFile(pool, fileAttributes))
+                                      || (type == DirectionType.WRITE && pool.canWrite())
+                                      || (type == DirectionType.P2P && pool.canWriteForP2P()))
+                                      && (_allPoolsActive || pool.isActive())) {
                                     if (exclude.test(pool.getName())) {
-                                        LOGGER.debug("Qualifying pool {} is on excluded host {}; skipping.",
-                                                   pool.getName(),
-                                                   pool.getCanonicalHostName());
+                                        LOGGER.debug(
+                                              "Qualifying pool {} is on excluded host {}; skipping.",
+                                              pool.getName(),
+                                              pool.getCanonicalHostName());
                                     } else {
                                         resultList.add(pool.getName());
                                     }
@@ -855,13 +864,13 @@ public class PoolSelectionUnitV2
             runlock();
         }
 
-        if( LOGGER.isDebugEnabled() ) {
+        if (LOGGER.isDebugEnabled()) {
 
             StringBuilder sb = new StringBuilder("match done: ");
 
-            for( int i = 0; i < result.length; i++) {
+            for (int i = 0; i < result.length; i++) {
                 sb.append("[").append(i).append("] :");
-                for(String poolName: result[i].getPoolList()) {
+                for (String poolName : result[i].getPoolList()) {
                     sb.append(" ").append(poolName);
                 }
             }
@@ -890,10 +899,10 @@ public class PoolSelectionUnitV2
         //
         //
         if ((position < 0) || (position == 0)
-                        || (position == (protocolUnitName.length() - 1))) {
+              || (position == (protocolUnitName.length() - 1))) {
 
             throw new IllegalArgumentException(
-                            "Not a valid protocol specification : " + protocolUnitName);
+                  "Not a valid protocol specification : " + protocolUnitName);
         }
         //
         // we try :
@@ -931,7 +940,7 @@ public class PoolSelectionUnitV2
         try {
             Unit unit = _units.get(storageClass);
             if (unit != null && unit.getType() == STORE) {
-                return (StorageUnit)unit;
+                return (StorageUnit) unit;
             }
         } finally {
             _psuReadLock.unlock();
@@ -958,11 +967,9 @@ public class PoolSelectionUnitV2
     /**
      * Picks links associated with a unit (elementary rule).
      *
-     * @param unit
-     *            The unit as the matching criteria
-     * @param linkGroup
-     *            Use only subset of links if defined, or all associated links
-     *            if not defined (null)
+     * @param unit      The unit as the matching criteria
+     * @param linkGroup Use only subset of links if defined, or all associated links if not defined
+     *                  (null)
      * @return the matching links
      */
     public Map<String, Link> match(Unit unit, LinkGroup linkGroup, DirectionType iotype) {
@@ -976,7 +983,7 @@ public class PoolSelectionUnitV2
 
                     if (linkGroup == null) {
                         if (iotype == DirectionType.READ
-                                        || link.getLinkGroup() == null) {
+                              || link.getLinkGroup() == null) {
                             //
                             // no link group specified
                             // only consider link if it isn't in any link group
@@ -1014,7 +1021,7 @@ public class PoolSelectionUnitV2
                     break;
                 default:
                     throw new IllegalArgumentException(
-                                    "Syntax error," + " no such mode: " + mode);
+                          "Syntax error," + " no such mode: " + mode);
             }
         } finally {
             wunlock();
@@ -1032,22 +1039,22 @@ public class PoolSelectionUnitV2
         }
         if (unit == null) {
             throw new IllegalArgumentException("Host not a unit : "
-                            + hostAddress);
+                  + hostAddress);
         }
         return unit.toString();
     }
 
     public String matchLinkGroups(String linkGroup,
-                    String direction,
-                    String storeUnit,
-                    String dCacheUnit,
-                    String netUnit,
-                    String protocolUnit) {
+          String direction,
+          String storeUnit,
+          String dCacheUnit,
+          String netUnit,
+          String protocolUnit) {
         try {
             long start = System.currentTimeMillis();
             PoolPreferenceLevel[] list
-                            = matchLinkGroupsXml(linkGroup, direction,
-                            storeUnit, dCacheUnit, netUnit, protocolUnit);
+                  = matchLinkGroupsXml(linkGroup, direction,
+                  storeUnit, dCacheUnit, netUnit, protocolUnit);
             start = System.currentTimeMillis() - start;
 
             StringBuilder sb = new StringBuilder();
@@ -1055,10 +1062,10 @@ public class PoolSelectionUnitV2
                 String tag = list[i].getTag();
                 sb.append("Preference : ").append(i).append("\n");
                 sb.append("       Tag : ").append(tag == null ? "NONE" : tag)
-                                .append("\n");
+                      .append("\n");
                 for (String s : list[i].getPoolList()) {
                     sb.append("  ").append(s)
-                                    .append("\n");
+                          .append("\n");
                 }
             }
             sb.append("(time used : ").append(start).append(" millis)\n");
@@ -1076,11 +1083,11 @@ public class PoolSelectionUnitV2
 
         rlock();
         try {
-            for (String unitName: units) {
+            for (String unitName : units) {
                 Unit unit = _units.get(unitName);
                 if (unit == null) {
                     throw new IllegalArgumentException("Unit not found : "
-                                    + unitName);
+                          + unitName);
                 }
                 // TODO:
                 map = match(map, unit, DirectionType.READ);
@@ -1089,7 +1096,7 @@ public class PoolSelectionUnitV2
                 Unit unit = _netHandler.find(new NetUnit(netUnitName));
                 if (unit == null) {
                     throw new IllegalArgumentException(
-                                    "Unit not found in netList : " + netUnitName);
+                          "Unit not found in netList : " + netUnitName);
                 }
                 // TODO:
                 map = match(map, unit, DirectionType.READ);
@@ -1100,9 +1107,9 @@ public class PoolSelectionUnitV2
                 }
                 sb.append("Link : ").append(link.toString()).append("\n");
 
-                for(SelectionPool pool: link.getPools()) {
+                for (SelectionPool pool : link.getPools()) {
                     sb.append("    ").append(pool.getName()).append(
-                                    "\n");
+                          "\n");
                 }
             }
 
@@ -1129,7 +1136,7 @@ public class PoolSelectionUnitV2
             if (_pGroups.putIfAbsent(group.getName(), group) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
             }
-             // add any existing pools
+            // add any existing pools
             _pools.values().forEach(p -> group.addIfMatches(p));
         } finally {
             wunlock();
@@ -1137,7 +1144,7 @@ public class PoolSelectionUnitV2
     }
 
     public void createPoolGroup(String name, boolean isPrimary) {
-            wlock();
+        wlock();
         try {
             PGroup group = new PGroup(name, isPrimary);
 
@@ -1167,7 +1174,7 @@ public class PoolSelectionUnitV2
                 break;
             default:
                 throw new IllegalArgumentException(
-                                "please set regex either on or off");
+                      "please set regex either on or off");
         }
         return retVal;
     }
@@ -1195,7 +1202,7 @@ public class PoolSelectionUnitV2
         wlock();
         try {
             int count = 0;
-            for (Pool pool: getPools(pattern)) {
+            for (Pool pool : getPools(pattern)) {
                 count++;
                 switch (mode) {
                     case "enabled":
@@ -1218,7 +1225,7 @@ public class PoolSelectionUnitV2
                         break;
                     default:
                         throw new IllegalArgumentException("mode not supported : "
-                                        + mode);
+                              + mode);
                 }
             }
             return poolCountDescriptionFor(count) + " updated";
@@ -1251,11 +1258,11 @@ public class PoolSelectionUnitV2
             // only after we know, that all exist we can
             // add ourselfs to the uGroupLinkList
             //
-            for ( String uGroupName : unitGroup) {
+            for (String uGroupName : unitGroup) {
                 UGroup uGroup = _uGroups.get(uGroupName);
                 if (uGroup == null) {
                     throw new IllegalArgumentException("uGroup not found : "
-                                    + uGroupName);
+                          + uGroupName);
                 }
 
                 link._uGroupList.put(uGroup.getName(), uGroup);
@@ -1287,7 +1294,7 @@ public class PoolSelectionUnitV2
     }
 
     public void createUnit(String name, boolean isNet, boolean isStore,
-                    boolean isDcache, boolean isProtocol) {
+          boolean isDcache, boolean isProtocol) {
         Unit unit = null;
         wlock();
         try {
@@ -1304,7 +1311,7 @@ public class PoolSelectionUnitV2
             }
             if (unit == null) {
                 throw new IllegalArgumentException(
-                                "Unit type missing net/store/dcache/protocol");
+                      "Unit type missing net/store/dcache/protocol");
             }
 
             if (_units.putIfAbsent(name, unit) != null) {
@@ -1321,7 +1328,7 @@ public class PoolSelectionUnitV2
 
             if (_linkGroups.containsKey(groupName) && !isReset) {
                 throw new IllegalArgumentException(
-                                "LinkGroup already exists : " + groupName);
+                      "LinkGroup already exists : " + groupName);
             }
 
             LinkGroup newGroup = new LinkGroup(groupName);
@@ -1332,8 +1339,8 @@ public class PoolSelectionUnitV2
     }
 
     public void setStorageUnit(String storageUnitKey,
-                               Integer required,
-                               String[] onlyOneCopyPer) {
+          Integer required,
+          String[] onlyOneCopyPer) {
         wlock();
         try {
             Unit unit = _units.get(storageUnitKey);
@@ -1344,10 +1351,10 @@ public class PoolSelectionUnitV2
 
             if (unit.getType() != STORE) {
                 throw new IllegalStateException("unit named "
-                                + storageUnitKey + " is not of type STORE");
+                      + storageUnitKey + " is not of type STORE");
             }
 
-            StorageUnit sUnit = (StorageUnit)unit;
+            StorageUnit sUnit = (StorageUnit) unit;
             sUnit.setRequiredCopies(required);
 
             if (required == null) {
@@ -1356,9 +1363,9 @@ public class PoolSelectionUnitV2
 
             if (onlyOneCopyPer != null) {
                 Preconditions.checkArgument(sUnit.getRequiredCopies() != null,
-                                "required must be set to >= 1 "
-                                             + "in order to set partition tags, "
-						                     + "is currently set to none.");
+                      "required must be set to >= 1 "
+                            + "in order to set partition tags, "
+                            + "is currently set to none.");
             }
 
             sUnit.setOnlyOneCopyPer(onlyOneCopyPer);
@@ -1382,7 +1389,7 @@ public class PoolSelectionUnitV2
                 Pool pool = _pools.get(poolName);
                 if (pool == null) {
                     throw new IllegalArgumentException("Not found : "
-                                    + poolName);
+                          + poolName);
                 }
 
                 Object[] result = new Object[6];
@@ -1412,7 +1419,7 @@ public class PoolSelectionUnitV2
                 PGroup group = _pGroups.get(groupName);
                 if (group == null) {
                     throw new IllegalArgumentException("Not found : "
-                                    + groupName);
+                          + groupName);
                 }
 
                 Object[] result = new Object[4];
@@ -1450,18 +1457,18 @@ public class PoolSelectionUnitV2
                 Unit unit = _units.get(unitName);
                 if (unit == null) {
                     throw new IllegalArgumentException("Not found : "
-                                    + unitName);
+                          + unitName);
                 }
 
                 Object[] result = new Object[5];
                 result[0] = unitName;
                 result[1] = unit.getType() == STORE ? "Store"
-                                : unit.getType() == PROTOCOL ? "Protocol"
-                                : unit.getType() == DCACHE ? "dCache"
-                                : unit.getType() == NET ? "Net" : "Unknown";
+                      : unit.getType() == PROTOCOL ? "Protocol"
+                            : unit.getType() == DCACHE ? "dCache"
+                                  : unit.getType() == NET ? "Net" : "Unknown";
                 result[2] = unit._uGroupList.keySet().toArray();
                 if ("Store".equals(result[1])) {
-                    StorageUnit sunit = (StorageUnit)unit;
+                    StorageUnit sunit = (StorageUnit) unit;
                     result[3] = sunit.getRequiredCopies();
                     result[4] = sunit.getOnlyOneCopyPer();
                 }
@@ -1484,7 +1491,7 @@ public class PoolSelectionUnitV2
                 UGroup group = _uGroups.get(groupName);
                 if (group == null) {
                     throw new IllegalArgumentException("Not found : "
-                                    + groupName);
+                          + groupName);
                 }
 
                 Object[] result = new Object[3];
@@ -1519,7 +1526,7 @@ public class PoolSelectionUnitV2
                 Link link = _links.get(linkName);
                 if (link == null) {
                     throw new IllegalArgumentException("Not found : "
-                                    + linkName);
+                          + linkName);
                 }
 
                 xlsResult = fillLinkProperties(link, resolve);
@@ -1602,16 +1609,16 @@ public class PoolSelectionUnitV2
     }
 
     public PoolPreferenceLevel[] matchLinkGroupsXml(String linkGroup,
-                    String direction,
-                    String storeUnit,
-                    String dCacheUnit,
-                    String netUnit,
-                    String protocolUnit) {
+          String direction,
+          String storeUnit,
+          String dCacheUnit,
+          String netUnit,
+          String protocolUnit) {
         StorageInfo info = GenericStorageInfo.valueOf(storeUnit, dCacheUnit);
         return match(DirectionType.valueOf(direction.toUpperCase()),
-                     netUnit.equals("*") ? null : netUnit,
-                     protocolUnit.equals("*") ? null : protocolUnit,
-                     FileAttributes.ofStorageInfo(info), linkGroup, p->false);
+              netUnit.equals("*") ? null : netUnit,
+              protocolUnit.equals("*") ? null : protocolUnit,
+              FileAttributes.ofStorageInfo(info), linkGroup, p -> false);
     }
 
     // ..................................................................
@@ -1629,21 +1636,23 @@ public class PoolSelectionUnitV2
                 pools = globs.stream().flatMap(s -> getPools(Glob.parseGlobToPattern(s)).stream());
             }
             pools.sorted(comparing(Pool::getName)).forEachOrdered(
-                    pool -> {
-                        if (!detail) {
-                            sb.append(pool.getName()).append("\n");
-                        } else {
-                            sb.append(pool).append("\n");
-                            sb.append(" linkList   :\n");
-                            pool._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
-                                    link -> sb.append("   ").append(link).append("\n"));
-                            if (more) {
-                                sb.append(" pGroupList : \n");
-                                pool._pGroupList.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
-                                        group -> sb.append("   ").append(group).append("\n"));
-                            }
-                        }
-                    });
+                  pool -> {
+                      if (!detail) {
+                          sb.append(pool.getName()).append("\n");
+                      } else {
+                          sb.append(pool).append("\n");
+                          sb.append(" linkList   :\n");
+                          pool._linkList.values().stream().sorted(comparing(Link::getName))
+                                .forEachOrdered(
+                                      link -> sb.append("   ").append(link).append("\n"));
+                          if (more) {
+                              sb.append(" pGroupList : \n");
+                              pool._pGroupList.values().stream().sorted(comparing(PGroup::getName))
+                                    .forEachOrdered(
+                                          group -> sb.append("   ").append(group).append("\n"));
+                          }
+                      }
+                  });
         } finally {
             runlock();
         }
@@ -1672,14 +1681,16 @@ public class PoolSelectionUnitV2
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" dynamic   = ").append(group instanceof DynamicPGroup).append("\n")
-                                    .append(" resilient = ").append(group.isPrimary())
-                                    .append("\n")
-                                    .append(" linkList :\n");
-                    group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
-                            link -> sb.append("   ").append(link.toString()).append("\n"));
+                          .append(" resilient = ").append(group.isPrimary())
+                          .append("\n")
+                          .append(" linkList :\n");
+                    group._linkList.values().stream().sorted(comparing(Link::getName))
+                          .forEachOrdered(
+                                link -> sb.append("   ").append(link.toString()).append("\n"));
                     sb.append(" poolList :\n");
-                    group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
-                            pool -> sb.append("   ").append(pool.toString()).append("\n"));
+                    group._poolList.values().stream().sorted(comparing(Pool::getName))
+                          .forEachOrdered(
+                                pool -> sb.append("   ").append(pool.toString()).append("\n"));
                 }
             }
         } finally {
@@ -1699,33 +1710,37 @@ public class PoolSelectionUnitV2
                 links = names.stream().map(_links::get).filter(Objects::nonNull);
             }
             links.sorted(comparing(Link::getName)).forEachOrdered(
-                    link -> {
-                        sb.append(link.getName()).append("\n");
-                        if (detail) {
-                            sb.append(" readPref  : ").append(link.getReadPref()).append(
-                                            "\n");
-                            sb.append(" cachePref : ").append(link.getCachePref()).append(
-                                            "\n");
-                            sb.append(" writePref : ").append(link.getWritePref()).append(
-                                            "\n");
-                            sb.append(" p2pPref   : ").append(link.getP2pPref()).append(
-                                            "\n");
-                            sb.append(" section   : ").append(
-                                            link.getTag() == null ? "None" : link.getTag())
-                                            .append("\n");
-                            sb.append(" linkGroup : ").append(
-                                            link.getLinkGroup() == null ? "None" : link
-                                                            .getLinkGroup().getName()).append("\n");
-                            sb.append(" UGroups :\n");
-                            link._uGroupList.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
-                                    group -> sb.append("   ").append(group.toString()).append("\n"));
-                            if (more) {
-                                sb.append(" poolList  :\n");
-                                link._poolList.values().stream().sorted(comparing(PoolCore::getName)).forEachOrdered(
-                                        core -> sb.append("   ").append(core.toString()).append("\n"));
-                            }
-                        }
-                    });
+                  link -> {
+                      sb.append(link.getName()).append("\n");
+                      if (detail) {
+                          sb.append(" readPref  : ").append(link.getReadPref()).append(
+                                "\n");
+                          sb.append(" cachePref : ").append(link.getCachePref()).append(
+                                "\n");
+                          sb.append(" writePref : ").append(link.getWritePref()).append(
+                                "\n");
+                          sb.append(" p2pPref   : ").append(link.getP2pPref()).append(
+                                "\n");
+                          sb.append(" section   : ").append(
+                                      link.getTag() == null ? "None" : link.getTag())
+                                .append("\n");
+                          sb.append(" linkGroup : ").append(
+                                link.getLinkGroup() == null ? "None" : link
+                                      .getLinkGroup().getName()).append("\n");
+                          sb.append(" UGroups :\n");
+                          link._uGroupList.values().stream().sorted(comparing(UGroup::getName))
+                                .forEachOrdered(
+                                      group -> sb.append("   ").append(group.toString())
+                                            .append("\n"));
+                          if (more) {
+                              sb.append(" poolList  :\n");
+                              link._poolList.values().stream().sorted(comparing(PoolCore::getName))
+                                    .forEachOrdered(
+                                          core -> sb.append("   ").append(core.toString())
+                                                .append("\n"));
+                          }
+                      }
+                  });
         } finally {
             runlock();
         }
@@ -1744,19 +1759,23 @@ public class PoolSelectionUnitV2
                 i = names.stream().map(_uGroups::get).filter(Objects::nonNull);
             }
             i.sorted(comparing(UGroup::getName)).forEachOrdered(
-                    group -> {
-                        sb.append(group.getName()).append("\n");
-                        if (detail) {
-                            sb.append(" unitList :\n");
-                            group._unitList.values().stream().sorted(comparing(Unit::getName)).forEachOrdered(
-                                    unit -> sb.append("   ").append(unit.toString()).append("\n"));
-                            if (more) {
-                                sb.append(" linkList :\n");
-                                group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
-                                        link -> sb.append("   ").append(link.toString()).append("\n"));
-                            }
-                        }
-                    });
+                  group -> {
+                      sb.append(group.getName()).append("\n");
+                      if (detail) {
+                          sb.append(" unitList :\n");
+                          group._unitList.values().stream().sorted(comparing(Unit::getName))
+                                .forEachOrdered(
+                                      unit -> sb.append("   ").append(unit.toString())
+                                            .append("\n"));
+                          if (more) {
+                              sb.append(" linkList :\n");
+                              group._linkList.values().stream().sorted(comparing(Link::getName))
+                                    .forEachOrdered(
+                                          link -> sb.append("   ").append(link.toString())
+                                                .append("\n"));
+                          }
+                      }
+                  });
         } finally {
             runlock();
         }
@@ -1801,22 +1820,22 @@ public class PoolSelectionUnitV2
                 i = names.stream().map(_units::get).filter(Objects::nonNull);
             }
             i.sorted(comparing(Unit::getName)).forEachOrdered(
-                    unit -> {
-                        if (detail) {
-                            sb.append(unit.toString()).append("\n");
-                            if (more) {
-                                sb.append(" uGroupList :\n");
-                                unit._uGroupList.values().stream().sorted(
-                                                comparing(UGroup::getName)).forEachOrdered(
-                                                group -> sb.append(
-                                                                "   ").append(
-                                                                group.toString()).append(
-                                                                "\n"));
-                            }
-                        } else {
-                            sb.append(unit.getName()).append("\n");
-                        }
-                    });
+                  unit -> {
+                      if (detail) {
+                          sb.append(unit.toString()).append("\n");
+                          if (more) {
+                              sb.append(" uGroupList :\n");
+                              unit._uGroupList.values().stream().sorted(
+                                    comparing(UGroup::getName)).forEachOrdered(
+                                    group -> sb.append(
+                                          "   ").append(
+                                          group.toString()).append(
+                                          "\n"));
+                          }
+                      } else {
+                          sb.append(unit.getName()).append("\n");
+                      }
+                  });
         } finally {
             runlock();
         }
@@ -1833,7 +1852,7 @@ public class PoolSelectionUnitV2
                     LinkGroup linkGroup = _linkGroups.get(lgroup);
                     if (linkGroup == null) {
                         throw new IllegalArgumentException(
-                                        "LinkGroup not found : " + lgroup);
+                              "LinkGroup not found : " + lgroup);
                     }
 
                     if (isLongOutput) {
@@ -1844,7 +1863,8 @@ public class PoolSelectionUnitV2
                 });
             } else {
                 _linkGroups.values().stream().sorted(comparing(LinkGroup::getName)).forEachOrdered(
-                        linkGroup -> sb.append(isLongOutput ? linkGroup : linkGroup.getName()).append("\n"));
+                      linkGroup -> sb.append(isLongOutput ? linkGroup : linkGroup.getName())
+                            .append("\n"));
             }
         } finally {
             runlock();
@@ -1871,14 +1891,14 @@ public class PoolSelectionUnitV2
                 NetUnit netUnit = _netHandler.find(new NetUnit(name));
                 if (netUnit == null) {
                     throw new IllegalArgumentException(
-                                    "Not found in netList : " + name);
+                          "Not found in netList : " + name);
                 }
                 name = netUnit.getName();
             }
             Unit unit = _units.get(name);
             if (unit == null) {
                 throw new IllegalArgumentException("Unit not found : "
-                                + name);
+                      + name);
             }
 
             if (unit instanceof NetUnit) {
@@ -1901,17 +1921,17 @@ public class PoolSelectionUnitV2
             UGroup group = _uGroups.get(name);
             if (group == null) {
                 throw new IllegalArgumentException("UGroup not found : "
-                                + name);
+                      + name);
             }
 
             if (!group._unitList.isEmpty()) {
                 throw new IllegalArgumentException("UGroup not empty : "
-                                + name);
+                      + name);
             }
 
             if (!group._linkList.isEmpty()) {
                 throw new IllegalArgumentException(
-                                "Still link(s) pointing to us : " + name);
+                      "Still link(s) pointing to us : " + name);
             }
 
             _uGroups.remove(name);
@@ -1990,26 +2010,26 @@ public class PoolSelectionUnitV2
             UGroup group = _uGroups.get(groupName);
             if (group == null) {
                 throw new IllegalArgumentException("UGroup not found : "
-                                + groupName);
+                      + groupName);
             }
 
             if (isNet) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null) {
                     throw new IllegalArgumentException(
-                                    "Not found in netList : " + unitName);
+                          "Not found in netList : " + unitName);
                 }
                 unitName = netUnit.getName();
             }
             Unit unit = _units.get(unitName);
             if (unit == null) {
                 throw new IllegalArgumentException("Unit not found : "
-                                + unitName);
+                      + unitName);
             }
             String canonicalName = unit.getCanonicalName();
             if (group._unitList.get(canonicalName) == null) {
                 throw new IllegalArgumentException(unitName + " not member of "
-                                + groupName);
+                      + groupName);
             }
 
             group._unitList.remove(canonicalName);
@@ -2025,18 +2045,18 @@ public class PoolSelectionUnitV2
             Pool pool = _pools.get(poolName);
             if (pool == null) {
                 throw new IllegalArgumentException("Pool not found : "
-                                + poolName);
+                      + poolName);
             }
 
             PGroup group = _pGroups.get(groupName);
             if (group == null) {
                 throw new IllegalArgumentException("PGroup not found : "
-                                + groupName);
+                      + groupName);
             }
 
             if (group._poolList.get(poolName) == null) {
                 throw new IllegalArgumentException(poolName + " not member of "
-                                + groupName);
+                      + groupName);
             }
 
             group._poolList.remove(poolName);
@@ -2053,18 +2073,18 @@ public class PoolSelectionUnitV2
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
             if (linkGroup == null) {
                 throw new IllegalArgumentException("LinkGroup not found : "
-                                + linkGroupName);
+                      + linkGroupName);
             }
 
             Link link = _links.get(linkName);
             if (link == null) {
                 throw new IllegalArgumentException("Link is not found : "
-                                + linkName);
+                      + linkName);
             }
 
             if (!linkGroup.remove(link)) {
                 throw new IllegalArgumentException("Link [" + linkName
-                                + "] is not part of group : " + linkGroupName);
+                      + "] is not part of group : " + linkGroupName);
             }
             link.setLinkGroup(null);
 
@@ -2080,7 +2100,7 @@ public class PoolSelectionUnitV2
             LinkGroup linkGroup = _linkGroups.remove(name);
             if (linkGroup == null) {
                 throw new IllegalArgumentException("LinkGroup not found : "
-                                + name);
+                      + name);
             }
 
             for (SelectionLink link : linkGroup.getAllLinks()) {
@@ -2145,7 +2165,8 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException("Not found : " + pGroupName);
             }
             if (group instanceof DynamicPGroup) {
-                throw new IllegalArgumentException("Manual adding into dynamic pool is not allowed");
+                throw new IllegalArgumentException(
+                      "Manual adding into dynamic pool is not allowed");
             }
             Pool pool = _pools.get(poolName);
             if (pool == null) {
@@ -2166,7 +2187,7 @@ public class PoolSelectionUnitV2
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null) {
                     throw new IllegalArgumentException(
-                                    "Not found in netList : " + unitName);
+                          "Not found in netList : " + unitName);
                 }
                 unitName = netUnit.getName();
             }
@@ -2182,7 +2203,7 @@ public class PoolSelectionUnitV2
             String canonicalName = unit.getCanonicalName();
             if (group._unitList.get(canonicalName) != null) {
                 throw new IllegalArgumentException(unitName
-                                + " already member of " + uGroupName);
+                      + " already member of " + uGroupName);
             }
 
             unit._uGroupList.put(group.getName(), group);
@@ -2198,13 +2219,13 @@ public class PoolSelectionUnitV2
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
             if (linkGroup == null) {
                 throw new IllegalArgumentException("LinkGroup not found : "
-                                + linkName);
+                      + linkName);
             }
 
             Link link = _links.get(linkName);
             if (link == null) {
                 throw new IllegalArgumentException("Link not found : "
-                                + linkName);
+                      + linkName);
             }
 
             // search all linkgroups for this link
@@ -2212,8 +2233,8 @@ public class PoolSelectionUnitV2
             for (LinkGroup group : _linkGroups.values()) {
                 if (group.contains(link)) {
                     throw new IllegalArgumentException(
-                                    "Link already in linkGroup `" + group.getName()
-                                                    + "`");
+                          "Link already in linkGroup `" + group.getName()
+                                + "`");
                 }
             }
 
@@ -2242,7 +2263,7 @@ public class PoolSelectionUnitV2
 
             if (core._linkList.get(linkName) == null) {
                 throw new IllegalArgumentException(poolName + " not member of "
-                                + linkName);
+                      + linkName);
             }
 
             core._linkList.remove(linkName);
@@ -2286,7 +2307,7 @@ public class PoolSelectionUnitV2
                 Pool pool = _pools.get(poolName);
                 if (pool == null) {
                     throw new IllegalArgumentException("Pool not found : "
-                                    + poolName);
+                          + poolName);
                 }
                 pool.setActive(active);
             }
@@ -2297,7 +2318,7 @@ public class PoolSelectionUnitV2
     }
 
     public void setLink(String linkName, String readPref, String writePref,
-                    String cachePref, String p2pPref, String section) {
+          String cachePref, String p2pPref, String section) {
         wlock();
 
         try {
@@ -2327,15 +2348,15 @@ public class PoolSelectionUnitV2
     }
 
     public void setLinkGroup(String linkGroupName, String custodial,
-                    String nearline, String online, String output,
-                    String replica) {
+          String nearline, String online, String output,
+          String replica) {
         wlock();
 
         try {
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
             if (linkGroup == null) {
                 throw new IllegalArgumentException("LinkGroup not found : "
-                                + linkGroupName);
+                      + linkGroupName);
             }
 
             if (custodial != null) {
@@ -2363,8 +2384,7 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Map<String, SelectionPool> getPools()
-    {
+    public Map<String, SelectionPool> getPools() {
         rlock();
         try {
             return new HashMap<>(_pools);
@@ -2374,8 +2394,7 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Map<String, SelectionLinkGroup> getLinkGroups()
-    {
+    public Map<String, SelectionLinkGroup> getLinkGroups() {
         rlock();
         try {
             return new HashMap<>(_linkGroups);
@@ -2413,13 +2432,13 @@ public class PoolSelectionUnitV2
     }
 
     /**
-     * Returns true if and only if the pool can stage the given file. That is
-     * the only case if the file is located on an HSM connected to the pool.
+     * Returns true if and only if the pool can stage the given file. That is the only case if the
+     * file is located on an HSM connected to the pool.
      */
     private boolean poolCanStageFile(Pool pool, FileAttributes file) {
-        boolean rc  = false;
+        boolean rc = false;
         if (file.getStorageInfo().locations().isEmpty()
-                        && pool.getHsmInstances().contains(file.getHsm())) {
+              && pool.getHsmInstances().contains(file.getHsm())) {
             // This is for backwards compatibility until all info
             // extractors support URIs.
             rc = true;
@@ -2436,7 +2455,7 @@ public class PoolSelectionUnitV2
 
     @Override
     public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
-                    throws NoSuchElementException {
+          throws NoSuchElementException {
         PGroup group = _pGroups.get(poolGroup);
         if (group == null) {
             throw new NoSuchElementException("No such pool group: " + poolGroup);
@@ -2460,15 +2479,17 @@ public class PoolSelectionUnitV2
         return pools;
     }
 
-    /** Returns a live view of pools whos name match the given pattern. */
-    private Collection<Pool> getPools(Pattern pattern)
-    {
+    /**
+     * Returns a live view of pools whos name match the given pattern.
+     */
+    private Collection<Pool> getPools(Pattern pattern) {
         return Maps.filterKeys(_pools, Predicates.contains(pattern)).values();
     }
 
-    /** Returns a displayable string describing a quantity of pools. */
-    private String poolCountDescriptionFor(int count)
-    {
+    /**
+     * Returns a displayable string describing a quantity of pools.
+     */
+    private String poolCountDescriptionFor(int count) {
         switch (count) {
             case 0:
                 return "No pools";
@@ -2479,31 +2500,26 @@ public class PoolSelectionUnitV2
         }
     }
 
-    protected void wlock()
-    {
+    protected void wlock() {
         _psuWriteLock.lock();
     }
 
-    protected void wunlock()
-    {
+    protected void wunlock() {
         _psuWriteLock.unlock();
     }
 
-    protected void rlock()
-    {
+    protected void rlock() {
         _psuReadLock.lock();
     }
 
-    protected void runlock()
-    {
+    protected void runlock() {
         _psuReadLock.unlock();
     }
 
     public static final String hh_psu_add_link = "<link> <pool>|<pool group> # deprecated use 'psu addto link'";
 
     @AffectsSetup
-    public String ac_psu_add_link_$_2(Args args)
-    {
+    public String ac_psu_add_link_$_2(Args args) {
         addLink(args.argv(0), args.argv(1));
         return "Command was successful; please use 'psu addto link' next time.";
     }
@@ -2511,8 +2527,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_addto_link = "<link> <pool>|<pool group>";
 
     @AffectsSetup
-    public String ac_psu_addto_link_$_2(Args args)
-    {
+    public String ac_psu_addto_link_$_2(Args args) {
         addLink(args.argv(0), args.argv(1));
         return "";
     }
@@ -2520,8 +2535,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_addto_pgroup = "<pool group> <pool>";
 
     @AffectsSetup
-    public String ac_psu_addto_pgroup_$_2(Args args)
-    {
+    public String ac_psu_addto_pgroup_$_2(Args args) {
         addToPoolGroup(args.argv(0), args.argv(1));
         return "";
     }
@@ -2529,8 +2543,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_addto_linkGroup = "<link group> <link>";
 
     @AffectsSetup
-    public String ac_psu_addto_linkGroup_$_2(Args args)
-    {
+    public String ac_psu_addto_linkGroup_$_2(Args args) {
         addToLinkGroup(args.argv(0), args.argv(1));
         return "";
     }
@@ -2538,19 +2551,17 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_addto_ugroup = "<unit group> <unit>";
 
     @AffectsSetup
-    public String ac_psu_addto_ugroup_$_2(Args args)
-    {
+    public String ac_psu_addto_ugroup_$_2(Args args) {
         addToUnitGroup(args.argv(0),
-                       args.argv(1),
-                       args.hasOption("net"));
+              args.argv(1),
+              args.hasOption("net"));
         return "";
     }
 
     public static final String hh_psu_clear_im_really_sure = "# don't use this command";
 
     @AffectsSetup
-    public String ac_psu_clear_im_really_sure(Args args)
-    {
+    public String ac_psu_clear_im_really_sure(Args args) {
         clear();
         return "Voila, now everthing is really gone";
     }
@@ -2558,8 +2569,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_create_link = "<link> <unit group> [...]";
 
     @AffectsSetup
-    public String ac_psu_create_link_$_2_99(Args args)
-    {
+    public String ac_psu_create_link_$_2_99(Args args) {
         String name = args.argv(0);
         args.shift();
         createLink(name, args.getArguments());
@@ -2569,8 +2579,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_create_linkGroup = "<group name> [-reset]";
 
     @AffectsSetup
-    public String ac_psu_create_linkGroup_$_1(Args args)
-    {
+    public String ac_psu_create_linkGroup_$_1(Args args) {
         createLinkGroup(args.argv(0), args.hasOption("reset"));
         return "";
     }
@@ -2578,25 +2587,23 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_create_pool = "<pool> [-noping] [-disabled]";
 
     @AffectsSetup
-    public String ac_psu_create_pool_$_1(Args args)
-    {
+    public String ac_psu_create_pool_$_1(Args args) {
         createPool(args.argv(0),
-                   args.hasOption("noping"), args.hasOption("disabled"), args.hasOption("rdonly"));
+              args.hasOption("noping"), args.hasOption("disabled"), args.hasOption("rdonly"));
         return "";
     }
 
     public static final String hh_psu_create_pgroup = "<pool group> [-resilient (deprecated) || -primary]";
 
     @AffectsSetup
-    public String ac_psu_create_pgroup_$_1(Args args)
-    {
+    public String ac_psu_create_pgroup_$_1(Args args) {
         boolean primary = args.hasOption("resilient") || args.hasOption("primary");
         if (args.hasOption("dynamic")) {
             Map<String, String> tags = Splitter.on(',')
-                    .omitEmptyStrings()
-                    .trimResults()
-                    .withKeyValueSeparator('=')
-                    .split(args.getOption("tags", ""));
+                  .omitEmptyStrings()
+                  .trimResults()
+                  .withKeyValueSeparator('=')
+                  .split(args.getOption("tags", ""));
             createDynamicPoolGroup(args.argv(0), primary, tags);
         } else {
             createPoolGroup(args.argv(0), primary);
@@ -2607,94 +2614,87 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_create_unit = "-net|-store|-dcache|-protocol <name>";
 
     public static final String fh_psu_create_unit =
-            "NAME\n" +
-            "\tpsu create unit\n\n" +
-            "SYNOPSIS\n" +
-            "\tpsu create unit UNITTYPE NAME\n\n" +
-            "DESCRIPTION\n" +
-            "\tCreates a new unit of the specified type.  A unit is a predicate\n" +
-            "\tthat is used to select which pools are eligable for a specific user\n" +
-            "\trequest (to read data from dCache or write data).  Units are\n" +
-            "\tcombined in unit-groups; see psu create unitgroup for more details.\n\n" +
-            "\tThe UNITTYPE is one of '-net', '-store', '-dcache' or '-protocol'\n" +
-            "\tto create a network, store, dCache or protocol unit, respectively.\n\n" +
-            "\tThe NAME of the unit describes which particular subset of user\n" +
-            "\trequests will be selected; for example, a network unit with the\n" +
-            "\tname '10.1.0.0/24' will select only those requests from a computer\n" +
-            "\twith an IP address matching that subnet.\n\n" +
-            "\tThe NAME for network units is either an IPv4 address, IPv6 address,\n" +
-            "\tan IPv4 subnet or an IPv6 subnet.  Subnets may be written either\n" +
-            "\tusing CIDR notation or as an IP address and netmask, joined by a\n" +
-            "\t'/'.\n\n" +
-            "\tThe NAME for store units has the form <StorageClass>@<HSM-type>.\n" +
-            "\tBoth <StorageClass> and <HSM-type> may be replaced with a '*' to\n" +
-            "\tmatch any value.  If the HSM-type is 'osm' then <StorageClass> is\n" +
-            "\tconstructed by joining the store-name and store-group with a colon:\n" +
-            "\t<StoreName>:<StoreGroup>@osm.\n\n" +
-            "\tThe NAME for a dcache unit is an arbitrary string.  This matches\n" +
-            "\tagainst the optional cache-class that may be set within the\n" +
-            "\tnamespace in a similar fashion to the storage-class.\n\n" +
-            "\tThe NAME for a protocol unit has the form <protocol>/<version>. If\n" +
-            "\t<version> is '*' then all versions of that protocol match.\n\n" +
-            "OPTIONS\n" +
-            "\tnone\n";
+          "NAME\n" +
+                "\tpsu create unit\n\n" +
+                "SYNOPSIS\n" +
+                "\tpsu create unit UNITTYPE NAME\n\n" +
+                "DESCRIPTION\n" +
+                "\tCreates a new unit of the specified type.  A unit is a predicate\n" +
+                "\tthat is used to select which pools are eligable for a specific user\n" +
+                "\trequest (to read data from dCache or write data).  Units are\n" +
+                "\tcombined in unit-groups; see psu create unitgroup for more details.\n\n" +
+                "\tThe UNITTYPE is one of '-net', '-store', '-dcache' or '-protocol'\n" +
+                "\tto create a network, store, dCache or protocol unit, respectively.\n\n" +
+                "\tThe NAME of the unit describes which particular subset of user\n" +
+                "\trequests will be selected; for example, a network unit with the\n" +
+                "\tname '10.1.0.0/24' will select only those requests from a computer\n" +
+                "\twith an IP address matching that subnet.\n\n" +
+                "\tThe NAME for network units is either an IPv4 address, IPv6 address,\n" +
+                "\tan IPv4 subnet or an IPv6 subnet.  Subnets may be written either\n" +
+                "\tusing CIDR notation or as an IP address and netmask, joined by a\n" +
+                "\t'/'.\n\n" +
+                "\tThe NAME for store units has the form <StorageClass>@<HSM-type>.\n" +
+                "\tBoth <StorageClass> and <HSM-type> may be replaced with a '*' to\n" +
+                "\tmatch any value.  If the HSM-type is 'osm' then <StorageClass> is\n" +
+                "\tconstructed by joining the store-name and store-group with a colon:\n" +
+                "\t<StoreName>:<StoreGroup>@osm.\n\n" +
+                "\tThe NAME for a dcache unit is an arbitrary string.  This matches\n" +
+                "\tagainst the optional cache-class that may be set within the\n" +
+                "\tnamespace in a similar fashion to the storage-class.\n\n" +
+                "\tThe NAME for a protocol unit has the form <protocol>/<version>. If\n" +
+                "\t<version> is '*' then all versions of that protocol match.\n\n" +
+                "OPTIONS\n" +
+                "\tnone\n";
 
     @AffectsSetup
-    public String ac_psu_create_unit_$_1(Args args)
-    {
+    public String ac_psu_create_unit_$_1(Args args) {
         createUnit(args.argv(0),
-                   args.hasOption("net"),
-                   args.hasOption("store"),
-                   args.hasOption("dcache"),
-                   args.hasOption("protocol"));
+              args.hasOption("net"),
+              args.hasOption("store"),
+              args.hasOption("dcache"),
+              args.hasOption("protocol"));
         return "";
     }
 
     public static final String hh_psu_create_ugroup = "<unit group>";
 
     @AffectsSetup
-    public String ac_psu_create_ugroup_$_1(Args args)
-    {
+    public String ac_psu_create_ugroup_$_1(Args args) {
         createUnitGroup(args.argv(0));
         return "";
     }
 
     public static final String hh_psu_dump_setup = "";
 
-    public String ac_psu_dump_setup(Args args)
-    {
+    public String ac_psu_dump_setup(Args args) {
         return dumpSetup();
     }
 
     public static final String hh_psu_ls_link = "[-l] [-a] [ <link> [...]]";
 
-    public String ac_psu_ls_link_$_0_99(Args args)
-    {
+    public String ac_psu_ls_link_$_0_99(Args args) {
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
         return listPoolLinks(more, detail, args.getArguments());
     }
 
     public static final String hh_psu_ls_linkGroup
-            = "[-l] [<link group1> ... <link groupN>]";
+          = "[-l] [<link group1> ... <link groupN>]";
 
-    public String ac_psu_ls_linkGroup_$_0_99(Args args)
-    {
+    public String ac_psu_ls_linkGroup_$_0_99(Args args) {
         return listLinkGroups(args.hasOption("l"),
-                              args.getArguments());
+              args.getArguments());
     }
 
     public static final String hh_psu_ls_netunits = "";
 
-    public String ac_psu_ls_netunits(Args args)
-    {
+    public String ac_psu_ls_netunits(Args args) {
         return listNetUnits();
     }
 
     public static final String hh_psu_ls_pgroup = "[-l] [-a] [<pool group> [...]]";
 
-    public String ac_psu_ls_pgroup_$_0_99(Args args)
-    {
+    public String ac_psu_ls_pgroup_$_0_99(Args args) {
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
         return listPoolGroups(more, detail, args.getArguments());
@@ -2702,18 +2702,16 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_ls_pool = "[-l] [-a] [<pool glob> [...]]";
 
-    public String ac_psu_ls_pool_$_0_99(Args args)
-    {
+    public String ac_psu_ls_pool_$_0_99(Args args) {
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
         return listPool(more, detail, args.getArguments());
     }
 
     public static final String hh_psu_ls_ugroup
-            = "[-l] [-a] [<unit group> [...]]";
+          = "[-l] [-a] [<unit group> [...]]";
 
-    public String ac_psu_ls_ugroup_$_0_99(Args args)
-    {
+    public String ac_psu_ls_ugroup_$_0_99(Args args) {
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
         return listUnitGroups(more, detail, args.getArguments());
@@ -2721,43 +2719,38 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_ls_unit = " [-a] [<unit> [...]]";
 
-    public String ac_psu_ls_unit_$_0_99(Args args)
-    {
+    public String ac_psu_ls_unit_$_0_99(Args args) {
         boolean more = args.hasOption("a");
         boolean detail = args.hasOption("l") || more;
         return listUnits(more, detail, args.getArguments());
     }
 
     public static final String hh_psu_match = "[-linkGroup=<link group>] "
-                                              + "read|cache|write|p2p <store unit>|* <store unit>|* "
-                                              + "<store unit>|* <protocol unit>|* ";
+          + "read|cache|write|p2p <store unit>|* <store unit>|* "
+          + "<store unit>|* <protocol unit>|* ";
 
-    public String ac_psu_match_$_5(Args args) throws Exception
-    {
+    public String ac_psu_match_$_5(Args args) throws Exception {
         return matchLinkGroups(args.getOpt("linkGroup"), args.argv(0),
-                               args.argv(1), args.argv(2), args.argv(3), args.argv(4));
+              args.argv(1), args.argv(2), args.argv(3), args.argv(4));
     }
 
     public static final String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
 
-    public String ac_psu_match2_$_1_99(Args args)
-    {
+    public String ac_psu_match2_$_1_99(Args args) {
         return matchUnits(args.getOpt("net"), args.getArguments());
     }
 
     public static final String hh_psu_netmatch = "<host address>";
 
-    public String ac_psu_netmatch_$_1(Args args) throws UnknownHostException
-    {
+    public String ac_psu_netmatch_$_1(Args args) throws UnknownHostException {
         return netMatch(args.argv(0));
     }
 
     public static final String hh_psu_removefrom_linkGroup
-            = "<link group> <link>";
+          = "<link group> <link>";
 
     @AffectsSetup
-    public String ac_psu_removefrom_linkGroup_$_2(Args args)
-    {
+    public String ac_psu_removefrom_linkGroup_$_2(Args args) {
         removeFromLinkGroup(args.argv(0), args.argv(1));
         return "";
     }
@@ -2765,28 +2758,25 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_removefrom_pgroup = "<pool group> <pool>";
 
     @AffectsSetup
-    public String ac_psu_removefrom_pgroup_$_2(Args args)
-    {
+    public String ac_psu_removefrom_pgroup_$_2(Args args) {
         removeFromPoolGroup(args.argv(0), args.argv(1));
         return "";
     }
 
     public static final String hh_psu_removefrom_ugroup
-            = "<unit group> <unit> -net";
+          = "<unit group> <unit> -net";
 
     @AffectsSetup
-    public String ac_psu_removefrom_ugroup_$_2(Args args)
-    {
+    public String ac_psu_removefrom_ugroup_$_2(Args args) {
         removeFromUnitGroup(args.argv(0), args.argv(1),
-                            args.hasOption("net"));
+              args.hasOption("net"));
         return "";
     }
 
     public static final String hh_psu_remove_link = "<link>";
 
     @AffectsSetup
-    public String ac_psu_remove_link_$_1(Args args)
-    {
+    public String ac_psu_remove_link_$_1(Args args) {
         removeLink(args.argv(0));
         return "";
     }
@@ -2794,8 +2784,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_remove_linkGroup = "<link group>";
 
     @AffectsSetup
-    public String ac_psu_remove_linkGroup_$_1(Args args)
-    {
+    public String ac_psu_remove_linkGroup_$_1(Args args) {
         removeLinkGroup(args.argv(0));
         return "";
     }
@@ -2803,29 +2792,24 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_remove_pool = "<pool>";
 
     @AffectsSetup
-    public String ac_psu_remove_pool_$_1(Args args)
-    {
-	if(Glob.isGlob(args.argv(0)))
-	{
-		Glob glob = new Glob(args.argv(0));
-		List<String> names = getPools(glob.toPattern()).stream().map((Pool pool) -> pool.getName()).collect(Collectors.toList());
-		for(String name : names)
-		{
-			removePool(name);
-		}
-	}
-	else
-	{
-		removePool(args.argv(0));
-	}
-	return "";
+    public String ac_psu_remove_pool_$_1(Args args) {
+        if (Glob.isGlob(args.argv(0))) {
+            Glob glob = new Glob(args.argv(0));
+            List<String> names = getPools(glob.toPattern()).stream()
+                  .map((Pool pool) -> pool.getName()).collect(Collectors.toList());
+            for (String name : names) {
+                removePool(name);
+            }
+        } else {
+            removePool(args.argv(0));
+        }
+        return "";
     }
 
     public static final String hh_psu_remove_pgroup = "<pool group>";
 
     @AffectsSetup
-    public String ac_psu_remove_pgroup_$_1(Args args)
-    {
+    public String ac_psu_remove_pgroup_$_1(Args args) {
         removePoolGroup(args.argv(0));
         return "";
     }
@@ -2833,8 +2817,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_remove_unit = "<unit> [-net]";
 
     @AffectsSetup
-    public String ac_psu_remove_unit_$_1(Args args)
-    {
+    public String ac_psu_remove_unit_$_1(Args args) {
         removeUnit(args.argv(0), args.hasOption("net"));
         return "";
     }
@@ -2842,8 +2825,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_remove_ugroup = "<unit group>";
 
     @AffectsSetup
-    public String ac_psu_remove_ugroup_$_1(Args args)
-    {
+    public String ac_psu_remove_ugroup_$_1(Args args) {
         removeUnitGroup(args.argv(0));
         return "";
     }
@@ -2851,8 +2833,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_set_active = "<pool>|* [-no]";
 
-    public String ac_psu_set_active_$_1(Args args)
-    {
+    public String ac_psu_set_active_$_1(Args args) {
         setPoolActive(args.argv(0), !args.hasOption("no"));
         return "";
     }
@@ -2861,8 +2842,7 @@ public class PoolSelectionUnitV2
 
     @AffectsSetup
     public String ac_psu_set_allpoolsactive_$_1(Args args) throws
-            CommandSyntaxException
-    {
+          CommandSyntaxException {
         try {
             setAllPoolsActive(args.argv(0));
         } catch (IllegalArgumentException e) {
@@ -2874,156 +2854,145 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_set_disabled = "<pool glob>";
 
-    public String ac_psu_set_disabled_$_1(Args args)
-    {
+    public String ac_psu_set_disabled_$_1(Args args) {
         return setPoolDisabled(args.argv(0));
     }
 
     public static final String hh_psu_set_enabled = "<pool glob>";
 
-    public String ac_psu_set_enabled_$_1(Args args)
-    {
+    public String ac_psu_set_enabled_$_1(Args args) {
         return setPoolEnabled(args.argv(0));
     }
 
     public static final String hh_psu_set_link
-            = "<link> [-readpref=<readpref>] [-writepref=<writepref>] "
-              + "[-cachepref=<cachepref>] [-p2ppref=<p2ppref>] "
-              + "[-section=<section>|NONE]";
+          = "<link> [-readpref=<readpref>] [-writepref=<writepref>] "
+          + "[-cachepref=<cachepref>] [-p2ppref=<p2ppref>] "
+          + "[-section=<section>|NONE]";
 
     @AffectsSetup
-    public String ac_psu_set_link_$_1(Args args)
-    {
+    public String ac_psu_set_link_$_1(Args args) {
         setLink(args.argv(0), args.getOption("readpref"),
-                args.getOption("writepref"),
-                args.getOption("cachepref"), args.getOption("p2ppref"),
-                args.getOption("section"));
+              args.getOption("writepref"),
+              args.getOption("cachepref"), args.getOption("p2ppref"),
+              args.getOption("section"));
         return "";
     }
 
 
     public static final String hh_psu_set_linkGroup_custodialAllowed
-            = "<link group> <true|false>";
+          = "<link group> <true|false>";
 
     @AffectsSetup
-    public String ac_psu_set_linkGroup_custodialAllowed_$_2(Args args)
-    {
+    public String ac_psu_set_linkGroup_custodialAllowed_$_2(Args args) {
         setLinkGroup(args.argv(0), args.argv(1), null, null, null,
-                     null);
+              null);
         return "";
     }
 
     public static final String hh_psu_set_linkGroup_nearlineAllowed
-            = "<link group> <true|false>";
+          = "<link group> <true|false>";
 
     @AffectsSetup
-    public String ac_psu_set_linkGroup_nearlineAllowed_$_2(Args args)
-    {
+    public String ac_psu_set_linkGroup_nearlineAllowed_$_2(Args args) {
         setLinkGroup(args.argv(0), null, args.argv(1), null, null,
-                     null);
+              null);
         return "";
     }
 
     public static final String hh_psu_set_linkGroup_onlineAllowed
-            = "<link group> <true|false>";
+          = "<link group> <true|false>";
 
     @AffectsSetup
-    public String ac_psu_set_linkGroup_onlineAllowed_$_2(Args args)
-    {
+    public String ac_psu_set_linkGroup_onlineAllowed_$_2(Args args) {
         setLinkGroup(args.argv(0), null, null, args.argv(1), null,
-                     null);
+              null);
         return "";
     }
 
     public static final String hh_psu_set_linkGroup_outputAllowed
-            = "<link group> <true|false>";
+          = "<link group> <true|false>";
 
     @AffectsSetup
-    public String ac_psu_set_linkGroup_outputAllowed_$_2(Args args)
-    {
+    public String ac_psu_set_linkGroup_outputAllowed_$_2(Args args) {
         setLinkGroup(args.argv(0), null, null, null, args.argv(1),
-                     null);
+              null);
         return "";
     }
 
     public static final String hh_psu_set_linkGroup_replicaAllowed
-            = "<link group> <true|false>";
+          = "<link group> <true|false>";
 
     @AffectsSetup
-    public String ac_psu_set_linkGroup_replicaAllowed_$_2(Args args)
-    {
+    public String ac_psu_set_linkGroup_replicaAllowed_$_2(Args args) {
         setLinkGroup(args.argv(0), null, null, null, null, args.argv(1));
         return "";
     }
 
     public static final String hh_psu_set_pool =
-            "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
+          "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
 
     @AffectsSetup
-    public String ac_psu_set_pool_$_2(Args args)
-    {
+    public String ac_psu_set_pool_$_2(Args args) {
         return setPool(args.argv(0), args.argv(1));
     }
 
     public static final String hh_psu_set_regex = "on | off";
 
     @AffectsSetup
-    public String ac_psu_set_regex_$_1(Args args)
-    {
+    public String ac_psu_set_regex_$_1(Args args) {
         return setRegex(args.argv(0));
     }
 
     @AffectsSetup
     @Command(name = "psu set storage unit",
-            hint = "define resilience requirements for a storage unit",
-            description = "Sets the required number of copies and/or "
-                          + "the partitioning of replicas by pool tags.")
-    class StorageUnitCommand implements Callable<String>
-    {
+          hint = "define resilience requirements for a storage unit",
+          description = "Sets the required number of copies and/or "
+                + "the partitioning of replicas by pool tags.")
+    class StorageUnitCommand implements Callable<String> {
+
         @Option(name = "required",
-                usage = "Set the number of copies required. "
-                        + "Must be an integer >= 1.  A storage "
-                        + "unit has required set to 1 by default.  "
-                        + "Not specifying this attribute removes the "
-                        + "required setting, making the unit non-resilient.")
+              usage = "Set the number of copies required. "
+                    + "Must be an integer >= 1.  A storage "
+                    + "unit has required set to 1 by default.  "
+                    + "Not specifying this attribute removes the "
+                    + "required setting, making the unit non-resilient.")
         Integer required;
 
         @Option(name = "onlyOneCopyPer",
-                separator = ",",
-                usage = "A comma-delimited list of pool tag names used to "
-                        + "partition copies across pools "
-                        + "(interpreted as an 'and'-clause). "
-                        + "A storage unit has an empty list by default.  "
-                        + "Not specifying this attribute restores the default.")
+              separator = ",",
+              usage = "A comma-delimited list of pool tag names used to "
+                    + "partition copies across pools "
+                    + "(interpreted as an 'and'-clause). "
+                    + "A storage unit has an empty list by default.  "
+                    + "Not specifying this attribute restores the default.")
         String[] onlyOneCopyPer;
 
         @Argument(usage = "Name of the storage unit.")
         String name;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             Preconditions.checkArgument(required == null || required >= 1,
-                                        "required must be >= 1, "
-                                                        + "was set to %s.",
-                                        required);
+                  "required must be >= 1, "
+                        + "was set to %s.",
+                  required);
             setStorageUnit(name, required, onlyOneCopyPer);
             return "";
         }
     }
 
     public static final String hh_psu_unlink = "<link> <pool>|<pool group> # deprecated, use 'psu removefrom link'";
+
     @AffectsSetup
-    public String ac_psu_unlink_$_2(Args args) throws CommandException
-    {
+    public String ac_psu_unlink_$_2(Args args) throws CommandException {
         unlink(args.argv(0), args.argv(1));
         return "Command was successful; please use 'psu removefrom link' next time.";
     }
 
     public static final String hh_psu_removefrom_link = "<link> <pool>|<pool group>";
+
     @AffectsSetup
-    public String ac_psu_removefrom_link_$_2(Args args) throws CommandException
-    {
+    public String ac_psu_removefrom_link_$_2(Args args) throws CommandException {
         unlink(args.argv(0), args.argv(1));
         return "";
     }
@@ -3034,8 +3003,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
 
-    public Object ac_psux_ls_link_$_0_1(Args args)
-    {
+    public Object ac_psux_ls_link_$_0_1(Args args) {
         String link = null;
         boolean resolve = args.hasOption("resolve");
         boolean isX = args.hasOption("x");
@@ -3048,49 +3016,43 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psux_ls_pgroup = "[<pool group>]";
 
-    public Object ac_psux_ls_pgroup_$_0_1(Args args)
-    {
+    public Object ac_psux_ls_pgroup_$_0_1(Args args) {
         String groupName = args.argc() == 0 ? null : args.argv(0);
         return listPoolGroupXml(groupName);
     }
 
     public static final String hh_psux_ls_pool = "[<pool>]";
 
-    public Object ac_psux_ls_pool_$_0_1(Args args)
-    {
+    public Object ac_psux_ls_pool_$_0_1(Args args) {
         String poolName = args.argc() == 0 ? null : args.argv(0);
         return listPoolXml(poolName);
     }
 
     public static final String hh_psux_ls_unit = "[<unit>]";
 
-    public Object ac_psux_ls_unit_$_0_1(Args args)
-    {
+    public Object ac_psux_ls_unit_$_0_1(Args args) {
         String unitName = args.argc() == 0 ? null : args.argv(0);
         return listUnitXml(unitName);
     }
 
     public static final String hh_psux_ls_ugroup = "[<unit group>]";
 
-    public Object ac_psux_ls_ugroup_$_0_1(Args args)
-    {
+    public Object ac_psux_ls_ugroup_$_0_1(Args args) {
         String groupName = args.argc() == 0 ? null : args.argv(0);
         return listUnitGroupXml(groupName);
     }
 
     public static final String hh_psux_match = "[-linkGroup=<link group>] "
-                                               + "read|cache|write <store unit>|* <store unit>|* "
-                                               + "<store unit>|* <protocol unit>|* ";
+          + "read|cache|write <store unit>|* <store unit>|* "
+          + "<store unit>|* <protocol unit>|* ";
 
-    public Object ac_psux_match_$_5(Args args)
-    {
+    public Object ac_psux_match_$_5(Args args) {
         return matchLinkGroupsXml(args.getOpt("linkGroup"),
-                                  args.argv(0), args.argv(1), args.argv(2), args.argv(3),
-                                  args.argv(4));
+              args.argv(0), args.argv(1), args.argv(2), args.argv(3),
+              args.argv(4));
     }
 
-    private void writeObject(ObjectOutputStream stream) throws IOException
-    {
+    private void writeObject(ObjectOutputStream stream) throws IOException {
         rlock();
         try {
             stream.defaultWriteObject();

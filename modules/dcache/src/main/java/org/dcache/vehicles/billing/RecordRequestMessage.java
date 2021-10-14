@@ -59,16 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.billing;
 
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-
 import org.dcache.services.billing.db.data.RecordEntry;
 import org.dcache.util.FieldSort;
 
@@ -76,7 +74,8 @@ import org.dcache.util.FieldSort;
  * <p>Base class for messages requesting billing records.</p>
  */
 public abstract class RecordRequestMessage<T extends RecordEntry>
-                extends Message {
+      extends Message {
+
     private static final long serialVersionUID = 8715103130379892004L;
 
     public enum Type {
@@ -84,23 +83,23 @@ public abstract class RecordRequestMessage<T extends RecordEntry>
     }
 
     private final PnfsId pnfsId;
-    private final Date   before;
-    private final Date   after;
-    private final int    offset;
-    private final int    limit;
-    private final Type   type;
+    private final Date before;
+    private final Date after;
+    private final int offset;
+    private final int limit;
+    private final Type type;
     private final String sort;
 
     private List<T> records;
-    private int     total;
+    private int total;
 
     protected RecordRequestMessage(PnfsId pnfsId,
-                                   Date before,
-                                   Date after,
-                                   Type type,
-                                   int limit,
-                                   int offset,
-                                   String sort) {
+          Date before,
+          Date after,
+          Type type,
+          int limit,
+          int offset,
+          String sort) {
         this.pnfsId = pnfsId;
         this.before = before;
         this.after = after;
@@ -111,8 +110,8 @@ public abstract class RecordRequestMessage<T extends RecordEntry>
     }
 
     public void buildDAOQuery(StringBuilder filter,
-                              StringBuilder params,
-                              List<Object> values) {
+          StringBuilder params,
+          List<Object> values) {
         filter.append("pnfsid == pnfsid1 && type == type1");
         params.append("java.lang.String pnfsid1, java.lang.String type1");
         values.add(pnfsId.toString());
@@ -177,8 +176,8 @@ public abstract class RecordRequestMessage<T extends RecordEntry>
         }
 
         return Arrays.stream(sort.split(","))
-                     .map(FieldSort::new)
-                     .collect(Collectors.toList());
+              .map(FieldSort::new)
+              .collect(Collectors.toList());
     }
 
     public abstract Predicate<T> filter();

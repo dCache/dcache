@@ -17,21 +17,27 @@
  */
 package org.dcache.auth.attributes;
 
-import org.junit.Test;
-
-import java.util.EnumSet;
+import static org.dcache.auth.attributes.Activity.DELETE;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.MANAGE;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.auth.attributes.Activity.UPDATE_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.theInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import diskCacheV111.util.FsPath;
+import java.util.EnumSet;
+import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
-import static org.dcache.auth.attributes.Activity.*;
+public class RestrictionsTests {
 
-public class RestrictionsTests
-{
     @Test
-    public void shouldProvideRestrictionThatDeniesEverything()
-    {
+    public void shouldProvideRestrictionThatDeniesEverything() {
         Restriction restriction = Restrictions.denyAll();
 
         FsPath path = FsPath.create("/some/arbitrary/path");
@@ -46,8 +52,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldProvideRestrictionThatDeniesNothing()
-    {
+    public void shouldProvideRestrictionThatDeniesNothing() {
         Restriction restriction = Restrictions.none();
 
         FsPath path = FsPath.create("/some/arbitrary/path");
@@ -62,8 +67,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldProvideRestrictionThatDeniesModifying()
-    {
+    public void shouldProvideRestrictionThatDeniesModifying() {
         Restriction restriction = Restrictions.readOnly();
 
         FsPath path = FsPath.create("/some/arbitrary/path");
@@ -79,16 +83,14 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatNoneAsUnrestricted()
-    {
+    public void shouldConcatNoneAsUnrestricted() {
         Restriction concat = Restrictions.concat();
 
         assertThat(concat, is(equalTo(Restrictions.none())));
     }
 
     @Test
-    public void shouldConcatNoneAsSame()
-    {
+    public void shouldConcatNoneAsSame() {
         Restriction none = Restrictions.none();
 
         Restriction concat = Restrictions.concat(none);
@@ -97,8 +99,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatDenyAllAsSame()
-    {
+    public void shouldConcatDenyAllAsSame() {
         Restriction denyAll = Restrictions.denyAll();
 
         Restriction concat = Restrictions.concat(denyAll);
@@ -107,8 +108,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatReadOnlyAllAsSame()
-    {
+    public void shouldConcatReadOnlyAllAsSame() {
         Restriction readOnly = Restrictions.readOnly();
 
         Restriction concat = Restrictions.concat(readOnly);
@@ -117,8 +117,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatNoneNoneAsNone()
-    {
+    public void shouldConcatNoneNoneAsNone() {
         Restriction none = Restrictions.none();
 
         Restriction concat = Restrictions.concat(none, none);
@@ -127,8 +126,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatNoneReadOnlyAsReadOnly()
-    {
+    public void shouldConcatNoneReadOnlyAsReadOnly() {
         Restriction none = Restrictions.none();
         Restriction readOnly = Restrictions.readOnly();
 
@@ -138,8 +136,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatReadOnlyNoneAsReadOnly()
-    {
+    public void shouldConcatReadOnlyNoneAsReadOnly() {
         Restriction readOnly = Restrictions.readOnly();
         Restriction none = Restrictions.none();
 
@@ -149,8 +146,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatReadOnlyReadOnlyAsReadOnly()
-    {
+    public void shouldConcatReadOnlyReadOnlyAsReadOnly() {
         Restriction readOnly = Restrictions.readOnly();
 
         Restriction concat = Restrictions.concat(readOnly, readOnly);
@@ -159,8 +155,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatReadOnlyDenyAllAsDenyAll()
-    {
+    public void shouldConcatReadOnlyDenyAllAsDenyAll() {
         Restriction readOnly = Restrictions.readOnly();
         Restriction denyAll = Restrictions.denyAll();
 
@@ -170,8 +165,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatDenyAllReadOnlyAsDenyAll()
-    {
+    public void shouldConcatDenyAllReadOnlyAsDenyAll() {
         Restriction denyAll = Restrictions.denyAll();
         Restriction readOnly = Restrictions.readOnly();
 
@@ -181,8 +175,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatNoneDenyAllAsDenyAll()
-    {
+    public void shouldConcatNoneDenyAllAsDenyAll() {
         Restriction none = Restrictions.none();
         Restriction denyAll = Restrictions.denyAll();
 
@@ -192,8 +185,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatDenyAllNoneAsDenyAll()
-    {
+    public void shouldConcatDenyAllNoneAsDenyAll() {
         Restriction denyAll = Restrictions.denyAll();
         Restriction none = Restrictions.none();
 
@@ -203,8 +195,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatDenyAllDenyAllAsDenyAll()
-    {
+    public void shouldConcatDenyAllDenyAllAsDenyAll() {
         Restriction denyAll = Restrictions.denyAll();
 
         Restriction concat = Restrictions.concat(denyAll, denyAll);
@@ -213,8 +204,7 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldConcatTwoNonSubsumptionAsComposite()
-    {
+    public void shouldConcatTwoNonSubsumptionAsComposite() {
         Restriction denyDownload = new DenyActivityRestriction(DOWNLOAD);
         Restriction denyUpload = new DenyActivityRestriction(UPLOAD);
 
@@ -237,8 +227,7 @@ public class RestrictionsTests
 
 
     @Test
-    public void shouldConcatTwoNonSubsumptionAndSubsumptionAsComposite()
-    {
+    public void shouldConcatTwoNonSubsumptionAndSubsumptionAsComposite() {
         Restriction denyDownload = new DenyActivityRestriction(DOWNLOAD);
         Restriction denyUpload = new DenyActivityRestriction(UPLOAD);
         Restriction denyDownloadAndDelete = new DenyActivityRestriction(DOWNLOAD, DELETE);
@@ -261,10 +250,11 @@ public class RestrictionsTests
     }
 
     @Test
-    public void shouldCombinePathAndActivityRestrictions()
-    {
-        Restriction onlyUpload = new DenyActivityRestriction(EnumSet.complementOf(EnumSet.of(UPLOAD)));
-        Restriction pathRestriction = new PrefixRestriction(FsPath.create("/foo/bar/latest-results.dat"));
+    public void shouldCombinePathAndActivityRestrictions() {
+        Restriction onlyUpload = new DenyActivityRestriction(
+              EnumSet.complementOf(EnumSet.of(UPLOAD)));
+        Restriction pathRestriction = new PrefixRestriction(
+              FsPath.create("/foo/bar/latest-results.dat"));
 
         Restriction concat = Restrictions.concat(onlyUpload, pathRestriction);
 
@@ -276,26 +266,38 @@ public class RestrictionsTests
         assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo")), is(equalTo(true)));
         assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo")), is(equalTo(true)));
         assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo")), is(equalTo(true)));
-        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo")),
+              is(equalTo(false)));
 
         assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
         assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
-        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar")), is(equalTo(true)));
-        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar")),
+              is(equalTo(true)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar")),
+              is(equalTo(false)));
 
-        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
-        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(true)));
-        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
-        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")), is(equalTo(false)));
+        assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")),
+              is(equalTo(false)));
+        assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")),
+              is(equalTo(true)));
+        assertThat(
+              concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/bar/latest-results.dat")),
+              is(equalTo(false)));
+        assertThat(
+              concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/bar/latest-results.dat")),
+              is(equalTo(false)));
 
         assertThat(concat.isRestricted(UPLOAD, FsPath.create("/baz")), is(equalTo(true)));
         assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/baz")), is(equalTo(true)));
         assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/baz")), is(equalTo(false)));
-        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/baz")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/baz")),
+              is(equalTo(false)));
 
         assertThat(concat.isRestricted(UPLOAD, FsPath.create("/foo/baz")), is(equalTo(true)));
         assertThat(concat.isRestricted(DOWNLOAD, FsPath.create("/foo/baz")), is(equalTo(true)));
-        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/baz")), is(equalTo(false)));
-        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/baz")), is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(UPLOAD, FsPath.create("/foo/baz")),
+              is(equalTo(false)));
+        assertThat(concat.hasUnrestrictedChild(DOWNLOAD, FsPath.create("/foo/baz")),
+              is(equalTo(false)));
     }
 }

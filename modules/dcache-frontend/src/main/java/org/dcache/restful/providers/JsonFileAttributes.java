@@ -1,39 +1,33 @@
 package org.dcache.restful.providers;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.StorageInfo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.acl.ACL;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * This class is needed to mapping FileAttributes, when they are not defined.
- * The issue is that in the system not all attributes may be defined.
- * Attempts to read undefined attributes
- * will throw IllegalStateException( e.g. guard(CHECKSUM)).
- * So just returning FileAttributes in
- * FileResources.getFileAttributes will throw an error.
- * Therefore, we are forced to keep  JsonFileAttributes to  bypass  "quards"
- * and set manually file attributes.
+ * This class is needed to mapping FileAttributes, when they are not defined. The issue is that in
+ * the system not all attributes may be defined. Attempts to read undefined attributes will throw
+ * IllegalStateException( e.g. guard(CHECKSUM)). So just returning FileAttributes in
+ * FileResources.getFileAttributes will throw an error. Therefore, we are forced to keep
+ * JsonFileAttributes to  bypass  "quards" and set manually file attributes.
  */
 @ApiModel(description = "Specifies the attributes of a given file.")
-public class JsonFileAttributes
-{
+public class JsonFileAttributes {
+
     @ApiModelProperty("NFSv4 Access control list.")
     private ACL _acl;
 
@@ -64,13 +58,13 @@ public class JsonFileAttributes
     @ApiModelProperty("POSIX.1 file mode.")
     private Integer _mode;
 
-    @ApiModelProperty(value="File's access latency.", allowableValues = "ONLINE, NEARLINE")
+    @ApiModelProperty(value = "File's access latency.", allowableValues = "ONLINE, NEARLINE")
     private AccessLatency _accessLatency;
 
-    @ApiModelProperty(value="File's retention policy.", allowableValues = "CUSTODIAL, REPLICA, OUTPUT")
+    @ApiModelProperty(value = "File's retention policy.", allowableValues = "CUSTODIAL, REPLICA, OUTPUT")
     private RetentionPolicy _retentionPolicy;
 
-    @ApiModelProperty(value="File type.", allowableValues = "REG, DIR, LINK, SPECIAL")
+    @ApiModelProperty(value = "File type.", allowableValues = "REG, DIR, LINK, SPECIAL")
     private FileType _fileType;
 
     @ApiModelProperty("File's (disk) locations within dCache.")
@@ -121,7 +115,7 @@ public class JsonFileAttributes
     @ApiModelProperty("dCache file attributes of the file.")
     public FileAttributes attributes;
 
-    @ApiModelProperty(value="Current file availability.", allowableValues = "ONLINE, NEARLINE, ONLINE_AND_NEARLINE")
+    @ApiModelProperty(value = "Current file availability.", allowableValues = "ONLINE, NEARLINE, ONLINE_AND_NEARLINE")
     public FileLocality fileLocality;
 
     @ApiModelProperty("Current QoS for this file.")
@@ -131,7 +125,7 @@ public class JsonFileAttributes
     public String targetQos;
 
     @ApiModelProperty("File's extended attributes.")
-    private Map<String,String> xattr;
+    private Map<String, String> xattr;
 
     @ApiModelProperty("File's labels.")
     private Set<String> labels;
@@ -144,9 +138,13 @@ public class JsonFileAttributes
         this._acl = _acl;
     }
 
-    public Integer getNlink() { return _nlink; }
+    public Integer getNlink() {
+        return _nlink;
+    }
 
-    public void setNlink(Integer nlink) { _nlink = nlink; }
+    public void setNlink(Integer nlink) {
+        _nlink = nlink;
+    }
 
     public Long getSize() {
         return _size;
@@ -204,7 +202,7 @@ public class JsonFileAttributes
         this._owner = _owner;
     }
 
-    public  Integer getGroup() {
+    public Integer getGroup() {
         return _group;
     }
 
@@ -221,7 +219,7 @@ public class JsonFileAttributes
     }
 
     public String getAccessLatency() {
-        return _accessLatency == null?  null : _accessLatency.toString();
+        return _accessLatency == null ? null : _accessLatency.toString();
     }
 
     public void setAccessLatency(AccessLatency _accessLatency) {
@@ -229,7 +227,7 @@ public class JsonFileAttributes
     }
 
     public String getRetentionPolicy() {
-        return _retentionPolicy == null? null : _retentionPolicy.toString();
+        return _retentionPolicy == null ? null : _retentionPolicy.toString();
     }
 
     public void setRetentionPolicy(RetentionPolicy _retentionPolicy) {
@@ -316,13 +314,11 @@ public class JsonFileAttributes
         this.fileName = fileName;
     }
 
-    public String getFileMimeType()
-    {
+    public String getFileMimeType() {
         return fileMimeType;
     }
 
-    public void setFileMimeType(String type)
-    {
+    public void setFileMimeType(String type) {
         fileMimeType = type;
     }
 
@@ -390,17 +386,19 @@ public class JsonFileAttributes
         return targetQos;
     }
 
-    public void setExtendedAttributes(Map<String,String> attributes) {
+    public void setExtendedAttributes(Map<String, String> attributes) {
         xattr = attributes;
     }
 
-    public Map<String,String> getExtendedAttributes() {
+    public Map<String, String> getExtendedAttributes() {
         return xattr;
     }
 
     public void setLabels(Set<String> labelnames) {
-        if (labelnames == null) return;
-        if(labels == null) {
+        if (labelnames == null) {
+            return;
+        }
+        if (labels == null) {
             labels = new HashSet();
         }
         labels.addAll(labelnames);

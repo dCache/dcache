@@ -18,27 +18,23 @@
 package org.dcache.srm.scheduler.strategy;
 
 import java.util.Map;
-
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 
-public class FifoSchedulingStrategyProvider implements SchedulingStrategyProvider
-{
+public class FifoSchedulingStrategyProvider implements SchedulingStrategyProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "fifo";
     }
 
     @Override
-    public void setConfiguration(Map<String, String> configuration)
-    {
+    public void setConfiguration(Map<String, String> configuration) {
     }
 
     @Override
-    public SchedulingStrategy createStrategy(Scheduler scheduler)
-    {
+    public SchedulingStrategy createStrategy(Scheduler scheduler) {
         return new FifoSchedulingStrategy();
     }
 }

@@ -23,46 +23,46 @@ import eu.emi.security.authn.x509.OCSPCheckingMode;
 import io.netty.handler.ssl.SslContext;
 import java.io.File;
 import java.util.Properties;
-
 import org.dcache.ssl.CanlContextFactory;
 
 /**
  * Provides the SSL handler's context using the CanlContextFactory.
  * <p/>
  * This class's FQN should be assigned to the xrootd property:<br/>
- *
- *   xrootd.security.tls.handler-factory.class=org.dcache.xrootd.plugins.tls.CDCCanlTLSHandlerFactory
+ * <p>
+ * xrootd.security.tls.handler-factory.class=org.dcache.xrootd.plugins.tls.CDCCanlTLSHandlerFactory
  */
 public class CDCCanlTLSHandlerFactory extends SSLHandlerFactory {
-  private static final String SERVICE_KEY = "xrootd.security.tls.hostcert.key";
-  private static final String SERVICE_CERT = "xrootd.security.tls.hostcert.cert";
-  private static final String SERVICE_CACERTS = "xrootd.security.tls.ca.path";
-  private static final String NAMESPACE_MODE = "xrootd.security.tls.ca.namespace-mode";
-  private static final String CRL_MODE = "xrootd.security.tls.ca.crl-mode";
-  private static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
 
-  @Override
-  protected SslContext buildContext(Properties properties) throws Exception {
-    File serviceKey = new File(properties.getProperty(SERVICE_KEY));
-    File serviceCert = new File(properties.getProperty(SERVICE_CERT));
-    File serviceCaCerts = new File(properties.getProperty(SERVICE_CACERTS));
-    NamespaceCheckingMode namespaceMode =
-        NamespaceCheckingMode.valueOf(properties.getProperty(NAMESPACE_MODE));
-    CrlCheckingMode crlMode
-        = CrlCheckingMode.valueOf(properties.getProperty(CRL_MODE));
-    OCSPCheckingMode ocspMode
-        = OCSPCheckingMode.valueOf(properties.getProperty(OCSP_MODE));
+    private static final String SERVICE_KEY = "xrootd.security.tls.hostcert.key";
+    private static final String SERVICE_CERT = "xrootd.security.tls.hostcert.cert";
+    private static final String SERVICE_CACERTS = "xrootd.security.tls.ca.path";
+    private static final String NAMESPACE_MODE = "xrootd.security.tls.ca.namespace-mode";
+    private static final String CRL_MODE = "xrootd.security.tls.ca.crl-mode";
+    private static final String OCSP_MODE = "xrootd.security.tls.ca.ocsp-mode";
 
-    return CanlContextFactory.custom()
-        .withCertificatePath(serviceCert.toPath())
-        .withKeyPath(serviceKey.toPath())
-        .withCertificateAuthorityPath(serviceCaCerts.toPath())
-        .withCrlCheckingMode(crlMode)
-        .withOcspCheckingMode(ocspMode)
-        .withNamespaceMode(namespaceMode)
-        .withLazy(false)
-        .startTls(startTls)
-        .buildWithCaching(SslContext.class)
-        .call();
-  }
+    @Override
+    protected SslContext buildContext(Properties properties) throws Exception {
+        File serviceKey = new File(properties.getProperty(SERVICE_KEY));
+        File serviceCert = new File(properties.getProperty(SERVICE_CERT));
+        File serviceCaCerts = new File(properties.getProperty(SERVICE_CACERTS));
+        NamespaceCheckingMode namespaceMode =
+              NamespaceCheckingMode.valueOf(properties.getProperty(NAMESPACE_MODE));
+        CrlCheckingMode crlMode
+              = CrlCheckingMode.valueOf(properties.getProperty(CRL_MODE));
+        OCSPCheckingMode ocspMode
+              = OCSPCheckingMode.valueOf(properties.getProperty(OCSP_MODE));
+
+        return CanlContextFactory.custom()
+              .withCertificatePath(serviceCert.toPath())
+              .withKeyPath(serviceKey.toPath())
+              .withCertificateAuthorityPath(serviceCaCerts.toPath())
+              .withCrlCheckingMode(crlMode)
+              .withOcspCheckingMode(ocspMode)
+              .withNamespaceMode(namespaceMode)
+              .withLazy(false)
+              .startTls(startTls)
+              .buildWithCaching(SslContext.class)
+              .call();
+    }
 }

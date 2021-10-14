@@ -21,7 +21,7 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.util.ChecksumType;
 
 /**
- *   cat ".(checksums)()" returns the available checksum types.
+ * cat ".(checksums)()" returns the available checksum types.
  */
 public class FsInode_CKSTYP extends FsInode {
 

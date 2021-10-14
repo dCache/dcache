@@ -20,13 +20,13 @@ package org.dcache.cells;
 import java.util.Optional;
 
 /**
- * A class that declares itself ZoneAware needs to know in which zone it
- * resides.
+ * A class that declares itself ZoneAware needs to know in which zone it resides.
  */
-public interface ZoneAware
-{
+public interface ZoneAware {
+
     /**
      * Provide the class with the zone within which this cell resides.
+     *
      * @param zone the zone this cell resides.
      */
     void setZone(Optional<String> zone);

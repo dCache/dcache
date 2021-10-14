@@ -20,81 +20,72 @@ package org.dcache.restful.events;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.swagger.annotations.ApiModelProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.dcache.restful.events.spi.EventStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * The collection of known EventStream instances.
  */
-public class EventStreamRepository
-{
-    public class EventStreamMetadata
-    {
+public class EventStreamRepository {
+
+    public class EventStreamMetadata {
+
         @ApiModelProperty("Provide a short (typically single sentence) "
-                + "description of the generated events.")
+              + "description of the generated events.")
         public final String description;
 
-        public EventStreamMetadata(EventStream stream)
-        {
+        public EventStreamMetadata(EventStream stream) {
             description = stream.description();
         }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamRepository.class);
 
-    private final Map<String,EventStream> streams = new HashMap<>();
+    private final Map<String, EventStream> streams = new HashMap<>();
 
     @Required
-    public void setPlugins(List<EventStream> streams)
-    {
+    public void setPlugins(List<EventStream> streams) {
         LOGGER.debug("Received plugins: {}", streams);
 
         for (EventStream stream : streams) {
             EventStream previous = this.streams.put(stream.eventType(), stream);
             if (previous != null) {
                 throw new IllegalArgumentException("Duplicate event type "
-                        + stream.eventType() + ": " + stream.getClass() + " and "
-                        + previous.getClass());
+                      + stream.eventType() + ": " + stream.getClass() + " and "
+                      + previous.getClass());
             }
         }
     }
 
-    public Optional<EventStream> getEventStream(String eventType)
-    {
+    public Optional<EventStream> getEventStream(String eventType) {
         return Optional.ofNullable(streams.get(eventType));
     }
 
-    public List<String> listEventTypes()
-    {
+    public List<String> listEventTypes() {
         return streams.keySet().stream()
-                .sorted()
-                .collect(Collectors.toList());
+              .sorted()
+              .collect(Collectors.toList());
     }
 
-    public Optional<EventStreamMetadata> metadataForEventType(String type)
-    {
+    public Optional<EventStreamMetadata> metadataForEventType(String type) {
         return Optional.ofNullable(streams.get(type))
-                    .map(EventStreamMetadata::new);
+              .map(EventStreamMetadata::new);
     }
 
-    public Optional<ObjectNode> selectorSchemaForEventType(String type)
-    {
+    public Optional<ObjectNode> selectorSchemaForEventType(String type) {
         return Optional.ofNullable(streams.get(type))
-                    .map(EventStream::selectorSchema);
+              .map(EventStream::selectorSchema);
     }
 
-    public Optional<ObjectNode> eventSchemaForEventType(String type)
-    {
+    public Optional<ObjectNode> eventSchemaForEventType(String type) {
         return Optional.ofNullable(streams.get(type))
-                    .map(EventStream::eventSchema);
+              .map(EventStream::eventSchema);
     }
 }

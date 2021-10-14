@@ -18,40 +18,34 @@
  */
 package org.dcache.pinmanager;
 
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellMessageReceiver;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.PnfsId;
-
+import javax.security.auth.Subject;
 import org.dcache.pinmanager.PinManagerListPinsMessage.Info;
 
 /**
- * Process request to get a list of pins.  The subject field is used to
- * decide which pins the user is allowed to remove.
+ * Process request to get a list of pins.  The subject field is used to decide which pins the user
+ * is allowed to remove.
  */
-public class ListRequestProcessor implements CellMessageReceiver
-{
+public class ListRequestProcessor implements CellMessageReceiver {
+
     private final PinDao _dao;
     private final AuthorizationPolicy _pdp;
 
-    public ListRequestProcessor(PinDao dao, AuthorizationPolicy pdp)
-    {
+    public ListRequestProcessor(PinDao dao, AuthorizationPolicy pdp) {
         _dao = dao;
         _pdp = pdp;
     }
 
-    public PinManagerListPinsMessage messageArrived(PinManagerListPinsMessage message)
-    {
+    public PinManagerListPinsMessage messageArrived(PinManagerListPinsMessage message) {
         Subject subject = message.getSubject();
         PnfsId id = message.getPnfsId();
 
         List<Info> info = _dao.get(_dao.where().pnfsId(id)).stream()
-                .map(p -> new Info(p, _pdp.canUnpin(subject, p)))
-                .collect(Collectors.toList());
+              .map(p -> new Info(p, _pdp.canUnpin(subject, p)))
+              .collect(Collectors.toList());
 
         message.setInfo(info);
         return message;

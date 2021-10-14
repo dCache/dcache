@@ -59,27 +59,27 @@ documents or software obtained from this server.
  */
 package diskCacheV111.pools.json;
 
+import diskCacheV111.pools.PoolCostInfo;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import diskCacheV111.pools.PoolCostInfo;
 
 /**
  * <p>Bean analogous to {@link PoolCostInfo}.</p>
  */
 public class PoolCostData implements Serializable {
+
     private static final long serialVersionUID = 4425027701522401625L;
     private String label;
-    private PoolQueueData              mover;
-    private PoolQueueData              store;
-    private PoolQueueData              restore;
-    private PoolQueueData              p2p;
-    private PoolQueueData              p2pClient;
+    private PoolQueueData mover;
+    private PoolQueueData store;
+    private PoolQueueData restore;
+    private PoolQueueData p2p;
+    private PoolQueueData p2pClient;
     private Map<String, PoolQueueData> extendedMoverHash;
-    private String                     defaultQueueName;
-    private PoolSpaceData              space;
-    private double                     moverCostFactor;
+    private String defaultQueueName;
+    private PoolSpaceData space;
+    private double moverCostFactor;
 
     public PoolCostData() {
     }
@@ -95,11 +95,11 @@ public class PoolCostData implements Serializable {
         mover = new PoolQueueData(info.getMoverQueue());
         extendedMoverHash = new HashMap<>();
         info.getExtendedMoverHash()
-            .entrySet()
-            .stream()
-            .forEach((e) -> extendedMoverHash.put(e.getKey(),
-                                                  new PoolQueueData(
-                                                                  e.getValue())));
+              .entrySet()
+              .stream()
+              .forEach((e) -> extendedMoverHash.put(e.getKey(),
+                    new PoolQueueData(
+                          e.getValue())));
         space = new PoolSpaceData(info.getSpaceInfo());
     }
 
@@ -148,7 +148,7 @@ public class PoolCostData implements Serializable {
     }
 
     public void setExtendedMoverHash(
-                    Map<String, PoolQueueData> extendedMoverHash) {
+          Map<String, PoolQueueData> extendedMoverHash) {
         this.extendedMoverHash = extendedMoverHash;
     }
 

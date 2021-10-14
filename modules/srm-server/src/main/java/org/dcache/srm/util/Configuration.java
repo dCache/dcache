@@ -66,19 +66,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.ByteUnit.KiB;
+
 import com.google.common.base.Strings;
-import org.springframework.transaction.PlatformTransactionManager;
-
-import javax.sql.DataSource;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import javax.sql.DataSource;
 import org.dcache.srm.client.Transport;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.util.ByteUnit.KiB;
+import org.springframework.transaction.PlatformTransactionManager;
 
 public class Configuration {
 
@@ -93,82 +90,84 @@ public class Configuration {
 
     protected boolean debug = false;
 
-    protected String urlcopy="../scripts/urlcopy.sh";
+    protected String urlcopy = "../scripts/urlcopy.sh";
 
     protected String gsiftpclinet = "globus-url-copy";
 
     protected boolean gsissl = true;
 
 
-    protected int buffer_size=KiB.toBytes(2);
+    protected int buffer_size = KiB.toBytes(2);
     protected int tcp_buffer_size;
-    private int parallel_streams=10;
+    private int parallel_streams = 10;
 
     protected long authzCacheLifetime = 180;
     protected String proxies_directory = "../proxies";
-    protected int timeout=60*60; //one hour
-    protected String timeout_script="../scripts/timeout.sh";
+    protected int timeout = 60 * 60; //one hour
+    protected String timeout_script = "../scripts/timeout.sh";
     /**
-     * Host to use in the surl (srm url) of the
-     * local file, when giving the info (metadata) to srm clients
+     * Host to use in the surl (srm url) of the local file, when giving the info (metadata) to srm
+     * clients
      */
     private String srmHost;
 
     // scheduler parameters
 
-    protected long getMaxPollPeriod =60000;
+    protected long getMaxPollPeriod = 60000;
     private long getSwitchToAsynchronousModeDelay = 0;
 
-    protected long lsMaxPollPeriod =60000;
+    protected long lsMaxPollPeriod = 60000;
     private long lsSwitchToAsynchronousModeDelay = 0;
 
-    protected long bringOnlineMaxPollPeriod =60000;
+    protected long bringOnlineMaxPollPeriod = 60000;
     private long bringOnlineSwitchToAsynchronousModeDelay = 0;
 
-    protected long putMaxPollPeriod =60000;
+    protected long putMaxPollPeriod = 60000;
     private long putSwitchToAsynchronousModeDelay = 0;
 
-    protected long reserveSpaceMaxPollPeriod =60000;
+    protected long reserveSpaceMaxPollPeriod = 60000;
 
-    protected long copyMaxPollPeriod =60000;
+    protected long copyMaxPollPeriod = 60000;
 
 
-    protected long getLifetime = 24*60*60*1000;
-    protected long bringOnlineLifetime = 24*60*60*1000;
-    protected long putLifetime = 24*60*60*1000;
-    protected long copyLifetime = 24*60*60*1000;
-    protected long reserveSpaceLifetime = 24*60*60*1000;
-    protected long defaultSpaceLifetime = 24*60*60*1000;
+    protected long getLifetime = 24 * 60 * 60 * 1000;
+    protected long bringOnlineLifetime = 24 * 60 * 60 * 1000;
+    protected long putLifetime = 24 * 60 * 60 * 1000;
+    protected long copyLifetime = 24 * 60 * 60 * 1000;
+    protected long reserveSpaceLifetime = 24 * 60 * 60 * 1000;
+    protected long defaultSpaceLifetime = 24 * 60 * 60 * 1000;
 
     protected long maximumClientAssumedBandwidth = 0;
 
-    protected boolean useUrlcopyScript=false;
-    protected boolean useDcapForSrmCopy=false;
-    protected boolean useGsiftpForSrmCopy=true;
-    protected boolean useHttpForSrmCopy=true;
-    protected boolean useFtpForSrmCopy=true;
-    protected boolean recursiveDirectoryCreation=false;
+    protected boolean useUrlcopyScript = false;
+    protected boolean useDcapForSrmCopy = false;
+    protected boolean useGsiftpForSrmCopy = true;
+    protected boolean useHttpForSrmCopy = true;
+    protected boolean useFtpForSrmCopy = true;
+    protected boolean recursiveDirectoryCreation = false;
     protected long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     protected String qosPluginClass = null;
     protected String qosConfigFile = null;
-    private Integer maxQueuedJdbcTasksNum ; //null by default
+    private Integer maxQueuedJdbcTasksNum; //null by default
     private Integer jdbcExecutionThreadNum;//null by default
-    private String credentialsDirectory="/opt/d-cache/credentials";
+    private String credentialsDirectory = "/opt/d-cache/credentials";
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
-    private boolean clientDNSLookup=false;
+    private boolean clientDNSLookup = false;
     protected String clientTransport = Transport.GSI.name();
     private DataSource dataSource;
     private PlatformTransactionManager transactionManager;
 
-    private final Map<String,DatabaseParameters> databaseParameters =
-        new HashMap<>();
+    private final Map<String, DatabaseParameters> databaseParameters =
+          new HashMap<>();
     private String caCertificatePath;
 
-    /** Creates a new instance of Configuration */
+    /**
+     * Creates a new instance of Configuration
+     */
     public Configuration() {
         databaseParameters.put(PUT_PARAMETERS, new DatabaseParameters("Put"));
         databaseParameters.put(GET_PARAMETERS, new DatabaseParameters("Get"));
@@ -178,56 +177,72 @@ public class Configuration {
         databaseParameters.put(RESERVE_PARAMETERS, new DatabaseParameters("Reserve Space"));
     }
 
-    /** Getter for property urlcopy.
+    /**
+     * Getter for property urlcopy.
+     *
      * @return Value of property urlcopy.
      */
     public String getUrlcopy() {
         return urlcopy;
     }
 
-    /** Setter for property urlcopy.
+    /**
+     * Setter for property urlcopy.
+     *
      * @param urlcopy New value of property urlcopy.
      */
     public void setUrlcopy(String urlcopy) {
         this.urlcopy = urlcopy;
     }
 
-    /** Getter for property gsiftpclinet.
+    /**
+     * Getter for property gsiftpclinet.
+     *
      * @return Value of property gsiftpclinet.
      */
     public String getGsiftpclinet() {
         return gsiftpclinet;
     }
 
-    /** Setter for property gsiftpclinet.
+    /**
+     * Setter for property gsiftpclinet.
+     *
      * @param gsiftpclinet New value of property gsiftpclinet.
      */
     public void setGsiftpclinet(String gsiftpclinet) {
         this.gsiftpclinet = gsiftpclinet;
     }
 
-    /** Getter for property gsissl.
+    /**
+     * Getter for property gsissl.
+     *
      * @return Value of property gsissl.
      */
     public boolean isGsissl() {
         return gsissl;
     }
 
-    /** Setter for property gsissl.
+    /**
+     * Setter for property gsissl.
+     *
      * @param gsissl New value of property gsissl.
      */
     public void setGsissl(boolean gsissl) {
         this.gsissl = gsissl;
     }
 
-    /** Getter for property debug.
+    /**
+     * Getter for property debug.
+     *
      * @return Value of property debug.
      */
     public boolean isDebug() {
         return debug;
     }
 
-    /** Setter for property debug.
+    /**
+     * Setter for property debug.
+     *
      * @param debug New value of property debug.
      */
     public void setDebug(boolean debug) {
@@ -235,28 +250,36 @@ public class Configuration {
     }
 
 
-    /** Getter for property buffer_size.
+    /**
+     * Getter for property buffer_size.
+     *
      * @return Value of property buffer_size.
      */
     public int getBuffer_size() {
         return buffer_size;
     }
 
-    /** Setter for property buffer_size.
+    /**
+     * Setter for property buffer_size.
+     *
      * @param buffer_size New value of property buffer_size.
      */
     public void setBuffer_size(int buffer_size) {
         this.buffer_size = buffer_size;
     }
 
-    /** Getter for property tcp_buffer_size.
+    /**
+     * Getter for property tcp_buffer_size.
+     *
      * @return Value of property tcp_buffer_size.
      */
     public int getTcp_buffer_size() {
         return tcp_buffer_size;
     }
 
-    /** Setter for property tcp_buffer_size.
+    /**
+     * Setter for property tcp_buffer_size.
+     *
      * @param tcp_buffer_size New value of property tcp_buffer_size.
      */
     public void setTcp_buffer_size(int tcp_buffer_size) {
@@ -265,73 +288,88 @@ public class Configuration {
 
     /**
      * Getter for property authzCacheLifetime.
+     *
      * @return Value of property authzCacheLifetime.
      */
     public long getAuthzCacheLifetime() {
         return authzCacheLifetime;
     }
 
-    /** Setter for property authzCacheLifetime.
+    /**
+     * Setter for property authzCacheLifetime.
+     *
      * @param authzCacheLifetime New value of property authzCacheLifetime.
      */
     public void setAuthzCacheLifetime(long authzCacheLifetime) {
         this.authzCacheLifetime = authzCacheLifetime;
     }
 
-    /** Getter for property proxies_directory.
+    /**
+     * Getter for property proxies_directory.
+     *
      * @return Value of property proxies_directory.
      */
     public String getProxies_directory() {
         return proxies_directory;
     }
 
-    /** Setter for property proxies_directory.
+    /**
+     * Setter for property proxies_directory.
+     *
      * @param proxies_directory New value of property proxies_directory.
      */
     public void setProxies_directory(String proxies_directory) {
         this.proxies_directory = proxies_directory;
     }
 
-    /** Getter for property timeout.
+    /**
+     * Getter for property timeout.
+     *
      * @return Value of property timeout.
      */
     public int getTimeout() {
         return timeout;
     }
 
-    /** Setter for property timeout.
+    /**
+     * Setter for property timeout.
+     *
      * @param timeout New value of property timeout.
      */
     public void setTimeout(int timeout) {
         this.timeout = timeout;
     }
 
-    /** Getter for property timeout_script.
+    /**
+     * Getter for property timeout_script.
+     *
      * @return Value of property timeout_script.
      */
     public String getTimeout_script() {
         return timeout_script;
     }
 
-    /** Setter for property timeout_script.
+    /**
+     * Setter for property timeout_script.
+     *
      * @param timeout_script New value of property timeout_script.
      */
     public void setTimeout_script(String timeout_script) {
         this.timeout_script = timeout_script;
     }
 
-    private String timeToString(long value)
-    {
+    private String timeToString(long value) {
         return (value == Long.MAX_VALUE) ? INFINITY : String.valueOf(value);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
-        sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime );
-        sb.append("\n\t\"bringOnline\"  request lifetime: ").append(this.bringOnlineLifetime );
-        sb.append("\n\t\"put\"  request lifetime: ").append(this.putLifetime );
+        sb.append("\t\"defaultSpaceLifetime\"  request lifetime: ")
+              .append(this.defaultSpaceLifetime);
+        sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime);
+        sb.append("\n\t\"bringOnline\"  request lifetime: ").append(this.bringOnlineLifetime);
+        sb.append("\n\t\"put\"  request lifetime: ").append(this.putLifetime);
         sb.append("\n\t\"copy\" request lifetime: ").append(this.copyLifetime);
         sb.append("\n\tdebug=").append(this.debug);
         sb.append("\n\tgsissl=").append(this.gsissl);
@@ -352,25 +390,30 @@ public class Configuration {
         sb.append("\n\t\t *** GetRequests Parameters **");
         sb.append("\n\t\t request Lifetime in milliseconds =").append(this.getLifetime);
         sb.append("\n\t\t max poll period in milliseconds =").append(this.getMaxPollPeriod);
-        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.getSwitchToAsynchronousModeDelay));
+        sb.append("\n\t\t switch to async mode delay=")
+              .append(timeToString(this.getSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** BringOnlineRequests Parameters **");
         sb.append("\n\t\t request Lifetime in milliseconds =").append(this.bringOnlineLifetime);
         sb.append("\n\t\t max poll period in milliseconds =").append(this.bringOnlineMaxPollPeriod);
-        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.bringOnlineSwitchToAsynchronousModeDelay));
+        sb.append("\n\t\t switch to async mode delay=")
+              .append(timeToString(this.bringOnlineSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** LsRequests Parameters **");
         sb.append("\n\t\t max poll period in milliseconds =").append(this.lsMaxPollPeriod);
-        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.lsSwitchToAsynchronousModeDelay));
+        sb.append("\n\t\t switch to async mode delay=")
+              .append(timeToString(this.lsSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** PutRequests Parameters **");
         sb.append("\n\t\t request Lifetime in milliseconds =").append(this.putLifetime);
         sb.append("\n\t\t max poll period in milliseconds =").append(this.putMaxPollPeriod);
-        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.putSwitchToAsynchronousModeDelay));
+        sb.append("\n\t\t switch to async mode delay=")
+              .append(timeToString(this.putSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** ReserveSpaceRequests Parameters **");
         sb.append("\n\t\t request Lifetime in milliseconds =").append(this.reserveSpaceLifetime);
-        sb.append("\n\t\t max poll period in milliseconds =").append(this.reserveSpaceMaxPollPeriod);
+        sb.append("\n\t\t max poll period in milliseconds =")
+              .append(this.reserveSpaceMaxPollPeriod);
 
         sb.append("\n\t\t *** CopyRequests Parameters **");
         sb.append("\n\t\t request Lifetime in milliseconds =").append(this.copyLifetime);
@@ -382,18 +425,22 @@ public class Configuration {
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
-        sb.append( "\n\tclientTransport=").append(clientTransport);
+        sb.append("\n\tclientTransport=").append(clientTransport);
         return sb.toString();
     }
 
-    /** Getter for property parallel_streams.
+    /**
+     * Getter for property parallel_streams.
+     *
      * @return Value of property parallel_streams.
      */
     public int getParallel_streams() {
         return parallel_streams;
     }
 
-    /** Setter for property parallel_streams.
+    /**
+     * Setter for property parallel_streams.
+     *
      * @param parallel_streams New value of property parallel_streams.
      */
     public void setParallel_streams(int parallel_streams) {
@@ -401,145 +448,163 @@ public class Configuration {
     }
 
 
-    /** Getter for property getLifetime.
-     * @return Value of property getLifetime.
+    /**
+     * Getter for property getLifetime.
      *
+     * @return Value of property getLifetime.
      */
     public long getGetLifetime() {
         return getLifetime;
     }
 
-    /** Setter for property getLifetime.
-     * @param getLifetime New value of property getLifetime.
+    /**
+     * Setter for property getLifetime.
      *
+     * @param getLifetime New value of property getLifetime.
      */
     public void setGetLifetime(long getLifetime) {
         this.getLifetime = getLifetime;
     }
 
-    /** Getter for property putLifetime.
-     * @return Value of property putLifetime.
+    /**
+     * Getter for property putLifetime.
      *
+     * @return Value of property putLifetime.
      */
     public long getPutLifetime() {
         return putLifetime;
     }
 
-    /** Setter for property putLifetime.
-     * @param putLifetime New value of property putLifetime.
+    /**
+     * Setter for property putLifetime.
      *
+     * @param putLifetime New value of property putLifetime.
      */
     public void setPutLifetime(long putLifetime) {
         this.putLifetime = putLifetime;
     }
 
-    /** Getter for property copyLifetime.
-     * @return Value of property copyLifetime.
+    /**
+     * Getter for property copyLifetime.
      *
+     * @return Value of property copyLifetime.
      */
     public long getCopyLifetime() {
         return copyLifetime;
     }
 
-    /** Setter for property copyLifetime.
-     * @param copyLifetime New value of property copyLifetime.
+    /**
+     * Setter for property copyLifetime.
      *
+     * @param copyLifetime New value of property copyLifetime.
      */
     public void setCopyLifetime(long copyLifetime) {
         this.copyLifetime = copyLifetime;
     }
 
-    /** Getter for property useUrlcopyScript.
-     * @return Value of property useUrlcopyScript.
+    /**
+     * Getter for property useUrlcopyScript.
      *
+     * @return Value of property useUrlcopyScript.
      */
     public boolean isUseUrlcopyScript() {
         return useUrlcopyScript;
     }
 
-    /** Setter for property useUrlcopyScript.
-     * @param useUrlcopyScript New value of property useUrlcopyScript.
+    /**
+     * Setter for property useUrlcopyScript.
      *
+     * @param useUrlcopyScript New value of property useUrlcopyScript.
      */
     public void setUseUrlcopyScript(boolean useUrlcopyScript) {
         this.useUrlcopyScript = useUrlcopyScript;
     }
 
-    /** Getter for property useDcapForSrmCopy.
-     * @return Value of property useDcapForSrmCopy.
+    /**
+     * Getter for property useDcapForSrmCopy.
      *
+     * @return Value of property useDcapForSrmCopy.
      */
     public boolean isUseDcapForSrmCopy() {
         return useDcapForSrmCopy;
     }
 
-    /** Setter for property useDcapForSrmCopy.
-     * @param useDcapForSrmCopy New value of property useDcapForSrmCopy.
+    /**
+     * Setter for property useDcapForSrmCopy.
      *
+     * @param useDcapForSrmCopy New value of property useDcapForSrmCopy.
      */
     public void setUseDcapForSrmCopy(boolean useDcapForSrmCopy) {
         this.useDcapForSrmCopy = useDcapForSrmCopy;
     }
 
-    /** Getter for property useGsiftpForSrmCopy.
-     * @return Value of property useGsiftpForSrmCopy.
+    /**
+     * Getter for property useGsiftpForSrmCopy.
      *
+     * @return Value of property useGsiftpForSrmCopy.
      */
     public boolean isUseGsiftpForSrmCopy() {
         return useGsiftpForSrmCopy;
     }
 
-    /** Setter for property useGsiftpForSrmCopy.
-     * @param useGsiftpForSrmCopy New value of property useGsiftpForSrmCopy.
+    /**
+     * Setter for property useGsiftpForSrmCopy.
      *
+     * @param useGsiftpForSrmCopy New value of property useGsiftpForSrmCopy.
      */
     public void setUseGsiftpForSrmCopy(boolean useGsiftpForSrmCopy) {
         this.useGsiftpForSrmCopy = useGsiftpForSrmCopy;
     }
 
-    /** Getter for property useHttpForSrmCopy.
-     * @return Value of property useHttpForSrmCopy.
+    /**
+     * Getter for property useHttpForSrmCopy.
      *
+     * @return Value of property useHttpForSrmCopy.
      */
     public boolean isUseHttpForSrmCopy() {
         return useHttpForSrmCopy;
     }
 
-    /** Setter for property useHttpForSrmCopy.
-     * @param useHttpForSrmCopy New value of property useHttpForSrmCopy.
+    /**
+     * Setter for property useHttpForSrmCopy.
      *
+     * @param useHttpForSrmCopy New value of property useHttpForSrmCopy.
      */
     public void setUseHttpForSrmCopy(boolean useHttpForSrmCopy) {
         this.useHttpForSrmCopy = useHttpForSrmCopy;
     }
 
-    /** Getter for property useFtpForSrmCopy.
-     * @return Value of property useFtpForSrmCopy.
+    /**
+     * Getter for property useFtpForSrmCopy.
      *
+     * @return Value of property useFtpForSrmCopy.
      */
     public boolean isUseFtpForSrmCopy() {
         return useFtpForSrmCopy;
     }
 
-    /** Setter for property useFtpForSrmCopy.
-     * @param useFtpForSrmCopy New value of property useFtpForSrmCopy.
+    /**
+     * Setter for property useFtpForSrmCopy.
      *
+     * @param useFtpForSrmCopy New value of property useFtpForSrmCopy.
      */
     public void setUseFtpForSrmCopy(boolean useFtpForSrmCopy) {
         this.useFtpForSrmCopy = useFtpForSrmCopy;
     }
 
-    /** Getter for property recursiveDirectoryCreation.
-     * @return Value of property recursiveDirectoryCreation.
+    /**
+     * Getter for property recursiveDirectoryCreation.
      *
+     * @return Value of property recursiveDirectoryCreation.
      */
     public boolean isRecursiveDirectoryCreation() {
         return recursiveDirectoryCreation;
     }
 
-    /** Setter for property recursiveDirectoryCreation.
-     * @param recursiveDirectoryCreation New value of property recursiveDirectoryCreation.
+    /**
+     * Setter for property recursiveDirectoryCreation.
      *
+     * @param recursiveDirectoryCreation New value of property recursiveDirectoryCreation.
      */
     public void setRecursiveDirectoryCreation(boolean recursiveDirectoryCreation) {
         this.recursiveDirectoryCreation = recursiveDirectoryCreation;
@@ -549,45 +614,42 @@ public class Configuration {
         this.dataSource = ds;
     }
 
-    public DataSource getDataSource()
-    {
+    public DataSource getDataSource() {
         return dataSource;
     }
 
-    public void setTransactionManager(PlatformTransactionManager transactionManager)
-    {
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }
 
-    public PlatformTransactionManager getTransactionManager()
-    {
+    public PlatformTransactionManager getTransactionManager() {
         return transactionManager;
     }
 
     /**
-     * Set the maximum allowed client-assumed bandwidth.  If clients make
-     * requests with too short a lifetime then they are assuming a bandwidth in
-     * excess of this maximum.  Such requests will be given longer, more
-     * realistic lifetimes.
+     * Set the maximum allowed client-assumed bandwidth.  If clients make requests with too short a
+     * lifetime then they are assuming a bandwidth in excess of this maximum.  Such requests will be
+     * given longer, more realistic lifetimes.
+     *
      * @value the bandwidth in KiB/s or zero to disable this feature.
      */
-    public void setMaximumClientAssumedBandwidth(long value)
-    {
+    public void setMaximumClientAssumedBandwidth(long value) {
         checkArgument(value >= 0, "Bandwidth must be 0 or a positive value");
         maximumClientAssumedBandwidth = value;
     }
 
     /**
      * Get the maximum allowed client-assumed bandwidth.
+     *
      * @return the bandwidth in KiB/s or zero if this feature is disable.
      */
-    public long getMaximumClientAssumedBandwidth()
-    {
+    public long getMaximumClientAssumedBandwidth() {
         return maximumClientAssumedBandwidth;
     }
 
     /**
      * Getter for property getMaxPollPeriod.
+     *
      * @return Value of property getMaxPollPeriod.
      */
     public long getGetMaxPollPeriod() {
@@ -596,6 +658,7 @@ public class Configuration {
 
     /**
      * Setter for property getMaxPollPeriod.
+     *
      * @param getMaxPollPeriod New value of property getMaxPollPeriod.
      */
     public void setGetMaxPollPeriod(long getMaxPollPeriod) {
@@ -604,6 +667,7 @@ public class Configuration {
 
     /**
      * Getter for property putMaxPollPeriod.
+     *
      * @return Value of property putMaxPollPeriod.
      */
     public long getPutMaxPollPeriod() {
@@ -612,6 +676,7 @@ public class Configuration {
 
     /**
      * Setter for property putMaxPollPeriod.
+     *
      * @param putMaxPollPeriod New value of property putMaxPollPeriod.
      */
     public void setPutMaxPollPeriod(long putMaxPollPeriod) {
@@ -620,6 +685,7 @@ public class Configuration {
 
     /**
      * Getter for property copyMaxPollPeriod.
+     *
      * @return Value of property copyMaxPollPeriod.
      */
     public long getCopyMaxPollPeriod() {
@@ -628,6 +694,7 @@ public class Configuration {
 
     /**
      * Setter for property copyMaxPollPeriod.
+     *
      * @param copyMaxPollPeriod New value of property copyMaxPollPeriod.
      */
     public void setCopyMaxPollPeriod(long copyMaxPollPeriod) {
@@ -636,6 +703,7 @@ public class Configuration {
 
     /**
      * Getter for property reserveSpaceMaxPollPeriod.
+     *
      * @return Value of property reserveSpaceMaxPollPeriod.
      */
     public long getReserveSpaceMaxPollPeriod() {
@@ -644,6 +712,7 @@ public class Configuration {
 
     /**
      * Setter for property reserveSpaceMaxPollPeriod.
+     *
      * @param reserveSpaceMaxPollPeriod New value of property reserveSpaceMaxPollPeriod.
      */
     public void setReserveSpaceMaxPollPeriod(long reserveSpaceMaxPollPeriod) {
@@ -652,6 +721,7 @@ public class Configuration {
 
     /**
      * Getter for property storage_info_update_period.
+     *
      * @return Value of property storage_info_update_period.
      */
     public long getStorage_info_update_period() {
@@ -660,6 +730,7 @@ public class Configuration {
 
     /**
      * Setter for property storage_info_update_period.
+     *
      * @param storage_info_update_period New value of property storage_info_update_period.
      */
     public void setStorage_info_update_period(long storage_info_update_period) {
@@ -670,14 +741,17 @@ public class Configuration {
     public String getQosPluginClass() {
         return qosPluginClass;
     }
+
     public void setQosPluginClass(String qosPluginClass) {
         this.qosPluginClass = Strings.emptyToNull(qosPluginClass);
     }
+
     public String getQosConfigFile() {
-    	return qosConfigFile;
+        return qosConfigFile;
     }
+
     public void setQosConfigFile(String qosConfigFile) {
-    	this.qosConfigFile = Strings.emptyToNull(qosConfigFile);
+        this.qosConfigFile = Strings.emptyToNull(qosConfigFile);
     }
 
     public long getDefaultSpaceLifetime() {
@@ -696,7 +770,7 @@ public class Configuration {
         this.jdbcExecutionThreadNum = jdbcExecutionThreadNum;
     }
 
-     public Integer getMaxQueuedJdbcTasksNum() {
+    public Integer getMaxQueuedJdbcTasksNum() {
         return maxQueuedJdbcTasksNum;
     }
 
@@ -721,67 +795,59 @@ public class Configuration {
     }
 
     public int getSizeOfSingleRemoveBatch() {
-	    return sizeOfSingleRemoveBatch;
+        return sizeOfSingleRemoveBatch;
     }
 
     public void setSizeOfSingleRemoveBatch(int size) {
-	    sizeOfSingleRemoveBatch=size;
+        sizeOfSingleRemoveBatch = size;
     }
 
-    public long getGetSwitchToAsynchronousModeDelay()
-    {
+    public long getGetSwitchToAsynchronousModeDelay() {
         return getSwitchToAsynchronousModeDelay;
     }
 
-    public void setGetSwitchToAsynchronousModeDelay(long time)
-    {
+    public void setGetSwitchToAsynchronousModeDelay(long time) {
         getSwitchToAsynchronousModeDelay = time;
     }
 
-    public long getPutSwitchToAsynchronousModeDelay()
-    {
+    public long getPutSwitchToAsynchronousModeDelay() {
         return putSwitchToAsynchronousModeDelay;
     }
 
-    public void setPutSwitchToAsynchronousModeDelay(long time)
-    {
+    public void setPutSwitchToAsynchronousModeDelay(long time) {
         putSwitchToAsynchronousModeDelay = time;
     }
 
-    public long getLsSwitchToAsynchronousModeDelay()
-    {
+    public long getLsSwitchToAsynchronousModeDelay() {
         return lsSwitchToAsynchronousModeDelay;
     }
 
-    public void setLsSwitchToAsynchronousModeDelay(long time)
-    {
+    public void setLsSwitchToAsynchronousModeDelay(long time) {
         lsSwitchToAsynchronousModeDelay = time;
     }
 
-    public long getBringOnlineSwitchToAsynchronousModeDelay()
-    {
+    public long getBringOnlineSwitchToAsynchronousModeDelay() {
         return bringOnlineSwitchToAsynchronousModeDelay;
     }
 
-    public void setBringOnlineSwitchToAsynchronousModeDelay(long time)
-    {
+    public void setBringOnlineSwitchToAsynchronousModeDelay(long time) {
         bringOnlineSwitchToAsynchronousModeDelay = time;
     }
 
     public int getMaxNumberOfLsLevels() {
-	    return maxNumberOfLsLevels;
+        return maxNumberOfLsLevels;
     }
 
     public void setMaxNumberOfLsLevels(int max_ls_levels) {
-	    maxNumberOfLsLevels=max_ls_levels;
+        maxNumberOfLsLevels = max_ls_levels;
     }
 
     public int getMaxNumberOfLsEntries() {
-	    return maxNumberOfLsEntries;
+        return maxNumberOfLsEntries;
     }
 
     public void setMaxNumberOfLsEntries(int max_ls_entries) {
-	   maxNumberOfLsEntries=max_ls_entries;
+        maxNumberOfLsEntries = max_ls_entries;
     }
 
     public boolean isOverwrite_by_default() {
@@ -870,18 +936,16 @@ public class Configuration {
         return databaseParameters.get(name);
     }
 
-    public void setCaCertificatePath(String caCertificatePath)
-    {
+    public void setCaCertificatePath(String caCertificatePath) {
         this.caCertificatePath = caCertificatePath;
     }
 
-    public String getCaCertificatePath()
-    {
+    public String getCaCertificatePath() {
         return caCertificatePath;
     }
 
-    public class DatabaseParameters
-    {
+    public class DatabaseParameters {
+
         private final String name;
         private boolean databaseEnabled = true;
         private boolean requestHistoryDatabaseEnabled = false;
@@ -890,8 +954,7 @@ public class Configuration {
         private long expiredRequestRemovalPeriod = 3600;
         private boolean cleanPendingRequestsOnRestart = false;
 
-        public DatabaseParameters(String name)
-        {
+        public DatabaseParameters(String name) {
             this.name = name;
         }
 
@@ -951,18 +1014,18 @@ public class Configuration {
             sb.append("\n\t\tstoreCompletedRequestsOnly=").append(storeCompletedRequestsOnly);
             sb.append("\n\t\trequestHistoryDatabaseEnabled=").append(requestHistoryDatabaseEnabled);
             sb.append("\n\t\tcleanPendingRequestsOnRestart=").append(cleanPendingRequestsOnRestart);
-            sb.append("\n\t\tkeepRequestHistoryPeriod=").append(keepRequestHistoryPeriod).append(" days");
-            sb.append("\n\t\texpiredRequestRemovalPeriod=").append(expiredRequestRemovalPeriod).append(" seconds");
+            sb.append("\n\t\tkeepRequestHistoryPeriod=").append(keepRequestHistoryPeriod)
+                  .append(" days");
+            sb.append("\n\t\texpiredRequestRemovalPeriod=").append(expiredRequestRemovalPeriod)
+                  .append(" seconds");
             return sb.toString();
         }
 
-        public DataSource getDataSource()
-        {
+        public DataSource getDataSource() {
             return Configuration.this.getDataSource();
         }
 
-        public PlatformTransactionManager getTransactionManager()
-        {
+        public PlatformTransactionManager getTransactionManager() {
             return Configuration.this.getTransactionManager();
         }
     }

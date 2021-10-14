@@ -65,22 +65,24 @@ import java.io.Serializable;
  * <p>A frontend wrapper for the pool-side object</p>
  */
 public class MoverData
-                implements Serializable {
-    private static final long serialVersionUID = 8037942643623452040L;
-    private String            pnfsId;
-    private String            queue;
-    private String            mode;
-    private String            door;
-    private String            storageClass;
-    private String            state;
-    private Long              bytes;
-    private Long              timeInMilliseconds;
-    private Long              startTime;
-    private Long              submitTime;
-    private Long              lastModified;
-    private Integer           moverId;
+      implements Serializable {
 
-    public MoverData() {}
+    private static final long serialVersionUID = 8037942643623452040L;
+    private String pnfsId;
+    private String queue;
+    private String mode;
+    private String door;
+    private String storageClass;
+    private String state;
+    private Long bytes;
+    private Long timeInMilliseconds;
+    private Long startTime;
+    private Long submitTime;
+    private Long lastModified;
+    private Integer moverId;
+
+    public MoverData() {
+    }
 
     public MoverData(org.dcache.pool.movers.json.MoverData moverData) {
         pnfsId = moverData.getPnfsId();

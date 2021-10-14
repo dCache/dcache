@@ -1,25 +1,9 @@
 package diskCacheV111.poolManager;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import com.google.common.escape.Escaper;
 import com.google.common.html.HtmlEscapers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HTMLWriter;
 import diskCacheV111.util.PnfsId;
@@ -28,7 +12,6 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
@@ -43,7 +26,19 @@ import dmg.util.AgingHash;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
-
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.Partition;
@@ -52,14 +47,14 @@ import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpPoolMgrEngineV3 implements
-        HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender,
-                CellMessageReceiver, DomainContextAware,
-        CellCommandListener, CellLifeCycleAware
-{
+      HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender,
+      CellMessageReceiver, DomainContextAware,
+      CellCommandListener, CellLifeCycleAware {
+
     private static final String PARAMETER_DCACHE = "dcache";
     private static final String PARAMETER_GREP = "grep";
     private static final String PARAMETER_LINKGROUP = "linkGroup";
@@ -69,7 +64,7 @@ public class HttpPoolMgrEngineV3 implements
     private static final String PARAMETER_STORE = "store";
     private static final String PARAMETER_TYPE = "type";
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
+          LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
 
     private static final long TIMEOUT = 20000;
 
@@ -87,35 +82,32 @@ public class HttpPoolMgrEngineV3 implements
 
     private RestoreRequestsReceiver _receiver;
 
-    private final AgingHash   _pnfsPathMap     = new AgingHash(500);
+    private final AgingHash _pnfsPathMap = new AgingHash(500);
     private final AgingHash _fileAttributesMap = new AgingHash(500);
     private static final ThreadLocal<SimpleDateFormat> _formatter =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("MM.dd HH:mm:ss");
-                }
-            };
+          new ThreadLocal<SimpleDateFormat>() {
+              @Override
+              protected SimpleDateFormat initialValue() {
+                  return new SimpleDateFormat("MM.dd HH:mm:ss");
+              }
+          };
     private volatile List<Object[]> _lazyRestoreList =
-        new ArrayList<>();
-    private long        _collectorUpdate = 60000L;
-    private long        _errorCounter;
-    private long        _requestCounter;
-    private final Object      _updateLock      = new Object();
-    private boolean     _addStorageInfo;
-    private boolean     _addHsmInfo;
-    private String[]    _siDetails;
-    private String      _cssFile         = "/poolInfo/css/default.css";
+          new ArrayList<>();
+    private long _collectorUpdate = 60000L;
+    private long _errorCounter;
+    private long _requestCounter;
+    private final Object _updateLock = new Object();
+    private boolean _addStorageInfo;
+    private boolean _addHsmInfo;
+    private String[] _siDetails;
+    private String _cssFile = "/poolInfo/css/default.css";
     private Map<String, Object> _context;
 
     private CellEndpoint _endpoint;
 
     private final Escaper htmlEscaper = HtmlEscapers.htmlEscaper();
 
-    public HttpPoolMgrEngineV3(String[] argsString)
-    {
+    public HttpPoolMgrEngineV3(String[] argsString) {
         _receiver = new RestoreRequestsReceiver();
         Args arguments = new Args(argsString);
         _poolManagerAddress = arguments.getOption("poolmanager");
@@ -146,8 +138,7 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         _endpoint = endpoint;
         _poolManager = new CellStub(endpoint, new CellPath(_poolManagerAddress), TIMEOUT, SECONDS);
         _pnfsManager = new CellStub(endpoint, new CellPath(_pnfsManagerAddress), TIMEOUT, SECONDS);
@@ -157,22 +148,19 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public void setDomainContext(Map<String, Object> context)
-    {
+    public void setDomainContext(Map<String, Object> context) {
         _context = context;
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         _pm.start();
         _pm.afterStart();
         _restoreCollector.start();
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         _restoreCollector.interrupt();
         try {
             _restoreCollector.join();
@@ -186,8 +174,7 @@ public class HttpPoolMgrEngineV3 implements
         _receiver.messageArrived(message);
     }
 
-    private void decodeCss(String cssDetails)
-    {
+    private void decodeCss(String cssDetails) {
         cssDetails = cssDetails.trim();
 
         if ((!cssDetails.isEmpty()) && !cssDetails.equals("default")) {
@@ -196,16 +183,14 @@ public class HttpPoolMgrEngineV3 implements
 
     }
 
-    private void decodeDetails(String details)
-    {
+    private void decodeDetails(String details) {
         if (details.startsWith("details=") && (details.length() >= 9)) {
             _siDetails = details.substring(8).split(",");
         }
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         LOGGER.info("Restore Collector Thread started");
         try {
             while (!Thread.interrupted()) {
@@ -214,7 +199,7 @@ public class HttpPoolMgrEngineV3 implements
                         _updateLock.wait(_collectorUpdate);
                     }
                     runRestoreCollector();
-                } catch(NoRouteToCellException e) {
+                } catch (NoRouteToCellException e) {
                     LOGGER.warn("Restore Collector got : " + e, e);
                 }
             }
@@ -224,19 +209,19 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
-        pw.println(" PoolManagerEngine : [$Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $]");
-        pw.println("   Request Counter : "+_requestCounter);
-        pw.println("     Error Counter : "+_errorCounter);
-        pw.println("  Collector Update : "+(_collectorUpdate/1000L)+" seconds");
-        pw.println("    addStorageInfo : "+_addStorageInfo);
-        pw.println("        addHsmInfo : "+_addHsmInfo);
+    public void getInfo(PrintWriter pw) {
+        pw.println(
+              " PoolManagerEngine : [$Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $]");
+        pw.println("   Request Counter : " + _requestCounter);
+        pw.println("     Error Counter : " + _errorCounter);
+        pw.println("  Collector Update : " + (_collectorUpdate / 1000L) + " seconds");
+        pw.println("    addStorageInfo : " + _addStorageInfo);
+        pw.println("        addHsmInfo : " + _addHsmInfo);
     }
 
     public static final String hh_set_update = "[<updateTime/sec>]";
-    public String ac_set_update_$_0_1(Args args)
-    {
+
+    public String ac_set_update_$_0_1(Args args) {
         if (args.argc() == 0) {
             synchronized (_updateLock) {
                 _updateLock.notifyAll();
@@ -245,7 +230,7 @@ public class HttpPoolMgrEngineV3 implements
             long x = Long.parseLong(args.argv(0));
             if (x < 30) {
                 throw new
-                        IllegalArgumentException("<updateTime> must be > 30");
+                      IllegalArgumentException("<updateTime> must be > 30");
             }
             synchronized (_updateLock) {
                 _collectorUpdate = x * 1000;
@@ -256,8 +241,7 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void runRestoreCollector()
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         List<RestoreHandlerInfo> infos = _receiver.getAllRequests();
 
         List<Object[]> agedList = new ArrayList<>();
@@ -284,7 +268,7 @@ public class HttpPoolMgrEngineV3 implements
                 //
                 if (_addStorageInfo) {
                     FileAttributes fileAttributes = (FileAttributes) _fileAttributesMap.get(
-                                    pnfsId);
+                          pnfsId);
                     if (fileAttributes == null) {
                         fileAttributes = getFileAttributesByPnfsId(pnfsId);
                     }
@@ -292,7 +276,7 @@ public class HttpPoolMgrEngineV3 implements
                         StorageInfo storageInfo = fileAttributes.getStorageInfo();
                         if (_addHsmInfo) {
                             StorageInfo si = getHsmInfoByStorageInfo(pnfsId,
-                                                                     storageInfo);
+                                  storageInfo);
                             if (si != null) {
                                 storageInfo = si;
                                 fileAttributes.setStorageInfo(si);
@@ -301,16 +285,16 @@ public class HttpPoolMgrEngineV3 implements
                         if (_siDetails != null) { // allows to select items
                             if (fileAttributes.isDefined(FileAttribute.SIZE)) {
                                 storageInfo.setKey("size",
-                                                   String.valueOf(fileAttributes.getSize()));
+                                      String.valueOf(fileAttributes.getSize()));
                             }
                             storageInfo.setKey("new",
-                                               String.valueOf(storageInfo.isCreatedOnly()));
+                                  String.valueOf(storageInfo.isCreatedOnly()));
                             storageInfo.setKey("stored",
-                                               String.valueOf(storageInfo.isStored()));
+                                  String.valueOf(storageInfo.isStored()));
                             storageInfo.setKey("sClass",
-                                               fileAttributes.getStorageClass());
+                                  fileAttributes.getStorageClass());
                             storageInfo.setKey("cClass",
-                                               fileAttributes.getCacheClass());
+                                  fileAttributes.getCacheClass());
                             storageInfo.setKey("hsm", fileAttributes.getHsm());
                         }
                         _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
@@ -326,11 +310,10 @@ public class HttpPoolMgrEngineV3 implements
         _lazyRestoreList = agedList;
     }
 
-    private StorageInfo getHsmInfoByStorageInfo(String pnfsId, StorageInfo storageInfo)
-    {
+    private StorageInfo getHsmInfoByStorageInfo(String pnfsId, StorageInfo storageInfo) {
         try {
             HsmControlGetBfDetailsMsg msg =
-                new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
+                  new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId), storageInfo, "default");
             return _hsmController.sendAndWait(msg).getStorageInfo();
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             LOGGER.warn(e.toString(), e);
@@ -338,8 +321,7 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private String getPathByPnfsId(String pnfsId)
-    {
+    private String getPathByPnfsId(String pnfsId) {
         try {
             PnfsMapPathMessage msg = new PnfsMapPathMessage(new PnfsId(pnfsId));
             return _pnfsManager.sendAndWait(msg).getGlobalPath();
@@ -349,11 +331,11 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private FileAttributes getFileAttributesByPnfsId(String pnfsId)
-    {
+    private FileAttributes getFileAttributesByPnfsId(String pnfsId) {
         try {
             PnfsGetFileAttributes msg =
-                    new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
+                  new PnfsGetFileAttributes(new PnfsId(pnfsId),
+                        EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
             return _pnfsManager.sendAndWait(msg).getFileAttributes();
         } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             LOGGER.warn(e.toString());
@@ -361,53 +343,52 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private void printMenu(PrintWriter pw, String sort, String grep)
-    {
-        String action         = "detail";
+    private void printMenu(PrintWriter pw, String sort, String grep) {
+        String action = "detail";
         String tableDataColor = "#eeeeee";
-        String tableColor     = "#dddddd";
-        String[] sel  =
-            { "PnfsId"      , "i.name",
-              "Time"        , "i.start",
-              "Pool"        , "i.pool",
-              "Status"      , "i.status",
-              "Tape"        , "hsm.osm.volumeName",
-              "StorageClass", "sclass",
-              "Path"        , "path"
-            };
-        pw.println("<form name=\"input\" action=\""+action+"\" method=\"get\">");
-        pw.println("<center><table border=0 cellspacing=2 width=\"95%\" bgcolor=\""+tableColor+"\">");
+        String tableColor = "#dddddd";
+        String[] sel =
+              {"PnfsId", "i.name",
+                    "Time", "i.start",
+                    "Pool", "i.pool",
+                    "Status", "i.status",
+                    "Tape", "hsm.osm.volumeName",
+                    "StorageClass", "sclass",
+                    "Path", "path"
+              };
+        pw.println("<form name=\"input\" action=\"" + action + "\" method=\"get\">");
+        pw.println("<center><table border=0 cellspacing=2 width=\"95%\" bgcolor=\"" + tableColor
+              + "\">");
         pw.println("   <tr>");
-        pw.println("      <td align=center bgcolor=\""+tableDataColor+"\">");
+        pw.println("      <td align=center bgcolor=\"" + tableDataColor + "\">");
         pw.println("         <input type=\"submit\" value=\"Select\" name=\"otto\">");
         pw.println("      </td>");
-        pw.println("      <td align=center bgcolor=\""+tableDataColor+"\">");
+        pw.println("      <td align=center bgcolor=\"" + tableDataColor + "\">");
         pw.println("         Sort by");
         pw.println("      </td>");
-        String radio   = "type=\"radio\" name=\"sort\"";
+        String radio = "type=\"radio\" name=\"sort\"";
         String checked = "checked=\"checked\"  ";
-        for (int i = 0, n = sel.length ; i < n; i+=2) {
-            pw.println("      <td align=center bgcolor=\""+tableDataColor+"\">");
-            pw.println("         <input "+radio+" id=\""+sel[i]+"\" value=\""+
-                       sel[i+1]+"\" "+
-                       ((((sort==null)&&(i==0))||
-                         ((sort!=null)&&sel[i+1].equals(sort))) ?  checked : "")+"/>");
-            pw.println("         <label for=\""+sel[i]+"\">"+sel[i]+"</label>");
+        for (int i = 0, n = sel.length; i < n; i += 2) {
+            pw.println("      <td align=center bgcolor=\"" + tableDataColor + "\">");
+            pw.println("         <input " + radio + " id=\"" + sel[i] + "\" value=\"" +
+                  sel[i + 1] + "\" " +
+                  ((((sort == null) && (i == 0)) ||
+                        ((sort != null) && sel[i + 1].equals(sort))) ? checked : "") + "/>");
+            pw.println("         <label for=\"" + sel[i] + "\">" + sel[i] + "</label>");
             pw.println("      </td>");
 
         }
-        pw.println("      <td align=center bgcolor=\""+tableDataColor+"\">");
-        pw.println("         Search <input type=\"text\" value=\""+
-                   (grep == null ? "" : grep)
-                   +"\" name=\"grep\">");
+        pw.println("      <td align=center bgcolor=\"" + tableDataColor + "\">");
+        pw.println("         Search <input type=\"text\" value=\"" +
+              (grep == null ? "" : grep)
+              + "\" name=\"grep\">");
         pw.println("      </td>");
         pw.println("   </tr>");
         pw.println("</table></center>");
 
     }
 
-    private void printCssFile(PrintWriter pw, String filename)
-    {
+    private void printCssFile(PrintWriter pw, String filename) {
         if (filename.equals("test.html")) {
             //
             // table test for css (internal and external)
@@ -415,16 +396,19 @@ public class HttpPoolMgrEngineV3 implements
             pw.println("<html>");
             pw.println("<head>");
             pw.println("<title>Titel der Datei</title>");
-            pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\""+_cssFile+"\">");
+            pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + _cssFile + "\">");
             pw.println("</head>");
             pw.println("<body>");
             pw.println("<h1>This is a header - 1 </h1>");
             pw.println("<h2>This is a header - 2 </h2>");
             pw.println("<center>");
             pw.println("<table class=\"s-table\">");
-            pw.println("<tr class=\"s-table\"><th class=\"s-table\">Header 1</th><th class=\"s-table\">Header 2</th></tr>");
-            pw.println("<tr class=\"s-table-a\"><td class=\"s-table\">entry-1</td><td class=\"s-table\">entry-2</td></tr>");
-            pw.println("<tr class=\"s-table-b\"><td class=\"s-table\">entry-3</td><td class=\"s-table\">entry-4</td></tr>");
+            pw.println(
+                  "<tr class=\"s-table\"><th class=\"s-table\">Header 1</th><th class=\"s-table\">Header 2</th></tr>");
+            pw.println(
+                  "<tr class=\"s-table-a\"><td class=\"s-table\">entry-1</td><td class=\"s-table\">entry-2</td></tr>");
+            pw.println(
+                  "<tr class=\"s-table-b\"><td class=\"s-table\">entry-3</td><td class=\"s-table\">entry-4</td></tr>");
             pw.println("</table>");
             pw.println("</body>");
             pw.println("</html>");
@@ -434,48 +418,59 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private void printInternalCssFile(PrintWriter pw)
-    {
+    private void printInternalCssFile(PrintWriter pw) {
         pw.println("body { background-color:orange; }");
-        pw.println("table.s-table { width:90%; border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse; }");
+        pw.println(
+              "table.s-table { width:90%; border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse; }");
         pw.println("tr.s-table   { background-color:#115259; color:white; font-size:18; }");
         pw.println("tr.s-table-a { background-color:#bebebe; text-align:center; font-size:16; }");
         pw.println("tr.s-table-b { background-color:#efefef; text-align:center; font-size:16; }");
         pw.println("tr.s-table-e { background-color:red; text-align:center; font-size:16; }");
-        pw.println("td.s-table {  border:1px ; border-style:solid; border-spacing:1px; padding:3; }");
+        pw.println(
+              "td.s-table {  border:1px ; border-style:solid; border-spacing:1px; padding:3; }");
         pw.println("th.s-table {  border:1px ; border-style:solid; border-spacing:1px;}");
-        pw.println("td.s-table-disabled {  border:1px ; border-style:solid; border-spacing:0px; padding:3;}");
+        pw.println(
+              "td.s-table-disabled {  border:1px ; border-style:solid; border-spacing:0px; padding:3;}");
         pw.println("td.s-table-e {  background-color:red;}");
-        pw.println("td.s-table-regular  {  border:1px ; border-style:solid; border-spacing:0px; padding:3;}");
+        pw.println(
+              "td.s-table-regular  {  border:1px ; border-style:solid; border-spacing:0px; padding:3;}");
         pw.println("span.s-table-disabled { color:gray ; }");
         pw.println("span.s-table-regular  { color:black ; }");
         pw.println("a.s-table:visited  { text-decoration:none; color:blue; }");
         pw.println("a.s-table:link     { text-decoration:none; color:blue; }");
-        pw.println("table.m-table { width:90%; border:0px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
-        pw.println("td.m-table {  background-color:white; text-align:center; border:1px ; border-style:solid; border-spacing:1px;}");
+        pw.println(
+              "table.m-table { width:90%; border:0px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
+        pw.println(
+              "td.m-table {  background-color:white; text-align:center; border:1px ; border-style:solid; border-spacing:1px;}");
         pw.println("a.m-table:visited        { text-decoration:none; }");
         pw.println("a.m-table-active:visited { text-decoration:none; color:red; }");
         pw.println("a.m-table:link        { text-decoration:none; }");
         pw.println("a.m-table-active:link { text-decoration:none; color:red; }");
         pw.println("table.l-table { width:90%; color:black; table-layout:auto;");
-        pw.println("    border:1px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
+        pw.println(
+              "    border:1px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
         pw.println("tr.l-table { background-color:green; }");
         pw.println("td.l-table { background-color:white; color:black;");
         pw.println("width:10.5%;");
         pw.println("padding:4; text-align:center;");
-        pw.println("border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse; }");
+        pw.println(
+              "border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse; }");
         pw.println("span.l-table { font-size:16;}");
         pw.println("a.l-table:visited  { text-decoration:none; color:blue; }");
         pw.println("a.l-table:link     { text-decoration:none; color:blue; }");
-        pw.println("table.f-table-a { width:90%; color:black; table-layout:auto; background-color:white;");
-        pw.println("border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse;}");
+        pw.println(
+              "table.f-table-a { width:90%; color:black; table-layout:auto; background-color:white;");
+        pw.println(
+              "border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse;}");
         pw.println("td.f-table-a { text-align:center; padding:10; }");
         pw.println("span.f-table-a { text-align:center; font-size:20px }");
         pw.println("table.f-table-b { width:100%;  color:black; table-layout:auto; ");
-        pw.println(" border:1px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
+        pw.println(
+              " border:1px; border-style:none; border-spacing:0px; border-collapse:collapse; }");
         pw.println("th.f-table-b { width:20%;}");
         pw.println("td.f-table-b { width:20%; background-color:#eeeeee; color:black;");
-        pw.println("padding:4; text-align:center; border:1px; border-style:solid; border-spacing:0px; }");
+        pw.println(
+              "padding:4; text-align:center; border:1px; border-style:solid; border-spacing:0px; }");
         pw.println("span.m-title { font-size:18; color=red; }");
         pw.println("a.big-link:visited  { text-decoration:none; color:blue; }");
         pw.println("a.big-link:link  { text-decoration:none; color:blue; }");
@@ -483,14 +478,13 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public void queryUrl(HttpRequest request)  throws HttpException
-    {
-        OutputStream out    = request.getOutputStream();
-        PrintWriter pw      = request.getPrintWriter();
-        String[]   urlItems = request.getRequestTokens();
+    public void queryUrl(HttpRequest request) throws HttpException {
+        OutputStream out = request.getOutputStream();
+        PrintWriter pw = request.getPrintWriter();
+        String[] urlItems = request.getRequestTokens();
 
         request.printHttpHeader(0);
-        _requestCounter ++;
+        _requestCounter++;
         try {
             if (urlItems.length < 1) {
                 return;
@@ -519,23 +513,22 @@ public class HttpPoolMgrEngineV3 implements
                 }
             } else if ((urlItems.length > 1) && (urlItems[1].equals("restoreHandler"))) {
 
-
                 if (urlItems.length > 2) {
 
                     if (urlItems[2].equals("lazy")) {
                         //
                         //  LAZY retore queue
                         //
-                        if ((urlItems.length > 3) &&  urlItems[3].startsWith("detail")) {
+                        if ((urlItems.length > 3) && urlItems[3].startsWith("detail")) {
                             String sort = request.getParameter(PARAMETER_SORT);
                             String grep = request.getParameter(PARAMETER_GREP);
-                            printMenu(pw,  sort, grep);
+                            printMenu(pw, sort, grep);
                             printLazyRestoreInfo(out, sort, grep);
                         } else {
                             //
                             // regular restore queue
                             //
-                            printLazyRestoreInfo(out, null,null);
+                            printLazyRestoreInfo(out, null, null);
                         }
                     } else if (urlItems[2].startsWith("detail")) {
                         String sort = request.getParameter(PARAMETER_SORT);
@@ -543,10 +536,10 @@ public class HttpPoolMgrEngineV3 implements
                         printMenu(pw, sort, grep);
                         printRestoreInfo(out, sort, grep);
                     } else {
-                        printRestoreInfo(out,  null, null);
+                        printRestoreInfo(out, null, null);
                     }
                 } else {
-                    printRestoreInfo(out,  null, null);
+                    printRestoreInfo(out, null, null);
                 }
 
             } else {
@@ -554,14 +547,14 @@ public class HttpPoolMgrEngineV3 implements
             }
 
         } catch (HttpException httpe) {
-            _errorCounter ++;
+            _errorCounter++;
             throw httpe;
         } catch (Exception e) {
-            _errorCounter ++;
+            _errorCounter++;
             showProblem(pw, e.getMessage());
             pw.println("<ul>");
             for (int i = 0; i < urlItems.length; i++) {
-                pw.println("<li> ["+i+"] ");
+                pw.println("<li> [" + i + "] ");
                 pw.println(urlItems[i]);
             }
             pw.println("</ul>");
@@ -571,21 +564,19 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private void printConfigurationHeader(PrintWriter pw)
-    {
-	pw.println("<html>");
-	pw.println("<head>");
+    private void printConfigurationHeader(PrintWriter pw) {
+        pw.println("<html>");
+        pw.println("<head>");
         pw.println("<title>PoolManager (Pool SelectionUnit) Configuration</title>");
-        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\""+_cssFile+"\">");
+        pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + _cssFile + "\">");
         pw.println("</head>");
 
-	pw.println("<body class=\"m-body\">");
+        pw.println("<body class=\"m-body\">");
 
     }
 
     private void printConfigurationPages(PrintWriter pw, String[] urlItems, HttpRequest request)
-        throws HttpException, NoRouteToCellException, InterruptedException
-    {
+          throws HttpException, NoRouteToCellException, InterruptedException {
         printConfigurationHeader(pw);
 
         printPoolManagerHeader(pw, null);
@@ -599,7 +590,7 @@ public class HttpPoolMgrEngineV3 implements
             showDirectory(pw, 3);
             StringBuilder sb = new StringBuilder();
             int i;
-            for (i = 2; i < (urlItems.length-1); i++) {
+            for (i = 2; i < (urlItems.length - 1); i++) {
                 sb.append(urlItems[i]).append("/");
             }
             sb.append(urlItems[i]);
@@ -620,17 +611,17 @@ public class HttpPoolMgrEngineV3 implements
             showDirectory(pw, 6);
             showMatch(pw, request);
         } else {
-            throw new HttpException(404, "Unknown key : "+urlItems[1]);
+            throw new HttpException(404, "Unknown key : " + urlItems[1]);
         }
     }
 
-    private void printParameter(PrintWriter pw, String key)
-    {
+    private void printParameter(PrintWriter pw, String key) {
         try {
             printConfigurationHeader(pw);
             printPoolManagerHeader(pw, "Partition Manager");
             showDirectory(pw, 0);
-            Map<String,Partition> parameterMap = _poolManager.sendAndWait("pmx get map", Map.class);
+            Map<String, Partition> parameterMap = _poolManager.sendAndWait("pmx get map",
+                  Map.class);
             if (key.equals("section")) {
                 printParameterInSections(pw, parameterMap);
             } else if (key.equals("matrix")) {
@@ -642,31 +633,31 @@ public class HttpPoolMgrEngineV3 implements
             showProblem(pw, e.getMessage());
         }
 
-        pw.println("<hr><address>Created "+(new Date())+" $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $");
+        pw.println("<hr><address>Created " + (new Date())
+              + " $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $");
         pw.println("</body></html>");
     }
 
-    private void printParameterInMatrix(PrintWriter pw, Map<String,Partition> parameterMap)
-    {
+    private void printParameterInMatrix(PrintWriter pw, Map<String, Partition> parameterMap) {
         Partition defaultParas = parameterMap.get("default");
         if (defaultParas == null) {
             return;
         }
 
-        Map<String,Object[]>[] restMap = new Map[parameterMap.size()-1];
-        String[] header  = new String[parameterMap.size()-1];
+        Map<String, Object[]>[] restMap = new Map[parameterMap.size() - 1];
+        String[] header = new String[parameterMap.size() - 1];
         int row = 0;
 
-        for (Map.Entry<String,Partition> entry : parameterMap.entrySet()) {
+        for (Map.Entry<String, Partition> entry : parameterMap.entrySet()) {
             String mapName = entry.getKey();
 
             if (mapName.equals("default")) {
                 continue;
             }
 
-            header[row]  = mapName;
+            header[row] = mapName;
             restMap[row] = entry.getValue().toMap();
-            row ++;
+            row++;
         }
 
         pw.println("<center><table class=\"s-table\"");
@@ -680,26 +671,29 @@ public class HttpPoolMgrEngineV3 implements
 
         Map<String, Object[]> defaultMap = new TreeMap<>(defaultParas.toMap());
         row = 0;
-        String[] setColor = { "s-table-disabled", "s-table-regular"  };
-        String[] rowClass = { "s-table-a", "s-table-b" };
+        String[] setColor = {"s-table-disabled", "s-table-regular"};
+        String[] rowClass = {"s-table-a", "s-table-b"};
 
         for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
-            String key      =  entry.getKey();
-            Object[] e      = entry.getValue();
+            String key = entry.getKey();
+            Object[] e = entry.getValue();
             boolean isSet;
-            String value    = e[1].toString();
+            String value = e[1].toString();
 
             //
             // the keys
             //
-            pw.print("<tr class=\""+rowClass[row%rowClass.length]+"\">");
-            pw.print("<th class=\"s-table\">"); pw.print(key); pw.print("</th>");
+            pw.print("<tr class=\"" + rowClass[row % rowClass.length] + "\">");
+            pw.print("<th class=\"s-table\">");
+            pw.print(key);
+            pw.print("</th>");
             //
             // default values
             //
             pw.print("<td class=\"s-table-regular\">");
             pw.print("<span class=\"s-table-regular\">");
-            pw.print(value); pw.println("</span></td>");
+            pw.print(value);
+            pw.println("</span></td>");
             //
             // the other partitions
             //
@@ -719,18 +713,16 @@ public class HttpPoolMgrEngineV3 implements
     }
 
 
-    private void printParameterInSections(PrintWriter pw, Map<String,Partition> parameterMap)
-    {
-        for (Map.Entry<String,Partition> entry : parameterMap.entrySet()) {
+    private void printParameterInSections(PrintWriter pw, Map<String, Partition> parameterMap) {
+        for (Map.Entry<String, Partition> entry : parameterMap.entrySet()) {
             String name = entry.getKey();
             Partition p = entry.getValue();
-            pw.println("<h2>"+name+"</h2>");
+            pw.println("<h2>" + name + "</h2>");
             printParameterEntry(pw, p);
         }
     }
 
-    private void printParameterEntry(PrintWriter pw, Partition p)
-    {
+    private void printParameterEntry(PrintWriter pw, Partition p) {
         Map<String, Object[]> map = p.toMap();
 
         int column = 0;
@@ -739,31 +731,36 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("<center><table width=\"90%\" cellspacing=4 cellpadding=4 bgcolor=yellow>");
 
         pw.print("<tr>");
-        for (int l = 0; l < (maxColumn+1); l ++) {
+        for (int l = 0; l < (maxColumn + 1); l++) {
             pw.print("<th align=center>Key</th><th align=center>Value</th>");
         }
         pw.println("</tr>");
 
         for (Map.Entry<String, Object[]> entry : map.entrySet()) {
-            String     name  = entry.getKey();
-            Object[]  array = entry.getValue();
-            boolean    isSet = (Boolean)array[0];
-            Object     value = array[1].toString();
+            String name = entry.getKey();
+            Object[] array = entry.getValue();
+            boolean isSet = (Boolean) array[0];
+            Object value = array[1].toString();
 
             if (column == 0) {
                 pw.print("<tr>");
             }
 
             String col = isSet ? "black" : "gray";
-            pw.print("<th bgcolor=white>"); pw.print(name); pw.print("</th>");
-            pw.print("<td  bgcolor=white align=center ><font color="); pw.print(col) ; pw.print(">");
-            pw.print(value); pw.println("</font></td>");
+            pw.print("<th bgcolor=white>");
+            pw.print(name);
+            pw.print("</th>");
+            pw.print("<td  bgcolor=white align=center ><font color=");
+            pw.print(col);
+            pw.print(">");
+            pw.print(value);
+            pw.println("</font></td>");
 
             if (column == maxColumn) {
                 pw.print("</tr>");
             }
 
-            column = (column + 1) % (maxColumn+1);
+            column = (column + 1) % (maxColumn + 1);
         }
 
         pw.println("</table></center>");
@@ -771,56 +768,54 @@ public class HttpPoolMgrEngineV3 implements
     }
 
 
-    private void printLazyRestoreInfo(OutputStream out, String sorting, String grep)
-    {
+    private void printLazyRestoreInfo(OutputStream out, String sorting, String grep) {
         HTMLWriter html = new HTMLWriter(out, _context);
 
         html.addHeader("/styles/restoreHandler.css",
-                       "dCache Dataset Restore Monitor (Lazy)");
+              "dCache Dataset Restore Monitor (Lazy)");
 
         html.beginTable("sortable",
-                        "pnfs",      "PnfsId",
-                        "subnet",    "Subnet",
-                        "candidate", "PoolCandidate",
-                        "started",   "Started",
-                        "clients",   "Clients",
-                        "retries",   "Retries",
-                        "status",    "Status");
+              "pnfs", "PnfsId",
+              "subnet", "Subnet",
+              "candidate", "PoolCandidate",
+              "started", "Started",
+              "clients", "Clients",
+              "retries", "Retries",
+              "status", "Status");
 
         List<Object[]> copy = new ArrayList<>(_lazyRestoreList);
         Collections.sort(copy, new OurComparator(sorting));
-        for (Object[] a: copy) {
+        for (Object[] a : copy) {
             if ((grep == null) || grepOk(grep, a)) {
                 showRestoreInfo(html,
-                        (RestoreHandlerInfo) a[0],
-                        (String) a[1],
-                        (StorageInfo) a[2]);
+                      (RestoreHandlerInfo) a[0],
+                      (String) a[1],
+                      (StorageInfo) a[2]);
             }
         }
         html.endTable();
         html.addFooter(getClass().getName());
     }
 
-    private void printRestoreInfo(OutputStream out, String sorting, String grep)
-    {
+    private void printRestoreInfo(OutputStream out, String sorting, String grep) {
         HTMLWriter html = new HTMLWriter(out, _context);
 
         html.addHeader("/styles/restoreHandler.css",
-                       "dCache Dataset Restore Monitor");
+              "dCache Dataset Restore Monitor");
 
         RestoreHandlerInfo[] list = _lazyRestoreList.stream()
-                                                    .map(o -> o[0])
-                                                    .toArray(RestoreHandlerInfo[]::new);
+              .map(o -> o[0])
+              .toArray(RestoreHandlerInfo[]::new);
         Arrays.sort(list, new OurComparator(sorting));
 
         html.beginTable("sortable",
-                        "pnfs", "PnfsId",
-                        "subnet", "Subnet",
-                        "candidate", "PoolCandidate",
-                        "started", "Started",
-                        "clients", "Clients",
-                        "retries", "Retries",
-                        "status", "Status");
+              "pnfs", "PnfsId",
+              "subnet", "Subnet",
+              "candidate", "PoolCandidate",
+              "started", "Started",
+              "clients", "Clients",
+              "retries", "Retries",
+              "status", "Status");
 
         for (RestoreHandlerInfo info : list) {
             if ((grep == null) || grepOk(grep, info)) {
@@ -832,18 +827,18 @@ public class HttpPoolMgrEngineV3 implements
         html.addFooter(getClass().getName());
     }
 
-    private boolean grepOk(String grep, Object o)
-    {
+    private boolean grepOk(String grep, Object o) {
         RestoreHandlerInfo info;
         if (o instanceof RestoreHandlerInfo) {
-            info = (RestoreHandlerInfo)o;
+            info = (RestoreHandlerInfo) o;
         } else if (o instanceof Object[]) {
-            info = (RestoreHandlerInfo)((Object[])o)[0];
+            info = (RestoreHandlerInfo) ((Object[]) o)[0];
         } else {
             return true;
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(info.getName()).append(info.getPool()).append(info.getStartTime()).append(info.getStatus());
+        sb.append(info.getName()).append(info.getPool()).append(info.getStartTime())
+              .append(info.getStatus());
         Object er = info.getErrorMessage();
         if (er != null) {
             sb.append(er.toString());
@@ -855,12 +850,12 @@ public class HttpPoolMgrEngineV3 implements
         if (!(o instanceof Object[])) {
             return false;
         }
-        Object[] a = (Object[])o;
+        Object[] a = (Object[]) o;
         if ((a[1] != null) && (a[1].toString().contains(grep))) {
             return true;
         }
 
-        StorageInfo si = (StorageInfo)a[2];
+        StorageInfo si = (StorageInfo) a[2];
         if (si == null) {
             return false;
         }
@@ -870,23 +865,20 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 
-    private static class OurComparator implements Comparator<Object>
-    {
+    private static class OurComparator implements Comparator<Object> {
+
         private final String _type;
 
-        private OurComparator(String type)
-        {
+        private OurComparator(String type) {
             _type = type;
         }
 
         @Override
-        public int compare(Object o1, Object o2)
-        {
+        public int compare(Object o1, Object o2) {
             if (o1 instanceof RestoreHandlerInfo) {
                 return compareInfo((RestoreHandlerInfo) o1, (RestoreHandlerInfo) o2);
             }
@@ -896,15 +888,14 @@ public class HttpPoolMgrEngineV3 implements
             return 0;
         }
 
-        private int compareInfo(RestoreHandlerInfo i1, RestoreHandlerInfo i2)
-        {
+        private int compareInfo(RestoreHandlerInfo i1, RestoreHandlerInfo i2) {
             if (_type == null) {
                 return i1.getName().compareTo(i2.getName());
             } else if (_type.equals("i.name")) {
                 return i1.getName().compareTo(i2.getName());
             } else if (_type.equals("i.error")) {
                 return (i1.getErrorCode() + i1.getName()).
-                    compareTo(i2.getErrorCode() + i2.getName());
+                      compareTo(i2.getErrorCode() + i2.getName());
             } else if (_type.equals("i.status")) {
                 return i1.getStatus().compareTo(i2.getStatus());
             } else if (_type.equals("i.pool")) {
@@ -916,14 +907,13 @@ public class HttpPoolMgrEngineV3 implements
 
                 return a.compareTo(b);
             } else if (_type.equals("i.start")) {
-                return Long.compare(i1.getStartTime(),i2.getStartTime());
+                return Long.compare(i1.getStartTime(), i2.getStartTime());
             } else {
                 return i1.getName().compareTo(i2.getName());
             }
         }
 
-        private int compareArray(Object[] o1, Object[] o2)
-        {
+        private int compareArray(Object[] o1, Object[] o2) {
             if (_type == null || _type.startsWith("i.")) {
                 return compareInfo((RestoreHandlerInfo) o1[0], (RestoreHandlerInfo) o2[0]);
             }
@@ -932,12 +922,10 @@ public class HttpPoolMgrEngineV3 implements
                 return o1[1].toString().compareTo(o2[1].toString());
             }
 
-
             return compareStorageInfo((StorageInfo) o1[2], (StorageInfo) o2[2]);
         }
 
-        private int compareStorageInfo(StorageInfo s1, StorageInfo s2)
-        {
+        private int compareStorageInfo(StorageInfo s1, StorageInfo s2) {
             if (_type.equals("sclass")) {
                 return s1.getStorageClass().compareTo(s2.getStorageClass());
             }
@@ -948,32 +936,30 @@ public class HttpPoolMgrEngineV3 implements
                 return k1 == null ? -1 : k2 == null ? 1 : 0;
             }
 
-            return  k1.compareTo(k2);
+            return k1.compareTo(k2);
         }
 
     }
 
-    private void showRestoreInfo(HTMLWriter html, RestoreHandlerInfo info)
-    {
+    private void showRestoreInfo(HTMLWriter html, RestoreHandlerInfo info) {
         showRestoreInfo(html, info, null, null);
     }
 
     private void showRestoreInfo(HTMLWriter html,
-                                 RestoreHandlerInfo info,
-                                 String path,
-                                 StorageInfo storageInfo)
-    {
-        String  name   = info.getName();
-        int     pos    = name.indexOf('@');
-        String  pnfsId = name.substring(0,pos);
-        String  subnet = name.substring(pos+1);
-        int     rc     = info.getErrorCode();
-        String  msg    = info.getErrorMessage();
-        String  started= _formatter.get().format(new Date(info.getStartTime()));
+          RestoreHandlerInfo info,
+          String path,
+          StorageInfo storageInfo) {
+        String name = info.getName();
+        int pos = name.indexOf('@');
+        String pnfsId = name.substring(0, pos);
+        String subnet = name.substring(pos + 1);
+        int rc = info.getErrorCode();
+        String msg = info.getErrorMessage();
+        String started = _formatter.get().format(new Date(info.getStartTime()));
 
-        boolean   error      = (rc != 0) || ((msg != null) && (!msg.isEmpty()));
+        boolean error = (rc != 0) || ((msg != null) && (!msg.isEmpty()));
 
-        String  pool = info.getPool();
+        String pool = info.getPool();
         pool = (pool == null) || (pool.isEmpty() || pool.equals("<unknown>")) ? "N.N." : pool;
         String status = info.getStatus();
         status = (status == null) || (status.isEmpty()) ? "&nbsp;" : htmlEscaper.escape(status);
@@ -983,13 +969,13 @@ public class HttpPoolMgrEngineV3 implements
         } else {
             html.beginRow(null, "odd");
         }
-        html.td("pnfs",    pnfsId);
-        html.td("subnet",  subnet);
-        html.td("pool",    pool);
+        html.td("pnfs", pnfsId);
+        html.td("subnet", subnet);
+        html.td("pool", pool);
         html.td("started", started);
         html.td("clients", info.getClientCount());
         html.td("retries", info.getRetryCount());
-        html.td("status",  status);
+        html.td("status", status);
         if (path != null) {
             html.endRow(false);
             if (error) {
@@ -1012,7 +998,7 @@ public class HttpPoolMgrEngineV3 implements
                     String value;
                     if ((value = storageInfo.getKey(key)) != null) {
                         builder.append(key).append("=").append(value)
-                                .append(";");
+                              .append(";");
                     }
                 }
                 html.td(7, "storageinfo", builder);
@@ -1028,8 +1014,7 @@ public class HttpPoolMgrEngineV3 implements
         html.endRow();
     }
 
-    private void printPoolManagerHeader(PrintWriter pw, String title)
-    {
+    private void printPoolManagerHeader(PrintWriter pw, String title) {
         pw.println("<table class=\"m-table\" border=0 cellpadding=10 cellspacing=0 width=\"90%\">");
         pw.println("<tr><td align=center valign=center width=\"1%\">");
         pw.println("<a href=\"/\"><img border=0 src=\"/images/eagleredtrans.gif\"></a>");
@@ -1044,36 +1029,33 @@ public class HttpPoolMgrEngineV3 implements
 
     }
 
-    private void showDirectory(PrintWriter pw)
-    {
+    private void showDirectory(PrintWriter pw) {
         showDirectory(pw, -1);
     }
 
-    private void showDirectory(PrintWriter pw, int position)
-    {
+    private void showDirectory(PrintWriter pw, int position) {
         pw.println("<br><center><table class=\"m-table\">");
         pw.println("<tr class=\"m-table\">");
 
-        printDirEntry(pw, "Partitions" , position == 0, "/poolInfo/parameterHandler/set/matrix/*");
-        printDirEntry(pw, "Pools"      , position == 1, "/poolInfo/pools/*");
+        printDirEntry(pw, "Partitions", position == 0, "/poolInfo/parameterHandler/set/matrix/*");
+        printDirEntry(pw, "Pools", position == 1, "/poolInfo/pools/*");
         printDirEntry(pw, "Pool Groups", position == 2, "/poolInfo/pgroups/*");
-        printDirEntry(pw, "Selection"  , position == 3, "/poolInfo/units/*");
+        printDirEntry(pw, "Selection", position == 3, "/poolInfo/units/*");
 
         pw.println("</tr><tr>");
 
         printDirEntry(pw, "Selection Groups", position == 4, "/poolInfo/ugroups/*");
-        printDirEntry(pw, "Links"           , position == 5, "/poolInfo/links/*");
-        printDirEntry(pw, "Link List"       , position == 7, "/poolInfo/linklist/*");
-        printDirEntry(pw, "Match"           , position == 6, "/poolInfo/match/*");
+        printDirEntry(pw, "Links", position == 5, "/poolInfo/links/*");
+        printDirEntry(pw, "Link List", position == 7, "/poolInfo/linklist/*");
+        printDirEntry(pw, "Match", position == 6, "/poolInfo/match/*");
 
         pw.println("</tr></table></center>");
         pw.println("<br><hr><br>");
 
     }
 
-    private void printDirEntry(PrintWriter pw, String text, boolean inUse, String link)
-    {
-        String alternateClass=inUse?"class=\"m-table-active\"":"class=\"m-table\"";
+    private void printDirEntry(PrintWriter pw, String text, boolean inUse, String link) {
+        String alternateClass = inUse ? "class=\"m-table-active\"" : "class=\"m-table\"";
         pw.print("<td width=\"25%\" class=\"m-table\"><span ");
         pw.print(alternateClass);
         pw.print("><a ");
@@ -1085,26 +1067,24 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("</a></span></td>");
     }
 
-    private void showList(PrintWriter pw, Object[] array, int rows)
-    {
+    private void showList(PrintWriter pw, Object[] array, int rows) {
         showList(pw, array, rows, null);
     }
 
     private void showMatch(PrintWriter pw, HttpRequest request)
-        throws NoRouteToCellException, InterruptedException
-    {
-        String type   = request.getParameter(PARAMETER_TYPE);
-        String store  = request.getParameter(PARAMETER_STORE);
+          throws NoRouteToCellException, InterruptedException {
+        String type = request.getParameter(PARAMETER_TYPE);
+        String store = request.getParameter(PARAMETER_STORE);
         String dcache = request.getParameter(PARAMETER_DCACHE);
-        String net    = request.getParameter(PARAMETER_NET);
-        String prot   = request.getParameter(PARAMETER_PROTOCOL);
+        String net = request.getParameter(PARAMETER_NET);
+        String prot = request.getParameter(PARAMETER_PROTOCOL);
         String linkGroup = request.getParameter(PARAMETER_LINKGROUP);
 
-        linkGroup  = (linkGroup  == null) || (linkGroup.isEmpty()) ? "none" : linkGroup;
-        store  = (store  == null) || (store.isEmpty()) ? "*" : store;
+        linkGroup = (linkGroup == null) || (linkGroup.isEmpty()) ? "none" : linkGroup;
+        store = (store == null) || (store.isEmpty()) ? "*" : store;
         dcache = (dcache == null) || (dcache.isEmpty()) ? "*" : dcache;
-        net    = (net    == null) || (net.isEmpty()) ? "*" : net;
-        prot   = (prot   == null) || (prot.isEmpty()) ? "*" : prot;
+        net = (net == null) || (net.isEmpty()) ? "*" : net;
+        prot = (prot == null) || (prot.isEmpty()) ? "*" : prot;
         pw.println("<center>");
         if (type == null) {
             showQueryForm(pw, "none", "read", "*", "*", "*", "DCap/3");
@@ -1114,12 +1094,12 @@ public class HttpPoolMgrEngineV3 implements
 
             try {
                 PoolPreferenceLevel[] result =
-                        _poolManager.sendAndWait("psux match " + type + " "
-                                                         + store + " " + dcache + " " + net + " " + prot
-                                                         + (linkGroup.equals("none") ? "" : " -linkGroup="+linkGroup),
-                                                 PoolPreferenceLevel[].class);
+                      _poolManager.sendAndWait("psux match " + type + " "
+                                  + store + " " + dcache + " " + net + " " + prot
+                                  + (linkGroup.equals("none") ? "" : " -linkGroup=" + linkGroup),
+                            PoolPreferenceLevel[].class);
                 for (int i = 0; i < result.length; i++) {
-                    pw.print("<p><h2>Selected Pools with attraction "+i);
+                    pw.print("<p><h2>Selected Pools with attraction " + i);
                     String tag = result[i].getTag();
                     if (tag != null) {
                         pw.print(" (dCache subsection=" + tag + ")");
@@ -1136,27 +1116,25 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("</center>");
     }
 
-    private String makeLink(String link)
-    {
+    private String makeLink(String link) {
         StringBuilder sb = new StringBuilder();
-        for (int i= 0, n = link.length(); i < n; i ++) {
+        for (int i = 0, n = link.length(); i < n; i++) {
             char c = link.charAt(i);
-            switch(c) {
-            case ':' :
-                sb.append("%3A");
-                break;
-            default :
-                sb.append(c);
+            switch (c) {
+                case ':':
+                    sb.append("%3A");
+                    break;
+                default:
+                    sb.append(c);
             }
         }
         return sb.toString();
     }
 
-    private void showList(PrintWriter pw, Object[] array, int rows, String link)
-    {
+    private void showList(PrintWriter pw, Object[] array, int rows, String link) {
         pw.println("<table class=\"l-table\"");
         Arrays.sort(array);
-        for (int i= 0; i < array.length; i++) {
+        for (int i = 0; i < array.length; i++) {
             if ((i % rows) == 0) {
                 pw.println("<tr class=\"l-table\">");
             }
@@ -1186,13 +1164,12 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void showQueryForm(PrintWriter pw,
-                               String linkGroup,
-                               String type,
-                               String store,
-                               String dcache,
-                               String net,
-                               String protocol)
-    {
+          String linkGroup,
+          String type,
+          String store,
+          String dcache,
+          String net,
+          String protocol) {
         pw.println("<table class=\"f-table-a\">");
         pw.println("<tr class=\"f-table-a\">");
         pw.println("<td class=\"f-table-a\">");
@@ -1209,20 +1186,23 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("<th class=\"f-table-b\">Protocol</th>");
         pw.println("</tr><tr>");
 
-        pw.println("<td class=\"f-table-b\"><input name=linkGroup value=\""+linkGroup+"\"></td>");
+        pw.println(
+              "<td class=\"f-table-b\"><input name=linkGroup value=\"" + linkGroup + "\"></td>");
 
         pw.println("<td class=\"f-table-b\">");
         pw.println("<select name=type>");
-        pw.println("<option value=read  "+(type.equals("read")?"selected":"")+">Read");
-        pw.println("<option value=p2p   "+(type.equals("p2p")?"selected":"")+">Pool 2 Pool");
-        pw.println("<option value=cache "+(type.equals("cache")?"selected":"")+">Cache");
-        pw.println("<option value=write "+(type.equals("write")?"selected":"")+">Write</select>");
+        pw.println("<option value=read  " + (type.equals("read") ? "selected" : "") + ">Read");
+        pw.println(
+              "<option value=p2p   " + (type.equals("p2p") ? "selected" : "") + ">Pool 2 Pool");
+        pw.println("<option value=cache " + (type.equals("cache") ? "selected" : "") + ">Cache");
+        pw.println("<option value=write " + (type.equals("write") ? "selected" : "")
+              + ">Write</select>");
         pw.println("</td>");
 
-        pw.println("<td class=\"f-table-b\"><input name=store value=\""+store+"\"></td>");
-        pw.println("<td class=\"f-table-b\"><input name=dcache value=\""+dcache+"\"></td>");
-        pw.println("<td class=\"f-table-b\"><input name=net value=\""+net+"\"></td>");
-        pw.println("<td class=\"f-table-b\"><input name=protocol value=\""+protocol+"\"></td>");
+        pw.println("<td class=\"f-table-b\"><input name=store value=\"" + store + "\"></td>");
+        pw.println("<td class=\"f-table-b\"><input name=dcache value=\"" + dcache + "\"></td>");
+        pw.println("<td class=\"f-table-b\"><input name=net value=\"" + net + "\"></td>");
+        pw.println("<td class=\"f-table-b\"><input name=protocol value=\"" + protocol + "\"></td>");
         pw.println("</tr></table>");
         pw.println("</td></tr><td  class=\"f-table-a\">");
         pw.println("<input type=submit value=\"Send Query\">");
@@ -1232,11 +1212,10 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void queryAll(PrintWriter pw, String request, String type)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         try {
             Object[] o = _poolManager.sendAndWait(request, Object[].class);
-            pw.println("<center><h1>"+type+"</h1>");
+            pw.println("<center><h1>" + type + "</h1>");
             showList(pw, o, 8);
             pw.println("</center>");
         } catch (TimeoutCacheException e) {
@@ -1247,51 +1226,45 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void queryAllPools(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         queryAll(pw, "psux ls pool", "Registered Pools");
     }
 
     private void queryAllPGroups(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         queryAll(pw, "psux ls pgroup", "Registered Pool Groups");
     }
 
     private void queryAllUnits(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         queryAll(pw, "psux ls unit", "Registered Units");
     }
 
     private void queryAllUGroups(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         queryAll(pw, "psux ls ugroup", "Registered Unit Groups");
     }
 
     private void queryAllLinks(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         queryAll(pw, "psux ls link", "Registered Links");
     }
 
     private void queryPool(PrintWriter pw, String poolName)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         if ((poolName.isEmpty()) || (poolName.equals("*"))) {
             queryAllPools(pw);
             return;
         }
         pw.println("<center>");
-        pw.println("<h1>Report for Pool <font color=red>"+poolName+"</font></h1>");
+        pw.println("<h1>Report for Pool <font color=red>" + poolName + "</font></h1>");
         try {
             Object[] o = _poolManager.sendAndWait("psux ls pool " + poolName, Object[].class);
-            Object[] groupList = (Object[])o[1];
-            Object[] linkList  = (Object[])o[2];
-            boolean   enabled   = (Boolean)o[3];
-            boolean   rdOnly    = (Boolean)o[5];
-            long      active    = (Long)o[4];
+            Object[] groupList = (Object[]) o[1];
+            Object[] linkList = (Object[]) o[2];
+            boolean enabled = (Boolean) o[3];
+            boolean rdOnly = (Boolean) o[5];
+            long active = (Long) o[4];
             pw.println("<table border=0 cellspacing=4 cellpadding=4>");
             pw.print("<tr><th align=right>Enabled : </th><td align=left>");
             pw.print(enabled ? "Yes" : "No");
@@ -1315,19 +1288,18 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void queryUnit(PrintWriter pw, String unitName)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         if ((unitName.isEmpty()) || (unitName.equals("*"))) {
             queryAllUnits(pw);
             return;
         }
         pw.println("<center>");
-        pw.println("<h1>Report for Unit <font color=red>"+unitName+"</font></h1>");
+        pw.println("<h1>Report for Unit <font color=red>" + unitName + "</font></h1>");
         try {
-            Object[] o = _poolManager.sendAndWait("psux ls unit "+unitName, Object[].class);
+            Object[] o = _poolManager.sendAndWait("psux ls unit " + unitName, Object[].class);
 
-            String   type       = o[1].toString();
-            Object[] groupList = (Object[])o[2];
+            String type = o[1].toString();
+            Object[] groupList = (Object[]) o[2];
 
             pw.println("<table border=0 cellspacing=4 cellpadding=4>");
             pw.print("<tr><th align=right>Selection Unit : </th><td align=left>");
@@ -1347,40 +1319,39 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("</center>");
     }
 
-    private static class LinkProperties implements Comparable<LinkProperties>
-    {
+    private static class LinkProperties implements Comparable<LinkProperties> {
+
         private String name;
-        private int    readPref;
-        private int    writePref;
-        private int    cachePref;
-        private int    p2pPref;
+        private int readPref;
+        private int writePref;
+        private int cachePref;
+        private int p2pPref;
         private Object[] groupList;
         private Object[] poolList;
         private Object[] pGroupList;
         private String tag;
-        private LinkProperties(Object[] prop)
-        {
+
+        private LinkProperties(Object[] prop) {
             extractLinkProperties(this, prop);
         }
-        private LinkProperties extractLinkProperties(LinkProperties p, Object[] prop)
-        {
 
-            p.name      = prop[0].toString();
-            p.readPref  = (Integer) prop[1];
+        private LinkProperties extractLinkProperties(LinkProperties p, Object[] prop) {
+
+            p.name = prop[0].toString();
+            p.readPref = (Integer) prop[1];
             p.cachePref = (Integer) prop[2];
             p.writePref = (Integer) prop[3];
-            p.p2pPref   = (Integer) prop[7];
-            p.tag       =  prop[8] == null ? "NONE" : prop[8].toString();
-            p.groupList   = (Object[])prop[4];
-            p.poolList    = (Object[])prop[5];
-            p.pGroupList  = (Object[])prop[6];
+            p.p2pPref = (Integer) prop[7];
+            p.tag = prop[8] == null ? "NONE" : prop[8].toString();
+            p.groupList = (Object[]) prop[4];
+            p.poolList = (Object[]) prop[5];
+            p.pGroupList = (Object[]) prop[6];
 
             return p;
         }
 
         @Override
-        public int compareTo(LinkProperties link )
-        {
+        public int compareTo(LinkProperties link) {
             if (link.tag.equals(tag)) {
                 return name.compareTo(link.name);
             }
@@ -1391,12 +1362,13 @@ public class HttpPoolMgrEngineV3 implements
         }
 
         @Override
-        public String toString() { return "["+tag+"/"+name+"]"; }
+        public String toString() {
+            return "[" + tag + "/" + name + "]";
+        }
     }
 
     private void queryLinkList(PrintWriter pw)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
 
         try {
             List<Object[]> answer = _poolManager.sendAndWait("psux ls link -x", List.class);
@@ -1420,10 +1392,10 @@ public class HttpPoolMgrEngineV3 implements
             pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</font></th>");
             pw.println("</tr>");
             int row = 0;
-            String[] rowColor = { "s-table-a", "s-table-b" };
+            String[] rowColor = {"s-table-a", "s-table-b"};
 
             for (LinkProperties lp : list) {
-                pw.println("<tr class=\""+rowColor[row%rowColor.length]+"\">");
+                pw.println("<tr class=\"" + rowColor[row % rowColor.length] + "\">");
                 printLinkPropertyRow(pw, lp);
                 pw.println("</tr>");
                 row++;
@@ -1437,32 +1409,47 @@ public class HttpPoolMgrEngineV3 implements
         }
     }
 
-    private void printLinkPropertyRow(PrintWriter pw, LinkProperties lp)
-    {
+    private void printLinkPropertyRow(PrintWriter pw, LinkProperties lp) {
         String tableData = "<td class=\"s-table\"><span class=\"s-table\">";
-        String dataEnd   = "</span></td>";
+        String dataEnd = "</span></td>";
         pw.print(tableData);
         pw.print("<a class=\"s-table\" href=\"/poolInfo/links/");
         pw.print(lp.name);
         pw.print("\">");
         pw.print(lp.name);
-        pw.println("</a>"+dataEnd);
-        pw.print(tableData); pw.print(lp.tag); pw.println(dataEnd);
-        pw.print(tableData); pw.print(lp.readPref); pw.println(dataEnd);
-        pw.print(tableData); pw.print(lp.writePref); pw.println(dataEnd);
-        pw.print(tableData); pw.print(lp.cachePref); pw.println(dataEnd);
+        pw.println("</a>" + dataEnd);
+        pw.print(tableData);
+        pw.print(lp.tag);
+        pw.println(dataEnd);
+        pw.print(tableData);
+        pw.print(lp.readPref);
+        pw.println(dataEnd);
+        pw.print(tableData);
+        pw.print(lp.writePref);
+        pw.println(dataEnd);
+        pw.print(tableData);
+        pw.print(lp.cachePref);
+        pw.println(dataEnd);
         if (lp.p2pPref < 0) {
-            pw.print(tableData); pw.print("("+lp.readPref+")"); pw.println(dataEnd);
+            pw.print(tableData);
+            pw.print("(" + lp.readPref + ")");
+            pw.println(dataEnd);
         } else {
-            pw.print(tableData); pw.print(lp.p2pPref); pw.println(dataEnd);
+            pw.print(tableData);
+            pw.print(lp.p2pPref);
+            pw.println(dataEnd);
         }
         int i = 0, n;
         for (n = lp.groupList == null ? 0 : lp.groupList.length; i < n; i++) {
-            String unitName  = lp.groupList[i].toString();
-            pw.print(tableData); pw.print(unitName); pw.println(dataEnd);
+            String unitName = lp.groupList[i].toString();
+            pw.print(tableData);
+            pw.print(unitName);
+            pw.println(dataEnd);
         }
         for (; i < 4; i++) {
-            pw.print(tableData); pw.print("-"); pw.println(dataEnd);
+            pw.print(tableData);
+            pw.print("-");
+            pw.println(dataEnd);
         }
         StringBuilder sb = new StringBuilder();
         if (lp.pGroupList != null) {
@@ -1475,7 +1462,9 @@ public class HttpPoolMgrEngineV3 implements
         }
         String out = sb.length() == 0 ? "-" : sb.toString();
 
-        pw.print(tableData); pw.print(out); pw.println(dataEnd);
+        pw.print(tableData);
+        pw.print(out);
+        pw.println(dataEnd);
         sb = new StringBuilder();
         if (lp.poolList != null) {
             for (i = 0, n = lp.poolList.length; i < n; i++) {
@@ -1486,12 +1475,13 @@ public class HttpPoolMgrEngineV3 implements
             }
         }
         out = sb.length() == 0 ? "-" : sb.toString();
-        pw.print(tableData); pw.print(out); pw.println(dataEnd);
+        pw.print(tableData);
+        pw.print(out);
+        pw.println(dataEnd);
     }
 
     private void queryLink(PrintWriter pw, String linkName)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         if ((linkName.isEmpty()) || (linkName.equals("*"))) {
             queryAllLinks(pw);
             return;
@@ -1501,7 +1491,7 @@ public class HttpPoolMgrEngineV3 implements
             LinkProperties lp = new LinkProperties(answer);
 
             pw.println("<center>");
-            pw.println("<h1>Report for Link <font color=red>"+linkName+"</font></h1>");
+            pw.println("<h1>Report for Link <font color=red>" + linkName + "</font></h1>");
             pw.println("<h3>Link Properties</h3>");
 
             pw.println("<table class=\"s-table\" id=\"linkproperties\">");
@@ -1534,7 +1524,6 @@ public class HttpPoolMgrEngineV3 implements
 
             pw.println("</table>");
 
-
             if (lp.poolList.length > 0) {
                 pw.println("<h3>We point the following Pools</h3>");
                 showList(pw, lp.poolList, 8, "/poolInfo/pools/");
@@ -1552,18 +1541,17 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void queryUnitGroup(PrintWriter pw, String groupName)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         if ((groupName.isEmpty()) || (groupName.equals("*"))) {
             queryAllUGroups(pw);
             return;
         }
         pw.println("<center>");
-        pw.println("<h1>Report for Unit Group <font color=red>"+groupName+"</font></h1>");
+        pw.println("<h1>Report for Unit Group <font color=red>" + groupName + "</font></h1>");
         try {
-            Object[] o = _poolManager.sendAndWait("psux ls ugroup "+groupName, Object[].class);
-            Object[] unitList   = (Object[])o[1];
-            Object[] linkList   = (Object[])o[2];
+            Object[] o = _poolManager.sendAndWait("psux ls ugroup " + groupName, Object[].class);
+            Object[] unitList = (Object[]) o[1];
+            Object[] linkList = (Object[]) o[2];
 
             pw.println("<table border=0 cellspacing=4 cellpadding=4>");
             pw.print("<tr><th align=right>Unit Group : </th><td align=left>");
@@ -1585,18 +1573,17 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     private void queryPoolGroup(PrintWriter pw, String groupName)
-        throws NoRouteToCellException, InterruptedException
-    {
+          throws NoRouteToCellException, InterruptedException {
         if ((groupName.isEmpty()) || (groupName.equals("*"))) {
             queryAllPGroups(pw);
             return;
         }
         pw.println("<center>");
-        pw.println("<h1>Report for Pool Group <font color=red>"+groupName+"</font></h1>");
+        pw.println("<h1>Report for Pool Group <font color=red>" + groupName + "</font></h1>");
         try {
-            Object[] o = _poolManager.sendAndWait("psux ls pgroup "+groupName, Object[].class);
-            Object[] poolList   = (Object[])o[1];
-            Object[] linkList   = (Object[])o[2];
+            Object[] o = _poolManager.sendAndWait("psux ls pgroup " + groupName, Object[].class);
+            Object[] poolList = (Object[]) o[1];
+            Object[] linkList = (Object[]) o[2];
 
             pw.println("<table border=0 cellspacing=4 cellpadding=4>");
             pw.print("<tr><th align=right>Pool Group : </th><td align=left>");
@@ -1617,13 +1604,11 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("</center>");
     }
 
-    private void showTimeout(PrintWriter pw)
-    {
+    private void showTimeout(PrintWriter pw) {
         pw.println("<font color=red><h1>Sorry, the request timed out</h1></font>");
     }
 
-    private void showProblem(PrintWriter pw, String message)
-    {
+    private void showProblem(PrintWriter pw, String message) {
         pw.print("<font color=red><h1>");
         pw.print(message);
         pw.println("</h1></font>");

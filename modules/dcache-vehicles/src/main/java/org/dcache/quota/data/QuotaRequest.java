@@ -62,38 +62,39 @@ package org.dcache.quota.data;
 import java.io.Serializable;
 
 /**
- *  Represents the JSON payload object used for requesting quota limits.
+ * Represents the JSON payload object used for requesting quota limits.
  */
 public class QuotaRequest implements Serializable {
-  private static final long serialVersionUID = 8016831535272601326L;
 
-  public static final String NONE = "[N,n][O,o][N,n][E,e]";
+    private static final long serialVersionUID = 8016831535272601326L;
 
-  private String custodialLimit;
-  private String replicaLimit;
-  private String outputLimit;
+    public static final String NONE = "[N,n][O,o][N,n][E,e]";
 
-  public String getCustodialLimit() {
-    return custodialLimit;
-  }
+    private String custodialLimit;
+    private String replicaLimit;
+    private String outputLimit;
 
-  public void setCustodialLimit(String custodialLimit) {
-    this.custodialLimit = custodialLimit;
-  }
+    public String getCustodialLimit() {
+        return custodialLimit;
+    }
 
-  public String getReplicaLimit() {
-    return replicaLimit;
-  }
+    public void setCustodialLimit(String custodialLimit) {
+        this.custodialLimit = custodialLimit;
+    }
 
-  public void setReplicaLimit(String replicaLimit) {
-    this.replicaLimit = replicaLimit;
-  }
+    public String getReplicaLimit() {
+        return replicaLimit;
+    }
 
-  public String getOutputLimit() {
-    return outputLimit;
-  }
+    public void setReplicaLimit(String replicaLimit) {
+        this.replicaLimit = replicaLimit;
+    }
 
-  public void setOutputLimit(String outputLimit) {
-    this.outputLimit = outputLimit;
-  }
+    public String getOutputLimit() {
+        return outputLimit;
+    }
+
+    public void setOutputLimit(String outputLimit) {
+        this.outputLimit = outputLimit;
+    }
 }

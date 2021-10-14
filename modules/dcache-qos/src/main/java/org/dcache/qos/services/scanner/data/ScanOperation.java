@@ -62,35 +62,36 @@ package org.dcache.qos.services.scanner.data;
 import org.dcache.qos.services.scanner.util.ScanTask;
 
 abstract class ScanOperation<T extends ScanTask> {
-  protected enum ScanLabel {
-    STARTED("started"),
-    FINISHED("finished");
 
-    private String label;
+    protected enum ScanLabel {
+        STARTED("started"),
+        FINISHED("finished");
 
-    ScanLabel(String label) {
-      this.label = label;
+        private String label;
+
+        ScanLabel(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return label;
+        }
     }
 
-    public String label() {
-      return label;
+    protected T task;
+    protected ScanLabel scanLabel;
+    protected long lastUpdate;
+    protected long lastScan;
+    protected long completed;
+    protected long failed;
+
+    protected String getFailedMessage() {
+        return failed == 0 ? "" : failed + " operations failed";
     }
-  }
 
-  protected T task;
-  protected ScanLabel scanLabel;
-  protected long lastUpdate;
-  protected long lastScan;
-  protected long completed;
-  protected long failed;
+    protected abstract void incrementCompleted(boolean failed);
 
-  protected String getFailedMessage() {
-    return failed == 0 ? "" : failed + " operations failed";
-  }
+    protected abstract String getFormattedPercentDone();
 
-  protected abstract void  incrementCompleted(boolean failed);
-
-  protected abstract String getFormattedPercentDone();
-
-  protected abstract boolean isComplete();
+    protected abstract boolean isComplete();
 }

@@ -68,9 +68,8 @@ import org.dcache.util.histograms.TimeseriesHistogram;
  * in support of RESTful interfaces.</p>
  *
  * <p>Unlike previous APIs, which were somewhat more coupled with the
- * actual plotting requirements (JAIDA), there are no presuppositions
- * here as to what will be done with the histogram data.  Plotting will now
- * be completely a client-side prerogative.</p>
+ * actual plotting requirements (JAIDA), there are no presuppositions here as to what will be done
+ * with the histogram data.  Plotting will now be completely a client-side prerogative.</p>
  *
  * <p>This class is part of an API which will eventually replace the
  * previous, JAIDA-based one.</p>
@@ -79,6 +78,7 @@ import org.dcache.util.histograms.TimeseriesHistogram;
  * {@link org.dcache.services.billing.cells.receivers.BillingDataRequestReceiver}.</p>
  */
 public final class BillingDataRequestMessage extends Message {
+
     public enum SeriesType {
         READ, WRITE, P2P, STORE, RESTORE, CONNECTION, CACHED
     }
@@ -95,9 +95,8 @@ public final class BillingDataRequestMessage extends Message {
 
     /**
      * <p>Specifies the subtype of data: for transfers, whether the amount of
-     * data transferred or the number of transfers; for connections, whether
-     * average, minimum or maximum values; and for disk cache,
-     * whether hits or misses.</p>
+     * data transferred or the number of transfers; for connections, whether average, minimum or
+     * maximum values; and for disk cache, whether hits or misses.</p>
      */
     private SeriesDataType dataType;
 
@@ -128,7 +127,7 @@ public final class BillingDataRequestMessage extends Message {
     }
 
     public void setDataType(
-                    SeriesDataType dataType) {
+          SeriesDataType dataType) {
         this.dataType = dataType;
     }
 

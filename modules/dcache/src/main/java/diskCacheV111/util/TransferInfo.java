@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
-import javax.security.auth.Subject;
+import static org.dcache.util.ByteUnit.BYTES;
 
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
+import javax.security.auth.Subject;
 import org.dcache.util.InvalidatableItem;
 import org.dcache.util.TimeUtils.DurationParser;
-
-import static org.dcache.util.ByteUnit.BYTES;
 
 /**
  * <p>Encapsulates the representation of active transfer data.</p>
@@ -77,12 +75,13 @@ import static org.dcache.util.ByteUnit.BYTES;
  * <p>Extended in both dCache and webadmin modules.</p>
  */
 public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem, Serializable {
+
     private static final long serialVersionUID = 7303353263666911507L;
 
-    private static final String FORMAT    = "(%s %s %s)(prot %s)"
-                    + "(uid %s gid %s vomsgrp %s)"
-                    + "(proc %s)(%s)(pool %s)(client %s)"
-                    + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)(path %s)\n";
+    private static final String FORMAT = "(%s %s %s)(prot %s)"
+          + "(uid %s gid %s vomsgrp %s)"
+          + "(proc %s)(%s)(pool %s)(client %s)"
+          + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)(path %s)\n";
 
     protected static String getTimeString(long time, boolean display) {
         if (!display) {
@@ -90,13 +89,13 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         }
 
         DurationParser durations = new DurationParser(time,
-                                                      TimeUnit.MILLISECONDS).parseAll();
+              TimeUnit.MILLISECONDS).parseAll();
 
         return String.format("%d+%02d:%02d:%02d",
-                             durations.get(TimeUnit.DAYS),
-                             durations.get(TimeUnit.HOURS),
-                             durations.get(TimeUnit.MINUTES),
-                             durations.get(TimeUnit.SECONDS));
+              durations.get(TimeUnit.DAYS),
+              durations.get(TimeUnit.HOURS),
+              durations.get(TimeUnit.MINUTES),
+              durations.get(TimeUnit.SECONDS));
     }
 
     public enum MoverState {
@@ -108,33 +107,33 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         POOL, HOST, STATUS, STATE, WAITING, MOVER
     }
 
-    protected String cellName   = "";
+    protected String cellName = "";
     protected String domainName = "";
     protected Long serialId;
-    protected String protocol      = "<unknown>";
-    protected String process       = "<unknown>";
-    protected String pnfsId        = "";
-    protected String path          = "";
-    protected String     pool          = "";
-    protected String     replyHost     = "";
-    protected String     sessionStatus = "";
-    protected long       waitingSince;
-    protected MoverState moverStatus   = MoverState.NOTFOUND;
-    protected Long       transferTime;
-    protected Long       bytesTransferred;
-    protected Long       moverId;
-    protected Long       moverSubmit;
-    protected Long       moverStart;
-    protected Subject    subject;
-    protected UserInfo   userInfo;
-    protected boolean    valid         = true;
+    protected String protocol = "<unknown>";
+    protected String process = "<unknown>";
+    protected String pnfsId = "";
+    protected String path = "";
+    protected String pool = "";
+    protected String replyHost = "";
+    protected String sessionStatus = "";
+    protected long waitingSince;
+    protected MoverState moverStatus = MoverState.NOTFOUND;
+    protected Long transferTime;
+    protected Long bytesTransferred;
+    protected Long moverId;
+    protected Long moverSubmit;
+    protected Long moverStart;
+    protected Subject subject;
+    protected UserInfo userInfo;
+    protected boolean valid = true;
 
     @Override
     public int compareTo(TransferInfo o) {
         return Comparator.comparing(TransferInfo::getCellName)
-                         .thenComparing(TransferInfo::getDomainName)
-                         .thenComparing(TransferInfo::getSerialId)
-                         .compare(this, o);
+              .thenComparing(TransferInfo::getDomainName)
+              .thenComparing(TransferInfo::getSerialId)
+              .compare(this, o);
     }
 
     @Override
@@ -147,24 +146,24 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
             return false;
         }
 
-        TransferInfo info = (TransferInfo)o;
+        TransferInfo info = (TransferInfo) o;
 
         return Objects.equals(cellName, info.cellName) &&
-                        Objects.equals(domainName, info.domainName) &&
-                        Objects.equals(serialId, info.serialId) &&
-                        Objects.equals(protocol, info.protocol) &&
-                        Objects.equals(pnfsId, info.pnfsId) &&
-                        Objects.equals(replyHost, info.replyHost);
+              Objects.equals(domainName, info.domainName) &&
+              Objects.equals(serialId, info.serialId) &&
+              Objects.equals(protocol, info.protocol) &&
+              Objects.equals(pnfsId, info.pnfsId) &&
+              Objects.equals(replyHost, info.replyHost);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(cellName,
-                            domainName,
-                            serialId,
-                            protocol,
-                            pnfsId,
-                            replyHost);
+              domainName,
+              serialId,
+              protocol,
+              pnfsId,
+              replyHost);
     }
 
     public Long getBytesTransferred() {
@@ -269,7 +268,7 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
     }
 
     public String getTimeWaiting() {
-        return timeWaiting(System.currentTimeMillis(),true);
+        return timeWaiting(System.currentTimeMillis(), true);
     }
 
     @Override
@@ -382,23 +381,23 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         }
 
         return String.format(FORMAT,
-                             cellName,
-                             domainName,
-                             String.valueOf(serialId),
-                             protocol,
-                             userInfo == null ? "" : userInfo.getUid(),
-                             userInfo == null ? "" : userInfo.getGid(),
-                             userInfo == null ? "" : userInfo.getPrimaryVOMSGroup(),
-                             process,
-                             pnfsId,
-                             pool,
-                             replyHost,
-                             sessionStatus,
-                             state,
-                             getTimeWaiting(),
-                             size,
-                             speed,
-                             path);
+              cellName,
+              domainName,
+              String.valueOf(serialId),
+              protocol,
+              userInfo == null ? "" : userInfo.getUid(),
+              userInfo == null ? "" : userInfo.getGid(),
+              userInfo == null ? "" : userInfo.getPrimaryVOMSGroup(),
+              process,
+              pnfsId,
+              pool,
+              replyHost,
+              sessionStatus,
+              state,
+              getTimeWaiting(),
+              size,
+              speed,
+              path);
     }
 
     protected String timeRunning(long now, boolean display) {

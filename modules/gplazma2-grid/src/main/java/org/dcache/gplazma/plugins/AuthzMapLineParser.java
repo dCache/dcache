@@ -1,27 +1,25 @@
 package org.dcache.gplazma.plugins;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.ByteUnits.isoSymbol;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.dcache.util.ByteSizeParser;
-
-import static java.util.Objects.requireNonNull;
-import static org.dcache.util.ByteUnits.isoSymbol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author karsten
- *
  */
-class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicate, AuthzMapLineParser.UserAuthzInformation> {
+class AuthzMapLineParser implements
+      LineParser<AuthzMapLineParser.StringPredicate, AuthzMapLineParser.UserAuthzInformation> {
 
     private static final Logger _log = LoggerFactory.getLogger(AuthzMapLineParser.class);
 
@@ -34,13 +32,14 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
     private static final String GID = "\\d+(?:,\\d+)*";
     private static final String PATH = "(?:\"[^\\00]+\")|(?:(?:(?:\\\\\\s)|[^\\s\\00])+)";
     private static final Pattern USER_MAP_FILE_LINE_PATTERN = Pattern.compile(
-            "(?:"+SOME_WS+")?" + AUTHORIZE + SOME_WS + "("+USERNAME+")"
-                    + SOME_WS + "("+ACCESS+")"
-                    + "(?:"+SOME_WS+MAX_UPLOAD+")?"
-                    + SOME_WS + "("+UID+")" + SOME_WS + "("+GID+")"
-                    + SOME_WS + "("+PATH+")" + SOME_WS + "("+PATH+")"
-                    + "(?:"+SOME_WS+"("+PATH+"))?");
-    private static final Pattern MAX_UPLOAD_VALUE = Pattern.compile("(?<value>\\d*(?:\\.\\d*)?)(?<scale>.*)?");
+          "(?:" + SOME_WS + ")?" + AUTHORIZE + SOME_WS + "(" + USERNAME + ")"
+                + SOME_WS + "(" + ACCESS + ")"
+                + "(?:" + SOME_WS + MAX_UPLOAD + ")?"
+                + SOME_WS + "(" + UID + ")" + SOME_WS + "(" + GID + ")"
+                + SOME_WS + "(" + PATH + ")" + SOME_WS + "(" + PATH + ")"
+                + "(?:" + SOME_WS + "(" + PATH + "))?");
+    private static final Pattern MAX_UPLOAD_VALUE = Pattern.compile(
+          "(?<value>\\d*(?:\\.\\d*)?)(?<scale>.*)?");
     private static final int UM_KEY_GROUP = 1;
     private static final int UM_ACCESS_GROUP = 2;
     private static final int UM_UID_GROUP = 4;
@@ -51,8 +50,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
 
     private static final ByteSizeParser SIZE_PARSER = ByteSizeParser.using(isoSymbol()).build();
 
-    private static long[] toLongs(String[] s)
-    {
+    private static long[] toLongs(String[] s) {
         long[] longs = new long[s.length];
         for (int i = 0; i < s.length; i++) {
             longs[i] = Long.parseLong(s[i]);
@@ -60,8 +58,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         return longs;
     }
 
-    private static String stripQuotes(String s)
-    {
+    private static String stripQuotes(String s) {
         if (s != null && s.startsWith("\"") && s.endsWith("\"") && s.length() > 1) {
             return s.substring(1, s.length() - 1);
         } else {
@@ -70,7 +67,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
     }
 
     @Override
-    public Map.Entry<StringPredicate,UserAuthzInformation> accept(String line) {
+    public Map.Entry<StringPredicate, UserAuthzInformation> accept(String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#") || line.startsWith("version 2.")) {
             return null;
@@ -88,10 +85,10 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
                 final String fsroot = stripQuotes(matcher.group(UM_FS_ROOT_GROUP));
                 String maxUploadValue = matcher.group("maxupload");
                 OptionalLong maxUpload = maxUploadValue == null
-                        ? OptionalLong.empty()
-                        : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
+                      ? OptionalLong.empty()
+                      : OptionalLong.of(SIZE_PARSER.parse(maxUploadValue));
                 UserAuthzInformation info = new UserAuthzInformation(key, access,
-                        Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
+                      Long.parseLong(uid), gids, home, root, fsroot, maxUpload);
                 return new SimpleImmutableEntry<>(new StringPredicate(key), info);
             }
             _log.warn("Ignored malformed line in AuthzDB-File: '{}'", line);
@@ -115,8 +112,8 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         }
     }
 
-    public static class UserAuthzInformation
-    {
+    public static class UserAuthzInformation {
+
         private final String _username;
         private final String _access;
         private final long _uid;
@@ -127,9 +124,8 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         private final OptionalLong _maxUpload;
 
         public UserAuthzInformation(String username, String access, long uid,
-                long[] gids, String home, String root, String fsroot,
-                OptionalLong maxUpload)
-        {
+              long[] gids, String home, String root, String fsroot,
+              OptionalLong maxUpload) {
             _username = username;
             _access = access;
             _uid = uid;
@@ -179,9 +175,9 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         @Override
         public int hashCode() {
             return _username.hashCode() ^ _access.hashCode()
-                   ^ Arrays.hashCode(_gids)
-                   ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
-                   ^ Objects.hashCode(_uid) ^ _maxUpload.hashCode();
+                  ^ Arrays.hashCode(_gids)
+                  ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
+                  ^ Objects.hashCode(_uid) ^ _maxUpload.hashCode();
         }
 
         @Override
@@ -194,30 +190,29 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
                 UserAuthzInformation otherInfo = (UserAuthzInformation) other;
 
                 return Objects.equal(_username, otherInfo._username)
-                        && Objects.equal(_access, otherInfo._access)
-                        && (_uid == otherInfo._uid)
-                        && Arrays.equals(_gids, otherInfo._gids)
-                        && Objects.equal(_home, otherInfo._home)
-                        && Objects.equal(_root, otherInfo._root)
-                        && Objects.equal(_fsroot, otherInfo._fsroot)
-                        && _maxUpload.equals(otherInfo._maxUpload);
+                      && Objects.equal(_access, otherInfo._access)
+                      && (_uid == otherInfo._uid)
+                      && Arrays.equals(_gids, otherInfo._gids)
+                      && Objects.equal(_home, otherInfo._home)
+                      && Objects.equal(_root, otherInfo._root)
+                      && Objects.equal(_fsroot, otherInfo._fsroot)
+                      && _maxUpload.equals(otherInfo._maxUpload);
             }
 
             return false;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return MoreObjects.toStringHelper(this)
-                    .add("username", _username)
-                    .add("access", _access)
-                    .add("uid", _uid)
-                    .add("gids", _gids)
-                    .add("home", _home)
-                    .add("root", _root)
-                    .add("fsroot", _fsroot)
-                    .toString();
+                  .add("username", _username)
+                  .add("access", _access)
+                  .add("uid", _uid)
+                  .add("gids", _gids)
+                  .add("home", _home)
+                  .add("root", _root)
+                  .add("fsroot", _fsroot)
+                  .toString();
         }
     }
 }

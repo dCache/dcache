@@ -71,15 +71,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Dispatches to the namespace the scan summary request and calls complete when if terminates.
- *  Updates the scan counts on the basis of verification response.  Updates the operation map
- *  when a pool's status has changed.
+ * Dispatches to the namespace the scan summary request and calls complete when if terminates.
+ * Updates the scan counts on the basis of verification response.  Updates the operation map when a
+ * pool's status has changed.
  */
 public final class NamespaceOpHandler implements PoolOpHandler {
-    private static final Logger LOGGER
-                    = LoggerFactory.getLogger(NamespaceOpHandler.class);
 
-    private NamespaceAccess  namespace;
+    private static final Logger LOGGER
+          = LoggerFactory.getLogger(NamespaceOpHandler.class);
+
+    private NamespaceAccess namespace;
     private QoSPoolScanResponseListener listener;
     private QoSVerificationListener verificationListener;
 
@@ -107,11 +108,12 @@ public final class NamespaceOpHandler implements PoolOpHandler {
 
     public void handlePoolScanCancelled(String pool, PoolQoSStatus status) {
         try {
-            LOGGER.trace("handlePoolScanCancelled for {}: {}, notifying cancellation.", pool, status);
+            LOGGER.trace("handlePoolScanCancelled for {}: {}, notifying cancellation.", pool,
+                  status);
             verificationListener.fileQoSBatchedVerificationCancelled(pool);
         } catch (QoSException e) {
             LOGGER.error("Could not send batch cancellation notification for {}: {}.",
-                pool, e.toString());
+                  pool, e.toString());
         }
     }
 
@@ -120,7 +122,7 @@ public final class NamespaceOpHandler implements PoolOpHandler {
             verificationListener.notifyLocationInclusion(pool);
         } catch (QoSException e) {
             LOGGER.error("Could not notify verification listener of re-included pool {}: {}.",
-                pool, e.toString());
+                  pool, e.toString());
         }
     }
 
@@ -129,7 +131,7 @@ public final class NamespaceOpHandler implements PoolOpHandler {
             verificationListener.notifyLocationExclusion(pool);
         } catch (QoSException e) {
             LOGGER.error("Could not notify verification listener of excluded pool {}: {}.",
-                pool, e.toString());
+                  pool, e.toString());
         }
     }
 

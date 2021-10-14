@@ -20,6 +20,7 @@ import java.util.Arrays;
 
 /**
  * Indicates the status of a file's data.
+ *
  * @since: 3.1
  */
 public enum FileState {
@@ -53,8 +54,8 @@ public enum FileState {
 
     public static FileState valueOf(int state) {
         return Arrays.stream(values())
-                .filter(s -> s.getValue() == state)
-                .findAny()
-                .orElseThrow(IllegalArgumentException::new);
+              .filter(s -> s.getValue() == state)
+              .findAny()
+              .orElseThrow(IllegalArgumentException::new);
     }
 }

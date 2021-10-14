@@ -5,9 +5,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.stream.ChunkedNioFile;
-
 import java.nio.ByteBuffer;
-
 import org.dcache.pool.repository.RepositoryChannel;
 
 /*
@@ -27,9 +25,9 @@ import org.dcache.pool.repository.RepositoryChannel;
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations
  * under the License.
-*/
-public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
-{
+ */
+public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf> {
+
     private final RepositoryChannel _channel;
     private final long _startOffset;
     private final long _endOffset;
@@ -38,27 +36,26 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
     private volatile long _offset;
 
     public ReusableChunkedNioFile(RepositoryChannel channel,
-                                  long offset,
-                                  long length,
-                                  int chunkSize)
-    {
+          long offset,
+          long length,
+          int chunkSize) {
         if (channel == null) {
             throw new NullPointerException("Channel must not be null");
         }
 
         if (offset < 0) {
             throw new IllegalArgumentException("offset: " + offset +
-                                               " (expected: 0 or greater)");
+                  " (expected: 0 or greater)");
         }
 
         if (length < 0) {
             throw new IllegalArgumentException("length: " + length +
-                                               " (expected: 0 or greater)");
+                  " (expected: 0 or greater)");
         }
 
         if (chunkSize <= 0) {
             throw new IllegalArgumentException("chunkSize: " + chunkSize +
-                                               " (expected: 1 or greater)");
+                  " (expected: 1 or greater)");
         }
 
         _channel = channel;
@@ -68,10 +65,9 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
     }
 
     /**
-     * With a normal ChunkedNioFile, Netty at some point receives a
-     * "connection closed by peer" signal and closes the file, trying to
-     * release the resources. As this closes the disk-file, the mover becomes
-     * useless despite keep-alive. To avoid this, close here is a no-op.
+     * With a normal ChunkedNioFile, Netty at some point receives a "connection closed by peer"
+     * signal and closes the file, trying to release the resources. As this closes the disk-file,
+     * the mover becomes useless despite keep-alive. To avoid this, close here is a no-op.
      */
     @Override
     public void close() throws Exception {
@@ -84,18 +80,15 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
     }
 
     @Override
-    public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception
-    {
+    public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception {
         return readChunk(ctx.alloc());
     }
 
     /**
-     * Like {@link ChunkedNioFile#readChunk}, but uses position independent
-     * IO calls.
+     * Like {@link ChunkedNioFile#readChunk}, but uses position independent IO calls.
      */
     @Override
-    public ByteBuf readChunk(ByteBufAllocator allocator) throws Exception
-    {
+    public ByteBuf readChunk(ByteBufAllocator allocator) throws Exception {
         long offset = _offset;
         if (offset >= _endOffset) {
             return null;
@@ -127,22 +120,19 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
     }
 
     @Override
-    public long length()
-    {
+    public long length() {
         return _endOffset - _startOffset;
     }
 
     @Override
-    public long progress()
-    {
+    public long progress() {
         return _offset - _startOffset;
     }
 
     /**
      * Returns the repository channel. Used for unit testing.
      */
-    RepositoryChannel getChannel()
-    {
+    RepositoryChannel getChannel() {
         return _channel;
     }
 

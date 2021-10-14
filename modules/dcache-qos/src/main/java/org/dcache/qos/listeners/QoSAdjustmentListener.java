@@ -64,17 +64,18 @@ import org.dcache.qos.QoSException;
 import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 
 public interface QoSAdjustmentListener {
-  /**
-   *  Notification that something needs to be done to satisfy the file's QoS requirements.
-   *
-   *  @param adjustmentRequest indicating file, metadata and the action which should be taken.
-   */
-  void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) throws QoSException;
 
-  /**
-   *  Notify that the current adjustment should be canceled for the given file.
-   *
-   *  @param pnfsId file for which to cancel any adjustment in flight.
-   */
-  void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException;
+    /**
+     * Notification that something needs to be done to satisfy the file's QoS requirements.
+     *
+     * @param adjustmentRequest indicating file, metadata and the action which should be taken.
+     */
+    void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) throws QoSException;
+
+    /**
+     * Notify that the current adjustment should be canceled for the given file.
+     *
+     * @param pnfsId file for which to cancel any adjustment in flight.
+     */
+    void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException;
 }

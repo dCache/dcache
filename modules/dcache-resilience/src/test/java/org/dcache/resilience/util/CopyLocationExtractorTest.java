@@ -59,23 +59,22 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
+import diskCacheV111.poolManager.StorageUnit;
+import diskCacheV111.util.CacheException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.StorageUnit;
-import diskCacheV111.util.CacheException;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class CopyLocationExtractorTest extends TestBase {
+
     private String pool;
     private FileAttributes attributes;
     private StorageUnit unit;
@@ -89,7 +88,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithBothConstraintsOnPoolWithNoTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithNoTags();
         givenAReplicaOnlineFileWithBothTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -101,7 +100,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithHostConstraintOnPoolWithNoTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithNoTags();
         givenAReplicaOnlineFileWithHostTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -113,7 +112,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithNoConstraintsOnPoolWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostAndRackTags();
         givenAReplicaOnlineFileWithNoTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -125,7 +124,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithNoConstraintsOnPoolWithHostTag()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostTags();
         givenAReplicaOnlineFileWithNoTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -137,7 +136,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithNoConstraintsOnPoolWithNoTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithNoTags();
         givenAReplicaOnlineFileWithNoTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -149,7 +148,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithRackConstraintOnPoolWithHostTag()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostTags();
         givenAReplicaOnlineFileWithRackTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -161,7 +160,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChooseAnyPoolWhenSourceWithRackConstraintOnPoolWithNoTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithNoTags();
         givenAReplicaOnlineFileWithRackTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -173,7 +172,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChoosePoolOnDifferentHostAndRackWhenSourceWithBothConstraintsOnPoolWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostAndRackTags();
         givenAReplicaOnlineFileWithBothTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -181,12 +180,12 @@ public final class CopyLocationExtractorTest extends TestBase {
         whenTheExtractorIsCalledForTheNextSetOfLocations();
 
         assertTrue(theSelectedPoolsWere(
-                        allPoolsNotOnSameHostAndRackAsSource()));
+              allPoolsNotOnSameHostAndRackAsSource()));
     }
 
     @Test
     public void shouldChoosePoolOnDifferentHostWhenSourceWithBothConstraintsOnPoolWithHostTag()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostTags();
         givenAReplicaOnlineFileWithBothTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -198,7 +197,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChoosePoolOnDifferentHostWhenSourceWithHostConstraintOnPoolWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostAndRackTags();
         givenAReplicaOnlineFileWithHostTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -210,7 +209,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChoosePoolOnDifferentHostWhenSourceWithHostConstraintOnPoolWithHostTag()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostTags();
         givenAReplicaOnlineFileWithHostTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -222,7 +221,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldChoosePoolOnDifferentRackWhenSourceWithRackConstraintOnPoolWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         givenNewFilesOnPoolsWithHostAndRackTags();
         givenAReplicaOnlineFileWithRackTag();
         givenTheSourceAndConstraintsOfThisFile();
@@ -234,7 +233,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     @Test
     public void shouldNotFindAnyAvailablePoolIfFileIsOverconstrained()
-                    throws CacheException {
+          throws CacheException {
         givenFilesWithExcessLocations();
         givenAReplicaOnlineFileWithBothTags();
         givenTheSourceAndConstraintsOfThisFile();
@@ -248,9 +247,9 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     private Collection<String> allAvailablePools() {
         return memberPools().stream()
-                            .map((i) -> poolInfoMap.getPool(i))
-                            .filter((p) -> poolInfoMap.getPoolState(pool).mode.isEnabled())
-                            .collect(Collectors.toSet());
+              .map((i) -> poolInfoMap.getPool(i))
+              .filter((p) -> poolInfoMap.getPoolState(pool).mode.isEnabled())
+              .collect(Collectors.toSet());
     }
 
     private Collection<String> allPoolsNotOnSameHostAndRackAsSource() {
@@ -267,7 +266,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     private Collection<String> filterPools(String... constraints) {
         Map<String, String> sourceTags = poolInfoMap.getTags(
-                        poolInfoMap.getPoolIndex(pool));
+              poolInfoMap.getPoolIndex(pool));
         return memberPools().stream().filter((p) -> {
             Map<String, String> tags = poolInfoMap.getTags(p);
 
@@ -277,7 +276,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
             for (String key : constraints) {
                 if (tags.containsKey(key) && sourceTags.containsKey(key)
-                                && tags.get(key).equals(sourceTags.get(key))) {
+                      && tags.get(key).equals(sourceTags.get(key))) {
                     return false;
                 }
             }
@@ -304,9 +303,9 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     private void givenAllTaglessPoolsAreOffline() {
         Collection<String> offline = memberPools().stream().filter(
-                        (pool) -> poolInfoMap.getTags(pool).isEmpty()).map(
-                        (i) -> poolInfoMap.getPool(i)).collect(
-                        Collectors.toList());
+              (pool) -> poolInfoMap.getTags(pool).isEmpty()).map(
+              (i) -> poolInfoMap.getPool(i)).collect(
+              Collectors.toList());
         offlinePools(offline.toArray(String[]::new));
     }
 
@@ -329,16 +328,16 @@ public final class CopyLocationExtractorTest extends TestBase {
     private void givenTheSourceAndConstraintsOfThisFile() {
         pool = attributes.getLocations().iterator().next();
         String storageGroupName = attributes.getStorageClass() + "@"
-                        + attributes.getHsm();
+              + attributes.getHsm();
         Integer sindex = poolInfoMap.getUnitIndex(storageGroupName);
         StorageUnitConstraints constraints = poolInfoMap.getStorageUnitConstraints(sindex);
         extractor = new CopyLocationExtractor(constraints.getOneCopyPer(),
-                        poolInfoMap);
+              poolInfoMap);
     }
 
     private Collection<Integer> memberPools() {
         return poolInfoMap.getPoolsOfGroup(poolInfoMap.getResilientPoolGroup(
-                        poolInfoMap.getPoolIndex(pool)));
+              poolInfoMap.getPoolIndex(pool)));
     }
 
     private Collection<String> noneAvailable() {
@@ -363,7 +362,7 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     private void whenTheExtractorIsCalledForTheNextSetOfLocations() {
         attributes.getLocations().stream().forEach(
-                        (p) -> extractor.addSeenTagsFor(p));
+              (p) -> extractor.addSeenTagsFor(p));
         selected = extractor.getCandidateLocations(allAvailablePools());
     }
 }

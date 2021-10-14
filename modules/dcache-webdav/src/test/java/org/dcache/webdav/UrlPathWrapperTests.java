@@ -1,17 +1,16 @@
 package org.dcache.webdav;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
-public class UrlPathWrapperTests
-{
+import org.junit.Test;
+
+public class UrlPathWrapperTests {
+
     private static final String UNENCODED = "\u0561\u0580\u0574\u0578\u0582\u0576\u056F\u0020";
     private static final String ENCODED = "%D5%A1%D6%80%D5%B4%D5%B8%D6%82%D5%B6%D5%AF%20";
 
     @Test
-    public void testGetEmptyString()
-    {
+    public void testGetEmptyString() {
         UrlPathWrapper empty = UrlPathWrapper.forEmptyPath();
 
         assertEquals("", empty.toString());
@@ -20,8 +19,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testAsciiForPath()
-    {
+    public void testAsciiForPath() {
         String source = "pathElement";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -32,8 +30,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithColon()
-    {
+    public void testForPathWithColon() {
         String source = "path:element";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -44,8 +41,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithSpaceColon()
-    {
+    public void testForPathWithSpaceColon() {
         String decoded = "path :element";
 
         UrlPathWrapper.forPath(decoded);
@@ -57,9 +53,8 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testGoettingen()
-    {
-        String decoded="Göttingen:information";
+    public void testGoettingen() {
+        String decoded = "Göttingen:information";
         UrlPathWrapper.forPath(decoded);
 
         /*
@@ -69,8 +64,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithMiddleSlash()
-    {
+    public void testForPathWithMiddleSlash() {
         String source = "path/element";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -81,8 +75,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithEndSlash()
-    {
+    public void testForPathWithEndSlash() {
         String source = "pathElement/";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -93,8 +86,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithStartSlash()
-    {
+    public void testForPathWithStartSlash() {
         String source = "/pathElement";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -105,8 +97,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithDoubleStartSlash()
-    {
+    public void testForPathWithDoubleStartSlash() {
         String source = "//pathElement";
 
         UrlPathWrapper path = UrlPathWrapper.forPath(source);
@@ -117,8 +108,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithPercent()
-    {
+    public void testForPathWithPercent() {
         String source = "path%element";
         String encoded = "path%25element";
 
@@ -130,8 +120,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithQuestion()
-    {
+    public void testForPathWithQuestion() {
         String source = "path?element";
         String encoded = "path%3Felement";
 
@@ -143,8 +132,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithSpace()
-    {
+    public void testForPathWithSpace() {
         String source = "path element";
         String encoded = "path%20element";
 
@@ -156,8 +144,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithSquareBrackets()
-    {
+    public void testForPathWithSquareBrackets() {
         String source = "path[element]";
         String encoded = "path%5Belement%5D";
 
@@ -169,8 +156,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithHash()
-    {
+    public void testForPathWithHash() {
         String source = "path#element";
         String encoded = "path%23element";
 
@@ -182,8 +168,7 @@ public class UrlPathWrapperTests
     }
 
     @Test
-    public void testForPathWithNonAscii()
-    {
+    public void testForPathWithNonAscii() {
         UrlPathWrapper path = UrlPathWrapper.forPath(UNENCODED);
 
         assertEquals(ENCODED, path.getEncoded());

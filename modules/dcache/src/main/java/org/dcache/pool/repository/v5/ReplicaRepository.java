@@ -1,11 +1,33 @@
 package org.dcache.pool.repository.v5;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.pool.repository.ReplicaState.NEW;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.REMOVED;
+import static org.dcache.util.ByteUnit.GiB;
+
 import com.google.common.base.Stopwatch;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.DiskSpace;
+import diskCacheV111.util.FileCorruptedCacheException;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import java.io.PrintWriter;
 import java.nio.file.OpenOption;
 import java.util.ArrayList;
@@ -35,26 +57,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.DiskSpace;
-import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.LockedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -84,28 +87,19 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.pool.repository.ReplicaState.NEW;
-import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
-import static org.dcache.pool.repository.ReplicaState.REMOVED;
-import static org.dcache.util.ByteUnit.GiB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of Repository interface.
- *
- * Allows openEntry, getEntry, getState and setSticky to be called
- * before the load method finishes. Other methods of the Repository
- * interface will fail until load has completed.
+ * <p>
+ * Allows openEntry, getEntry, getState and setSticky to be called before the load method finishes.
+ * Other methods of the Repository interface will fail until load has completed.
  */
 public class ReplicaRepository
-    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider, CellIdentityAware,
-                PoolDataBeanProvider<RepositoryData>
-{
+      implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider,
+      CellIdentityAware,
+      PoolDataBeanProvider<RepositoryData> {
     /* Implementation note
      * -------------------
      *
@@ -119,48 +113,49 @@ public class ReplicaRepository
      */
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(ReplicaRepository.class);
+          LoggerFactory.getLogger(ReplicaRepository.class);
 
     /**
-     * Time in millisecs added to each sticky expiration task.  We
-     * schedule the task later than the expiration time to account for
-     * small clock shifts.
+     * Time in millisecs added to each sticky expiration task.  We schedule the task later than the
+     * expiration time to account for small clock shifts.
      */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
 
     public static final long DEFAULT_GAP = GiB.toBytes(4L);
 
     private final List<FaultListener> _faultListeners =
-        new CopyOnWriteArrayList<>();
+          new CopyOnWriteArrayList<>();
 
     private final StateChangeListeners _stateChangeListeners =
-        new StateChangeListeners();
+          new StateChangeListeners();
 
     /**
      * Sticky bit expiration tasks.
      */
-    private final Map<PnfsId,ScheduledFuture<?>> _tasks =
-        new ConcurrentHashMap<>();
+    private final Map<PnfsId, ScheduledFuture<?>> _tasks =
+          new ConcurrentHashMap<>();
 
     /**
      * Collection of removable entries.
      */
     private final Set<PnfsId> _removable =
-        Collections.newSetFromMap(new ConcurrentHashMap<>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-     /**
+    /**
      * Threads pool size to scan the repository to check metadata.
      */
     private Integer scanThreads;
 
-     /**
+    /**
      * workQueue attributes to scan the repository to check metadata.
      */
     private int _workQueueCapacity = 10000;
     private long _workQueuekeepAliveTime = 60;
-    private TimeUnit _workQueueTimeUnit =  TimeUnit.SECONDS;
+    private TimeUnit _workQueueTimeUnit = TimeUnit.SECONDS;
 
-    /** Executor for periodic tasks. */
+    /**
+     * Executor for periodic tasks.
+     */
     @GuardedBy("_stateLock")
     private ScheduledExecutorService _executor;
 
@@ -240,12 +235,10 @@ public class ReplicaRepository
     private DiskSpace _gap = DiskSpace.UNSPECIFIED;
 
     /**
-     * Throws an IllegalStateException if the repository has been
-     * initialized.
+     * Throws an IllegalStateException if the repository has been initialized.
      */
     @GuardedBy("_stateLock")
-    private void checkUninitialized()
-    {
+    private void checkUninitialized() {
         if (_state != State.UNINITIALIZED) {
             throw new IllegalStateException("Operation not allowed after initialization");
         }
@@ -255,30 +248,29 @@ public class ReplicaRepository
      * Throws an IllegalStateException if the repository is not open.
      */
     @GuardedBy("_stateLock")
-    private void checkOpen()
-    {
+    private void checkOpen() {
         State state = _state;
         if (state != State.OPEN) {
-            throw new IllegalStateException("Operation not allowed while repository is in state " + state);
+            throw new IllegalStateException(
+                  "Operation not allowed while repository is in state " + state);
         }
     }
 
     /**
-     * Throws an IllegalStateException if the repository is not in
-     * either INITIALIZED, LOADING or OPEN.
+     * Throws an IllegalStateException if the repository is not in either INITIALIZED, LOADING or
+     * OPEN.
      */
     @GuardedBy("_stateLock")
-    private void checkInitialized()
-    {
+    private void checkInitialized() {
         State state = _state;
         if (state != State.INITIALIZED && state != State.LOADING && state != State.OPEN) {
-            throw new IllegalStateException("Operation not allowed while repository is in state " + state);
+            throw new IllegalStateException(
+                  "Operation not allowed while repository is in state " + state);
         }
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -288,23 +280,21 @@ public class ReplicaRepository
         }
     }
 
-    public Integer getscanThreads()
-    {
+    public Integer getscanThreads() {
         return scanThreads;
     }
 
-    public void setScanThreads(Integer scanThreads)
-    {
+    public void setScanThreads(Integer scanThreads) {
         this.scanThreads = scanThreads;
     }
 
 
     /**
      * Get pool name to which repository belongs.
+     *
      * @return pool name.
      */
-    public String getPoolName()
-    {
+    public String getPoolName() {
         _stateLock.readLock().lock();
         try {
             return _poolName;
@@ -314,11 +304,9 @@ public class ReplicaRepository
     }
 
     /**
-     * The executor is used for periodic background checks and sticky
-     * flag expiration.
+     * The executor is used for periodic background checks and sticky flag expiration.
      */
-    public void setExecutor(ScheduledExecutorService executor)
-    {
+    public void setExecutor(ScheduledExecutorService executor) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -331,8 +319,7 @@ public class ReplicaRepository
     /**
      * Sets the handler for talking to the PNFS manager.
      */
-    public void setPnfsHandler(PnfsHandler pnfs)
-    {
+    public void setPnfsHandler(PnfsHandler pnfs) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -342,8 +329,7 @@ public class ReplicaRepository
         }
     }
 
-    public boolean getVolatile()
-    {
+    public boolean getVolatile() {
         _stateLock.readLock().lock();
         try {
             return _volatile;
@@ -353,12 +339,10 @@ public class ReplicaRepository
     }
 
     /**
-     * Sets whether pool is volatile. On volatile pools
-     * ClearCacheLocation messages are flagged to trigger deletion of
-     * the namespace entry when the last known replica is deleted.
+     * Sets whether pool is volatile. On volatile pools ClearCacheLocation messages are flagged to
+     * trigger deletion of the namespace entry when the last known replica is deleted.
      */
-    public void setVolatile(boolean value)
-    {
+    public void setVolatile(boolean value) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -371,8 +355,7 @@ public class ReplicaRepository
     /**
      * The account keeps track of available space.
      */
-    public void setAccount(Account account)
-    {
+    public void setAccount(Account account) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -382,17 +365,13 @@ public class ReplicaRepository
         }
     }
 
-    public void setReplicaStore(ReplicaStore store)
-    {
+    public void setReplicaStore(ReplicaStore store) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
-            _store = new ReplicaStoreCache(store, new StateChangeListener()
-
-            {
+            _store = new ReplicaStoreCache(store, new StateChangeListener() {
                 @Override
-                public void stateChanged(StateChangeEvent event)
-                {
+                public void stateChanged(StateChangeEvent event) {
                     PnfsId id = event.getPnfsId();
                     if (event.getOldState() != NEW || event.getNewState() != REMOVED) {
                         if (event.getOldState() == NEW) {
@@ -412,58 +391,55 @@ public class ReplicaRepository
 
                         if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
                             _account.adjustPrecious(id, event.getNewEntry().getReplicaSize());
-                        } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
+                        } else if (event.getOldState() == PRECIOUS
+                              && event.getNewState() != PRECIOUS) {
                             _account.adjustPrecious(id, -event.getOldEntry().getReplicaSize());
                         }
 
                         _stateChangeListeners.stateChanged(event);
                     }
                     switch (event.getNewState()) {
-                    case REMOVED:
-                        if (event.getOldState() != NEW) {
-                            LOGGER.info("remove entry {}: {}", id, event.getWhy());
-                        }
+                        case REMOVED:
+                            if (event.getOldState() != NEW) {
+                                LOGGER.info("remove entry {}: {}", id, event.getWhy());
+                            }
 
-                        _pnfs.clearCacheLocation(id, _volatile);
+                            _pnfs.clearCacheLocation(id, _volatile);
 
-                        ScheduledFuture<?> oldTask = _tasks.remove(id);
-                        if (oldTask != null) {
-                            oldTask.cancel(false);
-                        }
-                        break;
-                    case DESTROYED:
-                        /* It is essential to free after we removed the file: This is the opposite
-                         * of what happens during allocation, in which we allocate before writing
-                         * to disk. We rely on never having anything on disk that we haven't accounted
-                         * for in the Account object.
-                         */
-                        long size = event.getOldEntry().getReplicaSize();
-                        if (size > 0L) {
-                            _account.free(id, size);
-                        }
-                        break;
+                            ScheduledFuture<?> oldTask = _tasks.remove(id);
+                            if (oldTask != null) {
+                                oldTask.cancel(false);
+                            }
+                            break;
+                        case DESTROYED:
+                            /* It is essential to free after we removed the file: This is the opposite
+                             * of what happens during allocation, in which we allocate before writing
+                             * to disk. We rely on never having anything on disk that we haven't accounted
+                             * for in the Account object.
+                             */
+                            long size = event.getOldEntry().getReplicaSize();
+                            if (size > 0L) {
+                                _account.free(id, size);
+                            }
+                            break;
                     }
                 }
 
                 @Override
-                public void accessTimeChanged(EntryChangeEvent event)
-                {
+                public void accessTimeChanged(EntryChangeEvent event) {
                     updateRemovable(event.getNewEntry());
                     _stateChangeListeners.accessTimeChanged(event);
                 }
 
                 @Override
-                public void stickyChanged(StickyChangeEvent event)
-                {
+                public void stickyChanged(StickyChangeEvent event) {
                     updateRemovable(event.getNewEntry());
                     _stateChangeListeners.stickyChanged(event);
                     scheduleExpirationTask(event.getNewEntry());
                 }
-            }, new FaultListener()
-            {
+            }, new FaultListener() {
                 @Override
-                public void faultOccurred(FaultEvent event)
-                {
+                public void faultOccurred(FaultEvent event) {
                     for (FaultListener listener : _faultListeners) {
                         listener.faultOccurred(event);
                     }
@@ -474,8 +450,7 @@ public class ReplicaRepository
         }
     }
 
-    public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
-    {
+    public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper) {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
@@ -485,13 +460,11 @@ public class ReplicaRepository
         }
     }
 
-    public void setMaxDiskSpaceString(String size)
-    {
+    public void setMaxDiskSpaceString(String size) {
         setMaxDiskSpace(size.isEmpty() ? DiskSpace.UNSPECIFIED : new DiskSpace(size));
     }
 
-    public void setMaxDiskSpace(DiskSpace size)
-    {
+    public void setMaxDiskSpace(DiskSpace size) {
         _stateLock.writeLock().lock();
         try {
             _staticMaxSize = size;
@@ -503,8 +476,7 @@ public class ReplicaRepository
         }
     }
 
-    public State getState()
-    {
+    public State getState() {
         _stateLock.readLock().lock();
         try {
             return _state;
@@ -515,8 +487,7 @@ public class ReplicaRepository
 
     @Override
     public void init()
-            throws IllegalStateException, CacheException
-    {
+          throws IllegalStateException, CacheException {
         checkState(_pnfs != null, "Pnfs handler must be set.");
         checkState(_account != null, "Account must be set.");
 
@@ -525,8 +496,7 @@ public class ReplicaRepository
         }
     }
 
-    private boolean compareAndSetState(State expected, State state)
-    {
+    private boolean compareAndSetState(State expected, State state) {
         _stateLock.writeLock().lock();
         try {
             if (_state != expected) {
@@ -540,8 +510,8 @@ public class ReplicaRepository
     }
 
     private PnfsId loadRecord(PnfsId id)
-            throws CacheException, IllegalStateException,
-            InterruptedException {
+          throws CacheException, IllegalStateException,
+          InterruptedException {
         ReplicaRecord entry = readReplicaRecord(id);
         if (entry != null) {
             ReplicaState state = entry.getState();
@@ -557,10 +527,11 @@ public class ReplicaRepository
 
     @Override
     public void load()
-            throws CacheException, IllegalStateException,
-            InterruptedException {
+          throws CacheException, IllegalStateException,
+          InterruptedException {
         if (!compareAndSetState(State.INITIALIZED, State.LOADING)) {
-            throw new IllegalStateException("Can only load repository after initialization and only once.");
+            throw new IllegalStateException(
+                  "Can only load repository after initialization and only once.");
         }
 
         Stopwatch watch = Stopwatch.createStarted();
@@ -580,9 +551,12 @@ public class ReplicaRepository
                     _initializationProgress = ((float) ++cnt) / fileCount;
                 }
             } else {
-                BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(_workQueueCapacity);
-                ThreadPoolExecutor scanExecutor = new ThreadPoolExecutor(1, scanThreads, _workQueuekeepAliveTime, _workQueueTimeUnit, workQueue);
-                CompletionService<PnfsId> completionService = new ExecutorCompletionService<PnfsId>(scanExecutor);
+                BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(
+                      _workQueueCapacity);
+                ThreadPoolExecutor scanExecutor = new ThreadPoolExecutor(1, scanThreads,
+                      _workQueuekeepAliveTime, _workQueueTimeUnit, workQueue);
+                CompletionService<PnfsId> completionService = new ExecutorCompletionService<PnfsId>(
+                      scanExecutor);
                 Set<Future<PnfsId>> futures = new HashSet<Future<PnfsId>>();
 
                 for (PnfsId id : ids) {
@@ -599,7 +573,8 @@ public class ReplicaRepository
                         }
                     }
 
-                    while (completedFutures.size() > 0 || (futures.size() + cnt == fileCount && futures.size() > 0)) {
+                    while (completedFutures.size() > 0 || (futures.size() + cnt == fileCount
+                          && futures.size() > 0)) {
 
                         Future<PnfsId> future = completionService.poll();
                         if (future != null) {
@@ -641,8 +616,7 @@ public class ReplicaRepository
     }
 
     @Override
-    public Iterator<PnfsId> iterator()
-    {
+    public Iterator<PnfsId> iterator() {
         _stateLock.readLock().lock();
         try {
             checkOpen();
@@ -658,15 +632,15 @@ public class ReplicaRepository
 
     @Override
     public ReplicaDescriptor createEntry(FileAttributes fileAttributes,
-                                   ReplicaState transferState,
-                                   ReplicaState targetState,
-                                   List<StickyRecord> stickyRecords,
-                                   Set<? extends OpenOption> flags,
-                                   OptionalLong maximumSize)
-        throws CacheException
-    {
+          ReplicaState transferState,
+          ReplicaState targetState,
+          List<StickyRecord> stickyRecords,
+          Set<? extends OpenOption> flags,
+          OptionalLong maximumSize)
+          throws CacheException {
         if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
-            throw new IllegalArgumentException("PNFSID and STORAGEINFO are required, only got " + fileAttributes.getDefinedAttributes());
+            throw new IllegalArgumentException("PNFSID and STORAGEINFO are required, only got "
+                  + fileAttributes.getDefinedAttributes());
         }
         if (stickyRecords == null) {
             throw new IllegalArgumentException("List of sticky records must not be null");
@@ -677,20 +651,20 @@ public class ReplicaRepository
             checkOpen();
 
             switch (transferState) {
-            case FROM_CLIENT:
-            case FROM_STORE:
-            case FROM_POOL:
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid initial state");
+                case FROM_CLIENT:
+                case FROM_STORE:
+                case FROM_POOL:
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid initial state");
             }
 
             switch (targetState) {
-            case PRECIOUS:
-            case CACHED:
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid target state");
+                case PRECIOUS:
+                case CACHED:
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid target state");
             }
 
             LOGGER.info("Creating new entry for {}", id);
@@ -700,7 +674,7 @@ public class ReplicaRepository
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
                 return new WriteHandleImpl(this, buildAllocator(flags, maximumSize), _pnfs,
-                        entry, fileAttributes, targetState, stickyRecords);
+                      entry, fileAttributes, targetState, stickyRecords);
             });
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make
@@ -714,10 +688,9 @@ public class ReplicaRepository
     }
 
     private Allocator buildAllocator(Set<? extends OpenOption> flags,
-            OptionalLong maximumSize)
-    {
+          OptionalLong maximumSize) {
         Allocator allocator = flags.contains(OpenFlags.NONBLOCK_SPACE_ALLOCATION)
-                ? new ImmediateAllocator(_account) : new BlockingAllocator(_account);
+              ? new ImmediateAllocator(_account) : new BlockingAllocator(_account);
         if (maximumSize.isPresent()) {
             allocator = new LimitedAllocator(allocator, maximumSize.getAsLong());
         }
@@ -726,8 +699,7 @@ public class ReplicaRepository
 
     @Override
     public ReplicaDescriptor openEntry(PnfsId id, Set<? extends OpenOption> flags)
-        throws CacheException
-    {
+          throws CacheException {
         _stateLock.readLock().lock();
         try {
             checkInitialized();
@@ -736,19 +708,19 @@ public class ReplicaRepository
             ReplicaRecord entry = getReplicaRecord(id);
             synchronized (entry) {
                 switch (entry.getState()) {
-                case NEW:
-                case FROM_CLIENT:
-                case FROM_STORE:
-                case FROM_POOL:
-                    throw new LockedCacheException("File is incomplete");
-                case BROKEN:
-                    throw new FileCorruptedCacheException("File is broken");
-                case REMOVED:
-                case DESTROYED:
-                    throw new LockedCacheException("File has been removed");
-                case PRECIOUS:
-                case CACHED:
-                    break;
+                    case NEW:
+                    case FROM_CLIENT:
+                    case FROM_STORE:
+                    case FROM_POOL:
+                        throw new LockedCacheException("File is incomplete");
+                    case BROKEN:
+                        throw new FileCorruptedCacheException("File is broken");
+                    case REMOVED:
+                    case DESTROYED:
+                        throw new LockedCacheException("File has been removed");
+                    case PRECIOUS:
+                    case CACHED:
+                        break;
                 }
                 fileAttributes = entry.getFileAttributes();
                 if (!flags.contains(OpenFlags.NOATIME)) {
@@ -770,7 +742,7 @@ public class ReplicaRepository
             try {
                 ReplicaRecord entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
                 entry.update("Removing replica created to recover from unknown open request",
-                        r -> r.setState(REMOVED));
+                      r -> r.setState(REMOVED));
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (CacheException | RuntimeException f) {
@@ -784,8 +756,7 @@ public class ReplicaRepository
 
     @Override
     public CacheEntry getEntry(PnfsId id)
-        throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         _stateLock.readLock().lock();
         try {
             checkInitialized();
@@ -804,11 +775,10 @@ public class ReplicaRepository
 
     @Override
     public void setSticky(PnfsId id, String owner,
-                          long expire, boolean overwrite)
-        throws IllegalArgumentException,
-               CacheException,
-               InterruptedException
-    {
+          long expire, boolean overwrite)
+          throws IllegalArgumentException,
+          CacheException,
+          InterruptedException {
         requireNonNull(id);
         requireNonNull(owner);
         checkArgument(expire >= -1, "Expiration time must be -1 or non-negative");
@@ -826,8 +796,9 @@ public class ReplicaRepository
                  */
                 try {
                     entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
-                    entry.update("Removing replica created to recover from unknown setSticky request",
-                            r -> r.setState(REMOVED));
+                    entry.update(
+                          "Removing replica created to recover from unknown setSticky request",
+                          r -> r.setState(REMOVED));
                 } catch (DuplicateEntryException concurrentCreation) {
                     setSticky(id, owner, expire, overwrite);
                     return;
@@ -839,18 +810,18 @@ public class ReplicaRepository
 
             entry.update("Setting " + owner + " sticky", r -> {
                 switch (r.getState()) {
-                case NEW:
-                case FROM_CLIENT:
-                case FROM_STORE:
-                case FROM_POOL:
-                    throw new LockedCacheException("File is incomplete");
-                case REMOVED:
-                case DESTROYED:
-                    throw new LockedCacheException("File has been removed");
-                case BROKEN:
-                case PRECIOUS:
-                case CACHED:
-                    break;
+                    case NEW:
+                    case FROM_CLIENT:
+                    case FROM_STORE:
+                    case FROM_POOL:
+                        throw new LockedCacheException("File is incomplete");
+                    case REMOVED:
+                    case DESTROYED:
+                        throw new LockedCacheException("File has been removed");
+                    case BROKEN:
+                    case PRECIOUS:
+                    case CACHED:
+                        break;
                 }
                 return r.setSticky(owner, expire, overwrite);
             });
@@ -860,19 +831,18 @@ public class ReplicaRepository
     }
 
     @Override
-    public SpaceRecord getSpaceRecord()
-    {
+    public SpaceRecord getSpaceRecord() {
         _stateLock.readLock().lock();
         try {
             SpaceRecord space = _account.getSpaceRecord();
             long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
             long gap = _gap.orElse(Math.min(space.getTotalSpace() / 4, DEFAULT_GAP));
             return new SpaceRecord(space.getTotalSpace(),
-                                   space.getFreeSpace(),
-                                   space.getPreciousSpace(),
-                                   space.getRemovableSpace(),
-                                   lru,
-                                   gap);
+                  space.getFreeSpace(),
+                  space.getPreciousSpace(),
+                  space.getRemovableSpace(),
+                  lru,
+                  gap);
         } finally {
             _stateLock.readLock().unlock();
         }
@@ -880,8 +850,7 @@ public class ReplicaRepository
 
     @Override
     public void setState(PnfsId id, ReplicaState state, String why)
-        throws IllegalArgumentException, InterruptedException, CacheException
-    {
+          throws IllegalArgumentException, InterruptedException, CacheException {
         if (id == null) {
             throw new IllegalArgumentException("id is null");
         }
@@ -895,30 +864,30 @@ public class ReplicaRepository
                 entry.update(why, r -> {
                     ReplicaState source = r.getState();
                     switch (source) {
-                    case NEW:
-                    case REMOVED:
-                    case DESTROYED:
-                        if (state == ReplicaState.REMOVED) {
-                            /* File doesn't exist or is already
-                             * deleted. That's all we care about.
-                             */
-                            return null;
-                        }
-                        break;
-                    case PRECIOUS:
-                    case CACHED:
-                    case BROKEN:
-                        switch (state) {
+                        case NEW:
                         case REMOVED:
-                        case CACHED:
+                        case DESTROYED:
+                            if (state == ReplicaState.REMOVED) {
+                                /* File doesn't exist or is already
+                                 * deleted. That's all we care about.
+                                 */
+                                return null;
+                            }
+                            break;
                         case PRECIOUS:
+                        case CACHED:
                         case BROKEN:
-                            return r.setState(state);
+                            switch (state) {
+                                case REMOVED:
+                                case CACHED:
+                                case PRECIOUS:
+                                case BROKEN:
+                                    return r.setState(state);
+                                default:
+                                    break;
+                            }
                         default:
                             break;
-                        }
-                    default:
-                        break;
                     }
                     throw new IllegalTransitionException(id, source, state);
                 });
@@ -937,45 +906,38 @@ public class ReplicaRepository
     }
 
     /**
-     * If set to true, then state change listeners are notified
-     * synchronously. In this case listeners must not acquire any
-     * locks or call back into the repository, as there is otherwise a
-     * risk that the component will deadlock. Synchronous notification
-     * is mainly provided for testing purposes.
+     * If set to true, then state change listeners are notified synchronously. In this case
+     * listeners must not acquire any locks or call back into the repository, as there is otherwise
+     * a risk that the component will deadlock. Synchronous notification is mainly provided for
+     * testing purposes.
      */
-    public void setSynchronousNotification(boolean value)
-    {
+    public void setSynchronousNotification(boolean value) {
         _stateChangeListeners.setSynchronousNotification(value);
     }
 
     @Override
-    public void addListener(StateChangeListener listener)
-    {
+    public void addListener(StateChangeListener listener) {
         _stateChangeListeners.add(listener);
     }
 
     @Override
-    public void removeListener(StateChangeListener listener)
-    {
+    public void removeListener(StateChangeListener listener) {
         _stateChangeListeners.remove(listener);
     }
 
     @Override
-    public void addFaultListener(FaultListener listener)
-    {
+    public void addFaultListener(FaultListener listener) {
         _faultListeners.add(listener);
     }
 
     @Override
-    public void removeFaultListener(FaultListener listener)
-    {
+    public void removeFaultListener(FaultListener listener) {
         _faultListeners.remove(listener);
     }
 
     @Override
     public ReplicaState getState(PnfsId id)
-        throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         _stateLock.readLock().lock();
         try {
             checkInitialized();
@@ -990,12 +952,11 @@ public class ReplicaRepository
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
-       getDataObject().print(pw);
-       pw.println("Sweeper Policy");
-       pw.println("    lru   : " + _sweeper.getLru());
-       pw.println("    margin: " + _sweeper.getMargin());
+    public void getInfo(PrintWriter pw) {
+        getDataObject().print(pw);
+        pw.println("Sweeper Policy");
+        pw.println("    lru   : " + _sweeper.getLru());
+        pw.println("    margin: " + _sweeper.getMargin());
     }
 
     @Override
@@ -1011,8 +972,8 @@ public class ReplicaRepository
             }
             try {
                 if (_state == State.OPEN ||
-                                _state == State.LOADING ||
-                                _state == State.INITIALIZED) {
+                      _state == State.LOADING ||
+                      _state == State.INITIALIZED) {
                     info.setFiles(_store.index().size());
                 }
             } catch (CacheException e) {
@@ -1037,13 +998,16 @@ public class ReplicaRepository
             info.setPreciousDiskSpace(precious);
             info.setPreciousDiskSpaceRatio(((double) precious) / ((double) total));
             info.setRemovableDiskSpace(removable);
-            info.setRemovableDiskSpaceRatio(((double) space.getRemovableSpace()) / ((double) total));
+            info.setRemovableDiskSpaceRatio(
+                  ((double) space.getRemovableSpace()) / ((double) total));
             info.setFileSystemSize(fsTotal);
             info.setFileSystemFree(fsFree);
             info.setFileSystemRatioFreeToTotal(((double) fsFree) / fsTotal);
             info.setFileSystemMaxSpace(fsFree + used);
-            info.setStaticallyConfiguredMax(_staticMaxSize.isSpecified() ? _staticMaxSize.longValue(): null);
-            info.setRuntimeConfiguredMax(_runtimeMaxSize.isSpecified() ? _runtimeMaxSize.longValue() : null);
+            info.setStaticallyConfiguredMax(
+                  _staticMaxSize.isSpecified() ? _staticMaxSize.longValue() : null);
+            info.setRuntimeConfiguredMax(
+                  _runtimeMaxSize.isSpecified() ? _runtimeMaxSize.longValue() : null);
         } finally {
             _stateLock.readLock().unlock();
         }
@@ -1051,8 +1015,7 @@ public class ReplicaRepository
         return info;
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         _stateLock.writeLock().lock();
         try {
             _stateChangeListeners.stop();
@@ -1064,8 +1027,7 @@ public class ReplicaRepository
     }
 
     @GuardedBy("getReplicaRecord(entry.getPnfsid())")
-    protected void updateRemovable(CacheEntry entry)
-    {
+    protected void updateRemovable(CacheEntry entry) {
         PnfsId id = entry.getPnfsId();
         if (_sweeper.isRemovable(entry)) {
             if (_removable.add(id)) {
@@ -1079,27 +1041,23 @@ public class ReplicaRepository
     }
 
     /**
-     * @throw FileNotInCacheException in case file is not in
-     *        repository
+     * @throw FileNotInCacheException in case file is not in repository
      */
     private ReplicaRecord getReplicaRecord(PnfsId pnfsId)
-        throws CacheException
-    {
+          throws CacheException {
         ReplicaRecord entry = _store.get(pnfsId);
         if (entry == null) {
             throw new FileNotInCacheException("Entry not in repository : "
-                                              + pnfsId);
+                  + pnfsId);
         }
         return entry;
     }
 
     /**
-     * Reads an entry from the meta data store. Retries indefinitely
-     * in case of timeouts.
+     * Reads an entry from the meta data store. Retries indefinitely in case of timeouts.
      */
     private ReplicaRecord readReplicaRecord(PnfsId id)
-        throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         /* In case of communication problems with the pool, there is
          * no point in failing - the pool would be dead if we did. It
          * is reasonable to expect that the PNFS manager is started at
@@ -1111,7 +1069,7 @@ public class ReplicaRepository
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.TIMEOUT) {
                     throw CacheExceptionFactory.exceptionOf(e.getRc(),
-                            "Failed to read meta data for " + id + ": " + e.getMessage(), e);
+                          "Failed to read meta data for " + id + ": " + e.getMessage(), e);
                 }
             }
             Thread.sleep(1000);
@@ -1124,8 +1082,7 @@ public class ReplicaRepository
      * Schedules an expiration task for a sticky entry.
      */
     @GuardedBy("entry")
-    private void scheduleExpirationTask(CacheEntry entry)
-    {
+    private void scheduleExpirationTask(CacheEntry entry) {
         /* Cancel previous task.
          */
         PnfsId pnfsId = entry.getPnfsId();
@@ -1137,7 +1094,7 @@ public class ReplicaRepository
         /* Find next sticky flag to expire.
          */
         long expire = Long.MAX_VALUE;
-        for (StickyRecord record: entry.getStickyRecords()) {
+        for (StickyRecord record : entry.getStickyRecords()) {
             if (record.expire() > -1) {
                 expire = Math.min(expire, record.expire());
             }
@@ -1150,7 +1107,7 @@ public class ReplicaRepository
         if (expire != Long.MAX_VALUE) {
             ExpirationTask task = new ExpirationTask(entry.getPnfsId());
             future = _executor.schedule(task, expire - System.currentTimeMillis()
-                                        + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
+                  + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
             _tasks.put(pnfsId, future);
         }
     }
@@ -1158,10 +1115,9 @@ public class ReplicaRepository
     /**
      * Reports a fault to all fault listeners.
      */
-    void fail(FaultAction action, String message)
-    {
+    void fail(FaultAction action, String message) {
         FaultEvent event =
-            new FaultEvent("repository", action, message, null);
+              new FaultEvent("repository", action, message, null);
         for (FaultListener listener : _faultListeners) {
             listener.faultOccurred(event);
         }
@@ -1170,18 +1126,16 @@ public class ReplicaRepository
     /**
      * Runnable for removing expired sticky flags.
      */
-    class ExpirationTask implements Runnable
-    {
+    class ExpirationTask implements Runnable {
+
         private final PnfsId _id;
 
-        public ExpirationTask(PnfsId id)
-        {
+        public ExpirationTask(PnfsId id) {
             _id = id;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 _tasks.remove(_id);
                 ReplicaRecord entry = _store.get(_id);
@@ -1203,8 +1157,8 @@ public class ReplicaRepository
                 // This ought to be a transient error, so reschedule
                 LOGGER.warn("Failed to clear sticky flags for {}: {}", _id, e.getMessage());
                 ScheduledFuture<?> future =
-                        _executor.schedule(this, EXPIRATION_CLOCKSHIFT_EXTRA_TIME,
-                                           TimeUnit.MILLISECONDS);
+                      _executor.schedule(this, EXPIRATION_CLOCKSHIFT_EXTRA_TIME,
+                            TimeUnit.MILLISECONDS);
                 _tasks.put(_id, future);
             }
         }
@@ -1212,22 +1166,21 @@ public class ReplicaRepository
 
     @AffectsSetup
     @Command(name = "set max diskspace",
-            hint = "set size of pool",
-            description = "Sets the maximum disk space to be used by this pool. Overrides " +
-                          "whatever maximum was defined in the configuration file. The value " +
-                          "will be saved to the pool setup file if the save command is " +
-                          "executed.")
-    class SetMaxDiskspaceCommand implements Callable<String>
-    {
+          hint = "set size of pool",
+          description = "Sets the maximum disk space to be used by this pool. Overrides " +
+                "whatever maximum was defined in the configuration file. The value " +
+                "will be saved to the pool setup file if the save command is " +
+                "executed.")
+    class SetMaxDiskspaceCommand implements Callable<String> {
+
         @Argument(valueSpec = "-|BYTES[k|m|g|t]",
-                usage = "Disk space in bytes, kibibytes, mebibytes, gibibytes, or tebibytes. If " +
-                        "- is specified, then the pool will return to the size configured in " +
-                        "the configuration file, or no maximum if such a size is not defined.")
+              usage = "Disk space in bytes, kibibytes, mebibytes, gibibytes, or tebibytes. If " +
+                    "- is specified, then the pool will return to the size configured in " +
+                    "the configuration file, or no maximum if such a size is not defined.")
         DiskSpace size;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             _stateLock.writeLock().lock();
             try {
                 _runtimeMaxSize = size;
@@ -1243,23 +1196,30 @@ public class ReplicaRepository
 
     @AffectsSetup
     @Command(name = "set gap",
-            hint = "set minimum free space target",
-            description = "New transfers will not be assigned to a pool once it has less free space than the " +
-                          "gap. This is to ensure that there is a reasonable chance for ongoing transfers to " +
-                          "complete. To prevent that writes will fail due to lack of space, the gap should be " +
-                          "in the order of the expected largest file size multiplied by the largest number of " +
-                          "concurrent writes expected to a pool, although a smaller value will often do.\n\n" +
-                          "It is not an error for a pool to have less free space than the gap.")
-    class SetGapCommand implements Callable<String>
-    {
+          hint = "set minimum free space target",
+          description =
+                "New transfers will not be assigned to a pool once it has less free space than the "
+                      +
+                      "gap. This is to ensure that there is a reasonable chance for ongoing transfers to "
+                      +
+                      "complete. To prevent that writes will fail due to lack of space, the gap should be "
+                      +
+                      "in the order of the expected largest file size multiplied by the largest number of "
+                      +
+                      "concurrent writes expected to a pool, although a smaller value will often do.\n\n"
+                      +
+                      "It is not an error for a pool to have less free space than the gap.")
+    class SetGapCommand implements Callable<String> {
+
         @Argument(valueSpec = "BYTES[k|m|g|t]", required = false,
-                usage = "The gap in bytes, kibibytes, mebibytes, gibibytes or tebibytes. If not specified the " +
-                        "default is the smaller of 4 GiB or 25% of the pool size.")
+              usage =
+                    "The gap in bytes, kibibytes, mebibytes, gibibytes or tebibytes. If not specified the "
+                          +
+                          "default is the smaller of 4 GiB or 25% of the pool size.")
         DiskSpace gap = DiskSpace.UNSPECIFIED;
 
         @Override
-        public String call()
-        {
+        public String call() {
             _stateLock.writeLock().lock();
             try {
                 _gap = gap;
@@ -1271,8 +1231,7 @@ public class ReplicaRepository
     }
 
     @Override
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         DiskSpace runtimeMaxSize;
         DiskSpace gap;
 
@@ -1292,8 +1251,7 @@ public class ReplicaRepository
         }
     }
 
-    private DiskSpace getConfiguredMaxSize()
-    {
+    private DiskSpace getConfiguredMaxSize() {
         _stateLock.readLock().lock();
         try {
             return _runtimeMaxSize.orElse(_staticMaxSize);
@@ -1302,8 +1260,7 @@ public class ReplicaRepository
         }
     }
 
-    private long getFileSystemMaxSize()
-    {
+    private long getFileSystemMaxSize() {
         _stateLock.readLock().lock();
         try {
             return _store.getFreeSpace() + _account.getUsed();
@@ -1312,8 +1269,7 @@ public class ReplicaRepository
         }
     }
 
-    private boolean isTotalSpaceReported()
-    {
+    private boolean isTotalSpaceReported() {
         _stateLock.readLock().lock();
         try {
             return _store.getTotalSpace() > 0;
@@ -1323,21 +1279,18 @@ public class ReplicaRepository
     }
 
     /**
-     * Updates the total size of the Account based on the configured
-     * limits and the available disk space.
-     *
-     * Notice that if the configured limits are larger than the file
-     * system or if there are no configured limits, then the size is
-     * going to be an overapproximation based on the current amount of
-     * used space and the amount of free space on disk. This is so
-     * because the Account object does not accurately track space that
-     * has been reserved but not yet written to disk. In this case the
-     * periodic health check will adjust the pool size when a more
-     * accurate limit can be determined.
+     * Updates the total size of the Account based on the configured limits and the available disk
+     * space.
+     * <p>
+     * Notice that if the configured limits are larger than the file system or if there are no
+     * configured limits, then the size is going to be an overapproximation based on the current
+     * amount of used space and the amount of free space on disk. This is so because the Account
+     * object does not accurately track space that has been reserved but not yet written to disk. In
+     * this case the periodic health check will adjust the pool size when a more accurate limit can
+     * be determined.
      */
     @GuardedBy("_stateLock")
-    private void updateAccountSize()
-    {
+    private void updateAccountSize() {
         Account account = _account;
         synchronized (account) {
             DiskSpace configuredPoolSize = getConfiguredMaxSize();
@@ -1345,20 +1298,23 @@ public class ReplicaRepository
             long used = account.getUsed();
 
             if (!isTotalSpaceReported()) {
-                LOGGER.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
+                LOGGER.warn(
+                      "Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
                 if (!configuredPoolSize.isSpecified()) {
-                    throw new IllegalStateException("Failed to determine file system size. A pool size must be configured.");
+                    throw new IllegalStateException(
+                          "Failed to determine file system size. A pool size must be configured.");
                 }
             }
 
             long newSize;
 
             if (configuredPoolSize.isLargerThan(maxPoolSize)) {
-                LOGGER.warn("Configured pool size ({}) is larger than what is available on disk ({}).",
-                            configuredPoolSize, maxPoolSize);
+                LOGGER.warn(
+                      "Configured pool size ({}) is larger than what is available on disk ({}).",
+                      configuredPoolSize, maxPoolSize);
             } else if (configuredPoolSize.isLessThan(used)) {
                 LOGGER.warn("Configured pool size ({}) is less than what is used already ({}).",
-                            configuredPoolSize, used);
+                      configuredPoolSize, used);
             }
 
             newSize = Math.max(used, configuredPoolSize.orElse(maxPoolSize));

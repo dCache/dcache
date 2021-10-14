@@ -32,26 +32,23 @@
 
 package org.dcache.gplazma.htpasswd;
 
+import java.security.MessageDigest;
+import org.dcache.gplazma.AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.security.MessageDigest;
-
-import org.dcache.gplazma.AuthenticationException;
 
 /**
  * This class defines a method, {@link MD5Crypt#crypt(java.lang.String, java.lang.String) crypt()},
  * which takes a password and a salt string and generates an OpenBSD/FreeBSD/Linux-compatible
  * md5-encoded password entry.
  */
-public final class MD5Crypt
-{
+public final class MD5Crypt {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MD5Crypt.class);
 
     private static final String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    private static final String to64(long v, int size)
-    {
+    private static final String to64(long v, int size) {
         StringBuilder result = new StringBuilder();
 
         while (--size >= 0) {
@@ -62,22 +59,21 @@ public final class MD5Crypt
         return result.toString();
     }
 
-    private static final void clearbits(byte bits[])
-    {
+    private static final void clearbits(byte bits[]) {
         for (int i = 0; i < bits.length; i++) {
             bits[i] = 0;
         }
     }
 
-    /** convert an encoded unsigned byte value into a int with the unsigned value. */
+    /**
+     * convert an encoded unsigned byte value into a int with the unsigned value.
+     */
 
-    private static final int bytes2u(byte inp)
-    {
+    private static final int bytes2u(byte inp) {
         return (int) inp & 0xff;
     }
 
-    private static MessageDigest getMD5()
-    {
+    private static MessageDigest getMD5() {
         try {
             return MessageDigest.getInstance("MD5");
         } catch (java.security.NoSuchAlgorithmException ex) {
@@ -86,7 +82,8 @@ public final class MD5Crypt
     }
 
     /**
-     * <p>This method actually generates a OpenBSD/FreeBSD/Linux PAM compatible md5-encoded password
+     * <p>This method actually generates a OpenBSD/FreeBSD/Linux PAM compatible md5-encoded
+     * password
      * hash from a plaintext password and a salt.</p>
      * <p/>
      * <p>The resulting string will be in the form '$1$&lt;salt&gt;$&lt;hashed mess&gt;</p>
@@ -98,8 +95,7 @@ public final class MD5Crypt
      * @return An OpenBSD/FreeBSD/Linux-compatible md5-hashed password field.
      */
 
-    public static final String crypt(String password, String salt)
-    {
+    public static final String crypt(String password, String salt) {
         return MD5Crypt.crypt(password, salt, "$1$");
     }
 
@@ -116,13 +112,13 @@ public final class MD5Crypt
      * @return An Apache-compatible md5-hashed password string.
      */
 
-    public static final String apacheCrypt(String password, String salt)
-    {
+    public static final String apacheCrypt(String password, String salt) {
         return MD5Crypt.crypt(password, salt, "$apr1$");
     }
 
     /**
-     * <p>This method generates a md5-encoded password hash from a plaintext password, a salt, and a
+     * <p>This method generates a md5-encoded password hash from a plaintext password, a salt, and
+     * a
      * magic string.</p>
      * <p/>
      * <p>There are two magic strings that make sense to use here.. '$1$' is the magic string used
@@ -142,8 +138,7 @@ public final class MD5Crypt
      * @return An md5-hashed password string.
      */
 
-    public static final String crypt(String password, String salt, String magic)
-    {
+    public static final String crypt(String password, String salt, String magic) {
         /* This string is magic for this algorithm.  Having it this way,
          * we can get get better later on */
 
@@ -174,7 +169,7 @@ public final class MD5Crypt
         ctx = getMD5();
 
         ctx.update(password
-                .getBytes());    // The password first, since that is what is most unknown
+              .getBytes());    // The password first, since that is what is most unknown
         ctx.update(magic.getBytes());    // Then our magic string
         ctx.update(salt.getBytes());    // Then the raw salt
 
@@ -250,19 +245,24 @@ public final class MD5Crypt
         result.append(salt);
         result.append("$");
 
-        l = (bytes2u(finalState[0]) << 16) | (bytes2u(finalState[6]) << 8) | bytes2u(finalState[12]);
+        l = (bytes2u(finalState[0]) << 16) | (bytes2u(finalState[6]) << 8) | bytes2u(
+              finalState[12]);
         result.append(to64(l, 4));
 
-        l = (bytes2u(finalState[1]) << 16) | (bytes2u(finalState[7]) << 8) | bytes2u(finalState[13]);
+        l = (bytes2u(finalState[1]) << 16) | (bytes2u(finalState[7]) << 8) | bytes2u(
+              finalState[13]);
         result.append(to64(l, 4));
 
-        l = (bytes2u(finalState[2]) << 16) | (bytes2u(finalState[8]) << 8) | bytes2u(finalState[14]);
+        l = (bytes2u(finalState[2]) << 16) | (bytes2u(finalState[8]) << 8) | bytes2u(
+              finalState[14]);
         result.append(to64(l, 4));
 
-        l = (bytes2u(finalState[3]) << 16) | (bytes2u(finalState[9]) << 8) | bytes2u(finalState[15]);
+        l = (bytes2u(finalState[3]) << 16) | (bytes2u(finalState[9]) << 8) | bytes2u(
+              finalState[15]);
         result.append(to64(l, 4));
 
-        l = (bytes2u(finalState[4]) << 16) | (bytes2u(finalState[10]) << 8) | bytes2u(finalState[5]);
+        l = (bytes2u(finalState[4]) << 16) | (bytes2u(finalState[10]) << 8) | bytes2u(
+              finalState[5]);
         result.append(to64(l, 4));
 
         l = bytes2u(finalState[11]);
@@ -287,14 +287,14 @@ public final class MD5Crypt
      * @throws AuthenticationException if the md5CryptText is badly formed.
      */
     public static final boolean verifyPassword(String plaintextPass, String md5CryptText)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         if (md5CryptText.startsWith("$1$")) {
             return md5CryptText.equals(MD5Crypt.crypt(plaintextPass, md5CryptText));
         } else if (md5CryptText.startsWith("$apr1$")) {
             return md5CryptText.equals(MD5Crypt.apacheCrypt(plaintextPass, md5CryptText));
         } else {
-            LOGGER.error("Bad entry in file: hash does not start '$1$' or '$apr1$': {}", md5CryptText);
+            LOGGER.error("Bad entry in file: hash does not start '$1$' or '$apr1$': {}",
+                  md5CryptText);
             throw new AuthenticationException("bad hash in file");
         }
     }

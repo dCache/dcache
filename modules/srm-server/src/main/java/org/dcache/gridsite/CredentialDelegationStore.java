@@ -20,38 +20,36 @@ package org.dcache.gridsite;
 import org.dcache.delegation.gridsite2.DelegationException;
 
 /**
- * A CredentialDelegationStore provide storage for on-going delegations.
- * The delegation process requires two iterations between client and server
- * before a delegated credential is created.  After the server has supplied the
- * Certificate Signing Request and before the client has replied with the
- * certificate, some CredentalDelegationStore will hold the CredentialDelegation
- * object that represents this incomplete delegated credential.
+ * A CredentialDelegationStore provide storage for on-going delegations. The delegation process
+ * requires two iterations between client and server before a delegated credential is created.
+ * After the server has supplied the Certificate Signing Request and before the client has replied
+ * with the certificate, some CredentalDelegationStore will hold the CredentialDelegation object
+ * that represents this incomplete delegated credential.
  */
-public interface CredentialDelegationStore
-{
-    /**
-     * Fetch the matching in-progress CredentialDelegation.  If there is
-     * no matching CredentialDelegation then DelegationException is thrown.
-     */
-    CredentialDelegation get(DelegationIdentity id)
-            throws DelegationException;
+public interface CredentialDelegationStore {
 
     /**
-     * Add a CredentialDelegation to this store.  Throws DelegationException if
-     * there is already an incomplete delegation with the same
-     * DelegationIdentity as that of delegation.
+     * Fetch the matching in-progress CredentialDelegation.  If there is no matching
+     * CredentialDelegation then DelegationException is thrown.
+     */
+    CredentialDelegation get(DelegationIdentity id)
+          throws DelegationException;
+
+    /**
+     * Add a CredentialDelegation to this store.  Throws DelegationException if there is already an
+     * incomplete delegation with the same DelegationIdentity as that of delegation.
      */
     void add(CredentialDelegation delegation) throws DelegationException;
 
     /**
-     * Remove the on-going delegation request with this id and returns it.
-     * Throws an exception if there is no CredentialDelegation for this id.
+     * Remove the on-going delegation request with this id and returns it. Throws an exception if
+     * there is no CredentialDelegation for this id.
      */
     CredentialDelegation remove(DelegationIdentity id) throws DelegationException;
 
     /**
-     * Remove any on-going delegation request with this id.  Does nothing
-     * if there is no CredentialDelegation for this id.
+     * Remove any on-going delegation request with this id.  Does nothing if there is no
+     * CredentialDelegation for this id.
      */
     void removeIfPresent(DelegationIdentity id);
 

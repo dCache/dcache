@@ -16,8 +16,9 @@
  */
 package org.dcache.chimera;
 
-import org.dcache.chimera.posix.Stat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.dcache.chimera.posix.Stat;
 
 public class FsInode_CONST extends FsInode {
 
@@ -63,13 +64,12 @@ public class FsInode_CONST extends FsInode {
 
     @Override
     public void setStat(Stat predefinedStat) {
-	// nop
+        // nop
     }
 
     /**
-     * fake reply: the inode is a file
-     * size is equal to size of version string
-     * access time, creation time, modification time is current time.
+     * fake reply: the inode is a file size is equal to size of version string access time, creation
+     * time, modification time is current time.
      */
     @Override
     public Stat stat() throws ChimeraFsException {

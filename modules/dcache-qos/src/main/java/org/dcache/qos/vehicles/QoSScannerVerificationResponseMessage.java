@@ -62,25 +62,26 @@ package org.dcache.qos.vehicles;
 import diskCacheV111.vehicles.Message;
 
 public class QoSScannerVerificationResponseMessage extends Message {
-  private final String location;
-  private final int succeeded;
-  private final int failed;
 
-  public QoSScannerVerificationResponseMessage(String location, int succeeded, int failed) {
-    this.location = location;
-    this.succeeded = succeeded;
-    this.failed = failed;
-  }
+    private final String location;
+    private final int succeeded;
+    private final int failed;
 
-  public int getSucceeded() {
-    return succeeded;
-  }
+    public QoSScannerVerificationResponseMessage(String location, int succeeded, int failed) {
+        this.location = location;
+        this.succeeded = succeeded;
+        this.failed = failed;
+    }
 
-  public int getFailed() {
-    return failed;
-  }
+    public int getSucceeded() {
+        return succeeded;
+    }
 
-  public String getLocation() {
-    return location;
-  }
+    public int getFailed() {
+        return failed;
+    }
+
+    public String getLocation() {
+        return location;
+    }
 }

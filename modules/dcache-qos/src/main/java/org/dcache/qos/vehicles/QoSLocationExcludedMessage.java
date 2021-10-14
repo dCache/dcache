@@ -63,19 +63,19 @@ import diskCacheV111.vehicles.Message;
 
 public class QoSLocationExcludedMessage extends Message {
 
-  private final String location;
-  private final boolean excluded;
+    private final String location;
+    private final boolean excluded;
 
-  public QoSLocationExcludedMessage(String location, boolean excluded) {
-    this.location = location;
-    this.excluded = excluded;
-  }
+    public QoSLocationExcludedMessage(String location, boolean excluded) {
+        this.location = location;
+        this.excluded = excluded;
+    }
 
-  public String getLocation() {
-    return location;
-  }
+    public String getLocation() {
+        return location;
+    }
 
-  public boolean isExcluded() {
-    return excluded;
-  }
+    public boolean isExcluded() {
+        return excluded;
+    }
 }

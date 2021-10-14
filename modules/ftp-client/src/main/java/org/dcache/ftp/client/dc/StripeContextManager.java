@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,15 +16,13 @@
 package org.dcache.ftp.client.dc;
 
 import org.dcache.ftp.client.extended.GridFTPServerFacade;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StripeContextManager
-{
+public class StripeContextManager {
 
     static final Logger logger =
-            LoggerFactory.getLogger(StripeContextManager.class);
+          LoggerFactory.getLogger(StripeContextManager.class);
 
     protected final int stripes;
     protected final StripeTransferContext[] contextList;
@@ -32,34 +30,30 @@ public class StripeContextManager
     protected Object contextQuitToken = new Object();
 
     public StripeContextManager(int stripes,
-                                SocketPool pool,
-                                GridFTPServerFacade facade)
-    {
+          SocketPool pool,
+          GridFTPServerFacade facade) {
         this.stripes = stripes;
         contextList = new StripeTransferContext[stripes];
         for (int i = 0; i < stripes; i++) {
             contextList[i] = new StripeTransferContext(this);
             contextList[i].setSocketPool(pool);
             contextList[i].setTransferThreadManager(
-                    facade.createTransferThreadManager());
+                  facade.createTransferThreadManager());
         }
     }
 
     /**
      * return number of stripes
      **/
-    public int getStripes()
-    {
+    public int getStripes() {
         return stripes;
     }
 
-    public EBlockParallelTransferContext getStripeContext(int stripe)
-    {
+    public EBlockParallelTransferContext getStripeContext(int stripe) {
         return contextList[stripe];
     }
 
-    public Object getQuitToken()
-    {
+    public Object getQuitToken() {
         int i = 0;
         while (i < stripes) {
             logger.debug("examining stripe {}", i);
@@ -67,7 +61,7 @@ public class StripeContextManager
                 // obtained quit token from one stripe.
                 stripeQuitTokens++;
                 logger.debug("obtained stripe quit token. Total = {}; total needed = {}",
-                        stripeQuitTokens, stripes);
+                      stripeQuitTokens, stripes);
             }
             i++;
         }
@@ -90,24 +84,22 @@ public class StripeContextManager
         }
     }
 
-    class StripeTransferContext extends EBlockParallelTransferContext
-    {
+    class StripeTransferContext extends EBlockParallelTransferContext {
 
         final StripeContextManager mgr;
 
-        public StripeTransferContext(StripeContextManager mgr)
-        {
+        public StripeTransferContext(StripeContextManager mgr) {
             this.mgr = mgr;
         }
 
         /**
          * @return non-null if this stripe received or sent all the EODs
          **/
-        public Object getStripeQuitToken()
-        {
+        public Object getStripeQuitToken() {
             Object token = super.getQuitToken();
             StripeContextManager.logger.debug(
-                    (token != null) ? "stripe released the quit token" : "stripe did not release the quit token");
+                  (token != null) ? "stripe released the quit token"
+                        : "stripe did not release the quit token");
             return token;
         }
 
@@ -115,8 +107,7 @@ public class StripeContextManager
          * @return non-null if all EODs in all stripes have been transferred.
          **/
         @Override
-        public Object getQuitToken()
-        {
+        public Object getQuitToken() {
             return mgr.getQuitToken();
         }
     }

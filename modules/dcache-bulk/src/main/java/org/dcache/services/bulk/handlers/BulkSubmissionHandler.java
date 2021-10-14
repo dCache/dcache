@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.handlers;
 
 import javax.security.auth.Subject;
-
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.BulkJobKey;
@@ -68,46 +67,45 @@ import org.dcache.services.bulk.job.MultipleTargetJob;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  Defines the basic submission methods for interacting with the queue.
+ * Defines the basic submission methods for interacting with the queue.
  */
-public interface BulkSubmissionHandler
-{
+public interface BulkSubmissionHandler {
+
     /**
-     * Unrecoverable internal failure.  This usually means
-     * that the target has not yet been processed into a job.
+     * Unrecoverable internal failure.  This usually means that the target has not yet been
+     * processed into a job.
      *
      * @param requestId unique identifier
-     * @param target specific target
+     * @param target    specific target
      * @param exception error
      */
     void abortRequestTarget(String requestId, String target,
-                            Throwable exception)
-                    throws BulkServiceException;
+          Throwable exception)
+          throws BulkServiceException;
 
     /**
      * Services request (from user) to (cancel) the request.
      *
-     * @param subject of the user.
+     * @param subject   of the user.
      * @param requestId of the request to cancel.
      * @throws BulkServiceException
      */
     void cancelRequest(Subject subject, String requestId)
-                    throws BulkServiceException;
+          throws BulkServiceException;
 
     /**
-     * Services request (from user) to free all data
-     * associated with the request.
+     * Services request (from user) to free all data associated with the request.
      *
-     * @param subject of the user.
+     * @param subject   of the user.
      * @param requestId of the request to clear.
      * @throws BulkServiceException
      */
     void clearRequest(Subject subject, String requestId)
-                    throws BulkServiceException;
+          throws BulkServiceException;
 
     /**
-     * Should configure and submit the top-level job responsible for
-     * processing all targets defined by the bulk request.
+     * Should configure and submit the top-level job responsible for processing all targets defined
+     * by the bulk request.
      *
      * @param request to be processed.
      * @throws BulkServiceException
@@ -115,33 +113,32 @@ public interface BulkSubmissionHandler
     void submitRequest(BulkRequest request) throws BulkServiceException;
 
     /**
-     * Submits a job which takes action on a specific target.  The
-     * job is created by the factory on the basis of the request's
-     * activity definition (this is passed through the parent).
+     * Submits a job which takes action on a specific target.  The job is created by the factory on
+     * the basis of the request's activity definition (this is passed through the parent).
      *
-     * @param target file or directory.
-     * @param parentKey key of the generating job (i.e., with a directory target).
+     * @param target     file or directory.
+     * @param parentKey  key of the generating job (i.e., with a directory target).
      * @param attributes received during directory listing.
-     * @param parent the generating job.
+     * @param parent     the generating job.
      * @throws BulkServiceException
      */
     void submitSingleTargetJob(String target,
-                               BulkJobKey parentKey,
-                               FileAttributes attributes,
-                               MultipleTargetJob parent)
-                    throws BulkServiceException;
+          BulkJobKey parentKey,
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException;
 
     /**
-     * Submits a job which manages multiple targets resulting from
-     * a target (i.e., directory) expansion.
+     * Submits a job which manages multiple targets resulting from a target (i.e., directory)
+     * expansion.
      *
-     * @param target directory
+     * @param target     directory
      * @param attributes of the directory
-     * @param parent the generating job.
+     * @param parent     the generating job.
      * @throws BulkServiceException
      */
     void submitTargetExpansionJob(String target,
-                                  FileAttributes attributes,
-                                  MultipleTargetJob parent)
-                    throws BulkServiceException;
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException;
 }

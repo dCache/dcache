@@ -18,30 +18,26 @@
 package javatunnel.token;
 
 import com.google.common.io.BaseEncoding;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-public class Base64TokenWriter implements TokenWriter
-{
+public class Base64TokenWriter implements TokenWriter {
+
     private final OutputStreamWriter out;
 
-    public Base64TokenWriter(OutputStream out)
-    {
+    public Base64TokenWriter(OutputStream out) {
         this.out = new OutputStreamWriter(out);
     }
 
     @Override
-    public void write(byte[] token) throws IOException
-    {
+    public void write(byte[] token) throws IOException {
         out.write("enc " + BaseEncoding.base64().encode(token) + '\n');
         out.flush();
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         out.close();
     }
 }

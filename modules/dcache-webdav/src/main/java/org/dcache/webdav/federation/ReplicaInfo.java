@@ -1,30 +1,28 @@
 package org.dcache.webdav.federation;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.escape.Escaper;
 import com.google.common.net.PercentEscaper;
 import io.milton.http.Request;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.isNullOrEmpty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class represents the information passed by the client in the URL when
- * a request comes from the GlobalAccessService.  The format is documented here:
+ * This class represents the information passed by the client in the URL when a request comes from
+ * the GlobalAccessService.  The format is documented here:
  * <p>
  * https://svnweb.cern.ch/trac/lcgdm/wiki/Dpm/WebDAV/Extensions#GlobalAccessService
  * <p>
- * Format is that the query part of a URL contains a list key-value pairs; the
- * each key and value is joined by '=' and the key-value pairs are joined by
- * '&'s.  This is the normal format used by web-forms when submitting results
- * via a GET request.
+ * Format is that the query part of a URL contains a list key-value pairs; the each key and value is
+ * joined by '=' and the key-value pairs are joined by '&'s.  This is the normal format used by
+ * web-forms when submitting results via a GET request.
  * <p>
  * Certain keys are recognised and the values have the following semantics:
  * <pre>
@@ -37,45 +35,42 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  *              This item repeats a replica that is still to be attempted.
  * </pre>
  * <p>
- * For the {@literal r&lt;index>} fields, {@literal &lt;index>} is some
- * positive integer.  The values of {@literal r&lt;index>} do not repeat.
- * Considered together, all {@literal r&lt;index>} fields represent a stack of
- * replicas that are still to be attempted, with {@literal r1} representing the
- * next replica.
+ * For the {@literal r&lt;index>} fields, {@literal &lt;index>} is some positive integer.  The
+ * values of {@literal r&lt;index>} do not repeat. Considered together, all {@literal r&lt;index>}
+ * fields represent a stack of replicas that are still to be attempted, with {@literal r1}
+ * representing the next replica.
  * <p>
- * Note that creating an object is a light-weight operation.  The computational
- * effort of parsing the supplied information happens when {@code #hasNext}
- * method is called the first time.  This call must happen before
- * {@code #buildLocationWhenNotFound} or {@code #buildLocationWhenForbidden} is
- * called.
+ * Note that creating an object is a light-weight operation.  The computational effort of parsing
+ * the supplied information happens when {@code #hasNext} method is called the first time.  This
+ * call must happen before {@code #buildLocationWhenNotFound} or {@code #buildLocationWhenForbidden}
+ * is called.
  */
-public class ReplicaInfo
-{
+public class ReplicaInfo {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ReplicaInfo.class);
 
     private static final ReplicaInfo EMPTY_INFO = new ReplicaInfo();
     private static final Splitter ON_FIRST_COMMA = Splitter.on(',')
-            .trimResults().limit(2);
+          .trimResults().limit(2);
 
     // Equivalent to Guava's uriQueryStringEscaper(false), but this hasn't been
     // released yet.
     private static final Escaper QUERY_STRING_ESCAPER =
-            new PercentEscaper("-._~!$'()*,;@:/?", false);
+          new PercentEscaper("-._~!$'()*,;@:/?", false);
 
     // Used to escape the schema and path part of the redirected URI.
     private static final Escaper SCHEMA_AND_PATH_ESCAPER =
-            new PercentEscaper("-._~!$'()*,;@:/", false);
+          new PercentEscaper("-._~!$'()*,;@:/", false);
 
-    private final Map<String,String> _parameters;
+    private final Map<String, String> _parameters;
 
     private boolean _isParsed;
     private String _nextReplica;
     private String _ourId;
     private List<String> _remainingReplicas = new ArrayList<>();
 
-    public static ReplicaInfo forRequest(Request request)
-    {
-        Map<String,String> parameters = request.getParams();
+    public static ReplicaInfo forRequest(Request request) {
+        Map<String, String> parameters = request.getParams();
 
         if (parameters == null) {
             return EMPTY_INFO;
@@ -84,8 +79,8 @@ public class ReplicaInfo
         String r1 = parameters.get("r1");
 
         if (isNullOrEmpty(parameters.get("rid"))
-                || isNullOrEmpty(r1)
-                || r1.indexOf(',') == -1) {
+              || isNullOrEmpty(r1)
+              || r1.indexOf(',') == -1) {
             LOGGER.trace("returning empty QueryStringInfo for request");
             return EMPTY_INFO;
         } else {
@@ -94,25 +89,22 @@ public class ReplicaInfo
         }
     }
 
-    private ReplicaInfo()
-    {
+    private ReplicaInfo() {
         _parameters = null;
         _isParsed = true;
     }
 
-    private ReplicaInfo(Request request)
-    {
+    private ReplicaInfo(Request request) {
         _parameters = request.getParams();
     }
 
-    private void parseParameters()
-    {
+    private void parseParameters() {
         _ourId = _parameters.get("rid");
 
         String replica;
         for (int index = 1;
-                (replica = _parameters.get("r"+index)) != null;
-                index++) {
+              (replica = _parameters.get("r" + index)) != null;
+              index++) {
             if (_nextReplica == null) {
                 _nextReplica = replica;
             } else {
@@ -123,8 +115,7 @@ public class ReplicaInfo
         _isParsed = true;
     }
 
-    public boolean hasNext()
-    {
+    public boolean hasNext() {
         if (!_isParsed) {
             parseParameters();
         }
@@ -132,23 +123,21 @@ public class ReplicaInfo
         return _ourId != null && _nextReplica != null;
     }
 
-    private StringBuilder buildNextReplicaLocation()
-    {
+    private StringBuilder buildNextReplicaLocation() {
         StringBuilder sb = new StringBuilder();
 
         List<String> nextReplica =
-                Lists.newArrayList(ON_FIRST_COMMA.split(_nextReplica));
+              Lists.newArrayList(ON_FIRST_COMMA.split(_nextReplica));
         sb.append(SCHEMA_AND_PATH_ESCAPER.escape(nextReplica.get(1)));
         sb.append("?rid=").append(QUERY_STRING_ESCAPER.escape(nextReplica.get(0)));
 
         return sb;
     }
 
-    private StringBuilder addRemainingReplicas(StringBuilder sb)
-    {
+    private StringBuilder addRemainingReplicas(StringBuilder sb) {
         int index = 1;
 
-        for(String url : this._remainingReplicas) {
+        for (String url : this._remainingReplicas) {
             sb.append('&').append('r').append(index++);
             sb.append('=').append(QUERY_STRING_ESCAPER.escape(url));
         }
@@ -156,8 +145,7 @@ public class ReplicaInfo
         return sb;
     }
 
-    public String buildLocationWhenNotFound()
-    {
+    public String buildLocationWhenNotFound() {
         checkState(_isParsed && _ourId != null && _nextReplica != null);
 
         StringBuilder sb = buildNextReplicaLocation();
@@ -168,8 +156,7 @@ public class ReplicaInfo
         return addRemainingReplicas(sb).toString();
     }
 
-    public String buildLocationWhenForbidden()
-    {
+    public String buildLocationWhenForbidden() {
         checkState(_isParsed && _ourId != null && _nextReplica != null);
 
         StringBuilder sb = buildNextReplicaLocation();
@@ -180,8 +167,7 @@ public class ReplicaInfo
         return addRemainingReplicas(sb).toString();
     }
 
-    private CharSequence ampersandValueOrEmpty(String name)
-    {
+    private CharSequence ampersandValueOrEmpty(String name) {
         String item = _parameters.get(name);
 
         if (item == null) {
@@ -194,8 +180,7 @@ public class ReplicaInfo
         return sb;
     }
 
-    private CharSequence getAppendedField(String name, String item)
-    {
+    private CharSequence getAppendedField(String name, String item) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(name).append('=');
@@ -211,8 +196,7 @@ public class ReplicaInfo
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         if (_parameters == null) {
             return "<EMPTY>";
         }
@@ -221,7 +205,7 @@ public class ReplicaInfo
             return "<NOT PARSED>";
         }
 
-        return "ourId=" + _ourId + ", next="+ _nextReplica + ", remaining=" +
-                _remainingReplicas;
+        return "ourId=" + _ourId + ", next=" + _nextReplica + ", remaining=" +
+              _remainingReplicas;
     }
 }

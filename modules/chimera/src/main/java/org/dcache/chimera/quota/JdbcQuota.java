@@ -60,33 +60,29 @@ documents or software obtained from this server.
 
 package org.dcache.chimera.quota;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import diskCacheV111.util.RetentionPolicy;
 import java.sql.SQLException;
 import java.util.Map;
-
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.RetentionPolicy;
-
+import javax.sql.DataSource;
 import org.dcache.util.FireAndForgetTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcQuota implements QuotaHandler {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(JdbcQuota.class);
+          LoggerFactory.getLogger(JdbcQuota.class);
 
     private final QuotaSqlDriver sqlDriver;
     private volatile Map<Integer, Quota> userQuotas;
     private volatile Map<Integer, Quota> groupQuotas;
-    private ScheduledExecutorService  quotaRefreshExecutor;
+    private ScheduledExecutorService quotaRefreshExecutor;
 
     public JdbcQuota(DataSource ds)
-            throws SQLException {
+          throws SQLException {
         sqlDriver = QuotaSqlDriver.getDriverInstance(ds);
         userQuotas = sqlDriver.getUserQuotas();
         groupQuotas = sqlDriver.getGroupQuotas();
@@ -98,86 +94,83 @@ public class JdbcQuota implements QuotaHandler {
 
     public void scheduleRefreshQuota() {
         ScheduledFuture<?> refreshUserQuota = quotaRefreshExecutor.
-                scheduleWithFixedDelay(
-                        new FireAndForgetTask(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    refreshUserQuotas();
-                                } catch(Exception ignore) {
-                                    LOGGER.warn("refreshUserQuotas failed {}",ignore.getMessage()) ;
-                                }
+              scheduleWithFixedDelay(
+                    new FireAndForgetTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                refreshUserQuotas();
+                            } catch (Exception ignore) {
+                                LOGGER.warn("refreshUserQuotas failed {}", ignore.getMessage());
                             }
-                        }),
-                        60000,
-                        60000,
-                        TimeUnit.MILLISECONDS);
+                        }
+                    }),
+                    60000,
+                    60000,
+                    TimeUnit.MILLISECONDS);
 
         ScheduledFuture<?> refreshGroupQuota = quotaRefreshExecutor.
-                scheduleWithFixedDelay(
-                        new FireAndForgetTask(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    refreshGroupQuotas();
-                                } catch (Exception ignore) {
-                                    LOGGER.warn("refreshGroupQuotas failed {}",ignore.getMessage()) ;
-                                }
+              scheduleWithFixedDelay(
+                    new FireAndForgetTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                refreshGroupQuotas();
+                            } catch (Exception ignore) {
+                                LOGGER.warn("refreshGroupQuotas failed {}", ignore.getMessage());
                             }
-                        }),
-                        60000,
-                        60000,
-                        TimeUnit.MILLISECONDS);
+                        }
+                    }),
+                    60000,
+                    60000,
+                    TimeUnit.MILLISECONDS);
     }
 
 
     @Override
-    public Map<Integer, Quota> getUserQuotas()
-    {
+    public Map<Integer, Quota> getUserQuotas() {
         return userQuotas;
     }
 
     @Override
-    public Map<Integer, Quota> getGroupQuotas()
-    {
+    public Map<Integer, Quota> getGroupQuotas() {
         return groupQuotas;
     }
 
     @Override
-    public void setUserQuota(Quota quota)
-    {
+    public void setUserQuota(Quota quota) {
         sqlDriver.setUserQuota(quota);
     }
 
     @Override
-    public void createUserQuota(Quota quota)
-    {
+    public void createUserQuota(Quota quota) {
         sqlDriver.createUserQuota(quota);
     }
 
     @Override
-    public void setGroupQuota(Quota quota)
-    {
+    public void setGroupQuota(Quota quota) {
         sqlDriver.setGroupQuota(quota);
     }
 
     @Override
-    public void createGroupQuota(Quota quota)
-    {
+    public void createGroupQuota(Quota quota) {
         sqlDriver.createGroupQuota(quota);
     }
 
     @Override
-    public void deleteUserQuota(int uid) { sqlDriver.deleteUserQuota(uid); }
+    public void deleteUserQuota(int uid) {
+        sqlDriver.deleteUserQuota(uid);
+    }
 
     @Override
-    public void deleteGroupQuota(int gid) { sqlDriver.deleteGroupQuota(gid); }
+    public void deleteGroupQuota(int gid) {
+        sqlDriver.deleteGroupQuota(gid);
+    }
 
     @Override
-    public boolean checkUserQuota(int uid, RetentionPolicy rp)
-    {
+    public boolean checkUserQuota(int uid, RetentionPolicy rp) {
         Quota quota = userQuotas.get(uid);
-        if (quota == null)  {
+        if (quota == null) {
             return true;
         } else {
             return quota.check(rp);
@@ -185,10 +178,9 @@ public class JdbcQuota implements QuotaHandler {
     }
 
     @Override
-    public boolean checkGroupQuota(int gid, RetentionPolicy rp)
-    {
+    public boolean checkGroupQuota(int gid, RetentionPolicy rp) {
         Quota quota = groupQuotas.get(gid);
-        if (quota == null)  {
+        if (quota == null) {
             return true;
         } else {
             return quota.check(rp);
@@ -196,31 +188,27 @@ public class JdbcQuota implements QuotaHandler {
     }
 
     @Override
-    public void refreshUserQuotas()
-    {
+    public void refreshUserQuotas() {
         LOGGER.debug("Running refreshUserQuotas.");
         Map<Integer, Quota> tmp = sqlDriver.getUserQuotas();
         userQuotas = tmp;
     }
 
     @Override
-    public void refreshGroupQuotas()
-    {
+    public void refreshGroupQuotas() {
         LOGGER.debug("Running refreshGroupQuotas.");
         Map<Integer, Quota> tmp = sqlDriver.getGroupQuotas();
         groupQuotas = tmp;
     }
 
     @Override
-    public void updateUserQuotas()
-    {
+    public void updateUserQuotas() {
         LOGGER.info("Running updateUserQuotas.");
         sqlDriver.updateUserQuota();
     }
 
     @Override
-    public void updateGroupQuotas()
-    {
+    public void updateGroupQuotas() {
         LOGGER.info("Running updateGroupQuotas.");
         sqlDriver.updateGroupQuota();
     }

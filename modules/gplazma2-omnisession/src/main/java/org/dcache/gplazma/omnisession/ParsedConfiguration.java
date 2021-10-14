@@ -18,8 +18,8 @@
 package org.dcache.gplazma.omnisession;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Collections.unmodifiableList;
+import static java.util.List.copyOf;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -27,45 +27,43 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.gplazma.AuthenticationException;
-
-import static java.util.Collections.unmodifiableList;
-import static java.util.List.copyOf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
- * An instance of this object represents the information stored in the
- * OmniSession configuration file at some specific time.
+ * An instance of this object represents the information stored in the OmniSession configuration
+ * file at some specific time.
  */
-public class ParsedConfiguration implements Configuration
-{
+public class ParsedConfiguration implements Configuration {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ParsedConfiguration.class);
 
-    static class ParsedLine
-    {
+    static class ParsedLine {
+
         private final Predicate<Principal> predicate;
         private final List<LoginAttribute> attributes;
         private final String error;
         private final int lineNumber;
 
-        public static ParsedLine success(int lineNumber, Predicate<Principal> predicate, List<LoginAttribute> attributes)
-        {
+        public static ParsedLine success(int lineNumber, Predicate<Principal> predicate,
+              List<LoginAttribute> attributes) {
             return new ParsedLine(lineNumber, predicate, attributes, null);
         }
 
-        public static ParsedLine failure(int lineNumber, Predicate<Principal> predicate, String error)
-        {
+        public static ParsedLine failure(int lineNumber, Predicate<Principal> predicate,
+              String error) {
             return new ParsedLine(lineNumber, predicate, null, error);
         }
 
-        public boolean isFailure()
-        {
+        public boolean isFailure() {
             return error != null;
         }
 
-        private ParsedLine(int lineNumber, Predicate<Principal> predicate, List<LoginAttribute> attributes, String error) {
+        private ParsedLine(int lineNumber, Predicate<Principal> predicate,
+              List<LoginAttribute> attributes, String error) {
             this.predicate = predicate;
             this.attributes = attributes;
             this.error = error;
@@ -78,16 +76,14 @@ public class ParsedConfiguration implements Configuration
     private final List<ParsedLine> configLines;
 
     ParsedConfiguration(List<LoginAttribute> defaultAttributes,
-            List<ParsedLine> lines)
-    {
+          List<ParsedLine> lines) {
         this.defaultAttributes = unmodifiableList(copyOf(defaultAttributes));
         this.configLines = unmodifiableList(copyOf(lines));
     }
 
     @Override
     public List<LoginAttribute> attributesFor(Set<Principal> principals)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         Set<Class<? extends LoginAttribute>> addedAttributes = new HashSet<>();
 
         List<LoginAttribute> attributesToAdd = new ArrayList<>();
@@ -108,7 +104,7 @@ public class ParsedConfiguration implements Configuration
                 }
                 errorLineNumberToAdd = line.lineNumber;
                 LOGGER.debug("Login touched bad line {}: {}", line.lineNumber,
-                        line.error);
+                      line.error);
             } else {
                 if (errorLineNumberToAdd == -1) {
                     for (LoginAttribute attribute : line.attributes) {
@@ -116,10 +112,10 @@ public class ParsedConfiguration implements Configuration
                             addedAttributes.add(attribute.getClass());
                             attributesToAdd.add(attribute);
                             LOGGER.debug("Adding attribute from line {}: {}",
-                                    line.lineNumber, attribute);
+                                  line.lineNumber, attribute);
                         } else {
                             LOGGER.debug("Skipping attribute from line {}: {}",
-                                    line.lineNumber, attribute);
+                                  line.lineNumber, attribute);
                         }
                     }
                 }
@@ -135,7 +131,7 @@ public class ParsedConfiguration implements Configuration
             errorLineNumbers.append(errorLineNumberToAdd);
 
             String msg = "Bad " + (moreThanOneErrorLine ? "lines" : "line") + ": "
-                    + errorLineNumbers;
+                  + errorLineNumbers;
             LOGGER.debug("Aborting login: {}", msg);
             throw new AuthenticationException(msg);
         }

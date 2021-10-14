@@ -17,34 +17,30 @@
  */
 package diskCacheV111.srm.dcache;
 
-import java.io.PrintWriter;
-
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
-
+import java.io.PrintWriter;
 import org.dcache.srm.request.Job;
 
 /**
  * Simple sub-class of SRM Scheduler to implement the CellInfoProvider interface.
  */
-public class Scheduler<T extends Job> extends org.dcache.srm.scheduler.Scheduler<T> implements CellInfoProvider
-{
-    public Scheduler(String id, Class<T> type)
-    {
+public class Scheduler<T extends Job> extends org.dcache.srm.scheduler.Scheduler<T> implements
+      CellInfoProvider {
+
+    public Scheduler(String id, Class<T> type) {
         super(id, type);
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         StringBuilder sb = new StringBuilder();
         getInfo(sb);
         pw.append(sb);
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 }

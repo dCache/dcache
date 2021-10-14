@@ -63,13 +63,13 @@ import diskCacheV111.vehicles.Message;
 
 public class QoSScannerVerificationRequestMessage extends Message {
 
-  private final QoSScannerVerificationRequest request;
+    private final QoSScannerVerificationRequest request;
 
-  public QoSScannerVerificationRequestMessage(QoSScannerVerificationRequest request) {
-    this.request = request;
-  }
+    public QoSScannerVerificationRequestMessage(QoSScannerVerificationRequest request) {
+        this.request = request;
+    }
 
-  public QoSScannerVerificationRequest getRequest() {
-    return request;
-  }
+    public QoSScannerVerificationRequest getRequest() {
+        return request;
+    }
 }

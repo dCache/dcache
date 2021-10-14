@@ -59,22 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import org.dcache.resilience.TestBase;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import java.util.concurrent.TimeUnit;
+import org.dcache.resilience.TestBase;
+import org.junit.Before;
+import org.junit.Test;
+
 public final class FileFilterTest extends TestBase {
-    FileFilter    filter;
+
+    FileFilter filter;
     FileOperation operation;
 
     @Before
@@ -93,7 +92,7 @@ public final class FileFilterTest extends TestBase {
 
     @Test
     public void shouldIndicateSimplePnfsMatchNotwithstandingOtherAttributes()
-                    throws Exception {
+          throws Exception {
         String pnfsids = aReplicaOnlineFileWithNoTags().getPnfsId().toString();
         givenFilterWith(pnfsids, "RUNNING", null, null, null, null, false);
         assertTrue(filter.isSimplePnfsMatch());
@@ -102,36 +101,36 @@ public final class FileFilterTest extends TestBase {
     @Test
     public void shouldMatchWhenAfterMatches() throws Exception {
         givenFilterWith(null, null, null, null, System.currentTimeMillis(),
-                        null, false);
+              null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis()
-                                        + TimeUnit.HOURS.toMillis(1));
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis()
+                    + TimeUnit.HOURS.toMillis(1));
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchWhenBeforeMatches() throws Exception {
         givenFilterWith(null, null, null, null, null,
-                        System.currentTimeMillis(), false);
+              System.currentTimeMillis(), false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis()
-                                        - TimeUnit.HOURS.toMillis(1));
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis()
+                    - TimeUnit.HOURS.toMillis(1));
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchWhenMultipleAttributesMatch() throws Exception {
         String pnfsids = Joiner.on(",").join(
-                        aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
-                        aNonResilientFile().getPnfsId().toString());
+              aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
+              aNonResilientFile().getPnfsId().toString());
         givenFilterWith(pnfsids, "WAITING", null,
-                        "resilient-2.dcache-devel-test@enstore", null, null,
-                        false);
+              "resilient-2.dcache-devel-test@enstore", null, null,
+              false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "WAITING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "WAITING", System.currentTimeMillis());
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
@@ -139,20 +138,20 @@ public final class FileFilterTest extends TestBase {
     public void shouldMatchWhenPolicyMatches() throws Exception {
         givenFilterWith(null, null, "REPLICA", null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis());
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchWhenSpecifiedPnfsIdMatches() throws Exception {
         String pnfsids = Joiner.on(",").join(
-                        aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
-                        aNonResilientFile().getPnfsId().toString());
+              aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
+              aNonResilientFile().getPnfsId().toString());
         givenFilterWith(pnfsids, null, null, null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis());
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
@@ -160,27 +159,27 @@ public final class FileFilterTest extends TestBase {
     public void shouldMatchWhenStatesMatch() throws Exception {
         givenFilterWith(null, "RUNNING", null, null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", null, "RUNNING", System.currentTimeMillis());
+              "REPLICA", null, "RUNNING", System.currentTimeMillis());
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchWhenStorageUnitMatches() throws Exception {
         givenFilterWith(null, null, null,
-                        "resilient-2.dcache-devel-test@enstore", null, null,
-                        false);
+              "resilient-2.dcache-devel-test@enstore", null, null,
+              false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis());
         assertTrue(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldNotIndicateSimplePnfsMatchBecauseOfMultiplePnfsIds()
-                    throws Exception {
+          throws Exception {
         String pnfsids = Joiner.on(",").join(
-                        aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
-                        aNonResilientFile().getPnfsId().toString());
+              aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
+              aNonResilientFile().getPnfsId().toString());
         givenFilterWith(pnfsids, null, null, null, null, null, false);
         assertFalse(filter.isSimplePnfsMatch());
     }
@@ -188,37 +187,37 @@ public final class FileFilterTest extends TestBase {
     @Test
     public void shouldNotMatchWhenAfterDoesNotMatch() throws Exception {
         givenFilterWith(null, null, null, null, System.currentTimeMillis(),
-                        null, false);
+              null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis()
-                                        - TimeUnit.HOURS.toMillis(1));
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis()
+                    - TimeUnit.HOURS.toMillis(1));
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchWhenBeforeDoesNotMatch() throws Exception {
         givenFilterWith(null, null, null, null, null,
-                        System.currentTimeMillis(), false);
+              System.currentTimeMillis(), false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis() +
-                                        TimeUnit.HOURS.toMillis(1));
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis() +
+                    TimeUnit.HOURS.toMillis(1));
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchWhenOneOfSeveralAttributesDoesNotMatch()
-                    throws Exception {
+          throws Exception {
         String pnfsids = Joiner.on(",").join(
-                        aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
-                        aNonResilientFile().getPnfsId().toString());
+              aReplicaOnlineFileWithNoTags().getPnfsId().toString(),
+              aNonResilientFile().getPnfsId().toString());
         givenFilterWith(pnfsids, "WAITING", null,
-                        "resilient-3.dcache-devel-test@enstore", null, null,
-                        false);
+              "resilient-3.dcache-devel-test@enstore", null, null,
+              false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "WAITING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "WAITING", System.currentTimeMillis());
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
@@ -226,18 +225,18 @@ public final class FileFilterTest extends TestBase {
     public void shouldNotMatchWhenPolicyDoesNotMatch() throws Exception {
         givenFilterWith(null, null, "CUSTODIAL", null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", null, "RUNNING", System.currentTimeMillis());
+              "REPLICA", null, "RUNNING", System.currentTimeMillis());
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchWhenSpecifiedPnfsIdDoesNotMatch()
-                    throws Exception {
+          throws Exception {
         givenFilterWith(aCustodialNearlineFile().getPnfsId().toString(), null,
-                        null, null, null, null, false);
+              null, null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis());
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
@@ -245,24 +244,24 @@ public final class FileFilterTest extends TestBase {
     public void shouldNotMatchWhenStatesDoNotMatch() throws Exception {
         givenFilterWith(null, "WAITING", null, null, null, null, false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", null, "RUNNING", System.currentTimeMillis());
+              "REPLICA", null, "RUNNING", System.currentTimeMillis());
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchWhenStorageUnitDoesNotMatch() throws Exception {
         givenFilterWith(null, null, null,
-                        "resilient-3.dcache-devel-test@enstore", null, null,
-                        false);
+              "resilient-3.dcache-devel-test@enstore", null, null,
+              false);
         givenOperationWith(aReplicaOnlineFileWithNoTags().getPnfsId(),
-                        "REPLICA", "resilient-2.dcache-devel-test@enstore",
-                        "RUNNING", System.currentTimeMillis());
+              "REPLICA", "resilient-2.dcache-devel-test@enstore",
+              "RUNNING", System.currentTimeMillis());
         assertFalse(filter.matches(operation, poolInfoMap));
     }
 
     private void givenFilterWith(String pnfsIds, String states,
-                    String retentionPolicy, String storageUnit, Long after,
-                    Long before, boolean force) {
+          String retentionPolicy, String storageUnit, Long after,
+          Long before, boolean force) {
         filter = new FileFilter();
         filter.setForceRemoval(force);
         filter.setLastUpdateAfter(after);
@@ -276,11 +275,11 @@ public final class FileFilterTest extends TestBase {
     }
 
     private void givenOperationWith(PnfsId pnfsId, String retentionPolicy,
-                    String storageUnit, String state, Long update) {
+          String storageUnit, String state, Long update) {
         Integer sunit = storageUnit != null ?
-                        poolInfoMap.getUnitIndex(storageUnit) : null;
+              poolInfoMap.getUnitIndex(storageUnit) : null;
 
-        operation = new FileOperation(pnfsId, -1, sunit,1, 2L);
+        operation = new FileOperation(pnfsId, -1, sunit, 1, 2L);
 
         if (retentionPolicy != null) {
             operation.setRetentionPolicy(retentionPolicy);

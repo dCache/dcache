@@ -1,55 +1,48 @@
 package org.dcache.services.topology;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellTunnelInfo;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-
-import diskCacheV111.util.CacheException;
-
-import dmg.cells.network.CellDomainNode;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellTunnelInfo;
-import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.cells.CellStub;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Base class for CellsTopology implementations. Provides support for
- * building topology maps.
+ * Base class for CellsTopology implementations. Provides support for building topology maps.
  */
 public class AbstractCellsTopology
-    implements CellInfoProvider
-{
+      implements CellInfoProvider {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(AbstractCellsTopology.class);
+          LoggerFactory.getLogger(AbstractCellsTopology.class);
 
     private CellStub _stub;
 
-    public void setCellStub(CellStub stub)
-    {
+    public void setCellStub(CellStub stub) {
         _stub = stub;
     }
 
     private CellTunnelInfo[] getCellTunnelInfos(String address)
-            throws CacheException, InterruptedException, NoRouteToCellException
-    {
+          throws CacheException, InterruptedException, NoRouteToCellException {
         List<CellTunnelInfo> tunnels = new ArrayList<>();
 
         LOGGER.debug("Sending topology info request to {}", address);
         CellTunnelInfo[] infos =
-            _stub.sendAndWait(new CellPath(address),
-                              "getcelltunnelinfos",
-                              CellTunnelInfo[].class);
+              _stub.sendAndWait(new CellPath(address),
+                    "getcelltunnelinfos",
+                    CellTunnelInfo[].class);
         LOGGER.debug("Got reply from {}", address);
 
-        for (CellTunnelInfo info: infos) {
+        for (CellTunnelInfo info : infos) {
             if (info.getRemoteCellDomainInfo() != null) {
                 tunnels.add(info);
             }
@@ -58,26 +51,24 @@ public class AbstractCellsTopology
         return tunnels.toArray(CellTunnelInfo[]::new);
     }
 
-    private List<CellDomainNode> getConnectedNodes(CellDomainNode node)
-    {
+    private List<CellDomainNode> getConnectedNodes(CellDomainNode node) {
         List<CellDomainNode> nodes = new ArrayList<>();
 
-        for (CellTunnelInfo info: node.getLinks()) {
+        for (CellTunnelInfo info : node.getLinks()) {
             String address = node.getAddress();
             String domain =
-                info.getRemoteCellDomainInfo().getCellDomainName();
+                  info.getRemoteCellDomainInfo().getCellDomainName();
             nodes.add(new CellDomainNode(domain, address + ":System@" + domain));
         }
 
         return nodes;
     }
 
-    protected Map<String,CellDomainNode> buildTopologyMap(String domain)
-        throws InterruptedException
-    {
+    protected Map<String, CellDomainNode> buildTopologyMap(String domain)
+          throws InterruptedException {
         Queue<CellDomainNode> queue = new ArrayDeque<>();
         Map<String, CellDomainNode> map =
-            new HashMap<>();
+              new HashMap<>();
 
         CellDomainNode node = new CellDomainNode(domain, "System@" + domain);
         queue.add(node);
@@ -87,7 +78,7 @@ public class AbstractCellsTopology
             try {
                 node.setLinks(getCellTunnelInfos(node.getAddress()));
 
-                for (CellDomainNode connectedNode: getConnectedNodes(node)) {
+                for (CellDomainNode connectedNode : getConnectedNodes(node)) {
                     String name = connectedNode.getName();
                     if (!map.containsKey(name)) {
                         queue.add(connectedNode);
@@ -96,7 +87,7 @@ public class AbstractCellsTopology
                 }
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch topology info from {}: {}",
-                          node.getAddress(), e.getMessage());
+                      node.getAddress(), e.getMessage());
             }
         }
         return map;

@@ -59,44 +59,39 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.handlers;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.BulkJob;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.util.SignalAware;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- *  Tests the logic of the completion listener for correctness.
+ * Tests the logic of the completion listener for correctness.
  */
-public class BulkJobCompletionHandlerTest
-{
-    class SimpleTestJob extends BulkJob
-    {
-        SimpleTestJob(BulkJobKey parentKey) throws BulkServiceException
-        {
+public class BulkJobCompletionHandlerTest {
+
+    class SimpleTestJob extends BulkJob {
+
+        SimpleTestJob(BulkJobKey parentKey) throws BulkServiceException {
             super(BulkJobKey.newKey(requestId), parentKey, "test");
         }
 
         @Override
-        protected void doRun()
-        {
+        protected void doRun() {
             // NOP
         }
 
         @Override
-        protected void postCompletion()
-        {
+        protected void postCompletion() {
             // NOP
         }
     }
 
-    class JobSet
-    {
+    class JobSet {
+
         static final int ROOT = 0;
         static final int FILE_1 = 1;
         static final int DIR_1 = 2;
@@ -107,8 +102,7 @@ public class BulkJobCompletionHandlerTest
 
         BulkJob[] jobs;
 
-        JobSet(String requestId) throws Exception
-        {
+        JobSet(String requestId) throws Exception {
             jobs = new BulkJob[7];
             jobs[ROOT] = addJobWithParent(BulkJobKey.newKey(requestId));
             jobs[FILE_1] = addJobWithParent(jobs[ROOT].getKey());
@@ -119,58 +113,51 @@ public class BulkJobCompletionHandlerTest
             jobs[DIR_3] = addJobWithParent(jobs[DIR_2].getKey());
         }
 
-        Long idOf(int job)
-        {
+        Long idOf(int job) {
             return jobs[job].getKey().getJobId();
         }
 
-        void whenAllJobsTerminate()
-        {
+        void whenAllJobsTerminate() {
             for (BulkJob job : jobs) {
                 listener.jobCompleted(job);
             }
         }
 
-        void whenJobTerminates(int job)
-        {
+        void whenJobTerminates(int job) {
             listener.jobCompleted(jobs[job]);
         }
 
         private BulkJob addJobWithParent(BulkJobKey parentId)
-                        throws Exception
-        {
+              throws Exception {
             SimpleTestJob job = new SimpleTestJob(parentId);
             listener.addChild(job);
             return job;
         }
     }
 
-    class SignalAwareQueue implements SignalAware
-    {
+    class SignalAwareQueue implements SignalAware {
+
         private AtomicInteger signalled = new AtomicInteger(0);
 
         @Override
-        public void signal()
-        {
+        public void signal() {
             signalled.incrementAndGet();
         }
 
         @Override
-        public int countSignals()
-        {
+        public int countSignals() {
             return signalled.get();
         }
     }
 
-    SignalAware              queue;
+    SignalAware queue;
     BulkJobCompletionHandler listener;
-    String                   requestId;
-    Long                     requestJobId;
-    JobSet                   jobSet;
+    String requestId;
+    Long requestJobId;
+    JobSet jobSet;
 
     @Before
-    public void setup() throws Exception
-    {
+    public void setup() throws Exception {
         queue = new SignalAwareQueue();
         listener = new BulkJobCompletionHandler(queue);
         requestId = UUID.randomUUID().toString();
@@ -178,29 +165,25 @@ public class BulkJobCompletionHandlerTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowExceptionWhenListenerIsShared() throws Exception
-    {
+    public void shouldThrowExceptionWhenListenerIsShared() throws Exception {
         givenJobWithParentFromDifferentRequest();
     }
 
     @Test
-    public void shouldConsiderChildrenTerminatedForEmptyDir() throws Exception
-    {
+    public void shouldConsiderChildrenTerminatedForEmptyDir() throws Exception {
         givenNewJobSet();
         assertChildrenHaveAllTerminated(jobSet.idOf(JobSet.DIR_3));
     }
 
     @Test
-    public void shouldConsiderChildrenTerminatedForDirWithOnlyChildTerminated() throws Exception
-    {
+    public void shouldConsiderChildrenTerminatedForDirWithOnlyChildTerminated() throws Exception {
         givenNewJobSet();
         jobSet.whenJobTerminates(JobSet.DIR_3);
         assertChildrenHaveAllTerminated(jobSet.idOf(JobSet.DIR_2));
     }
 
     @Test
-    public void shouldNotConsiderChildrenTerminatedPrematurely() throws Exception
-    {
+    public void shouldNotConsiderChildrenTerminatedPrematurely() throws Exception {
         givenNewJobSet();
         jobSet.whenJobTerminates(JobSet.DIR_3);
         assertChildrenHaveNotAllTerminated(jobSet.idOf(JobSet.DIR_1));
@@ -213,8 +196,7 @@ public class BulkJobCompletionHandlerTest
     }
 
     @Test
-    public void shouldNotConsiderRequestCompletedWithNoJobsButMarkerPresent() throws Exception
-    {
+    public void shouldNotConsiderRequestCompletedWithNoJobsButMarkerPresent() throws Exception {
         givenRequestProcessingStarted();
         givenNewJobSet();
         jobSet.whenAllJobsTerminate();
@@ -222,8 +204,7 @@ public class BulkJobCompletionHandlerTest
     }
 
     @Test
-    public void shouldCompleteRequestIfAllJobsTerminated() throws Exception
-    {
+    public void shouldCompleteRequestIfAllJobsTerminated() throws Exception {
         givenRequestProcessingStarted();
         givenNewJobSet();
         givenRequestProcessingFinished();
@@ -232,59 +213,49 @@ public class BulkJobCompletionHandlerTest
     }
 
     @Test
-    public void queueShouldReceiveSignalFromQueueOnJobTermination() throws Exception
-    {
+    public void queueShouldReceiveSignalFromQueueOnJobTermination() throws Exception {
         givenNewJobSet();
         jobSet.whenAllJobsTerminate();
         assertAllJobsHaveSignalledQueue();
     }
 
-    private void assertRequestTerminated()
-    {
-        assert(listener.isRequestCompleted());
+    private void assertRequestTerminated() {
+        assert (listener.isRequestCompleted());
     }
 
-    private void assertRequestNotTerminated()
-    {
-        assert(!listener.isRequestCompleted());
+    private void assertRequestNotTerminated() {
+        assert (!listener.isRequestCompleted());
     }
 
-    private void assertChildrenHaveAllTerminated(Long parentId)
-    {
-        assert(listener.areChildrenAllTerminated(parentId));
+    private void assertChildrenHaveAllTerminated(Long parentId) {
+        assert (listener.areChildrenAllTerminated(parentId));
     }
 
-    private void assertChildrenHaveNotAllTerminated(Long parentId)
-    {
-        assert(!listener.areChildrenAllTerminated(parentId));
+    private void assertChildrenHaveNotAllTerminated(Long parentId) {
+        assert (!listener.areChildrenAllTerminated(parentId));
     }
 
-    private void assertAllJobsHaveSignalledQueue()
-    {
-        assert(queue.countSignals() == jobSet.jobs.length);
+    private void assertAllJobsHaveSignalledQueue() {
+        assert (queue.countSignals() == jobSet.jobs.length);
     }
 
-    private void givenNewJobSet() throws Exception
-    {
+    private void givenNewJobSet() throws Exception {
         jobSet = new JobSet(requestId);
     }
 
     private BulkJob givenJobWithParentFromDifferentRequest()
-                    throws Exception
-    {
+          throws Exception {
         SimpleTestJob job = new SimpleTestJob(BulkJobKey.newKey(UUID.randomUUID()
-                                                                    .toString()));
+              .toString()));
         listener.addChild(job);
         return job;
     }
 
-    private void givenRequestProcessingStarted()
-    {
+    private void givenRequestProcessingStarted() {
         listener.requestProcessingStarted(requestJobId);
     }
 
-    private void givenRequestProcessingFinished()
-    {
+    private void givenRequestProcessingFinished() {
         listener.requestProcessingFinished(requestJobId);
     }
 }

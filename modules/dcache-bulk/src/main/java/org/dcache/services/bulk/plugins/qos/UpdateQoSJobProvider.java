@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.qos;
 
+import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
+
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
@@ -66,36 +68,34 @@ import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
-
 /**
  * Provides update qos job for single file.
  */
 public class UpdateQoSJobProvider extends BulkJobProvider<UpdateQoSJob> {
 
-  static final BulkJobArgumentDescriptor TARGET_QOS =
-      new BulkJobArgumentDescriptor("target-qos",
-                                "the desired qos transition ('disk' is limited to "
-                                           + "files with volatile/unknown qos status)",
-                                 "disk|tape|disk+tape",
-                                   true,
-                                null);
+    static final BulkJobArgumentDescriptor TARGET_QOS =
+          new BulkJobArgumentDescriptor("target-qos",
+                "the desired qos transition ('disk' is limited to "
+                      + "files with volatile/unknown qos status)",
+                "disk|tape|disk+tape",
+                true,
+                null);
 
-  public UpdateQoSJobProvider() {
-    super("UPDATE-QOS", FILE, ExpansionType.BREADTH_FIRST);
-  }
+    public UpdateQoSJobProvider() {
+        super("UPDATE-QOS", FILE, ExpansionType.BREADTH_FIRST);
+    }
 
-  @Override
-  public UpdateQoSJob createJob(BulkJobKey key, BulkJobKey parentKey) {
-    return new UpdateQoSJob(key, parentKey, activity);
-  }
+    @Override
+    public UpdateQoSJob createJob(BulkJobKey key, BulkJobKey parentKey) {
+        return new UpdateQoSJob(key, parentKey, activity);
+    }
 
-  @Override
-  public Class<UpdateQoSJob> getJobClass() {
-    return UpdateQoSJob.class;
-  }
+    @Override
+    public Class<UpdateQoSJob> getJobClass() {
+        return UpdateQoSJob.class;
+    }
 
-  public Set<BulkJobArgumentDescriptor> getArguments() {
-    return ImmutableSet.of(TARGET_QOS);
-  }
+    public Set<BulkJobArgumentDescriptor> getArguments() {
+        return ImmutableSet.of(TARGET_QOS);
+    }
 }

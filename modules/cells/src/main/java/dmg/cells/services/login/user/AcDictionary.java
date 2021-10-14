@@ -1,13 +1,17 @@
-package dmg.cells.services.login.user ;
+package dmg.cells.services.login.user;
 
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
+
 public interface AcDictionary {
 
-    Enumeration<String> getPrincipals() ;
+    Enumeration<String> getPrincipals();
+
     boolean getPermission(String prinicalName)
-           throws NoSuchElementException ;
-    boolean isResolved() ;
-    String getInheritance() ;
+          throws NoSuchElementException;
+
+    boolean isResolved();
+
+    String getInheritance();
 
 }

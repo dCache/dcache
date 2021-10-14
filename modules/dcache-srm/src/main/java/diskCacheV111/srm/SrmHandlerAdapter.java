@@ -19,7 +19,6 @@
 package diskCacheV111.srm;
 
 import java.rmi.RemoteException;
-
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -101,318 +100,337 @@ import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 
 /**
- * Wraps an SrmHandler to implement the interface Axis calls into for the SRM
- * 2.2 service.
+ * Wraps an SrmHandler to implement the interface Axis calls into for the SRM 2.2 service.
  */
-public class SrmHandlerAdapter implements ISRM
-{
+public class SrmHandlerAdapter implements ISRM {
+
     private final SrmHandler handler;
 
-    public SrmHandlerAdapter(SrmHandler handler)
-    {
+    public SrmHandlerAdapter(SrmHandler handler) {
         this.handler = handler;
     }
 
     @Override
     public SrmReserveSpaceResponse srmReserveSpace(
-            SrmReserveSpaceRequest srmReserveSpaceRequest)
-            throws RemoteException
-    {
+          SrmReserveSpaceRequest srmReserveSpaceRequest)
+          throws RemoteException {
         return
-                (SrmReserveSpaceResponse)
-                        handler.handleRequest("srmReserveSpace",srmReserveSpaceRequest);
+              (SrmReserveSpaceResponse)
+                    handler.handleRequest("srmReserveSpace", srmReserveSpaceRequest);
     }
 
     @Override
     public SrmReleaseSpaceResponse srmReleaseSpace(
-            SrmReleaseSpaceRequest srmReleaseSpaceRequest)
-            throws RemoteException {
+          SrmReleaseSpaceRequest srmReleaseSpaceRequest)
+          throws RemoteException {
         return
-                (SrmReleaseSpaceResponse)
-                        handler.handleRequest("srmReleaseSpace",srmReleaseSpaceRequest);
+              (SrmReleaseSpaceResponse)
+                    handler.handleRequest("srmReleaseSpace", srmReleaseSpaceRequest);
     }
 
     @Override
     public SrmUpdateSpaceResponse srmUpdateSpace(
-            SrmUpdateSpaceRequest srmUpdateSpaceRequest)
-            throws RemoteException {
+          SrmUpdateSpaceRequest srmUpdateSpaceRequest)
+          throws RemoteException {
         return
-                (SrmUpdateSpaceResponse)
-                        handler.handleRequest("srmUpdateSpace",srmUpdateSpaceRequest);
+              (SrmUpdateSpaceResponse)
+                    handler.handleRequest("srmUpdateSpace", srmUpdateSpaceRequest);
     }
 
 
     @Override
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
-            SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest)
-            throws RemoteException {
+          SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest)
+          throws RemoteException {
         return
-                (SrmGetSpaceMetaDataResponse)
-                        handler.handleRequest("srmGetSpaceMetaData",srmGetSpaceMetaDataRequest);
+              (SrmGetSpaceMetaDataResponse)
+                    handler.handleRequest("srmGetSpaceMetaData", srmGetSpaceMetaDataRequest);
     }
-
 
 
     @Override
     public SrmSetPermissionResponse srmSetPermission(
-            SrmSetPermissionRequest srmSetPermissionRequest)
-            throws RemoteException {
+          SrmSetPermissionRequest srmSetPermissionRequest)
+          throws RemoteException {
         return
-                (SrmSetPermissionResponse)
-                        handler.handleRequest("srmSetPermission",srmSetPermissionRequest);
+              (SrmSetPermissionResponse)
+                    handler.handleRequest("srmSetPermission", srmSetPermissionRequest);
     }
 
 
     @Override
     public SrmCheckPermissionResponse srmCheckPermission(
-            SrmCheckPermissionRequest srmCheckPermissionRequest)
-            throws RemoteException {
+          SrmCheckPermissionRequest srmCheckPermissionRequest)
+          throws RemoteException {
         return
-                (SrmCheckPermissionResponse)
-                        handler.handleRequest("srmCheckPermission",srmCheckPermissionRequest);
+              (SrmCheckPermissionResponse)
+                    handler.handleRequest("srmCheckPermission", srmCheckPermissionRequest);
     }
 
     @Override
     public SrmMkdirResponse srmMkdir(SrmMkdirRequest request) throws RemoteException {
         return
-                (SrmMkdirResponse)
-                        handler.handleRequest("srmMkdir",request);
+              (SrmMkdirResponse)
+                    handler.handleRequest("srmMkdir", request);
     }
 
     @Override
     public SrmRmdirResponse srmRmdir(SrmRmdirRequest request) throws RemoteException {
         return
-                (SrmRmdirResponse)
-                        handler.handleRequest("srmRmdir",request);
+              (SrmRmdirResponse)
+                    handler.handleRequest("srmRmdir", request);
     }
 
     @Override
-    public SrmCopyResponse srmCopy(SrmCopyRequest request)  throws RemoteException {
+    public SrmCopyResponse srmCopy(SrmCopyRequest request) throws RemoteException {
         return
-                (SrmCopyResponse)
-                        handler.handleRequest("srmCopy",request);
+              (SrmCopyResponse)
+                    handler.handleRequest("srmCopy", request);
     }
 
     @Override
-    public SrmRmResponse srmRm(SrmRmRequest request)  throws RemoteException {
+    public SrmRmResponse srmRm(SrmRmRequest request) throws RemoteException {
         return
-                (SrmRmResponse)
-                        handler.handleRequest("srmRm",request);
+              (SrmRmResponse)
+                    handler.handleRequest("srmRm", request);
     }
 
     @Override
     public SrmLsResponse srmLs(SrmLsRequest srmLsRequest)
-            throws RemoteException {
-        return (SrmLsResponse)handler.handleRequest("srmLs",srmLsRequest);
+          throws RemoteException {
+        return (SrmLsResponse) handler.handleRequest("srmLs", srmLsRequest);
     }
 
     @Override
     public SrmMvResponse srmMv(SrmMvRequest request)
-            throws RemoteException {
+          throws RemoteException {
         return
-                (SrmMvResponse)
-                        handler.handleRequest("srmMv",request);
+              (SrmMvResponse)
+                    handler.handleRequest("srmMv", request);
     }
 
     @Override
     public SrmPrepareToGetResponse srmPrepareToGet(
-            SrmPrepareToGetRequest srmPrepareToGetRequest)
-            throws RemoteException {
+          SrmPrepareToGetRequest srmPrepareToGetRequest)
+          throws RemoteException {
         return
-                (SrmPrepareToGetResponse)
-                        handler.handleRequest("srmPrepareToGet",srmPrepareToGetRequest);
+              (SrmPrepareToGetResponse)
+                    handler.handleRequest("srmPrepareToGet", srmPrepareToGetRequest);
     }
 
     @Override
     public SrmPrepareToPutResponse srmPrepareToPut(
-            SrmPrepareToPutRequest srmPrepareToPutRequest)
-            throws RemoteException {
+          SrmPrepareToPutRequest srmPrepareToPutRequest)
+          throws RemoteException {
         return
-                (SrmPrepareToPutResponse)
-                        handler.handleRequest("srmPrepareToPut",srmPrepareToPutRequest);
+              (SrmPrepareToPutResponse)
+                    handler.handleRequest("srmPrepareToPut", srmPrepareToPutRequest);
     }
 
 
     @Override
     public SrmReleaseFilesResponse srmReleaseFiles(
-            SrmReleaseFilesRequest srmReleaseFilesRequest)
-            throws RemoteException {
+          SrmReleaseFilesRequest srmReleaseFilesRequest)
+          throws RemoteException {
         return
-                (SrmReleaseFilesResponse)
-                        handler.handleRequest("srmReleaseFiles",srmReleaseFilesRequest);
+              (SrmReleaseFilesResponse)
+                    handler.handleRequest("srmReleaseFiles", srmReleaseFilesRequest);
     }
 
     @Override
     public SrmPutDoneResponse srmPutDone(
-            SrmPutDoneRequest srmPutDoneRequest)
-            throws RemoteException {
+          SrmPutDoneRequest srmPutDoneRequest)
+          throws RemoteException {
         return
-                (SrmPutDoneResponse)
-                        handler.handleRequest("srmPutDone",srmPutDoneRequest);
+              (SrmPutDoneResponse)
+                    handler.handleRequest("srmPutDone", srmPutDoneRequest);
     }
 
     @Override
     public SrmAbortRequestResponse srmAbortRequest(
-            SrmAbortRequestRequest srmAbortRequestRequest)
-            throws RemoteException {
+          SrmAbortRequestRequest srmAbortRequestRequest)
+          throws RemoteException {
         return
-                (SrmAbortRequestResponse)
-                        handler.handleRequest("srmAbortRequest",srmAbortRequestRequest);
+              (SrmAbortRequestResponse)
+                    handler.handleRequest("srmAbortRequest", srmAbortRequestRequest);
     }
 
     @Override
     public SrmAbortFilesResponse srmAbortFiles(
-            SrmAbortFilesRequest srmAbortFilesRequest)
-            throws RemoteException {
+          SrmAbortFilesRequest srmAbortFilesRequest)
+          throws RemoteException {
         return
-                (SrmAbortFilesResponse)
-                        handler.handleRequest("srmAbortFiles",srmAbortFilesRequest);
+              (SrmAbortFilesResponse)
+                    handler.handleRequest("srmAbortFiles", srmAbortFilesRequest);
     }
 
     @Override
     public SrmSuspendRequestResponse srmSuspendRequest(
-            SrmSuspendRequestRequest srmSuspendRequestRequest)
-            throws RemoteException {
+          SrmSuspendRequestRequest srmSuspendRequestRequest)
+          throws RemoteException {
         return
-                (SrmSuspendRequestResponse)
-                        handler.handleRequest("srmSuspendRequest",srmSuspendRequestRequest);
+              (SrmSuspendRequestResponse)
+                    handler.handleRequest("srmSuspendRequest", srmSuspendRequestRequest);
     }
 
     @Override
     public SrmResumeRequestResponse srmResumeRequest(
-            SrmResumeRequestRequest srmResumeRequestRequest)
-            throws RemoteException {
+          SrmResumeRequestRequest srmResumeRequestRequest)
+          throws RemoteException {
         return
-                (SrmResumeRequestResponse)
-                        handler.handleRequest("srmResumeRequest",srmResumeRequestRequest);
+              (SrmResumeRequestResponse)
+                    handler.handleRequest("srmResumeRequest", srmResumeRequestRequest);
     }
 
     @Override
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
-            SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest)
-            throws RemoteException {
+          SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest)
+          throws RemoteException {
         return
-                (SrmStatusOfGetRequestResponse)
-                        handler.handleRequest("srmStatusOfGetRequest",srmStatusOfGetRequestRequest);
+              (SrmStatusOfGetRequestResponse)
+                    handler.handleRequest("srmStatusOfGetRequest", srmStatusOfGetRequestRequest);
     }
 
     @Override
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
-            SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest)
-            throws RemoteException {
+          SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest)
+          throws RemoteException {
         return
-                (SrmStatusOfPutRequestResponse)
-                        handler.handleRequest("srmStatusOfPutRequest",srmStatusOfPutRequestRequest);
+              (SrmStatusOfPutRequestResponse)
+                    handler.handleRequest("srmStatusOfPutRequest", srmStatusOfPutRequestRequest);
     }
 
 
     @Override
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
-            SrmStatusOfCopyRequestRequest request)
-            throws RemoteException {
+          SrmStatusOfCopyRequestRequest request)
+          throws RemoteException {
         return
-                (SrmStatusOfCopyRequestResponse)
-                        handler.handleRequest("srmStatusOfCopyRequest",request);
+              (SrmStatusOfCopyRequestResponse)
+                    handler.handleRequest("srmStatusOfCopyRequest", request);
     }
 
     @Override
     public SrmGetRequestSummaryResponse srmGetRequestSummary(
-            SrmGetRequestSummaryRequest srmGetRequestSummaryRequest)
-            throws RemoteException {
+          SrmGetRequestSummaryRequest srmGetRequestSummaryRequest)
+          throws RemoteException {
         return (SrmGetRequestSummaryResponse)
-                handler.handleRequest("srmGetRequestSummary",srmGetRequestSummaryRequest);
+              handler.handleRequest("srmGetRequestSummary", srmGetRequestSummaryRequest);
     }
 
     @Override
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
-            SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest)
-            throws RemoteException {
+          SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest)
+          throws RemoteException {
         return (SrmExtendFileLifeTimeResponse)
-                handler.handleRequest("srmExtendFileLifeTime",srmExtendFileLifeTimeRequest);
+              handler.handleRequest("srmExtendFileLifeTime", srmExtendFileLifeTimeRequest);
     }
 
     @Override
-    public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) throws RemoteException {
+    public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(
+          SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
-                handler.handleRequest("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest);
+              handler.handleRequest("srmStatusOfBringOnlineRequest",
+                    srmStatusOfBringOnlineRequestRequest);
     }
 
     @Override
-    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
+    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest)
+          throws RemoteException {
         return (SrmBringOnlineResponse)
-                handler.handleRequest("srmBringOnline",srmBringOnlineRequest);
+              handler.handleRequest("srmBringOnline", srmBringOnlineRequest);
     }
 
     @Override
-    public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
+    public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(
+          SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest)
+          throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
-                handler.handleRequest("srmExtendFileLifeTimeInSpace",srmExtendFileLifeTimeInSpaceRequest);
+              handler.handleRequest("srmExtendFileLifeTimeInSpace",
+                    srmExtendFileLifeTimeInSpaceRequest);
     }
 
     @Override
-    public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
+    public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(
+          SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
-                handler.handleRequest("srmStatusOfUpdateSpaceRequest",srmStatusOfUpdateSpaceRequestRequest);
+              handler.handleRequest("srmStatusOfUpdateSpaceRequest",
+                    srmStatusOfUpdateSpaceRequestRequest);
     }
 
     @Override
-    public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
+    public SrmPurgeFromSpaceResponse srmPurgeFromSpace(
+          SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
-                handler.handleRequest("srmPurgeFromSpace",srmPurgeFromSpaceRequest);
+              handler.handleRequest("srmPurgeFromSpace", srmPurgeFromSpaceRequest);
     }
 
     @Override
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
-                handler.handleRequest("srmPing", srmPingRequest);
+              handler.handleRequest("srmPing", srmPingRequest);
     }
 
     @Override
-    public SrmGetPermissionResponse srmGetPermission(SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
+    public SrmGetPermissionResponse srmGetPermission(
+          SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
-                handler.handleRequest("srmGetPermission",srmGetPermissionRequest);
+              handler.handleRequest("srmGetPermission", srmGetPermissionRequest);
     }
 
     @Override
-    public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
+    public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(
+          SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
-                handler.handleRequest("srmStatusOfReserveSpaceRequest",srmStatusOfReserveSpaceRequestRequest);
+              handler.handleRequest("srmStatusOfReserveSpaceRequest",
+                    srmStatusOfReserveSpaceRequestRequest);
     }
 
     @Override
-    public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
+    public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(
+          SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
-                handler.handleRequest("srmChangeSpaceForFiles",srmChangeSpaceForFilesRequest);
+              handler.handleRequest("srmChangeSpaceForFiles", srmChangeSpaceForFilesRequest);
     }
 
     @Override
-    public SrmGetTransferProtocolsResponse srmGetTransferProtocols(SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
+    public SrmGetTransferProtocolsResponse srmGetTransferProtocols(
+          SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
-                handler.handleRequest("srmGetTransferProtocols",srmGetTransferProtocolsRequest);
+              handler.handleRequest("srmGetTransferProtocols", srmGetTransferProtocolsRequest);
     }
 
     @Override
-    public SrmGetRequestTokensResponse srmGetRequestTokens(SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
+    public SrmGetRequestTokensResponse srmGetRequestTokens(
+          SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
-                handler.handleRequest("srmGetRequestTokens",srmGetRequestTokensRequest);
+              handler.handleRequest("srmGetRequestTokens", srmGetRequestTokensRequest);
     }
 
     @Override
-    public SrmGetSpaceTokensResponse srmGetSpaceTokens(SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
+    public SrmGetSpaceTokensResponse srmGetSpaceTokens(
+          SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
-                handler.handleRequest("srmGetSpaceTokens",srmGetSpaceTokensRequest);
+              handler.handleRequest("srmGetSpaceTokens", srmGetSpaceTokensRequest);
     }
 
     @Override
-    public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
+    public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(
+          SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
-                handler.handleRequest("srmStatusOfChangeSpaceForFilesRequest",srmStatusOfChangeSpaceForFilesRequestRequest);
+              handler.handleRequest("srmStatusOfChangeSpaceForFilesRequest",
+                    srmStatusOfChangeSpaceForFilesRequestRequest);
     }
 
     @Override
-    public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
+    public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(
+          SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
-                handler.handleRequest("srmStatusOfLsRequest",srmStatusOfLsRequestRequest);
+              handler.handleRequest("srmStatusOfLsRequest", srmStatusOfLsRequestRequest);
     }
 
 }

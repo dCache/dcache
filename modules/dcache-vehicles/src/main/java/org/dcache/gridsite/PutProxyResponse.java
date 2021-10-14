@@ -20,7 +20,7 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class PutProxyResponse implements Serializable
-{
+public class PutProxyResponse implements Serializable {
+
     private static final long serialVersionUID = 6918110781105861618L;
 }

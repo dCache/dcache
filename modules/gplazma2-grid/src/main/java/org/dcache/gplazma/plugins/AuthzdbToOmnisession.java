@@ -23,19 +23,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Program to convert an storage-authzdb plugin configuration file into
- * an omnisession plugin configuration file.
+ * Program to convert an storage-authzdb plugin configuration file into an omnisession plugin
+ * configuration file.
  */
-public class AuthzdbToOmnisession
-{
-    private static void fail(String why)
-    {
+public class AuthzdbToOmnisession {
+
+    private static void fail(String why) {
         System.err.println(why);
         System.exit(1);
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         if (args.length != 2) {
             fail("Require two arguments");
         }

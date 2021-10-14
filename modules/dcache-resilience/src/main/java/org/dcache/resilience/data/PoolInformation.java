@@ -60,26 +60,25 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.collect.ImmutableMap;
-
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.Date;
 import java.util.Map;
 
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolV2Mode;
-
 /**
  * <p>Encapsulates "live" pool information – pool mode, status, and cost.
- *      Also stores pool tags.</p>
+ * Also stores pool tags.</p>
  *
  * <p>This object is held by the {@link PoolInfoMap}; status, mode, tags
- *      and cost are refreshed during the Pool Monitor updates.</p>
+ * and cost are refreshed during the Pool Monitor updates.</p>
  */
 final class PoolInformation {
+
     public static final String UNINITIALIZED = "UNINITIALIZED";
 
     private static final String TOSTRING
-                    = "key\t\t%s\nname\t\t%s\ntags\t\t%s\nmode\t\t%s\n"
-                    + "status\t\t%s\nlast update\t%s\n";
+          = "key\t\t%s\nname\t\t%s\ntags\t\t%s\nmode\t\t%s\n"
+          + "status\t\t%s\nlast update\t%s\n";
 
     private final String name;
     private final Integer key;
@@ -104,28 +103,28 @@ final class PoolInformation {
 
     public synchronized String toString() {
         if (!isInitialized()) {
-            return  String.format(TOSTRING,
-                                  key, name, "", "", UNINITIALIZED, "");
+            return String.format(TOSTRING,
+                  key, name, "", "", UNINITIALIZED, "");
         }
         return String.format(TOSTRING,
-                             key, name, tags, mode,
-                             excluded ? "EXCLUDED" : status,
-                             new Date(lastUpdate));
+              key, name, tags, mode,
+              excluded ? "EXCLUDED" : status,
+              new Date(lastUpdate));
     }
 
     synchronized boolean canRead() {
         return mode != null
-                         && mode.getMode() != PoolV2Mode.DISABLED
-                         && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
-                         && !mode.isDisabled(PoolV2Mode.DISABLED_FETCH)
-                         && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
+              && mode.getMode() != PoolV2Mode.DISABLED
+              && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+              && !mode.isDisabled(PoolV2Mode.DISABLED_FETCH)
+              && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
     }
 
     synchronized boolean canWrite() {
         return mode != null
-                         && mode.getMode() != PoolV2Mode.DISABLED
-                         && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
-                         && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT);
+              && mode.getMode() != PoolV2Mode.DISABLED
+              && !mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+              && !mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT);
     }
 
     synchronized PoolCostInfo getCostInfo() {
@@ -173,7 +172,7 @@ final class PoolInformation {
     }
 
     synchronized void update(PoolV2Mode mode, Map<String, String> tags,
-                             PoolCostInfo costInfo) {
+          PoolCostInfo costInfo) {
         updatePoolMode(mode);
         updateTags(tags);
         if (costInfo != null) {

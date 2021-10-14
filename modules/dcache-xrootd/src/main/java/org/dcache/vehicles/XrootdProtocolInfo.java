@@ -1,5 +1,8 @@
 package org.dcache.vehicles;
 
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Sets;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -10,15 +13,11 @@ import java.util.EnumSet;
 import java.util.UUID;
 import org.dcache.auth.attributes.Restriction;
 
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
-
 public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private static final long serialVersionUID = -7070947404762513894L;
 
-    public enum Flags
-    {
+    public enum Flags {
         POSC
     }
 
@@ -53,10 +52,9 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     private boolean _overwriteAllowed;
 
     public XrootdProtocolInfo(String protocol, int major, int minor,
-                              InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
-                              int xrootdFileHandle, UUID uuid,
-                              InetSocketAddress doorAddress, Flags... flags)
-    {
+          InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
+          int xrootdFileHandle, UUID uuid,
+          InetSocketAddress doorAddress, Flags... flags) {
         _name = protocol;
         _minor = minor;
         _major = major;
@@ -69,18 +67,15 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         _flags = Sets.newEnumSet(asList(flags), Flags.class);
     }
 
-    public Serializable getDelegatedCredential()
-    {
+    public Serializable getDelegatedCredential() {
         return delegatedCredential;
     }
 
-    public Long getTpcUid()
-    {
+    public Long getTpcUid() {
         return _tpcUid;
     }
 
-    public Long getTpcGid()
-    {
+    public Long getTpcGid() {
         return _tpcGid;
     }
 
@@ -109,9 +104,9 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     }
 
     @Override
-    public String toString()
-    {
-        return getVersionString() + ':' + _clientSocketAddress.getAddress().getHostAddress() + ":" + _clientSocketAddress.getPort();
+    public String toString() {
+        return getVersionString() + ':' + _clientSocketAddress.getAddress().getHostAddress() + ":"
+              + _clientSocketAddress.getPort();
     }
 
     public CellPath getXrootdDoorCellPath() {
@@ -135,8 +130,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
     }
 
     @Override
-    public InetSocketAddress getSocketAddress()
-    {
+    public InetSocketAddress getSocketAddress() {
         return _clientSocketAddress;
     }
 
@@ -144,18 +138,15 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         return _overwriteAllowed;
     }
 
-    public void setSocketAddress(InetSocketAddress address)
-    {
+    public void setSocketAddress(InetSocketAddress address) {
         _clientSocketAddress = address;
     }
 
-    public EnumSet<Flags> getFlags()
-    {
+    public EnumSet<Flags> getFlags() {
         return _flags;
     }
 
-    public void setDelegatedCredential(Serializable delegatedCredential)
-    {
+    public void setDelegatedCredential(Serializable delegatedCredential) {
         this.delegatedCredential = delegatedCredential;
     }
 
@@ -163,13 +154,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
         this.restriction = requireNonNull(restriction);
     }
 
-    public void setTpcUid(Long tpcUid)
-    {
+    public void setTpcUid(Long tpcUid) {
         _tpcUid = tpcUid;
     }
 
-    public void setTpcGid(Long tpcGid)
-    {
+    public void setTpcGid(Long tpcGid) {
         _tpcGid = tpcGid;
     }
 

@@ -59,12 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import java.io.Serializable;
-import java.util.concurrent.ExecutionException;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.util.CacheExceptionFactory;
 
@@ -72,9 +70,10 @@ import org.dcache.util.CacheExceptionFactory;
  * <p>Wrapper methods for processing and handling {@link CacheException}s.</p>
  */
 public final class CacheExceptionUtils {
+
     static final String WILL_RETRY_LATER
-                    = " A best effort at retry will be made "
-                    + "during the next periodic scan.";
+          = " A best effort at retry will be made "
+          + "during the next periodic scan.";
 
     public static boolean replicaNotFound(Serializable object) {
         if (object instanceof ExecutionException) {
@@ -87,9 +86,9 @@ public final class CacheExceptionUtils {
             switch (exception.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
                 case CacheException.FILE_NOT_IN_REPOSITORY:
-                /*
-                 * For the purposes of remove we can consider this equivalent.
-                 */
+                    /*
+                     * For the purposes of remove we can consider this equivalent.
+                     */
                 case CacheException.TIMEOUT:
                     return true;
             }
@@ -99,24 +98,24 @@ public final class CacheExceptionUtils {
     }
 
     /**
-     * @param rc error code for CacheException
+     * @param rc       error code for CacheException
      * @param template string formatting, must have three '%' markers.
-     * @param pnfsid of the file operation
-     * @param type of operation
+     * @param pnfsid   of the file operation
+     * @param type     of operation
      * @param info
      * @param e
      * @return appropriate CacheException to be propagated.
      */
     public static CacheException getCacheException(int rc,
-                                                   String template,
-                                                   PnfsId pnfsid,
-                                                   Type type,
-                                                   String info,
-                                                   Throwable e) {
+          String template,
+          PnfsId pnfsid,
+          Type type,
+          String info,
+          Throwable e) {
         Object[] args = new Object[3];
         args[0] = pnfsid;
-        args[1] = info == null? "" : info;
-        args[2] = e == null? "" : new ExceptionMessage(e);
+        args[1] = info == null ? "" : info;
+        args[2] = e == null ? "" : new ExceptionMessage(e);
 
         String message = String.format(template, args);
 
@@ -134,7 +133,7 @@ public final class CacheExceptionUtils {
     }
 
     public static FailureType getFailureType(CacheException exception,
-                                             Type type) {
+          Type type) {
         if (exception == null) {
             return FailureType.RETRIABLE;
         }
@@ -166,10 +165,10 @@ public final class CacheExceptionUtils {
                         return FailureType.FATAL;
                 }
 
-            /*
-             *
-             * The replica already exists on this target.
-             */
+                /*
+                 *
+                 * The replica already exists on this target.
+                 */
             case CacheException.FILE_IN_CACHE:
                 return FailureType.NEWTARGET;
 
@@ -180,16 +179,16 @@ public final class CacheExceptionUtils {
             case CacheException.FILE_IS_NEW:
             case CacheException.HSM_DELAY_ERROR:
 
-            /*
-             *  There is not enough information to know whether
-             *  these involve the source or target.
-             *
-             *  The logic of the resilience service, however, is
-             *  to retry these for the indicated number of times,
-             *  and if we continue to fail, the source and target are
-             *  both marked tried, and an attempt with a new source
-             *  and target is made, if possible.
-             */
+                /*
+                 *  There is not enough information to know whether
+                 *  these involve the source or target.
+                 *
+                 *  The logic of the resilience service, however, is
+                 *  to retry these for the indicated number of times,
+                 *  and if we continue to fail, the source and target are
+                 *  both marked tried, and an attempt with a new source
+                 *  and target is made, if possible.
+                 */
             case CacheException.NO_POOL_CONFIGURED:
             case CacheException.NO_POOL_ONLINE:
             case CacheException.POOL_DISABLED:

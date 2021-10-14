@@ -1,5 +1,7 @@
 package org.dcache.srm.shell;
 
+import static java.util.Arrays.asList;
+
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -20,25 +22,21 @@ import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Arrays.asList;
-
 /**
  * Utility methods for TStatusCode class.
  */
-public class TStatusCodes
-{
-    private TStatusCodes()
-    {
+public class TStatusCodes {
+
+    private TStatusCodes() {
         // Utility class: prevent initialisation
     }
 
     /**
-     * Check the status of a bulk operation.  If the result is PARTIAL_SUCCESS
-     * or FAILURE then also check the result at the file level.
+     * Check the status of a bulk operation.  If the result is PARTIAL_SUCCESS or FAILURE then also
+     * check the result at the file level.
      */
     public static void checkBulkSuccess(TReturnStatus requestStatus,
-            Iterable<TReturnStatus> fileStatuses) throws SRMException
-    {
+          Iterable<TReturnStatus> fileStatuses) throws SRMException {
         TStatusCode code = requestStatus.getStatusCode();
         if (code == TStatusCode.SRM_FAILURE || code == TStatusCode.SRM_PARTIAL_SUCCESS) {
             for (TReturnStatus status : fileStatuses) {
@@ -49,13 +47,12 @@ public class TStatusCodes
         }
     }
 
-    public static void checkSuccess(TReturnStatus returnStatus) throws SRMException
-    {
+    public static void checkSuccess(TReturnStatus returnStatus) throws SRMException {
         checkSuccess(returnStatus, TStatusCode.SRM_SUCCESS);
     }
 
-    public static void checkSuccess(TReturnStatus returnStatus, TStatusCode... success) throws SRMException
-    {
+    public static void checkSuccess(TReturnStatus returnStatus, TStatusCode... success)
+          throws SRMException {
         TStatusCode statusCode = returnStatus.getStatusCode();
         String explanation = returnStatus.getExplanation();
         if (asList(success).contains(statusCode)) {

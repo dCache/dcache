@@ -65,6 +65,7 @@ import java.util.Map;
  * @author arossi
  */
 public abstract class SizeEntry extends BaseEntry {
+
     private static final long serialVersionUID = -3021364301068089477L;
 
     public static final String SIZE = "size";

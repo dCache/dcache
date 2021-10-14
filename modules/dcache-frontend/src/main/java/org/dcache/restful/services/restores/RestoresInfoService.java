@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
-import java.util.UUID;
-
 import diskCacheV111.util.CacheException;
+import java.util.UUID;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 
@@ -69,25 +68,26 @@ import org.dcache.restful.providers.restores.RestoreInfo;
  * <p>Internal API for calling the pool manager for restore requests.</p>
  */
 public interface RestoresInfoService {
+
     /**
      * <p>Return the metadata objects.</p>
      *
-     * @param offset    Return items beginning at this index.
-     * @param limit     Return at most this number of items.
-     * @param pnfsid    Filter on pnfsid.
-     * @param subnet    Filter on subnet.
-     * @param pool      Filter on pool.
-     * @param status    Filter on status.
-     * @param sort      comma-delimited orderd list of fields to sort on.
+     * @param offset Return items beginning at this index.
+     * @param limit  Return at most this number of items.
+     * @param pnfsid Filter on pnfsid.
+     * @param subnet Filter on subnet.
+     * @param pool   Filter on pool.
+     * @param status Filter on status.
+     * @param sort   comma-delimited orderd list of fields to sort on.
      * @return {@link SnapshotList<RestoreInfo>} containing list of beans.
      */
     SnapshotList<RestoreInfo> get(UUID token,
-                                  Integer offset,
-                                  Integer limit,
-                                  String pnfsid,
-                                  String subnet,
-                                  String pool,
-                                  String status,
-                                  String sort)
-                    throws CacheException;
+          Integer offset,
+          Integer limit,
+          String pnfsid,
+          String subnet,
+          String pool,
+          String status,
+          String sort)
+          throws CacheException;
 }

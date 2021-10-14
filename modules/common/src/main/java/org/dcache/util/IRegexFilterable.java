@@ -63,8 +63,8 @@ package org.dcache.util;
 import java.io.Serializable;
 
 /**
- * Defines a datatype which can serialize itself into a string representation
- * valid for filtering using another string pattern.
+ * Defines a datatype which can serialize itself into a string representation valid for filtering
+ * using another string pattern.
  *
  * @author arossi
  */

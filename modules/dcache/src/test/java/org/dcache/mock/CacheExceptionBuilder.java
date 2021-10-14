@@ -21,11 +21,11 @@ package org.dcache.mock;
 import diskCacheV111.util.CacheException;
 
 /**
- * A builder interface for creating mocked CacheExceptions with internal
- * structure.
+ * A builder interface for creating mocked CacheExceptions with internal structure.
+ *
  * @param <T> the type of CacheException to build.
  */
-public interface CacheExceptionBuilder<T extends CacheException>
-{
-  T build();
+public interface CacheExceptionBuilder<T extends CacheException> {
+
+    T build();
 }

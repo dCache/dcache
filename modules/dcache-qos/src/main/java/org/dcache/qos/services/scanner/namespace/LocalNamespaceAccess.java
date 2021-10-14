@@ -59,11 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.namespace;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
+import static org.dcache.util.SqlHelper.tryToClose;
 
-import javax.sql.DataSource;
-
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -72,11 +73,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
+import javax.sql.DataSource;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.BackEndErrorChimeraFsException;
 import org.dcache.chimera.ChimeraFsException;
@@ -86,75 +83,75 @@ import org.dcache.qos.listeners.QoSVerificationListener;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
 import org.dcache.qos.util.CacheExceptionUtils;
 import org.dcache.qos.vehicles.QoSScannerVerificationRequest;
-
-import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
-import static org.dcache.util.SqlHelper.tryToClose;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Provides handling of specialized long-running queries which require direct access to the
- *  underlying namespace database.
- *  <p/>
- *  Class is not marked final so that a test version can be implemented by extension.
+ * Provides handling of specialized long-running queries which require direct access to the
+ * underlying namespace database.
+ * <p/>
+ * Class is not marked final so that a test version can be implemented by extension.
  */
 public class LocalNamespaceAccess implements NamespaceAccess {
+
     static final String SQL_GET_ALL_FOR_LOCATION
-                    = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-                                    + "WHERE l.inumber = n.inumber "
-                                    + "AND l.itype = 1 "
-                                    + "AND l.ilocation = ?";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
+          + "WHERE l.inumber = n.inumber "
+          + "AND l.itype = 1 "
+          + "AND l.ilocation = ?";
 
     static final String SQL_GET_CONTAINED_IN
-                    = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-                                    + "WHERE n.inumber = l.inumber "
-                                    + "AND l.ilocation IN (%s) "
-                                    + "AND NOT EXISTS "
-                                    + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
-                                    + "WHERE n.inumber = l1.inumber "
-                                    + "AND n.inumber = n1.inumber "
-                                    + "AND l1.ilocation NOT IN (%s))";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
+          + "WHERE n.inumber = l.inumber "
+          + "AND l.ilocation IN (%s) "
+          + "AND NOT EXISTS "
+          + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
+          + "WHERE n.inumber = l1.inumber "
+          + "AND n.inumber = n1.inumber "
+          + "AND l1.ilocation NOT IN (%s))";
 
     static final String SQL_MISSING_ONLINE_CUSTODIAL
-                    = "SELECT n.ipnfsid FROM t_inodes n, t_locationinfo l0 "
-                                    + "WHERE n.inumber=l0.inumber "
-                                    + "AND l0.itype=0 "
-                                    + "AND n.iaccess_latency=1 "
-                                    + "AND n.iretention_policy=0 "
-                                    + "AND NOT EXISTS "
-                                    + "(SELECT * FROM t_locationinfo l1 "
-                                    + "WHERE n.inumber=l1.inumber "
-                                    + "AND l1.itype=1)";
+          = "SELECT n.ipnfsid FROM t_inodes n, t_locationinfo l0 "
+          + "WHERE n.inumber=l0.inumber "
+          + "AND l0.itype=0 "
+          + "AND n.iaccess_latency=1 "
+          + "AND n.iretention_policy=0 "
+          + "AND NOT EXISTS "
+          + "(SELECT * FROM t_locationinfo l1 "
+          + "WHERE n.inumber=l1.inumber "
+          + "AND l1.itype=1)";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
 
     /**
-     *  Callback to service for sending notifications.
+     * Callback to service for sending notifications.
      */
     protected QoSVerificationListener verificationListener;
 
     /**
-     *  Database connection pool for queries returning multiple pnfsid info.
+     * Database connection pool for queries returning multiple pnfsid info.
      */
     private DataSource connectionPool;
 
     /**
-     *  Delegate service used to extract file attributes; this is used when printing the
-     *  results of the inaccessible or contained-in queries.
+     * Delegate service used to extract file attributes; this is used when printing the results of
+     * the inaccessible or contained-in queries.
      */
     private NameSpaceProvider namespace;
 
     /**
-     *  Round-trip buffer used when running pool-based queries.
+     * Round-trip buffer used when running pool-based queries.
      */
     private int fetchSize;
 
     /**
-     *  Endpoint used for verifying replicas.
+     * Endpoint used for verifying replicas.
      */
     private CellStub pools;
 
     @Override
     public void printContainedInFiles(List<String> locations, PrintWriter printWriter)
-                    throws CacheException, InterruptedException {
+          throws CacheException, InterruptedException {
         try {
             Connection connection = getConnection();
             try {
@@ -166,8 +163,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
-                                     String.format("Could not handle pnfsids for %s",
-                                                   locations), e);
+                  String.format("Could not handle pnfsids for %s",
+                        locations), e);
         }
     }
 
@@ -186,8 +183,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
-                                     String.format("Could not handle pnfsids for %s",
-                                                   scan.getPool()), e);
+                  String.format("Could not handle pnfsids for %s",
+                        scan.getPool()), e);
         }
     }
 
@@ -223,11 +220,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     }
 
     /**
-     *  The query processes all replicas for the location by batching the returned pnfsids
-     *  into lists to be dispatched to the verification service.
+     * The query processes all replicas for the location by batching the returned pnfsids into lists
+     * to be dispatched to the verification service.
      */
     private void handleQuery(Connection connection, PoolScanSummary scan)
-        throws SQLException, QoSException {
+          throws SQLException, QoSException {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         String pool = scan.getPool();
@@ -239,7 +236,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         QoSScannerVerificationRequest request;
 
         LOGGER.debug("handleQuery: (pool {})(group {})(storageUnit {})(type {})(forced {})",
-            pool, group, storageUnit, type, forced);
+              pool, group, storageUnit, type, forced);
 
         try {
             if (CHECK_CUSTODIAL_ONLINE == type) {
@@ -260,7 +257,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 scan.incrementCount();
                 if (replicas.size() >= fetchSize) {
                     request = new QoSScannerVerificationRequest(pool, replicas, type, group,
-                        storageUnit, forced);
+                          storageUnit, forced);
                     verificationListener.fileQoSVerificationRequested(request);
                     replicas = new ArrayList<>();
                 }
@@ -268,7 +265,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
             if (!replicas.isEmpty() && !scan.isCancelled()) {
                 request = new QoSScannerVerificationRequest(pool, replicas, type, group,
-                    storageUnit, forced);
+                      storageUnit, forced);
                 verificationListener.fileQoSVerificationRequested(request);
             }
         } finally {
@@ -278,13 +275,13 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     }
 
     private void printResults(Connection connection, List<String> locations, PrintWriter writer)
-                    throws SQLException, InterruptedException {
-        String placeholders = locations.stream().map(l->"?")
-                                       .collect(Collectors.joining(","));
+          throws SQLException, InterruptedException {
+        String placeholders = locations.stream().map(l -> "?")
+              .collect(Collectors.joining(","));
 
         String query = String.format(SQL_GET_CONTAINED_IN,
-                                     placeholders,
-                                     placeholders);
+              placeholders,
+              placeholders);
 
         PreparedStatement statement = null;
         ResultSet resultSet = null;
@@ -293,8 +290,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         try {
             statement = connection.prepareStatement(query);
             for (int i = 1; i <= len; ++i) {
-                statement.setString(i, locations.get(i-1));
-                statement.setString(i+len, locations.get(i-1));
+                statement.setString(i, locations.get(i - 1));
+                statement.setString(i + len, locations.get(i - 1));
             }
             statement.setFetchSize(fetchSize);
 

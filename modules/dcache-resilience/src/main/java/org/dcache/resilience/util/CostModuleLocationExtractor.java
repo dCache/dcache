@@ -60,22 +60,21 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import com.google.common.collect.ImmutableMap;
-
+import diskCacheV111.poolManager.CostModule;
 import java.util.Collection;
 import java.util.Map;
-
-import diskCacheV111.poolManager.CostModule;
 import org.dcache.poolmanager.PoolInfo;
 
 /**
  * <p>Implementation of the {@link AbstractLocationExtractor} which uses
- *      {@link CostModule} to extract tags.</p>
+ * {@link CostModule} to extract tags.</p>
  */
 public final class CostModuleLocationExtractor extends AbstractLocationExtractor {
+
     private CostModule module;
 
     public CostModuleLocationExtractor(Collection<String> onlyOneCopyPer,
-                                       CostModule module) {
+          CostModule module) {
         super(onlyOneCopyPer);
         this.module = module;
     }

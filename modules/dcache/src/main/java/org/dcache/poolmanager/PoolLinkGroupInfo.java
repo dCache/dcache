@@ -1,11 +1,10 @@
 package org.dcache.poolmanager;
 
 import com.google.common.base.MoreObjects;
-
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
-public class PoolLinkGroupInfo
-{
+public class PoolLinkGroupInfo {
+
     private final String _groupName;
     private final long _totalSpaceInBytes;
     private final long _availableSpaceInBytes;
@@ -28,7 +27,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return the linkGroup name
      */
     public String getName() {
@@ -36,7 +34,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return total space of all pools in the linkGroup in bytes
      */
     public long getTotalSpace() {
@@ -44,7 +41,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return available space of all pools in the linkGroup in bytes
      */
     public long getAvailableSpaceInBytes() {
@@ -52,7 +48,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return true if LinkGroup allows custodial files
      */
     public boolean isCustodialAllowed() {
@@ -60,7 +55,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return true if LinkGroup allows output files
      */
     public boolean isOutputAllowed() {
@@ -68,7 +62,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return true if LinkGroup allows replica files
      */
     public boolean isReplicaAllowed() {
@@ -76,7 +69,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return true if LinkGour allows online files
      */
     public boolean isOnlineAllowed() {
@@ -84,7 +76,6 @@ public class PoolLinkGroupInfo
     }
 
     /**
-     *
      * @return true if LinkGour allows nearline files
      */
     public boolean isNearlineAllowed() {
@@ -92,17 +83,16 @@ public class PoolLinkGroupInfo
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("groupName", _groupName)
-                .add("totalSpace", _totalSpaceInBytes)
-                .add("availableSpace", _availableSpaceInBytes)
-                .add("custodial", _custodialAllowed)
-                .add("replica", _replicaAllowed)
-                .add("output", _outputAllowed)
-                .add("nearline", _nearlineAllowed)
-                .add("online", _onlineAllowed)
-                .toString();
+              .add("groupName", _groupName)
+              .add("totalSpace", _totalSpaceInBytes)
+              .add("availableSpace", _availableSpaceInBytes)
+              .add("custodial", _custodialAllowed)
+              .add("replica", _replicaAllowed)
+              .add("output", _outputAllowed)
+              .add("nearline", _nearlineAllowed)
+              .add("online", _onlineAllowed)
+              .toString();
     }
 }

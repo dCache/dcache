@@ -17,60 +17,53 @@
  */
 package org.dcache.util.configuration;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-
-import java.util.Collections;
-import java.util.Map;
-
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.Formats;
 import dmg.util.Replaceable;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
+import java.util.Collections;
+import java.util.Map;
+import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * A base class for creating dictionary-like objects from dCache configuration.
  */
-public abstract class AbstractPrefixFactoryBean implements EnvironmentAware
-{
+public abstract class AbstractPrefixFactoryBean implements EnvironmentAware {
+
     private String _prefix;
-    private Map<String,Object> _environment;
-    private Map<String,String> _staticEnvironment = Collections.emptyMap();
-    private ImmutableMap<String,String> _object;
+    private Map<String, Object> _environment;
+    private Map<String, String> _staticEnvironment = Collections.emptyMap();
+    private ImmutableMap<String, String> _object;
 
     @Override
-    public void setEnvironment(Map<String, Object> environment)
-    {
+    public void setEnvironment(Map<String, Object> environment) {
         _environment = requireNonNull(environment);
     }
 
-    public void setStaticEnvironment(Map<String, String> staticEnvironment)
-    {
+    public void setStaticEnvironment(Map<String, String> staticEnvironment) {
         _staticEnvironment = requireNonNull(staticEnvironment);
     }
 
     @Required
-    public void setPrefix(String value)
-    {
+    public void setPrefix(String value) {
         _prefix = requireNonNull(value) + ConfigurationProperties.PREFIX_SEPARATOR;
     }
 
     @PostConstruct
-    public void buildMap()
-    {
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
+    public void buildMap() {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
 
         Replaceable replaceable = name -> {
-            Object value =  _environment.get(name);
+            Object value = _environment.get(name);
             return (value == null) ? null : value.toString().trim();
         };
 
         int prefixLength = _prefix.length();
-        for (Map.Entry<String,Object> item : _environment.entrySet()) {
+        for (Map.Entry<String, Object> item : _environment.entrySet()) {
             String name = item.getKey();
             Object value = item.getValue();
             if (value instanceof String && name.startsWith(_prefix)) {
@@ -86,8 +79,7 @@ public abstract class AbstractPrefixFactoryBean implements EnvironmentAware
         _object = builder.build();
     }
 
-    protected ImmutableMap<String,String> configuration()
-    {
+    protected ImmutableMap<String, String> configuration() {
         checkState(_object != null, "buildMap not called");
         return _object;
     }

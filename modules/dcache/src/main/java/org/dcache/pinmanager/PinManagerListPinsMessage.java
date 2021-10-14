@@ -18,32 +18,27 @@
  */
 package org.dcache.pinmanager;
 
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
-
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.dcache.pinmanager.model.Pin;
 
 /**
- * A message that requests information about all pins targeting a specific
- * file.
+ * A message that requests information about all pins targeting a specific file.
  */
-public class PinManagerListPinsMessage extends Message
-{
-    public enum State
-    {
+public class PinManagerListPinsMessage extends Message {
+
+    public enum State {
         PINNING, PINNED, UNPINNING, READY_TO_UNPIN, FAILED_TO_UNPIN
     }
 
-    public static class Info implements Serializable
-    {
+    public static class Info implements Serializable {
+
         private static final long serialVersionUID = 1L;
         private final Instant creationTime;
         private final Instant expirationTime;
@@ -52,8 +47,7 @@ public class PinManagerListPinsMessage extends Message
         private final boolean canUnpin;
         private final long id;
 
-        public Info(Pin pin, boolean canUnpin)
-        {
+        public Info(Pin pin, boolean canUnpin) {
             creationTime = pin.getCreationTime().toInstant();
             Date expiration = pin.getExpirationTime();
             expirationTime = expiration == null ? null : expiration.toInstant();
@@ -63,65 +57,55 @@ public class PinManagerListPinsMessage extends Message
             this.canUnpin = canUnpin;
         }
 
-        public Instant getCreationTime()
-        {
+        public Instant getCreationTime() {
             return creationTime;
         }
 
-        public Optional<Instant> getExpirationTime()
-        {
+        public Optional<Instant> getExpirationTime() {
             return Optional.ofNullable(expirationTime);
         }
 
-        public State getState()
-        {
+        public State getState() {
             return state;
         }
 
-        public Optional<String> getRequestId()
-        {
+        public Optional<String> getRequestId() {
             return Optional.ofNullable(requestId);
         }
 
-        public long getId()
-        {
+        public long getId() {
             return id;
         }
 
-        public boolean isUnpinnable()
-        {
+        public boolean isUnpinnable() {
             return canUnpin;
         }
     }
 
-    private static final ImmutableMap<Pin.State,State> TO_MESSAGE_STATE = ImmutableMap.of(
-            Pin.State.PINNING, State.PINNING,
-            Pin.State.PINNED, State.PINNED,
-            Pin.State.UNPINNING, State.UNPINNING,
-            Pin.State.READY_TO_UNPIN, State.READY_TO_UNPIN,
-            Pin.State.FAILED_TO_UNPIN, State.FAILED_TO_UNPIN
+    private static final ImmutableMap<Pin.State, State> TO_MESSAGE_STATE = ImmutableMap.of(
+          Pin.State.PINNING, State.PINNING,
+          Pin.State.PINNED, State.PINNED,
+          Pin.State.UNPINNING, State.UNPINNING,
+          Pin.State.READY_TO_UNPIN, State.READY_TO_UNPIN,
+          Pin.State.FAILED_TO_UNPIN, State.FAILED_TO_UNPIN
     );
     private static final long serialVersionUID = 1L;
     private final PnfsId _pnfsId;
     private List<Info> _info;
 
-    public PinManagerListPinsMessage(PnfsId id)
-    {
+    public PinManagerListPinsMessage(PnfsId id) {
         _pnfsId = id;
     }
 
-    public PnfsId getPnfsId()
-    {
+    public PnfsId getPnfsId() {
         return _pnfsId;
     }
 
-    public void setInfo(List<Info> info)
-    {
+    public void setInfo(List<Info> info) {
         _info = info;
     }
 
-    public List<Info> getInfo()
-    {
+    public List<Info> getInfo() {
         return _info;
     }
 }

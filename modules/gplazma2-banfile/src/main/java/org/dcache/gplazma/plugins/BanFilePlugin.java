@@ -1,7 +1,8 @@
 package org.dcache.gplazma.plugins;
 
-import org.dcache.auth.Subjects;
-import org.dcache.gplazma.AuthenticationException;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.function.Predicate.not;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
-
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,14 +20,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.function.Predicate.not;
+import org.dcache.auth.Subjects;
+import org.dcache.gplazma.AuthenticationException;
 
 /**
- * The banfile plug-in bans users by their principal class and the associated name. It is configured via a simple plain
- * text file.
+ * The banfile plug-in bans users by their principal class and the associated name. It is configured
+ * via a simple plain text file.
  * <pre>
  *   # Ban users by principal
  *   alias dn=org.globus.gsi.gssapi.jaas.GlobusPrincipal
@@ -67,16 +65,11 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
     }
 
     /**
-     * Create a list of principals from the source file.
-     * The empty lines and comments, i.e., lines starting with '#' are ignored.
-     * It expects the file to be of the format:
-     * alias <alias>=<full qualified classname>
-     * ban <full qualified classname or alias>:<principal string>
-     * e.g.,
-     * alias username=org.dcache.auth.UserNamePrincipal
-     * ban username:Someuser
-     * or
-     * ban org.dcache.auth.UserNamePrincipal:Someuser
+     * Create a list of principals from the source file. The empty lines and comments, i.e., lines
+     * starting with '#' are ignored. It expects the file to be of the format: alias <alias>=<full
+     * qualified classname> ban <full qualified classname or alias>:<principal string> e.g., alias
+     * username=org.dcache.auth.UserNamePrincipal ban username:Someuser or ban
+     * org.dcache.auth.UserNamePrincipal:Someuser
      *
      * @return a set of banned principals
      */
@@ -84,8 +77,9 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
         try {
 
             if (bannedPrincipals == null ||
-                    lastFileRead.isBefore(
-                            Files.readAttributes(configFile, BasicFileAttributes.class).lastModifiedTime().toInstant())) {
+                  lastFileRead.isBefore(
+                        Files.readAttributes(configFile, BasicFileAttributes.class)
+                              .lastModifiedTime().toInstant())) {
 
                 // alias -> value, like uid=org.dcache.auth.UidPrincipal
                 Map<String, String> aliases = new HashMap<>();
@@ -95,10 +89,10 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
 
                 // group all 'alias' and all 'ban' records, skip comments and empty lines
                 Map<String, List<String>> config = loadConfigLines().stream()
-                        .map(String::strip)
-                        .filter(not(String::isEmpty))
-                        .filter(l -> l.charAt(0) != '#')
-                        .collect(Collectors.groupingBy(l -> l.split("\\s")[0]));
+                      .map(String::strip)
+                      .filter(not(String::isEmpty))
+                      .filter(l -> l.charAt(0) != '#')
+                      .collect(Collectors.groupingBy(l -> l.split("\\s")[0]));
 
                 // process aliases  as they might be used in the next step
                 List<String> configuredAliases = config.remove("alias");
@@ -106,7 +100,8 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                     configuredAliases.forEach(a -> {
                         Matcher m = ALIAS_PATTERN.matcher(a);
                         if (!m.matches()) {
-                            throw new IllegalArgumentException("Bad alias line format: '" + a + "', expected 'alias <alias>=<class>'");
+                            throw new IllegalArgumentException("Bad alias line format: '" + a
+                                  + "', expected 'alias <alias>=<class>'");
                         }
                         String alias = m.group(1);
                         String clazz = m.group(2);
@@ -120,7 +115,8 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
                     configuredBans.forEach(a -> {
                         Matcher m = BAN_PATTERN.matcher(a);
                         if (!m.matches()) {
-                            throw new IllegalArgumentException("Bad ban line format: '" + a + "', expected 'ban <classOrAlias>:<value>'");
+                            throw new IllegalArgumentException("Bad ban line format: '" + a
+                                  + "', expected 'ban <classOrAlias>:<value>'");
                         }
                         String clazz = m.group(1);
                         String value = m.group(2);
@@ -130,15 +126,17 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
 
                 // any other key is an error
                 if (!config.isEmpty()) {
-                    String badLines = config.values().stream().flatMap(List::stream).collect(Collectors.joining(",", "[", "]"));
-                    throw new IllegalArgumentException("Line has bad format: '" + badLines + "', expected '[alias|ban] <key>:<value>'");
+                    String badLines = config.values().stream().flatMap(List::stream)
+                          .collect(Collectors.joining(",", "[", "]"));
+                    throw new IllegalArgumentException("Line has bad format: '" + badLines
+                          + "', expected '[alias|ban] <key>:<value>'");
                 }
 
                 // construct lines suitable for Subjects.principalsFromArgs
                 // class:value or shortname:value
                 List<String> bannedNames = bans.entrySet().stream()
-                        .map(e -> e.getKey() + ":" + e.getValue())
-                        .collect(Collectors.toList());
+                      .map(e -> e.getKey() + ":" + e.getValue())
+                      .collect(Collectors.toList());
 
                 bannedPrincipals = Subjects.principalsFromArgs(bannedNames);
                 lastFileRead = Instant.now();
@@ -152,8 +150,8 @@ public class BanFilePlugin implements GPlazmaAccountPlugin {
 
 
     /**
-     * Check if any of the principals in authorizedPrincipals is blacklisted in the
-     * file specified by the dCache property gplazma.banfile.uri.
+     * Check if any of the principals in authorizedPrincipals is blacklisted in the file specified
+     * by the dCache property gplazma.banfile.uri.
      *
      * @param authorizedPrincipals principals associated with a user
      * @throws AuthenticationException indicating a banned user

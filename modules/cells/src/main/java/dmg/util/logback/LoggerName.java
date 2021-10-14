@@ -2,20 +2,18 @@ package dmg.util.logback;
 
 import org.slf4j.Logger;
 
-public class LoggerName
-{
+public class LoggerName {
+
     public static final LoggerName ROOT =
-        new LoggerName(Logger.ROOT_LOGGER_NAME);
+          new LoggerName(Logger.ROOT_LOGGER_NAME);
 
     private String _name;
 
-    public static LoggerName getInstance(Logger logger)
-    {
+    public static LoggerName getInstance(Logger logger) {
         return getInstance(logger.getName());
     }
 
-    public static LoggerName getInstance(String name)
-    {
+    public static LoggerName getInstance(String name) {
         if (name.equalsIgnoreCase(Logger.ROOT_LOGGER_NAME)) {
             return ROOT;
         } else {
@@ -23,30 +21,25 @@ public class LoggerName
         }
     }
 
-    public static LoggerName valueOf(String name)
-    {
+    public static LoggerName valueOf(String name) {
         return getInstance(name);
     }
 
-    private LoggerName(String name)
-    {
+    private LoggerName(String name) {
         _name = name;
     }
 
-    public boolean isNameOfLogger(Logger logger)
-    {
+    public boolean isNameOfLogger(Logger logger) {
         return logger.getName().equals(_name);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return _name;
     }
 
     @Override
-    public boolean equals(Object that)
-    {
+    public boolean equals(Object that) {
         if (this == that) {
             return true;
         }
@@ -60,13 +53,11 @@ public class LoggerName
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _name.hashCode();
     }
 
-    public LoggerName getParent()
-    {
+    public LoggerName getParent() {
         if (this == ROOT) {
             return null;
         }

@@ -23,27 +23,27 @@ import io.netty.handler.ssl.SslContext;
 import org.dcache.ssl.CanlContextFactory;
 
 /**
- * Netty SslContext context factory which uses native OpenSsl if available, but falls
- * back to Java if not.
+ * Netty SslContext context factory which uses native OpenSsl if available, but falls back to Java
+ * if not.
  */
 public class NettySslContextFactoryBean extends AbstractSslContextFactoryBean<SslContext> {
 
-  @Override
-  public SslContext getObject() throws Exception {
-    return CanlContextFactory.custom()
-        .withCertificateAuthorityPath(serverCaPath)
-        .withCrlCheckingMode(crlCheckingMode)
-        .withOcspCheckingMode(ocspCheckingMode)
-        .withCertificatePath(serverCertificatePath)
-        .withKeyPath(serverKeyPath)
-        .withLazy(false)
-        .withLoggingContext(new CDC()::restore)
-        .buildWithCaching(SslContext.class)
-        .call();
-  }
+    @Override
+    public SslContext getObject() throws Exception {
+        return CanlContextFactory.custom()
+              .withCertificateAuthorityPath(serverCaPath)
+              .withCrlCheckingMode(crlCheckingMode)
+              .withOcspCheckingMode(ocspCheckingMode)
+              .withCertificatePath(serverCertificatePath)
+              .withKeyPath(serverKeyPath)
+              .withLazy(false)
+              .withLoggingContext(new CDC()::restore)
+              .buildWithCaching(SslContext.class)
+              .call();
+    }
 
-  @Override
-  public Class<?> getObjectType() {
-    return SslContext.class;
-  }
+    @Override
+    public Class<?> getObjectType() {
+        return SslContext.class;
+    }
 }

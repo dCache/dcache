@@ -1,16 +1,15 @@
 package org.dcache.util;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.junit.Test;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class CompletableFuturesTest {
 
@@ -71,7 +70,8 @@ public class CompletableFuturesTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void shouldFailWhenCompletableCreatedFailed() throws InterruptedException, ExecutionException {
+    public void shouldFailWhenCompletableCreatedFailed()
+          throws InterruptedException, ExecutionException {
 
         CompletableFuture<Void> completable = CompletableFuture.failedFuture(new IOException());
 
@@ -81,7 +81,8 @@ public class CompletableFuturesTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void shouldFailWhenCompletableIsFailed() throws InterruptedException, ExecutionException {
+    public void shouldFailWhenCompletableIsFailed()
+          throws InterruptedException, ExecutionException {
 
         CompletableFuture<Void> completable = new CompletableFuture<>();
         ListenableFuture<Void> listenable = CompletableFutures.fromCompletableFuture(completable);
@@ -103,7 +104,8 @@ public class CompletableFuturesTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void shouldFailWhenListenableCompletesExceptionally() throws InterruptedException, ExecutionException {
+    public void shouldFailWhenListenableCompletesExceptionally()
+          throws InterruptedException, ExecutionException {
 
         SettableFuture<Void> listenable = SettableFuture.create();
         CompletableFuture<Void> completable = CompletableFutures.fromListenableFuture(listenable);
@@ -114,7 +116,8 @@ public class CompletableFuturesTest {
     }
 
     @Test
-    public void shouldCancelWhenCompletableIsCanceled() throws InterruptedException, ExecutionException {
+    public void shouldCancelWhenCompletableIsCanceled()
+          throws InterruptedException, ExecutionException {
 
         CompletableFuture<Void> completable = new CompletableFuture<>();
         ListenableFuture<Void> listenable = CompletableFutures.fromCompletableFuture(completable);
@@ -125,7 +128,8 @@ public class CompletableFuturesTest {
     }
 
     @Test
-    public void shouldCancelWhenListenableIsCanceled() throws InterruptedException, ExecutionException {
+    public void shouldCancelWhenListenableIsCanceled()
+          throws InterruptedException, ExecutionException {
 
         SettableFuture<Void> listenable = SettableFuture.create();
         CompletableFuture<Void> completable = CompletableFutures.fromListenableFuture(listenable);

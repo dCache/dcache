@@ -1,16 +1,16 @@
 package diskCacheV111.poolManager;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
+import diskCacheV111.poolManager.PoolSelectionUnit.UnitType;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-import diskCacheV111.poolManager.PoolSelectionUnit.UnitType;
-
 class Unit implements Serializable, SelectionUnit {
+
     private static final long serialVersionUID = -2534629882175347637L;
     private final String _name;
     private final UnitType _type;
@@ -41,7 +41,8 @@ class Unit implements Serializable, SelectionUnit {
 
     @Override
     public String toString() {
-        return _name + "  (type=" + _type + ";canonical=" + getCanonicalName() + ";uGroups=" + _uGroupList.size() + ")";
+        return _name + "  (type=" + _type + ";canonical=" + getCanonicalName() + ";uGroups="
+              + _uGroupList.size() + ")";
     }
 
 }

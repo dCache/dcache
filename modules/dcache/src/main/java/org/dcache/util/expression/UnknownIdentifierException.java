@@ -1,7 +1,7 @@
 package org.dcache.util.expression;
 
-public class UnknownIdentifierException extends Exception
-{
+public class UnknownIdentifierException extends Exception {
+
     private static final long serialVersionUID = -6503622624033170074L;
     private final String _identifier;
 
@@ -10,8 +10,7 @@ public class UnknownIdentifierException extends Exception
         _identifier = s;
     }
 
-    public String getIdentifier()
-    {
+    public String getIdentifier() {
         return _identifier;
     }
 }

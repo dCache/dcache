@@ -66,10 +66,11 @@ import java.util.ServiceLoader;
 
 /**
  * <p>Does the basic work of loading and invocation of listeners
- *    bound to the given factory type.</p>
+ * bound to the given factory type.</p>
  */
 public abstract class BaseLogEntryListenerFactory<L extends LogEntryListener>
-                implements LogEntryListenerFactory<L> {
+      implements LogEntryListenerFactory<L> {
+
     private final Collection<L> listeners = Collections.synchronizedList(new ArrayList<>());
 
     /**
@@ -97,7 +98,7 @@ public abstract class BaseLogEntryListenerFactory<L extends LogEntryListener>
 
     /**
      * <p>Procedure specific to the given listener type.  This may or may
-     *    not involve access to an application context.</p>
+     * not involve access to an application context.</p>
      *
      * @param listener of the type handled by this factory (may not be unique).
      */

@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.gplazma.plugins;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.URL;
@@ -69,22 +71,22 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class VOGroupPluginTest {
+
     private final static String TEST_FIXTURE = "org/dcache/gplazma/plugins/vo-group.json";
 
-    File                 file;
+    File file;
     FileBackedVOGroupMap map;
-    VOGroupPlugin        plugin;
-    Set<Principal>          principals = new HashSet<>();
-    AuthenticationException exception  = null;
+    VOGroupPlugin plugin;
+    Set<Principal> principals = new HashSet<>();
+    AuthenticationException exception = null;
 
     @Before
     public void setUp() throws Exception {
@@ -125,7 +127,7 @@ public class VOGroupPluginTest {
 
     @Test
     public void shouldFindThePrimaryFQANWhenMultipleArePresent()
-                    throws Exception {
+          throws Exception {
         givenNonPrimaryFQAN(aSecondFqan());
         givenNonPrimaryFQAN(aThirdFqan());
         givenFQAN(anFqanWithUname());
@@ -135,7 +137,7 @@ public class VOGroupPluginTest {
 
     @Test
     public void shouldFindTheWildcardMatch()
-                    throws Exception {
+          throws Exception {
         givenFQAN(anFqanWithUnameForWildCardMatch());
         whenMapIsCalled();
         assertThatPluginSucceeded();
@@ -143,11 +145,12 @@ public class VOGroupPluginTest {
 
     @Test
     public void shouldFailOnNoMatch()
-        throws Exception {
+          throws Exception {
         givenFQAN(anFqanThatShouldNotMacth());
         whenMapIsCalled();
         assertThatPluginFailed();
     }
+
     @Test
     public void shouldNotFailIfUserNamePresent() throws Exception {
         givenFQAN(anFqanWithUname());
@@ -199,48 +202,48 @@ public class VOGroupPluginTest {
 
     private void assertThatGidPrincipalWasAdded() {
         Optional<GidPrincipal> gidPrincipal
-                        = principals.stream()
-                                    .filter(p -> p instanceof GidPrincipal)
-                                    .map(p -> (GidPrincipal) p)
-                                    .findFirst();
+              = principals.stream()
+              .filter(p -> p instanceof GidPrincipal)
+              .map(p -> (GidPrincipal) p)
+              .findFirst();
         assertTrue("Gid Principal is missing!",
-                   gidPrincipal.isPresent());
+              gidPrincipal.isPresent());
     }
 
     private void assertThatPluginFailed() {
         assertNotNull("Mapping should have failed, but did not.",
-                      exception);
+              exception);
     }
 
     private void assertThatPluginSucceeded() {
         assertNull("Mapping should not have failed, but did.",
-                   exception);
+              exception);
     }
 
     private void assertThatReloadWasCalledOnce() {
         assertEquals("file reloaded wrong number of times",
-                     1, map.getReloadCount());
+              1, map.getReloadCount());
     }
 
     private void assertThatReloadWasCalledTwice() {
         assertEquals("file reloaded wrong number of times",
-                     2, map.getReloadCount());
+              2, map.getReloadCount());
     }
 
     private String assertThatUnamePrincipalWasAdded() {
         Optional<UserNamePrincipal> userNamePrincipal
-                        = principals.stream()
-                                    .filter(p -> p instanceof UserNamePrincipal)
-                                    .map(p -> (UserNamePrincipal) p)
-                                    .findFirst();
+              = principals.stream()
+              .filter(p -> p instanceof UserNamePrincipal)
+              .map(p -> (UserNamePrincipal) p)
+              .findFirst();
         assertTrue("UserName Principal is missing!",
-                   userNamePrincipal.isPresent());
+              userNamePrincipal.isPresent());
         return userNamePrincipal.get().getName();
     }
 
     private void assertThatUnamePrincipalWasFromPrimary() {
         assertEquals("Wrong user name!", "accelpro",
-                     assertThatUnamePrincipalWasAdded());
+              assertThatUnamePrincipalWasAdded());
     }
 
     private void givenFQAN(String fqan) {

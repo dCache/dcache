@@ -18,74 +18,69 @@
  */
 package org.dcache.mock;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static org.mockito.Mockito.mock;
+
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import java.io.Serializable;
 import org.mockito.BDDMockito;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-import static org.mockito.Mockito.mock;
-
 /**
- * Send a reply from a pool to the cell.  This is done by the
- * same thread sending the request.
+ * Send a reply from a pool to the cell.  This is done by the same thread sending the request.
  */
 public abstract class ResponseMessageDeliverable<R extends CellMessageReceiver>
-    extends EnvelopeAndMessageDeliverable<R> {
-  protected final CellMessage outbound;
-  protected Class<? extends Message> responseType;
-  protected Serializable error;
-  protected int code;
+      extends EnvelopeAndMessageDeliverable<R> {
 
-  protected ResponseMessageDeliverable(CellMessage outbound)
-  {
-    this.outbound = requireNonNull(outbound);
-    configureOutboundAddress();
-    // Simulate delivery of message to destination.
-    outbound.addSourceAddress(sourceAddress);
-    outbound.nextDestination();
+    protected final CellMessage outbound;
+    protected Class<? extends Message> responseType;
+    protected Serializable error;
+    protected int code;
 
-    Serializable request = outbound.getMessageObject();
-    checkArgument(request instanceof Message);
-    responseType = (Class<? extends Message>) request.getClass();
-  }
+    protected ResponseMessageDeliverable(CellMessage outbound) {
+        this.outbound = requireNonNull(outbound);
+        configureOutboundAddress();
+        // Simulate delivery of message to destination.
+        outbound.addSourceAddress(sourceAddress);
+        outbound.nextDestination();
 
-  public abstract ResponseMessageDeliverable aResponseTo(CellMessage message);
-
-  public ResponseMessageDeliverable ofType(Class<? extends Message> type)
-  {
-    responseType = requireNonNull(type);
-    return this;
-  }
-
-  public ResponseMessageDeliverable withError(Serializable error)
-  {
-    this.error = error;
-    return this;
-  }
-
-  public ResponseMessageDeliverable withRc(int code)
-  {
-    this.code = code;
-    return this;
-  }
-
-  protected abstract void configureOutboundAddress();
-
-  @Override
-  protected CellMessage buildEnvelope()
-  {
-    Message response = mock(responseType);
-    if (error != null) {
-      BDDMockito.given(response.getErrorObject()).willReturn(error);
+        Serializable request = outbound.getMessageObject();
+        checkArgument(request instanceof Message);
+        responseType = (Class<? extends Message>) request.getClass();
     }
-    BDDMockito.given(response.getReturnCode()).willReturn(code);
 
-    outbound.revertDirection();
-    outbound.setMessageObject(response);
+    public abstract ResponseMessageDeliverable aResponseTo(CellMessage message);
 
-    return outbound;
-  }
+    public ResponseMessageDeliverable ofType(Class<? extends Message> type) {
+        responseType = requireNonNull(type);
+        return this;
+    }
+
+    public ResponseMessageDeliverable withError(Serializable error) {
+        this.error = error;
+        return this;
+    }
+
+    public ResponseMessageDeliverable withRc(int code) {
+        this.code = code;
+        return this;
+    }
+
+    protected abstract void configureOutboundAddress();
+
+    @Override
+    protected CellMessage buildEnvelope() {
+        Message response = mock(responseType);
+        if (error != null) {
+            BDDMockito.given(response.getErrorObject()).willReturn(error);
+        }
+        BDDMockito.given(response.getReturnCode()).willReturn(code);
+
+        outbound.revertDirection();
+        outbound.setMessageObject(response);
+
+        return outbound;
+    }
 }

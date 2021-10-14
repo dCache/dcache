@@ -61,7 +61,6 @@ package org.dcache.services.billing.db.data;
 
 import java.io.Serializable;
 import java.util.Map;
-
 import org.dcache.commons.ITimestamped;
 
 /**
@@ -72,8 +71,8 @@ import org.dcache.commons.ITimestamped;
 public interface IHistogramData extends ITimestamped, Serializable {
 
     /**
-     * The contract is that the data which can be plotted on the Y-axis of a 1-D
-     * time histogram will be made available as a Map of name:value pairs.
+     * The contract is that the data which can be plotted on the Y-axis of a 1-D time histogram will
+     * be made available as a Map of name:value pairs.
      */
     Map<String, Double> data();
 }

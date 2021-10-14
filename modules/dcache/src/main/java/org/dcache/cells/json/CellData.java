@@ -67,30 +67,31 @@ import java.util.Date;
  * via the {@link dmg.cells.nucleus.CellInfo} object.</p>
  */
 public class CellData implements Serializable {
+
     private static final long serialVersionUID = 1861008223543700303L;
-    private String  label;
-    private String  cellName;
-    private String  cellType;
-    private String  cellClass;
-    private String  domainName;
-    private Date    creationTime;
+    private String label;
+    private String cellName;
+    private String cellType;
+    private String cellClass;
+    private String domainName;
+    private Date creationTime;
     private Integer state;
     private Integer eventQueueSize;
     private Integer threadCount;
-    private Long    expectedQueueTime;
-    private String  version;
-    private String  release;
-    private String  revision;
-    private long    roundTripTime;
+    private Long expectedQueueTime;
+    private String version;
+    private String release;
+    private String revision;
+    private long roundTripTime;
 
     public String toString() {
         return "(" + cellName + "@" + domainName + ")("
-                        + creationTime + ")("
-                        + version + ")(state "
-                        + state + ")(event queue "
-                        + eventQueueSize + ")(threads "
-                        + threadCount + ")(ping (ms) "
-                        + roundTripTime + ")";
+              + creationTime + ")("
+              + version + ")(state "
+              + state + ")(event queue "
+              + eventQueueSize + ")(threads "
+              + threadCount + ")(ping (ms) "
+              + roundTripTime + ")";
     }
 
     public String getCellClass() {

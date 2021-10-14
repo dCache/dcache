@@ -62,21 +62,19 @@ package org.dcache.services.bulk;
 import org.dcache.auth.attributes.Restriction;
 
 /**
- *   Message to cancel a single request.
+ * Message to cancel a single request.
  */
-public class BulkRequestCancelMessage extends BulkServiceMessage
-{
+public class BulkRequestCancelMessage extends BulkServiceMessage {
+
     private static final long serialVersionUID = -7362655973765754365L;
     private final String requestId;
 
-    public BulkRequestCancelMessage(String requestId, Restriction restriction)
-    {
+    public BulkRequestCancelMessage(String requestId, Restriction restriction) {
         super(restriction);
         this.requestId = requestId;
     }
 
-    public String getRequestId()
-    {
+    public String getRequestId() {
         return requestId;
     }
 }

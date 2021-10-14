@@ -18,37 +18,38 @@
  */
 package org.dcache.util;
 
+import static com.google.common.base.Throwables.throwIfUnchecked;
+import static org.junit.Assert.fail;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.google.common.base.Throwables.throwIfUnchecked;
-import static org.junit.Assert.fail;
-
 public class ExecutorUtils {
-  /**
-   *  This works by injecting a test job (a canary) into the executor.
-   *  <p/>
-   *  The executor <b>must</b> be single-threaded,
-   *  so that the canary is only executed after all existing jobs have completed.
-   *
-   * @param executor
-   * @throws InterruptedException
-   */
-  public static void waitUntilQuiescent(ExecutorService executor)
-      throws InterruptedException
-  {
-    Future canary = executor.submit(() -> {});
-    try {
-      canary.get(1, TimeUnit.SECONDS);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      throwIfUnchecked(cause);
-      throw new RuntimeException(cause);
-    } catch (TimeoutException e) {
-      fail("Component with executor took too long to go quiet");
+
+    /**
+     * This works by injecting a test job (a canary) into the executor.
+     * <p/>
+     * The executor <b>must</b> be single-threaded, so that the canary is only executed after all
+     * existing jobs have completed.
+     *
+     * @param executor
+     * @throws InterruptedException
+     */
+    public static void waitUntilQuiescent(ExecutorService executor)
+          throws InterruptedException {
+        Future canary = executor.submit(() -> {
+        });
+        try {
+            canary.get(1, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            throwIfUnchecked(cause);
+            throw new RuntimeException(cause);
+        } catch (TimeoutException e) {
+            fail("Component with executor took too long to go quiet");
+        }
     }
-  }
 }

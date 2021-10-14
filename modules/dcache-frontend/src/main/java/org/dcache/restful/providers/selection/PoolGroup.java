@@ -59,19 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-
 @ApiModel(description = "Information about a specific poolgroup.")
 public final class PoolGroup extends SelectionTypeWithLinks {
+
     private static final long serialVersionUID = -3481667048585522521L;
 
     @ApiModelProperty("The pools that are a member of this poolgroup.")
@@ -84,10 +83,10 @@ public final class PoolGroup extends SelectionTypeWithLinks {
     public PoolGroup(String group, PoolSelectionUnit psu) {
         super(group, psu);
         pools = psu.getPoolsByPoolGroup(name)
-                   .stream()
-                   .sorted(Comparator.comparing(SelectionPool::getName))
-                   .map(SelectionPool::getName)
-                   .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionPool::getName))
+              .map(SelectionPool::getName)
+              .collect(Collectors.toList());
     }
 
     public List<String> getPools() {
@@ -97,9 +96,9 @@ public final class PoolGroup extends SelectionTypeWithLinks {
     @Override
     protected List<String> extractLinks(PoolSelectionUnit psu) {
         return psu.getLinksPointingToPoolGroup(name)
-                  .stream()
-                  .sorted(Comparator.comparing(SelectionLink::getName))
-                  .map(SelectionLink::getName)
-                  .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionLink::getName))
+              .map(SelectionLink::getName)
+              .collect(Collectors.toList());
     }
 }

@@ -18,44 +18,40 @@
  */
 package org.dcache.vehicles;
 
-import org.junit.Test;
-
-import java.util.Map;
-import java.util.Optional;
-
-import org.dcache.util.FileAttributesBuilder;
-
 import static org.dcache.namespace.FileAttribute.XATTR;
 import static org.dcache.util.FileAttributesBuilder.fileAttributes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class FileAttributesTest
-{
+import java.util.Map;
+import java.util.Optional;
+import org.dcache.util.FileAttributesBuilder;
+import org.junit.Test;
+
+public class FileAttributesTest {
+
     FileAttributes fileAttributes;
 
     @Test
-    public void shouldNotHaveXattrInitially()
-    {
+    public void shouldNotHaveXattrInitially() {
         given(fileAttributes());
 
         assertFalse(fileAttributes.hasXattr("my-xattr"));
         assertFalse(fileAttributes.isDefined(XATTR));
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldDisallowFetchingXattrInitially()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldDisallowFetchingXattrInitially() {
         given(fileAttributes());
 
         fileAttributes.getXattrs();
     }
 
     @Test
-    public void shouldAcceptXattrMap()
-    {
+    public void shouldAcceptXattrMap() {
         given(fileAttributes());
 
         fileAttributes.setXattrs(Map.of("my-xattr", "my-value"));
@@ -66,8 +62,7 @@ public class FileAttributesTest
     }
 
     @Test
-    public void shouldUpdateEmptyXattr()
-    {
+    public void shouldUpdateEmptyXattr() {
         given(fileAttributes());
 
         Optional<String> oldValue = fileAttributes.updateXattr("my-xattr", "my-value");
@@ -79,8 +74,7 @@ public class FileAttributesTest
     }
 
     @Test
-    public void shouldUpdateExistingXattr()
-    {
+    public void shouldUpdateExistingXattr() {
         given(fileAttributes().withXattr("my-xattr", "my-old-value"));
 
         Optional<String> oldValue = fileAttributes.updateXattr("my-xattr", "my-value");
@@ -91,8 +85,7 @@ public class FileAttributesTest
         assertThat(fileAttributes.getXattrs(), hasEntry("my-xattr", "my-value"));
     }
 
-    private void given(FileAttributesBuilder builder)
-    {
+    private void given(FileAttributesBuilder builder) {
         fileAttributes = builder.build();
     }
 }

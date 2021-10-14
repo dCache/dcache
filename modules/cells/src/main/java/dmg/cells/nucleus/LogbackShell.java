@@ -9,43 +9,37 @@ import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.encoder.Encoder;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.dcache.util.Args;
+import org.slf4j.LoggerFactory;
 
-public class LogbackShell
-{
+public class LogbackShell {
+
     private LoggerContext _context;
 
-    public LogbackShell()
-    {
+    public LogbackShell() {
         _context = (LoggerContext) LoggerFactory.getILoggerFactory();
     }
 
-    private Logger getLogger(String name)
-    {
+    private Logger getLogger(String name) {
         return name.equals("root")
-            ? _context.getLogger(Logger.ROOT_LOGGER_NAME)
-            : _context.getLogger(name);
+              ? _context.getLogger(Logger.ROOT_LOGGER_NAME)
+              : _context.getLogger(name);
     }
 
-    private List<Logger> getLoggers()
-    {
+    private List<Logger> getLoggers() {
         return _context.getLoggerList();
     }
 
-    private Map<String,Appender<ILoggingEvent>> getAppenders()
-    {
-        Map<String,Appender<ILoggingEvent>> appenders =
-            new HashMap<>();
-        for (Logger logger: getLoggers()) {
+    private Map<String, Appender<ILoggingEvent>> getAppenders() {
+        Map<String, Appender<ILoggingEvent>> appenders =
+              new HashMap<>();
+        for (Logger logger : getLoggers()) {
             Iterator<Appender<ILoggingEvent>> i = logger.iteratorForAppenders();
             while (i.hasNext()) {
                 Appender<ILoggingEvent> appender = i.next();
@@ -55,45 +49,42 @@ public class LogbackShell
         return appenders;
     }
 
-    private List<Appender<ILoggingEvent>> getAppenders(Logger logger)
-    {
+    private List<Appender<ILoggingEvent>> getAppenders(Logger logger) {
         Iterator<Appender<ILoggingEvent>> appenders =
-            logger.iteratorForAppenders();
+              logger.iteratorForAppenders();
         List<Appender<ILoggingEvent>> result =
-            new ArrayList<>();
+              new ArrayList<>();
         while (appenders.hasNext()) {
             result.add(appenders.next());
         }
         return result;
     }
 
-    private List<String> getNames(List<Appender<ILoggingEvent>> appenders)
-    {
+    private List<String> getNames(List<Appender<ILoggingEvent>> appenders) {
         List<String> result = new ArrayList<>(appenders.size());
-        for (Appender<ILoggingEvent> appender: appenders) {
+        for (Appender<ILoggingEvent> appender : appenders) {
             result.add(appender.getName());
         }
         return result;
     }
 
-    private String toString(Level level)
-    {
+    private String toString(Level level) {
         return (level == null) ? "" : level.toString();
     }
 
     public static final String hh_log_logger_ls = "[-a]";
     public static final String fh_log_logger_ls =
-        "Lists logger instances. Loggers that inherit all properties are\n" +
-        "not listed unless the -a option is specified.";
-    public String ac_log_logger_ls(Args args)
-    {
+          "Lists logger instances. Loggers that inherit all properties are\n" +
+                "not listed unless the -a option is specified.";
+
+    public String ac_log_logger_ls(Args args) {
         final String format = "%-5s %-30s %s\n";
 
         boolean all = args.hasOption("a");
         Formatter f = new Formatter();
         f.format(format, "Level", "Appenders", "Logger");
         f.format(format, "-----", "---------", "------");
-        for (Logger logger: getLoggers()) {
+        for (Logger logger : getLoggers()) {
             List<Appender<ILoggingEvent>> appenders = getAppenders(logger);
             boolean hasAppenders = !appenders.isEmpty();
             boolean isEndOfRoad = !logger.isAdditive();
@@ -101,22 +92,22 @@ public class LogbackShell
             boolean isRoot = (logger.getName().equals(Logger.ROOT_LOGGER_NAME));
             if (all || hasAppenders || isEndOfRoad || hasLevel || isRoot) {
                 f.format(format,
-                         toString(logger.getLevel()),
-                         getNames(appenders),
-                         logger.getName());
+                      toString(logger.getLevel()),
+                      getNames(appenders),
+                      logger.getName());
             }
         }
         return f.toString();
     }
 
     public static final String hh_log_logger_set =
-        "<logger> OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
+          "<logger> OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
     public static final String fh_log_logger_set =
-        "Sets log level of <logger>. Notice that the preferred method to\n" +
-        "adjust log levels in dCache is to manipulate the appender log\n" +
-        "levels through the 'log set' and 'log reset' commands.";
-    public String ac_log_logger_set_$_2(Args args)
-    {
+          "Sets log level of <logger>. Notice that the preferred method to\n" +
+                "adjust log levels in dCache is to manipulate the appender log\n" +
+                "levels through the 'log set' and 'log reset' commands.";
+
+    public String ac_log_logger_set_$_2(Args args) {
         String name = args.argv(0);
         Level level = Level.valueOf(args.argv(1));
         Logger logger = getLogger(name);
@@ -129,14 +120,14 @@ public class LogbackShell
     }
 
     public static final String hh_log_logger_reset =
-        "<logger>";
+          "<logger>";
     public static final String fh_log_logger_reset =
-        "Resets the log level of <logger>. The effective log level will be\n" +
-        "inherited from the parent logger. Notice that the preferred method\n" +
-        "to adjust log levels in dCache is to manipulate the appender log\n" +
-        "levels through the 'log set' and 'log reset' commands.";
-    public String ac_log_logger_reset_$_1(Args args)
-    {
+          "Resets the log level of <logger>. The effective log level will be\n" +
+                "inherited from the parent logger. Notice that the preferred method\n" +
+                "to adjust log levels in dCache is to manipulate the appender log\n" +
+                "levels through the 'log set' and 'log reset' commands.";
+
+    public String ac_log_logger_reset_$_1(Args args) {
         String name = args.argv(0);
         Logger logger = getLogger(name);
         if (logger == null) {
@@ -148,11 +139,11 @@ public class LogbackShell
     }
 
     public static final String hh_log_attach =
-        "<logger> <appender>";
+          "<logger> <appender>";
     public static final String fh_log_attach =
-        "Attach <logger> to output module <appender>.";
-    public String ac_log_attach_$_2(Args args)
-    {
+          "Attach <logger> to output module <appender>.";
+
+    public String ac_log_attach_$_2(Args args) {
         String name = args.argv(0);
         String appender = args.argv(1);
         Logger logger = getLogger(name);
@@ -171,11 +162,11 @@ public class LogbackShell
     }
 
     public static final String hh_log_detach =
-        "<logger> <appender>";
+          "<logger> <appender>";
     public static final String fh_log_detach =
-        "Detach <logger> from output module <appender>.";
-    public String ac_log_detach_$_2(Args args)
-    {
+          "Detach <logger> from output module <appender>.";
+
+    public String ac_log_detach_$_2(Args args) {
         String name = args.argv(0);
         String appender = args.argv(1);
         Logger logger = getLogger(name);
@@ -189,11 +180,11 @@ public class LogbackShell
     }
 
     public static final String hh_log_get_pattern =
-            "<logger> <appender>";
+          "<logger> <appender>";
     public static final String fh_log_get_pattern =
-            "Get encoder pattern for <logger> <appender>.";
-    public String ac_log_get_pattern_$_2(Args args)
-    {
+          "Get encoder pattern for <logger> <appender>.";
+
+    public String ac_log_get_pattern_$_2(Args args) {
         String loggerName = args.argv(0);
         String appenderName = args.argv(1);
 
@@ -209,29 +200,30 @@ public class LogbackShell
 
         Encoder<?> encoder;
         if (appender instanceof ConsoleAppender) {
-            encoder = ((ConsoleAppender<?>)appender).getEncoder();
-        } else
-        if (appender instanceof FileAppender) {
-            encoder = ((FileAppender<?>)appender).getEncoder();
+            encoder = ((ConsoleAppender<?>) appender).getEncoder();
+        } else if (appender instanceof FileAppender) {
+            encoder = ((FileAppender<?>) appender).getEncoder();
         } else {
-            throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders.");
+            throw new IllegalArgumentException(
+                  "Appender " + appenderName + " does not support encoders.");
         }
         PatternLayoutEncoder patternLayoutEncoder;
         if (encoder instanceof PatternLayoutEncoder) {
-            patternLayoutEncoder = (PatternLayoutEncoder)encoder;
+            patternLayoutEncoder = (PatternLayoutEncoder) encoder;
         } else {
-            throw new IllegalArgumentException("Appender " + appenderName + " does not provide a pattern encoder.");
+            throw new IllegalArgumentException(
+                  "Appender " + appenderName + " does not provide a pattern encoder.");
         }
 
         return "pattern of appender " + appenderName + " is " + patternLayoutEncoder.getPattern();
     }
 
     public static final String hh_log_set_pattern =
-        "<logger> <appender> <pattern>";
+          "<logger> <appender> <pattern>";
     public static final String fh_log_set_pattern =
-        "Set encoder pattern to <pattern> for <logger> <appender>.";
-    public String ac_log_set_pattern_$_3(Args args)
-    {
+          "Set encoder pattern to <pattern> for <logger> <appender>.";
+
+    public String ac_log_set_pattern_$_3(Args args) {
         String loggerName = args.argv(0);
         String appenderName = args.argv(1);
         String pattern = args.argv(2);
@@ -252,14 +244,15 @@ public class LogbackShell
         encoder.start();
 
         if (appender instanceof ConsoleAppender) {
-            ((ConsoleAppender<ILoggingEvent>)appender).setEncoder(encoder);
-        } else
-        if (appender instanceof FileAppender) {
-            ((FileAppender<ILoggingEvent>)appender).setEncoder(encoder);
+            ((ConsoleAppender<ILoggingEvent>) appender).setEncoder(encoder);
+        } else if (appender instanceof FileAppender) {
+            ((FileAppender<ILoggingEvent>) appender).setEncoder(encoder);
         } else {
-            throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders");
+            throw new IllegalArgumentException(
+                  "Appender " + appenderName + " does not support encoders");
         }
 
-        return "pattern of appender " + loggerName + '.' + appenderName + " set to " + encoder.getPattern();
+        return "pattern of appender " + loggerName + '.' + appenderName + " set to "
+              + encoder.getPattern();
     }
 }

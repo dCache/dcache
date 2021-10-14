@@ -18,15 +18,10 @@
 package org.dcache.macaroons;
 
 import com.google.common.base.Throwables;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.leader.LeaderLatch;
-import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.zookeeper.CDCLeaderLatchListener;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -34,25 +29,26 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.zookeeper.CDCLeaderLatchListener;
-
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.util.FireAndForgetTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
- * A SecretSupplier that uses Zookeeper as a back-end to share secrets
- * across multiple dCache cells.  All instances may add a new secret.
- * Leader election is used to identify a single instance that is responsible
- * for removing expired secrets.
+ * A SecretSupplier that uses Zookeeper as a back-end to share secrets across multiple dCache cells.
+ *  All instances may add a new secret. Leader election is used to identify a single instance that
+ * is responsible for removing expired secrets.
  */
 public class ZookeeperSecretHandler implements SecretHandler,
-        CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
-{
+      CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperSecretHandler.class);
     private static final long INITIAL_EXPIRATION_DELAY = TimeUnit.MINUTES.toMillis(5);
     private static final Duration MINIMUM_SECRET_VALIDITY = Duration.ofMinutes(5);
@@ -70,80 +66,70 @@ public class ZookeeperSecretHandler implements SecretHandler,
     private CuratorFramework client;
 
     /**
-     * Class that starts or stops secret expiration depending on whether or not
-     * the current client is the leader.
+     * Class that starts or stops secret expiration depending on whether or not the current client
+     * is the leader.
      */
-    private class LeaderListener implements LeaderLatchListener
-    {
-        private final Runnable expirationTask = new FireAndForgetTask(secrets::removeExpiredSecrets);
+    private class LeaderListener implements LeaderLatchListener {
+
+        private final Runnable expirationTask = new FireAndForgetTask(
+              secrets::removeExpiredSecrets);
         private ScheduledFuture<?> expirationFuture;
 
         @Override
-        public void isLeader()
-        {
+        public void isLeader() {
             LOGGER.debug("Have become leader");
             expirationFuture = executor.scheduleWithFixedDelay(expirationTask,
-                    INITIAL_EXPIRATION_DELAY, expirationPeriodUnit.toMillis(expirationPeriod),
-                    TimeUnit.MILLISECONDS);
+                  INITIAL_EXPIRATION_DELAY, expirationPeriodUnit.toMillis(expirationPeriod),
+                  TimeUnit.MILLISECONDS);
         }
 
         @Override
-        public void notLeader()
-        {
+        public void notLeader() {
             LOGGER.debug("Have yielded leadership");
             expirationFuture.cancel(false);
         }
     }
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         this.client = client;
     }
 
     @Required
-    public void setExecutor(ScheduledExecutorService executor)
-    {
+    public void setExecutor(ScheduledExecutorService executor) {
         this.executor = executor;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         this.address = address;
     }
 
     @Required
-    public void setExpirationPeriod(long period)
-    {
+    public void setExpirationPeriod(long period) {
         expirationPeriod = period;
     }
 
-    public long getExpirationPeriod()
-    {
+    public long getExpirationPeriod() {
         return expirationPeriod;
     }
 
     @Required
-    public void setExpirationPeriodUnit(TimeUnit unit)
-    {
+    public void setExpirationPeriodUnit(TimeUnit unit) {
         expirationPeriodUnit = unit;
     }
 
-    public TimeUnit getExpirationPeriodUnit()
-    {
+    public TimeUnit getExpirationPeriodUnit() {
         return expirationPeriodUnit;
     }
 
     @Required
-    public void setZookeeperSecretStorage(ZookeeperSecretStorage storage)
-    {
+    public void setZookeeperSecretStorage(ZookeeperSecretStorage storage) {
         secrets = storage;
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         try {
             leaderLatch = new LeaderLatch(client, zkPath, address.toString());
             leaderLatch.addListener(new CDCLeaderLatchListener(new LeaderListener()));
@@ -155,20 +141,17 @@ public class ZookeeperSecretHandler implements SecretHandler,
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         if (leaderLatch != null) {
             CloseableUtils.closeQuietly(leaderLatch);
         }
     }
 
     /**
-     * To avoid having too many concurrent secrets, a secret's expiry may
-     * be some time after the desired macaroon expiry time.  This method
-     * calculates the actual secret expiry time.
+     * To avoid having too many concurrent secrets, a secret's expiry may be some time after the
+     * desired macaroon expiry time.  This method calculates the actual secret expiry time.
      */
-    private Instant secretExpiry(Instant macaroonExpiry)
-    {
+    private Instant secretExpiry(Instant macaroonExpiry) {
         Instant now = Instant.now();
         Duration validity = Duration.between(now, macaroonExpiry);
 
@@ -213,15 +196,15 @@ public class ZookeeperSecretHandler implements SecretHandler,
     }
 
     @Override
-    public IdentifiedSecret secretExpiringAfter(Instant expiry, Supplier<IdentifiedSecret> newSecret) throws Exception
-    {
+    public IdentifiedSecret secretExpiringAfter(Instant expiry,
+          Supplier<IdentifiedSecret> newSecret) throws Exception {
         Optional<IdentifiedSecret> existing = secrets.firstExpiringAfter(expiry);
-        return existing.isPresent() ? existing.get() : secrets.put(secretExpiry(expiry), newSecret.get());
+        return existing.isPresent() ? existing.get()
+              : secrets.put(secretExpiry(expiry), newSecret.get());
     }
 
     @Override
-    public byte[] findSecret(String identifier)
-    {
+    public byte[] findSecret(String identifier) {
         return secrets.get(identifier);
     }
 }

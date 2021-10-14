@@ -64,23 +64,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class QoSActionCompleteMessage extends Message {
-  private static final long serialVersionUID = -8274061495042289973L;
 
-  private final List<CompletedQoSAction> completedQoSActions = new ArrayList<>();
+    private static final long serialVersionUID = -8274061495042289973L;
 
-  public void addAction(CompletedQoSAction action) {
-    completedQoSActions.add(action);
-  }
+    private final List<CompletedQoSAction> completedQoSActions = new ArrayList<>();
 
-  public List<CompletedQoSAction> getCompletedQoSActions() {
-    return completedQoSActions;
-  }
+    public void addAction(CompletedQoSAction action) {
+        completedQoSActions.add(action);
+    }
 
-  public int currentSize() {
-    return completedQoSActions.size();
-  }
+    public List<CompletedQoSAction> getCompletedQoSActions() {
+        return completedQoSActions;
+    }
 
-  public String toString() {
-    return completedQoSActions.toString();
-  }
+    public int currentSize() {
+        return completedQoSActions.size();
+    }
+
+    public String toString() {
+        return completedQoSActions.toString();
+    }
 }

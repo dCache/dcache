@@ -63,26 +63,27 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- *  Simple implementation of PoolMatcher.
+ * Simple implementation of PoolMatcher.
  */
 public final class PoolFilter implements PoolMatcher {
+
     private Set<String> state;
-    private Pattern     pools;
+    private Pattern pools;
 
     private String poolStatus;
-    private Long   lastUpdateBefore;
-    private Long   lastUpdateAfter;
-    private Long   lastScanBefore;
-    private Long   lastScanAfter;
+    private Long lastUpdateBefore;
+    private Long lastUpdateAfter;
+    private Long lastScanBefore;
+    private Long lastScanAfter;
 
     public boolean isUndefined() {
-        return          null == state &&
-                        null == pools &&
-                        null == poolStatus &&
-                        null == lastUpdateBefore &&
-                        null == lastUpdateAfter &&
-                        null == lastScanBefore &&
-                        null == lastScanAfter;
+        return null == state &&
+              null == pools &&
+              null == poolStatus &&
+              null == lastUpdateBefore &&
+              null == lastUpdateAfter &&
+              null == lastScanBefore &&
+              null == lastScanAfter;
     }
 
     public boolean matches(String pool, PoolScanOperation operation) {
@@ -95,17 +96,17 @@ public final class PoolFilter implements PoolMatcher {
         }
 
         if (poolStatus != null &&
-                        !poolStatus.equals(operation.currStatus.name())) {
+              !poolStatus.equals(operation.currStatus.name())) {
             return false;
         }
 
         if (lastUpdateBefore != null
-                        && lastUpdateBefore <= operation.lastUpdate) {
+              && lastUpdateBefore <= operation.lastUpdate) {
             return false;
         }
 
         if (lastUpdateAfter != null
-                        && lastUpdateAfter >= operation.lastUpdate) {
+              && lastUpdateAfter >= operation.lastUpdate) {
             return false;
         }
 
@@ -126,12 +127,12 @@ public final class PoolFilter implements PoolMatcher {
          *  or an empty set.  Both of these signify "match all."
          */
         return state == null
-                        || state.isEmpty()
-                        || state.contains("IDLE")
-                        || state.contains("FAILED")
-                        || state.contains("CANCELED")
-                        || state.contains("EXCLUDED")
-                        || state.contains("INACTIVE");
+              || state.isEmpty()
+              || state.contains("IDLE")
+              || state.contains("FAILED")
+              || state.contains("CANCELED")
+              || state.contains("EXCLUDED")
+              || state.contains("INACTIVE");
     }
 
     public boolean matchesRunning() {

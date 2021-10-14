@@ -70,36 +70,34 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- * A Superclass of all SRM exceptions
- * SRMException.java, Mon May 27 10:32:35 2002
+ * A Superclass of all SRM exceptions SRMException.java, Mon May 27 10:32:35 2002
  *
  * @author Timur Perelmutov
  * @author CD/ISD
- * @version 	0.9, 27 May 2002
+ * @version 0.9, 27 May 2002
  */
 
 public class SRMException extends Exception {
-    
+
     private static final long serialVersionUID = -8113621955516703431L;
-    
+
     public SRMException() {
         super();
     }
-    
+
     public SRMException(String message) {
         super(message);
     }
-    
+
     public SRMException(String message, Throwable cause) {
-        super(message,cause);
+        super(message, cause);
     }
-    
+
     public SRMException(Throwable cause) {
         super(cause);
     }
 
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_FAILURE;
     }
 }

@@ -20,18 +20,17 @@ package diskCacheV111.util;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-
 import org.dcache.util.Checksum;
 
 /**
- * Signals that the file size or checksum of a file does not match the expected
- * checksum or file size, or that a file or replica is otherwise corrupted.
- *
- * Note that expected and actual file size or checksum stored in the exception
- * are not preserved by cells message passing.
+ * Signals that the file size or checksum of a file does not match the expected checksum or file
+ * size, or that a file or replica is otherwise corrupted.
+ * <p>
+ * Note that expected and actual file size or checksum stored in the exception are not preserved by
+ * cells message passing.
  */
-public class FileCorruptedCacheException extends CacheException
-{
+public class FileCorruptedCacheException extends CacheException {
+
     private static final long serialVersionUID = 6022529795888425409L;
 
     private final Set<Checksum> _expectedChecksums;
@@ -39,8 +38,7 @@ public class FileCorruptedCacheException extends CacheException
     private final Long _expectedSize;
     private final Long _actualSize;
 
-    public FileCorruptedCacheException(String message)
-    {
+    public FileCorruptedCacheException(String message) {
         super(FILE_CORRUPTED, message);
         _expectedChecksums = null;
         _actualChecksums = null;
@@ -48,8 +46,7 @@ public class FileCorruptedCacheException extends CacheException
         _actualSize = null;
     }
 
-    public FileCorruptedCacheException(String message, Throwable cause)
-    {
+    public FileCorruptedCacheException(String message, Throwable cause) {
         super(FILE_CORRUPTED, message, cause);
         _expectedChecksums = null;
         _actualChecksums = null;
@@ -57,46 +54,43 @@ public class FileCorruptedCacheException extends CacheException
         _actualSize = null;
     }
 
-    public FileCorruptedCacheException(Checksum expectedChecksum, Checksum actualChecksum)
-    {
+    public FileCorruptedCacheException(Checksum expectedChecksum, Checksum actualChecksum) {
         this(Collections.singleton(expectedChecksum), Collections.singleton(actualChecksum));
     }
 
-    public FileCorruptedCacheException(Set<Checksum> expectedChecksums, Set<Checksum> actualChecksums)
-    {
-        super(FILE_CORRUPTED, "Checksum mismatch (expected=" + expectedChecksums + ", actual=" + actualChecksums + ')');
+    public FileCorruptedCacheException(Set<Checksum> expectedChecksums,
+          Set<Checksum> actualChecksums) {
+        super(FILE_CORRUPTED,
+              "Checksum mismatch (expected=" + expectedChecksums + ", actual=" + actualChecksums
+                    + ')');
         _expectedChecksums = expectedChecksums;
         _actualChecksums = actualChecksums;
         _expectedSize = null;
         _actualSize = null;
     }
 
-    public FileCorruptedCacheException(long expectedSize, long actualSize)
-    {
-        super(FILE_CORRUPTED, "File size mismatch (expected=" + expectedSize + ", actual=" + actualSize + ')');
+    public FileCorruptedCacheException(long expectedSize, long actualSize) {
+        super(FILE_CORRUPTED,
+              "File size mismatch (expected=" + expectedSize + ", actual=" + actualSize + ')');
         _expectedChecksums = null;
         _actualChecksums = null;
         _expectedSize = expectedSize;
         _actualSize = actualSize;
     }
 
-    public Optional<Set<Checksum>> getExpectedChecksums()
-    {
+    public Optional<Set<Checksum>> getExpectedChecksums() {
         return Optional.ofNullable(_expectedChecksums);
     }
 
-    public Optional<Set<Checksum>> getActualChecksums()
-    {
+    public Optional<Set<Checksum>> getActualChecksums() {
         return Optional.ofNullable(_actualChecksums);
     }
 
-    public Optional<Long> getExpectedSize()
-    {
+    public Optional<Long> getExpectedSize() {
         return Optional.ofNullable(_expectedSize);
     }
 
-    public Optional<Long> getActualSize()
-    {
+    public Optional<Long> getActualSize() {
         return Optional.ofNullable(_actualSize);
     }
 }

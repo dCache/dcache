@@ -1,22 +1,19 @@
 package org.dcache.srm.handler;
 
 import com.google.common.base.Function;
-
 import org.dcache.srm.v2_2.TMetaDataSpace;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLLifetimeReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class ReturnStatuses
-{
+public class ReturnStatuses {
 
-    private ReturnStatuses()
-    {
+    private ReturnStatuses() {
     }
 
-    private static <T> TReturnStatus getSummaryReturnStatusForSurls(T[] objects, Function<T, TStatusCode> getStatusCode)
-    {
+    private static <T> TReturnStatus getSummaryReturnStatusForSurls(T[] objects,
+          Function<T, TStatusCode> getStatusCode) {
         boolean hasFailure = false;
         boolean hasSuccess = false;
         for (T object : objects) {
@@ -29,19 +26,19 @@ public class ReturnStatuses
         return ReturnStatuses.getSummaryReturnStatus(hasFailure, hasSuccess);
     }
 
-    public static TReturnStatus getSummaryReturnStatus(TSURLReturnStatus[] returnStatuses)
-    {
-        return getSummaryReturnStatusForSurls(returnStatuses, returnStatus -> returnStatus.getStatus().getStatusCode());
+    public static TReturnStatus getSummaryReturnStatus(TSURLReturnStatus[] returnStatuses) {
+        return getSummaryReturnStatusForSurls(returnStatuses,
+              returnStatus -> returnStatus.getStatus().getStatusCode());
     }
 
-    static TReturnStatus getSummaryReturnStatus(TMetaDataSpace[] metadataSpaces)
-    {
+    static TReturnStatus getSummaryReturnStatus(TMetaDataSpace[] metadataSpaces) {
         boolean hasFailure = false;
         boolean hasSuccess = false;
         for (TMetaDataSpace metaDataSpace : metadataSpaces) {
             if (metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_SUCCESS ||
-                    metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED ||
-                    metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_EXCEED_ALLOCATION) {
+                  metaDataSpace.getStatus().getStatusCode()
+                        == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED ||
+                  metaDataSpace.getStatus().getStatusCode() == TStatusCode.SRM_EXCEED_ALLOCATION) {
                 hasSuccess = true;
             } else {
                 hasFailure = true;
@@ -50,25 +47,27 @@ public class ReturnStatuses
         if (!hasFailure) {
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } else if (!hasSuccess) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "The operation failed for all spaces");
+            return new TReturnStatus(TStatusCode.SRM_FAILURE,
+                  "The operation failed for all spaces");
         } else {
-            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, "The operation failed for some spaces");
+            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                  "The operation failed for some spaces");
         }
     }
 
-    public static TReturnStatus getSummaryReturnStatus(boolean hasFailure, boolean hasSuccess)
-    {
+    public static TReturnStatus getSummaryReturnStatus(boolean hasFailure, boolean hasSuccess) {
         if (!hasFailure) {
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } else if (!hasSuccess) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, "The operation failed for all SURLs");
         } else {
-            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, "The operation failed for some SURLs");
+            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                  "The operation failed for some SURLs");
         }
     }
 
-    static TReturnStatus getSummaryReturnStatus(TSURLLifetimeReturnStatus[] surlStatus)
-    {
-        return getSummaryReturnStatusForSurls(surlStatus, returnStatus -> returnStatus.getStatus().getStatusCode());
+    static TReturnStatus getSummaryReturnStatus(TSURLLifetimeReturnStatus[] surlStatus) {
+        return getSummaryReturnStatusForSurls(surlStatus,
+              returnStatus -> returnStatus.getStatus().getStatusCode());
     }
 }

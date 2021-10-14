@@ -84,27 +84,25 @@ package gov.fnal.srm.util;
 
 
 import java.io.IOException;
-
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
 import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
 
-public class SRMReleaseSpaceClientV2 extends SRMClient
-{
+public class SRMReleaseSpaceClientV2 extends SRMClient {
+
     private final java.net.URI srmURL;
     private SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
 
     public SRMReleaseSpaceClientV2(Configuration configuration,
-                                   java.net.URI url) {
+          java.net.URI url) {
         super(configuration);
-        srmURL=url;
+        srmURL = url;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return srmURL;
     }
 
@@ -116,20 +114,20 @@ public class SRMReleaseSpaceClientV2 extends SRMClient
             request.setForceFileRelease(configuration.getForceFileRelease());
             configuration.getStorageSystemInfo().ifPresent(request::setStorageSystemInfo);
             SrmReleaseSpaceResponse response = srm.srmReleaseSpace(request);
-            if ( response == null ) {
+            if (response == null) {
                 throw new IOException(" null SrmReleaseSpace");
             }
-            TReturnStatus rs     = response.getReturnStatus();
-            if ( rs == null) {
+            TReturnStatus rs = response.getReturnStatus();
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("srmReleaseSpace submission failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+                throw new IOException(
+                      "srmReleaseSpace submission failed, unexpected or failed return status : " +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
             }
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

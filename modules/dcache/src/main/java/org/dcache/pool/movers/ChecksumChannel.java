@@ -1,15 +1,15 @@
 package org.dcache.pool.movers;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
@@ -23,26 +23,22 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayList;
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.Exceptions.messageOrClassName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A wrapper for RepositoryChannel that computes a digest
- * on the fly during write as long as all writes are
- * sequential.
+ * A wrapper for RepositoryChannel that computes a digest on the fly during write as long as all
+ * writes are sequential.
  */
-public class ChecksumChannel extends ForwardingRepositoryChannel
-{
+public class ChecksumChannel extends ForwardingRepositoryChannel {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(ChecksumChannel.class);
+          LoggerFactory.getLogger(ChecksumChannel.class);
 
     /**
      * Inner channel to which all operations are delegated.
@@ -77,8 +73,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
     private volatile boolean _isChecksumViable = true;
 
     /**
-     * Flag to indicate whether we still allow writing to the channel.
-     * This flag is set to false after getChecksums has been called.
+     * Flag to indicate whether we still allow writing to the channel. This flag is set to false
+     * after getChecksums has been called.
      */
     @GuardedBy("_ioStateLock")
     private boolean _isWritable = true;
@@ -91,8 +87,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
     private final Lock _ioStateWriteLock = _ioStateLock.writeLock();
 
     /**
-     * Buffer to be used for reading data back from the inner channel for
-     * checksum calculations.
+     * Buffer to be used for reading data back from the inner channel for checksum calculations.
      */
     @VisibleForTesting
     @GuardedBy("_digests")
@@ -102,40 +97,37 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
      * Static buffer with zeros shared with in all instances of ChecksumChannel.
      */
     private static final ByteBuffer ZERO_BUFFER = ByteBuffer
-            .allocate(KiB.toBytes(256))
-            .asReadOnlyBuffer();
+          .allocate(KiB.toBytes(256))
+          .asReadOnlyBuffer();
 
     /**
-     * Buffer to be used for feeding the checksum digester with 0s to fill up
-     * gaps in ranges.
+     * Buffer to be used for feeding the checksum digester with 0s to fill up gaps in ranges.
      */
     @VisibleForTesting
     ByteBuffer _zerosBuffer = ZERO_BUFFER.duplicate();
 
-    public ChecksumChannel(RepositoryChannel inner, Set<ChecksumType> types)
-    {
+    public ChecksumChannel(RepositoryChannel inner, Set<ChecksumType> types) {
         _channel = inner;
         _digests = types.stream()
-                .map(t -> t.createMessageDigest())
-                .collect(Collectors.toList());
+              .map(t -> t.createMessageDigest())
+              .collect(Collectors.toList());
     }
 
     /**
-     * Ensure that a Checksum is calculated for the supplied ChecksumType.  If
-     * the ChecksumType is already registered then this method does nothing,
-     * otherwise the ChecksumChannel is updated to calculate the new ChecksumType.
-     * If the ChecksumChannel has accepted a contiguous range of data from
-     * offset 0 then this method will reread that contiguous range.
+     * Ensure that a Checksum is calculated for the supplied ChecksumType.  If the ChecksumType is
+     * already registered then this method does nothing, otherwise the ChecksumChannel is updated to
+     * calculate the new ChecksumType. If the ChecksumChannel has accepted a contiguous range of
+     * data from offset 0 then this method will reread that contiguous range.
+     *
      * @param type The algorithm this ChecksumChannel should calculate.
-     * @throws IOException if the Channel has already started accepting data
-     * and an attempt to reread data from disk fails.
+     * @throws IOException if the Channel has already started accepting data and an attempt to
+     *                     reread data from disk fails.
      */
-    public void addType(ChecksumType type) throws IOException
-    {
+    public void addType(ChecksumType type) throws IOException {
         synchronized (_digests) {
             if (_digests.stream()
-                    .map(MessageDigest::getAlgorithm)
-                    .noneMatch(t -> t.equals(type.getName()))) {
+                  .map(MessageDigest::getAlgorithm)
+                  .noneMatch(t -> t.equals(type.getName()))) {
                 MessageDigest digest = type.createMessageDigest();
 
                 if (_isChecksumViable) {
@@ -143,7 +135,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
                         updateFromChannel(Collections.singleton(digest), 0L, _nextChecksumOffset);
                     } catch (IOException e) {
                         throw new IOException("Failed when reading received data: "
-                                + messageOrClassName(e), e);
+                              + messageOrClassName(e), e);
                     }
                 }
 
@@ -179,15 +171,13 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position,
-                             long count) throws IOException
-    {
+          long count) throws IOException {
         _isChecksumViable = false;
         return _channel.transferFrom(src, position, count);
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException
-    {
+    public int write(ByteBuffer src) throws IOException {
         _ioStateReadLock.lock();
         try {
 
@@ -207,7 +197,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
-            throws IOException {
+          throws IOException {
         _ioStateReadLock.lock();
         try {
 
@@ -228,16 +218,14 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
     }
 
     @Override
-    public synchronized long write(ByteBuffer[] srcs) throws IOException
-    {
+    public synchronized long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
     }
 
     /**
      * @return final checksum of this channel
      */
-    public Set<Checksum> getChecksums()
-    {
+    public Set<Checksum> getChecksums() {
         if (!_isChecksumViable) {
             return Collections.emptySet();
         }
@@ -272,8 +260,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
                     }
 
                     return _digests.stream()
-                            .map(Checksum::new)
-                            .collect(Collectors.toSet());
+                          .map(Checksum::new)
+                          .collect(Collectors.toSet());
                 } catch (IOException e) {
                     LOGGER.info("Unable to generate checksum of sparse file: {}", e.toString());
                     return Collections.emptySet();
@@ -283,7 +271,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
     }
 
     private void feedZerosToDigesterForRangeGaps() throws IOException {
-        ArrayList<Range<Long>> complement = newArrayList(_dataRangeSet.complement().subRangeSet(Range.closed(0L, size())).asRanges());
+        ArrayList<Range<Long>> complement = newArrayList(
+              _dataRangeSet.complement().subRangeSet(Range.closed(0L, size())).asRanges());
         complement.sort((r1, r2) -> r1.lowerEndpoint().compareTo(r2.lowerEndpoint()));
 
         for (Range<Long> range : complement) {
@@ -294,7 +283,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
             while (bytesToWrite > 0) {
                 _zerosBuffer.clear();
                 long chunkSize = Math.min(_zerosBuffer.capacity(), bytesToWrite);
-                _zerosBuffer.limit((int)chunkSize);
+                _zerosBuffer.limit((int) chunkSize);
 
                 updateChecksum(_zerosBuffer, chunkOffset, _zerosBuffer.limit());
 
@@ -304,8 +293,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
         }
     }
 
-    private int writeWithChecksumUpdate(ByteBuffer src) throws IOException
-    {
+    private int writeWithChecksumUpdate(ByteBuffer src) throws IOException {
         int writtenBytes;
         ByteBuffer readOnly = src.asReadOnlyBuffer();
         long updatePosition = position();
@@ -316,9 +304,9 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
     }
 
     /**
-     * @param buffer buffer containing the data
+     * @param buffer   buffer containing the data
      * @param position position of the data in the target file
-     * @param bytes number of bytes to use from the input data
+     * @param bytes    number of bytes to use from the input data
      * @throws IOException
      */
     @VisibleForTesting
@@ -332,7 +320,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
             buffer.limit(buffer.position() + bytes);
         }
 
-        Range<Long> writeRange = Range.closed(position, position + buffer.remaining() - 1).canonical(DiscreteDomain.longs());
+        Range<Long> writeRange = Range.closed(position, position + buffer.remaining() - 1)
+              .canonical(DiscreteDomain.longs());
         Range<Long> fileStartRange;
 
         synchronized (_dataRangeSet) {
@@ -345,7 +334,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
             }
 
             fileStartRange = _dataRangeSet.rangeContaining(0L);
-            boolean canCalculateChecksum = position == 0 || (fileStartRange != null && fileStartRange.upperEndpoint() == position);
+            boolean canCalculateChecksum = position == 0 || (fileStartRange != null
+                  && fileStartRange.upperEndpoint() == position);
 
             _dataRangeSet.add(writeRange);
             if (!canCalculateChecksum) {
@@ -362,7 +352,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
              * Nevertheless, there may be a different thread which needs to update
              * ahead of us. Wait for our turn.
              */
-            while(_nextChecksumOffset != position) {
+            while (_nextChecksumOffset != position) {
                 try {
                     _digests.wait();
                 } catch (InterruptedException e) {
@@ -391,8 +381,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
 
     @GuardedBy("_digests")
     private void updateFromChannel(Collection<MessageDigest> digests, long offset, long bytesToRead)
-            throws IOException
-    {
+          throws IOException {
         try {
             while (bytesToRead > 0) {
                 _readBackBuffer.clear();
@@ -400,7 +389,8 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
                 int bytesRead = _channel.read(_readBackBuffer, offset);
 
                 if (bytesRead < 0) {
-                    throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
+                    throw new IOException(
+                          "Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
                 }
 
                 _readBackBuffer.flip();

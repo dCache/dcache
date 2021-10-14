@@ -2,27 +2,23 @@ package dmg.util.command;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
-
+import dmg.util.CommandException;
+import dmg.util.CommandPanicException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.CommandThrowableException;
 import java.io.Serializable;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
-import dmg.util.CommandException;
-import dmg.util.CommandPanicException;
-import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
-
 import org.dcache.util.Args;
 import org.dcache.util.cli.CommandExecutor;
 
 /**
- * Implements the legacy cell shell commands which use reflection
- * on method and field names.
+ * Implements the legacy cell shell commands which use reflection on method and field names.
  */
-class AcCommandExecutor implements CommandExecutor
-{
+class AcCommandExecutor implements CommandExecutor {
+
     private final Object _listener;
     private Method _method;
     private int _minArgs;
@@ -32,19 +28,16 @@ class AcCommandExecutor implements CommandExecutor
     private Field _acls;
     private boolean _isDeprecated;
 
-    public AcCommandExecutor(Object listener)
-    {
+    public AcCommandExecutor(Object listener) {
         _listener = listener;
     }
 
     @Override
-    public boolean isDeprecated()
-    {
+    public boolean isDeprecated() {
         return _isDeprecated;
     }
 
-    public void setMethod(Method m, int mn, int mx)
-    {
+    public void setMethod(Method m, int mn, int mx) {
         _method = m;
         _minArgs = mn;
         _maxArgs = mx;
@@ -64,21 +57,19 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public boolean hasACLs()
-    {
+    public boolean hasACLs() {
         return _acls != null;
     }
 
     @Override
-    public String[] getACLs()
-    {
+    public String[] getACLs() {
         try {
             if (_acls != null) {
                 Object value = _acls.get(_listener);
                 if (value instanceof String[]) {
                     return (String[]) value;
                 } else if (value instanceof String) {
-                    return new String[] { value.toString() };
+                    return new String[]{value.toString()};
                 }
             }
         } catch (IllegalAccessException ee) {
@@ -89,8 +80,7 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public String getFullHelp(HelpFormat format)
-    {
+    public String getFullHelp(HelpFormat format) {
         try {
             if (_fullHelp != null) {
                 Object help = _fullHelp.get(_listener);
@@ -105,8 +95,7 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public String getHelpHint(HelpFormat format)
-    {
+    public String getHelpHint(HelpFormat format) {
         try {
             if (_helpHint != null) {
                 Object hint = _helpHint.get(_listener);
@@ -134,8 +123,7 @@ class AcCommandExecutor implements CommandExecutor
     }
 
     @Override
-    public Serializable execute(Args arguments) throws CommandException
-    {
+    public Serializable execute(Args arguments) throws CommandException {
         int params = arguments.argc();
 
         if ((params < _minArgs) || (params > _maxArgs)) {
@@ -155,15 +143,15 @@ class AcCommandExecutor implements CommandExecutor
             Throwables.throwIfInstanceOf(te, Error.class);
 
             if (te instanceof RuntimeException &&
-                    !(te instanceof IllegalArgumentException) &&
-                    !(te instanceof IllegalStateException)) {
+                  !(te instanceof IllegalArgumentException) &&
+                  !(te instanceof IllegalStateException)) {
                 /* We treat uncaught RuntimeExceptions other than
                  * IllegalArgumentException, IllegalStateException,
                  * and those declared to be thrown by the method as
                  * bugs and rethrow them.
                  */
                 boolean declared = false;
-                for (Class<?> clazz: _method.getExceptionTypes()) {
+                for (Class<?> clazz : _method.getExceptionTypes()) {
                     if (clazz.isAssignableFrom(te.getClass())) {
                         declared = true;
                     }
@@ -177,25 +165,23 @@ class AcCommandExecutor implements CommandExecutor
             throw new CommandThrowableException(te + " from " + _method.getName(), te);
         } catch (IllegalAccessException e) {
             throw new CommandPanicException("Exception while invoking " +
-                                            _method.getName() + ": " + e, e);
+                  _method.getName() + ": " + e, e);
         }
     }
 
     @Override
-    public AnnotatedElement getImplementation()
-    {
+    public AnnotatedElement getImplementation() {
         return _method;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return MoreObjects.toStringHelper(this)
-                .addValue(_method)
-                .addValue(_fullHelp)
-                .addValue(_helpHint)
-                .addValue(_acls)
-                .omitNullValues()
-                .toString();
+              .addValue(_method)
+              .addValue(_fullHelp)
+              .addValue(_helpHint)
+              .addValue(_acls)
+              .omitNullValues()
+              .toString();
     }
 }

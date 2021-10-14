@@ -1,16 +1,40 @@
 package org.dcache.tests.repository;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.dcache.pool.repository.ReplicaState.BROKEN;
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.DESTROYED;
+import static org.dcache.pool.repository.ReplicaState.FROM_CLIENT;
+import static org.dcache.pool.repository.ReplicaState.FROM_STORE;
+import static org.dcache.pool.repository.ReplicaState.NEW;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.REMOVED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.sleepycat.je.DatabaseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.DiskSpace;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,23 +49,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.DiskSpace;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.LockedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.GenericStorageInfo;
-import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
-import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
-import diskCacheV111.vehicles.StorageInfo;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.SpaceSweeper2;
 import org.dcache.pool.repository.AbstractStateChangeListener;
@@ -66,17 +73,16 @@ import org.dcache.tests.cells.Message;
 import org.dcache.util.ByteUnit;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
-
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.WRITE;
-
-import static org.dcache.pool.repository.ReplicaState.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class RepositorySubsystemTest
-    extends AbstractStateChangeListener
-{
-    private final static long repoSize = ByteUnit.MiB.toBytes(512); // allocator chunks 50MB. Make some room for allocation
+      extends AbstractStateChangeListener {
+
+    private final static long repoSize = ByteUnit.MiB.toBytes(
+          512); // allocator chunks 50MB. Make some room for allocation
 
     private long size1 = 1024;
     private long size2 = 1024;
@@ -115,42 +121,39 @@ public class RepositorySubsystemTest
     private Path dataDir;
 
     private BlockingQueue<StateChangeEvent> stateChangeEvents =
-        new LinkedBlockingQueue<>();
+          new LinkedBlockingQueue<>();
 
     private CellEndpointHelper cell;
     private final CellAddressCore address = new CellAddressCore("pool", "test");
 
     private void createFile(ReplicaDescriptor descriptor, long size)
-        throws IOException
-    {
+          throws IOException {
         try (RepositoryChannel channel = descriptor.createChannel()) {
             channel.write(ByteBuffer.allocate((int) size));
         }
     }
+
     private void createEntry(final FileAttributes attributes,
-                             final ReplicaState state,
-                             final List<StickyRecord> sticky)
-        throws Throwable
-    {
+          final ReplicaState state,
+          final List<StickyRecord> sticky)
+          throws Throwable {
         new CellStubHelper(cell) {
-            @Message(cell="pnfs")
-            public Object message(PnfsSetFileAttributes msg)
-            {
+            @Message(cell = "pnfs")
+            public Object message(PnfsSetFileAttributes msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                throws CacheException, IOException, InterruptedException
-            {
+                  throws CacheException, IOException, InterruptedException {
                 ReplicaDescriptor handle =
-                        repository.createEntry(attributes,
-                                               ReplicaState.FROM_CLIENT,
-                                               state,
-                                               sticky,
-                                               EnumSet.noneOf(OpenFlags.class),
-                                               OptionalLong.empty());
+                      repository.createEntry(attributes,
+                            ReplicaState.FROM_CLIENT,
+                            state,
+                            sticky,
+                            EnumSet.noneOf(OpenFlags.class),
+                            OptionalLong.empty());
                 try {
                     createFile(handle, attributes.getSize());
                     handle.commit();
@@ -161,8 +164,7 @@ public class RepositorySubsystemTest
         };
     }
 
-    private FileAttributes createFileAttributes(PnfsId pnfsId, long size, StorageInfo info)
-    {
+    private FileAttributes createFileAttributes(PnfsId pnfsId, long size, StorageInfo info) {
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(info);
@@ -172,8 +174,7 @@ public class RepositorySubsystemTest
         return attributes;
     }
 
-    private void deleteDirectory(Path dir) throws IOException
-    {
+    private void deleteDirectory(Path dir) throws IOException {
         Path[] fileArray;
         try (Stream<Path> list = Files.list(dir)) {
             fileArray = list.toArray(Path[]::new);
@@ -192,11 +193,10 @@ public class RepositorySubsystemTest
     }
 
     private void initRepository()
-            throws IOException, DatabaseException
-    {
+          throws IOException, DatabaseException {
         FileStore fileStore = new FlatFileStore(dataRoot);
         replicaStore =
-            new FileMetaDataRepository(fileStore, metaRoot, "pool");
+              new FileMetaDataRepository(fileStore, metaRoot, "pool");
 
         account = new Account();
         sweeper = new SpaceSweeper2();
@@ -211,14 +211,14 @@ public class RepositorySubsystemTest
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
         repository.setMaxDiskSpace(new DiskSpace(repoSize));
-        repository.addFaultListener(event -> System.err.println(event.getMessage() + ": " + event.getCause()));
+        repository.addFaultListener(
+              event -> System.err.println(event.getMessage() + ": " + event.getCause()));
         repository.setScanThreads(1);
     }
 
     @Before
     public void setUp()
-        throws Throwable
-    {
+          throws Throwable {
         id1 = new PnfsId("000000000001");
         id2 = new PnfsId("000000000002");
         id3 = new PnfsId("000000000003");
@@ -260,11 +260,11 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         createEntry(attributes1, ReplicaState.PRECIOUS,
-                    Arrays.asList(new StickyRecord("system", 0)));
+              Arrays.asList(new StickyRecord("system", 0)));
         createEntry(attributes2, ReplicaState.CACHED,
-                    Arrays.asList(new StickyRecord("system", 0)));
+              Arrays.asList(new StickyRecord("system", 0)));
         createEntry(attributes3, ReplicaState.CACHED,
-                    Arrays.asList(new StickyRecord("system", -1)));
+              Arrays.asList(new StickyRecord("system", -1)));
         repository.shutdown();
         replicaStore.close();
 
@@ -279,8 +279,7 @@ public class RepositorySubsystemTest
 
     @After
     public void tearDown()
-            throws InterruptedException, IOException
-    {
+          throws InterruptedException, IOException {
         sweeper.stop();
         repository.shutdown();
         replicaStore.close();
@@ -293,13 +292,11 @@ public class RepositorySubsystemTest
     }
 
     @Override
-    public void stateChanged(StateChangeEvent event)
-    {
+    public void stateChanged(StateChangeEvent event) {
         stateChangeEvents.add(event);
     }
 
-    public void expectStateChangeEvent(PnfsId id, ReplicaState oldState, ReplicaState newState)
-    {
+    public void expectStateChangeEvent(PnfsId id, ReplicaState oldState, ReplicaState newState) {
         StateChangeEvent event = stateChangeEvents.poll();
         assertNotNull(event);
         assertEquals(id, event.getPnfsId());
@@ -307,16 +304,14 @@ public class RepositorySubsystemTest
         assertEquals(newState, event.getNewState());
     }
 
-    public void assertNoStateChangeEvent()
-    {
+    public void assertNoStateChangeEvent() {
         if (stateChangeEvents.size() > 0) {
             fail("Unexpected state change event: "
-                    + stateChangeEvents.remove());
+                  + stateChangeEvents.remove());
         }
     }
 
-    private void assertSpaceRecord(long total, long free, long precious, long removable)
-    {
+    private void assertSpaceRecord(long total, long free, long precious, long removable) {
         SpaceRecord space = repository.getSpaceRecord();
         assertEquals(total, space.getTotalSpace());
         assertEquals(free, space.getFreeSpace());
@@ -325,18 +320,16 @@ public class RepositorySubsystemTest
     }
 
     private void assertCacheEntry(CacheEntry entry, PnfsId id,
-                                  long size, ReplicaState state)
-    {
+          long size, ReplicaState state) {
         assertEquals(id, entry.getPnfsId());
         assertEquals(size, entry.getReplicaSize());
         assertEquals(state, entry.getState());
     }
 
-    private void assertCanOpen(PnfsId id, long size, ReplicaState state)
-    {
+    private void assertCanOpen(PnfsId id, long size, ReplicaState state) {
         try {
             ReplicaDescriptor handle =
-                repository.openEntry(id, EnumSet.noneOf(OpenFlags.class));
+                  repository.openEntry(id, EnumSet.noneOf(OpenFlags.class));
             try {
                 try (RepositoryChannel channel = handle.createChannel()) {
                 }
@@ -351,75 +344,65 @@ public class RepositorySubsystemTest
         }
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testInitTwiceFails()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.init();
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testLoadTwiceFails()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         repository.load();
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testLoadBeforeInitFail()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.load();
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testCreateEntryFailsBeforeLoad() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testCreateEntryFailsBeforeLoad() throws Exception {
         repository.init();
         List<StickyRecord> stickyRecords = Collections.emptyList();
         repository.createEntry(FileAttributes.of().pnfsId(id1).storageInfo(info1).build(),
-                FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class),
-                OptionalLong.empty());
+              FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class),
+              OptionalLong.empty());
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testOpenEntryFailsBeforeInit() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testOpenEntryFailsBeforeInit() throws Exception {
         repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testGetEntryFailsBeforeInit() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testGetEntryFailsBeforeInit() throws Exception {
         repository.getEntry(id1);
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testSetStickyFailsBeforeInit() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testSetStickyFailsBeforeInit() throws Exception {
         repository.setSticky(id2, "system", 0, true);
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testGetStateFailsBeforeInit() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testGetStateFailsBeforeInit() throws Exception {
         repository.getState(id1);
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void testSetStateFailsBeforeLoad() throws Exception
-    {
+    @Test(expected = IllegalStateException.class)
+    public void testSetStateFailsBeforeLoad() throws Exception {
         repository.init();
         repository.setState(id1, CACHED, "test");
     }
 
     @Test
     public void testGetSpaceRecord()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         assertSpaceRecord(0, 0, 0, 0);
         repository.init();
         assertSpaceRecord(0, 0, 0, 0);
@@ -429,8 +412,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testOpenEntryBeforeLoad()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         stateChangeEvents.clear();
         assertCanOpen(id1, size1, PRECIOUS);
@@ -440,8 +422,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testOpenEntry()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -450,10 +431,9 @@ public class RepositorySubsystemTest
         assertCanOpen(id3, size3, CACHED);
     }
 
-    @Test(expected=FileNotInCacheException.class)
+    @Test(expected = FileNotInCacheException.class)
     public void testOpenEntryFileNotFound()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -461,17 +441,15 @@ public class RepositorySubsystemTest
             /* Attempting to open a non-existing entry triggers a
              * clear cache location message.
              */
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
-            {
+            @Message(required = true, step = 1, cell = "pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                throws CacheException, InterruptedException
-            {
+                  throws CacheException, InterruptedException {
                 repository.openEntry(id4, EnumSet.noneOf(OpenFlags.class));
             }
         };
@@ -482,11 +460,11 @@ public class RepositorySubsystemTest
         repository.init();
         repository.load();
         stateChangeEvents.clear();
-        new CellStubHelper(cell)  {
+        new CellStubHelper(cell) {
 
             @Message(required = true, step = 1, cell = "pnfs")
             public Object message(PnfsSetFileAttributes msg) {
-                if( msg.getFileAttributes().isDefined(FileAttribute.SIZE) ) {
+                if (msg.getFileAttributes().isDefined(FileAttribute.SIZE)) {
                     return new CacheException("");
                 }
                 msg.setSucceeded();
@@ -495,14 +473,15 @@ public class RepositorySubsystemTest
 
             @Override
             protected void run()
-                    throws CacheException, InterruptedException {
+                  throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED, stickyRecords,
-                        EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
+                ReplicaDescriptor handle = repository.createEntry(attributes5, FROM_STORE, CACHED,
+                      stickyRecords,
+                      EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
                 try {
                     createFile(handle, attributes5.getSize());
                     handle.commit();
-                }catch( IOException e) {
+                } catch (IOException e) {
                     throw new DiskErrorCacheException(e.getMessage());
                 } finally {
                     handle.close();
@@ -511,16 +490,15 @@ public class RepositorySubsystemTest
         };
     }
 
-    @Test(expected=IOException.class)
+    @Test(expected = IOException.class)
     public void testFileIsBroken()
-            throws IOException, IllegalTransitionException,
-            CacheException, InterruptedException
-    {
+          throws IOException, IllegalTransitionException,
+          CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
-        ReplicaDescriptor handle =  repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+        ReplicaDescriptor handle = repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         Path file = Paths.get(handle.getReplicaFile());
         Files.write(file, "APPEND".getBytes(), WRITE, APPEND);
         handle.createChannel();
@@ -529,9 +507,8 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetState()
-        throws IOException, IllegalTransitionException,
-               CacheException, InterruptedException
-    {
+          throws IOException, IllegalTransitionException,
+          CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -546,11 +523,10 @@ public class RepositorySubsystemTest
         assertCanOpen(id1, size1, PRECIOUS);
     }
 
-    @Test(expected=IllegalTransitionException.class)
+    @Test(expected = IllegalTransitionException.class)
     public void testSetStateFileNotFound()
-        throws IOException, IllegalTransitionException,
-               CacheException, InterruptedException
-    {
+          throws IOException, IllegalTransitionException,
+          CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -558,11 +534,10 @@ public class RepositorySubsystemTest
         repository.setState(id4, CACHED, "test");
     }
 
-    @Test(expected=IllegalTransitionException.class)
+    @Test(expected = IllegalTransitionException.class)
     public void testSetStateToNew()
-        throws IOException, IllegalTransitionException,
-               CacheException, InterruptedException
-    {
+          throws IOException, IllegalTransitionException,
+          CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -570,11 +545,10 @@ public class RepositorySubsystemTest
         repository.setState(id1, NEW, "test");
     }
 
-    @Test(expected=IllegalTransitionException.class)
+    @Test(expected = IllegalTransitionException.class)
     public void testSetStateToDestroyed()
-            throws IOException, IllegalTransitionException,
-            CacheException, InterruptedException
-    {
+          throws IOException, IllegalTransitionException,
+          CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -582,44 +556,41 @@ public class RepositorySubsystemTest
         repository.setState(id1, DESTROYED, "test");
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testClosedReadHandleClose()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         ReplicaDescriptor handle =
-            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+              repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         handle.close();
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testClosedReadHandleGetFile()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         ReplicaDescriptor handle =
-            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+              repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         handle.getReplicaFile();
     }
 
     @Test
     public void testClosedReadHandleGetFileAttributes()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         ReplicaDescriptor handle =
-            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+              repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         FileAttributes fileAttributes = handle.getFileAttributes();
         assertEquals(id1, fileAttributes.getPnfsId());
@@ -629,8 +600,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetSize()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -639,10 +609,9 @@ public class RepositorySubsystemTest
         assertSpaceRecord(3072, 0, 1024, 1024);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testSetSizeNegative()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -652,25 +621,22 @@ public class RepositorySubsystemTest
 
     @Test
     public void testRemoval()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         new CellStubHelper(cell) {
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
-            {
+            @Message(required = true, step = 1, cell = "pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                throws IllegalTransitionException,
-                       CacheException, InterruptedException
-            {
+                  throws IllegalTransitionException,
+                  CacheException, InterruptedException {
                 repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 expectStateChangeEvent(id1, REMOVED, DESTROYED);
@@ -682,27 +648,24 @@ public class RepositorySubsystemTest
 
     @Test
     public void testRemoveWhileReading()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         new CellStubHelper(cell) {
-            @Message(required=true,step=0,cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
-            {
+            @Message(required = true, step = 0, cell = "pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                throws CacheException, InterruptedException,
-                       IllegalTransitionException
-            {
+                  throws CacheException, InterruptedException,
+                  IllegalTransitionException {
                 ReplicaDescriptor handle1 =
-                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+                      repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
                 repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertNoStateChangeEvent();
@@ -713,42 +676,38 @@ public class RepositorySubsystemTest
         };
     }
 
-    @Test(expected= LockedCacheException.class)
+    @Test(expected = LockedCacheException.class)
     public void testRemoveOpenAgain()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
         new CellStubHelper(cell) {
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsClearCacheLocationMessage msg)
-            {
+            @Message(required = true, step = 1, cell = "pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                throws CacheException, InterruptedException,
-                       IllegalTransitionException
-            {
+                  throws CacheException, InterruptedException,
+                  IllegalTransitionException {
                 ReplicaDescriptor h1 =
-                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+                      repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
                 repository.setState(id1, REMOVED, "test");
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertStep("Cache location should have been cleared", 1);
                 ReplicaDescriptor h2 =
-                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
+                      repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
             }
         };
     }
 
-    @Test(expected=FileInCacheException.class)
+    @Test(expected = FileInCacheException.class)
     public void testCreateEntryFileExists()
-            throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -757,20 +716,18 @@ public class RepositorySubsystemTest
             /* Attempting to create an existing entry triggers a
              * add cache location message.
              */
-            @Message(required=true,step=1,cell="pnfs")
-            public Object message(PnfsAddCacheLocationMessage msg)
-            {
+            @Message(required = true, step = 1, cell = "pnfs")
+            public Object message(PnfsAddCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
             @Override
             protected void run()
-                    throws CacheException, InterruptedException
-            {
+                  throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords,
-                                       EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
+                      EnumSet.noneOf(OpenFlags.class), OptionalLong.empty());
             }
         };
     }
@@ -778,25 +735,22 @@ public class RepositorySubsystemTest
     /* Helper method for creating a fourth entry in the repository.
      */
     private void createEntry4(final boolean failSetAttributes,
-                              final boolean cancel,
-                              final ReplicaState transferState,
-                              final ReplicaState finalState)
-        throws Throwable
-    {
+          final boolean cancel,
+          final ReplicaState transferState,
+          final ReplicaState finalState)
+          throws Throwable {
         new CellStubHelper(cell) {
             boolean setAttr;
             boolean addCache;
 
-            @Message(required=false,step=1,cell="pnfs")
-            public Object whenFileIsGarbageCollected(PnfsClearCacheLocationMessage msg)
-            {
+            @Message(required = false, step = 1, cell = "pnfs")
+            public Object whenFileIsGarbageCollected(PnfsClearCacheLocationMessage msg) {
                 msg.setSucceeded();
                 return msg;
             }
 
-            @Message(required=false,step=3,cell="pnfs")
-            public Object whenDescriptorIsCommitted(PnfsSetFileAttributes msg)
-            {
+            @Message(required = false, step = 3, cell = "pnfs")
+            public Object whenDescriptorIsCommitted(PnfsSetFileAttributes msg) {
                 assertEquals(size4, msg.getFileAttributes().getSize());
                 if (failSetAttributes) {
                     msg.setFailed(1, null);
@@ -807,18 +761,16 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
-            @Message(required=false,step=5,cell="pnfs")
-            public Object whenDescriptorFails(PnfsAddCacheLocationMessage msg)
-            {
+            @Message(required = false, step = 5, cell = "pnfs")
+            public Object whenDescriptorFails(PnfsAddCacheLocationMessage msg) {
                 assertTrue(failSetAttributes || cancel);
                 msg.setSucceeded();
                 addCache = true;
                 return msg;
             }
 
-            @Message(required=false,step=5,cell="pnfs")
-            public Object whenDescriptorFails(PnfsSetFileAttributes msg)
-            {
+            @Message(required = false, step = 5, cell = "pnfs")
+            public Object whenDescriptorFails(PnfsSetFileAttributes msg) {
                 assertTrue(failSetAttributes || cancel);
                 msg.setSucceeded();
                 return msg;
@@ -826,16 +778,15 @@ public class RepositorySubsystemTest
 
             @Override
             protected void run()
-                throws FileInCacheException,
-                       CacheException,
-                       InterruptedException,
-                       IOException
-            {
+                  throws FileInCacheException,
+                  CacheException,
+                  InterruptedException,
+                  IOException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
                 ReplicaDescriptor handle =
-                    repository.createEntry(attributes4, transferState,
-                                           finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class),
-                                           OptionalLong.empty());
+                      repository.createEntry(attributes4, transferState,
+                            finalState, stickyRecords, EnumSet.noneOf(OpenFlags.class),
+                            OptionalLong.empty());
                 try {
                     assertStep("No clear after this point", 2);
                     createFile(handle, size4);
@@ -847,9 +798,9 @@ public class RepositorySubsystemTest
                     handle.close();
                 }
                 assertEquals("SetFileAttributes must be sent unless we don't try to commit",
-                             !cancel, setAttr);
+                      !cancel, setAttr);
                 assertEquals("AddCacheLocation must be sent if not committed",
-                             cancel || failSetAttributes, addCache);
+                      cancel || failSetAttributes, addCache);
             }
         };
     }
@@ -857,8 +808,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testCreateEntry()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -867,13 +817,13 @@ public class RepositorySubsystemTest
         createEntry4(false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
 
-        assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace() + size4, r.getRemovableSpace());
+        assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace() + size4,
+              r.getRemovableSpace());
     }
 
-    @Test(expected=CacheException.class)
+    @Test(expected = CacheException.class)
     public void testCreateEntrySetAttributesFailed()
-        throws Throwable
-    {
+          throws Throwable {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -882,7 +832,8 @@ public class RepositorySubsystemTest
             createEntry4(true, false, FROM_CLIENT, PRECIOUS);
         } finally {
             assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
-            assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace(), r.getRemovableSpace());
+            assertSpaceRecord(repoSize, r.getFreeSpace() - size4, r.getPreciousSpace(),
+                  r.getRemovableSpace());
         }
         // TODO: Check notification
     }
@@ -891,8 +842,7 @@ public class RepositorySubsystemTest
     @Ignore("Time-critical test; may fail under extreme load")
     @Test
     public void testStickyExpiration()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -907,8 +857,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testStickyClear()
-        throws IOException, CacheException, InterruptedException
-    {
+          throws IOException, CacheException, InterruptedException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -924,9 +873,8 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnCache()
-        throws IOException, CacheException,
-               InterruptedException, IllegalTransitionException
-    {
+          throws IOException, CacheException,
+          InterruptedException, IllegalTransitionException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -934,7 +882,8 @@ public class RepositorySubsystemTest
         SpaceRecord r = repository.getSpaceRecord();
 
         repository.setState(id1, CACHED, "test");
-        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() - size1, r.getRemovableSpace() + size1);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() - size1,
+              r.getRemovableSpace() + size1);
 
         r = repository.getSpaceRecord();
 
@@ -944,9 +893,8 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnPrecious()
-        throws IOException, CacheException,
-               InterruptedException, IllegalTransitionException
-    {
+          throws IOException, CacheException,
+          InterruptedException, IllegalTransitionException {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
@@ -954,7 +902,8 @@ public class RepositorySubsystemTest
         SpaceRecord r = repository.getSpaceRecord();
 
         repository.setState(id2, PRECIOUS, "test");
-        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() + size2, r.getRemovableSpace() - size2);
+        assertSpaceRecord(repoSize, r.getFreeSpace(), r.getPreciousSpace() + size2,
+              r.getRemovableSpace() - size2);
 
         r = repository.getSpaceRecord();
         repository.setState(id2, PRECIOUS, "test");
@@ -962,8 +911,7 @@ public class RepositorySubsystemTest
     }
 
     @Test
-    public void testWaitforLoad() throws CacheException, InterruptedException
-    {
+    public void testWaitforLoad() throws CacheException, InterruptedException {
 
         AtomicBoolean notifyed = new AtomicBoolean();
         repository.waitForLoad().thenRun(() -> notifyed.set(true));
@@ -974,7 +922,8 @@ public class RepositorySubsystemTest
     }
 
     @Test
-    public void testPropagateErrorOnLoad() throws CacheException, InterruptedException, IOException {
+    public void testPropagateErrorOnLoad()
+          throws CacheException, InterruptedException, IOException {
 
         AtomicReference<Throwable> throwableHolder = new AtomicReference<>();
         repository.waitForLoad().whenComplete((r, t) -> throwableHolder.set(t));

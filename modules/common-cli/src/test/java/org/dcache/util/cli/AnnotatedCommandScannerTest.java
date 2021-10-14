@@ -1,171 +1,166 @@
 package org.dcache.util.cli;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
+
+import dmg.util.CommandSyntaxException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.sql.Time;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-
-import dmg.util.CommandSyntaxException;
 import org.dcache.util.Args;
+import org.junit.Before;
+import org.junit.Test;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+public class AnnotatedCommandScannerTest {
 
-public class AnnotatedCommandScannerTest
-{
-    private enum AnEnum { FOO, BAR }
+    private enum AnEnum {FOO, BAR}
 
     private AnnotatedCommandScanner _scanner;
 
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         _scanner = new AnnotatedCommandScanner();
     }
 
     @Test
-    public void shouldUseCommandAnnotationToIdentifyCallableCommands() throws Exception
-    {
+    public void shouldUseCommandAnnotationToIdentifyCallableCommands() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertThat(commands, hasKey(asList("test")));
     }
 
     @Test
-    public void shouldIgnoreNonCallableCommands() throws Exception
-    {
+    public void shouldIgnoreNonCallableCommands() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand
-            {
+
+            @Command(name = "test")
+            class TestCommand {
+
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertTrue(commands.isEmpty());
     }
 
     @Test
-    public void shouldIgnoreUnannotatedCallables() throws Exception
-    {
+    public void shouldIgnoreUnannotatedCallables() throws Exception {
         class SUT {
-            class TestCommand implements Callable<String>
-            {
+
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertTrue(commands.isEmpty());
     }
 
     @Test
-    public void shouldUseAclAnnotationForSingleAcl() throws Exception
-    {
+    public void shouldUseAclAnnotationForSingleAcl() throws Exception {
         class SUT {
-            @Command(name="test", acl="acl")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test", acl = "acl")
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).hasACLs(), is(true));
         assertThat(commands.get(asList("test"))
-                .getACLs(), hasItemInArray("acl"));
+              .getACLs(), hasItemInArray("acl"));
     }
 
     @Test
-    public void shouldUseAclAnnotationForMultibleAcls() throws Exception
-    {
+    public void shouldUseAclAnnotationForMultibleAcls() throws Exception {
         class SUT {
-            @Command(name="test", acl={"acl1", "acl2"})
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test", acl = {"acl1", "acl2"})
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).hasACLs(), is(true));
         assertThat(commands.get(asList("test")).getACLs(), hasItemInArray("acl1"));
         assertThat(commands.get(asList("test"))
-                .getACLs(), hasItemInArray("acl2"));
+              .getACLs(), hasItemInArray("acl2"));
     }
 
     @Test
-    public void shouldUseHintAnnotationForHelpHint() throws Exception
-    {
+    public void shouldUseHintAnnotationForHelpHint() throws Exception {
         class SUT {
-            @Command(name="test", hint="hint")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test", hint = "hint")
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).getHelpHint(HelpFormat.PLAIN), is("# hint"));
     }
 
     @Test
-    public void shouldUseArgumentAnnotationForArguments() throws Exception
-    {
+    public void shouldUseArgumentAnnotationForArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Argument(index = 0)
                 int argument1;
 
@@ -173,8 +168,7 @@ public class AnnotatedCommandScannerTest
                 String argument2;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(argument1, is(1));
                     assertThat(argument2, is("2"));
                     return null;
@@ -182,123 +176,118 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"));
     }
 
     @Test
-    public void shouldUseNegativeArgumentArgumentIndexToCountFromTheEnd() throws Exception
-    {
+    public void shouldUseNegativeArgumentArgumentIndexToCountFromTheEnd() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Argument(index = -2)
                 int argument;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(argument, is(1));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"));
     }
 
     @Test
-    public void shouldReturnResultOfCallable() throws Exception
-    {
+    public void shouldReturnResultOfCallable() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return "result";
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         assertThat(commands.get(asList("test")).execute(new Args("")),
-                is((Object) "result"));
+              is((Object) "result"));
     }
 
-    @Test(expected=CommandSyntaxException.class)
-    public void shouldRejectTooFewArguments() throws Exception
-    {
+    @Test(expected = CommandSyntaxException.class)
+    public void shouldRejectTooFewArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Argument
                 int required;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""));
     }
 
-    @Test(expected=CommandSyntaxException.class)
-    public void shouldRejectTooManyArguments() throws Exception
-    {
+    @Test(expected = CommandSyntaxException.class)
+    public void shouldRejectTooManyArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
                 @Argument
                 int required;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"));
     }
 
     @Test
-    public void shouldAcceptOptionalArguments() throws Exception
-    {
+    public void shouldAcceptOptionalArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Argument(index=-2, required=false)
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Argument(index = -2, required = false)
                 Integer optional;
 
-                @Argument(index=-1)
+                @Argument(index = -1)
                 Integer required;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(optional, is(1));
                     assertThat(required, is(2));
                     return null;
@@ -306,28 +295,27 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("1 2"));
     }
 
     @Test
-    public void shouldNotRequireOptionalArguments() throws Exception
-    {
+    public void shouldNotRequireOptionalArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Argument(index=-2, required=false)
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Argument(index = -2, required = false)
                 Integer optional;
 
-                @Argument(index=-1)
+                @Argument(index = -1)
                 Integer required;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(optional, is((Integer) null));
                     assertThat(required, is(2));
                     return null;
@@ -335,104 +323,102 @@ public class AnnotatedCommandScannerTest
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("2"));
     }
 
     @Test
-    public void shouldRespectDefaultValues() throws Exception
-    {
+    public void shouldRespectDefaultValues() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Argument(index=1, required=false)
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Argument(index = 1, required = false)
                 int optional = 10;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(optional, is(10));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""));
     }
 
     @Test
-    public void shouldAcceptCommonTypes() throws Exception
-    {
+    public void shouldAcceptCommonTypes() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Argument(index=0)
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Argument(index = 0)
                 Integer arg0;
 
-                @Argument(index=1)
+                @Argument(index = 1)
                 int arg1;
 
-                @Argument(index=2)
+                @Argument(index = 2)
                 Short arg2;
 
-                @Argument(index=3)
+                @Argument(index = 3)
                 short arg3;
 
-                @Argument(index=4)
+                @Argument(index = 4)
                 Long arg4;
 
-                @Argument(index=5)
+                @Argument(index = 5)
                 long arg5;
 
-                @Argument(index=6)
+                @Argument(index = 6)
                 Byte arg6;
 
-                @Argument(index=7)
+                @Argument(index = 7)
                 byte arg7;
 
-                @Argument(index=8)
+                @Argument(index = 8)
                 Float arg8;
 
-                @Argument(index=9)
+                @Argument(index = 9)
                 float arg9;
 
-                @Argument(index=10)
+                @Argument(index = 10)
                 Double arg10;
 
-                @Argument(index=11)
+                @Argument(index = 11)
                 double arg11;
 
-                @Argument(index=12)
+                @Argument(index = 12)
                 String arg12;
 
-                @Argument(index=13)
+                @Argument(index = 13)
                 Character arg13;
 
-                @Argument(index=14)
+                @Argument(index = 14)
                 char arg14;
 
-                @Argument(index=15)
+                @Argument(index = 15)
                 AnEnum arg15;
 
-                @Argument(index=16)
+                @Argument(index = 16)
                 File arg16;
 
-                @Argument(index=17)
+                @Argument(index = 17)
                 Time arg17;
 
-                @Argument(index=18)
+                @Argument(index = 18)
                 long[] arg18;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(arg0, is(0));
                     assertThat(arg1, is(1));
                     assertThat(arg2, is((short) 2));
@@ -451,136 +437,131 @@ public class AnnotatedCommandScannerTest
                     assertThat(arg15, is(AnEnum.BAR));
                     assertThat(arg16, is(new File("/my/file")));
                     assertThat(arg17, is(Time.valueOf("12:34:56")));
-                    assertArrayEquals(arg18, new long[] { 100, 101 });
+                    assertArrayEquals(arg18, new long[]{100, 101});
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
-        commands.get(asList("test")).execute(new Args("0 1 2 3 4 5 6 7 8.0 9 10 11.00 12 a b BAR /my/file 12:34:56 100 101"));
+        commands.get(asList("test")).execute(
+              new Args("0 1 2 3 4 5 6 7 8.0 9 10 11.00 12 a b BAR /my/file 12:34:56 100 101"));
     }
 
     @Test
-    public void shouldOptionAnnotationForOptions() throws Exception
-    {
+    public void shouldOptionAnnotationForOptions() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Option(name="foo")
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Option(name = "foo")
                 boolean bar;
 
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(bar, is(true));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("-foo"));
     }
 
     @Test
-    public void shouldAllowOptionArguments() throws Exception
-    {
+    public void shouldAllowOptionArguments() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Option(name="foo")
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Option(name = "foo")
                 int bar;
 
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(bar, is(2));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args("-foo=2"));
     }
 
-    @Test(expected=CommandSyntaxException.class)
-    public void shouldEnforceRequiredOptions() throws Exception
-    {
+    @Test(expected = CommandSyntaxException.class)
+    public void shouldEnforceRequiredOptions() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Option(name="foo", required=true)
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Option(name = "foo", required = true)
                 int bar;
 
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(bar, is(2));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""));
     }
 
     @Test
-    public void shouldAllowOptionalOptions() throws Exception
-    {
+    public void shouldAllowOptionalOptions() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                @Option(name="foo")
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                @Option(name = "foo")
                 int bar;
 
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(bar, is(0));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
 
         commands.get(asList("test")).execute(new Args(""));
     }
 
     @Test(expected = RuntimeException.class)
-    public void shouldFailOnMissingConstructor() throws Exception
-    {
+    public void shouldFailOnMissingConstructor() throws Exception {
         class SUT {
-            @Command(name="test")
-            class TestCommand implements Callable<String>
-            {
-                public TestCommand(int invalid)
-                {
+
+            @Command(name = "test")
+            class TestCommand implements Callable<String> {
+
+                public TestCommand(int invalid) {
                 }
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
@@ -590,20 +571,18 @@ public class AnnotatedCommandScannerTest
     }
 
     @Test(expected = RuntimeException.class)
-    public void shouldFailOnNonSerializableReturnValue() throws Exception
-    {
-        class ReturnType
-        {
+    public void shouldFailOnNonSerializableReturnValue() throws Exception {
+        class ReturnType {
+
         }
 
-        class SUT
-        {
+        class SUT {
+
             @Command(name = "test")
-            class TestCommand implements Callable<ReturnType>
-            {
+            class TestCommand implements Callable<ReturnType> {
+
                 @Override
-                public ReturnType call()
-                {
+                public ReturnType call() {
                     return null;
                 }
             }
@@ -613,22 +592,20 @@ public class AnnotatedCommandScannerTest
     }
 
     @Test
-    public void shouldAcceptInheritedCommands() throws Exception
-    {
-        class SUT
-        {
-            class AbstractCommand implements Callable<String>
-            {
+    public void shouldAcceptInheritedCommands() throws Exception {
+        class SUT {
+
+            class AbstractCommand implements Callable<String> {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     return null;
                 }
             }
 
             @Command(name = "test")
-            class TestCommand extends AbstractCommand
-            {
+            class TestCommand extends AbstractCommand {
+
             }
         }
 
@@ -636,38 +613,35 @@ public class AnnotatedCommandScannerTest
     }
 
     @Test
-    public void shouldUseCommandOfSubClassWhenInjectingCommandLine() throws Exception
-    {
-        class SUT
-        {
+    public void shouldUseCommandOfSubClassWhenInjectingCommandLine() throws Exception {
+        class SUT {
+
             @Command(name = "base")
-            class BaseCommand implements Callable<String>
-            {
+            class BaseCommand implements Callable<String> {
+
                 @CommandLine
                 public String line;
 
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(line, is("base"));
                     return null;
                 }
             }
 
             @Command(name = "test")
-            class TestCommand extends BaseCommand
-            {
+            class TestCommand extends BaseCommand {
+
                 @Override
-                public String call()
-                {
+                public String call() {
                     assertThat(line, is("test"));
                     return null;
                 }
             }
         }
 
-        Map<List<String>,? extends CommandExecutor> commands =
-                _scanner.scan(new SUT());
+        Map<List<String>, ? extends CommandExecutor> commands =
+              _scanner.scan(new SUT());
         commands.get(asList("base")).execute(new Args(""));
         commands.get(asList("test")).execute(new Args(""));
     }

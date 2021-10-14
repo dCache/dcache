@@ -63,25 +63,26 @@ import java.io.Serializable;
 import org.dcache.qos.data.QoSMessageType;
 
 /**
- *  Simple struct to use during pool scan; shared between handlers, task and namespace access.
+ * Simple struct to use during pool scan; shared between handlers, task and namespace access.
  */
 public final class PoolScanSummary implements Serializable {
+
     private static final long serialVersionUID = 7907827079755395974L;
 
-    private final String          pool;
-    private final QoSMessageType  type;
-    private final String          group;
-    private final String          storageUnit;
-    private final boolean         forced;
+    private final String pool;
+    private final QoSMessageType type;
+    private final String group;
+    private final String storageUnit;
+    private final boolean forced;
 
-    private int                   files;
-    private boolean               cancelled;
+    private int files;
+    private boolean cancelled;
 
     public PoolScanSummary(String pool,
-                           QoSMessageType type,
-                           String group,
-                           String storageUnit,
-                           boolean forced) {
+          QoSMessageType type,
+          String group,
+          String storageUnit,
+          boolean forced) {
         this.pool = pool;
         this.type = type;
         this.group = group;
@@ -119,7 +120,9 @@ public final class PoolScanSummary implements Serializable {
         return cancelled;
     }
 
-    public boolean isForced() { return forced; }
+    public boolean isForced() {
+        return forced;
+    }
 
     public synchronized void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;

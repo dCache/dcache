@@ -61,14 +61,15 @@ package org.dcache.resilience.data;
 
 /**
  * <p>Filter used specifically with cancel operations.  The
- *    matching logic is slightly different.</p>
+ * matching logic is slightly different.</p>
  */
 public class FileCancelFilter extends FileFilter {
+
     protected boolean matchesPool(String toMatch,
-                                  Integer operationValue,
-                                  PoolInfoMap map) {
+          Integer operationValue,
+          PoolInfoMap map) {
         if (operationValue != null &&
-                        !map.isValidPoolIndex(operationValue)) {
+              !map.isValidPoolIndex(operationValue)) {
             /*
              *  since this is a cancel operation,
              *  if the pool does not exist, we should

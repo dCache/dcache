@@ -18,18 +18,17 @@
 
 package org.dcache.srm.taperecallscheduling.tapeinfoprovider;
 
-import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapefileInfo;
-import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.dcache.srm.taperecallscheduling.TapeInfo;
+import org.dcache.srm.taperecallscheduling.TapefileInfo;
+import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class FilebasedTapeInfoProvider implements TapeInfoProvider {
 
@@ -44,7 +43,7 @@ public abstract class FilebasedTapeInfoProvider implements TapeInfoProvider {
     private HashMap<String, TapefileInfo> tapeFileInfo = new HashMap<>();
 
     public void setTapeInfoDir(String tapeinfoDir) {
-        this.tapeinfoDir = tapeinfoDir.trim().endsWith("/") ? tapeinfoDir: tapeinfoDir + "/";
+        this.tapeinfoDir = tapeinfoDir.trim().endsWith("/") ? tapeinfoDir : tapeinfoDir + "/";
     }
 
     protected String getTapeinfoDir() {
@@ -61,23 +60,23 @@ public abstract class FilebasedTapeInfoProvider implements TapeInfoProvider {
 
     @Override
     public synchronized Map<String, TapeInfo> getTapeInfos(List<String> tapes) {
-        if(tapeInfo.isEmpty()) {
+        if (tapeInfo.isEmpty()) {
             initializeTapeInfo();
         }
         return tapeInfo.entrySet().stream()
-                .filter(e -> tapes.contains(e.getKey()))
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+              .filter(e -> tapes.contains(e.getKey()))
+              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     @Override
     public synchronized Map<String, TapefileInfo> getTapefileInfos(List<String> fileids) {
-        if(tapeFileInfo.isEmpty()) {
+        if (tapeFileInfo.isEmpty()) {
             initializeTapefileInfo();
         }
         return tapeFileInfo.entrySet()
-                .stream()
-                .filter(e -> fileids.contains(e.getKey()))
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+              .stream()
+              .filter(e -> fileids.contains(e.getKey()))
+              .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     protected abstract void initializeTapeInfo();
@@ -87,7 +86,7 @@ public abstract class FilebasedTapeInfoProvider implements TapeInfoProvider {
     protected static Optional<File> getFileIfExists(String dir, String name) {
         File file = new File(dir, name);
 
-        if(!file.isFile() || !file.canRead() ) {
+        if (!file.isFile() || !file.canRead()) {
             LOGGER.error("File is not accessible: {}", file.getPath());
             return Optional.empty();
         }

@@ -59,22 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector.pools;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.util.CacheException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.util.CacheException;
 import org.dcache.pool.json.PoolInfoWrapper;
 import org.dcache.services.history.pools.PoolListingService;
 
 /**
  * <p>Responsible for processing pool data into aggregated group data,
- *      included the 'all pools' group.</p>
+ * included the 'all pools' group.</p>
  */
 public abstract class PoolInfoAggregator {
 
@@ -87,27 +86,27 @@ public abstract class PoolInfoAggregator {
      * @throws CacheException
      */
     public void aggregateDataForPoolGroups(Map<String, PoolInfoWrapper> data,
-                                           PoolSelectionUnit psu)
-                    throws CacheException {
+          PoolSelectionUnit psu)
+          throws CacheException {
         psu.getPoolGroups()
-           .values().stream()
-           .map(SelectionPoolGroup::getName)
-           .forEach((group) -> {
-               PoolInfoWrapper groupInfo = getAggregateWrapper(group);
-               List<PoolInfoWrapper> poolInfo
-                               = getWrappers(psu.getPoolsByPoolGroup(group),
-                                             data);
-               update(groupInfo, poolInfo);
-               data.put(group, groupInfo);
-           });
+              .values().stream()
+              .map(SelectionPoolGroup::getName)
+              .forEach((group) -> {
+                  PoolInfoWrapper groupInfo = getAggregateWrapper(group);
+                  List<PoolInfoWrapper> poolInfo
+                        = getWrappers(psu.getPoolsByPoolGroup(group),
+                        data);
+                  update(groupInfo, poolInfo);
+                  data.put(group, groupInfo);
+              });
 
         /*
          *  Aggregate for all pools.
          */
         PoolInfoWrapper groupInfo = getAggregateWrapper(PoolListingService.ALL);
         List<PoolInfoWrapper> poolInfo
-                        = getWrappers(psu.getAllDefinedPools(false),
-                                      data);
+              = getWrappers(psu.getAllDefinedPools(false),
+              data);
         update(groupInfo, poolInfo);
         data.put(PoolListingService.ALL, groupInfo);
     }
@@ -121,24 +120,24 @@ public abstract class PoolInfoAggregator {
 
     /**
      * <p>Should do the actual aggregation and/or fetching of the appropriate
-     *    data and add it to the given wrapper.</p>
+     * data and add it to the given wrapper.</p>
      *
      * @param group to update
      * @param pools pool info for pools in the group
      */
     protected abstract void update(PoolInfoWrapper group,
-                                   List<PoolInfoWrapper> pools);
+          List<PoolInfoWrapper> pools);
 
     /**
      * @param pools of the group
      * @return list of current pool info objects
      */
     private static List<PoolInfoWrapper> getWrappers(Collection<SelectionPool> pools,
-                                                    Map<String, PoolInfoWrapper> data) {
+          Map<String, PoolInfoWrapper> data) {
         return pools.stream()
-                    .map(SelectionPool::getName)
-                    .map(data::get)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+              .map(SelectionPool::getName)
+              .map(data::get)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
     }
 }

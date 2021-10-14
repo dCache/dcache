@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,21 +15,16 @@
  */
 package org.dcache.ftp.client;
 
-import java.util.Vector;
-import java.util.StringTokenizer;
 import java.util.NoSuchElementException;
-
+import java.util.StringTokenizer;
+import java.util.Vector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents GridFTP restart marker, which contains unordered set
- * of byte ranges representing transferred data.
- * The ranges are preserved exactly as received
- * from the server, which may not be very useful.
- * For additional processing on byte ranges,
- * use ByteRangeList.
- * Typical usage:
+ * Represents GridFTP restart marker, which contains unordered set of byte ranges representing
+ * transferred data. The ranges are preserved exactly as received from the server, which may not be
+ * very useful. For additional processing on byte ranges, use ByteRangeList. Typical usage:
  * <pre>
  * list = new ByteRangeList();
  * marker = new GridFTPRestartMarker(reply.getMessage());
@@ -38,11 +33,10 @@ import org.slf4j.LoggerFactory;
  *
  * @see ByteRangeList
  **/
-public class GridFTPRestartMarker implements Marker
-{
+public class GridFTPRestartMarker implements Marker {
 
     private static Logger logger =
-            LoggerFactory.getLogger(GridFTPRestartMarker.class);
+          LoggerFactory.getLogger(GridFTPRestartMarker.class);
 
     final Vector vector;
 
@@ -50,13 +44,12 @@ public class GridFTPRestartMarker implements Marker
     /**
      * Constructs the restart marker by parsing the parameter string.
      *
-     * @param msg The string in the format of FTP reply 111 message,
-     *            for instance "Range Marker 0-29,30-89"
+     * @param msg The string in the format of FTP reply 111 message, for instance "Range Marker
+     *            0-29,30-89"
      * @throws IllegalArgumentException if the parameter is in bad format
      **/
     public GridFTPRestartMarker(String msg)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
 
         // expecting msg like "Range Marker 0-29,30-89"
 
@@ -110,25 +103,21 @@ public class GridFTPRestartMarker implements Marker
         }
     }
 
-    private void badMsg(String why, String msg)
-    {
+    private void badMsg(String why, String msg) {
         throw new IllegalArgumentException(
-                "argument is not FTP 111 reply message ("
-                + why + ": ->" + msg + "<-");
+              "argument is not FTP 111 reply message ("
+                    + why + ": ->" + msg + "<-");
     }
 
     /**
-     * Returns Vector representation of this object.  Its elements
-     * are be ByteRange objects. They are in the order exactly as received
-     * in the FTP reply; no additional processing has been done on them.
-     * To order and merge them, use ByteRangeList.
-     * Subsequent calls of this method will return
-     * the same Vector object.
+     * Returns Vector representation of this object.  Its elements are be ByteRange objects. They
+     * are in the order exactly as received in the FTP reply; no additional processing has been done
+     * on them. To order and merge them, use ByteRangeList. Subsequent calls of this method will
+     * return the same Vector object.
      *
      * @return Vector representation of this object.
      **/
-    public Vector toVector()
-    {
+    public Vector toVector() {
         return vector;
     }
 

@@ -1,10 +1,12 @@
 package org.dcache.ftp.data;
 
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.describe;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.Strings.toThreeSigFig;
+
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
@@ -23,95 +25,113 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Strings;
-
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.Strings.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base class for FTP transfer mode implementations.
- *
- * A mode may make use of several connections at the same time. The
- * transfer will be coordinated by the mode object. Therefore, the
- * mode object knows about the file to transfer and the direction of
+ * <p>
+ * A mode may make use of several connections at the same time. The transfer will be coordinated by
+ * the mode object. Therefore, the mode object knows about the file to transfer and the direction of
  * the transfer.
  */
-public abstract class Mode extends AbstractMultiplexerListener
-{
+public abstract class Mode extends AbstractMultiplexerListener {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Mode.class);
 
-    protected Role              _role;
-    protected Direction         _direction;
-    protected RepositoryChannel       _file;
+    protected Role _role;
+    protected Direction _direction;
+    protected RepositoryChannel _file;
     protected ConnectionMonitor _monitor;
 
-    private   long              _position;
+    private long _position;
 
-    private   long              _size;
+    private long _size;
 
-    protected   long              _fileSize;
+    protected long _fileSize;
 
-    /** Buffer for transferTo and transferFrom. */
-    private final ByteBuffer        _buffer = ByteBuffer.allocate(KiB.toBytes(8));
+    /**
+     * Buffer for transferTo and transferFrom.
+     */
+    private final ByteBuffer _buffer = ByteBuffer.allocate(KiB.toBytes(8));
 
-    /** The address to connect to for outgoing connections. */
-    private   InetSocketAddress     _address;
+    /**
+     * The address to connect to for outgoing connections.
+     */
+    private InetSocketAddress _address;
 
-    /** The channel used for incomming connections. */
-    private   ServerSocketChannel _channel;
+    /**
+     * The channel used for incomming connections.
+     */
+    private ServerSocketChannel _channel;
 
-    /** Local adress of _channel.  Cached to avoid ClosedChannelException. */
+    /**
+     * Local adress of _channel.  Cached to avoid ClosedChannelException.
+     */
     private SocketAddress _listeningOn;
 
-    /** Size of send and recv buffer when larger than 0. */
-    private   int               _bufferSize;
+    /**
+     * Size of send and recv buffer when larger than 0.
+     */
+    private int _bufferSize;
 
-    /** The largest number of concurrent connections to accept. */
-    protected int               _parallelism = 1;
+    /**
+     * The largest number of concurrent connections to accept.
+     */
+    protected int _parallelism = 1;
 
-    /** Disabled keys. The value is the interest set of the key. */
+    /**
+     * Disabled keys. The value is the interest set of the key.
+     */
     protected final Map<SelectionKey, Integer> disabled
-        = new HashMap<>();
+          = new HashMap<>();
 
-    /** Number of connections for which connect failed. */
-    protected int               _failed;
+    /**
+     * Number of connections for which connect failed.
+     */
+    protected int _failed;
 
-    /** Number of connections that have been opened. */
-    protected int               _opened;
+    /**
+     * Number of connections that have been opened.
+     */
+    protected int _opened;
 
-    /** Number of connections that have been closed. */
-    protected int               _closed;
+    /**
+     * Number of connections that have been closed.
+     */
+    protected int _closed;
 
-    /** Addresses of data channels.  For PASSIVE transfers (Direction.Incomming)
-     * this is a list of remote addresses; for ACTIVE transfers
-     * (Direction.Outgoing) this is a list of local transfes. */
+    /**
+     * Addresses of data channels.  For PASSIVE transfers (Direction.Incomming) this is a list of
+     * remote addresses; for ACTIVE transfers (Direction.Outgoing) this is a list of local
+     * transfes.
+     */
     private final List<InetSocketAddress> _addresses = new ArrayList<>();
 
     private String _lastFailure;
 
-    /** Constructs a new mode for outgoing connections. */
+    /**
+     * Constructs a new mode for outgoing connections.
+     */
     public Mode(Role role, RepositoryChannel file, ConnectionMonitor monitor)
-        throws IOException
-    {
-        _fileSize    = file.size();
-        _role        = role;
-        _file        = file;
-        _size        = _fileSize;
-        _monitor     = monitor;
+          throws IOException {
+        _fileSize = file.size();
+        _role = role;
+        _file = file;
+        _size = _fileSize;
+        _monitor = monitor;
     }
 
     /**
-     * Enable passive mode. Connections will be accepted on the given
-     * channel.
+     * Enable passive mode. Connections will be accepted on the given channel.
      */
-    public void setPassive(ServerSocketChannel channel)
-    {
+    public void setPassive(ServerSocketChannel channel) {
         assert _address == null && _channel == null && channel != null;
 
         _direction = Direction.Incomming;
-        _channel   = channel;
+        _channel = channel;
         try {
             _listeningOn = channel.getLocalAddress();
         } catch (IOException e) {
@@ -120,14 +140,12 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Enable active mode. Connections will be made to the given
-     * address.
+     * Enable active mode. Connections will be made to the given address.
      *
      * @throws UnresolvedAddressException if the address is unresolved
      */
     public void setActive(InetSocketAddress address)
-        throws UnresolvedAddressException
-    {
+          throws UnresolvedAddressException {
         assert _address == null && _channel == null && address != null;
 
         if (address.isUnresolved()) {
@@ -135,29 +153,25 @@ public abstract class Mode extends AbstractMultiplexerListener
         }
 
         _direction = Direction.Outgoing;
-        _address   = address;
+        _address = address;
     }
 
     /**
-     * Set parameters for partial retrive. This makes only sense when
-     * the role is Role.Sender.
+     * Set parameters for partial retrive. This makes only sense when the role is Role.Sender.
      */
-    public void setPartialRetrieveParameters(long position, long size)
-    {
+    public void setPartialRetrieveParameters(long position, long size) {
         if (_position < 0 || size < 0 || position + size > _fileSize) {
             throw new IllegalArgumentException();
         }
         _position = position;
-        _size     = size;
+        _size = size;
     }
 
     /**
-     * Set socket buffer size. The same value is used for send and
-     * receive buffers. A value of zero enables auto tuning. Auto
-     * tuning is enabled by default.
+     * Set socket buffer size. The same value is used for send and receive buffers. A value of zero
+     * enables auto tuning. Auto tuning is enabled by default.
      */
-    public void setBufferSize(int value)
-    {
+    public void setBufferSize(int value) {
         if (value < 0) {
             throw new IllegalArgumentException("Buffer size must be non-negative");
         }
@@ -165,53 +179,52 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Sets the number of concurrent connections to use. Only relevant
-     * for outgoing connections. Parallelism is not supported by all
-     * modes.
+     * Sets the number of concurrent connections to use. Only relevant for outgoing connections.
+     * Parallelism is not supported by all modes.
      */
-    public void setParallelism(int value)
-    {
+    public void setParallelism(int value) {
         if (value <= 0) {
             throw new IllegalArgumentException("Parallelism must be positive");
         }
         _parallelism = value;
     }
 
-    /** Returns the starting position of the transfer. */
-    public long getStartPosition()
-    {
+    /**
+     * Returns the starting position of the transfer.
+     */
+    public long getStartPosition() {
         return _position;
     }
 
-    /** Returns the number of bytes to transfer. */
-    public long getSize()
-    {
+    /**
+     * Returns the number of bytes to transfer.
+     */
+    public long getSize() {
         return _size;
     }
 
-    /** Returns the remote addresses the mode connected with. */
-    public Collection<InetSocketAddress> getRemoteAddresses()
-    {
+    /**
+     * Returns the remote addresses the mode connected with.
+     */
+    public Collection<InetSocketAddress> getRemoteAddresses() {
         return Collections.unmodifiableCollection(_addresses);
     }
 
     /**
      * Like calling _file.transferTo().
-     *
-     * This method behaves similarly to FileChannel.transferTo, except
-     * that it never uses zero-copy mode. FileChannel.transferTo has
-     * been subject to a large number of bugs throughout the history
-     * of Java.
+     * <p>
+     * This method behaves similarly to FileChannel.transferTo, except that it never uses zero-copy
+     * mode. FileChannel.transferTo has been subject to a large number of bugs throughout the
+     * history of Java.
      */
     protected long transferTo(long position, long count, SocketChannel socket)
-        throws IOException
-    {
+          throws IOException {
         long tr = 0;                        // Total bytes read
         long pos = position;
         _buffer.clear();
         while (tr < count) {
-            _buffer.limit((int)Math.min((count - tr),
-                                        (long)_buffer.capacity()));
+            _buffer.limit((int) Math.min((count - tr),
+                  (long) _buffer.capacity()));
             int nr = _file.read(_buffer, pos);
             if (nr < 0 && tr == 0) {
                 return -1;
@@ -232,36 +245,30 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Similar to _file.transferFrom(). In contrast to
-     * FileChannel.transferFrom(), this method does detect
-     * end-of-stream and returns -1 in that case.
-     *
-     * Originally, this method was based on
-     * FileChannel.transferFrom(), but spurious behaviour was observed
-     * in some cases (transferFrom returning 0, even though the
-     * selector claimed data was ready and a normal read returned
-     * data).
-     *
-     * The current implementation copies data into memory and writes
-     * it do disk. This should be no slower than using
-     * FileChannel.transferFrom() from JDK 6, since that does exactly
-     * the same when copying from a SocketChannel.
-     *
-     * An alternative would be to map the file into memory and read
-     * from the socket directly into the mapped file. That however
-     * would be better done at a higher level and it is currently
+     * Similar to _file.transferFrom(). In contrast to FileChannel.transferFrom(), this method does
+     * detect end-of-stream and returns -1 in that case.
+     * <p>
+     * Originally, this method was based on FileChannel.transferFrom(), but spurious behaviour was
+     * observed in some cases (transferFrom returning 0, even though the selector claimed data was
+     * ready and a normal read returned data).
+     * <p>
+     * The current implementation copies data into memory and writes it do disk. This should be no
+     * slower than using FileChannel.transferFrom() from JDK 6, since that does exactly the same
+     * when copying from a SocketChannel.
+     * <p>
+     * An alternative would be to map the file into memory and read from the socket directly into
+     * the mapped file. That however would be better done at a higher level and it is currently
      * unknown if the performance would improve.
      */
     protected long transferFrom(SocketChannel socket, long position, long count)
-        throws IOException
-    {
+          throws IOException {
         long tw = 0;                    // Total bytes written
         long pos = position;
         try {
             _buffer.clear();
             while (tw < count) {
-                _buffer.limit((int)Math.min((count - tw),
-                                            (long)_buffer.capacity()));
+                _buffer.limit((int) Math.min((count - tw),
+                      (long) _buffer.capacity()));
                 int nr = socket.read(_buffer);
                 if (nr < 0 && tw == 0) {
                     return -1;
@@ -288,19 +295,16 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Register the mode for outgoing connections. One or more
-     * connections will be established asynchronously. The number of
-     * connections to create is controlled by the parallelism.
-     *
-     * An IOException may be thrown if all connections attempts
-     * fail. Failures to create a SocketChannel are propagated to the
-     * caller.
+     * Register the mode for outgoing connections. One or more connections will be established
+     * asynchronously. The number of connections to create is controlled by the parallelism.
+     * <p>
+     * An IOException may be thrown if all connections attempts fail. Failures to create a
+     * SocketChannel are propagated to the caller.
      *
      * @see Mode#setParallelism, SocketChannel#open
      */
     protected void registerOutgoing(Multiplexer multiplexer)
-        throws IOException
-    {
+          throws IOException {
         IOException lastException = null;
 
         for (int i = 0; i < _parallelism; i++) {
@@ -319,7 +323,7 @@ public abstract class Mode extends AbstractMultiplexerListener
                 channel.socket().setKeepAlive(true);
 
                 SelectionKey key =
-                    multiplexer.register(this, SelectionKey.OP_CONNECT, channel);
+                      multiplexer.register(this, SelectionKey.OP_CONNECT, channel);
 
                 LOGGER.debug("Connecting to {}", _address);
                 if (channel.connect(_address)) {
@@ -336,7 +340,8 @@ public abstract class Mode extends AbstractMultiplexerListener
                 String displayAddress;
                 if (remoteAddress instanceof InetSocketAddress) {
                     InetSocketAddress ia = (InetSocketAddress) remoteAddress;
-                    displayAddress = InetAddresses.toUriString(ia.getAddress()) + ":" + ia.getPort();
+                    displayAddress =
+                          InetAddresses.toUriString(ia.getAddress()) + ":" + ia.getPort();
                 } else {
                     displayAddress = remoteAddress.toString();
                 }
@@ -355,21 +360,20 @@ public abstract class Mode extends AbstractMultiplexerListener
         }
     }
 
-    public String getRemoteAddressDescription()
-    {
+    public String getRemoteAddressDescription() {
         switch (_direction) {
-        case Outgoing:
-            if (_address == null) {
-                return null;
-            }
-            return InetAddresses.toUriString(_address.getAddress()) + ":" + _address.getPort();
+            case Outgoing:
+                if (_address == null) {
+                    return null;
+                }
+                return InetAddresses.toUriString(_address.getAddress()) + ":" + _address.getPort();
 
-        case Incomming:
-            Set<String> addresses = _addresses.stream().map(a ->
-                    InetAddresses.toUriString(a.getAddress()) + ":" + a.getPort()).
-                    collect(Collectors.toSet());
-            return addresses.size() == 1 ? Iterables.getOnlyElement(addresses) :
-                    addresses.toString();
+            case Incomming:
+                Set<String> addresses = _addresses.stream().map(a ->
+                            InetAddresses.toUriString(a.getAddress()) + ":" + a.getPort()).
+                      collect(Collectors.toSet());
+                return addresses.size() == 1 ? Iterables.getOnlyElement(addresses) :
+                      addresses.toString();
         }
 
         return null;
@@ -379,8 +383,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * Register the mode for incomming connections.
      */
     protected void registerIncomming(Multiplexer multiplexer)
-        throws IOException
-    {
+          throws IOException {
         _channel.configureBlocking(false);
         LOGGER.debug("Accepting connections on {}", _channel.socket().getLocalSocketAddress());
         multiplexer.register(this, SelectionKey.OP_ACCEPT, _channel);
@@ -391,36 +394,33 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     @Override
     public void register(Multiplexer multiplexer)
-            throws IOException
-    {
+          throws IOException {
         assert _address != null || _channel != null
-            : "Mode must be either set to passive or active.";
+              : "Mode must be either set to passive or active.";
 
         switch (_direction) {
-        case Incomming:
-            registerIncomming(multiplexer);
-            break;
-        case Outgoing:
-            registerOutgoing(multiplexer);
-            break;
-        default:
-            // Ignore
-            break;
+            case Incomming:
+                registerIncomming(multiplexer);
+                break;
+            case Outgoing:
+                registerOutgoing(multiplexer);
+                break;
+            default:
+                // Ignore
+                break;
         }
     }
 
     /**
-     * Called by the multiplexer when a new incomming connection can
-     * be accepted. A new socket is created and newConnection() is
-     * called.
-     *
+     * Called by the multiplexer when a new incomming connection can be accepted. A new socket is
+     * created and newConnection() is called.
+     * <p>
      * Failure to accept the connection is propagated to the caller.
      */
     @Override
     public void accept(Multiplexer multiplexer, SelectionKey key)
-        throws IOException
-    {
-        ServerSocketChannel server = (ServerSocketChannel)key.channel();
+          throws IOException {
+        ServerSocketChannel server = (ServerSocketChannel) key.channel();
         SocketChannel channel = server.accept();
         if (channel != null) {
             Socket socket = channel.socket();
@@ -437,20 +437,17 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Called by the multiplexer when a new outgoing connection has
-     * been established. If all outgoing connections have been
-     * established or failed, then all keys disabled by
+     * Called by the multiplexer when a new outgoing connection has been established. If all
+     * outgoing connections have been established or failed, then all keys disabled by
      * waitForConnectionCompletion() are enabled.
-     *
-     * Propagates failures to finish the connection establishment to
-     * the caller.
+     * <p>
+     * Propagates failures to finish the connection establishment to the caller.
      */
     @Override
     public void connect(Multiplexer multiplexer, SelectionKey key)
-        throws IOException
-    {
+          throws IOException {
         try {
-            SocketChannel channel = (SocketChannel)key.channel();
+            SocketChannel channel = (SocketChannel) key.channel();
             if (channel.finishConnect()) {
                 Socket socket = channel.socket();
                 _opened++;
@@ -473,15 +470,14 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /**
      * Close the socket channel associated with key.
-     *
-     * If mayShutdown is true and all connections have been closed,
-     * then the multiplexer is shut down.
+     * <p>
+     * If mayShutdown is true and all connections have been closed, then the multiplexer is shut
+     * down.
      */
     protected void close(Multiplexer multiplexer, SelectionKey key,
-                         boolean mayShutdown)
-        throws IOException
-    {
-        SocketChannel channel = (SocketChannel)key.channel();
+          boolean mayShutdown)
+          throws IOException {
+        SocketChannel channel = (SocketChannel) key.channel();
         LOGGER.debug("Closing {}", channel.socket());
 
         key.cancel();
@@ -498,9 +494,8 @@ public abstract class Mode extends AbstractMultiplexerListener
      *
      * @see Mode#disableKey
      */
-    private void enableDisabledKeys()
-    {
-        for (Map.Entry<SelectionKey,Integer> e : disabled.entrySet()) {
+    private void enableDisabledKeys() {
+        for (Map.Entry<SelectionKey, Integer> e : disabled.entrySet()) {
             e.getKey().interestOps(e.getValue());
         }
         disabled.clear();
@@ -511,8 +506,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      *
      * @see Mode#enableDisabledKeys
      */
-    private void disableKey(SelectionKey key)
-    {
+    private void disableKey(SelectionKey key) {
         if (!disabled.containsKey(key)) {
             disabled.put(key, key.interestOps());
             key.interestOps(0);
@@ -520,25 +514,20 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Returns true iff all connections have been either established
-     * or failed.
+     * Returns true iff all connections have been either established or failed.
      */
-    private boolean allConnectionsEstablished()
-    {
+    private boolean allConnectionsEstablished() {
         return (_opened + _failed >= _parallelism);
     }
 
     /**
-     * Returns true if all connections have been established or
-     * connection establishment has failed (wrt. the parallelism),
-     * false otherwise. When false, the key is deactivated until
+     * Returns true if all connections have been established or connection establishment has failed
+     * (wrt. the parallelism), false otherwise. When false, the key is deactivated until
      * waitForConnectionCompletion would return true.
-     *
-     * This call is only valid if the direction of the mode is set to
-     * Outgoing.
+     * <p>
+     * This call is only valid if the direction of the mode is set to Outgoing.
      */
-    protected boolean waitForConnectionCompletion(SelectionKey key)
-    {
+    protected boolean waitForConnectionCompletion(SelectionKey key) {
         if (_direction != Direction.Outgoing) {
             throw new IllegalArgumentException("Call is only valid for outgoing connections");
         }
@@ -550,53 +539,52 @@ public abstract class Mode extends AbstractMultiplexerListener
     }
 
     /**
-     * Called by a Connection object when a new connection has been
-     * established.
+     * Called by a Connection object when a new connection has been established.
      */
     protected abstract void newConnection(Multiplexer multiplexer,
-                                          SocketChannel channel)
-        throws IOException;
+          SocketChannel channel)
+          throws IOException;
 
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         switch (_direction) {
-        case Incomming:
-            pw.println("Connection role: PASSIVE");
-            pw.println("Listening on: " + describe(_listeningOn));
-            if (_lastFailure != null) {
-                pw.println("Last failure: " + _lastFailure);
-            }
-            if (_opened > 0) {
-                pw.println("Accepted connections: " + _opened);
-                pw.println("Connected remote addresses:");
-                _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
-            }
-            break;
+            case Incomming:
+                pw.println("Connection role: PASSIVE");
+                pw.println("Listening on: " + describe(_listeningOn));
+                if (_lastFailure != null) {
+                    pw.println("Last failure: " + _lastFailure);
+                }
+                if (_opened > 0) {
+                    pw.println("Accepted connections: " + _opened);
+                    pw.println("Connected remote addresses:");
+                    _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
+                }
+                break;
 
-        case Outgoing:
-            pw.println("Connection role: ACTIVE");
-            pw.println("Connecting to: " + describe(_address));
-            pw.println("Connections to establish: " + _parallelism);
-            if (_failed > 0) {
-                pw.println("Failures to establish connection: " + _failed);
-            }
-            if (_lastFailure != null) {
-                pw.println("Last failure: " + _lastFailure);
-            }
-            if (_opened > 0) {
-                pw.println("Established connections: " + _opened);
-                pw.println("Connected local addresses:");
-                _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
-            }
-            break;
+            case Outgoing:
+                pw.println("Connection role: ACTIVE");
+                pw.println("Connecting to: " + describe(_address));
+                pw.println("Connections to establish: " + _parallelism);
+                if (_failed > 0) {
+                    pw.println("Failures to establish connection: " + _failed);
+                }
+                if (_lastFailure != null) {
+                    pw.println("Last failure: " + _lastFailure);
+                }
+                if (_opened > 0) {
+                    pw.println("Established connections: " + _opened);
+                    pw.println("Connected local addresses:");
+                    _addresses.stream().map(Strings::describe).forEach(a -> pw.println("    " + a));
+                }
+                break;
         }
         pw.println("Closed connections: " + _closed);
 
         if (_size > 0) {
             if (_fileSize > 0) {
-                String percent = toThreeSigFig(100 * _size / (double)_fileSize, 1000);
-                pw.println("Desired transferred: " + describeSize(_size) + " (" + percent + "% of file)");
+                String percent = toThreeSigFig(100 * _size / (double) _fileSize, 1000);
+                pw.println("Desired transferred: " + describeSize(_size) + " (" + percent
+                      + "% of file)");
             } else {
                 pw.println("Desired transferred: " + describeSize(_size));
             }

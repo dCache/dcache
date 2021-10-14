@@ -66,83 +66,77 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import static diskCacheV111.util.CacheException.TIMEOUT;
+
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.util.concurrent.Executor;
-
 import diskCacheV111.util.PnfsId;
-
+import java.util.concurrent.Executor;
+import javax.security.auth.Subject;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.util.Exceptions;
-
-import static diskCacheV111.util.CacheException.TIMEOUT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UnpinCompanion
-    extends AbstractMessageCallback<PinManagerUnpinMessage>
-{
+      extends AbstractMessageCallback<PinManagerUnpinMessage> {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(UnpinCompanion.class);
+          LoggerFactory.getLogger(UnpinCompanion.class);
 
     private final PnfsId pnfsId;
     private final SettableFuture<String> future = SettableFuture.create();
 
-    /** Creates a new instance of StageAndPinCompanion */
-    private UnpinCompanion(PnfsId pnfsId)
-    {
+    /**
+     * Creates a new instance of StageAndPinCompanion
+     */
+    private UnpinCompanion(PnfsId pnfsId) {
         this.pnfsId = pnfsId;
     }
 
     @Override
-    public void success(PinManagerUnpinMessage message)
-    {
+    public void success(PinManagerUnpinMessage message) {
         future.set(String.valueOf(message.getPinId()));
     }
 
     @Override
-    public void failure(int rc, Object error)
-    {
+    public void failure(int rc, Object error) {
         switch (rc) {
-        case TIMEOUT:
-            _log.error(error.toString());
-            future.setException(new SRMInternalErrorException("Unpinning failed due to internal timeout."));
-            break;
+            case TIMEOUT:
+                _log.error(error.toString());
+                future.setException(
+                      new SRMInternalErrorException("Unpinning failed due to internal timeout."));
+                break;
 
-        default:
-            String message = error instanceof Exception
-                    ? Exceptions.messageOrClassName((Exception)error)
-                    : String.valueOf(error);
-            _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, message);
-            String reason =
-                String.format("Failed to unpin file [rc=%d,msg=%s]", rc, message);
-            future.setException(new SRMException(reason));
-            break;
+            default:
+                String message = error instanceof Exception
+                      ? Exceptions.messageOrClassName((Exception) error)
+                      : String.valueOf(error);
+                _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, message);
+                String reason =
+                      String.format("Failed to unpin file [rc=%d,msg=%s]", rc, message);
+                future.setException(new SRMException(reason));
+                break;
         }
     }
 
-    public String toString()
-    {
+    public String toString() {
         return getClass().getName() + " " + pnfsId;
     }
 
     public static ListenableFuture<String> unpinFile(Subject subject,
-                                                     PnfsId pnfsId,
-                                                     long pinId,
-                                                     CellStub pinManagerStub,
-                                                     Executor executor)
-    {
+          PnfsId pnfsId,
+          long pinId,
+          CellStub pinManagerStub,
+          Executor executor) {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(pnfsId);
+              new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
         CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
@@ -150,15 +144,14 @@ public class UnpinCompanion
     }
 
     public static ListenableFuture<String> unpinFileBySrmRequestId(Subject subject,
-                                                                   PnfsId pnfsId,
-                                                                   String requestToken,
-                                                                   CellStub pinManagerStub,
-                                                                   Executor executor)
-    {
+          PnfsId pnfsId,
+          String requestToken,
+          CellStub pinManagerStub,
+          Executor executor) {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(pnfsId);
+              new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
         CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
@@ -166,14 +159,13 @@ public class UnpinCompanion
     }
 
     public static ListenableFuture<String> unpinFile(Subject subject,
-                                                     PnfsId pnfsId,
-                                                     CellStub pinManagerStub,
-                                                     Executor executor)
-    {
+          PnfsId pnfsId,
+          CellStub pinManagerStub,
+          Executor executor) {
         _log.info("UnpinCompanion.unpinFile({}", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(pnfsId);
+              new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
         CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
         return companion.future;

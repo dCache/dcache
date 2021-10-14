@@ -62,12 +62,11 @@ package org.dcache.chimera.quota.spi;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
-
 import org.dcache.chimera.quota.QuotaSqlDriver;
 
 /**
- * SPI interface to Driver provider. Provider must create an instance of
- * {@link QuotaSqlDriver} for a supported DB type.
+ * SPI interface to Driver provider. Provider must create an instance of {@link QuotaSqlDriver} for
+ * a supported DB type.
  */
 public interface DbDriverProvider {
 

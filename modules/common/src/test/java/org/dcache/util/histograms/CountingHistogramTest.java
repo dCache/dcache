@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import org.apache.commons.math3.util.FastMath;
-import org.junit.Test;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -71,18 +71,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
+import org.apache.commons.math3.util.FastMath;
+import org.junit.Test;
 
 public final class CountingHistogramTest extends HistogramModelTest {
-    static final String     LAST_ACCESS = "org/dcache/util/histograms/last-access.txt";
+
+    static final String LAST_ACCESS = "org/dcache/util/histograms/last-access.txt";
     static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     @Test
     public void shouldProcessSweeperLsSuccessfully()
-                    throws Exception
-    {
+          throws Exception {
         givenCountingHistogram();
         givenBinCountOf(61);
         givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
@@ -96,7 +95,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void binUnitShouldBe1ForMaxValue50Days()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(50);
         givenBinCountOf(51);
@@ -111,7 +110,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void binUnitShouldBe2ForMaxValue100Days()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(100);
         givenBinCountOf(51);
@@ -126,7 +125,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void binUnitShouldBe3ForMaxValue101Days()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(101);
         givenBinCountOf(51);
@@ -141,7 +140,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void binUnitShouldBe3ForMaxValue100AndMinNeg14Days()
-                throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(100);
         givenAValueForNegativeDays(14);
@@ -157,7 +156,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoCountGivenToCounting()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(150);
         givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
@@ -170,7 +169,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoDataGivenToCountingHistogram()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         whenConfigureIsCalled();
         assertThatBuildFailed();
@@ -178,7 +177,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoUnitGivenToCountingHistogram()
-                    throws Exception {
+          throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(150);
         givenBinCountOf(51);
@@ -191,7 +190,7 @@ public final class CountingHistogramTest extends HistogramModelTest {
 
     private void assertThatBinWidthIs(int numUnits) {
         assertEquals("wrong binWidth",
-                     numUnits, (int) model.binWidth);
+              numUnits, (int) model.binWidth);
     }
 
     private void assertThatBuildFailed() {
@@ -234,8 +233,8 @@ public final class CountingHistogramTest extends HistogramModelTest {
     private void givenFilelifetimeValuesFromSweeperLs() throws Exception {
         List<Double> fileLifetime = new ArrayList<>();
         InputStream stream = this.getClass()
-                                 .getClassLoader()
-                                 .getResourceAsStream(LAST_ACCESS);
+              .getClassLoader()
+              .getResourceAsStream(LAST_ACCESS);
         BufferedReader r = new BufferedReader(new InputStreamReader(stream));
         Long now = System.currentTimeMillis();
         while (true) {

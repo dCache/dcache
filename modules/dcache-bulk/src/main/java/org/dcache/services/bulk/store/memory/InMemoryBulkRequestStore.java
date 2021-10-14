@@ -59,13 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.memory;
 
+import static org.dcache.services.bulk.BulkRequestStatus.Status.CANCELLED;
+import static org.dcache.services.bulk.BulkRequestStatus.Status.QUEUED;
+import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
-import javax.annotation.concurrent.GuardedBy;
-import javax.security.auth.Subject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -80,7 +80,8 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.annotation.concurrent.GuardedBy;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
@@ -92,25 +93,19 @@ import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
 
-import static org.dcache.services.bulk.BulkRequestStatus.Status.CANCELLED;
-import static org.dcache.services.bulk.BulkRequestStatus.Status.QUEUED;
-import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
-
 /**
- *  Simple set of maps and indices.
+ * Simple set of maps and indices.
  */
 public class InMemoryBulkRequestStore extends InMemoryStore
-                implements BulkRequestStore
-{
+      implements BulkRequestStore {
+
     /**
-     *  Maintains ordering where earlier timestamps
-     *  precede later ones.
+     * Maintains ordering where earlier timestamps precede later ones.
      */
-    public class StatusComparator implements Comparator<String>
-    {
+    public class StatusComparator implements Comparator<String> {
+
         @Override
-        public int compare(String left, String right)
-        {
+        public int compare(String left, String right) {
             if (left == null) {
                 return 1;
             }
@@ -131,20 +126,20 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             }
 
             return Long.compare(statusLeft.getFirstArrived(),
-                                statusRight.getFirstArrived());
+                  statusRight.getFirstArrived());
         }
     }
 
     /**
      * We treat synchronization on these maps en bloc.
      */
-    private final Map<String, BulkRequest>       requests;
+    private final Map<String, BulkRequest> requests;
     private final Map<String, BulkRequestStatus> status;
-    private final Map<String, Subject>           requestSubject;
-    private final Map<String, Restriction>       requestRestriction;
-    private final Multimap<String, String>       uidGidRequests;
-    private final StatusComparator               comparator;
-    private final Predicate<String>              notTerminated;
+    private final Map<String, Subject> requestSubject;
+    private final Map<String, Restriction> requestRestriction;
+    private final Multimap<String, String> uidGidRequests;
+    private final StatusComparator comparator;
+    private final Predicate<String> notTerminated;
 
     /**
      * Maintains order of arrival via comparator (above).
@@ -156,8 +151,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
      */
     private final Set<String> active;
 
-    public InMemoryBulkRequestStore()
-    {
+    public InMemoryBulkRequestStore() {
         requests = new HashMap<>();
         status = new HashMap<>();
         requestSubject = new HashMap<>();
@@ -167,23 +161,22 @@ public class InMemoryBulkRequestStore extends InMemoryStore
         queued = new TreeSet<>(comparator);
         active = new HashSet<>();
         notTerminated =
-                        id -> {
-                            BulkRequestStatus bstat = this.status.get(id);
-                            if (bstat == null) {
-                                return true;
-                            }
-                            Status status = bstat.getStatus();
-                            if (status == null) {
-                                return true;
-                            }
-                            return status != Status.CANCELLED
-                                            && status != Status.COMPLETED;
-                        };
+              id -> {
+                  BulkRequestStatus bstat = this.status.get(id);
+                  if (bstat == null) {
+                      return true;
+                  }
+                  Status status = bstat.getStatus();
+                  if (status == null) {
+                      return true;
+                  }
+                  return status != Status.CANCELLED
+                        && status != Status.COMPLETED;
+              };
     }
 
     @Override
-    public void abort(String requestId, Throwable exception)
-    {
+    public void abort(String requestId, Throwable exception) {
         write.lock();
         try {
             queued.remove(requestId);
@@ -198,8 +191,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public void addTarget(String requestId)
-    {
+    public void addTarget(String requestId) {
         write.lock();
         try {
             BulkRequestStatus bulkRequestStatus = status.get(requestId);
@@ -211,8 +203,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
         }
     }
 
-    public void clear(String requestId)
-    {
+    public void clear(String requestId) {
         write.lock();
         try {
             queued.remove(requestId);
@@ -229,8 +220,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public void clear(Subject subject, String requestId)
-                    throws BulkPermissionDeniedException
-    {
+          throws BulkPermissionDeniedException {
         if (!isRequestSubject(subject, requestId)) {
             throw new BulkPermissionDeniedException(requestId);
         }
@@ -239,13 +229,11 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     /**
-     *  Using the #find() method for this creates a bottleneck as the
-     *  store grows in size, since this method is called very frequently
-     *  and find is stream filtering, O(size of requests).
+     * Using the #find() method for this creates a bottleneck as the store grows in size, since this
+     * method is called very frequently and find is stream filtering, O(size of requests).
      */
     @Override
-    public int countActive()
-    {
+    public int countActive() {
         read.lock();
         try {
             return active.size();
@@ -255,14 +243,13 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public int countNonTerminated(String user)
-    {
+    public int countNonTerminated(String user) {
         read.lock();
         try {
-             return (int) uidGidRequests.get(user)
-                                        .stream()
-                                        .filter(notTerminated)
-                                        .count();
+            return (int) uidGidRequests.get(user)
+                  .stream()
+                  .filter(notTerminated)
+                  .count();
         } finally {
             read.unlock();
         }
@@ -270,9 +257,8 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public Collection<BulkRequest> find(Optional<Predicate<BulkRequest>> requestFilter,
-                                        Optional<Predicate<BulkRequestStatus>> statusFilter,
-                                        Long limit)
-    {
+          Optional<Predicate<BulkRequestStatus>> statusFilter,
+          Long limit) {
         read.lock();
         try {
             if (limit == null) {
@@ -284,7 +270,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             if (statusFilter.isPresent()) {
                 Predicate<BulkRequestStatus> sf = statusFilter.get();
                 keys = status.entrySet().stream().filter(e -> sf.test(e.getValue()))
-                             .map(Entry::getKey);
+                      .map(Entry::getKey);
             } else {
                 keys = requests.keySet().stream();
             }
@@ -292,13 +278,13 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             if (requestFilter.isPresent()) {
                 Predicate<BulkRequest> rf = requestFilter.get();
                 return keys.map(requests::get)
-                           .filter(rf::test)
-                           .limit(limit)
-                           .collect(Collectors.toList());
+                      .filter(rf::test)
+                      .limit(limit)
+                      .collect(Collectors.toList());
             } else {
                 return keys.map(requests::get)
-                           .limit(limit)
-                           .collect(Collectors.toList());
+                      .limit(limit)
+                      .collect(Collectors.toList());
             }
         } finally {
             read.unlock();
@@ -306,40 +292,37 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public Comparator<String> getStatusComparator()
-    {
+    public Comparator<String> getStatusComparator() {
         return comparator;
     }
 
     @Override
-    public Set<String> getRequestUrls(Subject subject, Set<Status> status)
-    {
+    public Set<String> getRequestUrls(Subject subject, Set<Status> status) {
         read.lock();
         try {
             /*
              *  do not allow non-root users to see other's requests
              */
             Predicate<Entry<String, BulkRequestStatus>> isUsersRequest
-                = e -> Subjects.isRoot(subject) || uidGidKey(subject).equals
-                                 (uidGidKey(requestSubject.get(e.getKey())));
+                  = e -> Subjects.isRoot(subject) || uidGidKey(subject).equals
+                  (uidGidKey(requestSubject.get(e.getKey())));
 
             return this.status.entrySet().stream()
-                                         .filter(isUsersRequest)
-                                         .filter(e -> status.isEmpty()
-                                                 ||   status.contains(e.getValue()
-                                                                       .getStatus()))
-                                         .map(e -> requests.get(e.getKey()))
-                                         .map(r -> r.getUrlPrefix()
-                                                         + "/" + r.getId())
-                                         .collect(Collectors.toSet());
+                  .filter(isUsersRequest)
+                  .filter(e -> status.isEmpty()
+                        || status.contains(e.getValue()
+                        .getStatus()))
+                  .map(e -> requests.get(e.getKey()))
+                  .map(r -> r.getUrlPrefix()
+                        + "/" + r.getId())
+                  .collect(Collectors.toSet());
         } finally {
             read.unlock();
         }
     }
 
     @Override
-    public Optional<BulkRequest> getRequest(String requestId)
-    {
+    public Optional<BulkRequest> getRequest(String requestId) {
         read.lock();
         try {
             return Optional.ofNullable(requests.get(requestId));
@@ -349,8 +332,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public Optional<Restriction> getRestriction(String requestId)
-    {
+    public Optional<Restriction> getRestriction(String requestId) {
         read.lock();
         try {
             return Optional.ofNullable(requestRestriction.get(requestId));
@@ -360,8 +342,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public Optional<BulkRequestStatus> getStatus(String requestId)
-    {
+    public Optional<BulkRequestStatus> getStatus(String requestId) {
         read.lock();
         try {
             return Optional.ofNullable(status.get(requestId));
@@ -372,10 +353,9 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public BulkRequestStatus getStatus(Subject subject,
-                                                 String requestId)
-                    throws BulkPermissionDeniedException,
-                    BulkRequestStorageException
-    {
+          String requestId)
+          throws BulkPermissionDeniedException,
+          BulkRequestStorageException {
         read.lock();
         try {
             if (!isRequestSubject(subject, requestId)) {
@@ -388,8 +368,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public Optional<Subject> getSubject(String requestId)
-    {
+    public Optional<Subject> getSubject(String requestId) {
         read.lock();
         try {
             return Optional.ofNullable(requestSubject.get(requestId));
@@ -399,14 +378,13 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public boolean isRequestSubject(Subject subject, String requestId)
-    {
+    public boolean isRequestSubject(Subject subject, String requestId) {
         read.lock();
         try {
             Subject requestSubject = this.requestSubject.get(requestId);
             return Subjects.isRoot(subject) ||
-                            uidGidKey(subject).equals(
-                                            uidGidKey(requestSubject));
+                  uidGidKey(subject).equals(
+                        uidGidKey(requestSubject));
         } finally {
             read.unlock();
         }
@@ -415,8 +393,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     /*
      *  Used by wrapper class
      */
-    public Set<String> ids()
-    {
+    public Set<String> ids() {
         read.lock();
         try {
             return requests.keySet().stream().collect(Collectors.toSet());
@@ -426,8 +403,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
     }
 
     @Override
-    public void load() throws BulkStorageException
-    {
+    public void load() throws BulkStorageException {
         throw new BulkStorageException("Not supported for in-memory storage.");
     }
 
@@ -436,25 +412,23 @@ public class InMemoryBulkRequestStore extends InMemoryStore
      * against the in-memory queue index, which is timestamp ordered.
      */
     @Override
-    public List<BulkRequest> next(long limit)
-    {
+    public List<BulkRequest> next(long limit) {
         read.lock();
         try {
             if (queued.isEmpty()) {
                 return Collections.EMPTY_LIST;
             }
             return queued.stream()
-                         .map(requests::get)
-                         .limit(limit)
-                         .collect(Collectors.toList());
+                  .map(requests::get)
+                  .limit(limit)
+                  .collect(Collectors.toList());
         } finally {
             read.unlock();
         }
     }
 
     @Override
-    public void reset(String requestId) throws BulkRequestStorageException
-    {
+    public void reset(String requestId) throws BulkRequestStorageException {
         write.lock();
         try {
             BulkRequestStatus stored = getNonNullStatus(requestId);
@@ -471,10 +445,9 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public void store(Subject subject,
-                      Restriction restriction,
-                      BulkRequest request,
-                      BulkRequestStatus status)
-    {
+          Restriction restriction,
+          BulkRequest request,
+          BulkRequestStatus status) {
         write.lock();
         try {
             String requestId = request.getId();
@@ -487,8 +460,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public void targetAborted(String requestId, String target, Throwable exception)
-                    throws BulkRequestStorageException
-    {
+          throws BulkRequestStorageException {
         write.lock();
         try {
             target = checkTarget(requestId, target);
@@ -500,8 +472,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public void targetCompleted(String requestId, String target, Throwable exception)
-        throws BulkRequestStorageException
-    {
+          throws BulkRequestStorageException {
         write.lock();
         try {
             target = checkTarget(requestId, target);
@@ -513,12 +484,10 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @Override
     public void update(String requestId, Status status)
-                    throws BulkRequestStorageException
-    {
+          throws BulkRequestStorageException {
         write.lock();
         try {
-            switch (status)
-            {
+            switch (status) {
                 case COMPLETED:
                 case CANCELLING:
                 case CANCELLED:
@@ -532,7 +501,7 @@ public class InMemoryBulkRequestStore extends InMemoryStore
             }
 
             LOGGER.trace("update {} to {}, queued {}, active {}.",
-                         requestId, status, queued.size(), active.size());
+                  requestId, status, queued.size(), active.size());
 
             BulkRequestStatus current = getNonNullStatus(requestId);
             Status storedStatus = current.getStatus();
@@ -570,12 +539,11 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @GuardedBy("write")
     private BulkRequestStatus getNonNullStatus(String requestId)
-                    throws BulkRequestNotFoundException
-    {
+          throws BulkRequestNotFoundException {
         BulkRequestStatus stored = this.status.get(requestId);
         if (stored == null) {
             String error = "request id " + requestId
-                            + " is no longer valid!";
+                  + " is no longer valid!";
             throw new BulkRequestNotFoundException(error);
         }
         return stored;
@@ -583,12 +551,11 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @GuardedBy("write")
     private String checkTarget(String requestId, String target)
-                    throws BulkRequestStorageException
-    {
+          throws BulkRequestStorageException {
         BulkRequest request = this.requests.get(requestId);
         if (request == null) {
             String error = "request id " + requestId
-                            + " is no longer valid!";
+                  + " is no longer valid!";
             throw new BulkRequestNotFoundException(error);
         }
 
@@ -602,9 +569,8 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @GuardedBy("write")
     private void storeRequest(String requestId,
-                              BulkRequest request,
-                              BulkRequestStatus status)
-    {
+          BulkRequest request,
+          BulkRequestStatus status) {
         requests.put(requestId, request);
 
         if (status == null) {
@@ -626,9 +592,8 @@ public class InMemoryBulkRequestStore extends InMemoryStore
 
     @GuardedBy("store,load")
     private void storePermissions(String requestId,
-                                  Subject subject,
-                                  Restriction restriction)
-    {
+          Subject subject,
+          Restriction restriction) {
         requestSubject.put(requestId, subject);
         uidGidRequests.put(uidGidKey(subject), requestId);
         requestRestriction.put(requestId, restriction);

@@ -92,16 +92,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Manages adjuster tasks that are submitted from the verification service.
+ * Manages adjuster tasks that are submitted from the verification service.
  */
 public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfoProvider {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjusterTaskMap.class);
     private static final String MISSING_ENTRY = "Entry for {} was removed from map before "
-        + "completion of outstanding task.";
+          + "completion of outstanding task.";
 
-    private final ReadWriteLock lock   = new ReentrantReadWriteLock(true);
-    private final Lock          write  = lock.writeLock();
-    private final Lock          read   = lock.readLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock(true);
+    private final Lock write = lock.writeLock();
+    private final Lock read = lock.readLock();
 
     private final Map<String, QoSAdjusterTask> index = new ConcurrentHashMap<>();
     private final Deque<QoSAdjusterTask> runningQueue = new LinkedBlockingDeque<>();
@@ -133,8 +134,8 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     private int maxRunning = 200;
 
     /**
-     *   Meaning for a given source-target pair (i.e., this task).  The verifier
-     *   will retry new pairings if possible and resubmit the task request.
+     * Meaning for a given source-target pair (i.e., this task).  The verifier will retry new
+     * pairings if possible and resubmit the task request.
      */
     private int maxRetries = 1;
 
@@ -154,7 +155,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Used by admin command.
+     * Used by admin command.
      */
     public void cancel(Predicate<QoSAdjusterTask> filter) {
         write.lock();
@@ -172,7 +173,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Used by admin command.
+     * Used by admin command.
      */
     public long count(Predicate<QoSAdjusterTask> filter) {
         read.lock();
@@ -191,7 +192,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Used by admin command.
+     * Used by admin command.
      */
     public void getInfo(StringBuilder builder) {
         counters.appendRunning(builder);
@@ -214,16 +215,16 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         read.lock();
         try {
             return index.values().stream()
-                                 .filter(filter)
-                                 .limit(limit)
-                                 .collect(Collectors.toList());
+                  .filter(filter)
+                  .limit(limit)
+                  .collect(Collectors.toList());
         } finally {
             read.unlock();
         }
     }
 
     /**
-     *  Used by admin command.
+     * Used by admin command.
      */
     public String list(Predicate<QoSAdjusterTask> filter, int limit) {
         StringBuilder builder = new StringBuilder();
@@ -232,12 +233,12 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         read.lock();
         try {
             index.values().stream()
-                .filter(filter)
-                .limit(limit)
-                .forEach(t -> {
-                    builder.append(t).append("\n");
-                    total.incrementAndGet();
-                });
+                  .filter(filter)
+                  .limit(limit)
+                  .forEach(t -> {
+                      builder.append(t).append("\n");
+                      total.incrementAndGet();
+                  });
         } finally {
             read.unlock();
         }
@@ -256,8 +257,9 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
         write.lock();
         try {
             if (!add(task.getPnfsId(), task)) {
-                LOGGER.error("received request for {} but a task for this file is already registered.",
-                                task.getPnfsId());
+                LOGGER.error(
+                      "received request for {} but a task for this file is already registered.",
+                      task.getPnfsId());
             }
         } finally {
             write.unlock();
@@ -267,14 +269,12 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  The consumer thread. When notified or times out, polls any waiting tasks and
-     *  then runs scan.
-     *  <p/>
-     *  Note that since the scan takes place outside of the monitor, the
-     *  signals sent by various update methods will not be caught before
-     *  the current thread is inside {@link #await}; for this reason, a
-     *  counter is used and reset to 0 before each scan. No wait occurs if
-     *  the counter is non-zero after the scan.
+     * The consumer thread. When notified or times out, polls any waiting tasks and then runs scan.
+     * <p/>
+     * Note that since the scan takes place outside of the monitor, the signals sent by various
+     * update methods will not be caught before the current thread is inside {@link #await}; for
+     * this reason, a counter is used and reset to 0 before each scan. No wait occurs if the counter
+     * is non-zero after the scan.
      */
     public void run() {
         try {
@@ -289,7 +289,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
                 scan();
 
                 long end = System.currentTimeMillis();
-                counters.recordSweep(end, end-start);
+                counters.recordSweep(end, end - start);
 
                 if (signalled.get() > 0) {
                     /*
@@ -297,8 +297,8 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
                      *  to free slots immediately, if possible, by rescanning now.
                      */
                     LOGGER.trace("Scan complete, received {} signals; "
-                                    + "rechecking for requeued operations ...",
-                                    signalled.get());
+                                + "rechecking for requeued operations ...",
+                          signalled.get());
                     continue;
                 }
 
@@ -316,8 +316,8 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Iterates over the queues to check the state of running tasks and to submit
-     *  waiting tasks if there are open slots.  Removes completed tasks.
+     * Iterates over the queues to check the state of running tasks and to submit waiting tasks if
+     * there are open slots.  Removes completed tasks.
      */
     public void scan() {
         write.lock();
@@ -342,19 +342,19 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
             toRemove.clear();
 
             waitingQueue.stream().filter(QoSAdjusterTask::isDone)
-                .forEach(t -> {
-                    toRemove.add(t);
-                    handleTerminatedTask(t);
-                });
+                  .forEach(t -> {
+                      toRemove.add(t);
+                      handleTerminatedTask(t);
+                  });
 
             toRemove.forEach(waitingQueue::remove);
             toRemove.clear();
 
             readyQueue.stream().filter(QoSAdjusterTask::isDone)
-                .forEach(t -> {
-                    toRemove.add(t);
-                    handleTerminatedTask(t);
-                });
+                  .forEach(t -> {
+                      toRemove.add(t);
+                      handleTerminatedTask(t);
+                  });
 
             toRemove.forEach(readyQueue::remove);
             toRemove.clear();
@@ -408,7 +408,7 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  <p>Also used by admin command.</p>
+     * <p>Also used by admin command.</p>
      */
     public synchronized void signalAll() {
         signalled.incrementAndGet();
@@ -425,11 +425,10 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Migration task termination.
-     *  <p/>
-     *  This call will bottom out in the completion handler finally calling
-     *  #updateTask(PnfsId, CacheException).  It is there that the callback
-     *  message is triggered.
+     * Migration task termination.
+     * <p/>
+     * This call will bottom out in the completion handler finally calling #updateTask(PnfsId,
+     * CacheException).  It is there that the callback message is triggered.
      */
     public void updateTask(PoolMigrationCopyFinishedMessage message) {
         PnfsId pnfsId = message.getPnfsId();
@@ -453,12 +452,12 @@ public final class QoSAdjusterTaskMap extends RunnableModule implements CellInfo
     }
 
     /**
-     *  Calls task terminated.
+     * Calls task terminated.
      *
-     *  @param pnfsId of the file undergoing adjustment.
-     *  @param target an optional target update (this is used only by staging, where the pool
-     *               manager selects the pool via the pin manager).
-     *  @param exception
+     * @param pnfsId    of the file undergoing adjustment.
+     * @param target    an optional target update (this is used only by staging, where the pool
+     *                  manager selects the pool via the pin manager).
+     * @param exception
      */
     public void updateTask(PnfsId pnfsId, Optional<String> target, CacheException exception) {
         QoSAdjusterTask task;

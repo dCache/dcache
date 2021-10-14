@@ -3,8 +3,8 @@ package org.dcache.pool.migration;
 /**
  * Callback interface for migration Task completion.
  */
-public interface TaskCompletionHandler
-{
+public interface TaskCompletionHandler {
+
     /**
      * The task was cancelled.
      *

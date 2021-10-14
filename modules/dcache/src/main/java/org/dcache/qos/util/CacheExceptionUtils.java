@@ -59,6 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import static org.dcache.qos.util.CacheExceptionUtils.FailureType.FATAL;
+import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWSOURCE;
+import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWTARGET;
+import static org.dcache.qos.util.CacheExceptionUtils.FailureType.RETRIABLE;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import java.io.Serializable;
@@ -66,17 +71,13 @@ import java.util.concurrent.ExecutionException;
 import org.dcache.qos.data.QoSAction;
 import org.dcache.util.CacheExceptionFactory;
 
-import static org.dcache.qos.util.CacheExceptionUtils.FailureType.FATAL;
-import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWSOURCE;
-import static org.dcache.qos.util.CacheExceptionUtils.FailureType.NEWTARGET;
-import static org.dcache.qos.util.CacheExceptionUtils.FailureType.RETRIABLE;
-
 /**
- *  Wrapper methods for processing and handling {@link CacheException}s.
+ * Wrapper methods for processing and handling {@link CacheException}s.
  */
 public final class CacheExceptionUtils {
+
     static final String WILL_RETRY_LATER
-        = " A best effort at retry will be made during the next periodic scan.";
+          = " A best effort at retry will be made during the next periodic scan.";
 
     public static boolean replicaNotFound(Serializable object) {
         if (object instanceof ExecutionException) {
@@ -89,9 +90,9 @@ public final class CacheExceptionUtils {
             switch (exception.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
                 case CacheException.FILE_NOT_IN_REPOSITORY:
-                /*
-                 * For the purposes of remove we can consider this equivalent.
-                 */
+                    /*
+                     * For the purposes of remove we can consider this equivalent.
+                     */
                 case CacheException.TIMEOUT:
                     return true;
             }
@@ -102,11 +103,11 @@ public final class CacheExceptionUtils {
 
     public static CacheException getCacheExceptionFrom(Serializable errorObject) {
         if (errorObject instanceof CacheException) {
-            return (CacheException)errorObject;
+            return (CacheException) errorObject;
         }
 
         if (errorObject instanceof Throwable) {
-            Throwable t = (Throwable)errorObject;
+            Throwable t = (Throwable) errorObject;
             return new CacheException(t.getMessage(), t.getCause());
         }
 
@@ -114,10 +115,10 @@ public final class CacheExceptionUtils {
     }
 
     public static String getCacheExceptionErrorMessage(String template,
-                                                       PnfsId pnfsid,
-                                                       QoSAction type,
-                                                       String info,
-                                                       Throwable e) {
+          PnfsId pnfsid,
+          QoSAction type,
+          String info,
+          Throwable e) {
         Object[] args = new Object[3];
         args[0] = pnfsid;
         args[1] = info == null ? "" : info;
@@ -127,20 +128,20 @@ public final class CacheExceptionUtils {
     }
 
     /**
-     *  @param rc error code for CacheException
-     *  @param template string formatting, must have three '%' markers.
-     *  @param pnfsid of the file operation
-     *  @param type of operation
-     *  @param info
-     *  @param e
-     *  @return appropriate CacheException to be propagated.
+     * @param rc       error code for CacheException
+     * @param template string formatting, must have three '%' markers.
+     * @param pnfsid   of the file operation
+     * @param type     of operation
+     * @param info
+     * @param e
+     * @return appropriate CacheException to be propagated.
      */
     public static CacheException getCacheException(int rc,
-                                                   String template,
-                                                   PnfsId pnfsid,
-                                                   QoSAction type,
-                                                   String info,
-                                                   Throwable e) {
+          String template,
+          PnfsId pnfsid,
+          QoSAction type,
+          String info,
+          Throwable e) {
         String message = getCacheExceptionErrorMessage(template, pnfsid, type, info, e);
 
         FailureType failureType = getFailureType(rc, type);
@@ -157,7 +158,7 @@ public final class CacheExceptionUtils {
     }
 
     public static FailureType getFailureType(CacheException exception,
-                                             QoSAction type) {
+          QoSAction type) {
         if (exception == null) {
             return RETRIABLE;
         }
@@ -189,10 +190,10 @@ public final class CacheExceptionUtils {
                         return FATAL;
                 }
 
-            /*
-             *
-             * The replica already exists on this target.
-             */
+                /*
+                 *
+                 * The replica already exists on this target.
+                 */
             case CacheException.FILE_IN_CACHE:
                 return NEWTARGET;
 
@@ -203,16 +204,16 @@ public final class CacheExceptionUtils {
             case CacheException.FILE_IS_NEW:
             case CacheException.HSM_DELAY_ERROR:
 
-            /*
-             *  There is not enough information to know whether
-             *  these involve the source or target.
-             *
-             *  The logic of the verification service, however, is
-             *  to retry these for the indicated number of times,
-             *  and if we continue to fail, the source and target are
-             *  both marked tried, and an attempt with a new source
-             *  and target is made, if possible.
-             */
+                /*
+                 *  There is not enough information to know whether
+                 *  these involve the source or target.
+                 *
+                 *  The logic of the verification service, however, is
+                 *  to retry these for the indicated number of times,
+                 *  and if we continue to fail, the source and target are
+                 *  both marked tried, and an attempt with a new source
+                 *  and target is made, if possible.
+                 */
             case CacheException.NO_POOL_CONFIGURED:
             case CacheException.NO_POOL_ONLINE:
             case CacheException.POOL_DISABLED:
@@ -222,9 +223,9 @@ public final class CacheExceptionUtils {
             case CacheException.TIMEOUT:
                 return RETRIABLE;
 
-           /*
-            *  Nothing further can be done.
-            */
+            /*
+             *  Nothing further can be done.
+             */
             case CacheException.FILE_CORRUPTED:
             case CacheException.BROKEN_ON_TAPE:
             case CacheException.FILE_NOT_FOUND:

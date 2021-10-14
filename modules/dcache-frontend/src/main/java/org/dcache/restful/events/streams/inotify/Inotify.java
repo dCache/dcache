@@ -18,6 +18,12 @@
  */
 package org.dcache.restful.events.streams.inotify;
 
+import static diskCacheV111.namespace.EventNotifier.INOTIFY_PATH;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.restful.util.transfers.Json.readFromJar;
+
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,18 +31,19 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.curator.utils.ZKPaths;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.concurrent.GuardedBy;
-import javax.inject.Inject;
-
+import diskCacheV111.namespace.EventNotifier;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,33 +59,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-
-import diskCacheV111.namespace.EventNotifier;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
-
+import javax.annotation.concurrent.GuardedBy;
+import javax.inject.Inject;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.events.Event;
-import org.dcache.namespace.FileAttribute;
-import org.dcache.namespace.FileType;
-import org.dcache.namespace.events.InotifyEvent;
-import org.dcache.namespace.events.EventType;
 import org.dcache.events.NotificationMessage;
 import org.dcache.events.SystemEvent;
 import org.dcache.http.PathMapper;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.events.EventType;
+import org.dcache.namespace.events.InotifyEvent;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectedEventStream;
 import org.dcache.restful.events.spi.SelectionContext;
@@ -86,55 +84,48 @@ import org.dcache.restful.events.spi.SelectionResult;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.util.RepeatableTaskRunner;
 import org.dcache.vehicles.FileAttributes;
-
-import static diskCacheV111.namespace.EventNotifier.INOTIFY_PATH;
-import static org.dcache.auth.attributes.Activity.READ_METADATA;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.TYPE;
-import static org.dcache.restful.util.transfers.Json.readFromJar;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * An EventStream that provides the client with events based on namespace
- * activity.  The dCache-internal events that this EventStream provides are
- * closely modelled on the inotify(7) API, from Linux.
+ * An EventStream that provides the client with events based on namespace activity.  The
+ * dCache-internal events that this EventStream provides are closely modelled on the inotify(7) API,
+ * from Linux.
  * <p>
- * Care must be taken when entering the two monitors: Inotify and
- * InotifySelection.  To avoid lock inversions (ABBA-type deadlocks), we must
- * guarantee that the Inotify monitor is <emph>NEVER</emph> entered after a
- * thread has entered the InotifySelection monitor.
+ * Care must be taken when entering the two monitors: Inotify and InotifySelection.  To avoid lock
+ * inversions (ABBA-type deadlocks), we must guarantee that the Inotify monitor is
+ * <emph>NEVER</emph> entered after a thread has entered the InotifySelection monitor.
  * <p>
- * One way to achieve this is to always enter the Inotify monitor before
- * entering the InotifySelection monitor.  This is sufficient to guarantee
- * the code is free of such ABBA deadlocks, but this isn't strictly necessary.
- * If the code can guarantee that the Inotify monitor is never entered then it
- * is safe to enter the InotifySelection monitor without first entering the
+ * One way to achieve this is to always enter the Inotify monitor before entering the
+ * InotifySelection monitor.  This is sufficient to guarantee the code is free of such ABBA
+ * deadlocks, but this isn't strictly necessary. If the code can guarantee that the Inotify monitor
+ * is never entered then it is safe to enter the InotifySelection monitor without first entering the
  * Inotify monitor.
  */
 public class Inotify implements EventStream, CellMessageReceiver,
-        CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
-{
+      CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware {
 
     /**
-     * Represents the kind of inotify events selected by a specific client from
-     * a specific PNFS-ID.  This is the client-supplied selector plus some
-     * operational field-members.
+     * Represents the kind of inotify events selected by a specific client from a specific PNFS-ID.
+     * This is the client-supplied selector plus some operational field-members.
      */
-    private class InotifySelection implements SelectedEventStream
-    {
-        private final BiConsumer<String,JsonNode> eventReceiver;
+    private class InotifySelection implements SelectedEventStream {
+
+        private final BiConsumer<String, JsonNode> eventReceiver;
         private final WatchIdentity identity;
         private final Restriction restriction;
         private final Queue<JsonNode> in = new ArrayBlockingQueue(1000);
-        private final RepeatableTaskRunner sender = new RepeatableTaskRunner(executor, this::sendQueuedEvents);
+        private final RepeatableTaskRunner sender = new RepeatableTaskRunner(executor,
+              this::sendQueuedEvents);
         private Set<EventType> selectedEvents;
         private InotifySelector selector;
         private boolean isClosed;
         private boolean isOverflow;
 
-        private InotifySelection(BiConsumer<String,JsonNode> receiver,
-                InotifySelector selector, WatchIdentity id) throws CacheException,
-                InterruptedException, NoRouteToCellException
-        {
+        private InotifySelection(BiConsumer<String, JsonNode> receiver,
+              InotifySelector selector, WatchIdentity id) throws CacheException,
+              InterruptedException, NoRouteToCellException {
             this.eventReceiver = receiver;
             this.selector = selector;
             identity = id;
@@ -143,8 +134,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
 
         public void accept(InotifySelector selector) throws CacheException,
-                InterruptedException, NoRouteToCellException
-        {
+              InterruptedException, NoRouteToCellException {
             if (selector.flags().contains(AddWatchFlag.IN_MASK_ADD)) {
                 InotifySelector combinedSelector = new InotifySelector();
                 combinedSelector.setPath(selector.getPath());
@@ -163,32 +153,27 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
 
         @Override
-        public String getId()
-        {
+        public String getId() {
             return identity.selectionId();
         }
 
-        private Set<EventType> selectedEvents()
-        {
+        private Set<EventType> selectedEvents() {
             return selectedEvents;
         }
 
         @Override
-        public JsonNode selector()
-        {
+        public JsonNode selector() {
             return mapper.convertValue(selector, JsonNode.class);
         }
 
-        public synchronized void requestClose()
-        {
+        public synchronized void requestClose() {
             if (!isClosed) {
                 queueEvent(EventStream.CLOSE_STREAM);
             }
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             boolean justClosed;
 
             synchronized (this) {
@@ -216,8 +201,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
 
         @GuardedBy("this")
-        private void queueEvent(JsonNode json)
-        {
+        private void queueEvent(JsonNode json) {
             if (in.offer(json)) {
                 sender.start();
             } else {
@@ -226,24 +210,21 @@ public class Inotify implements EventStream, CellMessageReceiver,
             }
         }
 
-        public synchronized boolean isSendableEvent(EventType type, String filename)
-        {
+        public synchronized boolean isSendableEvent(EventType type, String filename) {
             FsPath target = selector.getFsPath();
 
             boolean isRestricted = filename == null
-                    ? restriction.isRestricted(READ_METADATA, target.parent(), target.name())
-                    : restriction.isRestricted(READ_METADATA, target, filename);
+                  ? restriction.isRestricted(READ_METADATA, target.parent(), target.name())
+                  : restriction.isRestricted(READ_METADATA, target, filename);
 
             return !isClosed && selectedEvents.contains(type) && !isRestricted;
         }
 
-        public synchronized boolean isClosed()
-        {
+        public synchronized boolean isClosed() {
             return isClosed;
         }
 
-        private synchronized void acceptEvent(JsonNode json)
-        {
+        private synchronized void acceptEvent(JsonNode json) {
             queueEvent(json);
 
             if (selector.flags().contains(AddWatchFlag.IN_ONESHOT)) {
@@ -251,22 +232,20 @@ public class Inotify implements EventStream, CellMessageReceiver,
             }
         }
 
-        private synchronized void acceptEventIfNotClosed(JsonNode json)
-        {
+        private synchronized void acceptEventIfNotClosed(JsonNode json) {
             if (!isClosed) {
                 acceptEvent(json);
             }
         }
 
-        private synchronized void acceptEventIfSendable(EventType type, String filename, JsonNode json)
-        {
+        private synchronized void acceptEventIfSendable(EventType type, String filename,
+              JsonNode json) {
             if (isSendableEvent(type, filename)) {
                 acceptEvent(json);
             }
         }
 
-        public synchronized List<JsonNode> drainQueuedEvents()
-        {
+        public synchronized List<JsonNode> drainQueuedEvents() {
             int count = in.size();
             if (isOverflow) {
                 count++;
@@ -287,26 +266,31 @@ public class Inotify implements EventStream, CellMessageReceiver,
             return todo;
         }
 
-        private void sendQueuedEvents()
-        {
+        private void sendQueuedEvents() {
             LOGGER.debug("Starting send run");
             List<JsonNode> events = drainQueuedEvents();
-            events.forEach(json -> { eventReceiver.accept(identity.selectionId(), json); });
+            events.forEach(json -> {
+                eventReceiver.accept(identity.selectionId(), json);
+            });
         }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Inotify.class);
-    private static final ObjectNode SELECTOR_SCHEMA = readFromJar("/org/dcache/frontend/inotify/selector-schema.json");
-    private static final ObjectNode EVENT_SCHEMA = readFromJar("/org/dcache/frontend/inotify/event-schema.json");
+    private static final ObjectNode SELECTOR_SCHEMA = readFromJar(
+          "/org/dcache/frontend/inotify/selector-schema.json");
+    private static final ObjectNode EVENT_SCHEMA = readFromJar(
+          "/org/dcache/frontend/inotify/event-schema.json");
 
     public static final JsonNode IN_IGNORED_JSON =
-            new ObjectMapper().convertValue(new InotifyEventPayload(EventFlag.IN_IGNORED), JsonNode.class);
+          new ObjectMapper().convertValue(new InotifyEventPayload(EventFlag.IN_IGNORED),
+                JsonNode.class);
     public static final JsonNode IN_OVERFLOW_JSON =
-            new ObjectMapper().convertValue(new InotifyEventPayload(EventFlag.IN_Q_OVERFLOW), JsonNode.class);
+          new ObjectMapper().convertValue(new InotifyEventPayload(EventFlag.IN_Q_OVERFLOW),
+                JsonNode.class);
 
-    private final Map<WatchIdentity,InotifySelection> selectionByWatch = new ConcurrentHashMap<>();
-    private final SetMultimap<PnfsId,InotifySelection> selectionByPnfsId =
-            Multimaps.synchronizedSetMultimap(MultimapBuilder.hashKeys().hashSetValues().build());
+    private final Map<WatchIdentity, InotifySelection> selectionByWatch = new ConcurrentHashMap<>();
+    private final SetMultimap<PnfsId, InotifySelection> selectionByPnfsId =
+          Multimaps.synchronizedSetMultimap(MultimapBuilder.hashKeys().hashSetValues().build());
     private final ObjectMapper mapper = new ObjectMapper();
 
     private PnfsHandler pnfsHandler;
@@ -319,56 +303,47 @@ public class Inotify implements EventStream, CellMessageReceiver,
     private PathMapper pathMapper;
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         curator = client;
     }
 
     @Override
-    public String eventType()
-    {
+    public String eventType() {
         return "inotify";
     }
 
     @Override
-    public String description()
-    {
+    public String description() {
         return "notification of namespace activity, modelled after inotify(7)";
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler handler)
-    {
+    public void setPnfsHandler(PnfsHandler handler) {
         pnfsHandler = handler;
     }
 
     @Required
-    public void setExecutor(Executor executor)
-    {
+    public void setExecutor(Executor executor) {
         this.executor = executor;
     }
 
     @Override
-    public ObjectNode selectorSchema()
-    {
+    public ObjectNode selectorSchema() {
         return SELECTOR_SCHEMA;
     }
 
     @Override
-    public ObjectNode eventSchema()
-    {
+    public ObjectNode eventSchema() {
         return EVENT_SCHEMA;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         subscriptionPath = ZKPaths.makePath(INOTIFY_PATH, address.toString());
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         try {
             curator.create().withMode(CreateMode.PERSISTENT).forPath(INOTIFY_PATH);
         } catch (NodeExistsException e) {
@@ -381,8 +356,7 @@ public class Inotify implements EventStream, CellMessageReceiver,
     }
 
 
-    private void updateZK() throws CacheException
-    {
+    private void updateZK() throws CacheException {
         try {
             if (selectionByPnfsId.isEmpty()) {
                 if (subscriptions != null) {
@@ -394,14 +368,14 @@ public class Inotify implements EventStream, CellMessageReceiver,
                 byte[] data = encodeSubscriptions();
                 if (subscriptions == null) {
                     LOGGER.debug("Creating new ZK node with {} bytes.",
-                            data.length);
+                          data.length);
                     subscriptions = new PersistentNode(curator,
-                            CreateMode.EPHEMERAL, false, subscriptionPath, data);
+                          CreateMode.EPHEMERAL, false, subscriptionPath, data);
                     subscriptions.start();
                     subscriptions.waitForInitialCreate(10, TimeUnit.SECONDS);
                 } else {
                     LOGGER.debug("Updating data in ZK node to contain {} bytes.",
-                            data.length);
+                          data.length);
                     subscriptions.setData(data);
                 }
             }
@@ -414,66 +388,65 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
     }
 
-    private byte[] encodeSubscriptions()
-    {
-        Map<PnfsId,Collection<EventType>> selectedEvents = new HashMap<>();
+    private byte[] encodeSubscriptions() {
+        Map<PnfsId, Collection<EventType>> selectedEvents = new HashMap<>();
 
         synchronized (selectionByPnfsId) {
-            selectionByPnfsId.asMap().forEach((id,selections) -> {
-                        // Always subscribe to IN_DELETE_SELF to discover when to close subscription
-                        Collection<EventType> events = EnumSet.of(EventType.IN_DELETE_SELF);
-                        selections.forEach(s -> events.addAll(s.selectedEvents()));
-                        selectedEvents.put(id, events);
-                    });
+            selectionByPnfsId.asMap().forEach((id, selections) -> {
+                // Always subscribe to IN_DELETE_SELF to discover when to close subscription
+                Collection<EventType> events = EnumSet.of(EventType.IN_DELETE_SELF);
+                selections.forEach(s -> events.addAll(s.selectedEvents()));
+                selectedEvents.put(id, events);
+            });
         }
 
         return EventNotifier.toZkData(selectedEvents);
     }
 
-    public void messageArrived(NotificationMessage message)
-    {
+    public void messageArrived(NotificationMessage message) {
         message.forEachEvent(this::acceptEvent);
     }
 
-    private void acceptEvent(Event rawEvent)
-    {
+    private void acceptEvent(Event rawEvent) {
         LOGGER.debug("accepting event: {}", rawEvent);
 
         switch (rawEvent.getCategory()) {
 
-        case "inotify":
-            InotifyEvent inotifyEvent = (InotifyEvent) rawEvent;
+            case "inotify":
+                InotifyEvent inotifyEvent = (InotifyEvent) rawEvent;
 
-            Collection<InotifySelection> targetSelections;
-            if (inotifyEvent.getTarget() == null) {
-                /* The "self" inotify events. */
-                targetSelections = selectionByWatch.values();
-            } else {
-                /* The "child" inotify events. */
-                synchronized (selectionByPnfsId) {
-                    Set<InotifySelection> targetSelectionsView = selectionByPnfsId.get(inotifyEvent.getTarget());
-                    targetSelections = new ArrayList(targetSelectionsView);
+                Collection<InotifySelection> targetSelections;
+                if (inotifyEvent.getTarget() == null) {
+                    /* The "self" inotify events. */
+                    targetSelections = selectionByWatch.values();
+                } else {
+                    /* The "child" inotify events. */
+                    synchronized (selectionByPnfsId) {
+                        Set<InotifySelection> targetSelectionsView = selectionByPnfsId.get(
+                              inotifyEvent.getTarget());
+                        targetSelections = new ArrayList(targetSelectionsView);
+                    }
                 }
-            }
-            sendEventToSelections(inotifyEvent, targetSelections);
-            break;
+                sendEventToSelections(inotifyEvent, targetSelections);
+                break;
 
-        case "SYSTEM":
-            SystemEvent systemEvent = (SystemEvent) rawEvent;
-            JsonNode json = mapper.convertValue(new InotifyEventPayload(systemEvent), JsonNode.class);
-            selectionByWatch.values().forEach(s -> s.acceptEventIfNotClosed(json));
-            break;
+            case "SYSTEM":
+                SystemEvent systemEvent = (SystemEvent) rawEvent;
+                JsonNode json = mapper.convertValue(new InotifyEventPayload(systemEvent),
+                      JsonNode.class);
+                selectionByWatch.values().forEach(s -> s.acceptEventIfNotClosed(json));
+                break;
         }
     }
 
-    private void sendEventToSelections(InotifyEvent event, Collection<InotifySelection> selections)
-    {
+    private void sendEventToSelections(InotifyEvent event,
+          Collection<InotifySelection> selections) {
         EventType type = event.getEventType();
         String filename = event.getName();
 
         if (selections.stream().anyMatch(s -> s.isSendableEvent(type, filename))) {
             JsonNode json = mapper.convertValue(new InotifyEventPayload(event),
-                    JsonNode.class);
+                  JsonNode.class);
             selections.forEach(s -> s.acceptEventIfSendable(type, filename, json));
         }
 
@@ -483,18 +456,17 @@ public class Inotify implements EventStream, CellMessageReceiver,
     }
 
     @Override
-    public SelectionResult select(SelectionContext context, BiConsumer<String,JsonNode> receiver,
-            JsonNode serialisedSelector)
-    {
+    public SelectionResult select(SelectionContext context, BiConsumer<String, JsonNode> receiver,
+          JsonNode serialisedSelector) {
         try {
             InotifySelector selector = mapper.readerFor(InotifySelector.class)
-                    .readValue(serialisedSelector);
+                  .readValue(serialisedSelector);
             String clientPath = selector.getPath();
             FsPath dCachePath = pathMapper.asDcachePath(context.httpServletRequest(),
-                    clientPath, PermissionDeniedCacheException::new);
+                  clientPath, PermissionDeniedCacheException::new);
             selector.setFsPath(dCachePath);
             return selector.validationError().orElseGet(() ->
-                    select(context.channelId(), receiver, selector));
+                  select(context.channelId(), receiver, selector));
         } catch (PermissionDeniedCacheException e) {
             return SelectionResult.permissionDenied(e.getMessage());
         } catch (JsonMappingException e) {
@@ -506,9 +478,9 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
     }
 
-    private synchronized SelectionResult select(String channelId, BiConsumer<String,JsonNode> receiver,
-            InotifySelector selector)
-    {
+    private synchronized SelectionResult select(String channelId,
+          BiConsumer<String, JsonNode> receiver,
+          InotifySelector selector) {
         try {
             PnfsId pnfsid = lookup(selector);
             WatchIdentity watchId = new WatchIdentity(channelId, pnfsid);
@@ -537,11 +509,10 @@ public class Inotify implements EventStream, CellMessageReceiver,
         }
     }
 
-    private PnfsId lookup(InotifySelector selector) throws CacheException
-    {
+    private PnfsId lookup(InotifySelector selector) throws CacheException {
         FsPath path = selector.getFsPath();
         PnfsHandler handler = new PnfsHandler(pnfsHandler,
-                RequestUser.getSubject(), RequestUser.getRestriction());
+              RequestUser.getSubject(), RequestUser.getRestriction());
 
         FileAttributes attr = handler.getFileAttributes(path, EnumSet.of(PNFSID, TYPE));
 
@@ -551,19 +522,20 @@ public class Inotify implements EventStream, CellMessageReceiver,
         //     if FileType == DIR then LIST_DIRECTORY otherwise READ_DATA.
 
         if (attr.getFileType() == FileType.DIR) {
-            handler.getFileAttributes(path.toString(), // REVISIT update PnfsHandler to support FsPath here
-                    EnumSet.noneOf(FileAttribute.class),
-                    EnumSet.of(AccessMask.LIST_DIRECTORY),
-                    false);
+            handler.getFileAttributes(path.toString(),
+                  // REVISIT update PnfsHandler to support FsPath here
+                  EnumSet.noneOf(FileAttribute.class),
+                  EnumSet.of(AccessMask.LIST_DIRECTORY),
+                  false);
         } else {
             if (selector.flags().contains(AddWatchFlag.IN_ONLYDIR)) {
                 throw new NotDirCacheException("IN_ONLYDIR with " + attr.getFileType() + " target");
             }
 
             handler.getFileAttributes(path.toString(),
-                    EnumSet.noneOf(FileAttribute.class),
-                    EnumSet.of(AccessMask.READ_DATA),
-                    false);
+                  EnumSet.noneOf(FileAttribute.class),
+                  EnumSet.of(AccessMask.READ_DATA),
+                  false);
         }
 
         return attr.getPnfsId();

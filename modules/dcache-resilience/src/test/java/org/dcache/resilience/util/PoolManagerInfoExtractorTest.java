@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import diskCacheV111.poolManager.StorageUnitInfoExtractor;
-import diskCacheV111.util.CacheException;
-
-import org.dcache.resilience.TestBase;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import diskCacheV111.poolManager.StorageUnitInfoExtractor;
+import diskCacheV111.util.CacheException;
+import org.dcache.resilience.TestBase;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class PoolManagerInfoExtractorTest extends TestBase {
 
@@ -81,38 +79,38 @@ public final class PoolManagerInfoExtractorTest extends TestBase {
     @Test
     public void shouldAssertThatPoolGroupHasResilientStorageUnit() {
         assertTrue(StorageUnitInfoExtractor.hasResilientStorageUnit(
-                        "resilient-group", testSelectionUnit));
+              "resilient-group", testSelectionUnit));
     }
 
     @Test
     public void shouldNotAssertThatPoolGroupHasResilientStorageUnit() {
         assertFalse(StorageUnitInfoExtractor.hasResilientStorageUnit(
-                        "standard-group", testSelectionUnit));
+              "standard-group", testSelectionUnit));
     }
 
     @Test
     public void shouldReturnResilientPoolGroupForStorageUnit() {
         assertEquals("resilient-group",
-                        StorageUnitInfoExtractor.getResilientGroupsFor(
-                                        "resilient-1.dcache-devel-test@enstore",
-                                        testSelectionUnit).iterator().next());
+              StorageUnitInfoExtractor.getResilientGroupsFor(
+                    "resilient-1.dcache-devel-test@enstore",
+                    testSelectionUnit).iterator().next());
     }
 
     @Test
     public void shouldReturnNoResilientPoolGroupForStorageUnit() {
         assertEquals(0, StorageUnitInfoExtractor.getResilientGroupsFor(
-                        "standard.dcache-devel-test@enstore", testSelectionUnit).size());
+              "standard.dcache-devel-test@enstore", testSelectionUnit).size());
     }
 
     @Test
     public void shouldReturnSixStorageUnitsForResilientPoolGroup() {
         assertEquals(6, StorageUnitInfoExtractor.getStorageUnitsInGroup(
-                        "resilient-group", testSelectionUnit).size());
+              "resilient-group", testSelectionUnit).size());
     }
 
     @Test
     public void shouldReturnOneStorageUnitForNonResilientPoolGroup() {
         assertEquals(1, StorageUnitInfoExtractor.getStorageUnitsInGroup(
-                        "standard-group", testSelectionUnit).size());
+              "standard-group", testSelectionUnit).size());
     }
 }

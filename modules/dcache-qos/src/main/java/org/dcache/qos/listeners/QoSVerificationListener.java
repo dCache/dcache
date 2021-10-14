@@ -66,56 +66,59 @@ import org.dcache.qos.vehicles.QoSScannerVerificationRequest;
 import org.dcache.qos.vehicles.QoSVerificationRequest;
 
 public interface QoSVerificationListener {
-  /**
-   *  Request to check the file's status on disk and tape against its requirements.
-   *
-   *  @param verificationRequest composing file update and requirements data.
-   */
-  void fileQoSVerificationRequested(QoSVerificationRequest verificationRequest) throws QoSException;
 
-  /**
-   *  Request to check a collection of files residing at a given (pool) location.
-   *
-   *  @param verificationRequest includes the location name, originating message type, and list of
-   *                             pnfsIds.
-   */
-  void fileQoSVerificationRequested(QoSScannerVerificationRequest verificationRequest) throws QoSException;
+    /**
+     * Request to check the file's status on disk and tape against its requirements.
+     *
+     * @param verificationRequest composing file update and requirements data.
+     */
+    void fileQoSVerificationRequested(QoSVerificationRequest verificationRequest)
+          throws QoSException;
 
-  /**
-   *  A single adjustment request has completed.
-   *
-   *  @param adjustmentResponse encapsulates the file id, action, and status of the adjustment.
-   */
-  void fileQoSAdjustmentCompleted(QoSAdjustmentResponse adjustmentResponse) throws QoSException;
+    /**
+     * Request to check a collection of files residing at a given (pool) location.
+     *
+     * @param verificationRequest includes the location name, originating message type, and list of
+     *                            pnfsIds.
+     */
+    void fileQoSVerificationRequested(QoSScannerVerificationRequest verificationRequest)
+          throws QoSException;
 
-  /**
-   *  This is a notification to cancel and remove the verification operation for a file.
-   *
-   *  @param pnfsId the file for which to cancel verification operation.
-   */
-  void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException;
+    /**
+     * A single adjustment request has completed.
+     *
+     * @param adjustmentResponse encapsulates the file id, action, and status of the adjustment.
+     */
+    void fileQoSAdjustmentCompleted(QoSAdjustmentResponse adjustmentResponse) throws QoSException;
 
-  /**
-   *  Scanning activity has been cancelled; this is a notification to cancel all outstanding
-   *  verification operations having this pool as 'parent'.
-   *
-   *  @param pool the parent pool to search for in order to cancel verification operations.
-   */
-  void fileQoSBatchedVerificationCancelled(String pool) throws QoSException;
+    /**
+     * This is a notification to cancel and remove the verification operation for a file.
+     *
+     * @param pnfsId the file for which to cancel verification operation.
+     */
+    void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException;
 
-  /**
-   *  The verifier will usually need to know if a location has been manually excluded.
-   *  This information is conveyed by the scanner.
-   *
-   *  @param location whose exclusion status is being reported.
-   */
-  void notifyLocationExclusion(String location) throws QoSException;
+    /**
+     * Scanning activity has been cancelled; this is a notification to cancel all outstanding
+     * verification operations having this pool as 'parent'.
+     *
+     * @param pool the parent pool to search for in order to cancel verification operations.
+     */
+    void fileQoSBatchedVerificationCancelled(String pool) throws QoSException;
 
-  /**
-   *  The verifier will usually need to know if a location has been manually (re)included.
-   *  This information is conveyed by the scanner.
-   *
-   *  @param location whose exclusion status is being reported.
-   */
-  void notifyLocationInclusion(String location) throws QoSException;
+    /**
+     * The verifier will usually need to know if a location has been manually excluded. This
+     * information is conveyed by the scanner.
+     *
+     * @param location whose exclusion status is being reported.
+     */
+    void notifyLocationExclusion(String location) throws QoSException;
+
+    /**
+     * The verifier will usually need to know if a location has been manually (re)included. This
+     * information is conveyed by the scanner.
+     *
+     * @param location whose exclusion status is being reported.
+     */
+    void notifyLocationInclusion(String location) throws QoSException;
 }

@@ -2,24 +2,22 @@ package org.dcache.restful.providers.doors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.net.InetAddresses;
+import dmg.cells.services.login.LoginBrokerInfo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dmg.cells.services.login.LoginBrokerInfo;
-
 @ApiModel(description = "Description about a specific dCache door.")
-public final class Door
-{
+public final class Door {
+
     @ApiModelProperty("The door cell name. Requires admin role assertion.")
     private String cellName;
 
     @ApiModelProperty("The domain name in which the door reside. Requires admin " +
-            "role assertion.")
+          "role assertion.")
     private String domainName;
 
     @ApiModelProperty("The abbreviation of the protocol name.")
@@ -35,7 +33,7 @@ public final class Door
     private String identifier;
 
     @ApiModelProperty("List of addresses on which the door is listening for " +
-            "incoming client connections.")
+          "incoming client connections.")
     private List<InetAddress> addresses;
 
     @ApiModelProperty("The port number of the door.")
@@ -46,7 +44,7 @@ public final class Door
     private double load;
 
     @ApiModelProperty("Elapsed time (in milliseconds) since the door was started. " +
-            "Requires admin role assertion.")
+          "Requires admin role assertion.")
     private long updateTime;
 
     @ApiModelProperty("List of tags associated with the door.")
@@ -58,8 +56,7 @@ public final class Door
     @ApiModelProperty("List of write paths.")
     private Collection<String> writePaths;
 
-    public Door(Boolean isAdmin, LoginBrokerInfo info)
-    {
+    public Door(Boolean isAdmin, LoginBrokerInfo info) {
         cellName = isAdmin ? info.getCellName() : null;
         domainName = isAdmin ? info.getDomainName() : null;
         identifier = isAdmin ? info.getIdentifier() : null;
@@ -69,8 +66,8 @@ public final class Door
         version = info.getProtocolVersion();
         root = info.getRoot();
         addresses = info.getAddresses().stream()
-                .filter(a -> !InetAddresses.isInetAddress(a.getHostName()))
-                .collect(Collectors.toList());
+              .filter(a -> !InetAddresses.isInetAddress(a.getHostName()))
+              .collect(Collectors.toList());
         port = info.getPort();
         load = info.getLoad();
         tags = info.getTags();
@@ -78,68 +75,55 @@ public final class Door
         writePaths = info.getWritePaths();
     }
 
-    public String getCellName()
-    {
+    public String getCellName() {
         return cellName;
     }
 
-    public String getDomainName()
-    {
+    public String getDomainName() {
         return domainName;
     }
 
-    public String getProtocol()
-    {
+    public String getProtocol() {
         return protocol;
     }
 
-    public String getVersion()
-    {
+    public String getVersion() {
         return version;
     }
 
-    public String getRoot()
-    {
+    public String getRoot() {
         return root;
     }
 
-    public String getIdentifier()
-    {
+    public String getIdentifier() {
         return identifier;
     }
 
-    public List<InetAddress> getAddresses()
-    {
+    public List<InetAddress> getAddresses() {
         return addresses;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return port;
     }
 
-    public double getLoad()
-    {
+    public double getLoad() {
         return load;
     }
 
-    public long getUpdateTime()
-    {
+    public long getUpdateTime() {
         return updateTime;
     }
 
-    public Collection<String> getTags()
-    {
+    public Collection<String> getTags() {
         return tags;
     }
 
-    public Collection<String> getReadPaths()
-    {
+    public Collection<String> getReadPaths() {
         return readPaths;
     }
 
-    public Collection<String> getWritePaths()
-    {
+    public Collection<String> getWritePaths() {
         return writePaths;
     }
 }

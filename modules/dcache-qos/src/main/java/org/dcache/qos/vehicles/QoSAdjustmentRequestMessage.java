@@ -62,13 +62,14 @@ package org.dcache.qos.vehicles;
 import diskCacheV111.vehicles.Message;
 
 public class QoSAdjustmentRequestMessage extends Message {
-  private final QoSAdjustmentRequest request;
 
-  public QoSAdjustmentRequestMessage(QoSAdjustmentRequest request) {
-    this.request = request;
-  }
+    private final QoSAdjustmentRequest request;
 
-  public QoSAdjustmentRequest getRequest() {
-    return request;
-  }
+    public QoSAdjustmentRequestMessage(QoSAdjustmentRequest request) {
+        this.request = request;
+    }
+
+    public QoSAdjustmentRequest getRequest() {
+        return request;
+    }
 }

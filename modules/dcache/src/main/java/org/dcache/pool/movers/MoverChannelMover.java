@@ -17,72 +17,65 @@
  */
 package org.dcache.pool.movers;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
+import static com.google.common.base.Preconditions.checkState;
 
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.nio.file.StandardOpenOption;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
-
-import static com.google.common.base.Preconditions.checkState;
-
-import java.nio.file.StandardOpenOption;
 
 /**
  * A Mover implementation based on the MoverChannel class.
  */
-public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverChannelMover<P, M>> extends AbstractMover<P, M>
-{
+public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverChannelMover<P, M>> extends
+      AbstractMover<P, M> {
+
     private volatile MoverChannel<P> _wrappedChannel;
 
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
-                             CellPath pathToDoor,
-                             TransferService<M> transferService)
-    {
+          CellPath pathToDoor,
+          TransferService<M> transferService) {
         super(handle, message, pathToDoor, transferService);
     }
 
     @Override
-    public long getTransferTime()
-    {
+    public long getTransferTime() {
         MoverChannel<P> channel = _wrappedChannel;
         return (channel == null) ? 0 : channel.getTransferTime();
     }
 
     @Override
-    public long getBytesTransferred()
-    {
+    public long getBytesTransferred() {
         MoverChannel<P> channel = _wrappedChannel;
         return (channel == null) ? 0 : channel.getBytesTransferred();
     }
 
     @Override
-    public long getLastTransferred()
-    {
+    public long getLastTransferred() {
         MoverChannel<P> channel = _wrappedChannel;
         return (channel == null) ? 0 : channel.getLastTransferred();
     }
 
     /**
      * Opens a MoverChannel for the replica of this mover.
-     *
+     * <p>
      * The caller is responsible for closing the channel.
-     *
-     * The channel will be registered with the mover and will provide information
-     * about the progress of the transfer.
+     * <p>
+     * The channel will be registered with the mover and will provide information about the progress
+     * of the transfer.
      *
      * @return an open MoverChannel
-     * @throws InterruptedIOException if the mover was cancelled
+     * @throws InterruptedIOException  if the mover was cancelled
      * @throws DiskErrorCacheException if the file could not be opened
-     * @throws IllegalStateException if called more than once
+     * @throws IllegalStateException   if called more than once
      */
-    public synchronized MoverChannel<P> open() throws DiskErrorCacheException, InterruptedIOException
-    {
+    public synchronized MoverChannel<P> open()
+          throws DiskErrorCacheException, InterruptedIOException {
         checkState(_wrappedChannel == null);
         _wrappedChannel = new MoverChannel<>(this, openChannel());
         return _wrappedChannel;
@@ -101,8 +94,7 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
     }
 
     @Override
-    protected String getStatus()
-    {
+    protected String getStatus() {
         StringBuilder s = new StringBuilder(_protocolInfo.getProtocol());
         try {
             if (_wrappedChannel != null && getIoMode().contains(StandardOpenOption.WRITE)) {

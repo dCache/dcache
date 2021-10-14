@@ -73,30 +73,26 @@
 
 package diskCacheV111.srm.dcache;
 
-import javax.security.auth.Subject;
-
-import java.util.EnumSet;
-import java.util.concurrent.Executor;
+import static org.dcache.namespace.FileType.LINK;
+import static org.dcache.namespace.FileType.REGULAR;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
-
+import java.util.EnumSet;
+import java.util.concurrent.Executor;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.RemoveFileCallback;
 
-import static org.dcache.namespace.FileType.LINK;
-import static org.dcache.namespace.FileType.REGULAR;
-
 public class RemoveFileCompanion
-    extends AbstractMessageCallback<PnfsDeleteEntryMessage>
-{
+      extends AbstractMessageCallback<PnfsDeleteEntryMessage> {
+
     private final Subject _subject;
     private final RemoveFileCallback _callback;
     private final String _path;
@@ -105,11 +101,10 @@ public class RemoveFileCompanion
     private final CellStub _billingStub;
 
     private RemoveFileCompanion(Subject subject,
-                                String path,
-                                RemoveFileCallback callbacks,
-                                CellAddressCore address,
-                                CellStub billingStub)
-    {
+          String path,
+          RemoveFileCallback callbacks,
+          CellAddressCore address,
+          CellStub billingStub) {
         _subject = subject;
         _path = path;
         _callback = callbacks;
@@ -118,74 +113,68 @@ public class RemoveFileCompanion
     }
 
     public static void removeFile(Subject subject,
-                                  Restriction restriction,
-                                  String path,
-                                  RemoveFileCallback callbacks,
-                                  CellStub pnfsStub,
-                                  CellStub billingStub,
-                                  CellAddressCore address,
-                                  Executor executor)
-    {
+          Restriction restriction,
+          String path,
+          RemoveFileCallback callbacks,
+          CellStub pnfsStub,
+          CellStub billingStub,
+          CellAddressCore address,
+          Executor executor) {
         RemoveFileCompanion companion =
-            new RemoveFileCompanion(subject, path, callbacks, address, billingStub);
+              new RemoveFileCompanion(subject, path, callbacks, address, billingStub);
         PnfsDeleteEntryMessage message =
-            new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
+              new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
         message.setRestriction(restriction);
         CellStub.addCallback(pnfsStub.send(message), companion, executor);
     }
 
     @Override
-    public void success(PnfsDeleteEntryMessage message)
-    {
+    public void success(PnfsDeleteEntryMessage message) {
         sendRemoveInfoToBilling(message.getPnfsId());
         _callback.success();
     }
 
     @Override
-    public void failure(int rc, Object error)
-    {
+    public void failure(int rc, Object error) {
         switch (rc) {
-        case CacheException.FILE_NOT_FOUND:
-            _callback.notFound("No such file");
-            break;
+            case CacheException.FILE_NOT_FOUND:
+                _callback.notFound("No such file");
+                break;
 
-        case CacheException.NOT_FILE:
-            _callback.notFound("Not a file");
-            break;
+            case CacheException.NOT_FILE:
+                _callback.notFound("Not a file");
+                break;
 
-        case CacheException.TIMEOUT:
-            timeout();
-            break;
+            case CacheException.TIMEOUT:
+                timeout();
+                break;
 
-        case CacheException.PERMISSION_DENIED:
-            _callback.permissionDenied();
-            break;
+            case CacheException.PERMISSION_DENIED:
+                _callback.permissionDenied();
+                break;
 
-        default:
-            _callback.failure(String.format("Deletion failed [rc=%d,msg=%s]",
-                    rc, error));
-            break;
+            default:
+                _callback.failure(String.format("Deletion failed [rc=%d,msg=%s]",
+                      rc, error));
+                break;
         }
     }
 
-    public void noroute()
-    {
+    public void noroute() {
         /* No route and timeout are both transient errors and to the client it doesn't
          * matter whether we fail because of one or the other condition.
          */
         _callback.timeout();
     }
 
-    public void timeout()
-    {
+    public void timeout() {
         _callback.timeout();
     }
 
-    private void sendRemoveInfoToBilling(PnfsId pnfsid)
-    {
+    private void sendRemoveInfoToBilling(PnfsId pnfsid) {
         DoorRequestInfoMessage msg =
-            new DoorRequestInfoMessage(_myAddress, "remove");
+              new DoorRequestInfoMessage(_myAddress, "remove");
         msg.setSubject(_subject);
         msg.setBillingPath(_path);
         msg.setPnfsId(pnfsid);

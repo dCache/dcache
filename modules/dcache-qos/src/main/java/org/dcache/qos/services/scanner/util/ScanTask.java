@@ -65,19 +65,20 @@ import org.dcache.pool.classic.Cancellable;
 import org.dcache.qos.util.ErrorAwareTask;
 
 public abstract class ScanTask extends ErrorAwareTask implements Cancellable {
-  private Future future;
 
-  @Override
-  public synchronized void cancel(String explanation) {
-    if (future != null) {
-      future.cancel(true);
-      future = null;
+    private Future future;
+
+    @Override
+    public synchronized void cancel(String explanation) {
+        if (future != null) {
+            future.cancel(true);
+            future = null;
+        }
     }
-  }
 
-  public void submit() {
-    future = getService().submit(toFireAndForgetTask());
-  }
+    public void submit() {
+        future = getService().submit(toFireAndForgetTask());
+    }
 
-  protected abstract ExecutorService getService();
+    protected abstract ExecutorService getService();
 }

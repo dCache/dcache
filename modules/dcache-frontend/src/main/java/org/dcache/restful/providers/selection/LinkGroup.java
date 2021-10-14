@@ -59,16 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApiModel(description = "Information about a specific link group.")
 public final class LinkGroup extends SelectionTypeWithLinks {
@@ -128,10 +126,10 @@ public final class LinkGroup extends SelectionTypeWithLinks {
     @Override
     protected List<String> extractLinks(PoolSelectionUnit psu) {
         return psu.getLinkGroupByName(name)
-                  .getLinks()
-                  .stream()
-                  .sorted(Comparator.comparing(SelectionLink::getName))
-                  .map(SelectionLink::getName)
-                  .collect(Collectors.toList());
+              .getLinks()
+              .stream()
+              .sorted(Comparator.comparing(SelectionLink::getName))
+              .map(SelectionLink::getName)
+              .collect(Collectors.toList());
     }
 }

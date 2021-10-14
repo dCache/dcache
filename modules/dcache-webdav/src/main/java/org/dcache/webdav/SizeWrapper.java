@@ -1,29 +1,26 @@
 package org.dcache.webdav;
 
-import org.dcache.util.ByteUnit;
-
 import static org.dcache.util.ByteUnit.BYTES;
 import static org.dcache.util.ByteUnit.Type.BINARY;
 import static org.dcache.util.ByteUnits.isoSymbol;
 
+import org.dcache.util.ByteUnit;
+
 /**
- * Class to hold information about a file's size.  In particular, it
- * allows the StringTemplate language to access the file's size in different
- * formats.
+ * Class to hold information about a file's size.  In particular, it allows the StringTemplate
+ * language to access the file's size in different formats.
  */
-public class SizeWrapper
-{
+public class SizeWrapper {
+
     private final long _size;
     private final String _humanFriendly;
 
-    public SizeWrapper(long size)
-    {
+    public SizeWrapper(long size) {
         _size = size;
         _humanFriendly = asReadableString(size);
     }
 
-    private static String asReadableString(long size)
-    {
+    private static String asReadableString(long size) {
         if (size == 0) {
             return "Empty";
         }
@@ -33,7 +30,7 @@ public class SizeWrapper
         if (units == BYTES) {
             sb.append(size);
         } else {
-            double val = units.convert((double)size, BYTES);
+            double val = units.convert((double) size, BYTES);
             String fmt;
             if (val >= 99.5) {
                 fmt = "%.0f";
@@ -49,13 +46,11 @@ public class SizeWrapper
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return String.valueOf(_size);
     }
 
-    public String getHumanFriendly()
-    {
+    public String getHumanFriendly() {
         return _humanFriendly;
     }
 }

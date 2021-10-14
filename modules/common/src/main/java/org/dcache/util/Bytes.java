@@ -17,7 +17,6 @@
 package org.dcache.util;
 
 /**
- *
  * @since 0.0.3
  */
 public final class Bytes {
@@ -26,15 +25,16 @@ public final class Bytes {
     }
 
     /**
-     * Puts a big-endian representation of {@code value} into <code>bytes</code>
-     * staring from <code>offset</code>.
+     * Puts a big-endian representation of {@code value} into <code>bytes</code> staring from
+     * <code>offset</code>.
+     *
      * @param bytes
      * @param offset
      * @param value
      * @throws IllegalArgumentException there is no enough room for 8 bytes.
      */
     public static void putLong(byte[] bytes, int offset, long value)
-            throws IllegalArgumentException {
+          throws IllegalArgumentException {
 
         if (bytes.length - offset < 8) {
             throw new IllegalArgumentException("not enough space to store long");
@@ -51,15 +51,16 @@ public final class Bytes {
     }
 
     /**
-     * Puts a big-endian representation of {@code value} into <code>bytes</code>
-     * staring from <code>offset</code>.
+     * Puts a big-endian representation of {@code value} into <code>bytes</code> staring from
+     * <code>offset</code>.
+     *
      * @param bytes
      * @param offset
      * @param value
      * @throws IllegalArgumentException there is no enough room for 4 bytes.
      */
     public static void putInt(byte[] bytes, int offset, int value)
-            throws IllegalArgumentException {
+          throws IllegalArgumentException {
 
         if (bytes.length - offset < 4) {
             throw new IllegalArgumentException("not enough space to store int");
@@ -72,34 +73,36 @@ public final class Bytes {
     }
 
     /**
-     * Returns the big-endian {@code long} value whose byte representation is the 8
-     * bytes of <code>bytes</code> staring <code>offset</code>.
+     * Returns the big-endian {@code long} value whose byte representation is the 8 bytes of
+     * <code>bytes</code> staring <code>offset</code>.
+     *
      * @param bytes
      * @param offset
      * @return long value
      */
     public static long getLong(byte[] bytes, int offset) {
         return (bytes[offset] & 0xFFL) << 56
-                | (bytes[offset + 1] & 0xFFL) << 48
-                | (bytes[offset + 2] & 0xFFL) << 40
-                | (bytes[offset + 3] & 0xFFL) << 32
-                | (bytes[offset + 4] & 0xFFL) << 24
-                | (bytes[offset + 5] & 0xFFL) << 16
-                | (bytes[offset + 6] & 0xFFL) << 8
-                | (bytes[offset + 7] & 0xFFL);
+              | (bytes[offset + 1] & 0xFFL) << 48
+              | (bytes[offset + 2] & 0xFFL) << 40
+              | (bytes[offset + 3] & 0xFFL) << 32
+              | (bytes[offset + 4] & 0xFFL) << 24
+              | (bytes[offset + 5] & 0xFFL) << 16
+              | (bytes[offset + 6] & 0xFFL) << 8
+              | (bytes[offset + 7] & 0xFFL);
     }
 
     /**
-     * Returns the big-endian {@code int} value whose byte representation is the 4
-     * bytes of <code>bytes</code> staring <code>offset</code>.
+     * Returns the big-endian {@code int} value whose byte representation is the 4 bytes of
+     * <code>bytes</code> staring <code>offset</code>.
+     *
      * @param bytes
      * @param offset
      * @return int value
      */
     public static int getInt(byte[] bytes, int offset) {
         return (bytes[offset + 0] & 0xFF) << 24
-                | (bytes[offset + 1] & 0xFF) << 16
-                | (bytes[offset + 2] & 0xFF) << 8
-                | (bytes[offset + 3] & 0xFF);
+              | (bytes[offset + 1] & 0xFF) << 16
+              | (bytes[offset + 2] & 0xFF) << 8
+              | (bytes[offset + 3] & 0xFF);
     }
 }

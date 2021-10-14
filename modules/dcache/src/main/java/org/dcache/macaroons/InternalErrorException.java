@@ -20,10 +20,9 @@ package org.dcache.macaroons;
 /**
  * An exception that indicates a problem with the infrastructure.
  */
-public class InternalErrorException extends Exception
-{
-    public InternalErrorException(String message, Throwable cause)
-    {
+public class InternalErrorException extends Exception {
+
+    public InternalErrorException(String message, Throwable cause) {
         super(message, cause);
     }
 }

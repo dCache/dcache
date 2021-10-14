@@ -17,26 +17,26 @@
  */
 package diskCacheV111.doors;
 
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import diskCacheV111.doors.DCapDoorInterpreterV3.Version;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Test;
 
 /**
  * Tests for parts of DCapDoorInterpreter
  */
-public class DCapDoorInterpreterV3Tests
-{
+public class DCapDoorInterpreterV3Tests {
+
     @Test
-    public void versionShouldEqual()
-    {
+    public void versionShouldEqual() {
         Version v1_2 = new Version(1, 2);
         Version v1_1 = new Version(1, 1);
         Version v2_2 = new Version(2, 2);
-        Version v1_1_1 = new Version(1,1,1,null);
-        Version v1_1_1_1 = new Version(1,1,1,"1");
+        Version v1_1_1 = new Version(1, 1, 1, null);
+        Version v1_1_1_1 = new Version(1, 1, 1, "1");
 
         assertThat(v1_1, is(equalTo(v1_1)));
         assertThat(v1_2, is(equalTo(v1_2)));
@@ -44,11 +44,11 @@ public class DCapDoorInterpreterV3Tests
         assertThat(v1_1_1, is(equalTo(v1_1_1)));
         assertThat(v1_1_1_1, is(equalTo(v1_1_1_1)));
 
-        assertThat(new Version(1,1), is(equalTo(v1_1)));
-        assertThat(new Version(1,2), is(equalTo(v1_2)));
-        assertThat(new Version(2,2), is(equalTo(v2_2)));
-        assertThat(new Version(1,1,1,null), is(equalTo(v1_1_1)));
-        assertThat(new Version(1,1,1,"1"), is(equalTo(v1_1_1_1)));
+        assertThat(new Version(1, 1), is(equalTo(v1_1)));
+        assertThat(new Version(1, 2), is(equalTo(v1_2)));
+        assertThat(new Version(2, 2), is(equalTo(v2_2)));
+        assertThat(new Version(1, 1, 1, null), is(equalTo(v1_1_1)));
+        assertThat(new Version(1, 1, 1, "1"), is(equalTo(v1_1_1_1)));
 
         assertThat(v1_1, not(equalTo(v1_2)));
         assertThat(v1_2, not(equalTo(v1_1)));
@@ -70,16 +70,14 @@ public class DCapDoorInterpreterV3Tests
     }
 
     @Test
-    public void versionShouldConstructFromString()
-    {
-        assertThat(new Version("1.2"), is(equalTo(new Version(1,2))));
-        assertThat(new Version("1.2.3"), is(equalTo(new Version(1,2,3,null))));
-        assertThat(new Version("1.2.3-4"), is(equalTo(new Version(1,2,3,"4"))));
+    public void versionShouldConstructFromString() {
+        assertThat(new Version("1.2"), is(equalTo(new Version(1, 2))));
+        assertThat(new Version("1.2.3"), is(equalTo(new Version(1, 2, 3, null))));
+        assertThat(new Version("1.2.3-4"), is(equalTo(new Version(1, 2, 3, "4"))));
     }
 
     @Test
-    public void versionShouldMatchTo()
-    {
+    public void versionShouldMatchTo() {
         Version v1_2 = new Version(1, 2);
         Version v1_1 = new Version(1, 1);
         Version v2_1 = new Version(2, 1);

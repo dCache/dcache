@@ -1,45 +1,51 @@
 package org.dcache.namespace;
 
-import javax.security.auth.Subject;
+import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import static org.dcache.acl.enums.AccessType.ACCESS_DENIED;
+import static org.dcache.chimera.UnixPermission.S_IRGRP;
+import static org.dcache.chimera.UnixPermission.S_IROTH;
+import static org.dcache.chimera.UnixPermission.S_IRUSR;
+import static org.dcache.chimera.UnixPermission.S_IWGRP;
+import static org.dcache.chimera.UnixPermission.S_IWOTH;
+import static org.dcache.chimera.UnixPermission.S_IWUSR;
+import static org.dcache.chimera.UnixPermission.S_IXGRP;
+import static org.dcache.chimera.UnixPermission.S_IXOTH;
+import static org.dcache.chimera.UnixPermission.S_IXUSR;
+import static org.dcache.namespace.FileAttribute.ACL;
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
 
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-
+import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
-import static org.dcache.acl.enums.AccessType.ACCESS_DENIED;
-import static org.dcache.chimera.UnixPermission.*;
-import static org.dcache.namespace.FileAttribute.*;
-
 /**
  * A PermissionHandler implementing the POSIX.1 permission model.
- *
- * Notice that there is no concept of a ROOT owner in this
- * PermissionHandler. That is, ROOT is just a regular user.
+ * <p>
+ * Notice that there is no concept of a ROOT owner in this PermissionHandler. That is, ROOT is just
+ * a regular user.
  */
-public class PosixPermissionHandler implements PermissionHandler
-{
+public class PosixPermissionHandler implements PermissionHandler {
+
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
-        Collections.unmodifiableSet(EnumSet.of(OWNER, OWNER_GROUP, MODE));
+          Collections.unmodifiableSet(EnumSet.of(OWNER, OWNER_GROUP, MODE));
 
     @Override
-    public Set<FileAttribute> getRequiredAttributes()
-    {
+    public Set<FileAttribute> getRequiredAttributes() {
         return REQUIRED_ATTRIBUTES;
     }
 
-    private boolean isSet(int mode, int flag)
-    {
+    private boolean isSet(int mode, int flag) {
         return (mode & flag) == flag;
     }
 
     @Override
-    public AccessType canReadFile(Subject subject, FileAttributes attr)
-    {
+    public AccessType canReadFile(Subject subject, FileAttributes attr) {
         int mode = attr.getMode();
         if (Subjects.hasUid(subject, attr.getOwner())) {
             return AccessType.valueOf(isSet(mode, S_IRUSR));
@@ -53,8 +59,7 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canWriteFile(Subject subject, FileAttributes attr)
-    {
+    public AccessType canWriteFile(Subject subject, FileAttributes attr) {
         int mode = attr.getMode();
         if (Subjects.hasUid(subject, attr.getOwner())) {
             return AccessType.valueOf(isSet(mode, S_IWUSR));
@@ -68,8 +73,7 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
-    {
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr) {
         if (parentAttr == null) {
             return ACCESS_DENIED;
         }
@@ -86,8 +90,7 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
-    {
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr) {
         if (parentAttr == null) {
             return ACCESS_DENIED;
         }
@@ -105,9 +108,8 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canDeleteFile(Subject subject,
-                                    FileAttributes parentAttr,
-                                    FileAttributes childAttr)
-    {
+          FileAttributes parentAttr,
+          FileAttributes childAttr) {
         if (parentAttr == null) {
             return ACCESS_DENIED;
         }
@@ -126,9 +128,8 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canDeleteDir(Subject subject,
-                                   FileAttributes parentAttr,
-                                   FileAttributes childAttr)
-    {
+          FileAttributes parentAttr,
+          FileAttributes childAttr) {
         if (parentAttr == null) {
             return ACCESS_DENIED;
         }
@@ -146,8 +147,7 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canListDir(Subject subject, FileAttributes attr)
-    {
+    public AccessType canListDir(Subject subject, FileAttributes attr) {
         int mode = attr.getMode();
 
         if (Subjects.hasUid(subject, attr.getOwner())) {
@@ -162,8 +162,7 @@ public class PosixPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canLookup(Subject subject, FileAttributes attr)
-    {
+    public AccessType canLookup(Subject subject, FileAttributes attr) {
         int mode = attr.getMode();
 
         if (Subjects.hasUid(subject, attr.getOwner())) {
@@ -179,10 +178,9 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canRename(Subject subject,
-                                FileAttributes parentAttr,
-                                FileAttributes newParentAttr,
-                                boolean isDirectory)
-    {
+          FileAttributes parentAttr,
+          FileAttributes newParentAttr,
+          boolean isDirectory) {
         if (parentAttr == null || newParentAttr == null) {
             return ACCESS_DENIED;
         }
@@ -213,14 +211,13 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes currentAttributes,
-                                       FileAttributes desiredAttributes)
-    {
+          FileAttributes currentAttributes,
+          FileAttributes desiredAttributes) {
         /* Some attributes can only be changed by the owner of the file. */
         if (desiredAttributes.isDefined(OWNER) ||
-            desiredAttributes.isDefined(OWNER_GROUP) ||
-            desiredAttributes.isDefined(MODE) ||
-            desiredAttributes.isDefined(ACL)) {
+              desiredAttributes.isDefined(OWNER_GROUP) ||
+              desiredAttributes.isDefined(MODE) ||
+              desiredAttributes.isDefined(ACL)) {
 
             if (!Subjects.hasUid(subject, currentAttributes.getOwner())) {
                 return AccessType.ACCESS_DENIED;
@@ -252,9 +249,8 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canGetAttributes(Subject subject,
-                                       FileAttributes attr,
-                                       Set<FileAttribute> attributes)
-    {
+          FileAttributes attr,
+          Set<FileAttribute> attributes) {
         // posix always allowes to read attributes
         return ACCESS_ALLOWED;
     }

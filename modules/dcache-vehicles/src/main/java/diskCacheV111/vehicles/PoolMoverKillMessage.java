@@ -9,22 +9,23 @@ public class PoolMoverKillMessage extends PoolMessage {
     private static final long serialVersionUID = -8654307136745044047L;
 
     private final String explanation;
-    public int  moverId;
+    public int moverId;
 
     public PoolMoverKillMessage(String poolName, int moverId,
-            String explanation){
-	super(poolName);
-        this.moverId = moverId ;
+          String explanation) {
+        super(poolName);
+        this.moverId = moverId;
         setReplyRequired(true);
         this.explanation = requireNonNull(explanation);
     }
 
-    public String getExplanation()
-    {
+    public String getExplanation() {
         return explanation;
     }
 
-    public int getMoverId(){ return moverId ; }
+    public int getMoverId() {
+        return moverId;
+    }
 }
 
 

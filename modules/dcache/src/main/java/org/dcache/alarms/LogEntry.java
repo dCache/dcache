@@ -59,29 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ComparisonChain;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ComparisonChain;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import org.dcache.util.IRegexFilterable;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Storage class for all log events.<br>
- *
- * Uses the unique key for hashCode and equals.
- * Also implements comparable on the basis of the unique key.
+ * <p>
+ * Uses the unique key for hashCode and equals. Also implements comparable on the basis of the
+ * unique key.
  *
  * @author arossi
  */
 public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
 
-    private static final long   serialVersionUID = -8477649423971508910L;
-    private static final String FORMAT           = "E MMM dd HH:mm:ss zzz yyyy";
+    private static final long serialVersionUID = -8477649423971508910L;
+    private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
 
     private static String getFormattedDate(Date date) {
         DateFormat format = new SimpleDateFormat(FORMAT);
@@ -90,16 +87,16 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     }
 
     private String key;
-    private Long   firstArrived;
-    private Long   lastUpdate;
+    private Long firstArrived;
+    private Long lastUpdate;
     private String type;
     private String host;
     private String domain;
     private String service;
     private String info;
     private String notes;
-    private Boolean closed   = false;
-    private Boolean alarm    = false;
+    private Boolean closed = false;
+    private Boolean alarm = false;
     private Integer received;
 
     /*
@@ -110,10 +107,10 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     @Override
     public int compareTo(LogEntry o) {
         return ComparisonChain.start()
-                              .compare(lastUpdate, o.lastUpdate)
-                              .compare(firstArrived, o.firstArrived)
-                              .compare(key, o.key)
-                              .result();
+              .compare(lastUpdate, o.lastUpdate)
+              .compare(firstArrived, o.firstArrived)
+              .compare(key, o.key)
+              .result();
     }
 
     @Override
@@ -139,7 +136,7 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
      */
     public String getFormattedDateOfFirstArrival() {
         return firstArrived == null ? "" :
-                        getFormattedDate(new Date(firstArrived));
+              getFormattedDate(new Date(firstArrived));
     }
 
     /*
@@ -149,7 +146,7 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
      */
     public String getFormattedDateOfLastUpdate() {
         return lastUpdate == null ? "" :
-                        getFormattedDate(new Date(lastUpdate));
+              getFormattedDate(new Date(lastUpdate));
     }
 
     public String getHost() {
@@ -270,9 +267,9 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     @Override
     public String toFilterableString() {
         return getFormattedDateOfFirstArrival() + " "
-                        + getFormattedDateOfLastUpdate() + " " + type + " "
-                        + received + " " + host + " "
-                        + domain + " " + info + " " + service + " " + notes;
+              + getFormattedDateOfLastUpdate() + " " + type + " "
+              + received + " " + host + " "
+              + domain + " " + info + " " + service + " " + notes;
     }
 
     @Override

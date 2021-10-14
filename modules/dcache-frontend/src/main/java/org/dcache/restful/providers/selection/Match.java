@@ -61,28 +61,28 @@ package org.dcache.restful.providers.selection;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 
 @ApiModel(description = "Specifies parameters for selecting a group of pools.  "
-                                + "Pools must match all specified fields.")
+      + "Pools must match all specified fields.")
 public final class Match implements Serializable {
+
     private static final long serialVersionUID = -3298166715830066810L;
 
-    @ApiModelProperty(value="The operation type.", allowableValues = "READ, WRITE, CACHE, P2P, ANY")
-    private String type      = "READ";
+    @ApiModelProperty(value = "The operation type.", allowableValues = "READ, WRITE, CACHE, P2P, ANY")
+    private String type = "READ";
 
     @ApiModelProperty("The name of the matching store unit.")
-    private String store     = "*";
+    private String store = "*";
 
     @ApiModelProperty("The name of the matching dcache unit.")
-    private String dcache    = "*";
+    private String dcache = "*";
 
     @ApiModelProperty("The name of the matching net unit.")
-    private String net       = "*";
+    private String net = "*";
 
     @ApiModelProperty("The name of the matching protocol unit.")
-    private String protocol  = "*";
+    private String protocol = "*";
 
     @ApiModelProperty("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
     private String linkGroup = "none";
@@ -137,7 +137,7 @@ public final class Match implements Serializable {
 
     public String toPoolManagerCommand() {
         return "psux match " + type + " " + store + " " + dcache + " " + net
-                        + " " + protocol + (linkGroup.equals("none") ?
-                        "" : " -linkGroup=" + linkGroup);
+              + " " + protocol + (linkGroup.equals("none") ?
+              "" : " -linkGroup=" + linkGroup);
     }
 }

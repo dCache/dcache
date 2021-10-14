@@ -20,40 +20,39 @@ package org.dcache.gplazma.omnisession;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A parser that can understand a configuration file's contents when the lines
- * from that configuration file are presented one at a time.
+ * A parser that can understand a configuration file's contents when the lines from that
+ * configuration file are presented one at a time.
+ *
  * @param <T> The class that represents the file's content.
  */
-public interface LineBasedParser<T>
-{
+public interface LineBasedParser<T> {
+
     /**
-     * Problem has been detected when parsing a line of text that invalidates
-     * the whole model.  The message should describe the problem without
-     * including the line number.
+     * Problem has been detected when parsing a line of text that invalidates the whole model.  The
+     * message should describe the problem without including the line number.
      */
-    public class UnrecoverableParsingException extends Exception
-    {
-        public UnrecoverableParsingException(String message)
-        {
+    public class UnrecoverableParsingException extends Exception {
+
+        public UnrecoverableParsingException(String message) {
             super(requireNonNull(message));
         }
     }
 
     /**
-     * Accept a new configuration line.  The lines of a file are presented
-     * one after the other until either there are no more lines or this method
-     * throws an exception.
+     * Accept a new configuration line.  The lines of a file are presented one after the other until
+     * either there are no more lines or this method throws an exception.
+     *
      * @param line the text of a line, without any new-line character.
-     * @throws UnrecoverableParsingException the line contains an error that
-     * invalidates the entire configuration file.
+     * @throws UnrecoverableParsingException the line contains an error that invalidates the entire
+     *                                       configuration file.
      */
     void accept(String line) throws UnrecoverableParsingException;
 
     /**
-     * Return an object that represents the information that has just been
-     * parsed.  This method should only be called if no calls to
-     * {@link #accept(java.lang.String)} throws an exception.
+     * Return an object that represents the information that has just been parsed.  This method
+     * should only be called if no calls to {@link #accept(java.lang.String)} throws an exception.
      * The returned object should be immutable.
+     *
      * @return The representation of the parsed contents.
      */
     T build();

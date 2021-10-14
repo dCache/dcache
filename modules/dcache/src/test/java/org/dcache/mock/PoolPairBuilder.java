@@ -18,43 +18,38 @@
  */
 package org.dcache.mock;
 
+import static org.dcache.mock.SelectedPoolBuilder.aPool;
+
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.SelectedPool;
 
-import static org.dcache.mock.SelectedPoolBuilder.aPool;
-
 /**
- * Create a PoolPair object using the builder pattern.  Note that, since
- * the code accesses field-members directly, this builder creates a real
- * object rather than a mocked object.
+ * Create a PoolPair object using the builder pattern.  Note that, since the code accesses
+ * field-members directly, this builder creates a real object rather than a mocked object.
  */
 public class PoolPairBuilder {
-  private SelectedPool source;
-  private SelectedPool destination;
 
-  public static PoolPairBuilder aPoolPair()
-  {
-    return new PoolPairBuilder();
-  }
+    private SelectedPool source;
+    private SelectedPool destination;
 
-  private PoolPairBuilder()
-  {
-  }
+    public static PoolPairBuilder aPoolPair() {
+        return new PoolPairBuilder();
+    }
 
-  public PoolPairBuilder withSource(String address)
-  {
-    source = aPool(address);
-    return this;
-  }
+    private PoolPairBuilder() {
+    }
 
-  public PoolPairBuilder withDestination(String address)
-  {
-    destination = aPool(address);
-    return this;
-  }
+    public PoolPairBuilder withSource(String address) {
+        source = aPool(address);
+        return this;
+    }
 
-  public Partition.P2pPair build()
-  {
-    return new Partition.P2pPair(source, destination);
-  }
+    public PoolPairBuilder withDestination(String address) {
+        destination = aPool(address);
+        return this;
+    }
+
+    public Partition.P2pPair build() {
+        return new Partition.P2pPair(source, destination);
+    }
 }

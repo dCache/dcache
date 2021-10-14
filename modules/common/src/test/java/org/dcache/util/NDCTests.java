@@ -1,17 +1,16 @@
 package org.dcache.util;
 
-import org.junit.Test;
-import org.slf4j.MDC;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-public class NDCTests
-{
+import org.junit.Test;
+import org.slf4j.MDC;
+
+public class NDCTests {
+
     @Test
-    public void shouldBeNullInitially()
-    {
+    public void shouldBeNullInitially() {
         givenEmptyNdc();
 
         // REVISIT: is this correct?
@@ -19,8 +18,7 @@ public class NDCTests
     }
 
     @Test
-    public void shouldPopOnEmpty()
-    {
+    public void shouldPopOnEmpty() {
         givenEmptyNdc();
 
         String popped = NDC.pop();
@@ -30,8 +28,7 @@ public class NDCTests
     }
 
     @Test
-    public void shouldHaveItemAfterPush()
-    {
+    public void shouldHaveItemAfterPush() {
         givenEmptyNdc();
 
         NDC.push("item-1");
@@ -40,8 +37,7 @@ public class NDCTests
     }
 
     @Test
-    public void shouldBeNullAfterPushPop()
-    {
+    public void shouldBeNullAfterPushPop() {
         givenNdc().push("item-1");
 
         String popped = NDC.pop();
@@ -52,8 +48,7 @@ public class NDCTests
     }
 
     @Test
-    public void shouldBeNullAfterPushClear()
-    {
+    public void shouldBeNullAfterPushClear() {
         givenNdc().push("item-1");
 
         NDC.clear();
@@ -63,19 +58,17 @@ public class NDCTests
     }
 
     @Test
-    public void shouldHaveFirstItemAfterTwoPushThenPop()
-    {
+    public void shouldHaveFirstItemAfterTwoPushThenPop() {
         givenNdc().push("item-1").push("item-2");
 
         String popped = NDC.pop();
 
         assertThat(ndc(), is("item-1"));
-        assertThat(popped, is ("item-2"));
+        assertThat(popped, is("item-2"));
     }
 
     @Test
-    public void shouldBeNullAfterTwoPushesThenTwoPops()
-    {
+    public void shouldBeNullAfterTwoPushesThenTwoPops() {
         givenNdc().push("item-1").push("item-2").pop();
 
         String popped = NDC.pop();
@@ -86,10 +79,8 @@ public class NDCTests
     }
 
 
-
     @Test
-    public void shouldBeTwoItemsAfterTwoPushesThenPopThenPush()
-    {
+    public void shouldBeTwoItemsAfterTwoPushesThenPopThenPush() {
         givenNdc().push("item-1").push("item-2").pop();
 
         NDC.push("item-3");
@@ -98,8 +89,7 @@ public class NDCTests
     }
 
     @Test
-    public void shouldRestoreClonedValueAfterSet()
-    {
+    public void shouldRestoreClonedValueAfterSet() {
         NDC cloned = givenClonedNdc(givenNdc().push("item-1"));
         givenNdc().push("item-2");
 
@@ -108,47 +98,39 @@ public class NDCTests
         assertThat(ndc(), is("item-1"));
     }
 
-    private String ndc()
-    {
+    private String ndc() {
         return MDC.get(NDC.KEY_NDC);
     }
 
-    private NdcBuilder givenNdc()
-    {
+    private NdcBuilder givenNdc() {
         return new NdcBuilder();
     }
 
-    private NDC givenClonedNdc(NdcBuilder builder)
-    {
+    private NDC givenClonedNdc(NdcBuilder builder) {
         return builder.clone();
     }
 
-    private void givenEmptyNdc()
-    {
+    private void givenEmptyNdc() {
         NDC.clear();
     }
 
-    private class NdcBuilder
-    {
-        public NdcBuilder()
-        {
+    private class NdcBuilder {
+
+        public NdcBuilder() {
             NDC.clear();
         }
 
-        public NdcBuilder push(String value)
-        {
+        public NdcBuilder push(String value) {
             NDC.push(value);
             return this;
         }
 
-        public NdcBuilder pop()
-        {
+        public NdcBuilder pop() {
             NDC.pop();
             return this;
         }
 
-        public NDC clone()
-        {
+        public NDC clone() {
             return NDC.cloneNdc();
         }
     }

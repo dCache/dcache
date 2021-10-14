@@ -17,45 +17,39 @@
  */
 package org.dcache.srm.scheduler;
 
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
-
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Spring factory bean to create SchedulingStrategyProviders.
  */
-public class SchedulingStrategyFactoryBean implements FactoryBean<SchedulingStrategyProvider>
-{
+public class SchedulingStrategyFactoryBean implements FactoryBean<SchedulingStrategyProvider> {
+
     private final ServiceLoader<SchedulingStrategyProvider> PROVIDERS =
-            ServiceLoader.load(SchedulingStrategyProvider.class);
+          ServiceLoader.load(SchedulingStrategyProvider.class);
     private String name;
     private Map<String, String> configuration;
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Required
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 
     @Required
-    public void setConfiguration(Map<String, String> configuration)
-    {
+    public void setConfiguration(Map<String, String> configuration) {
         this.configuration = configuration;
     }
 
     @Override
-    public SchedulingStrategyProvider getObject() throws Exception
-    {
+    public SchedulingStrategyProvider getObject() throws Exception {
         for (SchedulingStrategyProvider provider : PROVIDERS) {
             if (provider.getName().equals(name)) {
                 provider.setConfiguration(configuration);
@@ -66,14 +60,12 @@ public class SchedulingStrategyFactoryBean implements FactoryBean<SchedulingStra
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return SchedulingStrategyProvider.class;
     }
 
     @Override
-    public boolean isSingleton()
-    {
+    public boolean isSingleton() {
         return true;
     }
 }

@@ -75,15 +75,14 @@ package org.dcache.srm.scheduler;
 import java.beans.PropertyChangeEvent;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class JobStorageAddedEvent extends PropertyChangeEvent {
 
     private static final long serialVersionUID = 5949249723887926882L;
 
     public JobStorageAddedEvent(JobStorage<?> jobStorage) {
-        super(jobStorage, "State",null, jobStorage);
+        super(jobStorage, "State", null, jobStorage);
     }
 
 }
