@@ -61,7 +61,8 @@ package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,10 +78,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.resilience.data.PoolOperation.NextAction;
@@ -97,46 +94,44 @@ import org.dcache.util.RunnableModule;
 
 /**
  * <p>Maintains three queues corresponding to the IDLE, WAITING, and RUNNING
- *    pool operation states.  The runnable method periodically scans the
- *    queues, promoting tasks as slots become available, and returning
- *    pool operation placeholders to IDLE when the related scan completes.</p>
+ * pool operation states.  The runnable method periodically scans the queues, promoting tasks as
+ * slots become available, and returning pool operation placeholders to IDLE when the related scan
+ * completes.</p>
  *
  * <p>When a pool status DOWN update is received, a certain grace period
- *    is observed before actually launching the associated task.</p>
+ * is observed before actually launching the associated task.</p>
  *
  * <p>Subsequent duplicate messages are handled according to a transition
- *    table (see {@link PoolOperation#getNextAction(PoolStatusForResilience)})
- *    which defines whether the current operation should be kept,
- *    replaced or cancelled (see {@link #update}).</p>
+ * table (see {@link PoolOperation#getNextAction(PoolStatusForResilience)}) which defines whether
+ * the current operation should be kept, replaced or cancelled (see {@link #update}).</p>
  *
  * <p>The map is swept every period (which should be less than or equal to that
- *    defined by the grace interval).  Idle pools are first checked
- *    for expired "last scan" timestamps; those eligible are promoted to
- *    the waiting queue (this is the "watchdog" component of the map).  Next,
- *    the waiting queue is scanned for grace interval expiration; the
- *    eligible operations are then promoted to running, with a scan task
- *    being launched.</p>
+ * defined by the grace interval).  Idle pools are first checked for expired "last scan" timestamps;
+ * those eligible are promoted to the waiting queue (this is the "watchdog" component of the map).
+ * Next, the waiting queue is scanned for grace interval expiration; the eligible operations are
+ * then promoted to running, with a scan task being launched.</p>
  *
  * <p>When a scan terminates, the update of the task records whether it
- *    completed successfully, was cancelled or failed, and the task is
- *    returned to the idle queue.</p>
+ * completed successfully, was cancelled or failed, and the task is returned to the idle queue.</p>
  *
  * <p>Map provides methods for cancellation of running pool scans, and for
- *    ad hoc submission of a scan.</p>
+ * ad hoc submission of a scan.</p>
  *
  * <p>If pools are added or removed from the {@link PoolInfoMap} via the
- *    arrival of a PoolMonitor message, the corresponding
- *    pool operation will also be added or removed here.</p>
+ * arrival of a PoolMonitor message, the corresponding pool operation will also be added or removed
+ * here.</p>
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class PoolOperationMap extends RunnableModule {
+
     class Watchdog {
-        Integer  rescanWindow;
+
+        Integer rescanWindow;
         TimeUnit rescanWindowUnit;
-        volatile boolean running        = true;
+        volatile boolean running = true;
         volatile boolean resetInterrupt = false;
-        volatile boolean runInterrupt   = false;
+        volatile boolean runInterrupt = false;
 
         long getExpiry() {
             if (!running) {
@@ -146,25 +141,25 @@ public class PoolOperationMap extends RunnableModule {
         }
     }
 
-    final Map<String, PoolOperation> idle    = new LinkedHashMap<>();
+    final Map<String, PoolOperation> idle = new LinkedHashMap<>();
     final Map<String, PoolOperation> waiting = new LinkedHashMap<>();
     final Map<String, PoolOperation> running = new HashMap<>();
 
-    private final Lock      lock      = new ReentrantLock();
+    private final Lock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
-    private final Watchdog  watchdog  = new Watchdog();
+    private final Watchdog watchdog = new Watchdog();
 
-    private PoolInfoMap             poolInfoMap;
-    private PoolOperationHandler    handler;
-    private FileOperationMap        fileOperationMap; // needed for cancellation
+    private PoolInfoMap poolInfoMap;
+    private PoolOperationHandler handler;
+    private FileOperationMap fileOperationMap; // needed for cancellation
 
-    private String                  excludedPoolsFile;
+    private String excludedPoolsFile;
 
-    private int                 downGracePeriod;
-    private TimeUnit            downGracePeriodUnit;
-    private int                 restartGracePeriod;
-    private TimeUnit            restartGracePeriodUnit;
-    private int                 maxConcurrentRunning;
+    private int downGracePeriod;
+    private TimeUnit downGracePeriodUnit;
+    private int restartGracePeriod;
+    private TimeUnit restartGracePeriodUnit;
+    private int maxConcurrentRunning;
     private OperationStatistics counters;
 
     public void saveExcluded() {
@@ -180,15 +175,13 @@ public class PoolOperationMap extends RunnableModule {
      * <p>Called by the admin interface.</p>
      *
      * <p>Sets pool operation state to either included or
-     *      excluded.  If the latter, it will not be susceptible to pool scans
-     *      or status change messages, though it will continue to be checked for
-     *      status when other pools are scanned.  The arrival of a new
-     *      mode update will change the state but trigger nothing.</p>
+     * excluded.  If the latter, it will not be susceptible to pool scans or status change messages,
+     * though it will continue to be checked for status when other pools are scanned.  The arrival
+     * of a new mode update will change the state but trigger nothing.</p>
      *
-     * @param filter used only with regular expression for pools.
+     * @param filter   used only with regular expression for pools.
      * @param included whether to include or not.
-     * @return the number of pool operations which have been included or
-     *          excluded.
+     * @return the number of pool operations which have been included or excluded.
      */
     public long setIncluded(PoolMatcher filter, boolean included) {
         lock.lock();
@@ -295,9 +288,9 @@ public class PoolOperationMap extends RunnableModule {
      */
     public String list(PoolMatcher filter) {
         StringBuilder builder = new StringBuilder();
-        TreeMap<String, PoolOperation>[] tmp =  new TreeMap[]{new TreeMap(),
-                                                              new TreeMap<>(),
-                                                              new TreeMap<>()};
+        TreeMap<String, PoolOperation>[] tmp = new TreeMap[]{new TreeMap(),
+              new TreeMap<>(),
+              new TreeMap<>()};
         lock.lock();
 
         try {
@@ -318,8 +311,8 @@ public class PoolOperationMap extends RunnableModule {
 
         int total = 0;
 
-        for (TreeMap<String, PoolOperation> map: tmp) {
-            for (Entry<String, PoolOperation> entry: map.entrySet()) {
+        for (TreeMap<String, PoolOperation> map : tmp) {
+            for (Entry<String, PoolOperation> entry : map.entrySet()) {
                 String key = entry.getKey();
                 PoolOperation op = entry.getValue();
                 if (filter.matches(key, op)) {
@@ -341,7 +334,6 @@ public class PoolOperationMap extends RunnableModule {
 
     /**
      * @return list of pools that have been removed.
-     *
      * @see MapInitializer#initialize()
      */
     public List<String> loadPools() {
@@ -414,8 +406,8 @@ public class PoolOperationMap extends RunnableModule {
             } catch (InterruptedException e) {
                 if (watchdog.resetInterrupt) {
                     LOGGER.trace("Pool watchdog reset, returning to wait: "
-                                                 + "timeout {} {}.", timeout,
-                                 timeoutUnit);
+                                + "timeout {} {}.", timeout,
+                          timeoutUnit);
                     watchdog.resetInterrupt = false;
                     continue;
                 }
@@ -450,7 +442,7 @@ public class PoolOperationMap extends RunnableModule {
 
     /**
      * <p>Called by {@link org.dcache.resilience.handlers.PoolInfoChangeHandler)</p>
-     *
+     * <p>
      * See documentation at {@link #doScan}.
      */
     public boolean scan(PoolStateUpdate update, boolean bypassStateCheck) {
@@ -466,10 +458,9 @@ public class PoolOperationMap extends RunnableModule {
      * <p>Called by admin command.</p>
      *
      * <p>Tries to match the filter against pool operation on the
-     *      WAITING or IDLE queue.  As in the auxiliary method called,
-     *      WAITING operations have their forceScan flag set to true,
-     *      but are not promoted to RUNNING here.</p>
-     *
+     * WAITING or IDLE queue.  As in the auxiliary method called, WAITING operations have their
+     * forceScan flag set to true, but are not promoted to RUNNING here.</p>
+     * <p>
      * See documentation at {@link #doScan}.
      */
     public void scan(PoolFilter filter, StringBuilder reply, StringBuilder errors) {
@@ -506,7 +497,7 @@ public class PoolOperationMap extends RunnableModule {
                     } catch (IllegalArgumentException e) {
                         errors.append("\t")
                               .append(String.format("%s, %s", pool,
-                                                    new ExceptionMessage(e)))
+                                    new ExceptionMessage(e)))
                               .append("\n");
                     }
                 }
@@ -570,14 +561,14 @@ public class PoolOperationMap extends RunnableModule {
 
     public void updateInitialized() {
         poolInfoMap.getResilientPools().stream()
-                   .filter(poolInfoMap::isInitialized)
-                   .map(poolInfoMap::getPoolState)
-                   .forEach(this::update);
+              .filter(poolInfoMap::isInitialized)
+              .map(poolInfoMap::getPoolState)
+              .forEach(this::update);
     }
 
     /**
      * <p>Called upon receipt of a pool status update (generated via
-     *      comparison of PoolMonitor data).</p>
+     * comparison of PoolMonitor data).</p>
      */
     public void update(PoolStateUpdate update) {
         /*
@@ -630,12 +621,12 @@ public class PoolOperationMap extends RunnableModule {
                 case UP_TO_DOWN:
                     if (operation.state == State.WAITING) {
                         LOGGER.trace("Update, {} already on WAITING queue, {}.",
-                                     update.pool, operation);
+                              update.pool, operation);
                         break;
                     }
 
                     LOGGER.trace("Update, putting {} on WAITING queue, {}.",
-                                    update.pool, operation);
+                          update.pool, operation);
                     queue.remove(update.pool);
                     operation.resetChildren();
                     operation.resetFailed();
@@ -668,7 +659,7 @@ public class PoolOperationMap extends RunnableModule {
      */
     public void update(String pool, PnfsId pnfsId, boolean failed) {
         LOGGER.debug("Parent {}, child operation for {} has completed.", pool,
-                     pnfsId);
+              pnfsId);
         lock.lock();
         try {
             PoolOperation operation = get(pool);
@@ -684,13 +675,13 @@ public class PoolOperationMap extends RunnableModule {
 
     /**
      * <p>Called by the {@link PoolOperationHandler)
-     *      when scan completes or fails.</p>
+     * when scan completes or fails.</p>
      */
     public void update(String pool,
-                       int children,
-                       CacheException exception) {
+          int children,
+          CacheException exception) {
         LOGGER.debug("Pool {}, operation update, children {}.", pool,
-                     children);
+              children);
         lock.lock();
         try {
             PoolOperation operation = get(pool);
@@ -719,8 +710,8 @@ public class PoolOperationMap extends RunnableModule {
          *  Idempotency.  Should not fail.
          */
         if (idle.containsKey(pool)
-                        || waiting.containsKey(pool)
-                        || running.containsKey(pool)) {
+              || waiting.containsKey(pool)
+              || running.containsKey(pool)) {
             return;
         }
 
@@ -747,7 +738,7 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     private void cancel(String pool, PoolOperation operation,
-                    Map<String, PoolOperation> queue) {
+          Map<String, PoolOperation> queue) {
         if (operation.task != null) {
             operation.task.cancel("resilient admin command");
             operation.task = null;
@@ -772,25 +763,21 @@ public class PoolOperationMap extends RunnableModule {
 
     /**
      * <p>Serves ad hoc scans. Ignores the grace period timeouts (this
-     *    corresponds to setting the <code>forceScan</code>
-     *    flag on the operation).</p>
+     * corresponds to setting the <code>forceScan</code> flag on the operation).</p>
      *
      * <p>Will <i>not</i> override the behavior of normal task submission by
-     *      cancelling any outstanding task for this pool.</p>
+     * cancelling any outstanding task for this pool.</p>
      *
      * <p>If indicated, bypasses the transition checking of pool status.</p>
      *
      * <p>Called after lock has been acquired.</p>
      *
-     * @param bypassStateCheck if false, will not bypass considerations
-     *                              of whether the pool has been previously
-     *                              scanned because it went down.  NOTE:
-     *                              an excluded pool will not be scanned
-     *                              under any circumstances until it is
-     *                              included.
+     * @param bypassStateCheck if false, will not bypass considerations of whether the pool has been
+     *                         previously scanned because it went down.  NOTE: an excluded pool will
+     *                         not be scanned under any circumstances until it is included.
      * @return true only if operation has been promoted from idle to waiting.
      */
-    private  boolean doScan(PoolStateUpdate update, boolean bypassStateCheck) {
+    private boolean doScan(PoolStateUpdate update, boolean bypassStateCheck) {
         if (running.containsKey(update.pool)) {
             LOGGER.info("Scan of {} is already in progress", update.pool);
             return false;
@@ -800,8 +787,8 @@ public class PoolOperationMap extends RunnableModule {
 
         if (waiting.containsKey(update.pool)) {
             LOGGER.info("Scan of {} is already in waiting state, setting its "
-                                        + "force flag to true.",
-                        update.pool);
+                        + "force flag to true.",
+                  update.pool);
             waiting.get(update.pool).forceScan = true;
             return false;
         }
@@ -809,8 +796,8 @@ public class PoolOperationMap extends RunnableModule {
         operation = idle.remove(update.pool);
         if (operation == null) {
             LOGGER.warn("No entry for {} in any queues; "
-                                        + "pool is not (yet) registered.",
-                        update.pool);
+                        + "pool is not (yet) registered.",
+                  update.pool);
             return false;
         }
 
@@ -828,9 +815,9 @@ public class PoolOperationMap extends RunnableModule {
 
         if (!bypassStateCheck) {
             if (operation.currStatus == PoolStatusForResilience.DOWN &&
-                operation.lastStatus == PoolStatusForResilience.DOWN) {
+                  operation.lastStatus == PoolStatusForResilience.DOWN) {
                 LOGGER.info("Skipping scan {} –– pool is down and was already "
-                                + "scanned", update.pool);
+                      + "scanned", update.pool);
                 reset(update.pool, operation);
                 return false;
             }
@@ -880,20 +867,19 @@ public class PoolOperationMap extends RunnableModule {
             idle.put(pool, operation);
         } else if (operation.state == State.FAILED || operation.failedChildren() > 0) {
             String message = operation.exception == null ? "" : "exception: " +
-                            new ExceptionMessage(operation.exception);
+                  new ExceptionMessage(operation.exception);
             LOGGER.error(AlarmMarkerFactory.getMarker(
-                            PredefinedAlarm.FAILED_REPLICATION, pool),
-                            "{} was removed from resilient group but final scan "
-                                            + "{}; {} failed file operations.",
-                         pool, message, operation.failedChildren());
+                        PredefinedAlarm.FAILED_REPLICATION, pool),
+                  "{} was removed from resilient group but final scan "
+                        + "{}; {} failed file operations.",
+                  pool, message, operation.failedChildren());
         }
     }
 
     /**
      * <p>Handles the periodic scan/watchdog function.
-     *      The scan uses the implicit temporal ordering of puts to the linked
-     *      hash map to find all expired pools (they will be at the head of the
-     *      list maintained by the map).</p>
+     * The scan uses the implicit temporal ordering of puts to the linked hash map to find all
+     * expired pools (they will be at the head of the list maintained by the map).</p>
      */
     private void scanIdle() {
         lock.lock();
@@ -902,7 +888,7 @@ public class PoolOperationMap extends RunnableModule {
             long expiry = watchdog.getExpiry();
 
             for (Iterator<Entry<String, PoolOperation>> i
-                    = idle.entrySet().iterator(); i.hasNext(); ) {
+                  = idle.entrySet().iterator(); i.hasNext(); ) {
                 Entry<String, PoolOperation> entry = i.next();
                 String pool = entry.getKey();
                 PoolOperation operation = entry.getValue();
@@ -916,7 +902,7 @@ public class PoolOperationMap extends RunnableModule {
                 }
 
                 if (operation.lastStatus == PoolStatusForResilience.DOWN &&
-                    operation.currStatus == PoolStatusForResilience.DOWN) {
+                      operation.currStatus == PoolStatusForResilience.DOWN) {
                     /*
                      *  When a scan completes or the operation is reset,
                      *  the lastStatus is set to the current status.
@@ -957,18 +943,22 @@ public class PoolOperationMap extends RunnableModule {
             long now = System.currentTimeMillis();
             long downExpiry = downGracePeriodUnit.toMillis(downGracePeriod);
             long restartExpiry =
-                            restartGracePeriodUnit.toMillis(restartGracePeriod);
+                  restartGracePeriodUnit.toMillis(restartGracePeriod);
 
             for (Iterator<Entry<String, PoolOperation>> i
-                 = waiting.entrySet().iterator(); i.hasNext(); ) {
+                  = waiting.entrySet().iterator(); i.hasNext(); ) {
                 Entry<String, PoolOperation> entry = i.next();
                 String pool = entry.getKey();
                 PoolOperation operation = entry.getValue();
                 long expiry;
 
                 switch (operation.currStatus) {
-                    case DOWN:  expiry = downExpiry; break;
-                    default:    expiry = restartExpiry; break;
+                    case DOWN:
+                        expiry = downExpiry;
+                        break;
+                    default:
+                        expiry = restartExpiry;
+                        break;
                 }
 
                 /*
@@ -977,13 +967,13 @@ public class PoolOperationMap extends RunnableModule {
                  *  when a slot is available
                  */
                 if ((operation.forceScan ||
-                                now - operation.lastUpdate >= expiry)
-                                && running.size() < maxConcurrentRunning) {
+                      now - operation.lastUpdate >= expiry)
+                      && running.size() < maxConcurrentRunning) {
                     i.remove();
                     LOGGER.trace("{}, lapsed time {}, running {}: submitting.",
-                                 operation,
-                                 now - operation.lastUpdate,
-                                 running.size());
+                          operation,
+                          now - operation.lastUpdate,
+                          running.size());
                     submit(pool, operation);
                 }
             }
@@ -994,11 +984,11 @@ public class PoolOperationMap extends RunnableModule {
 
     private void submit(String pool, PoolOperation operation) {
         operation.task = new PoolScanTask(pool,
-                                          operation.currStatus.getMessageType(),
-                                          operation.group,
-                                          operation.unit,
-                                          operation.forceScan,
-                                          handler);
+              operation.currStatus.getMessageType(),
+              operation.group,
+              operation.unit,
+              operation.forceScan,
+              handler);
         operation.state = State.RUNNING;
         operation.lastUpdate = System.currentTimeMillis();
         operation.lastStatus = operation.currStatus;
@@ -1030,9 +1020,9 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     private void update(PoolMatcher filter,
-                        Map<String, PoolOperation> queue,
-                        boolean include,
-                        Set<String> visited) {
+          Map<String, PoolOperation> queue,
+          boolean include,
+          Set<String> visited) {
         ImmutableSet.copyOf(queue.keySet()).stream().forEach((k) -> {
             if (!visited.contains(k)) {
                 PoolOperation operation = queue.get(k);
@@ -1061,7 +1051,7 @@ public class PoolOperationMap extends RunnableModule {
                      *  know this pool is temporarily in limbo.
                      */
                     poolInfoMap.getPoolInformation(poolInfoMap.getPoolIndex(k))
-                               .setExcluded(!include);
+                          .setExcluded(!include);
                 }
             }
         });

@@ -1,22 +1,20 @@
 package org.dcache.util;
 
-import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
-
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
-import static org.hamcrest.MatcherAssert.assertThat;
+
+import com.google.common.collect.ImmutableMap;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Test;
 
 public class XattrsTest {
 
     @Test
-    public void testUriXattrEmpty()
-    {
+    public void testUriXattrEmpty() {
         URI uri = URI.create("http://server.example.com/foo");
 
         Map<String, String> xattrs = Xattrs.from(uri);
@@ -77,8 +75,7 @@ public class XattrsTest {
     }
 
     @Test
-    public void testMapXattrEmpty()
-    {
+    public void testMapXattrEmpty() {
         Map<String, String> params = new HashMap<>();
 
         Map<String, String> xattrs = Xattrs.from(params);
@@ -88,7 +85,7 @@ public class XattrsTest {
     @Test
     public void testMapXattrSingleValue() {
         Map<String, String> params = ImmutableMap.of(
-                "xattr.key1", "value1"
+              "xattr.key1", "value1"
         );
 
         Map<String, String> xattrs = Xattrs.from(params);
@@ -99,8 +96,8 @@ public class XattrsTest {
     @Test
     public void testMapXattrMutipleValue() {
         Map<String, String> params = ImmutableMap.of(
-                "xattr.key1", "value1",
-                "xattr.key2", "value2"
+              "xattr.key1", "value1",
+              "xattr.key2", "value2"
         );
 
         Map<String, String> xattrs = Xattrs.from(params);
@@ -112,8 +109,8 @@ public class XattrsTest {
     @Test
     public void testMapXattrIgnoreOthers() {
         Map<String, String> params = ImmutableMap.of(
-                "xattr.key1", "value1",
-                "key2", "value2"
+              "xattr.key1", "value1",
+              "key2", "value2"
         );
 
         Map<String, String> xattrs = Xattrs.from(params);

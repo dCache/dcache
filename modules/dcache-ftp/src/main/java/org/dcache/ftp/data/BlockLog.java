@@ -1,5 +1,7 @@
 package org.dcache.ftp.data;
 
+import static org.dcache.util.Strings.humanReadableSize;
+
 import java.io.PrintWriter;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -8,52 +10,46 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.dcache.util.Strings.humanReadableSize;
-
 /**
- * A log of transferred blocks. Adjacent blocks are merged, so for a
- * sequential transfer only information about a single block will be
- * maintained.
- *
+ * A log of transferred blocks. Adjacent blocks are merged, so for a sequential transfer only
+ * information about a single block will be maintained.
+ * <p>
  * Overlapping blocks are detected and reported via an exception.
- *
+ * <p>
  * The class is thread safe.
  */
-public class BlockLog
-{
-    private final SortedMap<Long,Long> _blocks = new TreeMap<>();
+public class BlockLog {
+
+    private final SortedMap<Long, Long> _blocks = new TreeMap<>();
     private boolean _eof;
 
     private static final String _overlapMsg
-            = "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
+          = "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
 
     private long _limit;
 
-    public BlockLog()
-    {
+    public BlockLog() {
         _limit = Long.MAX_VALUE;
     }
 
     /**
-     * Adds a block to the log. Blocks do not need to be added
-     * sequentially.
+     * Adds a block to the log. Blocks do not need to be added sequentially.
      *
      * @param position A non-negative starting posisiton
      * @param size     A non-negative block size
      * @throws FTPException if blocks overlap
      */
     public synchronized void addBlock(long position, long size)
-            throws FTPException
-    {
+          throws FTPException {
         if (size == 0) {
             return;
         }
 
         long begin = position;
-        long end   = position + size;
+        long end = position + size;
 
-        SortedMap<Long,Long> headMap = _blocks.headMap(position);
-        SortedMap<Long,Long> tailMap = _blocks.tailMap(position);
+        SortedMap<Long, Long> headMap = _blocks.headMap(position);
+        SortedMap<Long, Long> tailMap = _blocks.tailMap(position);
 
         if (!headMap.isEmpty()) {
             long prevBegin = headMap.lastKey();
@@ -63,8 +59,8 @@ public class BlockLog
              */
             if (prevEnd > begin) {
                 String err =
-                        MessageFormat.format(_overlapMsg,
-                                             begin, end, prevBegin, prevEnd);
+                      MessageFormat.format(_overlapMsg,
+                            begin, end, prevBegin, prevEnd);
                 throw new FTPException(err);
             }
 
@@ -77,14 +73,14 @@ public class BlockLog
         }
         if (!tailMap.isEmpty()) {
             long nextBegin = tailMap.firstKey();
-            long nextEnd   = _blocks.get(nextBegin);
+            long nextEnd = _blocks.get(nextBegin);
 
             /* Consistency check.
              */
             if (end > nextBegin) {
                 String err =
-                        MessageFormat.format(_overlapMsg,
-                                             begin, end, nextBegin, nextEnd);
+                      MessageFormat.format(_overlapMsg,
+                            begin, end, nextBegin, nextEnd);
                 throw new FTPException(err);
             }
 
@@ -115,11 +111,10 @@ public class BlockLog
     }
 
     /**
-     * Indicates that the end of the transfer has been reached. The
-     * main purpose is to make sure that waitCompleted() returns.
+     * Indicates that the end of the transfer has been reached. The main purpose is to make sure
+     * that waitCompleted() returns.
      */
-    public synchronized void setEof()
-    {
+    public synchronized void setEof() {
         _eof = true;
         notifyAll();
     }
@@ -127,47 +122,40 @@ public class BlockLog
     /**
      * Returns true when setEof() has been called.
      */
-    public synchronized boolean isEof()
-    {
+    public synchronized boolean isEof() {
         return _eof;
     }
 
     /**
-     * Returns the number of fragments received, i.e. continous areas
-     * of the file for which either the byte before or the byte after
-     * the area has not been received.
+     * Returns the number of fragments received, i.e. continous areas of the file for which either
+     * the byte before or the byte after the area has not been received.
      */
-    public synchronized int getFragments()
-    {
+    public synchronized int getFragments() {
         return _blocks.size();
     }
 
     /**
-     * Returns true when the complete file has been received. This is
-     * the case if EOF has been set and the complete file only
-     * contains one fragment.
+     * Returns true when the complete file has been received. This is the case if EOF has been set
+     * and the complete file only contains one fragment.
      */
-    public synchronized boolean isComplete()
-    {
+    public synchronized boolean isComplete() {
         return isEof() && getFragments() <= 1;
     }
 
     /**
-     * Returns the number of consecutive bytes from the beginning of
-     * the file that have been transferred.
+     * Returns the number of consecutive bytes from the beginning of the file that have been
+     * transferred.
      */
-    public synchronized long getCompleted()
-    {
+    public synchronized long getCompleted() {
         return !_blocks.containsKey(0L) ? 0L : _blocks.get(0L);
     }
 
     /**
-     * Blocks until getCompleted() returns a value larger than or
-     * equal to position or until setEof() has been called.
+     * Blocks until getCompleted() returns a value larger than or equal to position or until
+     * setEof() has been called.
      */
     public synchronized void waitCompleted(long position)
-            throws InterruptedException
-    {
+          throws InterruptedException {
         if (_limit < position) {
             setLimit(position);
         }
@@ -179,50 +167,45 @@ public class BlockLog
     /**
      * Returns the current transfer limit.
      */
-    public synchronized long getLimit()
-    {
+    public synchronized long getLimit() {
         return _limit;
     }
 
     /**
      * Sets the current transfer limit.
-     *
+     * <p>
      * The <code>addBlock</code> method will block as soon as
      * <code>getCompleted</code> would return something not smaller
-     * than <code>limit</code>. The idea is that the limit will
-     * throttle the transfer as soon as everything up to
+     * than <code>limit</code>. The idea is that the limit will throttle the transfer as soon as
+     * everything up to
      * <code>limit</code> has been received.
-     *
-     * Using Long.MAX_VALUE for the limit effectively disables
-     * transfer throttling.
+     * <p>
+     * Using Long.MAX_VALUE for the limit effectively disables transfer throttling.
      *
      * @param limit the new limit
      */
-    public synchronized void setLimit(long limit)
-    {
+    public synchronized void setLimit(long limit) {
         _limit = limit;
         notifyAll();
     }
 
-    private Function<Map.Entry<Long,Long>,String> asHumanReadable()
-    {
+    private Function<Map.Entry<Long, Long>, String> asHumanReadable() {
         if (_blocks.size() <= 1) {
             return e -> humanReadableSize(e.getKey()) + "--" + humanReadableSize(e.getValue());
         } else {
             return e -> humanReadableSize(e.getKey()) + "--" + humanReadableSize(e.getValue())
-                        + " (" + humanReadableSize(e.getValue() - e.getKey()) + ")";
+                  + " (" + humanReadableSize(e.getValue() - e.getKey()) + ")";
         }
     }
 
-    public synchronized void getInfo(PrintWriter pw)
-    {
+    public synchronized void getInfo(PrintWriter pw) {
         if (!_blocks.isEmpty()) {
             pw.println("Transferred blocks: " + _blocks.entrySet().stream()
-                    .map(e -> e.getKey() + "--" + e.getValue())
-                    .collect(Collectors.joining(", ")));
+                  .map(e -> e.getKey() + "--" + e.getValue())
+                  .collect(Collectors.joining(", ")));
             pw.println("Transferred blocks: " + _blocks.entrySet().stream()
-                    .map(asHumanReadable())
-                    .collect(Collectors.joining(", ")));
+                  .map(asHumanReadable())
+                  .collect(Collectors.joining(", ")));
         }
     }
 }

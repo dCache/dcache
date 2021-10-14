@@ -64,12 +64,12 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 /**
- * Defines the component responsible for mapping alarms or alerts to a priority
- * level.
+ * Defines the component responsible for mapping alarms or alerts to a priority level.
  *
  * @author arossi
  */
 public interface AlarmPriorityMap {
+
     /**
      * In case the implementation uses a local path
      */
@@ -81,17 +81,15 @@ public interface AlarmPriorityMap {
     AlarmPriority getDefaultPriority();
 
     /**
-     * @param type
-     *            alarm name.
+     * @param type alarm name.
      * @return priority to which this is mapped.
-     * @throws NoSuchElementException
-     *             if there is no current mapping.
+     * @throws NoSuchElementException if there is no current mapping.
      */
     AlarmPriority getPriority(String type) throws NoSuchElementException;
 
     /**
-     * @return an object which can be included in a serializable message. The
-     *         map should be unmodifiable.
+     * @return an object which can be included in a serializable message. The map should be
+     * unmodifiable.
      */
     Map<String, AlarmPriority> getPriorityMap();
 
@@ -101,12 +99,10 @@ public interface AlarmPriorityMap {
     String getSortedList();
 
     /**
-     * Should locate all internal and external alarm types and load their type
-     * names. It should then override the default priority with any saved
-     * settings.
+     * Should locate all internal and external alarm types and load their type names. It should then
+     * override the default priority with any saved settings.
      *
-     * @param env
-     *            any special settings which should override current ones.
+     * @param env any special settings which should override current ones.
      */
     void load(Properties env) throws Exception;
 
@@ -116,28 +112,22 @@ public interface AlarmPriorityMap {
     void restoreAllToDefaultPriority();
 
     /**
-     * Should save the current mapping to some form of persistent storage for
-     * future reloading.
+     * Should save the current mapping to some form of persistent storage for future reloading.
      *
-     * @param env
-     *            any special settings which should override current ones.
+     * @param env any special settings which should override current ones.
      */
     void save(Properties env) throws Exception;
 
     /**
-     * @param priority
-     *            to use as default.
+     * @param priority to use as default.
      */
     void setDefaultPriority(String priority);
 
     /**
-     * @param alarm
-     *            defined via custom definition or predefined enum.
-     * @param priority
-     *            to which this is mapped.
-     * @throws NoSuchElementException
-     *             if there is no current mapping.
+     * @param alarm    defined via custom definition or predefined enum.
+     * @param priority to which this is mapped.
+     * @throws NoSuchElementException if there is no current mapping.
      */
     void setPriority(String alarm, AlarmPriority priority)
-                    throws NoSuchElementException;
+          throws NoSuchElementException;
 }

@@ -62,96 +62,80 @@ package org.dcache.services.bulk;
 import java.io.Serializable;
 
 /**
- *  Generic bulk status.  In addition to the required fields,
- *  tracks timestamps.
+ * Generic bulk status.  In addition to the required fields, tracks timestamps.
  */
-public class BulkRequestStatus implements Serializable
-{
+public class BulkRequestStatus implements Serializable {
+
     private static final long serialVersionUID = -7992364565691790254L;
 
-    public enum Status
-    {
+    public enum Status {
         QUEUED, STARTED, COMPLETED, CANCELLING, CANCELLED
     }
 
-    private long         firstArrived;
-    private long         lastModified;
-    private Status       status;
-    private int          targets;
-    private int          processed;
+    private long firstArrived;
+    private long lastModified;
+    private Status status;
+    private int targets;
+    private int processed;
     private BulkFailures failures;
 
-    public long getFirstArrived()
-    {
+    public long getFirstArrived() {
         return firstArrived;
     }
 
-    public long getLastModified()
-    {
+    public long getLastModified() {
         return lastModified;
     }
 
-    public Status getStatus()
-    {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status)
-    {
+    public void setStatus(Status status) {
         this.status = status;
         lastModified = System.currentTimeMillis();
     }
 
-    public int getTargets()
-    {
+    public int getTargets() {
         return targets;
     }
 
-    public void targetAdded()
-    {
+    public void targetAdded() {
         ++targets;
     }
 
-    public void setFirstArrived(long firstArrived)
-    {
+    public void setFirstArrived(long firstArrived) {
         this.firstArrived = firstArrived;
     }
 
-    public void setLastModified(long lastModified)
-    {
+    public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
 
-    public void setTargets(int targets)
-    {
+    public void setTargets(int targets) {
         this.targets = targets;
         lastModified = System.currentTimeMillis();
     }
 
-    public int getProcessed()
-    {
+    public int getProcessed() {
         return processed;
     }
 
-    public void setProcessed(int processed)
-    {
+    public void setProcessed(int processed) {
         this.processed = processed;
         lastModified = System.currentTimeMillis();
     }
 
-    public BulkFailures getFailures()
-    {
+    public BulkFailures getFailures() {
         return failures;
     }
 
-    public void setFailures(BulkFailures failures)
-    {
+    public void setFailures(BulkFailures failures) {
         this.failures = failures;
         lastModified = System.currentTimeMillis();
     }
 
-    public void targetAborted(String target, Throwable exception)
-    {
+    public void targetAborted(String target, Throwable exception) {
         if (target != null) {
             addException(target, exception);
         }
@@ -159,8 +143,7 @@ public class BulkRequestStatus implements Serializable
         lastModified = System.currentTimeMillis();
     }
 
-    public void targetCompleted(String target, Throwable exception)
-    {
+    public void targetCompleted(String target, Throwable exception) {
         if (target != null) {
             ++processed;
             addException(target, exception);
@@ -169,8 +152,7 @@ public class BulkRequestStatus implements Serializable
         lastModified = System.currentTimeMillis();
     }
 
-    private void addException(String target, Throwable exception)
-    {
+    private void addException(String target, Throwable exception) {
         if (exception != null) {
             if (failures == null) {
                 failures = new BulkFailures();

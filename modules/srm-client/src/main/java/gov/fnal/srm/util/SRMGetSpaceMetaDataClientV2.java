@@ -83,7 +83,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import java.io.IOException;
-
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest;
@@ -94,10 +93,9 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 
-public class SRMGetSpaceMetaDataClientV2 extends SRMClient
-{
-    public SRMGetSpaceMetaDataClientV2(Configuration configuration)
-    {
+public class SRMGetSpaceMetaDataClientV2 extends SRMClient {
+
+    public SRMGetSpaceMetaDataClientV2(Configuration configuration) {
         super(configuration);
     }
 
@@ -111,58 +109,57 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient
 
             SrmGetSpaceMetaDataResponse response = srm.srmGetSpaceMetaData(request);
 
-
-            if ( response == null ) {
+            if (response == null) {
                 throw new IOException(" null SrmGetSpaceMetaDataResponse");
             }
 
-            TReturnStatus rs     = response.getReturnStatus();
-            if ( rs == null) {
+            TReturnStatus rs = response.getReturnStatus();
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("SrmGetSpaceMetaData failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+                throw new IOException(
+                      "SrmGetSpaceMetaData failed, unexpected or failed return status : " +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
             }
-            TMetaDataSpace [] spaceMetaDatas  = response.getArrayOfSpaceDetails().getSpaceDataArray();
+            TMetaDataSpace[] spaceMetaDatas = response.getArrayOfSpaceDetails().getSpaceDataArray();
             for (TMetaDataSpace spaceMetaData : spaceMetaDatas) {
                 System.out
-                        .println("Space Reservation with token=" + spaceMetaData
-                                .getSpaceToken());
+                      .println("Space Reservation with token=" + spaceMetaData
+                            .getSpaceToken());
                 if (spaceMetaData.getStatus()
-                        .getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                      .getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     System.out.println("\t StatusCode=" + spaceMetaData
-                            .getStatus().getStatusCode() +
-                            " explanation=" + spaceMetaData.getStatus()
-                            .getExplanation());
+                          .getStatus().getStatusCode() +
+                          " explanation=" + spaceMetaData.getStatus()
+                          .getExplanation());
                     continue;
 
                 }
                 System.out.println("\t           owner:" + spaceMetaData
-                        .getOwner());
+                      .getOwner());
                 System.out.println("\t       totalSize:" + spaceMetaData
-                        .getTotalSize());
+                      .getTotalSize());
                 System.out.println("\t  guaranteedSize:" + spaceMetaData
-                        .getGuaranteedSize());
+                      .getGuaranteedSize());
                 System.out.println("\t      unusedSize:" + spaceMetaData
-                        .getUnusedSize());
+                      .getUnusedSize());
                 System.out.println("\tlifetimeAssigned:" + spaceMetaData
-                        .getLifetimeAssigned());
+                      .getLifetimeAssigned());
                 System.out.println("\t    lifetimeLeft:" + spaceMetaData
-                        .getLifetimeLeft());
+                      .getLifetimeLeft());
                 TRetentionPolicyInfo policyInfo = spaceMetaData
-                        .getRetentionPolicyInfo();
+                      .getRetentionPolicyInfo();
                 if (policyInfo != null) {
                     System.out.println("\t   accessLatency:" + policyInfo
-                            .getAccessLatency());
+                          .getAccessLatency());
                     System.out.println("\t retentionPolicy:" + policyInfo
-                            .getRetentionPolicy());
+                          .getRetentionPolicy());
                 }
 
             }
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

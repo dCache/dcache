@@ -63,13 +63,14 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.qos.data.FileQoSRequirements;
 
 public class QoSRequirementsModifiedMessage extends Message {
-  private final FileQoSRequirements requirements;
 
-  public QoSRequirementsModifiedMessage(FileQoSRequirements requirements) {
-    this.requirements = requirements;
-  }
+    private final FileQoSRequirements requirements;
 
-  public FileQoSRequirements getRequirements() {
-    return requirements;
-  }
+    public QoSRequirementsModifiedMessage(FileQoSRequirements requirements) {
+        this.requirements = requirements;
+    }
+
+    public FileQoSRequirements getRequirements() {
+        return requirements;
+    }
 }

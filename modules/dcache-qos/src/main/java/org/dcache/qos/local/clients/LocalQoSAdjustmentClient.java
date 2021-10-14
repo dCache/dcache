@@ -66,23 +66,24 @@ import org.dcache.qos.services.adjuster.handlers.QoSAdjusterTaskHandler;
 import org.dcache.qos.vehicles.QoSAdjustmentRequest;
 
 /**
- *  A pass-through to the adjuster task handler. Use this listener when plugging in directly to
- *  the adjustment service.
+ * A pass-through to the adjuster task handler. Use this listener when plugging in directly to the
+ * adjustment service.
  */
 public final class LocalQoSAdjustmentClient implements QoSAdjustmentListener {
-  private QoSAdjusterTaskHandler taskHandler;
 
-  @Override
-  public void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) {
-      taskHandler.handleAdjustmentRequest(adjustmentRequest);
-  }
+    private QoSAdjusterTaskHandler taskHandler;
 
-  @Override
-  public void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException {
-      taskHandler.handleAdjustmentCancelled(pnfsId);
-  }
+    @Override
+    public void fileQoSAdjustmentRequested(QoSAdjustmentRequest adjustmentRequest) {
+        taskHandler.handleAdjustmentRequest(adjustmentRequest);
+    }
 
-  public void setTaskHandler(QoSAdjusterTaskHandler taskHandler) {
-    this.taskHandler = taskHandler;
-  }
+    @Override
+    public void fileQoSAdjustmentCancelled(PnfsId pnfsId) throws QoSException {
+        taskHandler.handleAdjustmentCancelled(pnfsId);
+    }
+
+    public void setTaskHandler(QoSAdjusterTaskHandler taskHandler) {
+        this.taskHandler = taskHandler;
+    }
 }

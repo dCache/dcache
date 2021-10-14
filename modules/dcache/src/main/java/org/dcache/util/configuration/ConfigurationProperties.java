@@ -1,12 +1,13 @@
 package org.dcache.util.configuration;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
-import javax.annotation.Nullable;
-
+import dmg.util.Formats;
+import dmg.util.PropertiesBackedReplaceable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -25,26 +26,18 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-
-import dmg.util.Formats;
-import dmg.util.PropertiesBackedReplaceable;
-
-import static java.util.Objects.requireNonNull;
+import javax.annotation.Nullable;
 
 /**
- * The ConfigurationProperties class represents a set of dCache
- * configuration properties.
+ * The ConfigurationProperties class represents a set of dCache configuration properties.
  * <p>
- * Repeated declaration of the same property is considered an error
- * and will cause loading of configuration files to fail.
+ * Repeated declaration of the same property is considered an error and will cause loading of
+ * configuration files to fail.
  * <p>
- * Properties may have zero or more annotations.  These annotations
- * are represented as a comma-separated list of annotation-labels
- * inside parentheses immediately before the property key. Valid
- * annotation labels are "deprecated", "obsolete", "forbidden"
- * and "not-for-services".  A property may have, at most, one annotation
- * from the set {deprecated, obsolete, forbidden}.
+ * Properties may have zero or more annotations.  These annotations are represented as a
+ * comma-separated list of annotation-labels inside parentheses immediately before the property key.
+ * Valid annotation labels are "deprecated", "obsolete", "forbidden" and "not-for-services".  A
+ * property may have, at most, one annotation from the set {deprecated, obsolete, forbidden}.
  * <p>
  * Annotations have the following semantics:
  * <ul>
@@ -87,26 +80,25 @@ import static java.util.Objects.requireNonNull;
  * @see Properties
  */
 public class ConfigurationProperties
-    extends Properties
-{
+      extends Properties {
+
     private static final long serialVersionUID = -5684848160314570455L;
 
     /**
-     * The character that separates the prefix from the key for PREFIX-annotated
-     * properties.
+     * The character that separates the prefix from the key for PREFIX-annotated properties.
      */
     public static final String PREFIX_SEPARATOR = "!";
 
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
-        EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
+          EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
     private static final Pattern MATCH_COMMAS = Pattern.compile(",");
 
     private final PropertiesBackedReplaceable _replaceable =
-        new PropertiesBackedReplaceable(this);
+          new PropertiesBackedReplaceable(this);
 
-    private final Map<String,AnnotatedKey> _annotatedKeys =
-            new HashMap<>();
+    private final Map<String, AnnotatedKey> _annotatedKeys =
+          new HashMap<>();
     private final UsageChecker _usageChecker;
     private final List<String> _prefixes = new ArrayList<>();
 
@@ -114,22 +106,19 @@ public class ConfigurationProperties
     private boolean _isService;
     private ProblemConsumer _problemConsumer = new DefaultProblemConsumer();
 
-    public ConfigurationProperties()
-    {
+    public ConfigurationProperties() {
         super();
         _usageChecker = new UniversalUsageChecker();
     }
 
-    public ConfigurationProperties(Properties defaults)
-    {
+    public ConfigurationProperties(Properties defaults) {
         this(defaults, new UniversalUsageChecker());
     }
 
-    public ConfigurationProperties(Properties defaults, UsageChecker usageChecker)
-    {
+    public ConfigurationProperties(Properties defaults, UsageChecker usageChecker) {
         super(defaults);
 
-        if( defaults instanceof ConfigurationProperties) {
+        if (defaults instanceof ConfigurationProperties) {
             ConfigurationProperties defaultConfig = (ConfigurationProperties) defaults;
             _problemConsumer = defaultConfig._problemConsumer;
             _prefixes.addAll(defaultConfig._prefixes);
@@ -137,23 +126,19 @@ public class ConfigurationProperties
         _usageChecker = usageChecker;
     }
 
-    public void setProblemConsumer(ProblemConsumer consumer)
-    {
+    public void setProblemConsumer(ProblemConsumer consumer) {
         _problemConsumer = consumer;
     }
 
-    public ProblemConsumer getProblemConsumer()
-    {
+    public ProblemConsumer getProblemConsumer() {
         return _problemConsumer;
     }
 
-    public void setIsService(boolean isService)
-    {
+    public void setIsService(boolean isService) {
         _isService = isService;
     }
 
-    public boolean hasDeclaredPrefix(String name)
-    {
+    public boolean hasDeclaredPrefix(String name) {
         for (String prefix : _prefixes) {
             if (name.startsWith(prefix)) {
                 return true;
@@ -164,12 +149,10 @@ public class ConfigurationProperties
     }
 
     /**
-     * @throws IllegalArgumentException during loading if a property
-     * is defined multiple times.
+     * @throws IllegalArgumentException during loading if a property is defined multiple times.
      */
     @Override
-    public synchronized void load(Reader reader) throws IOException
-    {
+    public synchronized void load(Reader reader) throws IOException {
         _loading = true;
         try {
             super.load(reader);
@@ -179,12 +162,10 @@ public class ConfigurationProperties
     }
 
     /**
-     * @throws IllegalArgumentException during loading if a property
-     * is defined multiple times.
+     * @throws IllegalArgumentException during loading if a property is defined multiple times.
      */
     @Override
-    public synchronized void load(InputStream in) throws IOException
-    {
+    public synchronized void load(InputStream in) throws IOException {
         _loading = true;
         try {
             super.load(in);
@@ -194,13 +175,12 @@ public class ConfigurationProperties
     }
 
     /**
-     * @throws IllegalArgumentException during loading if a property
-     * is defined multiple times or the annotations are inappropriate.
+     * @throws IllegalArgumentException during loading if a property is defined multiple times or
+     *                                  the annotations are inappropriate.
      */
     @Override
     public synchronized void loadFromXML(InputStream in)
-        throws IOException, InvalidPropertiesFormatException
-    {
+          throws IOException, InvalidPropertiesFormatException {
         _loading = true;
         try {
             super.loadFromXML(in);
@@ -213,35 +193,32 @@ public class ConfigurationProperties
      * Loads a Java properties file.
      */
     public void loadFile(File file)
-        throws IOException
-    {
+          throws IOException {
         try (Reader reader = new FileReader(file)) {
             load(file.getName(), 0, reader);
         }
     }
 
     /**
-     * Wrapper method that ensures error and warning messages have
-     * the correct line number.
+     * Wrapper method that ensures error and warning messages have the correct line number.
+     *
      * @param source a label describing where Reader is obtaining information
-     * @param line Number of lines read so far
+     * @param line   Number of lines read so far
      * @param reader Source of the property information
      */
-    public void load(String source, int line, Reader reader) throws IOException
-    {
+    public void load(String source, int line, Reader reader) throws IOException {
         LineNumberReader lnr = new LineNumberReader(reader);
         lnr.setLineNumber(line);
         load(source, lnr);
     }
 
     /**
-     * Wrapper method that ensures error and warning messages have
-     * the correct line number.
+     * Wrapper method that ensures error and warning messages have the correct line number.
+     *
      * @param source a label describing where Reader is obtaining information
      * @param reader Source of the property information
      */
-    public void load(String source, LineNumberReader reader) throws IOException
-    {
+    public void load(String source, LineNumberReader reader) throws IOException {
         _problemConsumer.setFilename(source);
         _problemConsumer.setLineNumberReader(reader);
         try {
@@ -252,12 +229,10 @@ public class ConfigurationProperties
     }
 
     /**
-     * @throws IllegalArgumentException during loading if key is
-     * already defined.
+     * @throws IllegalArgumentException during loading if key is already defined.
      */
     @Override
-    public synchronized Object put(Object rawKey, Object value)
-    {
+    public synchronized Object put(Object rawKey, Object value) {
         requireNonNull(rawKey, "A property key must not be null");
         requireNonNull(value, "A property value must not be null");
 
@@ -278,27 +253,26 @@ public class ConfigurationProperties
             putAnnotatedKey(key);
         }
 
-        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, canonicalizeValue(name, value));
+        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null
+              : super.put(name, canonicalizeValue(name, value));
     }
 
-    private String canonicalizeValue(String key, Object value)
-    {
+    private String canonicalizeValue(String key, Object value) {
         AnnotatedKey annotatedKey = getAnnotatedKey(key);
         if (annotatedKey != null && annotatedKey.hasAnnotation(Annotation.ANY_OF)) {
             return MATCH_COMMAS.splitAsStream(String.valueOf(value))
-                               .map(String::trim)
-                               .filter(s -> !s.isEmpty())
-                               .distinct()
-                               .sorted()
-                               .collect(Collectors.joining(","));
+                  .map(String::trim)
+                  .filter(s -> !s.isEmpty())
+                  .distinct()
+                  .sorted()
+                  .collect(Collectors.joining(","));
         }
 
         return String.valueOf(value).trim();
     }
 
 
-    protected void checkIsAllowed(AnnotatedKey key, String value)
-    {
+    protected void checkIsAllowed(AnnotatedKey key, String value) {
         String name = key.getPropertyName();
         AnnotatedKey existingKey = getAnnotatedKey(name);
         if (existingKey != null) {
@@ -306,7 +280,8 @@ public class ConfigurationProperties
             checkDataValid(existingKey, value);
         } else if (name.indexOf('/') > -1) {
             _problemConsumer.error(
-                    "Property " + name + " is a scoped property. Scoped properties are no longer supported.");
+                  "Property " + name
+                        + " is a scoped property. Scoped properties are no longer supported.");
         } else if (!_usageChecker.isStandardProperty(defaults, name)) {
             // TODO: It would be nice if we could check whether the property is actually
             // used, ie if it appears as part of the value of a standard property. To do this
@@ -317,62 +292,59 @@ public class ConfigurationProperties
         checkDataValid(key, value);
     }
 
-    private void checkKeyValid(AnnotatedKey existingKey, AnnotatedKey key)
-    {
+    private void checkKeyValid(AnnotatedKey existingKey, AnnotatedKey key) {
         String name = key.getPropertyName();
 
         if (existingKey.hasAnnotations() && key.hasAnnotations()) {
             _problemConsumer.error("Property " + name + ": " +
-                    "remove \"" + key.getAnnotationDeclaration() + "\"; " +
-                    "annotated assignments are not allowed");
+                  "remove \"" + key.getAnnotationDeclaration() + "\"; " +
+                  "annotated assignments are not allowed");
         }
 
         if (existingKey.hasAnyOf(EnumSet.of(Annotation.IMMUTABLE,
-                Annotation.PREFIX, Annotation.FORBIDDEN))) {
+              Annotation.PREFIX, Annotation.FORBIDDEN))) {
             _problemConsumer.error(messageFor(existingKey));
         }
 
         if ((_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) ||
-            existingKey.hasAnyOf(EnumSet.of(Annotation.OBSOLETE, Annotation.DEPRECATED))) {
+              existingKey.hasAnyOf(EnumSet.of(Annotation.OBSOLETE, Annotation.DEPRECATED))) {
             _problemConsumer.warning(messageFor(existingKey));
         }
     }
 
 
-    private void checkDataValid(AnnotatedKey key, String value)
-    {
-        if(key.hasAnnotation(Annotation.ONE_OF)) {
+    private void checkDataValid(AnnotatedKey key, String value) {
+        if (key.hasAnnotation(Annotation.ONE_OF)) {
             String oneOfParameter = key.getParameter(Annotation.ONE_OF);
             Set<String> validValues = ImmutableSet.copyOf(oneOfParameter.split("\\|"));
-            if(!validValues.contains(value)) {
+            if (!validValues.contains(value)) {
                 String validValuesList = "\"" +
-                        Joiner.on("\", \"").join(validValues) + "\"";
+                      Joiner.on("\", \"").join(validValues) + "\"";
                 _problemConsumer.error("Property " + key.getPropertyName() +
-                        ": \"" + value + "\" is not a valid value.  Must be one of "
-                        + validValuesList);
+                      ": \"" + value + "\" is not a valid value.  Must be one of "
+                      + validValuesList);
             }
         }
         if (key.hasAnnotation(Annotation.ANY_OF)) {
             String anyOfParameter = key.getParameter(Annotation.ANY_OF);
             Set<String> values = Sets.newHashSet(Splitter.on(',')
-                    .omitEmptyStrings()
-                    .trimResults().split(value));
+                  .omitEmptyStrings()
+                  .trimResults().split(value));
             Set<String> validValues = ImmutableSet.copyOf(anyOfParameter.split("\\|"));
             values.removeAll(validValues);
             if (!values.isEmpty()) {
                 String validValuesList = "\""
-                        + Joiner.on("\", \"").join(validValues) + "\"";
+                      + Joiner.on("\", \"").join(validValues) + "\"";
                 _problemConsumer.error("Property " + key.getPropertyName()
-                        + ": \"" + value
-                        + "\" is not a valid value. Must be a comma separated list of "
-                        + validValuesList);
+                      + ": \"" + value
+                      + "\" is not a valid value. Must be a comma separated list of "
+                      + validValuesList);
             }
         }
     }
 
     /**
-     * Define the binary relationship property A hasSynonym property B
-     * as true iff either:
+     * Define the binary relationship property A hasSynonym property B as true iff either:
      * <ul>
      * <li>If there exists precisely one non-deprecated property with a simple reference to
      * property A; e.g.
@@ -392,8 +364,7 @@ public class ConfigurationProperties
      * hasSynonym relationship (property B) with the supplied property
      * (as property A), or null if no such property exists.
      */
-    private String findSynonymOf(String propertyName)
-    {
+    private String findSynonymOf(String propertyName) {
         String synonym = null;
         String simpleReference = "${" + propertyName + "}";
 
@@ -415,8 +386,7 @@ public class ConfigurationProperties
         return synonym;
     }
 
-    private String messageFor(AnnotatedKey key)
-    {
+    private String messageFor(AnnotatedKey key) {
         String name = key.getPropertyName();
 
         StringBuilder sb = new StringBuilder();
@@ -432,7 +402,7 @@ public class ConfigurationProperties
         } else if (key.hasAnnotation(Annotation.OBSOLETE)) {
             sb.append("please remove this assignment; ");
             sb.append(key.hasError() ? key.getError() : "it has no effect");
-        } else if(key.hasAnnotation(Annotation.DEPRECATED)) {
+        } else if (key.hasAnnotation(Annotation.DEPRECATED)) {
             String synonym = findSynonymOf(name);
             if (synonym != null) {
                 sb.append("use \"").append(synonym).append("\" instead");
@@ -450,25 +420,21 @@ public class ConfigurationProperties
     }
 
     @Override
-    public synchronized Enumeration<?> propertyNames()
-    {
+    public synchronized Enumeration<?> propertyNames() {
         return Collections.enumeration(stringPropertyNames());
     }
 
-    public String replaceKeywords(String s)
-    {
+    public String replaceKeywords(String s) {
         return Formats.replaceKeywords(s, _replaceable);
     }
 
-    public String getValue(String name)
-    {
+    public String getValue(String name) {
         String value = getProperty(name);
         return (value == null) ? null : replaceKeywords(value);
     }
 
     @Nullable
-    public AnnotatedKey getAnnotatedKey(String name)
-    {
+    public AnnotatedKey getAnnotatedKey(String name) {
         AnnotatedKey key = _annotatedKeys.get(name);
         if (key == null && defaults instanceof ConfigurationProperties) {
             key = ((ConfigurationProperties) defaults).getAnnotatedKey(name);
@@ -476,8 +442,7 @@ public class ConfigurationProperties
         return key;
     }
 
-    private void putAnnotatedKey(AnnotatedKey key)
-    {
+    private void putAnnotatedKey(AnnotatedKey key) {
         _annotatedKeys.put(key.getPropertyName(), key);
     }
 }

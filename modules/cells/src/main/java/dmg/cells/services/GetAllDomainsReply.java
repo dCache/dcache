@@ -23,21 +23,19 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetAllDomainsReply implements Serializable
-{
+public class GetAllDomainsReply implements Serializable {
+
     private static final long serialVersionUID = -1927002132633862165L;
     private final Map<String, Collection<String>> domains;
 
-    public GetAllDomainsReply(Map<String, Collection<String>> domains)
-    {
+    public GetAllDomainsReply(Map<String, Collection<String>> domains) {
         this.domains = domains;
     }
 
     /**
      * Returns a multimap from domains to the well known cells of that domain.
      */
-    public Map<String, Collection<String>> getDomains()
-    {
+    public Map<String, Collection<String>> getDomains() {
         Map<String, Collection<String>> map = new HashMap<>();
         domains.forEach((k, v) -> map.put(k, new ArrayList<>(v)));
         return map;

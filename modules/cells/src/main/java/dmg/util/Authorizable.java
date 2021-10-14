@@ -1,5 +1,6 @@
-package dmg.util; 
+package dmg.util;
 
 public interface Authorizable {
-    String getAuthorizedPrincipal() ;
+
+    String getAuthorizedPrincipal();
 }

@@ -17,89 +17,76 @@
  */
 package org.dcache.pool.repository;
 
-import java.nio.file.OpenOption;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.nio.file.OpenOption;
+import java.util.Set;
 import org.dcache.util.Strings;
 
 /**
  * A ReplicaStore that delegates all operations to some delegate.
  */
-public abstract class ForwardingReplicaStore implements ReplicaStore
-{
+public abstract class ForwardingReplicaStore implements ReplicaStore {
+
     private static final String NAME_SUFFIX = "ReplicaStore";
 
     protected abstract ReplicaStore delegate();
 
     @Override
-    public void init() throws CacheException
-    {
+    public void init() throws CacheException {
         delegate().init();
     }
 
     @Override
-    public Set<diskCacheV111.util.PnfsId> index(IndexOption... options) throws CacheException
-    {
+    public Set<diskCacheV111.util.PnfsId> index(IndexOption... options) throws CacheException {
         return delegate().index(options);
     }
 
     @Override
-    public ReplicaRecord get(PnfsId id) throws CacheException
-    {
+    public ReplicaRecord get(PnfsId id) throws CacheException {
         return delegate().get(id);
     }
 
     @Override
     public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
-            throws DuplicateEntryException, CacheException
-    {
+          throws DuplicateEntryException, CacheException {
         return delegate().create(id, flags);
     }
 
     @Override
-    public void remove(PnfsId id) throws CacheException
-    {
+    public void remove(PnfsId id) throws CacheException {
         delegate().remove(id);
     }
 
     @Override
-    public boolean isOk()
-    {
+    public boolean isOk() {
         return delegate().isOk();
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         delegate().close();
     }
 
     @Override
-    public long getFreeSpace()
-    {
+    public long getFreeSpace() {
         return delegate().getFreeSpace();
     }
 
     @Override
-    public long getTotalSpace()
-    {
+    public long getTotalSpace() {
         return delegate().getTotalSpace();
     }
 
-    private String name()
-    {
+    private String name() {
         String name = getClass().getSimpleName();
         return name.endsWith(NAME_SUFFIX)
-                ? name.substring(0, name.length() - NAME_SUFFIX.length())
-                : name;
+              ? name.substring(0, name.length() - NAME_SUFFIX.length())
+              : name;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder(name());
 
         String innerName = delegate().toString();

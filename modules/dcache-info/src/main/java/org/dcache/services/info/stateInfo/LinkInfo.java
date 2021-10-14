@@ -3,7 +3,6 @@ package org.dcache.services.info.stateInfo;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,46 +12,40 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A simple class to store information about a link.
  */
-public class LinkInfo
-{
+public class LinkInfo {
+
     /**
-     * The different types of unit that may be used to select a link. These
-     * are dcache, store, protocol and network.
+     * The different types of unit that may be used to select a link. These are dcache, store,
+     * protocol and network.
      */
-    public enum UNIT_TYPE
-    {
+    public enum UNIT_TYPE {
         DCACHE("dcache"), STORE("store"), PROTOCOL("protocol"), NETWORK("net");
 
         private String _pathElement;
 
-        UNIT_TYPE(String pathElement)
-        {
+        UNIT_TYPE(String pathElement) {
             _pathElement = pathElement;
         }
 
-        public String getPathElement()
-        {
+        public String getPathElement() {
             return _pathElement;
         }
     }
 
     /**
-     * The four different types of operation that may be allowed on a link.
-     * These are read, write, stage and pool-to-pool destination.
+     * The four different types of operation that may be allowed on a link. These are read, write,
+     * stage and pool-to-pool destination.
      */
-    public enum OPERATION
-    {
+    public enum OPERATION {
         READ("read"), WRITE("write"), CACHE("cache"), P2P("p2p");
 
         private String _pathElement;
 
-        OPERATION(String pathElement)
-        {
+        OPERATION(String pathElement) {
             _pathElement = pathElement;
         }
 
-        public String getPathElement()
-        {
+        public String getPathElement() {
             return _pathElement;
         }
     }
@@ -65,79 +58,67 @@ public class LinkInfo
 
     private final Map<OPERATION, Long> _operationPref = new ConcurrentHashMap<>();
 
-    public LinkInfo(String id)
-    {
+    public LinkInfo(String id) {
         _id = id;
     }
 
-    protected void addPool(String poolName)
-    {
+    protected void addPool(String poolName) {
         synchronized (_pools) {
             _pools.add(poolName);
         }
     }
 
-    protected void addPoolgroup(String poolgroup)
-    {
+    protected void addPoolgroup(String poolgroup) {
         synchronized (_poolgroups) {
             _poolgroups.add(poolgroup);
         }
     }
 
-    protected void addUnitgroup(String unitgroupName)
-    {
+    protected void addUnitgroup(String unitgroupName) {
         synchronized (_unitgroups) {
             _unitgroups.add(unitgroupName);
         }
     }
 
-    protected void addUnit(UNIT_TYPE type, String unitName)
-    {
+    protected void addUnit(UNIT_TYPE type, String unitName) {
         synchronized (_units) {
             _units.put(type, unitName);
         }
     }
 
-    protected void setOperationPref(OPERATION operation, long pref)
-    {
+    protected void setOperationPref(OPERATION operation, long pref) {
         _operationPref.put(operation, pref);
     }
 
-    public String getId()
-    {
+    public String getId() {
         return _id;
     }
 
-    public Set<String> getPools()
-    {
+    public Set<String> getPools() {
         synchronized (_pools) {
             return ImmutableSet.copyOf(_pools);
         }
     }
 
-    public Set<String> getPoolgroups()
-    {
+    public Set<String> getPoolgroups() {
         synchronized (_poolgroups) {
             return ImmutableSet.copyOf(_poolgroups);
         }
     }
 
-    public Set<String> getUnitgroups()
-    {
+    public Set<String> getUnitgroups() {
         synchronized (_unitgroups) {
             return ImmutableSet.copyOf(_unitgroups);
         }
     }
 
-    public Set<String> getUnits(UNIT_TYPE unitType)
-    {
+    public Set<String> getUnits(UNIT_TYPE unitType) {
         synchronized (_units) {
             return ImmutableSet.copyOf(_units.get(unitType));
         }
     }
 
-    public long getOperationPref(OPERATION operation)
-    {
+    public long getOperationPref(OPERATION operation) {
         Long preference = _operationPref.get(operation);
 
         // If not defined, assume not accessible for this operation.
@@ -148,28 +129,25 @@ public class LinkInfo
         return preference;
     }
 
-    public boolean isAccessableFor(OPERATION operation)
-    {
+    public boolean isAccessableFor(OPERATION operation) {
         long pref = getOperationPref(operation);
 
         if (operation == OPERATION.P2P) {
             return pref > 0 ||
-                    (pref == -1 && getOperationPref(OPERATION.READ) > 0);
+                  (pref == -1 && getOperationPref(OPERATION.READ) > 0);
         }
 
         return pref > 0;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _pools.hashCode() ^ _poolgroups.hashCode() ^ _units.hashCode() ^
-               _operationPref.hashCode();
+              _operationPref.hashCode();
     }
 
     @Override
-    public boolean equals(Object otherObject)
-    {
+    public boolean equals(Object otherObject) {
         if (!(otherObject instanceof LinkInfo)) {
             return false;
         }
@@ -202,8 +180,7 @@ public class LinkInfo
     /**
      * A handy method to emit some debugging information about this LinkInfo.
      */
-    public String debugInfo()
-    {
+    public String debugInfo() {
         StringBuilder sb = new StringBuilder();
 
         sb.append("=== LinkInfo for link \"").append(_id).append("\" ===\n");
@@ -234,7 +211,7 @@ public class LinkInfo
             for (OPERATION operation : OPERATION.values()) {
                 if (_operationPref.containsKey(operation)) {
                     sb.append("    ").append(operation).append(": ")
-                            .append(_operationPref.get(operation)).append("\n");
+                          .append(_operationPref.get(operation)).append("\n");
                 }
             }
         }

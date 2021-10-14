@@ -1,17 +1,27 @@
 package org.dcache.services.billing.cells;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
+
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.stringtemplate.v4.ST;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.compiler.STException;
-
-import javax.annotation.PostConstruct;
-
+import diskCacheV111.cells.DateRenderer;
+import diskCacheV111.vehicles.InfoMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.PnfsFileInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.EnvironmentAware;
+import dmg.util.CommandThrowableException;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,58 +38,45 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import diskCacheV111.cells.DateRenderer;
-import diskCacheV111.vehicles.InfoMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-import diskCacheV111.vehicles.PnfsFileInfoMessage;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.CommandThrowableException;
-import dmg.util.Formats;
-import dmg.util.Replaceable;
-
+import javax.annotation.PostConstruct;
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import org.dcache.util.Args;
 import org.dcache.util.Slf4jSTErrorListener;
-
-import static java.nio.file.StandardOpenOption.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.compiler.STException;
 
 /**
- * This class is responsible for the processing of messages from other
- * domains regarding transfers and pool usage.
+ * This class is responsible for the processing of messages from other domains regarding transfers
+ * and pool usage.
  */
 public final class BillingCell
-    implements CellMessageReceiver,
-               CellCommandListener,
-               CellInfoProvider,
-               EnvironmentAware
-{
+      implements CellMessageReceiver,
+      CellCommandListener,
+      CellInfoProvider,
+      EnvironmentAware {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(BillingCell.class);
+          LoggerFactory.getLogger(BillingCell.class);
     public static final String FORMAT_PREFIX = "billing.text.format.";
 
     private final SimpleDateFormat _formatter =
-        new SimpleDateFormat ("MM.dd HH:mm:ss");
+          new SimpleDateFormat("MM.dd HH:mm:ss");
     private final SimpleDateFormat _fileNameFormat =
-        new SimpleDateFormat("yyyy.MM.dd");
+          new SimpleDateFormat("yyyy.MM.dd");
     private final SimpleDateFormat _directoryNameFormat =
-        new SimpleDateFormat("yyyy" + File.separator + "MM");
+          new SimpleDateFormat("yyyy" + File.separator + "MM");
 
     private final STGroup _templateGroup = new STGroup('$', '$');
-    private final Map<String,String> _formats = new HashMap<>();
+    private final Map<String, String> _formats = new HashMap<>();
 
-    private final Map<String,int[]> _map = Maps.newHashMap();
-    private final Map<String,long[]> _poolStatistics = Maps.newHashMap();
-    private final Map<String,Map<String,long[]>> _poolStorageMap = Maps.newHashMap();
+    private final Map<String, int[]> _map = Maps.newHashMap();
+    private final Map<String, long[]> _poolStatistics = Maps.newHashMap();
+    private final Map<String, Map<String, long[]>> _poolStorageMap = Maps.newHashMap();
 
     private int _requests;
     private int _failed;
@@ -93,23 +90,23 @@ public final class BillingCell
     private boolean _enableText;
     private boolean _flatTextDir;
 
-    public BillingCell()
-    {
+    public BillingCell() {
         _templateGroup.registerRenderer(Date.class, new DateRenderer());
         _templateGroup.setListener(new Slf4jSTErrorListener(_log));
     }
 
     @Override
-    public void setEnvironment(final Map<String,Object> environment) {
+    public void setEnvironment(final Map<String, Object> environment) {
         Replaceable replaceable = name -> {
-            Object value =  environment.get(name);
+            Object value = environment.get(name);
             return (value == null) ? null : value.toString().trim();
         };
-        for (Map.Entry<String,Object> e: environment.entrySet()) {
+        for (Map.Entry<String, Object> e : environment.entrySet()) {
             String key = e.getKey();
             if (key.startsWith(FORMAT_PREFIX)) {
                 String format = Formats.replaceKeywords(String.valueOf(e.getValue()), replaceable);
-                String clazz = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, key.substring(FORMAT_PREFIX.length()));
+                String clazz = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL,
+                      key.substring(FORMAT_PREFIX.length()));
                 _formats.put(clazz, format);
             }
         }
@@ -128,16 +125,15 @@ public final class BillingCell
     @Override
     public void getInfo(PrintWriter pw) {
         pw.format("%20s : %6d / %d\n", "Requests", _requests, _failed);
-        for (Map.Entry<String,int[]> entry: _map.entrySet()) {
+        for (Map.Entry<String, int[]> entry : _map.entrySet()) {
             int[] values = entry.getValue();
             pw.format("%20s : %6d / %d\n",
-                      entry.getKey(), values[0], values[1]);
+                  entry.getKey(), values[0], values[1]);
         }
     }
 
     @PostConstruct
-    public void start() throws CommandThrowableException
-    {
+    public void start() throws CommandThrowableException {
         if (_enableText) {
             String ext = getFilenameExtension(new Date());
             appendHeaders(getBillingPath(ext));
@@ -145,22 +141,21 @@ public final class BillingCell
         }
     }
 
-    protected void appendHeaders(Path path) throws CommandThrowableException
-    {
+    protected void appendHeaders(Path path) throws CommandThrowableException {
         try {
             String headers = getFormatHeaders();
             Files.write(path, headers.getBytes(StandardCharsets.UTF_8),
-                    StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+                  StandardOpenOption.APPEND, StandardOpenOption.WRITE);
         } catch (NoSuchFileException ignored) {
         } catch (IOException e) {
-            throw new CommandThrowableException("Failed to write to billing file " + path + ": " + e, e);
+            throw new CommandThrowableException(
+                  "Failed to write to billing file " + path + ": " + e, e);
         }
     }
 
     /**
-     * The main cell routine. Depending on the type of cell message and the
-     * option sets, it either processes the message for persistent storage or
-     * logs the message to a text file (or both).
+     * The main cell routine. Depending on the type of cell message and the option sets, it either
+     * processes the message for persistent storage or logs the message to a text file (or both).
      */
     public void messageArrived(InfoMessage info) {
         /*
@@ -216,16 +211,17 @@ public final class BillingCell
 
     public Object[][] ac_get_billing_info(Args args) {
         return _map.entrySet().stream()
-                .map(e -> new Object[]{e.getKey(), Arrays.copyOf(e.getValue(), 2)})
-                .toArray(Object[][]::new);
+              .map(e -> new Object[]{e.getKey(), Arrays.copyOf(e.getValue(), 2)})
+              .toArray(Object[][]::new);
     }
 
     public static final String hh_get_pool_statistics = "[<poolName>]";
-    public Map<String,long[]> ac_get_pool_statistics_$_0_1(Args args) {
+
+    public Map<String, long[]> ac_get_pool_statistics_$_0_1(Args args) {
         if (args.argc() == 0) {
             return _poolStatistics;
         }
-        Map<String,long[]> map = _poolStorageMap.get(args.argv(0));
+        Map<String, long[]> map = _poolStorageMap.get(args.argv(0));
         if (map != null) {
             return map;
         }
@@ -233,6 +229,7 @@ public final class BillingCell
     }
 
     public static final String hh_clear_pool_statistics = "";
+
     public String ac_clear_pool_statistics(Args args) {
         _poolStatistics.clear();
         _poolStorageMap.clear();
@@ -240,14 +237,15 @@ public final class BillingCell
     }
 
     public static final String hh_dump_pool_statistics = "[<fileName>]";
+
     public String ac_dump_pool_statistics_$_0_1(Args args)
-        throws IOException
-    {
+          throws IOException {
         dumpPoolStatistics((args.argc() == 0) ? null : args.argv(0));
         return "";
     }
 
     public static final String hh_get_poolstatus = "[<fileName>]";
+
     public String ac_get_poolstatus_$_0_1(Args args) {
         String name;
         if (args.argc() == 0) {
@@ -263,13 +261,13 @@ public final class BillingCell
     }
 
     private void dumpPoolStatistics(String name)
-        throws IOException
-    {
+          throws IOException {
         if (name == null) {
             name = "poolFlow-" + _fileNameFormat.format(new Date());
         }
         Path report = _logsDir.resolve(name);
-        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(report, StandardCharsets.UTF_8))) {
+        try (PrintWriter pw = new PrintWriter(
+              Files.newBufferedWriter(report, StandardCharsets.UTF_8))) {
             Set<Map.Entry<String, Map<String, long[]>>> pools = _poolStorageMap.entrySet();
 
             for (Map.Entry<String, Map<String, long[]>> poolEntry : pools) {
@@ -318,8 +316,7 @@ public final class BillingCell
         }
     }
 
-    private String getFilenameExtension(Date dateOfEvent)
-    {
+    private String getFilenameExtension(Date dateOfEvent) {
         if (_flatTextDir) {
             _currentDbFile = _logsDir;
             return _fileNameFormat.format(dateOfEvent);
@@ -335,8 +332,7 @@ public final class BillingCell
         }
     }
 
-    private void log(Path path, String output)
-    {
+    private void log(Path path, String output) {
         byte[] outputBytes = (output + "\n").getBytes(StandardCharsets.UTF_8);
         try {
             try {
@@ -345,7 +341,7 @@ public final class BillingCell
                 String outputWithHeader = getFormatHeaders() + output + '\n';
                 try {
                     Files.write(path, outputWithHeader.getBytes(StandardCharsets.UTF_8),
-                            WRITE, CREATE_NEW);
+                          WRITE, CREATE_NEW);
                 } catch (FileAlreadyExistsException e) {
                     // Lost the race, so try appending again
                     Files.write(path, outputBytes, WRITE, APPEND);
@@ -356,20 +352,18 @@ public final class BillingCell
         }
     }
 
-    private String getFormatHeaders()
-    {
+    private String getFormatHeaders() {
         return _formats.entrySet().stream()
-                .map(e -> "## " + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, e.getKey()) + ' ' + e.getValue() + '\n')
-                .collect(Collectors.joining());
+              .map(e -> "## " + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, e.getKey()) + ' '
+                    + e.getValue() + '\n')
+              .collect(Collectors.joining());
     }
 
-    protected Path getBillingPath(String ext)
-    {
+    protected Path getBillingPath(String ext) {
         return _currentDbFile.resolve("billing-" + ext);
     }
 
-    private Path getErrorPath(String ext)
-    {
+    private Path getErrorPath(String ext) {
         return _currentDbFile.resolve("billing-error-" + ext);
     }
 
@@ -399,7 +393,7 @@ public final class BillingCell
             PnfsFileInfoMessage pnfsInfo = (PnfsFileInfoMessage) info;
             StorageInfo sinfo = (pnfsInfo).getStorageInfo();
             if (sinfo != null) {
-                Map<String,long[]> map = _poolStorageMap.get(cellName);
+                Map<String, long[]> map = _poolStorageMap.get(cellName);
                 if (map == null) {
                     map = Maps.newHashMap();
                     _poolStorageMap.put(cellName, map);
@@ -420,7 +414,7 @@ public final class BillingCell
                     counters[0]++;
                     MoverInfoMessage mim = (MoverInfoMessage) info;
                     counters[mim.isFileCreated() ? 4 : 5] +=
-                        mim.getDataTransferred();
+                          mim.getDataTransferred();
                 } else if (transactionType.equals("restore")) {
                     counters[1]++;
                     counters[6] += pnfsInfo.getFileSize();

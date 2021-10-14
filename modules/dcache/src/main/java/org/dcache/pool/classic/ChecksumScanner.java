@@ -1,5 +1,9 @@
 package org.dcache.pool.classic;
 
+import static dmg.util.CommandException.checkCommand;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.google.common.collect.Iterables;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -34,15 +38,11 @@ import org.dcache.util.Checksum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static dmg.util.CommandException.checkCommand;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.util.Exceptions.messageOrClassName;
-
 public class ChecksumScanner
-    implements CellCommandListener, CellLifeCycleAware
-{
+      implements CellCommandListener, CellLifeCycleAware {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(ChecksumScanner.class);
+          LoggerFactory.getLogger(ChecksumScanner.class);
 
     private final FullScan _fullScan = new FullScan();
     private final Scrubber _scrubber = new Scrubber();
@@ -54,15 +54,15 @@ public class ChecksumScanner
 
     private File _scrubberStateFile;
 
-    /** Errors found while running 'csm check'.
+    /**
+     * Errors found while running 'csm check'.
      */
-    private final Map<PnfsId,Iterable<Checksum>> _bad =
-        new ConcurrentHashMap<>();
+    private final Map<PnfsId, Iterable<Checksum>> _bad =
+          new ConcurrentHashMap<>();
 
     private final Runnable listener = this::onConfigChange;
 
-    private void onConfigChange()
-    {
+    private void onConfigChange() {
         if (_csm.isScrubEnabled()) {
             startScrubber();
         } else {
@@ -70,28 +70,23 @@ public class ChecksumScanner
         }
     }
 
-    private void startScrubber()
-    {
+    private void startScrubber() {
         _scrubber.start();
     }
 
-    private void stopScrubber()
-    {
+    private void stopScrubber() {
         _scrubber.kill();
     }
 
-    public void setRepository(Repository repository)
-    {
+    public void setRepository(Repository repository) {
         _repository = repository;
     }
 
-    public void setChecksumModule(ChecksumModuleV1 csm)
-    {
+    public void setChecksumModule(ChecksumModuleV1 csm) {
         _csm = csm;
     }
 
-    public void setScrubberStateFile(File path)
-    {
+    public void setScrubberStateFile(File path) {
         _scrubberStateFile = path;
     }
 
@@ -99,29 +94,27 @@ public class ChecksumScanner
         this.poolName = poolName;
     }
 
-    private class FullScan extends Singleton
-    {
+    private class FullScan extends Singleton {
+
         private volatile int _totalCount;
         private volatile int _badCount;
         private volatile int _unableCount;
 
-        public FullScan()
-        {
+        public FullScan() {
             super("FullScan");
         }
 
         @Override
-        public void runIt() throws Exception
-        {
+        public void runIt() throws Exception {
             stopScrubber();
             try {
                 _totalCount = _badCount = 0;
                 _bad.clear();
 
-                for (PnfsId id: _repository) {
+                for (PnfsId id : _repository) {
                     try {
                         ReplicaDescriptor handle =
-                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
+                              _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                         try {
                             _csm.verifyChecksum(handle);
                         } finally {
@@ -136,7 +129,8 @@ public class ChecksumScanner
                             _badCount++;
                             invalidateCacheEntryAndSendAlarm(id, e);
                         } else {
-                            _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
+                            _log.warn("csm scan command unable to verify {}: {}", id,
+                                  e.getMessage());
                             _unableCount++;
                         }
                     } catch (CacheException e) {
@@ -144,7 +138,8 @@ public class ChecksumScanner
                         _unableCount++;
                     } catch (IOException e) {
                         _unableCount++;
-                        throw new IOException("failed to read " + id + ": " + messageOrClassName(e), e);
+                        throw new IOException("failed to read " + id + ": " + messageOrClassName(e),
+                              e);
                     }
                     _totalCount++;
                 }
@@ -156,28 +151,25 @@ public class ChecksumScanner
             }
         }
 
-        public String toString()
-        {
+        public String toString() {
             return super.toString() + " "
-                + _totalCount + " files: "
-                + _badCount + " corrupt, "
-                + _unableCount + " unable to check";
+                  + _totalCount + " files: "
+                  + _badCount + " corrupt, "
+                  + _unableCount + " unable to check";
         }
     }
 
-    private class SingleScan extends Singleton
-    {
+    private class SingleScan extends Singleton {
+
         private volatile PnfsId _pnfsId;
         private volatile Iterable<Checksum> _actualChecksums;
         private volatile Iterable<Checksum> _expectedChecksums;
 
-        public SingleScan()
-        {
+        public SingleScan() {
             super("SingleScan");
         }
 
-        public synchronized void go(PnfsId pnfsId)
-        {
+        public synchronized void go(PnfsId pnfsId) {
             _expectedChecksums = null;
             _actualChecksums = null;
             _pnfsId = pnfsId;
@@ -186,12 +178,11 @@ public class ChecksumScanner
 
         @Override
         public void runIt()
-                throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
-        {
+              throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException {
             stopScrubber();
             try {
                 ReplicaDescriptor handle =
-                    _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
+                      _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
                 try {
                     _actualChecksums = _csm.verifyChecksum(handle);
                 } catch (FileCorruptedCacheException e) {
@@ -207,8 +198,7 @@ public class ChecksumScanner
             }
         }
 
-        public synchronized String toString()
-        {
+        public synchronized String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(super.toString());
             if (_pnfsId != null) {
@@ -219,18 +209,18 @@ public class ChecksumScanner
                     sb.append("OK ").append(_actualChecksums);
                 } else {
                     sb.append("BAD File = ").append(_actualChecksums)
-                        .append(" Expected = ").append(_expectedChecksums);
+                          .append(" Expected = ").append(_expectedChecksums);
                 }
             }
             return sb.toString();
         }
     }
 
-    private class Scrubber extends Singleton
-    {
+    private class Scrubber extends Singleton {
+
         private final long CHECKPOINT_INTERVAL = TimeUnit.MINUTES.toMillis(1);
         private final long FAILURE_RATELIMIT_DELAY =
-            TimeUnit.SECONDS.toMillis(10);
+              TimeUnit.SECONDS.toMillis(10);
 
         private volatile int _badCount;
         private volatile int _numFiles;
@@ -241,42 +231,38 @@ public class ChecksumScanner
         private long _lastCheckpoint;
         private long _lastStart;
 
-        public Scrubber()
-        {
+        public Scrubber() {
             super("Scrubber");
         }
 
         /**
-         * Save scrubber state to <code>_scrubberStateFile</code>. The format is
-         * the start time of the last scrub (<code>_lastStart</code>) separated
-         * by a whitespace followed by the pnfs id of the file last checked
-         * (<code>_lastFileChecked</code>). If there's no last checked file,
-         * write a dash instead.
+         * Save scrubber state to <code>_scrubberStateFile</code>. The format is the start time of
+         * the last scrub (<code>_lastStart</code>) separated by a whitespace followed by the pnfs
+         * id of the file last checked (<code>_lastFileChecked</code>). If there's no last checked
+         * file, write a dash instead.
          */
-        private void saveState()
-        {
+        private void saveState() {
             String line = _lastStart + " " +
-                          ((_lastFileChecked == null) ? "-" : _lastFileChecked);
+                  ((_lastFileChecked == null) ? "-" : _lastFileChecked);
             try {
                 Files.write(_scrubberStateFile.toPath(), line.getBytes(Charset.defaultCharset()));
             } catch (IOException e) {
-                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, messageOrClassName(e));
+                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile,
+                      messageOrClassName(e));
             }
         }
 
         /**
-         * Read the saved state information from disk written by <code>
-         * saveState()</code>. The following fields are initialized:<code>
-         * _lastFileChecked</code> - the pnfs id of the file that was last
-         * checksummed; <code>_lastStart</code> - time when the last scrub
-         * started, if there's no saved state it's initialized to the current
-         * time.
+         * Read the saved state information from disk written by <code> saveState()</code>. The
+         * following fields are initialized:<code> _lastFileChecked</code> - the pnfs id of the file
+         * that was last checksummed; <code>_lastStart</code> - time when the last scrub started, if
+         * there's no saved state it's initialized to the current time.
          */
-        private void initializeFromSavedState()
-        {
+        private void initializeFromSavedState() {
             String line;
             try {
-                line = Files.readAllLines(_scrubberStateFile.toPath(), Charset.defaultCharset()).get(0);
+                line = Files.readAllLines(_scrubberStateFile.toPath(), Charset.defaultCharset())
+                      .get(0);
             } catch (NoSuchFileException e) {
                 /**
                  * ignored - start immediately and check whole pool
@@ -285,14 +271,14 @@ public class ChecksumScanner
                 return;
             } catch (IOException e) {
                 _log.error("Failed to read scrubber saved state from {}: {}",
-                          _scrubberStateFile, messageOrClassName(e));
+                      _scrubberStateFile, messageOrClassName(e));
                 return;
             }
 
             String[] fields = line.split(" ");
             if (fields.length != 2) {
                 _log.error("scrubber saved state in {} has an invalid format: {}",
-                          _scrubberStateFile, line);
+                      _scrubberStateFile, line);
                 return;
             }
 
@@ -300,32 +286,29 @@ public class ChecksumScanner
                 _lastStart = Long.parseLong(fields[0]);
             } catch (NumberFormatException e) {
                 _log.error("Failed to read the last scrubber start time from {}: {}",
-                          _scrubberStateFile, e.getMessage());
+                      _scrubberStateFile, e.getMessage());
                 return;
             }
 
             if (PnfsId.isValid(fields[1])) {
                 _log.debug("Resuming scrubbing from the first file with a pnfs id greater than {}",
-                           fields[1]);
+                      fields[1]);
                 _lastFileChecked = new PnfsId(fields[1]);
             } else if (!fields[1].equals("-")) {
                 _log.error("Last checked pnfs id within {} has an invalid format: {}",
-                           _scrubberStateFile, fields[1]);
+                      _scrubberStateFile, fields[1]);
             }
         }
 
-        private boolean isFirstStart()
-        {
+        private boolean isFirstStart() {
             return !_scrubberStateFile.exists();
         }
 
-        private boolean isResuming()
-        {
+        private boolean isResuming() {
             return (_lastFileChecked != null);
         }
 
-        private void waitUntil(long t) throws InterruptedException
-        {
+        private void waitUntil(long t) throws InterruptedException {
             long now;
             while ((now = System.currentTimeMillis()) < t) {
                 Thread.sleep(t - now);
@@ -333,16 +316,14 @@ public class ChecksumScanner
         }
 
         @Override
-        public synchronized void start()
-        {
+        public synchronized void start() {
             if (_csm.isScrubEnabled() && !isActive()) {
                 super.start();
             }
         }
 
         @Override
-        public void runIt() throws InterruptedException
-        {
+        public void runIt() throws InterruptedException {
             initializeFromSavedState();
             boolean isFinished = !isFirstStart() && !isResuming();
 
@@ -350,13 +331,14 @@ public class ChecksumScanner
                 while (true) {
                     if (isFinished) {
                         _log.debug("Next scrub start is {}",
-                             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").
-                                 format(new Date(_lastStart +
-                                                 _csm.getScrubPeriod())));
+                              new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").
+                                    format(new Date(_lastStart +
+                                          _csm.getScrubPeriod())));
                         if (System.currentTimeMillis() - _lastStart > _csm.getScrubPeriod()) {
-                            _log.warn("The last scrub took longer time to finish ({} s.) than the configured period ({} s.) - consider increasing the scrubbing period",
-                                      System.currentTimeMillis() - _lastStart,
-                                      _csm.getScrubPeriod());
+                            _log.warn(
+                                  "The last scrub took longer time to finish ({} s.) than the configured period ({} s.) - consider increasing the scrubbing period",
+                                  System.currentTimeMillis() - _lastStart,
+                                  _csm.getScrubPeriod());
                         }
                         waitUntil(_lastStart + _csm.getScrubPeriod());
                         _lastStart = System.currentTimeMillis();
@@ -372,7 +354,7 @@ public class ChecksumScanner
                         scanFiles(toScan);
                         if (_badCount > 0) {
                             _log.warn("Finished scrubbing. Found {} bad files of {}",
-                                       _badCount, _numFiles);
+                                  _badCount, _numFiles);
                         }
                         isFinished = true;
                     } catch (IOException e) {
@@ -396,14 +378,14 @@ public class ChecksumScanner
         }
 
         /**
-         * Return array of pnfs id's that has not yet been verified. Any files
-         * added to the pool after this array has been generated will be
-         * included the next time the array is generated.
-         * @return array of pnfs id's that needs to be verified. No check is
-         *         done on in which state the files are in.
+         * Return array of pnfs id's that has not yet been verified. Any files added to the pool
+         * after this array has been generated will be included the next time the array is
+         * generated.
+         *
+         * @return array of pnfs id's that needs to be verified. No check is done on in which state
+         * the files are in.
          */
-        private PnfsId[] getFilesToVerify()
-        {
+        private PnfsId[] getFilesToVerify() {
             PnfsId[] repcopy = Iterables.toArray(_repository, PnfsId.class);
             Arrays.sort(repcopy);
 
@@ -427,11 +409,9 @@ public class ChecksumScanner
         }
 
         /**
-         * Save state information only every <code>CHECKPOINT_INTERVAL</code>
-         * period.
+         * Save state information only every <code>CHECKPOINT_INTERVAL</code> period.
          */
-        private void checkpointIfNeeded()
-        {
+        private void checkpointIfNeeded() {
             if (System.currentTimeMillis() - _lastCheckpoint > CHECKPOINT_INTERVAL) {
                 saveState();
                 _lastCheckpoint = System.currentTimeMillis();
@@ -439,14 +419,13 @@ public class ChecksumScanner
         }
 
         private void scanFiles(PnfsId[] repository)
-                throws InterruptedException, NoSuchAlgorithmException, IOException
-        {
+              throws InterruptedException, NoSuchAlgorithmException, IOException {
             for (PnfsId id : repository) {
                 try {
                     if (_repository.getState(id) == ReplicaState.CACHED ||
-                        _repository.getState(id) == ReplicaState.PRECIOUS) {
+                          _repository.getState(id) == ReplicaState.PRECIOUS) {
                         ReplicaDescriptor handle =
-                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
+                              _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                         try {
                             _csm.verifyChecksumWithThroughputLimit(handle);
                         } finally {
@@ -474,98 +453,89 @@ public class ChecksumScanner
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return super.toString() + " processed "
-                + _totalCount + " of " + _numFiles + " files: "
-                + _badCount + " corrupt, "
-                + _unableCount + " unable to check";
+                  + _totalCount + " of " + _numFiles + " files: "
+                  + _badCount + " corrupt, "
+                  + _unableCount + " unable to check";
         }
     }
 
     private void invalidateCacheEntryAndSendAlarm(PnfsId id, FileCorruptedCacheException e) {
         _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM, id.toString(), poolName),
-                   "Marking {} on {} as BROKEN: {}", id, poolName, e.getMessage());
+              "Marking {} on {} as BROKEN: {}", id, poolName, e.getMessage());
         try {
             _repository.setState(id, ReplicaState.BROKEN,
-                "scrubber found checksum inconsistency");
+                  "scrubber found checksum inconsistency");
         } catch (CacheException | InterruptedException t) {
             _log.warn("Failed to mark {} as BROKEN: {}", id, t.getMessage());
         }
     }
 
-    private abstract static class Singleton
-    {
-        private final String  _name;
+    private abstract static class Singleton {
+
+        private final String _name;
 
         private Exception _lastException;
         private Thread _currentThread;
         private String _abortMessage;
 
-        private Singleton(String name)
-        {
+        private Singleton(String name) {
             _name = name;
         }
 
         protected abstract void runIt() throws Exception;
 
-        public synchronized void kill()
-        {
+        public synchronized void kill() {
             if (isActive()) {
                 _currentThread.interrupt();
             }
         }
 
-        public synchronized boolean isActive()
-        {
+        public synchronized boolean isActive() {
             return (_currentThread != null);
         }
 
-        public synchronized void setAbortMessage(String reason)
-        {
+        public synchronized void setAbortMessage(String reason) {
             _abortMessage = requireNonNull(reason);
         }
 
-        private synchronized void stopped()
-        {
+        private synchronized void stopped() {
             _currentThread = null;
         }
 
-        public synchronized void setException(Exception e)
-        {
+        public synchronized void setException(Exception e) {
             _lastException = e;
         }
 
-        public synchronized void start()
-        {
+        public synchronized void start() {
             if (isActive()) {
                 throw new IllegalStateException("Still active");
             }
             _abortMessage = null;
             _lastException = null;
             _currentThread = new Thread(_name) {
-                    @Override
-                    public void run() {
-                        try {
-                            runIt();
-                        } catch (Exception ee) {
-                            setException(ee);
-                        } finally {
-                            stopped();
-                        }
+                @Override
+                public void run() {
+                    try {
+                        runIt();
+                    } catch (Exception ee) {
+                        setException(ee);
+                    } finally {
+                        stopped();
                     }
-                };
+                }
+            };
             _currentThread.start();
         }
 
         @Override
-        public synchronized String toString()
-        {
-            return _name + " " + getState() + (_lastException == null ? "" : " " + _lastException.toString()) + " ";
+        public synchronized String toString() {
+            return _name + " " + getState() + (_lastException == null ? ""
+                  : " " + _lastException.toString()) + " ";
         }
 
-        private synchronized String getState()
-        {
+        private synchronized String getState() {
             if (isActive()) {
                 return "Active";
             } else if (_abortMessage != null) {
@@ -577,28 +547,27 @@ public class ChecksumScanner
     }
 
     @Command(name = "csm check",
-            hint = "verify checksum of files on this pool",
-            description = "Do a checksum verification on a file or all files in " +
-                    "this pool. The result of the check can be view using the " +
-                    "'csm status' command.")
-    public class CsmCheckCommand implements Callable<String>
-    {
+          hint = "verify checksum of files on this pool",
+          description = "Do a checksum verification on a file or all files in " +
+                "this pool. The result of the check can be view using the " +
+                "'csm status' command.")
+    public class CsmCheckCommand implements Callable<String> {
+
         @Argument(valueSpec = "PNFSID|*",
-                usage = "Specify the pnfsID of the file to scan. If all " +
-                        "files in this pool are to be scan, simply use '*'.")
+              usage = "Specify the pnfsID of the file to scan. If all " +
+                    "files in this pool are to be scan, simply use '*'.")
         String pnfsID;
 
         @Override
         public String call() throws CommandException, CacheException,
-                InterruptedException, IOException, NoSuchAlgorithmException
-        {
+              InterruptedException, IOException, NoSuchAlgorithmException {
             if (pnfsID.equals("*")) {
                 checkCommand(!_fullScan.isActive(),
-                        "Existing full scan is still active: %s", _fullScan);
+                      "Existing full scan is still active: %s", _fullScan);
                 _fullScan.start();
             } else {
                 checkCommand(!_singleScan.isActive(),
-                        "Existing single scan is still active: %s", _singleScan);
+                      "Existing single scan is still active: %s", _singleScan);
                 _singleScan.go(new PnfsId(pnfsID));
             }
             return "Started ...; check 'csm status' for status";
@@ -606,55 +575,51 @@ public class ChecksumScanner
     }
 
     @Command(name = "csm status",
-            hint = "get checksum verification result",
-            description = "Display the detailed result of the checksum check " +
-                    "performed by scanning all or a single file in this pool. " +
-                    "This status report will contain the full scan, single scan " +
-                    "and the scrubber result.")
-    public class CsmStatusCommand implements Callable<String>
-    {
+          hint = "get checksum verification result",
+          description = "Display the detailed result of the checksum check " +
+                "performed by scanning all or a single file in this pool. " +
+                "This status report will contain the full scan, single scan " +
+                "and the scrubber result.")
+    public class CsmStatusCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return _fullScan.toString() + "\n" + _singleScan.toString() + "\n" +
-                    _scrubber.toString();
+                  _scrubber.toString();
         }
     }
 
     @Command(name = "csm show errors",
-            hint = "show errors found during checksum verification",
-            description = "Display the list of all errors found while running " +
-                    "the 'csm check' command. The shown information (based on " +
-                    "these errors) will contain the pnfsID and the actual " +
-                    "checksum value of the (corrupted) file. Nothing is returned " +
-                    "when no error is found.")
-    public class CsmShowErrorsCommand implements Callable<String>
-    {
+          hint = "show errors found during checksum verification",
+          description = "Display the list of all errors found while running " +
+                "the 'csm check' command. The shown information (based on " +
+                "these errors) will contain the pnfsID and the actual " +
+                "checksum value of the (corrupted) file. Nothing is returned " +
+                "when no error is found.")
+    public class CsmShowErrorsCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             StringBuilder builder = new StringBuilder();
-            for (Map.Entry<PnfsId,Iterable<Checksum>> e: _bad.entrySet()) {
+            for (Map.Entry<PnfsId, Iterable<Checksum>> e : _bad.entrySet()) {
                 builder
-                        .append(e.getKey())
-                        .append(" -> ")
-                        .append(e.getValue())
-                        .append('\n');
+                      .append(e.getKey())
+                      .append(" -> ")
+                      .append(e.getValue())
+                      .append('\n');
             }
             return builder.toString();
         }
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         _csm.addListener(listener);
         startScrubber();
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         _csm.removeListener(listener);
         stopScrubber();
     }

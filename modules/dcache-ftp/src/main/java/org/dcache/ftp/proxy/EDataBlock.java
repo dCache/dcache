@@ -69,54 +69,51 @@ package org.dcache.ftp.proxy;
 
 import java.io.InputStream;
 
-public class	EDataBlock {
+public class EDataBlock {
+
     private byte[] header;
-    private byte[]	data;
-    private String _myName="unknown";
+    private byte[] data;
+    private String _myName = "unknown";
     public static final int EOR_DESCRIPTOR = 128;
     public static final int EOF_DESCRIPTOR = 64;
     public static final int SUSPECTED_ERROR_DESCRIPTOR = 32;
     public static final int RESTART_MARKER_DESCRIPTOR = 16;
     public static final int EOD_DESCRIPTOR = 8;
     public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
-    public static final int HEADER_LENGTH=17;
+    public static final int HEADER_LENGTH = 17;
 
-    public EDataBlock(String name)
-    {	_myName = name;	}
+    public EDataBlock(String name) {
+        _myName = name;
+    }
 
-    public EDataBlock()
-    {	}
+    public EDataBlock() {
+    }
 
     public byte[] getHeader() {
         return header;
     }
 
-    public byte getDescriptors()
-    {
+    public byte getDescriptors() {
         return header[0];
     }
 
-    public boolean isDescriptorSet(int descriptor)
-    {
+    public boolean isDescriptorSet(int descriptor) {
         return (header[0] & descriptor) != 0;
     }
 
-    public void setDCCountTo1()
-    {
-        for ( int i = 9; i < 17; i++ ) {
+    public void setDCCountTo1() {
+        for (int i = 9; i < 17; i++) {
             header[i] = 0;
         }
-        header[16]= 1;
+        header[16] = 1;
     }
 
-    public void setDescriptor(int descriptor)
-    {
-        header[0] = (byte)(header[0] | descriptor);
+    public void setDescriptor(int descriptor) {
+        header[0] = (byte) (header[0] | descriptor);
     }
 
-    public void unsetDescriptor(int descriptor)
-    {
-        header[0] = (byte)(header[0] & ~descriptor);
+    public void unsetDescriptor(int descriptor) {
+        header[0] = (byte) (header[0] & ~descriptor);
     }
 
     public byte[] getData() {
@@ -125,21 +122,17 @@ public class	EDataBlock {
 
     public long getSize() {
         long size = 0;
-        for ( int i = 1; i < 9; i++ )
-        {
-            size = (size << 8) | ((int)header[i] & 0xFF);
+        for (int i = 1; i < 9; i++) {
+            size = (size << 8) | ((int) header[i] & 0xFF);
         }
         return size;
     }
 
     public long getDataChannelCount() {
         //XXX probably throwing an exception would be a better plan here...
-        if( isDescriptorSet( EOF_DESCRIPTOR) )
-        {
+        if (isDescriptorSet(EOF_DESCRIPTOR)) {
             return getOffset();
-        }
-        else
-        {
+        } else {
             return -1;
         }
     }
@@ -147,71 +140,62 @@ public class	EDataBlock {
 
     public long getOffset() {
         long offset = 0;
-        for ( int i = 9; i < 17; i++ )
-        {
-            offset = (offset << 8) | ((int)header[i] & 0xFF);
+        for (int i = 9; i < 17; i++) {
+            offset = (offset << 8) | ((int) header[i] & 0xFF);
         }
         return offset;
     }
 
     public long read(InputStream str) {
         header = new byte[HEADER_LENGTH];
-        int 	len = 0;
+        int len = 0;
 
-        while( len < HEADER_LENGTH )
-        {
+        while (len < HEADER_LENGTH) {
             int n;
-            try
-            {
+            try {
                 n = str.read(header, len, HEADER_LENGTH - len);
-            }
-            catch( Exception e )
-            {
+            } catch (Exception e) {
                 break;
             }
-            if ( n <= 0 )
-            {
+            if (n <= 0) {
                 break;
-    	    }
+            }
             len += n;
         }
 
-        if( len < HEADER_LENGTH ) {
+        if (len < HEADER_LENGTH) {
             return -1;
         }
 
         long size = 0;
-        for ( int i = 1; i < 9; i++ ) {
+        for (int i = 1; i < 9; i++) {
             size = (size << 8) | ((int) header[i] & 0xFF);
         }
 
-        data = new byte[(int)size];
+        data = new byte[(int) size];
 
         int n = 0;
-        while( n < size ) {
+        while (n < size) {
             int nr;
             try {
-                nr = str.read(data, n, (int)(size) - n);
-            }
-            catch( Exception e )
-            {
+                nr = str.read(data, n, (int) (size) - n);
+            } catch (Exception e) {
                 break;
             }
-            if( nr <= 0 ) {
+            if (nr <= 0) {
                 break;
             }
             n += nr;
         }
-        if( n < getSize() ) {
+        if (n < getSize()) {
             n = -1;
         }
-	//System.out.println("EDataBlock(" + _myName + ").read(): returning " + n);
+        //System.out.println("EDataBlock(" + _myName + ").read(): returning " + n);
         return n;
     }
 
-    public String toString()
-    {
-        return "EDataBlock("+_myName+"), size="+getSize()+" , offset="+getOffset();
+    public String toString() {
+        return "EDataBlock(" + _myName + "), size=" + getSize() + " , offset=" + getOffset();
     }
 }
 

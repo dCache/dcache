@@ -16,16 +16,15 @@
  */
 package org.dcache.chimera;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
-
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * inode representation
@@ -47,8 +46,7 @@ public class FsInode {
      */
     private Stat _stat;
     /**
-     * parent inode. In case of hard links, one of the
-     * possible parents.
+     * parent inode. In case of hard links, one of the possible parents.
      */
     private FsInode _parent;
 
@@ -61,8 +59,9 @@ public class FsInode {
 
     /**
      * create a new inode in filesystem fs with given id and type
-     * @param fs file system
-     * @param ino the new id
+     *
+     * @param fs   file system
+     * @param ino  the new id
      * @param type inode type
      */
     public FsInode(FileSystemProvider fs, long ino, FsInodeType type) {
@@ -71,7 +70,8 @@ public class FsInode {
 
     /**
      * create a new inode of type 'inode' in the filesystem fs with given id
-     * @param fs file system
+     *
+     * @param fs  file system
      * @param ino inode id
      */
     public FsInode(FileSystemProvider fs, long ino) {
@@ -80,6 +80,7 @@ public class FsInode {
 
     /**
      * Create a new FsInode with given id and level,  type == INODE
+     *
      * @param fs
      * @param ino
      * @param level
@@ -100,9 +101,9 @@ public class FsInode {
         this(fs, ino, type, level, null);
     }
 
-    public FsInode(FileSystemProvider fs, long ino, FsInodeType type, int level, Stat stat)
-    {
-        checkArgument(level >= 0 && level <= JdbcFs.LEVELS_NUMBER, "invalid level number: " + level);
+    public FsInode(FileSystemProvider fs, long ino, FsInodeType type, int level, Stat stat) {
+        checkArgument(level >= 0 && level <= JdbcFs.LEVELS_NUMBER,
+              "invalid level number: " + level);
         _ino = ino;
         _fs = fs;
         _level = level;
@@ -134,7 +135,6 @@ public class FsInode {
     }
 
     /**
-     *
      * @return inode's type, e.q.: inode, tag, id
      */
     public FsInodeType type() {
@@ -143,6 +143,7 @@ public class FsInode {
 
     /**
      * A helper method to generate the base part of identifier.
+     *
      * @param opaque inode specific data
      * @return byte array identifying the inode.
      */
@@ -159,9 +160,9 @@ public class FsInode {
         byte[] bytes = new byte[1 + 1 + 1 + Long.BYTES + 1 + opaque.length];
         ByteBuffer b = ByteBuffer.wrap(bytes);
         b.put((byte) _fs.getFsId())
-                .put((byte) _type.getType())
-                .put((byte)Long.BYTES) // set the file id size to be compatible with old format
-                .putLong(_ino);
+              .put((byte) _type.getType())
+              .put((byte) Long.BYTES) // set the file id size to be compatible with old format
+              .putLong(_ino);
 
         b.put((byte) opaque.length);
         b.put(opaque);
@@ -173,7 +174,7 @@ public class FsInode {
      * @return a byte[] representation of inode, including type and fsid
      */
     public byte[] getIdentifier() {
-        return byteBase(new byte[] { (byte)(0x30 + _level)}); // 0x30 is ascii code for '0'
+        return byteBase(new byte[]{(byte) (0x30 + _level)}); // 0x30 is ascii code for '0'
     }
 
     /**
@@ -185,9 +186,9 @@ public class FsInode {
     }
 
     /**
+     * gets the actual stat information of the inode and updated the cached value See also
+     * statCache()
      *
-     * gets the actual stat information of the inode and updated the cached value
-     * See also statCache()
      * @return Stat
      * @throws FileNotFoundChimeraFsException
      */
@@ -197,9 +198,8 @@ public class FsInode {
     }
 
     /**
+     * gets the cached value of  stat information of the inode See also stat()
      *
-     * gets the cached value of  stat information of the inode
-     * See also stat()
      * @return Stat
      * @throws FileNotFoundChimeraFsException
      */
@@ -207,15 +207,13 @@ public class FsInode {
         return (_stat == null) ? stat() : _stat;
     }
 
-    public int write(long pos, byte[] data, int offset, int len) throws ChimeraFsException
-    {
+    public int write(long pos, byte[] data, int offset, int len) throws ChimeraFsException {
         int ret = _fs.write(this, _level, pos, data, offset, len);
         _stat = null;
         return ret;
     }
 
-    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException
-    {
+    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException {
         return _fs.read(this, _level, pos, data, offset, len);
     }
 
@@ -240,8 +238,9 @@ public class FsInode {
     /**
      * crate a directory with name 'newDir' in current inode with different access rights
      */
-    public FsInode mkdir(String name, int owner, int group, int mode, List<ACE> acl, Map<String, byte[]> tags)
-            throws ChimeraFsException {
+    public FsInode mkdir(String name, int owner, int group, int mode, List<ACE> acl,
+          Map<String, byte[]> tags)
+          throws ChimeraFsException {
         FsInode dir = _fs.mkdir(this, name, owner, group, mode, acl, tags);
         _stat = null;
         return dir;
@@ -250,7 +249,8 @@ public class FsInode {
     /**
      * get inode of file in the current directory with name 'name'
      */
-    public FsInode inodeOf(String name, FileSystemProvider.StatCacheOption stat) throws ChimeraFsException {
+    public FsInode inodeOf(String name, FileSystemProvider.StatCacheOption stat)
+          throws ChimeraFsException {
         return _fs.inodeOf(this, name, stat);
     }
 
@@ -264,10 +264,11 @@ public class FsInode {
     }
 
     /**
-     * create new link to a specified file in the current directory with name 'name'
-     * ( FsInode parent, String name , int uid, int gid, int mode, byte[] dest)
+     * create new link to a specified file in the current directory with name 'name' ( FsInode
+     * parent, String name , int uid, int gid, int mode, byte[] dest)
      */
-    public FsInode createLink(String name, int uid, int gid, int mode, byte[] dest) throws ChimeraFsException {
+    public FsInode createLink(String name, int uid, int gid, int mode, byte[] dest)
+          throws ChimeraFsException {
         if (!this.isDirectory()) {
             throw new NotDirChimeraException(this);
         }
@@ -303,7 +304,7 @@ public class FsInode {
             if (exists() && ((_stat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR)) {
                 rc = true;
             }
-        } catch(ChimeraFsException ignore) {
+        } catch (ChimeraFsException ignore) {
         }
 
         return rc;
@@ -317,7 +318,7 @@ public class FsInode {
             if (exists() && new UnixPermission(_stat.getMode()).isSymLink()) {
                 rc = true;
             }
-        } catch(ChimeraFsException ignore) {
+        } catch (ChimeraFsException ignore) {
         }
 
         return rc;
@@ -367,14 +368,13 @@ public class FsInode {
     }
 
     public void setStat(Stat predefinedStat) throws ChimeraFsException {
-	_fs.setInodeAttributes(this, _level, predefinedStat);
-	if (_stat != null) {
-	    _stat.update(predefinedStat);
-	}
+        _fs.setInodeAttributes(this, _level, predefinedStat);
+        if (_stat != null) {
+            _stat.update(predefinedStat);
+        }
     }
 
-    protected Stat getStatCache()
-    {
+    protected Stat getStatCache() {
         return _stat;
     }
 
@@ -406,6 +406,7 @@ public class FsInode {
     public int hashCode() {
         return Long.hashCode(_ino);
     }
+
     // only package classes allowed to use this
     private boolean _ioEnabled;
     private boolean _ioFlagUpToDate;
@@ -429,8 +430,7 @@ public class FsInode {
         return _fs.newDirectoryStream(this);
     }
 
-    public String getId() throws ChimeraFsException
-    {
+    public String getId() throws ChimeraFsException {
         Stat stat = _stat;
         return (stat != null) ? stat.getId() : _fs.inode2id(this);
     }

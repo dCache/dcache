@@ -1,9 +1,7 @@
 package org.dcache.services.bulk;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Random;
@@ -12,16 +10,15 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessageReceiver;
-
 import org.dcache.cells.MessageReply;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 public class PingService implements CellLifeCycleAware,
-                CellMessageReceiver,
-                Runnable
-{
+      CellMessageReceiver,
+      Runnable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PingService.class);
     private static final Random RANDOM = new Random();
 
@@ -34,9 +31,10 @@ public class PingService implements CellLifeCycleAware,
     private AtomicLong replied = new AtomicLong(0);
 
     private class PingReply implements Comparable<PingReply> {
-        final String                    id;
-        final long                      expires;
-        final PingMessage               message;
+
+        final String id;
+        final long expires;
+        final PingMessage message;
         final MessageReply<PingMessage> messageReply;
 
         PingReply(PingMessage message) {
@@ -47,8 +45,7 @@ public class PingService implements CellLifeCycleAware,
         }
 
         @Override
-        public int compareTo(PingReply other)
-        {
+        public int compareTo(PingReply other) {
             int compared = Long.compare(expires, other.expires);
             if (compared == 0) {
                 compared = id.compareTo(other.id);
@@ -61,8 +58,7 @@ public class PingService implements CellLifeCycleAware,
     private final TreeSet<PingReply> replies = new TreeSet<>();
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         /*
          *  reset
          */
@@ -70,34 +66,30 @@ public class PingService implements CellLifeCycleAware,
         run();
     }
 
-    public MessageReply<PingMessage> messageArrived(PingMessage message)
-    {
+    public MessageReply<PingMessage> messageArrived(PingMessage message) {
         /*
          *  Work is minimal, do it on message thread.
          */
-        synchronized (replies)
-        {
+        synchronized (replies) {
             PingReply pingReply = new PingReply(message);
             replies.add(pingReply);
             received.incrementAndGet();
             LOGGER.info("[RECEIVED] {}, expires {}, total received {}, replies {}.",
-                        message.getKey(),
-                        new Date(pingReply.expires),
-                        received.get(),
-                        replies.size());
+                  message.getKey(),
+                  new Date(pingReply.expires),
+                  received.get(),
+                  replies.size());
             return pingReply.messageReply;
         }
     }
 
-    public void run()
-    {
+    public void run() {
         long delay = TimeUnit.SECONDS.toMillis(5);
         long now = System.currentTimeMillis();
 
-        synchronized(replies)
-        {
+        synchronized (replies) {
             LOGGER.info("BEGIN REPLY waiting {}, total replies {}.",
-                        replies.size(), replied.get());
+                  replies.size(), replied.get());
             if (!replies.isEmpty()) {
                 for (Iterator<PingReply> it = replies.iterator(); it.hasNext(); ) {
                     PingReply pingReply = it.next();
@@ -112,7 +104,7 @@ public class PingService implements CellLifeCycleAware,
                     }
                 }
                 LOGGER.info("END REPLY waiting {}, total replies {}.",
-                            replies.size(), replied.get());
+                      replies.size(), replied.get());
             }
         }
 
@@ -120,25 +112,21 @@ public class PingService implements CellLifeCycleAware,
     }
 
     @Required
-    public void setExecutorService(ScheduledExecutorService executorService)
-    {
+    public void setExecutorService(ScheduledExecutorService executorService) {
         this.executorService = executorService;
     }
 
     @Required
-    public void setMaxWait(int maxWait)
-    {
+    public void setMaxWait(int maxWait) {
         this.maxWait = maxWait;
     }
 
     @Required
-    public void setMaxWaitUnit(TimeUnit maxWaitUnit)
-    {
+    public void setMaxWaitUnit(TimeUnit maxWaitUnit) {
         this.maxWaitUnit = maxWaitUnit;
     }
 
-    private long getRandomMillis()
-    {
+    private long getRandomMillis() {
         return Math.abs(RANDOM.nextLong() % max);
     }
 }

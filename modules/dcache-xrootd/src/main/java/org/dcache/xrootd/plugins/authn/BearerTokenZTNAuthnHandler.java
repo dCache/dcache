@@ -64,12 +64,13 @@ import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.plugins.authn.ztn.AbstractZTNAuthenticationHandler;
 
 /**
- * Specific dCache implementation using the BearerTokenCredential class for the token.
- * Enables pass-through to gPlazma authentication using the scitokens module.
+ * Specific dCache implementation using the BearerTokenCredential class for the token. Enables
+ * pass-through to gPlazma authentication using the scitokens module.
  */
 public class BearerTokenZTNAuthnHandler extends AbstractZTNAuthenticationHandler {
-  @Override
-  protected void validateToken() throws XrootdException {
-      subject.getPrivateCredentials().add(new BearerTokenCredential(credential.getToken()));
-  }
+
+    @Override
+    protected void validateToken() throws XrootdException {
+        subject.getPrivateCredentials().add(new BearerTokenCredential(credential.getToken()));
+    }
 }

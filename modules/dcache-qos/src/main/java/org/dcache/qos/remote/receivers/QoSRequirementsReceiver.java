@@ -77,110 +77,111 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Implements message reception for remote requirements engine.
- *  <p/>
- *  Supports the reprocessing of backlogged messages received while the service
- *  is manually disabled.
- *  <p/>
- *  Note that the message guard for cache location messages is set to enforce
- *  EXTERNAL, meaning only messages not bearing a QOS session id.  This is to
- *  prevent the redundant reprocessing of cache location changes triggered by
- *  the QOS engine itself.
+ * Implements message reception for remote requirements engine.
+ * <p/>
+ * Supports the reprocessing of backlogged messages received while the service is manually
+ * disabled.
+ * <p/>
+ * Note that the message guard for cache location messages is set to enforce EXTERNAL, meaning only
+ * messages not bearing a QOS session id.  This is to prevent the redundant reprocessing of cache
+ * location changes triggered by the QOS engine itself.
  */
 public final class QoSRequirementsReceiver implements CellMessageReceiver, Consumer<Message> {
-  private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  private FileQoSStatusHandler fileStatusHandler;
-  private MessageGuard messageGuard;
+    private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  @Override
-  public void accept(Message message) {
-    if (message instanceof CorruptFileMessage) {
-      messageArrived((CorruptFileMessage)message);
-    } else if (message instanceof PnfsAddCacheLocationMessage) {
-      messageArrived((PnfsAddCacheLocationMessage) message);
-    } else if (message instanceof PnfsClearCacheLocationMessage) {
-      messageArrived((PnfsClearCacheLocationMessage) message);
-    } else if (message instanceof QoSRequirementsRequestMessage) {
-      messageArrived((QoSRequirementsRequestMessage) message);
-    } else if (message instanceof QoSRequirementsModifiedMessage) {
-      messageArrived((QoSRequirementsModifiedMessage) message);
-    } else if (message instanceof QoSActionCompleteMessage) {
-      messageArrived((QoSActionCompleteMessage) message);
+    private FileQoSStatusHandler fileStatusHandler;
+    private MessageGuard messageGuard;
+
+    @Override
+    public void accept(Message message) {
+        if (message instanceof CorruptFileMessage) {
+            messageArrived((CorruptFileMessage) message);
+        } else if (message instanceof PnfsAddCacheLocationMessage) {
+            messageArrived((PnfsAddCacheLocationMessage) message);
+        } else if (message instanceof PnfsClearCacheLocationMessage) {
+            messageArrived((PnfsClearCacheLocationMessage) message);
+        } else if (message instanceof QoSRequirementsRequestMessage) {
+            messageArrived((QoSRequirementsRequestMessage) message);
+        } else if (message instanceof QoSRequirementsModifiedMessage) {
+            messageArrived((QoSRequirementsModifiedMessage) message);
+        } else if (message instanceof QoSActionCompleteMessage) {
+            messageArrived((QoSActionCompleteMessage) message);
+        }
     }
-  }
 
-  public void messageArrived(CorruptFileMessage message) {
-    ACTIVITY_LOGGER.info("Received notice that file {} on pool {} is corrupt.",
-        message.getPnfsId(), message.getPool());
-    if (messageGuard.getStatus("CorruptFileMessage", message)
-        != Status.EXTERNAL) {
-      return;
+    public void messageArrived(CorruptFileMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that file {} on pool {} is corrupt.",
+              message.getPnfsId(), message.getPool());
+        if (messageGuard.getStatus("CorruptFileMessage", message)
+              != Status.EXTERNAL) {
+            return;
+        }
+        fileStatusHandler.handleBrokenFile(message.getPnfsId(), message.getPool());
     }
-    fileStatusHandler.handleBrokenFile(message.getPnfsId(), message.getPool());
-  }
 
-  public void messageArrived(PnfsAddCacheLocationMessage message) {
-    ACTIVITY_LOGGER.info("Received notice that pool {} received file {}.",
-        message.getPoolName(), message.getPnfsId());
-    if (messageGuard.getStatus("PnfsAddCacheLocationMessage", message)
-        != Status.EXTERNAL) {
-      return;
+    public void messageArrived(PnfsAddCacheLocationMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that pool {} received file {}.",
+              message.getPoolName(), message.getPnfsId());
+        if (messageGuard.getStatus("PnfsAddCacheLocationMessage", message)
+              != Status.EXTERNAL) {
+            return;
+        }
+        fileStatusHandler.handleAddCacheLocation(message.getPnfsId(), message.getPoolName());
     }
-    fileStatusHandler.handleAddCacheLocation(message.getPnfsId(), message.getPoolName());
-  }
 
-  public void messageArrived(PnfsClearCacheLocationMessage message) {
-    ACTIVITY_LOGGER.info("Received notice that pool {} cleared file {}.",
-        message.getPoolName(), message.getPnfsId());
-    if (messageGuard.getStatus("PnfsClearCacheLocationMessage", message)
-        != Status.EXTERNAL) {
-      return;
+    public void messageArrived(PnfsClearCacheLocationMessage message) {
+        ACTIVITY_LOGGER.info("Received notice that pool {} cleared file {}.",
+              message.getPoolName(), message.getPnfsId());
+        if (messageGuard.getStatus("PnfsClearCacheLocationMessage", message)
+              != Status.EXTERNAL) {
+            return;
+        }
+        fileStatusHandler.handleClearCacheLocation(message.getPnfsId(), message.getPoolName());
     }
-    fileStatusHandler.handleClearCacheLocation(message.getPnfsId(), message.getPoolName());
-  }
 
-  public MessageReply<QoSRequirementsRequestMessage> messageArrived(QoSRequirementsRequestMessage message) {
-    MessageReply<QoSRequirementsRequestMessage> reply = new MessageReply<>();
-    if (messageGuard.getStatus("QoSRequirementsRequestMessage", message)
-        == Status.DISABLED) {
-      return reply;
+    public MessageReply<QoSRequirementsRequestMessage> messageArrived(
+          QoSRequirementsRequestMessage message) {
+        MessageReply<QoSRequirementsRequestMessage> reply = new MessageReply<>();
+        if (messageGuard.getStatus("QoSRequirementsRequestMessage", message)
+              == Status.DISABLED) {
+            return reply;
+        }
+        fileStatusHandler.handleRequirementsRequestReply(reply, message);
+        return reply;
     }
-    fileStatusHandler.handleRequirementsRequestReply(reply, message);
-    return reply;
-  }
 
-  public void messageArrived(QoSRequirementsModifiedMessage message) {
-    if (messageGuard.getStatus("QoSRequirementsModifiedMessage", message)
-        == Status.DISABLED) {
-      return;
+    public void messageArrived(QoSRequirementsModifiedMessage message) {
+        if (messageGuard.getStatus("QoSRequirementsModifiedMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+        fileStatusHandler.handleQoSModification(message.getRequirements());
     }
-    fileStatusHandler.handleQoSModification(message.getRequirements());
-  }
 
-  public void messageArrived(QoSCancelRequirementsModifiedMessage message){
-    if (messageGuard.getStatus("QoSCancelRequirementsModifiedMessage", message)
-        == Status.DISABLED) {
-      return;
+    public void messageArrived(QoSCancelRequirementsModifiedMessage message) {
+        if (messageGuard.getStatus("QoSCancelRequirementsModifiedMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+        fileStatusHandler.handleQoSModificationCancelled(message.getPnfsId());
     }
-    fileStatusHandler.handleQoSModificationCancelled(message.getPnfsId());
-  }
 
-  public void messageArrived(QoSActionCompleteMessage message){
-    if (messageGuard.getStatus("QoSActionCompleteMessage", message)
-        == Status.DISABLED) {
-      return;
+    public void messageArrived(QoSActionCompleteMessage message) {
+        if (messageGuard.getStatus("QoSActionCompleteMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+        fileStatusHandler.handleActionCompleted(message.getPnfsId(),
+              message.getAction(),
+              message.getErrorObject());
     }
-    fileStatusHandler.handleActionCompleted(message.getPnfsId(),
-                                            message.getAction(),
-                                            message.getErrorObject());
-  }
 
-  public void setMessageGuard(MessageGuard messageGuard) {
-    this.messageGuard = messageGuard;
-  }
+    public void setMessageGuard(MessageGuard messageGuard) {
+        this.messageGuard = messageGuard;
+    }
 
-  public void setFileStatusHandler(FileQoSStatusHandler fileStatusHandler) {
-    this.fileStatusHandler = fileStatusHandler;
-  }
+    public void setFileStatusHandler(FileQoSStatusHandler fileStatusHandler) {
+        this.fileStatusHandler = fileStatusHandler;
+    }
 }

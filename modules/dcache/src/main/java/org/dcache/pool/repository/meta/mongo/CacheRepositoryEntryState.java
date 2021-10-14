@@ -3,19 +3,17 @@ package org.dcache.pool.repository.meta.mongo;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bson.Document;
-
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.entry.state.Sticky;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CacheRepositoryEntryState {
 
@@ -23,8 +21,8 @@ public class CacheRepositoryEntryState {
      * Update options to do an upsert.
      */
     private static final UpdateOptions UPSERT = new UpdateOptions()
-            .upsert(true)
-            .bypassDocumentValidation(true); // update aka add new fields
+          .upsert(true)
+          .bypassDocumentValidation(true); // update aka add new fields
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
 
@@ -35,7 +33,8 @@ public class CacheRepositoryEntryState {
     private final MongoCollection<Document> collection;
     private final Document dbKey;
 
-    public CacheRepositoryEntryState(Document dbKey, MongoCollection<Document> collection) throws IOException {
+    public CacheRepositoryEntryState(Document dbKey, MongoCollection<Document> collection)
+          throws IOException {
         this.dbKey = dbKey;
         this.collection = collection;
         _state = ReplicaState.NEW;
@@ -52,7 +51,7 @@ public class CacheRepositoryEntryState {
     }
 
     public void setState(ReplicaState state)
-            throws IOException {
+          throws IOException {
         if (state == _state) {
             return;
         }
@@ -77,19 +76,19 @@ public class CacheRepositoryEntryState {
                 break;
             case CACHED:
                 if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
+                      || _state == ReplicaState.DESTROYED) {
                     throw new IllegalStateException("Entry is " + _state);
                 }
                 break;
             case PRECIOUS:
                 if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
+                      || _state == ReplicaState.DESTROYED) {
                     throw new IllegalStateException("Entry is " + _state);
                 }
                 break;
             case BROKEN:
                 if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
+                      || _state == ReplicaState.DESTROYED) {
                     throw new IllegalStateException("Entry is " + _state);
                 }
                 break;
@@ -118,7 +117,7 @@ public class CacheRepositoryEntryState {
      *
      */
     public boolean setSticky(String owner, long expire, boolean overwrite)
-            throws IllegalStateException, IOException {
+          throws IllegalStateException, IOException {
         if (_state == ReplicaState.REMOVED || _state == ReplicaState.DESTROYED) {
             throw new IllegalStateException("Entry in removed state");
         }
@@ -144,11 +143,11 @@ public class CacheRepositoryEntryState {
 
         Map<String, Object> stickyRecords = new HashMap<>();
         _sticky.records().stream()
-                .forEach(r -> stickyRecords.put(r.owner(), r.expire()));
+              .forEach(r -> stickyRecords.put(r.owner(), r.expire()));
 
         Document d = new Document(dbKey)
-                .append("replicaState", _state.name())
-                .append("stickyRecords", new Document(stickyRecords));
+              .append("replicaState", _state.name())
+              .append("stickyRecords", new Document(stickyRecords));
 
         collection.updateOne(dbKey, new Document("$set", d), UPSERT);
     }
@@ -172,7 +171,7 @@ public class CacheRepositoryEntryState {
 
         if (stickyRecords != null) {
             stickyRecords.entrySet().forEach(e -> {
-                _sticky.addRecord(e.getKey(), (Long)e.getValue(), true);
+                _sticky.addRecord(e.getKey(), (Long) e.getValue(), true);
             });
         }
     }

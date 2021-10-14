@@ -70,40 +70,42 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Implements message reception for remote adjustment service.
- *  <p/>
- *  If disabled manually, messages will be dropped.
+ * Implements message reception for remote adjustment service.
+ * <p/>
+ * If disabled manually, messages will be dropped.
  */
 public final class QoSAdjustmentReceiver implements CellMessageReceiver {
-  private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  private MessageGuard messageGuard;
-  private QoSAdjusterTaskHandler taskHandler;
+    private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  public void messageArrived(QoSAdjustmentRequestMessage message) {
-    ACTIVITY_LOGGER.info("Received request for adjustment of {}.", message.getRequest().getPnfsId());
-    if (messageGuard.getStatus("QoSAdjustmentRequestMessage", message)
-        == Status.DISABLED) {
-      return;
+    private MessageGuard messageGuard;
+    private QoSAdjusterTaskHandler taskHandler;
+
+    public void messageArrived(QoSAdjustmentRequestMessage message) {
+        ACTIVITY_LOGGER.info("Received request for adjustment of {}.",
+              message.getRequest().getPnfsId());
+        if (messageGuard.getStatus("QoSAdjustmentRequestMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+        taskHandler.handleAdjustmentRequest(message.getRequest());
     }
-    taskHandler.handleAdjustmentRequest(message.getRequest());
-  }
 
-  public void messageArrived(QoSAdjustmentCancelledMessage message) {
-    PnfsId pnfsId = message.getPnfsId();
-    ACTIVITY_LOGGER.info("Received cancellation for adjustment of {}.", pnfsId);
-    if (messageGuard.getStatus("QoSAdjustmentCancelledMessage", message)
-        == Status.DISABLED) {
-      return;
+    public void messageArrived(QoSAdjustmentCancelledMessage message) {
+        PnfsId pnfsId = message.getPnfsId();
+        ACTIVITY_LOGGER.info("Received cancellation for adjustment of {}.", pnfsId);
+        if (messageGuard.getStatus("QoSAdjustmentCancelledMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+        taskHandler.handleAdjustmentCancelled(pnfsId);
     }
-    taskHandler.handleAdjustmentCancelled(pnfsId);
-  }
 
-  public void setTaskHandler(QoSAdjusterTaskHandler taskHandler) {
-    this.taskHandler = taskHandler;
-  }
+    public void setTaskHandler(QoSAdjusterTaskHandler taskHandler) {
+        this.taskHandler = taskHandler;
+    }
 
-  public void setMessageGuard(MessageGuard messageGuard) {
-    this.messageGuard = messageGuard;
-  }
+    public void setMessageGuard(MessageGuard messageGuard) {
+        this.messageGuard = messageGuard;
+    }
 }

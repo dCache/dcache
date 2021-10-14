@@ -1,5 +1,20 @@
 package org.dcache.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.util.concurrent.Futures.catchingAsync;
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
+import static com.google.common.util.concurrent.Futures.transformAsync;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.namespace.FileType.REGULAR;
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
+
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
@@ -8,31 +23,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import javax.annotation.Nullable;
-import javax.security.auth.Subject;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.OptionalLong;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
@@ -61,13 +51,30 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.TimebasedCounter;
-
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
@@ -77,26 +84,20 @@ import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.Futures.*;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.REGULAR;
-import static org.dcache.util.MathUtils.addWithInfinity;
-import static org.dcache.util.MathUtils.subWithInfinity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
- * Facade for transfer related operations. Encapsulates information
- * about and typical operations of a transfer.
+ * Facade for transfer related operations. Encapsulates information about and typical operations of
+ * a transfer.
  */
-public class Transfer implements Comparable<Transfer>
-{
+public class Transfer implements Comparable<Transfer> {
+
     protected static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
     private static final TimebasedCounter _sessionCounter =
-            new TimebasedCounter();
+          new TimebasedCounter();
 
     private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
@@ -140,40 +141,41 @@ public class Transfer implements Comparable<Transfer>
     private boolean _isOverwriteAllowed;
 
     private Set<FileAttribute> _additionalAttributes =
-            EnumSet.noneOf(FileAttribute.class);
+          EnumSet.noneOf(FileAttribute.class);
 
     private MoverInfoMessage moverInfoMessage;
 
-    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {};
+    private Consumer<DoorRequestInfoMessage> _kafkaSender = (s) -> {
+    };
 
 
     private static final ThreadFactory RETRY_THREAD_FACTORY =
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d").build();
+          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d")
+                .build();
     private static final ScheduledExecutorService RETRY_EXECUTOR =
-                    new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
+          new CDCScheduledExecutorServiceDecorator<>(
+                Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
 
     /**
      * Which activities poolmanager is allowed to do.
      */
     private EnumSet<RequestState> _allowedRequestStates = EnumSet.allOf(RequestState.class);
 
-    private synchronized EnumSet<RequestState> getAllowedRequestStates()
-    {
+    private synchronized EnumSet<RequestState> getAllowedRequestStates() {
         return EnumSet.copyOf(_allowedRequestStates);
     }
 
     /**
      * Constructs a new Transfer object.
      *
-     * @param pnfs             PnfsHandler used for pnfs communication
-     * @param namespaceSubject The subject performing the namespace operations
+     * @param pnfs                 PnfsHandler used for pnfs communication
+     * @param namespaceSubject     The subject performing the namespace operations
      * @param namespaceRestriction Any additional restrictions from this users session
-     * @param ioSubject        The subject performing the transfer
-     * @param path             The path of the file to transfer
+     * @param ioSubject            The subject performing the transfer
+     * @param path                 The path of the file to transfer
      */
     public Transfer(PnfsHandler pnfs, Subject namespaceSubject,
-            Restriction namespaceRestriction, Subject ioSubject, FsPath path)
-    {
+          Restriction namespaceRestriction, Subject ioSubject, FsPath path) {
         _pnfs = new PnfsHandler(pnfs, namespaceSubject, namespaceRestriction);
         _subject = ioSubject;
         _path = path;
@@ -187,32 +189,29 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Constructs a new Transfer object.
      *
-     * @param pnfs    PnfsHandler used for pnfs communication
-     * @param subject The subject performing the transfer and namespace operations
+     * @param pnfs        PnfsHandler used for pnfs communication
+     * @param subject     The subject performing the transfer and namespace operations
      * @param restriction Any additional restrictions from this users session
-     * @param path    The path of the file to transfer
+     * @param path        The path of the file to transfer
      */
-    public Transfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path)
-    {
+    public Transfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path) {
         this(pnfs, subject, restriction, subject, path);
     }
 
     /**
-     * Returns a ProtocolInfo suitable for selecting a pool. By
-     * default the protocol info set with setProtocolInfo is returned.
+     * Returns a ProtocolInfo suitable for selecting a pool. By default the protocol info set with
+     * setProtocolInfo is returned.
      */
-    protected ProtocolInfo getProtocolInfoForPoolManager()
-    {
+    protected ProtocolInfo getProtocolInfoForPoolManager() {
         checkState(_protocolInfo != null);
         return _protocolInfo;
     }
 
     /**
-     * Returns a ProtocolInfo suitable for starting a mover. By
-     * default the protocol info set with setProtocolInfo is returned.
+     * Returns a ProtocolInfo suitable for starting a mover. By default the protocol info set with
+     * setProtocolInfo is returned.
      */
-    protected ProtocolInfo getProtocolInfoForPool()
-    {
+    protected ProtocolInfo getProtocolInfoForPool() {
         checkState(_protocolInfo != null);
         return _protocolInfo;
     }
@@ -220,8 +219,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets the ProtocolInfo used for the transfer.
      */
-    public synchronized void setProtocolInfo(ProtocolInfo info)
-    {
+    public synchronized void setProtocolInfo(ProtocolInfo info) {
         _protocolInfo = info;
     }
 
@@ -229,85 +227,72 @@ public class Transfer implements Comparable<Transfer>
      * Returns the ProtocolInfo used for the transfer. May be null.
      */
     @Nullable
-    public synchronized ProtocolInfo getProtocolInfo()
-    {
+    public synchronized ProtocolInfo getProtocolInfo() {
         return _protocolInfo;
     }
 
     /**
-     * Orders Transfer objects according to hash value. Makes it
-     * possible to add Transfer objects to tree based collections.
+     * Orders Transfer objects according to hash value. Makes it possible to add Transfer objects to
+     * tree based collections.
      */
     @Override
-    public int compareTo(Transfer o)
-    {
+    public int compareTo(Transfer o) {
         return Long.compare(o.getId(), getId());
     }
 
     /**
-     * Returns the ID of this transfer. The transfer ID
-     * uniquely identifies this transfer object within this VM
-     * instance.
+     * Returns the ID of this transfer. The transfer ID uniquely identifies this transfer object
+     * within this VM instance.
      * <p>
-     * The transfer ID is used as the message ID for both the pool
-     * selection message sent to PoolManager and the io file message
-     * to the pool. The DoorTransferFinishedMessage from the pool will
-     * have the same ID.
+     * The transfer ID is used as the message ID for both the pool selection message sent to
+     * PoolManager and the io file message to the pool. The DoorTransferFinishedMessage from the
+     * pool will have the same ID.
      * <p>
-     * IoDoorEntry instances provided for monitoring will contain the
-     * transfer ID and the active transfer page of the httpd service
-     * reports the transfer ID in the sequence column.
+     * IoDoorEntry instances provided for monitoring will contain the transfer ID and the active
+     * transfer page of the httpd service reports the transfer ID in the sequence column.
      * <p>
-     * The transfer ID is not to be confused with session string
-     * identifier used for logging. The former identifies a single
-     * transfer while the latter identifies a user session and could
-     * in theory span multiple transfers.
+     * The transfer ID is not to be confused with session string identifier used for logging. The
+     * former identifies a single transfer while the latter identifies a user session and could in
+     * theory span multiple transfers.
      */
-    public long getId()
-    {
+    public long getId() {
         return _id;
     }
 
     /**
      * Sets CellStub for PoolManager.
      */
-    public synchronized void setPoolManagerStub(PoolManagerStub stub)
-    {
+    public synchronized void setPoolManagerStub(PoolManagerStub stub) {
         _poolManager = requireNonNull(stub, "PoolManager stub can't be null");
     }
 
     /**
      * Sets CellStub for pools.
      */
-    public synchronized void setPoolStub(CellStub stub)
-    {
+    public synchronized void setPoolStub(CellStub stub) {
         _poolStub = requireNonNull(stub, "Pool stub can't be null");
     }
 
     /**
      * Sets CellStub for Billing.
      */
-    public synchronized void setBillingStub(CellStub stub)
-    {
+    public synchronized void setBillingStub(CellStub stub) {
         _billing = requireNonNull(stub, "Billing stub can't be null");
     }
 
-    public synchronized void setKafkaSender(Consumer<DoorRequestInfoMessage> kafkaSender)
-    {
+    public synchronized void setKafkaSender(Consumer<DoorRequestInfoMessage> kafkaSender) {
         _kafkaSender = kafkaSender;
     }
 
     public synchronized void
-    setCheckStagePermission(CheckStagePermission checkStagePermission)
-    {
+    setCheckStagePermission(CheckStagePermission checkStagePermission) {
         _checkStagePermission = checkStagePermission;
     }
 
     /**
      * Sets the current status of a transfer. May be null.
      */
-    public synchronized void setStatus(String status)
-    {
+    public synchronized void setStatus(String status) {
         if (status != null) {
             _log.debug("Status: {}", status);
         }
@@ -315,11 +300,9 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Sets the current status of a pool and clear the status once the given future
-     * completes.
+     * Sets the current status of a pool and clear the status once the given future completes.
      */
-    public void setStatusUntil(String status, ListenableFuture<?> future)
-    {
+    public void setStatusUntil(String status, ListenableFuture<?> future) {
         setStatus(status);
         future.addListener(() -> setStatus(null), MoreExecutors.directExecutor());
     }
@@ -328,49 +311,44 @@ public class Transfer implements Comparable<Transfer>
      * Sets the current status of a pool. May be null.
      */
     @Nullable
-    public synchronized String getStatus()
-    {
+    public synchronized String getStatus() {
         return _status;
     }
 
     /**
      * When true, existing files will be overwritten on write.
      */
-    public synchronized void setOverwriteAllowed(boolean allowed)
-    {
+    public synchronized void setOverwriteAllowed(boolean allowed) {
         _isOverwriteAllowed = allowed;
     }
 
     /**
      * Sets the FileAttributes of the file to transfer.
      */
-    public synchronized FileAttributes getFileAttributes()
-    {
+    public synchronized FileAttributes getFileAttributes() {
         return _fileAttributes;
     }
 
     /**
      * Sets the FileAttributes of the file to transfer.
      */
-    public synchronized void setFileAttributes(FileAttributes fileAttributes)
-    {
+    public synchronized void setFileAttributes(FileAttributes fileAttributes) {
         _fileAttributes = fileAttributes;
     }
 
     /**
      * The name space path of the file being transferred.
      */
-    public synchronized String getTransferPath()
-    {
+    public synchronized String getTransferPath() {
         return _path.toString();
     }
 
     /**
      * The billable name space path of the file being transferred.
      */
-    public synchronized String getBillingPath()
-    {
-        if (_fileAttributes.isDefined(STORAGEINFO) && _fileAttributes.getStorageInfo().getKey("path") != null) {
+    public synchronized String getBillingPath() {
+        if (_fileAttributes.isDefined(STORAGEINFO)
+              && _fileAttributes.getStorageInfo().getKey("path") != null) {
             return _fileAttributes.getStorageInfo().getKey("path");
         } else {
             return _path.toString();
@@ -381,32 +359,28 @@ public class Transfer implements Comparable<Transfer>
      * Returns the PnfsId of the file to be transferred.
      */
     @Nullable
-    public synchronized PnfsId getPnfsId()
-    {
+    public synchronized PnfsId getPnfsId() {
         return _fileAttributes.isDefined(PNFSID) ? _fileAttributes.getPnfsId() : null;
     }
 
     /**
      * Sets the PnfsId of the file to be transferred.
      */
-    public synchronized void setPnfsId(PnfsId pnfsid)
-    {
+    public synchronized void setPnfsId(PnfsId pnfsid) {
         _fileAttributes.setPnfsId(pnfsid);
     }
 
     /**
      * Sets whether this is an upload.
      */
-    protected synchronized void setWrite(boolean isWrite)
-    {
+    protected synchronized void setWrite(boolean isWrite) {
         _isWrite = isWrite;
     }
 
     /**
      * Returns whether this is an upload.
      */
-    public synchronized boolean isWrite()
-    {
+    public synchronized boolean isWrite() {
         return _isWrite;
     }
 
@@ -415,8 +389,7 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param moverId The mover ID of the transfer.
      */
-    public synchronized void setMoverId(Integer moverId)
-    {
+    public synchronized void setMoverId(Integer moverId) {
         _moverId = moverId;
         _hasMoverBeenCreated = (_moverId != null);
     }
@@ -425,25 +398,21 @@ public class Transfer implements Comparable<Transfer>
      * Returns the ID of the mover of this transfer.
      */
     @Nullable
-    public synchronized Integer getMoverId()
-    {
+    public synchronized Integer getMoverId() {
         return _moverId;
     }
 
     /**
-     * Returns whether this transfer has a mover (to the best of our
-     * knowledge).
+     * Returns whether this transfer has a mover (to the best of our knowledge).
      */
-    public synchronized boolean hasMover()
-    {
+    public synchronized boolean hasMover() {
         return _hasMoverBeenCreated && !_hasMoverFinished;
     }
 
     /**
      * Sets the pool to use for this transfer.
      */
-    public synchronized void setPool(Pool pool)
-    {
+    public synchronized void setPool(Pool pool) {
         _pool = pool;
     }
 
@@ -451,25 +420,24 @@ public class Transfer implements Comparable<Transfer>
      * Returns the pool to use for this transfer.
      */
     @Nullable
-    public synchronized Pool getPool()
-    {
+    public synchronized Pool getPool() {
         return _pool;
     }
 
     /**
-     * Clear selected pool and enforce re-selection during retry procedure in {@link #selectPoolAndStartMoverAsync(TransferRetryPolicy)}.
+     * Clear selected pool and enforce re-selection during retry procedure in {@link
+     * #selectPoolAndStartMoverAsync(TransferRetryPolicy)}.
      */
-    private synchronized void clearPoolSelection()
-    {
+    private synchronized void clearPoolSelection() {
         _pool = null;
     }
 
     /**
-     * Restrict pool selection to only online files, e.g. no stage or p2p
-     * are allowed. Has no effect on upload.
-     *
-     * This option has no effect on stage protection. This means, that stage protection
-     * still can reject staging, even if {@code onlineOnly} is {@code false}.
+     * Restrict pool selection to only online files, e.g. no stage or p2p are allowed. Has no effect
+     * on upload.
+     * <p>
+     * This option has no effect on stage protection. This means, that stage protection still can
+     * reject staging, even if {@code onlineOnly} is {@code false}.
      *
      * @param onlineOnly True, is transfer should use on files directly accessible,
      */
@@ -485,8 +453,7 @@ public class Transfer implements Comparable<Transfer>
         return _allowedRequestStates.equals(RequestContainerV5.ONLINE_FILES_ONLY);
     }
 
-    public synchronized void setAllowStaging(boolean isAllowed)
-    {
+    public synchronized void setAllowStaging(boolean isAllowed) {
         if (isAllowed) {
             _allowedRequestStates.add(RequestState.ST_STAGE);
         } else {
@@ -494,8 +461,7 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    public synchronized void setAllowPool2Pool(boolean isAllowed)
-    {
+    public synchronized void setAllowPool2Pool(boolean isAllowed) {
         if (isAllowed) {
             _allowedRequestStates.add(RequestState.ST_POOL_2_POOL);
         } else {
@@ -503,32 +469,30 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    public synchronized void setTriedHosts(Set<String> tried)
-    {
+    public synchronized void setTriedHosts(Set<String> tried) {
         _tried = tried;
     }
 
     /**
-     * Initialises the session value in the cells diagnostic context
-     * (CDC). The session value is attached to the thread.
+     * Initialises the session value in the cells diagnostic context (CDC). The session value is
+     * attached to the thread.
      * <p>
      * The session key is pushed to the NDC for purposes of logging.
      * <p>
-     * The format of the session value is chosen to be compatible with
-     * the transaction ID format as found in the
-     * InfoMessage.getTransaction method.
+     * The format of the session value is chosen to be compatible with the transaction ID format as
+     * found in the InfoMessage.getTransaction method.
      *
-     * @param isCellNameSiteUnique       True if the cell name is unique throughout this
-     *                                   dCache site, that is, it is well known or derived
-     *                                   from a well known name.
-     * @param isCellNameTemporallyUnique True if the cell name is temporally unique,
-     *                                   that is, two invocations of initSession will
-     *                                   never have the same cell name.
-     * @throws IllegalStateException when the thread is not already
-     *                               associated with a cell through the CDC.
+     * @param isCellNameSiteUnique       True if the cell name is unique throughout this dCache
+     *                                   site, that is, it is well known or derived from a well
+     *                                   known name.
+     * @param isCellNameTemporallyUnique True if the cell name is temporally unique, that is, two
+     *                                   invocations of initSession will never have the same cell
+     *                                   name.
+     * @throws IllegalStateException when the thread is not already associated with a cell through
+     *                               the CDC.
      */
-    public static void initSession(boolean isCellNameSiteUnique, boolean isCellNameTemporallyUnique)
-    {
+    public static void initSession(boolean isCellNameSiteUnique,
+          boolean isCellNameTemporallyUnique) {
         Object domainName = MDC.get(CDC.MDC_DOMAIN);
         Object cellName = MDC.get(CDC.MDC_CELL);
         checkState(domainName != null, "Missing domain name in MDC");
@@ -540,7 +504,8 @@ public class Transfer implements Comparable<Transfer>
             session.append('@').append(domainName);
         }
         if (!isCellNameTemporallyUnique) {
-            session.append(':').append(SESSION_ENCODING.encode(Longs.toByteArray(_sessionCounter.next())));
+            session.append(':')
+                  .append(SESSION_ENCODING.encode(Longs.toByteArray(_sessionCounter.next())));
         }
         String s = session.toString();
         CDC.setSession(s);
@@ -548,11 +513,9 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * The transaction uniquely (with a high probably) identifies this
-     * transfer.
+     * The transaction uniquely (with a high probably) identifies this transfer.
      */
-    public synchronized String getTransaction()
-    {
+    public synchronized String getTransaction() {
         if (_session != null) {
             return _session + ":" + _id;
         } else if (_cellAddress != null) {
@@ -573,8 +536,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Signals that the mover of this transfer finished.
      */
-    public synchronized void finished(CacheException error)
-    {
+    public synchronized void finished(CacheException error) {
         _hasMoverFinished = true;
         _error = error;
         notifyAll();
@@ -583,8 +545,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Signals that the mover of this transfer finished.
      */
-    public final synchronized void finished(int rc, String error)
-    {
+    public final synchronized void finished(int rc, String error) {
         if (rc != 0) {
             finished(new CacheException(rc, error));
         } else {
@@ -595,8 +556,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Signals that the mover of this transfer finished.
      */
-    public final synchronized void finished(DoorTransferFinishedMessage msg)
-    {
+    public final synchronized void finished(DoorTransferFinishedMessage msg) {
         setFileAttributes(msg.getFileAttributes());
         setProtocolInfo(msg.getProtocolInfo());
         moverInfoMessage = msg.getMoverInfo();
@@ -607,16 +567,14 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    public synchronized void setCellAddress(CellAddressCore address)
-    {
+    public synchronized void setCellAddress(CellAddressCore address) {
         _cellAddress = address;
     }
 
     /**
      * Returns the cell name of the door handling the transfer.
      */
-    public synchronized String getCellName()
-    {
+    public synchronized String getCellName() {
         checkState(_cellAddress != null);
         return _cellAddress.getCellName();
     }
@@ -624,67 +582,56 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the domain name of the door handling the transfer.
      */
-    public synchronized String getDomainName()
-    {
+    public synchronized String getDomainName() {
         checkState(_cellAddress != null);
         return _cellAddress.getCellDomainName();
     }
 
     /**
-     * The client address is the socket address from which the
-     * transfer was initiated.
+     * The client address is the socket address from which the transfer was initiated.
      */
-    public synchronized void setClientAddress(InetSocketAddress address)
-    {
+    public synchronized void setClientAddress(InetSocketAddress address) {
         _clientAddresses = Collections.singletonList(address);
     }
 
     /**
-     * The client address(es) that initiated the request.  If the
-     * protocol does not support reporting relayed requests then this is
-     * a single entry.  If the protocol allows reporting of client
-     * addresses then the list-order represents the clients that initiated
-     * this request, starting with the client on the TCP connection.
+     * The client address(es) that initiated the request.  If the protocol does not support
+     * reporting relayed requests then this is a single entry.  If the protocol allows reporting of
+     * client addresses then the list-order represents the clients that initiated this request,
+     * starting with the client on the TCP connection.
      */
-    public synchronized void setClientAddresses(List<InetSocketAddress> addresses)
-    {
+    public synchronized void setClientAddresses(List<InetSocketAddress> addresses) {
         checkArgument(!addresses.isEmpty(), "empty address list is not allowed");
         _clientAddresses = addresses;
     }
 
     /**
-     * Report the address of the client that connected to dCache when
-     * initiated this transfer.
+     * Report the address of the client that connected to dCache when initiated this transfer.
      */
     @Nullable
-    public synchronized InetSocketAddress getClientAddress()
-    {
+    public synchronized InetSocketAddress getClientAddress() {
         return _clientAddresses == null ? null : _clientAddresses.get(0);
     }
 
     /**
-     * Report all relays and the client that initiated this transfer.
-     * The last item is the client that initiated the transfer; any addresses
-     * earlier in the list represent relay clients.  The first item is the
-     * client that directly connected to dCache.
+     * Report all relays and the client that initiated this transfer. The last item is the client
+     * that initiated the transfer; any addresses earlier in the list represent relay clients.  The
+     * first item is the client that directly connected to dCache.
      */
     @Nullable
-    public synchronized List<InetSocketAddress> getClientAddresses()
-    {
+    public synchronized List<InetSocketAddress> getClientAddresses() {
         return _clientAddresses;
     }
 
     public boolean waitForMover(long timeout, TimeUnit unit)
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         return waitForMover(unit.toMillis(timeout));
     }
 
     /**
-     * Blocks until the mover of this transfer finished, or until
-     * a timeout is reached. Relies on the
-     * DoorTransferFinishedMessage being injected into the
-     * transfer through the <code>finished</code> method.
+     * Blocks until the mover of this transfer finished, or until a timeout is reached. Relies on
+     * the DoorTransferFinishedMessage being injected into the transfer through the
+     * <code>finished</code> method.
      *
      * @param millis The timeout in milliseconds
      * @return true when the mover has finished
@@ -692,8 +639,7 @@ public class Transfer implements Comparable<Transfer>
      * @throws InterruptedException if the thread is interrupted
      */
     public synchronized boolean waitForMover(long millis)
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         long deadline = addWithInfinity(System.currentTimeMillis(), millis);
         while (!_hasMoverFinished && System.currentTimeMillis() < deadline) {
             wait(subWithInfinity(deadline, System.currentTimeMillis()));
@@ -707,39 +653,34 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Returns an IoDoorEntry describing the transfer. This is
-     * used by the "Active Transfer" view of the HTTP monitor.
+     * Returns an IoDoorEntry describing the transfer. This is used by the "Active Transfer" view of
+     * the HTTP monitor.
      */
-    public synchronized IoDoorEntry getIoDoorEntry()
-    {
+    public synchronized IoDoorEntry getIoDoorEntry() {
         return new IoDoorEntry(_id,
-                               getPnfsId(),
-                               getTransferPath(),
-                               _subject,
-                               _pool == null? "<unknown>" : _pool.getName(),
-                               _status,
-                               _startedAt,
-                               _clientAddresses.get(0)
-                                               .getAddress()
-                                               .getHostAddress());
+              getPnfsId(),
+              getTransferPath(),
+              _subject,
+              _pool == null ? "<unknown>" : _pool.getName(),
+              _status,
+              _startedAt,
+              _clientAddresses.get(0)
+                    .getAddress()
+                    .getHostAddress());
     }
 
     /**
-     * Creates a new name space entry for the file to transfer. This
-     * will fill in the PnfsId and StorageInfo of the file and mark
-     * the transfer as an upload.
+     * Creates a new name space entry for the file to transfer. This will fill in the PnfsId and
+     * StorageInfo of the file and mark the transfer as an upload.
      * <p>
-     * Will fail if the subject of the transfer doesn't have
-     * permission to create the file.
+     * Will fail if the subject of the transfer doesn't have permission to create the file.
      * <p>
-     * If the parent directories don't exist, then they will be
-     * created.
+     * If the parent directories don't exist, then they will be created.
      *
      * @throws CacheException if creating the entry failed
      */
     public void createNameSpaceEntryWithParents()
-            throws CacheException
-    {
+          throws CacheException {
         try {
             createNameSpaceEntry();
         } catch (FileNotFoundCacheException e) {
@@ -749,25 +690,22 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Creates a new name space entry for the file to transfer. This
-     * will fill in the PnfsId and StorageInfo of the file and mark
-     * the transfer as an upload.
+     * Creates a new name space entry for the file to transfer. This will fill in the PnfsId and
+     * StorageInfo of the file and mark the transfer as an upload.
      * <p>
-     * Will fail if the subject of the transfer doesn't have
-     * permission to create the file.
+     * Will fail if the subject of the transfer doesn't have permission to create the file.
      *
      * @throws CacheException if creating the entry failed
      */
     public void createNameSpaceEntry()
-            throws CacheException
-    {
+          throws CacheException {
         setStatus("PnfsManager: Creating name space entry");
         try {
             FileAttributes desiredAttributes = fileAttributesForNameSpace();
             PnfsCreateEntryMessage msg;
             try {
                 msg = _pnfs.createPnfsEntry(_path.toString(),
-                        desiredAttributes);
+                      desiredAttributes);
             } catch (FileExistsCacheException e) {
                 /* REVISIT: This should be moved to PnfsManager with a
                  * flag in the PnfsCreateEntryMessage.
@@ -777,7 +715,7 @@ public class Transfer implements Comparable<Transfer>
                 }
                 _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(REGULAR));
                 msg = _pnfs.createPnfsEntry(_path.toString(),
-                        desiredAttributes);
+                      desiredAttributes);
             }
 
             FileAttributes attrs = msg.getFileAttributes();
@@ -789,27 +727,25 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    protected FileAttributes fileAttributesForNameSpace()
-    {
+    protected FileAttributes fileAttributesForNameSpace() {
         return FileAttributes.ofFileType(REGULAR);
     }
 
     /**
-     * Reads the name space entry of the file to transfer. This will fill in the PnfsId
-     * and FileAttributes of the file.
+     * Reads the name space entry of the file to transfer. This will fill in the PnfsId and
+     * FileAttributes of the file.
      * <p>
      * Changes the I/O mode from write to read if the file is not new.
      *
+     * @param allowWrite whether the file may be opened for writing
      * @throws PermissionDeniedCacheException if permission to read/write the file is denied
      * @throws NotFileCacheException          if the file is not a regular file
      * @throws FileIsNewCacheException        when attempting to download an incomplete file
      * @throws CacheException                 if reading the entry failed
      * @throws InterruptedException           if the thread is interrupted
-     * @param allowWrite whether the file may be opened for writing
      */
     public final void readNameSpaceEntry(boolean allowWrite)
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         try {
             getCancellable(readNameSpaceEntryAsync(allowWrite));
         } catch (NoRouteToCellException e) {
@@ -818,20 +754,18 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Reads the name space entry of the file to transfer. This will fill in the PnfsId
-     * and FileAttributes of the file.
+     * Reads the name space entry of the file to transfer. This will fill in the PnfsId and
+     * FileAttributes of the file.
      * <p>
      * Changes the I/O mode from write to read if the file is not new.
      *
      * @param allowWrite whether the file may be opened for writing
      */
-    public ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite)
-    {
+    public ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite) {
         return readNameSpaceEntryAsync(allowWrite, _pnfs.getPnfsTimeout());
     }
 
-    private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout)
-    {
+    private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout) {
         Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
         attr.addAll(_additionalAttributes);
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
@@ -859,49 +793,45 @@ public class Transfer implements Comparable<Transfer>
         setStatusUntil("PnfsManager: Fetching storage info", reply);
 
         return CellStub.transformAsync(reply,
-                                       msg -> {
-                                           FileAttributes attributes = msg.getFileAttributes();
-                                           /* We can only transfer regular files.
-                                            */
-                                           FileType type = attributes.getFileType();
-                                           if (type == FileType.DIR || type == FileType.SPECIAL) {
-                                               throw new NotFileCacheException("Not a regular file");
-                                           }
+              msg -> {
+                  FileAttributes attributes = msg.getFileAttributes();
+                  /* We can only transfer regular files.
+                   */
+                  FileType type = attributes.getFileType();
+                  if (type == FileType.DIR || type == FileType.SPECIAL) {
+                      throw new NotFileCacheException("Not a regular file");
+                  }
 
-                                           /* I/O mode must match completeness of the file.
-                                            */
-                                           if (!attributes.getStorageInfo().isCreatedOnly()) {
-                                               setWrite(false);
-                                           } else if (allowWrite) {
-                                               setWrite(true);
-                                           } else {
-                                               throw new FileIsNewCacheException();
-                                           }
+                  /* I/O mode must match completeness of the file.
+                   */
+                  if (!attributes.getStorageInfo().isCreatedOnly()) {
+                      setWrite(false);
+                  } else if (allowWrite) {
+                      setWrite(true);
+                  } else {
+                      throw new FileIsNewCacheException();
+                  }
 
-                                           setFileAttributes(attributes);
-                                           return immediateFuture(null);
-                                       });
+                  setFileAttributes(attributes);
+                  return immediateFuture(null);
+              });
     }
 
     /**
-     * Specify a set of additional attributes as part of this transfer's
-     * namespace operation.  Any prior specified extra attributes are removed.
-     * In addition, some attributes required by this class and are always
-     * fetched.
+     * Specify a set of additional attributes as part of this transfer's namespace operation.  Any
+     * prior specified extra attributes are removed. In addition, some attributes required by this
+     * class and are always fetched.
      */
-    protected void setAdditionalAttributes(Set<FileAttribute> attributes)
-    {
+    protected void setAdditionalAttributes(Set<FileAttribute> attributes) {
         _additionalAttributes = Sets.immutableEnumSet(attributes);
     }
 
     /**
-     * Discover the set of additional attributes that will be fetched as part
-     * of this transfer's namespace operation.  In addition to the returned
-     * set, this class will always fetch certain attributes, which may not be
-     * reflected in the returned set.
+     * Discover the set of additional attributes that will be fetched as part of this transfer's
+     * namespace operation.  In addition to the returned set, this class will always fetch certain
+     * attributes, which may not be reflected in the returned set.
      */
-    protected Set<FileAttribute> getAdditionalAttributes()
-    {
+    protected Set<FileAttribute> getAdditionalAttributes() {
         return _additionalAttributes;
     }
 
@@ -910,33 +840,29 @@ public class Transfer implements Comparable<Transfer>
      *
      * @throws IllegalStateException if the length isn't known
      */
-    public synchronized long getLength()
-    {
+    public synchronized long getLength() {
         return _fileAttributes.getSize();
     }
 
     /**
-     * Sets the length of the file to be uploaded. Only valid for
-     * uploads.
+     * Sets the length of the file to be uploaded. Only valid for uploads.
      */
-    public synchronized void setLength(long length)
-    {
+    public synchronized void setLength(long length) {
         checkState(isWrite(), "Can only set length for uploads");
         // The following check is to catch bugs: the door should have already handled this situation
         checkArgument(!_maximumSize.isPresent() || _maximumSize.getAsLong() >= length,
-                "file length is larger than the already specified maximum length");
+              "file length is larger than the already specified maximum length");
         _fileAttributes.setSize(length);
     }
 
     /**
-     * Sets checksum of the file to be uploaded. Can be called multiple times
-     * with different checksums types. Only valid for uploads.
+     * Sets checksum of the file to be uploaded. Can be called multiple times with different
+     * checksums types. Only valid for uploads.
      *
      * @param checksum of the file
      * @throws CacheException if reading the entry failed
      */
-    public void setChecksum(Checksum checksum) throws CacheException
-    {
+    public void setChecksum(Checksum checksum) throws CacheException {
         if (!isWrite()) {
             throw new IllegalStateException("Can only set checksum for uploads");
         }
@@ -956,34 +882,32 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets the size of the preallocation to make.
      * <p>
-     * Only affects uploads. If the upload is larger than the
-     * preallocation, then the upload may fail.
+     * Only affects uploads. If the upload is larger than the preallocation, then the upload may
+     * fail.
      */
-    public synchronized void setAllocation(long length)
-    {
+    public synchronized void setAllocation(long length) {
         _allocated = length;
     }
 
     /**
-     * Set the maximum allowed size for an upload.  If the size of the file
-     * is known in advance then {@link #setLength(long)} should be used instead.
+     * Set the maximum allowed size for an upload.  If the size of the file is known in advance then
+     * {@link #setLength(long)} should be used instead.
+     *
      * @param length the maximum number of bytes for this transfer.
      */
-    public synchronized void setMaximumLength(long length)
-    {
+    public synchronized void setMaximumLength(long length) {
         checkState(isWrite(), "Can only set maximum length for uploads");
         checkArgument(length > 0, "maximum length must be a positive number");
         // The following check is to catch bugs: the door should have already handled this situation
         checkArgument(!_fileAttributes.isDefined(SIZE) || _fileAttributes.getSize() <= length,
-                "maximum file length is smaller than already specified file length");
+              "maximum file length is smaller than already specified file length");
         _maximumSize = OptionalLong.of(length);
     }
 
     /**
      * Sets the mover queue to use.
      */
-    public synchronized void setIoQueue(String queue)
-    {
+    public synchronized void setIoQueue(String queue) {
         _ioQueue = queue;
     }
 
@@ -991,34 +915,30 @@ public class Transfer implements Comparable<Transfer>
      * Returns the mover queue to be used.
      */
     @Nullable
-    public synchronized String getIoQueue()
-    {
+    public synchronized String getIoQueue() {
         return _ioQueue;
     }
 
     /**
      * Returns the read pool selection context.
      */
-    protected synchronized PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
-    {
+    protected synchronized PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext() {
         return _readPoolSelectionContext;
     }
 
     /**
-     * Sets the previous read pool selection message. The message
-     * contains state that is maintained across repeated pool
-     * selections.
+     * Sets the previous read pool selection message. The message contains state that is maintained
+     * across repeated pool selections.
      */
-    protected synchronized void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
-    {
+    protected synchronized void setReadPoolSelectionContext(
+          PoolMgrSelectReadPoolMsg.Context context) {
         _readPoolSelectionContext = context;
     }
 
     /**
      * Selects a pool suitable for the transfer.
      */
-    public ListenableFuture<Void> selectPoolAsync(long timeout)
-    {
+    public ListenableFuture<Void> selectPoolAsync(long timeout) {
         FileAttributes fileAttributes = getFileAttributes();
 
         ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
@@ -1029,9 +949,9 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             PoolMgrSelectWritePoolMsg request =
-                    new PoolMgrSelectWritePoolMsg(fileAttributes,
-                                                  protocolInfo,
-                                                  allocated);
+                  new PoolMgrSelectWritePoolMsg(fileAttributes,
+                        protocolInfo,
+                        allocated);
             request.setId(_id);
             request.setSubject(_subject);
             request.setBillingPath(getBillingPath());
@@ -1044,20 +964,21 @@ public class Transfer implements Comparable<Transfer>
             EnumSet<RequestState> allowedStates = getAllowedRequestStates();
             try {
                 if (allowedStates.contains(RequestState.ST_STAGE) &&
-                        !_checkStagePermission.canPerformStaging(_subject,
-                        fileAttributes, protocolInfo)) {
+                      !_checkStagePermission.canPerformStaging(_subject,
+                            fileAttributes, protocolInfo)) {
                     allowedStates.remove(RequestState.ST_STAGE);
                 }
             } catch (IOException e) {
                 return immediateFailedFuture(
-                        new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
+                      new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                            e.getMessage()));
             }
 
             PoolMgrSelectReadPoolMsg request =
-                    new PoolMgrSelectReadPoolMsg(fileAttributes,
-                                                 protocolInfo,
-                                                 getReadPoolSelectionContext(),
-                                                 allowedStates);
+                  new PoolMgrSelectReadPoolMsg(fileAttributes,
+                        protocolInfo,
+                        getReadPoolSelectionContext(),
+                        allowedStates);
             request.setId(_id);
             request.setSubject(_subject);
             request.setBillingPath(getBillingPath());
@@ -1066,31 +987,31 @@ public class Transfer implements Comparable<Transfer>
             request.setExcludedHosts(_tried);
 
             reply = Futures.transform(_poolManager.sendAsync(request, timeout),
-                                      (PoolMgrSelectReadPoolMsg msg) -> {
-                                          setReadPoolSelectionContext(msg.getContext());
-                                          return msg;
-                                      });
+                  (PoolMgrSelectReadPoolMsg msg) -> {
+                      setReadPoolSelectionContext(msg.getContext());
+                      return msg;
+                  });
         }
 
         setStatusUntil("PoolManager: Selecting pool", reply);
         return CellStub.transform(reply,
-                                  (PoolMgrSelectPoolMsg msg) -> {
-                                      setPool(msg.getPool());
-                                      setFileAttributes(msg.getFileAttributes());
-                                      return null;
-                                  });
+              (PoolMgrSelectPoolMsg msg) -> {
+                  setPool(msg.getPool());
+                  setFileAttributes(msg.getFileAttributes());
+                  return null;
+              });
     }
 
     /**
      * Creates a mover for the transfer.
      */
-    public ListenableFuture<Void> startMoverAsync(long timeout)
-    {
+    public ListenableFuture<Void> startMoverAsync(long timeout) {
         FileAttributes fileAttributes = getFileAttributes();
         Pool pool = getPool();
 
         if (fileAttributes == null || pool == null) {
-            throw new IllegalStateException("Need PNFS ID, file attributes and pool before a mover can be started");
+            throw new IllegalStateException(
+                  "Need PNFS ID, file attributes and pool before a mover can be started");
         }
 
         ProtocolInfo protocolInfo = getProtocolInfoForPool();
@@ -1101,10 +1022,12 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             message =
-                    new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption(), _maximumSize, allocated);
+                  new PoolAcceptFileMessage(pool.getName(), protocolInfo, fileAttributes,
+                        pool.getAssumption(), _maximumSize, allocated);
         } else {
             message =
-                    new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes, pool.getAssumption());
+                  new PoolDeliverFileMessage(pool.getName(), protocolInfo, fileAttributes,
+                        pool.getAssumption());
         }
         message.setBillingPath(getBillingPath());
         message.setTransferPath(getTransferPath());
@@ -1120,8 +1043,8 @@ public class Transfer implements Comparable<Transfer>
          * REVISIT: this should happen only when space manager is enabled.
          */
         ListenableFuture<PoolIoFileMessage> reply = isWrite() ?
-                _poolManager.startAsync(pool.getAddress(), message, timeout) :
-                _poolStub.send(new CellPath(pool.getAddress()), message, timeout);
+              _poolManager.startAsync(pool.getAddress(), message, timeout) :
+              _poolStub.send(new CellPath(pool.getAddress()), message, timeout);
 
         reply = catchingAsync(reply, NoRouteToCellException.class, x -> {
             // invalidate pool selection to let the door to start over
@@ -1138,29 +1061,26 @@ public class Transfer implements Comparable<Transfer>
 
 
     /**
-     * Kills the mover of the transfer.  Blocks until the mover has died or
-     * until a timeout is reached.  An error is logged if the mover failed to
-     * die or if the timeout was reached.
-     * @param timeout the duration of the timeout
-     * @param unit the time units of the duration
+     * Kills the mover of the transfer.  Blocks until the mover has died or until a timeout is
+     * reached.  An error is logged if the mover failed to die or if the timeout was reached.
+     *
+     * @param timeout     the duration of the timeout
+     * @param unit        the time units of the duration
      * @param explanation short information why the transfer is killed
      */
-    public final void killMover(long timeout, TimeUnit unit, String explanation)
-    {
+    public final void killMover(long timeout, TimeUnit unit, String explanation) {
         killMover(unit.toMillis(timeout), explanation);
     }
 
 
     /**
-     * Kills the mover of the transfer. Blocks until the mover has
-     * died or until a timeout is reached. An error is logged if
-     * the mover failed to die or if the timeout was reached.
+     * Kills the mover of the transfer. Blocks until the mover has died or until a timeout is
+     * reached. An error is logged if the mover failed to die or if the timeout was reached.
      *
-     * @param millis Timeout in milliseconds
+     * @param millis      Timeout in milliseconds
      * @param explanation short information why the transfer is killed
      */
-    public void killMover(long millis, String explanation)
-    {
+    public void killMover(long millis, String explanation) {
         if (!hasMover()) {
             return;
         }
@@ -1172,7 +1092,7 @@ public class Transfer implements Comparable<Transfer>
             /* Kill the mover.
              */
             PoolMoverKillMessage message =
-                    new PoolMoverKillMessage(pool.getName(), moverId, explanation);
+                  new PoolMoverKillMessage(pool.getName(), moverId, explanation);
             message.setReplyRequired(false);
             _poolStub.notify(new CellPath(pool.getAddress()), message);
 
@@ -1186,7 +1106,7 @@ public class Transfer implements Comparable<Transfer>
             // Not surprising that the pool reported a failure
             // when we killed the mover.
             _log.debug("Killed mover and pool reported: {}",
-                       e.getMessage());
+                  e.getMessage());
         } catch (InterruptedException e) {
             _log.warn("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
             Thread.currentThread().interrupt();
@@ -1196,27 +1116,25 @@ public class Transfer implements Comparable<Transfer>
     }
 
     public IoJobInfo queryMoverInfo()
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         if (!hasMover()) {
             throw new IllegalStateException("Transfer has no mover");
         }
 
         try {
             return _poolStub.sendAndWait(new CellPath(getPool().getAddress()),
-                                     "mover ls -binary " + getMoverId(),
-                                     IoJobInfo.class);
+                  "mover ls -binary " + getMoverId(),
+                  IoJobInfo.class);
         } catch (NoRouteToCellException e) {
             throw new TimeoutCacheException(e.getMessage(), e);
         }
     }
 
     /**
-     * Deletes the name space entry of the file. Only valid for
-     * uploads. In case of failures, an error is logged.
+     * Deletes the name space entry of the file. Only valid for uploads. In case of failures, an
+     * error is logged.
      */
-    public void deleteNameSpaceEntry()
-    {
+    public void deleteNameSpaceEntry() {
         if (!isWrite()) {
             throw new IllegalStateException("Can only delete name space entry for uploads");
         }
@@ -1231,11 +1149,13 @@ public class Transfer implements Comparable<Transfer>
                  *  restriction.
                  */
                 new PnfsHandler(_pnfs, Restrictions.none())
-                        .deletePnfsEntry(pnfsId, _path.toString());
+                      .deletePnfsEntry(pnfsId, _path.toString());
             } catch (FileNotFoundCacheException e) {
-                _log.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
+                _log.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId,
+                      e.getMessage());
             } catch (CacheException e) {
-                _log.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
+                _log.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId,
+                      e.getMessage());
             } finally {
                 setStatus(null);
             }
@@ -1243,14 +1163,12 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Sends billing information to the billing cell. Any invocation
-     * beyond the first is ignored.
+     * Sends billing information to the billing cell. Any invocation beyond the first is ignored.
      *
      * @param code  The error code of the transfer; zero indicates success
      * @param error The error string of the transfer; may be empty
      */
-    public synchronized void notifyBilling(int code, String error)
-    {
+    public synchronized void notifyBilling(int code, String error) {
         if (_isBillingNotified) {
             return;
         }
@@ -1262,9 +1180,9 @@ public class Transfer implements Comparable<Transfer>
         msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
         msg.setTransaction(getTransaction());
         String chain = _clientAddresses.stream().
-                map(InetSocketAddress::getAddress).
-                map(InetAddress::getHostAddress).
-                collect(Collectors.joining(","));
+              map(InetSocketAddress::getAddress).
+              map(InetAddress::getHostAddress).
+              collect(Collectors.joining(","));
         msg.setClientChain(chain);
         msg.setClient(_clientAddresses.get(0).getAddress().getHostAddress());
         msg.setPnfsId(getPnfsId());
@@ -1285,33 +1203,28 @@ public class Transfer implements Comparable<Transfer>
     }
 
 
-    private static long getTimeoutFor(long deadline)
-    {
+    private static long getTimeoutFor(long deadline) {
         return subWithInfinity(deadline, System.currentTimeMillis());
     }
 
-    private static long getTimeoutFor(CellStub stub, long deadline)
-    {
+    private static long getTimeoutFor(CellStub stub, long deadline) {
         return Math.min(getTimeoutFor(deadline), stub.getTimeoutInMillis());
     }
 
-    private static long getTimeoutFor(PnfsHandler pnfs, long deadline)
-    {
+    private static long getTimeoutFor(PnfsHandler pnfs, long deadline) {
         return Math.min(getTimeoutFor(deadline), pnfs.getPnfsTimeout());
     }
 
     /**
-     * Select a pool and start a mover. Failed attempts are handled
-     * according to the {@link TransferRetryPolicy}. Note, that there
-     * will be no retries on uploads.
+     * Select a pool and start a mover. Failed attempts are handled according to the {@link
+     * TransferRetryPolicy}. Note, that there will be no retries on uploads.
      *
      * @param policy to handle error cases
      * @throws CacheException
      * @throws InterruptedException
      */
     public void selectPoolAndStartMover(TransferRetryPolicy policy)
-            throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         policy.checkValid();
 
         try {
@@ -1321,109 +1234,109 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
-    {
+    public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy) {
 
         long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTimeout());
 
         AsyncFunction<Void, Void> selectPool =
-                ignored -> selectPoolAsync(getTimeoutFor(deadLine));
+              ignored -> selectPoolAsync(getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> startMover =
-                ignored -> startMoverAsync(getTimeoutFor(deadLine));
+              ignored -> startMoverAsync(getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> readNameSpaceEntry =
-                ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
+              ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
 
-        AsyncFunction<CacheException,Void> retry =
-                new AsyncFunction<CacheException, Void>()
-                {
-                    private int count;
+        AsyncFunction<CacheException, Void> retry =
+              new AsyncFunction<CacheException, Void>() {
+                  private int count;
 
-                    private long start = System.currentTimeMillis();
+                  private long start = System.currentTimeMillis();
 
-                    @Override
-                    public ListenableFuture<Void> apply(CacheException t) throws Exception
-                    {
-                        count++;
+                  @Override
+                  public ListenableFuture<Void> apply(CacheException t) throws Exception {
+                      count++;
 
-                        switch (t.getRc()) {
-                        case CacheException.TIMEOUT:
-                            _log.warn("Retrying request due to timeout: {}", t.getMessage());
-                            break;
-                        case CacheException.OUT_OF_DATE:
-                        case CacheException.POOL_DISABLED:
-                        case CacheException.FILE_NOT_IN_REPOSITORY:
-                            _log.info("Retrying pool selection: {}", t.getMessage());
-                            // enforce new selection in during retry
-                            clearPoolSelection();
-                            return retryWhen(immediateFuture(null));
-                        case CacheException.FILE_IN_CACHE:
-                        case CacheException.INVALID_ARGS:
-                        case CacheException.FILE_NOT_FOUND:
-                            return immediateFailedFuture(t);
-                        case CacheException.NO_POOL_CONFIGURED:
-                            _log.error(t.getMessage());
-                            return immediateFailedFuture(t);
-                        case CacheException.NO_POOL_ONLINE:
-                        case CacheException.POOL_UNAVAILABLE:
-                            _log.warn(t.getMessage());
-                            break;
-                        case CacheException.PERMISSION_DENIED:
-                            _log.info("request rejected due to permission settings: {}", t.getMessage());
-                            return immediateFailedFuture(t);
-                        default:
-                            _log.error(t.getMessage());
-                            break;
-                        }
+                      switch (t.getRc()) {
+                          case CacheException.TIMEOUT:
+                              _log.warn("Retrying request due to timeout: {}", t.getMessage());
+                              break;
+                          case CacheException.OUT_OF_DATE:
+                          case CacheException.POOL_DISABLED:
+                          case CacheException.FILE_NOT_IN_REPOSITORY:
+                              _log.info("Retrying pool selection: {}", t.getMessage());
+                              // enforce new selection in during retry
+                              clearPoolSelection();
+                              return retryWhen(immediateFuture(null));
+                          case CacheException.FILE_IN_CACHE:
+                          case CacheException.INVALID_ARGS:
+                          case CacheException.FILE_NOT_FOUND:
+                              return immediateFailedFuture(t);
+                          case CacheException.NO_POOL_CONFIGURED:
+                              _log.error(t.getMessage());
+                              return immediateFailedFuture(t);
+                          case CacheException.NO_POOL_ONLINE:
+                          case CacheException.POOL_UNAVAILABLE:
+                              _log.warn(t.getMessage());
+                              break;
+                          case CacheException.PERMISSION_DENIED:
+                              _log.info("request rejected due to permission settings: {}",
+                                    t.getMessage());
+                              return immediateFailedFuture(t);
+                          default:
+                              _log.error(t.getMessage());
+                              break;
+                      }
 
-                        if (count >= policy.getMaximumTries()) {
-                            _log.warn("Maximum number of attempts ({}) is reached", policy.getMaximumTries());
-                            return immediateFailedFuture(t);
-                        }
+                      if (count >= policy.getMaximumTries()) {
+                          _log.warn("Maximum number of attempts ({}) is reached",
+                                policy.getMaximumTries());
+                          return immediateFailedFuture(t);
+                      }
 
-                        /* We rate limit the retry loop: two consecutive
-                         * iterations are separated by at least retryPeriod.
-                         */
-                        long now = System.currentTimeMillis();
-                        long timeToSleep = Math.max(0, policy.getRetryPause() - (now - start));
+                      /* We rate limit the retry loop: two consecutive
+                       * iterations are separated by at least retryPeriod.
+                       */
+                      long now = System.currentTimeMillis();
+                      long timeToSleep = Math.max(0, policy.getRetryPause() - (now - start));
 
-                        if (subWithInfinity(deadLine, now) <= timeToSleep) {
-                            _log.warn("Maximum request lifetime ({}) is reached", Duration.ofMillis(policy.getTimeout()));
-                            return immediateFailedFuture(t);
-                        }
+                      if (subWithInfinity(deadLine, now) <= timeToSleep) {
+                          _log.warn("Maximum request lifetime ({}) is reached",
+                                Duration.ofMillis(policy.getTimeout()));
+                          return immediateFailedFuture(t);
+                      }
 
-                        ListenableFuture<Void> doneSleeping = Futures.scheduleAsync(
-                                () -> Futures.immediateFuture(null),
-                                timeToSleep, TimeUnit.MILLISECONDS,
-                                RETRY_EXECUTOR);
+                      ListenableFuture<Void> doneSleeping = Futures.scheduleAsync(
+                            () -> Futures.immediateFuture(null),
+                            timeToSleep, TimeUnit.MILLISECONDS,
+                            RETRY_EXECUTOR);
 
-                        setStatusUntil("Sleeping (" + t.getMessage() + ")", doneSleeping);
-                        return retryWhen(doneSleeping);
-                    }
+                      setStatusUntil("Sleeping (" + t.getMessage() + ")", doneSleeping);
+                      return retryWhen(doneSleeping);
+                  }
 
-                    public ListenableFuture<Void> retryWhen(ListenableFuture<Void> future)
-                    {
-                        if (getPool() == null) {
-                            if (!isWrite()) {
-                                future = transformAsync(future, readNameSpaceEntry);
-                            }
-                            future = transformAsync(future, selectPool);
-                        }
+                  public ListenableFuture<Void> retryWhen(ListenableFuture<Void> future) {
+                      if (getPool() == null) {
+                          if (!isWrite()) {
+                              future = transformAsync(future, readNameSpaceEntry);
+                          }
+                          future = transformAsync(future, selectPool);
+                      }
 
-                        start = System.currentTimeMillis();
-                        return catchingAsync(transformAsync(future, startMover), CacheException.class, this);
-                    }
-                };
+                      start = System.currentTimeMillis();
+                      return catchingAsync(transformAsync(future, startMover), CacheException.class,
+                            this);
+                  }
+              };
 
         return catchingAsync(transformAsync(
-                selectPoolAsync(getTimeoutFor(deadLine)), startMover), CacheException.class, retry);
+              selectPoolAsync(getTimeoutFor(deadLine)), startMover), CacheException.class, retry);
     }
 
     /**
-     * Returns the result of {@link Future#get()} as if by {@link CellStub#get}, but
-     * cancels {@code future} if the calling thread is interrupted.
+     * Returns the result of {@link Future#get()} as if by {@link CellStub#get}, but cancels {@code
+     * future} if the calling thread is interrupted.
      */
-    protected static <T> T getCancellable(ListenableFuture<T> future) throws CacheException, InterruptedException, NoRouteToCellException
-    {
+    protected static <T> T getCancellable(ListenableFuture<T> future)
+          throws CacheException, InterruptedException, NoRouteToCellException {
         try {
             return CellStub.get(future);
         } catch (InterruptedException e) {
@@ -1434,10 +1347,10 @@ public class Transfer implements Comparable<Transfer>
 
     /**
      * Get timestamp when this transfer was created.
+     *
      * @return timestamp, when transfer was created.
      */
-    public long getCreationTime()
-    {
+    public long getCreationTime() {
         return _startedAt;
     }
 }

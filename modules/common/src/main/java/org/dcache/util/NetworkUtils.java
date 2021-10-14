@@ -1,5 +1,15 @@
 package org.dcache.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.and;
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterators.concat;
+import static com.google.common.collect.Iterators.forEnumeration;
+import static com.google.common.collect.Iterators.transform;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
@@ -11,11 +21,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -36,14 +41,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.and;
-import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterators.*;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Various network related utility functions.
@@ -51,26 +51,26 @@ import static java.util.stream.Collectors.toList;
 public abstract class NetworkUtils {
 
     /**
-     * Accept a space-separated list of identifiers that are then used to build
-     * the supplied list of InetAddress.  Each identifier may be an IP address
-     * or a hostname.  Host names are resolved when an object is created and
-     * that lookup is subsequently cached.  If any identifier is a wildcard IP
-     * address (0.0.0.0 or ::) or hosts is null then the supplied addresses
-     * will include all local addresses.
+     * Accept a space-separated list of identifiers that are then used to build the supplied list of
+     * InetAddress.  Each identifier may be an IP address or a hostname.  Host names are resolved
+     * when an object is created and that lookup is subsequently cached.  If any identifier is a
+     * wildcard IP address (0.0.0.0 or ::) or hosts is null then the supplied addresses will include
+     * all local addresses.
      */
-    private static class HostListAddressSupplier implements java.util.function.Supplier<List<InetAddress>>
-    {
+    private static class HostListAddressSupplier implements
+          java.util.function.Supplier<List<InetAddress>> {
+
         private final List<InetAddress> fixedAddresses;
         private final java.util.function.Supplier<List<InetAddress>> dynamicAddresses;
 
-        public HostListAddressSupplier(@Nullable String hosts) throws UnknownHostException
-        {
+        public HostListAddressSupplier(@Nullable String hosts) throws UnknownHostException {
             boolean wildcard = false;
             ImmutableList.Builder<InetAddress> builder = ImmutableList.builder();
             for (String host : Splitter.on(' ').omitEmptyStrings().split(hosts)) {
                 if (isInetAddress(host)) {
                     InetAddress address = InetAddresses.forString(host);
-                    checkArgument(!address.isMulticastAddress(), "Invalid address %s: cannot publish a multicast address", host);
+                    checkArgument(!address.isMulticastAddress(),
+                          "Invalid address %s: cannot publish a multicast address", host);
                     if (address.isAnyLocalAddress()) {
                         wildcard = true;
                     } else {
@@ -85,8 +85,7 @@ public abstract class NetworkUtils {
         }
 
         @Override
-        public List<InetAddress> get()
-        {
+        public List<InetAddress> get() {
             List<InetAddress> dynamic = dynamicAddresses.get();
             if (dynamic.isEmpty()) {
                 return fixedAddresses;
@@ -102,32 +101,32 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * A supplier that returns all Internet addresses of network interfaces
-     * that are both up and not a loopback interface.
-     * REVISIT: LocalAddressSupplier and AnyAddressSupplier are essentially the
-     * same and should be merged.
+     * A supplier that returns all Internet addresses of network interfaces that are both up and not
+     * a loopback interface. REVISIT: LocalAddressSupplier and AnyAddressSupplier are essentially
+     * the same and should be merged.
      */
-    public static class AnyAddressSupplier implements java.util.function.Supplier<List<InetAddress>>
-    {
+    public static class AnyAddressSupplier implements
+          java.util.function.Supplier<List<InetAddress>> {
+
         private List<InetAddress> _previous = Collections.emptyList();
 
         @Override
-        public List<InetAddress> get()
-        {
+        public List<InetAddress> get() {
             NDC.push("NIC auto-discovery");
             try {
                 ArrayList<InetAddress> addresses = new ArrayList<>();
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 try {
                     Enumeration<NetworkInterface> interfaces =
-                            NetworkInterface.getNetworkInterfaces();
+                          NetworkInterface.getNetworkInterfaces();
                     while (interfaces.hasMoreElements()) {
                         NetworkInterface i = interfaces.nextElement();
                         try {
                             if (i.isUp() && !i.isLoopback()) {
                                 Enumeration<InetAddress> e = i.getInetAddresses();
                                 while (e.hasMoreElements()) {
-                                    addresses.add(NetworkUtils.withCanonicalAddress(e.nextElement()));
+                                    addresses.add(
+                                          NetworkUtils.withCanonicalAddress(e.nextElement()));
                                 }
                             }
                         } catch (SocketException e) {
@@ -146,11 +145,12 @@ public abstract class NetworkUtils {
             }
         }
 
-        private synchronized void logChanges(List<InetAddress> addresses)
-        {
+        private synchronized void logChanges(List<InetAddress> addresses) {
             if (!_previous.equals(addresses)) {
-                List<InetAddress> added = addresses.stream().filter(a -> !_previous.contains(a)).collect(toList());
-                List<InetAddress> removed = _previous.stream().filter(a -> !addresses.contains(a)).collect(toList());
+                List<InetAddress> added = addresses.stream().filter(a -> !_previous.contains(a))
+                      .collect(toList());
+                List<InetAddress> removed = _previous.stream().filter(a -> !addresses.contains(a))
+                      .collect(toList());
 
                 boolean adding = !added.isEmpty();
                 boolean removing = !removed.isEmpty();
@@ -176,12 +176,12 @@ public abstract class NetworkUtils {
             }
         }
 
-        private static String describeList(List<InetAddress> addresses)
-        {
+        private static String describeList(List<InetAddress> addresses) {
             if (addresses.size() == 1) {
                 return addresses.get(0).toString();
             } else {
-                return addresses.stream().map(NetworkUtils::toString).collect(joining(", ", "[", "]"));
+                return addresses.stream().map(NetworkUtils::toString)
+                      .collect(joining(", ", "[", "]"));
             }
         }
     }
@@ -196,12 +196,12 @@ public abstract class NetworkUtils {
     private static final List<InetAddress> FAKED_ADDRESSES;
 
     private static final Supplier<List<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
-            Suppliers.memoizeWithExpiration(new LocalAddressSupplier(), 5, TimeUnit.SECONDS);
+          Suppliers.memoizeWithExpiration(new LocalAddressSupplier(), 5, TimeUnit.SECONDS);
 
     static {
         String value = nullToEmpty(System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY));
         ImmutableList.Builder<InetAddress> fakedAddresses = ImmutableList.builder();
-        for (String address: Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
+        for (String address : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
             fakedAddresses.add(InetAddresses.forString(address));
         }
         FAKED_ADDRESSES = fakedAddresses.build();
@@ -228,17 +228,16 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * Like URI.toURL, but translates exceptions to URISyntaxException
-     * with a descriptive error message.
+     * Like URI.toURL, but translates exceptions to URISyntaxException with a descriptive error
+     * message.
      */
     public static URL toURL(URI uri)
-        throws URISyntaxException
-    {
+          throws URISyntaxException {
         try {
             return uri.toURL();
         } catch (IllegalArgumentException | MalformedURLException e) {
             URISyntaxException exception =
-                new URISyntaxException(uri.toString(), e.getMessage());
+                  new URISyntaxException(uri.toString(), e.getMessage());
             exception.initCause(e);
             throw exception;
         }
@@ -248,9 +247,9 @@ public abstract class NetworkUtils {
      * Return a local address that is likely reachable from {@code expectedSource}.
      */
     public static InetAddress getLocalAddress(InetAddress expectedSource)
-            throws SocketException
-    {
-        InetAddress localAddress = getLocalAddress(expectedSource, getProtocolFamily(expectedSource));
+          throws SocketException {
+        InetAddress localAddress = getLocalAddress(expectedSource,
+              getProtocolFamily(expectedSource));
         if (localAddress == null) {
             if (!FAKED_ADDRESSES.isEmpty()) {
                 localAddress = FAKED_ADDRESSES.get(0);
@@ -273,11 +272,12 @@ public abstract class NetworkUtils {
                         InetAddressScope minScope = InetAddressScope.of(expectedSource);
                         try {
                             return Ordering.natural().onResultOf(InetAddressScope::of).min(
-                                    filter(LOCAL_ADDRESS_SUPPLIER.get(),
-                                           and(greaterThanOrEquals(minScope),
-                                               isNotMulticast())));
+                                  filter(LOCAL_ADDRESS_SUPPLIER.get(),
+                                        and(greaterThanOrEquals(minScope),
+                                              isNotMulticast())));
                         } catch (NoSuchElementException e) {
-                            throw new SocketException("Unable to find address that faces " + expectedSource);
+                            throw new SocketException(
+                                  "Unable to find address that faces " + expectedSource);
                         }
                     }
                 }
@@ -288,12 +288,12 @@ public abstract class NetworkUtils {
 
     /**
      * Like getLocalAddress(InetAddress), but returns an addresses from the given protocolFamily
-     * that is likely reachable from {@code expectedSource}. Returns null if such an address
-     * could not be determined.
+     * that is likely reachable from {@code expectedSource}. Returns null if such an address could
+     * not be determined.
      */
-    public static InetAddress getLocalAddress(InetAddress expectedSource, ProtocolFamily protocolFamily)
-            throws SocketException
-    {
+    public static InetAddress getLocalAddress(InetAddress expectedSource,
+          ProtocolFamily protocolFamily)
+          throws SocketException {
         if (!FAKED_ADDRESSES.isEmpty()) {
             for (InetAddress address : FAKED_ADDRESSES) {
                 if (getProtocolFamily(address) == protocolFamily) {
@@ -321,10 +321,10 @@ public abstract class NetworkUtils {
                 InetAddressScope minScope = InetAddressScope.of(expectedSource);
                 try {
                     return Ordering.natural().onResultOf(InetAddressScope::of).min(
-                            filter(LOCAL_ADDRESS_SUPPLIER.get(),
-                                   and(greaterThanOrEquals(minScope),
-                                       hasProtocolFamily(protocolFamily),
-                                       isNotMulticast())));
+                          filter(LOCAL_ADDRESS_SUPPLIER.get(),
+                                and(greaterThanOrEquals(minScope),
+                                      hasProtocolFamily(protocolFamily),
+                                      isNotMulticast())));
                 } catch (NoSuchElementException e) {
                     return null;
                 }
@@ -340,10 +340,10 @@ public abstract class NetworkUtils {
                 NetworkInterface byInetAddress = NetworkInterface.getByInetAddress(localAddress);
                 try {
                     return Ordering.natural().onResultOf(InetAddressScope::of).min(
-                            Iterators.filter(forEnumeration(byInetAddress.getInetAddresses()),
-                                             and(greaterThanOrEquals(intendedScope),
-                                                 hasProtocolFamily(protocolFamily),
-                                                 isNotMulticast())));
+                          Iterators.filter(forEnumeration(byInetAddress.getInetAddresses()),
+                                and(greaterThanOrEquals(intendedScope),
+                                      hasProtocolFamily(protocolFamily),
+                                      isNotMulticast())));
                 } catch (NoSuchElementException e) {
                     return null;
                 }
@@ -352,23 +352,19 @@ public abstract class NetworkUtils {
         }
     }
 
-    private static Predicate<InetAddress> isNotMulticast()
-    {
+    private static Predicate<InetAddress> isNotMulticast() {
         return address -> !address.isMulticastAddress();
     }
 
-    private static Predicate<InetAddress> hasProtocolFamily(final ProtocolFamily protocolFamily)
-    {
+    private static Predicate<InetAddress> hasProtocolFamily(final ProtocolFamily protocolFamily) {
         return address -> getProtocolFamily(address) == protocolFamily;
     }
 
-    private static Predicate<InetAddress> greaterThanOrEquals(final InetAddressScope scope)
-    {
+    private static Predicate<InetAddress> greaterThanOrEquals(final InetAddressScope scope) {
         return address -> InetAddressScope.of(address).ordinal() >= scope.ordinal();
     }
 
-    public static ProtocolFamily getProtocolFamily(InetAddress address)
-    {
+    public static ProtocolFamily getProtocolFamily(InetAddress address) {
         if (address instanceof Inet4Address) {
             return StandardProtocolFamily.INET;
         }
@@ -378,8 +374,7 @@ public abstract class NetworkUtils {
         throw new IllegalArgumentException("Unknown protocol family: " + address);
     }
 
-    public static String toString(InetAddress a)
-    {
+    public static String toString(InetAddress a) {
         String name = a.getHostName();
         if (InetAddresses.isInetAddress(name)) {
             return InetAddresses.toAddrString(a);
@@ -391,7 +386,8 @@ public abstract class NetworkUtils {
 
     private static String getPreferredHostName() {
         List<InetAddress> addresses =
-                Ordering.natural().onResultOf(InetAddressScope::of).reverse().sortedCopy(getLocalAddresses());
+              Ordering.natural().onResultOf(InetAddressScope::of).reverse()
+                    .sortedCopy(getLocalAddresses());
         if (addresses.isEmpty()) {
             return "localhost";
         }
@@ -399,7 +395,7 @@ public abstract class NetworkUtils {
          * DNS host name; but if there is no mapping,
          * use the first address.
          */
-        for (InetAddress a: addresses) {
+        for (InetAddress a : addresses) {
             String hostName = stripScope(a.getCanonicalHostName());
             if (!InetAddresses.isInetAddress(hostName)) {
                 return hostName;
@@ -427,12 +423,11 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * Returns an InetAddress with the result of InetAddress#getCanonicalHostName
-     * filled in as the hostname. Subsequent calls to InetAddress#getHostName
-     * will return the canonical name without further lookups.
+     * Returns an InetAddress with the result of InetAddress#getCanonicalHostName filled in as the
+     * hostname. Subsequent calls to InetAddress#getHostName will return the canonical name without
+     * further lookups.
      */
-    public static InetAddress withCanonicalAddress(InetAddress address)
-    {
+    public static InetAddress withCanonicalAddress(InetAddress address) {
         try {
             String name = address.getCanonicalHostName();
 
@@ -471,18 +466,15 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * The scope of an address captures the extend of the validity of
-     * an internet address.
+     * The scope of an address captures the extend of the validity of an internet address.
      */
-    public enum InetAddressScope
-    {
+    public enum InetAddressScope {
         LOOPBACK,
         LINK,
         SITE,
         GLOBAL;
 
-        public static InetAddressScope of(InetAddress address)
-        {
+        public static InetAddressScope of(InetAddress address) {
             if (address.isLoopbackAddress()) {
                 return LOOPBACK;
             }
@@ -497,36 +489,32 @@ public abstract class NetworkUtils {
 
     }
 
-    public static java.util.function.Supplier<List<InetAddress>> anyAddressSupplier()
-    {
+    public static java.util.function.Supplier<List<InetAddress>> anyAddressSupplier() {
         return new AnyAddressSupplier();
     }
 
     /**
-     * Accept a space-separated list of identifiers that are then used to build
-     * the supplied list of InetAddress.  Each identifier may be an IP address
-     * or a hostname.  Hostnames are resolved when an object is created and that
-     * lookup is subsequently cached.  If any identifier is a wildcard IP
-     * address (0.0.0.0 or ::) then the supplied addresses will include all
-     * local addresses.
+     * Accept a space-separated list of identifiers that are then used to build the supplied list of
+     * InetAddress.  Each identifier may be an IP address or a hostname.  Hostnames are resolved
+     * when an object is created and that lookup is subsequently cached.  If any identifier is a
+     * wildcard IP address (0.0.0.0 or ::) then the supplied addresses will include all local
+     * addresses.
      */
-    public static java.util.function.Supplier<List<InetAddress>> hostListAddressSupplier(String list)
-            throws UnknownHostException
-    {
+    public static java.util.function.Supplier<List<InetAddress>> hostListAddressSupplier(
+          String list)
+          throws UnknownHostException {
         return new HostListAddressSupplier(list);
     }
 
 
     /**
-     * A supplier that returns all Internet addresses of network interfaces that
-     * are up.  REVISIT: LocalAddressSupplier and AnyAddressSupplier are
-     * essentially the same and should be merged.
+     * A supplier that returns all Internet addresses of network interfaces that are up.  REVISIT:
+     * LocalAddressSupplier and AnyAddressSupplier are essentially the same and should be merged.
      */
-    private static class LocalAddressSupplier implements Supplier<List<InetAddress>>
-    {
+    private static class LocalAddressSupplier implements Supplier<List<InetAddress>> {
+
         @Override
-        public List<InetAddress> get()
-        {
+        public List<InetAddress> get() {
             try {
                 /*
                  * Get IP addresses from all interfaces. As InetAddress objects returned by
@@ -535,24 +523,26 @@ public abstract class NetworkUtils {
                  * information only.
                  */
                 return Lists.newArrayList(
-                        transform(
-                                concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
-                                            (i) -> {
-                                                try {
-                                                    if (i.isUp()) {
-                                                        return forEnumeration(i.getInetAddresses());
-                                                    }
-                                                } catch (SocketException ignored) {
+                      transform(
+                            concat(
+                                  transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
+                                        (i) -> {
+                                            try {
+                                                if (i.isUp()) {
+                                                    return forEnumeration(i.getInetAddresses());
                                                 }
-                                                return Collections.emptyIterator();
-                                            })),
-                                (InetAddress input) -> {
-                                    try {
-                                        return InetAddress.getByAddress(input.getAddress());
-                                    } catch (UnknownHostException e) {
-                                        throw new RuntimeException("Failed to create new instance of InetAddress", e);
-                                    }
-                                }));
+                                            } catch (SocketException ignored) {
+                                            }
+                                            return Collections.emptyIterator();
+                                        })),
+                            (InetAddress input) -> {
+                                try {
+                                    return InetAddress.getByAddress(input.getAddress());
+                                } catch (UnknownHostException e) {
+                                    throw new RuntimeException(
+                                          "Failed to create new instance of InetAddress", e);
+                                }
+                            }));
             } catch (SocketException e) {
                 logger.error("Failed to resolve local network addresses: {}", e.toString());
                 return Collections.emptyList();

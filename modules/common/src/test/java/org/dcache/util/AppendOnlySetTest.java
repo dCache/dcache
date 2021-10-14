@@ -17,38 +17,35 @@
  */
 package org.dcache.util;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
+public class AppendOnlySetTest {
 
-public class AppendOnlySetTest
-{
     Set<Item> inner;
     Set<Item> appendOnly;
 
-    private class Item
-    {
+    private class Item {
+
     }
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         inner = new HashSet();
         appendOnly = new AppendOnlySet(inner);
     }
 
     @Test
-    public void shouldAllowAdd()
-    {
+    public void shouldAllowAdd() {
         Item item = new Item();
 
         appendOnly.add(item);
@@ -58,8 +55,7 @@ public class AppendOnlySetTest
     }
 
     @Test
-    public void shouldAllowAddAll()
-    {
+    public void shouldAllowAddAll() {
         Item item1 = new Item();
         Item item2 = new Item();
         List<Item> items = Arrays.asList(item1, item2);
@@ -70,18 +66,16 @@ public class AppendOnlySetTest
         assertThat(inner, hasItems(item1, item2));
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void shoudNotAllowRemoveItem()
-    {
+    @Test(expected = UnsupportedOperationException.class)
+    public void shoudNotAllowRemoveItem() {
         Item item = new Item();
         appendOnly.add(item);
 
         appendOnly.remove(item);
     }
 
-    @Test(expected=UnsupportedOperationException.class)
-    public void shoudNotAllowRemoveItemThroughIterator()
-    {
+    @Test(expected = UnsupportedOperationException.class)
+    public void shoudNotAllowRemoveItemThroughIterator() {
         Item item = new Item();
         appendOnly.add(item);
 

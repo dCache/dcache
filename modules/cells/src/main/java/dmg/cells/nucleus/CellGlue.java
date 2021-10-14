@@ -1,16 +1,14 @@
 package dmg.cells.nucleus;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-
+import dmg.util.TimebasedCounter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,31 +16,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
+import org.apache.curator.framework.CuratorFramework;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dmg.util.TimebasedCounter;
+class CellGlue {
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-
-class CellGlue
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(CellGlue.class);
+          LoggerFactory.getLogger(CellGlue.class);
 
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CellNucleus> _publicCellList = new ConcurrentHashMap<>();
     private final ConcurrentMap<CellNucleus, CompletableFuture<?>> _killedCells = new ConcurrentHashMap<>();
     private final Map<String, Object> _cellContext =
-            new ConcurrentHashMap<>();
+          new ConcurrentHashMap<>();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
     private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus _systemNucleus;
@@ -58,8 +55,7 @@ class CellGlue
     private final SerializationHandler.Serializer _serializer;
 
     CellGlue(String cellDomainName, @Nonnull CuratorFramework curatorFramework,
-            Optional<String> zone, SerializationHandler.Serializer serializer)
-    {
+          Optional<String> zone, SerializationHandler.Serializer serializer) {
         _serializer = serializer;
         _zone = requireNonNull(zone);
         String cellDomainNameLocal = cellDomainName;
@@ -70,8 +66,8 @@ class CellGlue
 
         if (cellDomainNameLocal.charAt(cellDomainNameLocal.length() - 1) == '*') {
             cellDomainNameLocal =
-                    cellDomainNameLocal.substring(0, cellDomainNameLocal.length()) +
-                    System.currentTimeMillis();
+                  cellDomainNameLocal.substring(0, cellDomainNameLocal.length()) +
+                        System.currentTimeMillis();
         }
         _cellDomainName = cellDomainNameLocal;
         _curatorFramework = curatorFramework;
@@ -79,23 +75,23 @@ class CellGlue
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
         ThreadFactory killerThreadFactory =
-                new ThreadFactoryBuilder().setNameFormat("killer-%d").setThreadFactory(r -> newThread(_killerThreadGroup, r)).build();
+              new ThreadFactoryBuilder().setNameFormat("killer-%d")
+                    .setThreadFactory(r -> newThread(_killerThreadGroup, r)).build();
         _killerExecutor = MoreExecutors.listeningDecorator
-                (new ThreadPoolExecutor(1, Integer.MAX_VALUE,
-                                        3L, TimeUnit.SECONDS,
-                                        new SynchronousQueue<>(),
-                                        killerThreadFactory));
+              (new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+                    3L, TimeUnit.SECONDS,
+                    new SynchronousQueue<>(),
+                    killerThreadFactory));
         ThreadPoolExecutor emergencyKillerExecutor =
-                new ThreadPoolExecutor(1, 1,
-                                       0L, TimeUnit.MILLISECONDS,
-                                       new LinkedBlockingQueue<>(),
-                                       killerThreadFactory);
+              new ThreadPoolExecutor(1, 1,
+                    0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<>(),
+                    killerThreadFactory);
         emergencyKillerExecutor.prestartCoreThread();
         _emergencyKillerExecutor = MoreExecutors.listeningDecorator(emergencyKillerExecutor);
     }
 
-    static Thread newThread(ThreadGroup threadGroup, Runnable r)
-    {
+    static Thread newThread(ThreadGroup threadGroup, Runnable r) {
         Thread thread = new Thread(threadGroup, r);
         /* By default threads inherit the daemon status and priority from the creating
          * thread. Thus we reset them.
@@ -109,8 +105,7 @@ class CellGlue
         return thread;
     }
 
-    static Thread newThread(ThreadGroup threadGroup, Runnable r, String name)
-    {
+    static Thread newThread(ThreadGroup threadGroup, Runnable r, String name) {
         Thread thread = new Thread(threadGroup, r, name);
         /* By default threads inherit the daemon status and priority from the creating
          * thread. Thus we reset them.
@@ -124,14 +119,12 @@ class CellGlue
         return thread;
     }
 
-    ThreadGroup getMasterThreadGroup()
-    {
+    ThreadGroup getMasterThreadGroup() {
         return _masterThreadGroup;
     }
 
     synchronized void registerCell(CellNucleus cell)
-            throws IllegalStateException
-    {
+          throws IllegalStateException {
         if (cell.getThisCell() instanceof SystemCell) {
             checkState(_systemNucleus == null);
             _systemNucleus = cell;
@@ -145,8 +138,7 @@ class CellGlue
     }
 
     synchronized void publishCell(CellNucleus cell)
-            throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         String name = cell.getCellName();
         if (_cellList.get(name) != cell) {
             throw new IllegalStateException("Cell " + name + " does not exist.");
@@ -156,71 +148,59 @@ class CellGlue
         }
     }
 
-    CellNucleus getSystemNucleus()
-    {
+    CellNucleus getSystemNucleus() {
         return _systemNucleus;
     }
 
-    void consume(CellNucleus cell, String queue)
-    {
+    void consume(CellNucleus cell, String queue) {
         routeAdd(new CellRoute(queue, cell.getThisAddress(), cell.getZone(), CellRoute.QUEUE));
     }
 
-    void subscribe(CellNucleus cell, String topic)
-    {
+    void subscribe(CellNucleus cell, String topic) {
         routeAdd(new CellRoute(topic, cell.getThisAddress(), cell.getZone(), CellRoute.TOPIC));
     }
 
-    Map<String, Object> getCellContext()
-    {
+    Map<String, Object> getCellContext() {
         return _cellContext;
     }
 
     @Nonnull
-    Optional<String> getZone()
-    {
+    Optional<String> getZone() {
         return _zone;
     }
 
-    SerializationHandler.Serializer getMessageSerializer()
-    {
+    SerializationHandler.Serializer getMessageSerializer() {
         return _serializer;
     }
 
-    Object getCellContext(String str)
-    {
+    Object getCellContext(String str) {
         return _cellContext.get(str);
     }
 
-    public synchronized void routeAdd(CellRoute route)
-    {
+    public synchronized void routeAdd(CellRoute route) {
         CellAddressCore target = route.getTarget();
         if (target.getCellDomainName().equals(getCellDomainName()) &&
-            !_publicCellList.containsKey(target.getCellName())) {
+              !_publicCellList.containsKey(target.getCellName())) {
             throw new IllegalArgumentException("No such cell: " + target);
         }
         _routingTable.add(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_ADDED_EVENT));
     }
 
-    public synchronized void routeDelete(CellRoute route)
-    {
+    public synchronized void routeDelete(CellRoute route) {
         _routingTable.delete(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
     }
 
-    CellRoutingTable getRoutingTable()
-    {
+    CellRoutingTable getRoutingTable() {
         return _routingTable;
     }
 
-    CellRoute[] getRoutingList()
-    {
+    CellRoute[] getRoutingList() {
         return _routingTable.getRoutingList();
     }
 
-    List<CellTunnelInfo> getCellTunnelInfos()
-    {
+    List<CellTunnelInfo> getCellTunnelInfos() {
         List<CellTunnelInfo> v = new ArrayList<>();
         for (CellNucleus cellNucleus : _publicCellList.values()) {
             Cell c = cellNucleus.getThisCell();
@@ -231,50 +211,43 @@ class CellGlue
         return v;
     }
 
-    List<String> getCellNames()
-    {
+    List<String> getCellNames() {
         return new ArrayList<>(_cellList.keySet());
     }
 
-    String getUnique()
-    {
+    String getUnique() {
         return COUNTER_ENCODING.encode(Longs.toByteArray(_uniqueCounter.next()));
     }
 
-    CellInfo getCellInfo(String name)
-    {
+    CellInfo getCellInfo(String name) {
         CellNucleus nucleus = getCell(name);
         return (nucleus == null) ? null : nucleus._getCellInfo();
     }
 
-    Thread[] getThreads(String name)
-    {
+    Thread[] getThreads(String name) {
         CellNucleus nucleus = getCell(name);
         return (nucleus == null) ? null : nucleus.getThreads();
     }
 
-    private void sendToAll(CellEvent event)
-    {
+    private void sendToAll(CellEvent event) {
         for (CellNucleus nucleus : _publicCellList.values()) {
             nucleus.addToEventQueue(event);
         }
     }
 
-    String getCellDomainName()
-    {
+    String getCellDomainName() {
         return _cellDomainName;
     }
 
-    CompletableFuture<?> kill(CellNucleus nucleus)
-    {
+    CompletableFuture<?> kill(CellNucleus nucleus) {
         return kill(nucleus, nucleus);
     }
 
-    CompletableFuture<?> kill(CellNucleus sender, String cellName)
-    {
+    CompletableFuture<?> kill(CellNucleus sender, String cellName) {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            return CompletableFuture.failedFuture(new NoSuchElementException("No such cell: " + cellName));
+            return CompletableFuture.failedFuture(
+                  new NoSuchElementException("No such cell: " + cellName));
         }
         return kill(sender, nucleus);
     }
@@ -282,8 +255,7 @@ class CellGlue
     /**
      * Log diagnostic information about a cell's ThreadGroup.
      */
-    void listThreadGroupOf(String cellName)
-    {
+    void listThreadGroupOf(String cellName) {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus != null) {
             nucleus.threadGroupList();
@@ -292,11 +264,11 @@ class CellGlue
 
     /**
      * Discover to which cell a thread belongs.
+     *
      * @param thread The Thread to identify
      * @return Optionally the CellNucleus for this thread
      */
-    Optional<CellNucleus> findCellNucleus(Thread thread)
-    {
+    Optional<CellNucleus> findCellNucleus(Thread thread) {
         ThreadGroup targetGroup = thread.getThreadGroup();
         Optional<CellNucleus> result = findCellNucleus(targetGroup);
         while (!result.isPresent() && targetGroup.getParent() != null) {
@@ -306,23 +278,20 @@ class CellGlue
         return result;
     }
 
-    private Optional<CellNucleus> findCellNucleus(ThreadGroup targetGroup)
-    {
+    private Optional<CellNucleus> findCellNucleus(ThreadGroup targetGroup) {
         return _cellList.values().stream()
-                .filter(n -> n.getThreadGroup().equals(targetGroup))
-                .findAny();
+              .filter(n -> n.getThreadGroup().equals(targetGroup))
+              .findAny();
     }
 
-    void listKillerThreadGroup()
-    {
+    void listKillerThreadGroup() {
         listThreadGroup(_killerThreadGroup);
     }
 
     /**
      * Log diagnostic information about a ThreadGroup.
      */
-    static void listThreadGroup(ThreadGroup threadGroup)
-    {
+    static void listThreadGroup(ThreadGroup threadGroup) {
         Thread[] threads = new Thread[threadGroup.activeCount()];
         int n = threadGroup.enumerate(threads);
         StringBuilder sb = new StringBuilder();
@@ -338,30 +307,29 @@ class CellGlue
                 sb.append(isAlive ? "A" : "-");
                 sb.append(thread.isDaemon() ? "D" : "-");
                 sb.append(thread.isInterrupted() ? "I" : "-");
-                sb.append("] (").append(thread.getPriority()).append(") ").append(thread.getState()).append('\n');
+                sb.append("] (").append(thread.getPriority()).append(") ").append(thread.getState())
+                      .append('\n');
                 for (int j = 0; j < elements.length; j++) {
                     if (j > 0) {
                         sb.append('\n');
                     }
-                    StackTraceElement el = elements [j];
+                    StackTraceElement el = elements[j];
                     sb.append("    ").append(el);
                 }
             }
         }
         LOGGER.warn("Thread Group \"{}\":\n{}",
-                threadGroup.getName(), sb.toString());
+              threadGroup.getName(), sb.toString());
     }
 
     /**
-     * Returns a named cell. This method also returns cells that have
-     * been killed, but which are not dead yet.
+     * Returns a named cell. This method also returns cells that have been killed, but which are not
+     * dead yet.
      *
      * @param cellName the name of the cell
-     * @return The cell with the given name or null if there is no such
-     * cell.
+     * @return The cell with the given name or null if there is no such cell.
      */
-    CellNucleus getCell(String cellName)
-    {
+    CellNucleus getCell(String cellName) {
         return _cellList.get(cellName);
     }
 
@@ -369,17 +337,14 @@ class CellGlue
      * Blocks until the given cell is dead.
      *
      * @param cellName the name of the cell
-     * @param timeout  the time to wait in milliseconds. A timeout
-     *                 of 0 means to wait forever.
+     * @param timeout  the time to wait in milliseconds. A timeout of 0 means to wait forever.
      * @return True if the cell died, false in case of a timeout.
-     * @throws InterruptedException if another thread interrupted the
-     *                              current thread before or while the current thread was
-     *                              waiting for a notification. The interrupted status of
-     *                              the current thread is cleared when this exception is
-     *                              thrown.
+     * @throws InterruptedException if another thread interrupted the current thread before or while
+     *                              the current thread was waiting for a notification. The
+     *                              interrupted status of the current thread is cleared when this
+     *                              exception is thrown.
      */
-    synchronized boolean join(String cellName, long timeout) throws InterruptedException
-    {
+    synchronized boolean join(String cellName, long timeout) throws InterruptedException {
         if (timeout == 0) {
             while (getCell(cellName) != null) {
                 wait();
@@ -395,27 +360,32 @@ class CellGlue
         }
     }
 
-    synchronized void destroy(CellNucleus nucleus)
-    {
+    synchronized void destroy(CellNucleus nucleus) {
         String cellName = nucleus.getCellName();
         if (_publicCellList.remove(cellName, nucleus)) {
-            LOGGER.warn("Apparently cell {} wasn't unpublished before being destroyed. Please contact support@dcache.org.", cellName);
+            LOGGER.warn(
+                  "Apparently cell {} wasn't unpublished before being destroyed. Please contact support@dcache.org.",
+                  cellName);
         }
         if (!_cellList.remove(cellName, nucleus)) {
-            LOGGER.warn("Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.", cellName);
+            LOGGER.warn(
+                  "Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.",
+                  cellName);
         }
         if (_killedCells.remove(nucleus) == null) {
-            LOGGER.warn("Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.", cellName);
+            LOGGER.warn(
+                  "Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.",
+                  cellName);
         }
         notifyAll();
     }
 
-    private synchronized CompletableFuture<?> kill(CellNucleus source, CellNucleus destination)
-    {
+    private synchronized CompletableFuture<?> kill(CellNucleus source, CellNucleus destination) {
         String cellToKill = destination.getCellName();
 
         if (_cellList.get(cellToKill) != destination) {
-            return CompletableFuture.failedFuture(new NoSuchElementException("No such cell: " + cellToKill));
+            return CompletableFuture.failedFuture(
+                  new NoSuchElementException("No such cell: " + cellToKill));
         }
 
         /* Mark the cell as being killed to prevent it from being killed more
@@ -424,8 +394,7 @@ class CellGlue
         return _killedCells.computeIfAbsent(destination, d -> doKill(source, d));
     }
 
-    private synchronized CompletableFuture<?> doKill(CellNucleus source, CellNucleus destination)
-    {
+    private synchronized CompletableFuture<?> doKill(CellNucleus source, CellNucleus destination) {
         String cellToKill = destination.getCellName();
 
         /* Remove routes to this cell first to reduce the chance that
@@ -467,25 +436,25 @@ class CellGlue
     /**
      * Send a message to another cell.
      *
-     * @param msg The cell envelope
-     * @param resolveLocally Whether to deliver messages for @local addresses to local cells
-     * @param resolveRemotely Whether to deliver messages for @local addresses through routes with
-     *                        a domain address as a target
+     * @param msg             The cell envelope
+     * @param resolveLocally  Whether to deliver messages for @local addresses to local cells
+     * @param resolveRemotely Whether to deliver messages for @local addresses through routes with a
+     *                        domain address as a target
      * @throws SerializationException
      */
     void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
-            throws SerializationException
-    {
+          throws SerializationException {
         if (!msg.isStreamMode()) {
             msg = msg.encodeWith(_serializer);
         }
         CellPath destination = msg.getDestinationPath();
         LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
-        sendMessage(msg, destination.getCurrent(), resolveLocally, resolveRemotely, MAX_ROUTE_LEVELS);
+        sendMessage(msg, destination.getCurrent(), resolveLocally, resolveRemotely,
+              MAX_ROUTE_LEVELS);
     }
 
-    private void sendMessage(CellMessage msg, CellAddressCore address, boolean resolveLocally, boolean resolveRemotely, int steps)
-    {
+    private void sendMessage(CellMessage msg, CellAddressCore address, boolean resolveLocally,
+          boolean resolveRemotely, int steps) {
         CellPath destination = msg.getDestinationPath();
 
         /* We track whether we advanced the current position in the destination path. If not, we refuse
@@ -552,7 +521,8 @@ class CellGlue
              * or more domains: Such loops may have legitimate alias-routes rewriting the destination
              * and sending the message to where it has been before may be perfectly reasonable.
              */
-            if (!hasDestinationChanged && msg.getSourcePath().getDestinationAddress().equals(address)) {
+            if (!hasDestinationChanged && msg.getSourcePath().getDestinationAddress()
+                  .equals(address)) {
                 if (!hasTopicRoutes) {
                     sendException(msg, address.toString());
                 }
@@ -575,7 +545,7 @@ class CellGlue
             /* Alias routes rewrite the address.
              */
             if (route.getRouteType() == CellRoute.ALIAS ||
-                route.getRouteType() == CellRoute.QUEUE && !address.isDomainAddress()) {
+                  route.getRouteType() == CellRoute.QUEUE && !address.isDomainAddress()) {
                 destination.replaceCurrent(address);
                 hasDestinationChanged = true;
             }
@@ -593,8 +563,7 @@ class CellGlue
         sendException(msg, address.toString());
     }
 
-    private boolean deliverLocally(CellMessage msg, CellAddressCore address)
-    {
+    private boolean deliverLocally(CellMessage msg, CellAddressCore address) {
         CellNucleus destNucleus = _publicCellList.get(address.getCellName());
         if (destNucleus != null) {
             /* Is the message addressed to the cell or is the cell merely a router.
@@ -604,8 +573,9 @@ class CellGlue
                 try {
                     destNucleus.addToEventQueue(new MessageEvent(msg.decode()));
                 } catch (SerializationException e) {
-                    LOGGER.error("Received malformed message from {} with UOID {} and session [{}]: {}",
-                                 msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
+                    LOGGER.error(
+                          "Received malformed message from {} with UOID {} and session [{}]: {}",
+                          msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
                     sendException(msg, address.toString());
                 }
             } else if (msg.getSourcePath().hops() > 30) {
@@ -621,28 +591,28 @@ class CellGlue
     }
 
     private void sendException(CellMessage msg, String routeTarget)
-            throws SerializationException
-    {
+          throws SerializationException {
         if (msg.getSourceAddress().getCellName().equals("*")) {
             Serializable messageObject = msg.decode().getMessageObject();
             if (messageObject instanceof NoRouteToCellException) {
                 LOGGER.info(
-                        "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
-                        msg.getDestinationPath(), ((NoRouteToCellException) messageObject).getDestinationPath(),
-                        routeTarget, _cellDomainName);
+                      "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
+                      msg.getDestinationPath(),
+                      ((NoRouteToCellException) messageObject).getDestinationPath(),
+                      routeTarget, _cellDomainName);
             } else {
                 LOGGER.warn(
-                        "Message from {} could not be delivered because no route to {} is known.",
-                        msg.getSourcePath(), routeTarget);
+                      "Message from {} could not be delivered because no route to {} is known.",
+                      msg.getSourcePath(), routeTarget);
             }
         } else {
             LOGGER.debug(
-                    "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
-                    msg.getSourcePath(), routeTarget);
+                  "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
+                  msg.getSourcePath(), routeTarget);
             CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
-                                                   new NoRouteToCellException(msg,
-                                                                              "Route for >" + routeTarget +
-                                                                              "< not found at >" + _cellDomainName + '<'));
+                  new NoRouteToCellException(msg,
+                        "Route for >" + routeTarget +
+                              "< not found at >" + _cellDomainName + '<'));
             envelope.setLastUOID(msg.getUOID());
             envelope.addSourceAddress(_domainAddress);
             sendMessage(envelope, true, true);
@@ -650,19 +620,16 @@ class CellGlue
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return _cellDomainName;
     }
 
     @Nonnull
-    public CuratorFramework getCuratorFramework()
-    {
+    public CuratorFramework getCuratorFramework() {
         return _curatorFramework;
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         _curatorFramework.close();
         _killerExecutor.shutdown();
     }

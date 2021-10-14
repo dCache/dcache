@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
+
 import java.util.Collections;
 import java.util.Set;
 import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
@@ -66,25 +68,24 @@ import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
-
 public class UnpinJobProvider extends BulkJobProvider<UnpinJob> {
-  public UnpinJobProvider() {
-    super("UNPIN", FILE, ExpansionType.DEPTH_FIRST);
-  }
 
-  @Override
-  public UnpinJob createJob(BulkJobKey key, BulkJobKey parentKey) {
-    return new UnpinJob(key, parentKey, activity);
-  }
+    public UnpinJobProvider() {
+        super("UNPIN", FILE, ExpansionType.DEPTH_FIRST);
+    }
 
-  @Override
-  public Class<UnpinJob> getJobClass() {
-    return UnpinJob.class;
-  }
+    @Override
+    public UnpinJob createJob(BulkJobKey key, BulkJobKey parentKey) {
+        return new UnpinJob(key, parentKey, activity);
+    }
 
-  @Override
-  public Set<BulkJobArgumentDescriptor> getArguments() {
-    return Collections.EMPTY_SET;
-  }
+    @Override
+    public Class<UnpinJob> getJobClass() {
+        return UnpinJob.class;
+    }
+
+    @Override
+    public Set<BulkJobArgumentDescriptor> getArguments() {
+        return Collections.EMPTY_SET;
+    }
 }

@@ -20,16 +20,20 @@ package org.dcache.util.configuration;
 import java.io.LineNumberReader;
 
 /**
- * A class that implement this interface, when registered, will accept
- * responsibility for handling the warnings and errors produced when
- * parsing dCache configuration.  These methods may throw an exception,
- * to terminate parsing; however, code using a ProblemsAware class must
- * not assume that this will happen.
+ * A class that implement this interface, when registered, will accept responsibility for handling
+ * the warnings and errors produced when parsing dCache configuration.  These methods may throw an
+ * exception, to terminate parsing; however, code using a ProblemsAware class must not assume that
+ * this will happen.
  */
 public interface ProblemConsumer {
+
     void setFilename(String name);
+
     void setLineNumberReader(LineNumberReader reader);
+
     void error(String message);
+
     void warning(String message);
+
     void info(String message);
 }

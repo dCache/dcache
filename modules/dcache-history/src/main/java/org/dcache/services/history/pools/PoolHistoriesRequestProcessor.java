@@ -62,8 +62,8 @@ package org.dcache.services.history.pools;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.util.CacheException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -74,10 +74,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import diskCacheV111.pools.json.PoolCostData;
-import diskCacheV111.util.CacheException;
-
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -87,17 +83,19 @@ import org.dcache.util.collector.pools.PoolHistoriesAggregator;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Handles the transformation of message content from pools into a cached
- * {@link PoolInfoWrapper}.  The data handled by this transformation are
- * the timeseries histograms for request queues and for file lifetime.</p>
+ * {@link PoolInfoWrapper}.  The data handled by this transformation are the timeseries histograms
+ * for request queues and for file lifetime.</p>
  *
  * <p>Post-processing stores all data to local files that are read back
  * in on start-up.</p>
  */
 public final class PoolHistoriesRequestProcessor extends
-                RequestFutureProcessor<PoolInfoWrapper, PoolLiveDataForHistoriesMessage> {
+      RequestFutureProcessor<PoolInfoWrapper, PoolLiveDataForHistoriesMessage> {
+
     private static final FilenameFilter filter = new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
@@ -106,13 +104,13 @@ public final class PoolHistoriesRequestProcessor extends
     };
 
     private PoolTimeseriesServiceImpl service;
-    private PoolHistoriesAggregator   handler;
-    private File                      storageDir;
+    private PoolHistoriesAggregator handler;
+    private File storageDir;
 
     /**
      * <p>It is assumed the storage directory points to a shallow directory
-     * containing files which have the ".json" extension and whose
-     * names correspond to the key values of the map.</p>
+     * containing files which have the ".json" extension and whose names correspond to the key
+     * values of the map.</p>
      *
      * @return map of JSON values and filename (minus extension) keys.
      */
@@ -146,15 +144,15 @@ public final class PoolHistoriesRequestProcessor extends
                 }
 
                 info = builder.create().fromJson(reader,
-                                                 PoolInfoWrapper.class);
+                      PoolInfoWrapper.class);
             } catch (JsonSyntaxException | JsonIOException e) {
                 LOGGER.warn("Json parsing/syntax problem for {}: {}; file "
-                                            + "is corrupt or incomplete; removing ...",
-                            file, e.getMessage());
+                            + "is corrupt or incomplete; removing ...",
+                      file, e.getMessage());
                 file.delete();
             } catch (IOException e) {
                 LOGGER.warn("There was a problem reading json file {}: {}.",
-                            file, e.getMessage());
+                      file, e.getMessage());
             }
 
             if (key != null) {
@@ -184,10 +182,10 @@ public final class PoolHistoriesRequestProcessor extends
     protected void postProcess() {
         try {
             handler.aggregateDataForPoolGroups(next,
-                                               service.getSelectionUnit());
+                  service.getSelectionUnit());
         } catch (CacheException e) {
             LOGGER.error("Could not add aggregate data for pool groups: {}.",
-                         e.getMessage());
+                  e.getMessage());
         }
 
         writeMapToDisk();
@@ -196,13 +194,13 @@ public final class PoolHistoriesRequestProcessor extends
 
     @Override
     protected PoolInfoWrapper process(String key,
-                                      PoolLiveDataForHistoriesMessage data,
-                                      long sent) {
+          PoolLiveDataForHistoriesMessage data,
+          long sent) {
         Serializable errorObject = data.getErrorObject();
 
         if (errorObject != null) {
             LOGGER.warn("Problem with retrieval of live pool data for {}: {}.",
-                        key, errorObject.toString());
+                  key, errorObject.toString());
             return null;
         }
 
@@ -219,18 +217,18 @@ public final class PoolHistoriesRequestProcessor extends
 
         if (poolCostData != null) {
             PoolInfoCollectorUtils.updateQstatTimeSeries(poolCostData,
-                                                         info,
-                                                         timestamp);
+                  info,
+                  timestamp);
         }
 
         SweeperData sweeperData = data.getSweeperData();
         CountingHistogram histogram = sweeperData == null ? null :
-                        sweeperData.getLastAccessHistogram();
+              sweeperData.getLastAccessHistogram();
 
         if (histogram != null) {
             PoolInfoCollectorUtils.updateFstatHistograms(histogram,
-                                                         info,
-                                                         timestamp);
+                  info,
+                  timestamp);
         }
 
         PoolData poolData = new PoolData();
@@ -251,8 +249,8 @@ public final class PoolHistoriesRequestProcessor extends
                 builder.create().toJson(entry.getValue(), writer);
             } catch (IOException e) {
                 LOGGER.warn("There was a problem serializing json to file {}: "
-                                            + "{}, {}",
-                            file, e.getMessage(), e.getCause());
+                            + "{}, {}",
+                      file, e.getMessage(), e.getCause());
             }
         }
     }

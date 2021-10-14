@@ -1,30 +1,27 @@
 package org.dcache.poolmanager;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
-
-import org.mockito.ArgumentCaptor;
-import org.junit.Test;
-import org.junit.Before;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import diskCacheV111.vehicles.PoolMgrGetPoolMsg;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import org.dcache.cells.FutureCellMessageAnswerable;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class RendezvousPoolManagerHandlerTest {
 
@@ -42,8 +39,8 @@ public class RendezvousPoolManagerHandlerTest {
         envelopeCaptor = ArgumentCaptor.forClass(CellMessage.class);
         msg = mock(PoolMgrGetPoolMsg.class);
         when(msg.getFileAttributes())
-                .thenReturn(FileAttributes
-                        .ofPnfsId("00008B38D575774F46439388F526C8149EE2"));
+              .thenReturn(FileAttributes
+                    .ofPnfsId("00008B38D575774F46439388F526C8149EE2"));
     }
 
     @Test
@@ -54,7 +51,7 @@ public class RendezvousPoolManagerHandlerTest {
         sendMessage();
 
         assertThat(envelopeCaptor.getValue().getDestinationPath().toAddressString(),
-                is(SERVICE_NAME));
+              is(SERVICE_NAME));
     }
 
     @Test
@@ -65,14 +62,14 @@ public class RendezvousPoolManagerHandlerTest {
         sendMessage();
 
         assertThat(envelopeCaptor.getValue().getDestinationPath().toAddressString(),
-                anyOf(is("pm1@head1"), is("pm2@head1")));
+              anyOf(is("pm1@head1"), is("pm2@head1")));
     }
 
     private void givenPoolManagers(String... backends) {
         CellAddressCore service = new CellAddressCore(SERVICE_NAME);
         List<CellAddressCore> backendAddresses = Arrays.stream(backends)
-                .map(CellAddressCore::new)
-                .collect(Collectors.toList());
+              .map(CellAddressCore::new)
+              .collect(Collectors.toList());
 
         poolManagerHandler = new RendezvousPoolManagerHandler(service, backendAddresses);
     }
@@ -90,8 +87,8 @@ public class RendezvousPoolManagerHandlerTest {
         poolManagerHandler.sendAsync(cellEndpoint, msg, 1L);
 
         verify(cellEndpoint).sendMessage(envelopeCaptor.capture(),
-                any(FutureCellMessageAnswerable.class),
-                any(Executor.class), anyLong());
+              any(FutureCellMessageAnswerable.class),
+              any(Executor.class), anyLong());
     }
 
 }

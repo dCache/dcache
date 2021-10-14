@@ -73,8 +73,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class IllegalStateTransition extends Exception {
 
@@ -82,7 +81,9 @@ public class IllegalStateTransition extends Exception {
     private final State fromState;
     private final State toState;
 
-    /** Creates a new instance of IlleagalStateTransition */
+    /**
+     * Creates a new instance of IlleagalStateTransition
+     */
     public IllegalStateTransition() {
         this(null, null, null);
     }
@@ -97,13 +98,11 @@ public class IllegalStateTransition extends Exception {
         this.toState = toState;
     }
 
-    public State getFromState()
-    {
+    public State getFromState() {
         return fromState;
     }
 
-    public State getToState()
-    {
+    public State getToState() {
         return toState;
     }
 }

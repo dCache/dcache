@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class NetHandler implements Serializable {
+
     private static final long serialVersionUID = 8911153851483100573L;
     final Map<Long, NetUnit>[] _netList = new HashMap[33];
     private final String[] _maskStrings = new String[33];
@@ -63,9 +64,9 @@ class NetHandler implements Serializable {
 
     private long inetAddressToLong(InetAddress address) {
         long value = 0;
-        int i=24;
-        for(byte b : address.getAddress()) {
-            long bv = b >= 0 ? (long)b : (long)256+b;
+        int i = 24;
+        for (byte b : address.getAddress()) {
+            long bv = b >= 0 ? (long) b : (long) 256 + b;
             value |= bv << i;
             i -= 8;
         }
@@ -117,8 +118,8 @@ class NetHandler implements Serializable {
         int bit = net.getHostBits();
         NetUnit result = null;
         if (_netListV6[bit] != null) {
-           BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
-           result = _netListV6[bit].get(addr.and(_masksV6[bit]));
+            BigInteger addr = inetAddressToBigInteger(net.getHostAddress());
+            result = _netListV6[bit].get(addr.and(_masksV6[bit]));
         }
         if (result == null && _netList[bit] != null) {
             long addr = inetAddressToLong(net.getHostAddress());
@@ -146,21 +147,21 @@ class NetHandler implements Serializable {
                 cursor <<= 1;
             }
         } else {
-           BigInteger addr = inetAddressToBigInteger(address);
-           BigInteger mask = BigInteger.ZERO;
-           BigInteger cursor = BigInteger.ONE;
-           NetUnit unit;
-           for (Map<BigInteger, NetUnit> map : _netListV6) {
-               if (map != null) {
-                   BigInteger l = addr.and(mask.not());
-                   unit = map.get(l);
-                   if (unit != null) {
-                       return unit;
-                   }
-               }
-               mask = mask.or(cursor);
-               cursor = cursor.shiftLeft(1);
-           }
+            BigInteger addr = inetAddressToBigInteger(address);
+            BigInteger mask = BigInteger.ZERO;
+            BigInteger cursor = BigInteger.ONE;
+            NetUnit unit;
+            for (Map<BigInteger, NetUnit> map : _netListV6) {
+                if (map != null) {
+                    BigInteger l = addr.and(mask.not());
+                    unit = map.get(l);
+                    if (unit != null) {
+                        return unit;
+                    }
+                }
+                mask = mask.or(cursor);
+                cursor = cursor.shiftLeft(1);
+            }
         }
         return null;
     }

@@ -1,4 +1,3 @@
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -73,22 +72,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
-import org.apache.axis.types.URI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.rpc.ServiceException;
-
+import diskCacheV111.srm.RequestFileStatus;
+import diskCacheV111.srm.RequestStatus;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Optional;
-
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-
+import javax.xml.rpc.ServiceException;
+import org.apache.axis.types.URI;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
@@ -117,18 +110,19 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 import org.dcache.util.URIs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public final class RemoteTurlPutterV2 extends TurlGetterPutter
-{
+public final class RemoteTurlPutterV2 extends TurlGetterPutter {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoteTurlPutterV2.class);
     private ISRM srmv2;
     private String requestToken;
     private final String targetSpaceToken;
-    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+    private final HashMap<String, Integer> pendingSurlsToIndex = new HashMap<>();
     SrmPrepareToPutResponse srmPrepareToPutResponse;
     final Transport transport;
 
@@ -145,20 +139,20 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     private final TOverwriteMode overwriteMode;
 
     public RemoteTurlPutterV2(AbstractStorageElement storage,
-                              RequestCredential credential, String[] SURLs,
-                              long sizes[],
-                              String[] protocols,
-                              PropertyChangeListener listener,
-                              long retry_timeout,
-                              int retry_num,
-                              long requestLifetime,
-                              TFileStorageType storageType,
-                              TRetentionPolicy retentionPolicy,
-                              TAccessLatency accessLatency,
-                              TOverwriteMode overwriteMode,
-                              String targetSpaceToken,
-                              String caCertificatePath, Transport transport) {
-        super(storage,credential,protocols);
+          RequestCredential credential, String[] SURLs,
+          long sizes[],
+          String[] protocols,
+          PropertyChangeListener listener,
+          long retry_timeout,
+          int retry_num,
+          long requestLifetime,
+          TFileStorageType storageType,
+          TRetentionPolicy retentionPolicy,
+          TAccessLatency accessLatency,
+          TOverwriteMode overwriteMode,
+          String targetSpaceToken,
+          String caCertificatePath, Transport transport) {
+        super(storage, credential, protocols);
         this.SURLs = SURLs;
         this.caCertificatePath = caCertificatePath;
         this.number_of_file_reqs = SURLs.length;
@@ -176,15 +170,15 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
-    protected  void putDone(String surl) throws RemoteException,URI.MalformedURIException{
+    protected void putDone(String surl) throws RemoteException, URI.MalformedURIException {
         URI surlArray[] = new URI[1];
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
         srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmPutDoneResponse srmPutDoneResponse =
-            srmv2.srmPutDone(srmPutDoneRequest);
+              srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
-        if(returnStatus == null) {
+        if (returnStatus == null) {
             LOGGER.error("srmPutDone return status is null");
             return;
         }
@@ -193,60 +187,58 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
     @Override
     public void getInitialRequest() throws SRMException {
-        if(number_of_file_reqs == 0) {
+        if (number_of_file_reqs == 0) {
             LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
             java.net.URI srmUrl = URIs.createWithDefaultPort(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl,
-                                    Optional.of(credential.getDelegatedCredential()),
-                                    Optional.empty(),
-                                    retry_timout,
-                                    retry_num,
-                                    false,
-                                    false,
-                                    caCertificatePath,
-                                    transport);
+                  Optional.of(credential.getDelegatedCredential()),
+                  Optional.empty(),
+                  retry_timout,
+                  retry_num,
+                  false,
+                  false,
+                  caCertificatePath,
+                  transport);
 
             int len = SURLs.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
-            for(int i = 0; i < len; ++i) {
+            for (int i = 0; i < len; ++i) {
                 URI uri =
-                    new URI(SURLs[i]);
+                      new URI(SURLs[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setTargetSURL(uri);
-                pendingSurlsToIndex.put(SURLs[i],i);
+                pendingSurlsToIndex.put(SURLs[i], i);
             }
 
             SrmPrepareToPutRequest srmPrepareToPutRequest = new SrmPrepareToPutRequest();
 
-
-            if(retentionPolicy != null || accessLatency != null) {
+            if (retentionPolicy != null || accessLatency != null) {
                 TRetentionPolicyInfo retentionPolicyInfo
-                = new TRetentionPolicyInfo();
+                      = new TRetentionPolicyInfo();
                 retentionPolicyInfo.setRetentionPolicy(retentionPolicy);
                 retentionPolicyInfo.setAccessLatency(accessLatency);
                 srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
             TTransferParameters transferParameters =
-                new TTransferParameters();
+                  new TTransferParameters();
 
             transferParameters.setAccessPattern(TAccessPattern.TRANSFER_MODE);
             transferParameters.setConnectionType(TConnectionType.WAN);
             transferParameters.setArrayOfTransferProtocols(new ArrayOfString(protocols));
             srmPrepareToPutRequest.setTransferParameters(transferParameters);
             srmPrepareToPutRequest.setArrayOfFileRequests(
-                    new ArrayOfTPutFileRequest(fileRequests));
+                  new ArrayOfTPutFileRequest(fileRequests));
             srmPrepareToPutRequest.setDesiredFileStorageType(storageType);
-            srmPrepareToPutRequest.setDesiredTotalRequestTime((int)requestLifetime);
+            srmPrepareToPutRequest.setDesiredTotalRequestTime((int) requestLifetime);
             srmPrepareToPutRequest.setOverwriteOption(overwriteMode);
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
-        }
-        catch(URISyntaxException | IOException | InterruptedException | ServiceException e) {
-            LOGGER.error("failed to connect to {} {}",SURLs[0],e.getMessage());
-            throw new SRMException("failed to connect to "+SURLs[0],e);
+        } catch (URISyntaxException | IOException | InterruptedException | ServiceException e) {
+            LOGGER.error("failed to connect to {} {}", SURLs[0], e.getMessage());
+            throw new SRMException("failed to connect to " + SURLs[0], e);
         }
 
     }
@@ -254,179 +246,179 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
     @Override
     public void run() {
-        if(number_of_file_reqs == 0) {
+        if (number_of_file_reqs == 0) {
             LOGGER.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
             int len = SURLs.length;
-            if(srmPrepareToPutResponse == null) {
+            if (srmPrepareToPutResponse == null) {
                 throw new IOException(" null srmPrepareToPutResponse");
             }
             TReturnStatus status = srmPrepareToPutResponse.getReturnStatus();
-            if(status == null) {
+            if (status == null) {
                 throw new IOException(" null return status");
             }
             TStatusCode statusCode = status.getStatusCode();
-            if(statusCode == null) {
+            if (statusCode == null) {
                 throw new IOException(" null status code");
             }
-            if(RequestStatusTool.isFailedRequestStatus(status)){
-                throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+
-                        statusCode+" explanation="+status.getExplanation());
+            if (RequestStatusTool.isFailedRequestStatus(status)) {
+                throw new IOException(
+                      "srmPrepareToPut submission failed, unexpected or failed status : " +
+                            statusCode + " explanation=" + status.getExplanation());
             }
             requestToken = srmPrepareToPutResponse.getRequestToken();
-            LOGGER.debug(" srm returned requestToken = {} one of remote surls = {}", requestToken, SURLs[0]);
+            LOGGER.debug(" srm returned requestToken = {} one of remote surls = {}", requestToken,
+                  SURLs[0]);
 
             ArrayOfTPutRequestFileStatus arrayOfTPutRequestFileStatus =
-                srmPrepareToPutResponse.getArrayOfFileStatuses();
-            if(arrayOfTPutRequestFileStatus == null  ) {
+                  srmPrepareToPutResponse.getArrayOfFileStatuses();
+            if (arrayOfTPutRequestFileStatus == null) {
                 throw new IOException("returned PutRequestFileStatuses is an empty array");
             }
             TPutRequestFileStatus[] putRequestFileStatuses =
-                arrayOfTPutRequestFileStatus.getStatusArray();
-            if(putRequestFileStatuses == null  ) {
+                  arrayOfTPutRequestFileStatus.getStatusArray();
+            if (putRequestFileStatuses == null) {
                 throw new IOException("returned PutRequestFileStatuses is an empty array");
             }
-            if(putRequestFileStatuses.length != len) {
-                throw new IOException("incorrect number of GetRequestFileStatuses"+
-                        "in RequestStatus expected "+len+" received "+
-                        putRequestFileStatuses.length);
+            if (putRequestFileStatuses.length != len) {
+                throw new IOException("incorrect number of GetRequestFileStatuses" +
+                      "in RequestStatus expected " + len + " received " +
+                      putRequestFileStatuses.length);
             }
 
             boolean haveCompletedFileRequests = false;
 
-
-
-            while(!pendingSurlsToIndex.isEmpty()) {
+            while (!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = Integer.MAX_VALUE;
-                for(TPutRequestFileStatus putRequestFileStatus: putRequestFileStatuses) {
+                for (TPutRequestFileStatus putRequestFileStatus : putRequestFileStatuses) {
                     URI surl = putRequestFileStatus.getSURL();
-                    if(surl == null) {
+                    if (surl == null) {
                         LOGGER.error("invalid putRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
-                    if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        LOGGER.error("invalid putRequestFileStatus, surl = {} not found", surl_string);
+                    if (!pendingSurlsToIndex.containsKey(surl_string)) {
+                        LOGGER.error("invalid putRequestFileStatus, surl = {} not found",
+                              surl_string);
                         continue;
                     }
                     TReturnStatus fileStatus = putRequestFileStatus.getStatus();
-                    if(fileStatus == null) {
+                    if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    if(fileStatusCode == null) {
+                    if (fileStatusCode == null) {
                         throw new IOException(" null file status code");
                     }
-                    if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
-                        String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
-                        " explanation="+fileStatus.getExplanation();
+                    if (RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
+                        String error = "retreval of surl " + surl_string + " failed, status = "
+                              + fileStatusCode +
+                              " explanation=" + fileStatus.getExplanation();
                         LOGGER.error(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
                         continue;
                     }
-                    if(putRequestFileStatus.getTransferURL() != null ) {
+                    if (putRequestFileStatus.getTransferURL() != null) {
                         String turl = putRequestFileStatus.getTransferURL().toString();
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         // in case of put we do not need the size from the destination
-                        notifyOfTURL(SURLs[indx], turl,requestToken,null,null);
+                        notifyOfTURL(SURLs[indx], turl, requestToken, null, null);
                         continue;
                     }
-                    if(putRequestFileStatus.getEstimatedWaitTime() != null &&
-                            putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            putRequestFileStatus.getEstimatedWaitTime() >=1) {
+                    if (putRequestFileStatus.getEstimatedWaitTime() != null &&
+                          putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                          putRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = putRequestFileStatus
-                                .getEstimatedWaitTime();
+                              .getEstimatedWaitTime();
                     }
                 }
 
-                if(pendingSurlsToIndex.isEmpty()) {
+                if (pendingSurlsToIndex.isEmpty()) {
                     LOGGER.debug("no more pending transfers, breaking the loop");
                     break;
                 }
                 // do not wait longer then 60 seconds
-                if(estimatedWaitInSeconds > 60) {
+                if (estimatedWaitInSeconds > 60) {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
 
                     LOGGER.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
                     Thread.sleep(estimatedWaitInSeconds * 1000);
-                }
-                catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                 }
                 SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest =
-                    new SrmStatusOfPutRequestRequest();
+                      new SrmStatusOfPutRequestRequest();
                 srmStatusOfPutRequestRequest.setRequestToken(requestToken);
                 // if we do not have completed file requests
                 // we want to get status for all files
                 // we do not need to specify any surls
                 int expectedResponseLength;
-                if(haveCompletedFileRequests){
-                    String [] pendingSurlStrings =
-                            pendingSurlsToIndex.keySet()
-                                    .toArray(String[]::new);
-                    expectedResponseLength= pendingSurlStrings.length;
+                if (haveCompletedFileRequests) {
+                    String[] pendingSurlStrings =
+                          pendingSurlsToIndex.keySet()
+                                .toArray(String[]::new);
+                    expectedResponseLength = pendingSurlStrings.length;
                     URI surlArray[] =
-                        new URI[expectedResponseLength];
+                          new URI[expectedResponseLength];
 
-                    for(int i=0;i<expectedResponseLength;++i){
+                    for (int i = 0; i < expectedResponseLength; ++i) {
                         URI uri =
-                            new URI(pendingSurlStrings[i]);
-                        surlArray[i]=uri;
+                              new URI(pendingSurlStrings[i]);
+                        surlArray[i] = uri;
                     }
                     srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                            new ArrayOfAnyURI(surlArray));
-                }
-                else {
+                          new ArrayOfAnyURI(surlArray));
+                } else {
                     expectedResponseLength = SURLs.length;
-                    URI  surlArray[] = new  URI[expectedResponseLength];
+                    URI surlArray[] = new URI[expectedResponseLength];
 
-                    for(int i=0;i<expectedResponseLength;++i){
-                        URI surl = new  URI(SURLs[i]);
-                        surlArray[i]=surl;
+                    for (int i = 0; i < expectedResponseLength; ++i) {
+                        URI surl = new URI(SURLs[i]);
+                        surlArray[i] = surl;
                     }
                     srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                            new ArrayOfAnyURI(surlArray));
+                          new ArrayOfAnyURI(surlArray));
                 }
                 SrmStatusOfPutRequestResponse srmStatusOfPutRequestResponse =
-                    srmv2.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
-                if(srmStatusOfPutRequestResponse == null) {
+                      srmv2.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
+                if (srmStatusOfPutRequestResponse == null) {
                     throw new IOException(" null srmStatusOfPutRequestResponse");
                 }
                 arrayOfTPutRequestFileStatus =
-                    srmStatusOfPutRequestResponse.getArrayOfFileStatuses();
-                if(arrayOfTPutRequestFileStatus == null  ) {
+                      srmStatusOfPutRequestResponse.getArrayOfFileStatuses();
+                if (arrayOfTPutRequestFileStatus == null) {
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
                 putRequestFileStatuses =
-                    arrayOfTPutRequestFileStatus.getStatusArray();
+                      arrayOfTPutRequestFileStatus.getStatusArray();
 
-                if(putRequestFileStatuses == null ||
-                        putRequestFileStatuses.length !=  expectedResponseLength) {
-                    LOGGER.error( "incorrect number of RequestFileStatuses");
+                if (putRequestFileStatuses == null ||
+                      putRequestFileStatuses.length != expectedResponseLength) {
+                    LOGGER.error("incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
 
                 status = srmStatusOfPutRequestResponse.getReturnStatus();
-                if(status == null) {
+                if (status == null) {
                     throw new IOException(" null return status");
                 }
                 statusCode = status.getStatusCode();
-                if(statusCode == null) {
+                if (statusCode == null) {
                     throw new IOException(" null status code");
                 }
-                if(RequestStatusTool.isFailedRequestStatus(status)){
-                    throw new IOException("srmPrepareToPut update failed, unexpected or failed status : "+
-                            statusCode+" explanation="+status.getExplanation());
+                if (RequestStatusTool.isFailedRequestStatus(status)) {
+                    throw new IOException(
+                          "srmPrepareToPut update failed, unexpected or failed status : " +
+                                statusCode + " explanation=" + status.getExplanation());
                 }
             }
 
-        }
-        catch(IOException ioe) {
+        } catch (IOException ioe) {
             LOGGER.error(ioe.toString());
             notifyOfFailure(ioe);
         }
@@ -434,9 +426,9 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
-    public  static RequestFileStatus getFileRequest(RequestStatus rs,Integer nextID) {
+    public static RequestFileStatus getFileRequest(RequestStatus rs, Integer nextID) {
         RequestFileStatus[] frs = rs.fileStatuses;
-        if(frs == null ) {
+        if (frs == null) {
             return null;
         }
 
@@ -449,32 +441,30 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
-
     public static void staticPutDone(RequestCredential credential,
-                                     String surl,
-                                     String requestToken,
-                                     long retry_timeout,
-                                     int retry_num,
-                                     String caCertificatePath, Transport transport) throws Exception
-    {
+          String surl,
+          String requestToken,
+          long retry_timeout,
+          int retry_num,
+          String caCertificatePath, Transport transport) throws Exception {
         SRMClientV2 srmv2 = new SRMClientV2(URIs.createWithDefaultPort(surl),
-                                            Optional.of(credential.getDelegatedCredential()),
-                                            Optional.empty(),
-                                            retry_timeout,
-                                            retry_num,
-                                            false,
-                                            false,
-                                            caCertificatePath,
-                                            transport);
+              Optional.of(credential.getDelegatedCredential()),
+              Optional.empty(),
+              retry_timeout,
+              retry_num,
+              false,
+              false,
+              caCertificatePath,
+              transport);
         URI surlArray[] = new URI[1];
-        surlArray[0]= new URI(surl);
+        surlArray[0] = new URI(surl);
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
         srmPutDoneRequest.setRequestToken(requestToken);
         srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmPutDoneResponse srmPutDoneResponse =
-            srmv2.srmPutDone(srmPutDoneRequest);
+              srmv2.srmPutDone(srmPutDoneRequest);
         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
-        if(returnStatus == null) {
+        if (returnStatus == null) {
             LOGGER.error("srmPutDone return status is null");
             return;
         }

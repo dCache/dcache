@@ -12,32 +12,35 @@ package diskCacheV111.vehicles;
 import java.io.Serializable;
 
 /**
- *
  * @author timur
  */
 public class PoolLinkInfo implements Serializable {
+
     private static final long serialVersionUID = 2921069344133951213L;
     private String name;
     private long availableSpaceInBytes;
     private String[] storageGroups;
-    private String hsmType="None";
+    private String hsmType = "None";
 
-  // need to add once finalized
-   // private static final long serialVersionUID = ;
-    /** Creates a new instance of PoolLinkInfo */
+    // need to add once finalized
+    // private static final long serialVersionUID = ;
+
+    /**
+     * Creates a new instance of PoolLinkInfo
+     */
     public PoolLinkInfo() {
     }
 
-    public PoolLinkInfo(String name, long availableSpaceInBytes, String[] storageGroups){
+    public PoolLinkInfo(String name, long availableSpaceInBytes, String[] storageGroups) {
         this.name = name;
         this.availableSpaceInBytes = availableSpaceInBytes;
         this.storageGroups = storageGroups;
     }
 
     public PoolLinkInfo(String name,
-            long availableSpaceInBytes,
-            String[] storageGroups,
-            String hsmType){
+          long availableSpaceInBytes,
+          String[] storageGroups,
+          String hsmType) {
         this.name = name;
         this.availableSpaceInBytes = availableSpaceInBytes;
         this.storageGroups = storageGroups;

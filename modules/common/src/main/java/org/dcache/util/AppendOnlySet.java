@@ -26,15 +26,14 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * A Set that provides a view of some underlying Set that protects against
- * deleting elements from that set.
+ * A Set that provides a view of some underlying Set that protects against deleting elements from
+ * that set.
  */
-public class AppendOnlySet<T> implements Set<T>
-{
+public class AppendOnlySet<T> implements Set<T> {
+
     private final Set<T> inner;
 
-    public AppendOnlySet(Set<T> inner)
-    {
+    public AppendOnlySet(Set<T> inner) {
         this.inner = inner;
     }
 

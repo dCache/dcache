@@ -17,6 +17,10 @@
  */
 package org.dcache.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
@@ -30,7 +34,6 @@ import eu.emi.security.authn.x509.ValidationErrorCode;
 import eu.emi.security.authn.x509.ValidationErrorListener;
 import eu.emi.security.authn.x509.ValidationResult;
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-
 import java.security.cert.CertPath;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
@@ -39,29 +42,24 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.singletonList;
-
 /**
- * A Certificate validator that caches validation results for a configurable
- * period of time. The cache is keyed by the SHA256 of the certificate chain.
+ * A Certificate validator that caches validation results for a configurable period of time. The
+ * cache is keyed by the SHA256 of the certificate chain.
  */
-public class CachingCertificateValidator implements X509CertChainValidatorExt
-{
+public class CachingCertificateValidator implements X509CertChainValidatorExt {
+
     protected final Cache<String, ValidationResult> cache;
     protected final X509CertChainValidatorExt validator;
 
     public CachingCertificateValidator(X509CertChainValidatorExt val,
-                                       long maxCacheEntryLifetime)
-    {
-        cache = CacheBuilder.newBuilder().expireAfterWrite(maxCacheEntryLifetime, TimeUnit.MILLISECONDS).build();
+          long maxCacheEntryLifetime) {
+        cache = CacheBuilder.newBuilder()
+              .expireAfterWrite(maxCacheEntryLifetime, TimeUnit.MILLISECONDS).build();
         validator = val;
     }
 
     @Override
-    public ValidationResult validate(final X509Certificate[] certChain)
-    {
+    public ValidationResult validate(final X509Certificate[] certChain) {
         requireNonNull(certChain, "Cannot validate a null cert chain.");
         checkArgument(certChain.length > 0, "Cannot validate a cert chain of length 0.");
 
@@ -81,72 +79,70 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt
 
             return cache.get(certFingerprint, () -> validator.validate(certChain));
         } catch (CertificateEncodingException e) {
-            return new ValidationResult(false, singletonList(new ValidationError(certChain, pos, ValidationErrorCode.inputError, e.getMessage())));
+            return new ValidationResult(false, singletonList(
+                  new ValidationError(certChain, pos, ValidationErrorCode.inputError,
+                        e.getMessage())));
         } catch (ExecutionException e) {
-            return new ValidationResult(false, singletonList(new ValidationError(certChain, pos, ValidationErrorCode.inputError, e.getMessage())));
+            return new ValidationResult(false, singletonList(
+                  new ValidationError(certChain, pos, ValidationErrorCode.inputError,
+                        e.getMessage())));
         } catch (CertificateExpiredException e) {
-            return new ValidationResult(false, singletonList(new ValidationError(certChain, pos, ValidationErrorCode.certificateExpired, e.getMessage())));
+            return new ValidationResult(false, singletonList(
+                  new ValidationError(certChain, pos, ValidationErrorCode.certificateExpired,
+                        e.getMessage())));
         } catch (CertificateNotYetValidException e) {
-            return new ValidationResult(false, singletonList(new ValidationError(certChain, pos, ValidationErrorCode.certificateNotYetValid, e.getMessage())));
+            return new ValidationResult(false, singletonList(
+                  new ValidationError(certChain, pos, ValidationErrorCode.certificateNotYetValid,
+                        e.getMessage())));
         }
     }
 
-    public CacheStats stats()
-    {
+    public CacheStats stats() {
         return cache.stats();
     }
 
     @Override
-    public void dispose()
-    {
+    public void dispose() {
         validator.dispose();
     }
 
     @Override
-    public ProxySupport getProxySupport()
-    {
+    public ProxySupport getProxySupport() {
         return validator.getProxySupport();
     }
 
     @Override
-    public ValidationResult validate(CertPath certPath)
-    {
+    public ValidationResult validate(CertPath certPath) {
         return validator.validate(certPath);
     }
 
     @Override
-    public RevocationParameters getRevocationCheckingMode()
-    {
+    public RevocationParameters getRevocationCheckingMode() {
         return validator.getRevocationCheckingMode();
     }
 
     @Override
-    public X509Certificate[] getTrustedIssuers()
-    {
+    public X509Certificate[] getTrustedIssuers() {
         return validator.getTrustedIssuers();
     }
 
     @Override
-    public void addValidationListener(ValidationErrorListener listener)
-    {
+    public void addValidationListener(ValidationErrorListener listener) {
         validator.addValidationListener(listener);
     }
 
     @Override
-    public void removeValidationListener(ValidationErrorListener listener)
-    {
+    public void removeValidationListener(ValidationErrorListener listener) {
         validator.removeValidationListener(listener);
     }
 
     @Override
-    public void addUpdateListener(StoreUpdateListener listener)
-    {
+    public void addUpdateListener(StoreUpdateListener listener) {
         validator.addUpdateListener(listener);
     }
 
     @Override
-    public void removeUpdateListener(StoreUpdateListener listener)
-    {
+    public void removeUpdateListener(StoreUpdateListener listener) {
         validator.removeUpdateListener(listener);
     }
 }

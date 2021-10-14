@@ -17,38 +17,33 @@
  */
 package org.dcache.util.configuration;
 
+import java.util.Properties;
 import org.springframework.beans.factory.FactoryBean;
 
-import java.util.Properties;
-
 /**
- * The ConfigurationPropertiesFactoryBean builds a Properties object from some
- * (possibly empty) subset of dCache configuration.  The Bean takes a String
- * prefix as an argument.  All configuration properties with a key that starts
- * with this prefix are used to build the properties object, all others are
- * ignored.  The entries are created by removing the prefix from matching
- * property keys to form the properties-entry's key.  The corresponding
- * properties-entry's value is the property value.
+ * The ConfigurationPropertiesFactoryBean builds a Properties object from some (possibly empty)
+ * subset of dCache configuration.  The Bean takes a String prefix as an argument.  All
+ * configuration properties with a key that starts with this prefix are used to build the properties
+ * object, all others are ignored.  The entries are created by removing the prefix from matching
+ * property keys to form the properties-entry's key.  The corresponding properties-entry's value is
+ * the property value.
  * <p>
- * The created Properties bean is mutable.  However, the key-value pairs
- * represented by this Properties object are not backed by dCache configuration.
- * Any changes make to the created Properties bean are not reflected elsewhere
- * within dCache.
+ * The created Properties bean is mutable.  However, the key-value pairs represented by this
+ * Properties object are not backed by dCache configuration. Any changes make to the created
+ * Properties bean are not reflected elsewhere within dCache.
  */
 public class ConfigurationPropertiesFactoryBean extends AbstractPrefixFactoryBean
-        implements FactoryBean<Properties>
-{
+      implements FactoryBean<Properties> {
+
     @Override
-    public Properties getObject() throws Exception
-    {
+    public Properties getObject() throws Exception {
         Properties p = new Properties();
         p.putAll(configuration());
         return p;
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return Properties.class;
     }
 }

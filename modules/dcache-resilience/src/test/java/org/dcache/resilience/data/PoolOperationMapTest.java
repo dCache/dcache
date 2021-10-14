@@ -59,27 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import java.util.Iterator;
+import org.dcache.resilience.TestBase;
+import org.dcache.resilience.TestSynchronousExecutor.Mode;
+import org.dcache.util.CacheExceptionFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import org.dcache.resilience.TestBase;
-import org.dcache.resilience.TestSynchronousExecutor.Mode;
-import org.dcache.util.CacheExceptionFactory;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 public class PoolOperationMapTest extends TestBase {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    PoolOperationMapTest.class);
+          PoolOperationMapTest.class);
 
     String pool;
     int numberOfPools;
@@ -101,10 +100,10 @@ public class PoolOperationMapTest extends TestBase {
         numberOfPools = poolOperationMap.idle.size();
 
         poolInfoMap.getResilientPools().stream()
-                   .forEach((p) -> {
-                       PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
-                       poolOperationMap.update(new PoolStateUpdate(p, mode));
-                   });
+              .forEach((p) -> {
+                  PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
+                  poolOperationMap.update(new PoolStateUpdate(p, mode));
+              });
     }
 
     @Test
@@ -114,11 +113,11 @@ public class PoolOperationMapTest extends TestBase {
         while (!poolOperationMap.waiting.isEmpty()) {
             whenQueuesAreScanned();
             assertTrue(poolOperationMap.getMaxConcurrentRunning()
-                            >= poolOperationMap.running.size());
+                  >= poolOperationMap.running.size());
             assertEquals(numberOfPools
-                                            - poolOperationMap.getMaxConcurrentRunning(),
-                            poolOperationMap.waiting.size()
-                                            + poolOperationMap.idle.size());
+                        - poolOperationMap.getMaxConcurrentRunning(),
+                  poolOperationMap.waiting.size()
+                        + poolOperationMap.idle.size());
             whenNextOperationCompletes();
         }
 
@@ -160,7 +159,7 @@ public class PoolOperationMapTest extends TestBase {
         givenPoolIsUp(pool);
         assertTrue(poolOperationMap.waiting.containsKey(pool));
         assertEquals(PoolStatusForResilience.READ_ONLY,
-                        poolOperationMap.waiting.get(pool).currStatus);
+              poolOperationMap.waiting.get(pool).currStatus);
     }
 
     @Test
@@ -170,7 +169,7 @@ public class PoolOperationMapTest extends TestBase {
         assertTrue(poolOperationMap.waiting.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
         assertEquals(PoolStatusForResilience.READ_ONLY,
-                     poolOperationMap.waiting.get(pool).currStatus);
+              poolOperationMap.waiting.get(pool).currStatus);
     }
 
     @Test
@@ -179,7 +178,7 @@ public class PoolOperationMapTest extends TestBase {
         givenPoolIsDown(pool);
         assertTrue(poolOperationMap.waiting.containsKey(pool));
         assertEquals(PoolStatusForResilience.DOWN,
-                        poolOperationMap.waiting.get(pool).currStatus);
+              poolOperationMap.waiting.get(pool).currStatus);
         assertFalse(poolOperationMap.idle.containsKey(pool));
     }
 
@@ -243,9 +242,9 @@ public class PoolOperationMapTest extends TestBase {
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.idle.isEmpty());
         assertEquals(poolOperationMap.getMaxConcurrentRunning(),
-                     poolOperationMap.running.size());
+              poolOperationMap.running.size());
         assertEquals(numberOfPools - poolOperationMap.getMaxConcurrentRunning(),
-                     poolOperationMap.waiting.size());
+              poolOperationMap.waiting.size());
     }
 
     @Test
@@ -253,7 +252,7 @@ public class PoolOperationMapTest extends TestBase {
         givenPoolIsDown("resilient_pool-3");
         assertTrue(poolOperationMap.waiting.containsKey(pool));
         assertEquals(PoolStatusForResilience.DOWN,
-                        poolOperationMap.waiting.get(pool).currStatus);
+              poolOperationMap.waiting.get(pool).currStatus);
         assertFalse(poolOperationMap.idle.containsKey(pool));
     }
 
@@ -263,7 +262,7 @@ public class PoolOperationMapTest extends TestBase {
         givenPoolIsRestarted("resilient_pool-3");
         assertTrue(poolOperationMap.waiting.containsKey(pool));
         assertEquals(PoolStatusForResilience.ENABLED,
-                     poolOperationMap.waiting.get(pool).currStatus);
+              poolOperationMap.waiting.get(pool).currStatus);
         assertFalse(poolOperationMap.idle.containsKey(pool));
     }
 
@@ -368,9 +367,9 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(0);
         whenQueuesAreScanned();
         assertEquals(poolOperationMap.getMaxConcurrentRunning(),
-                        poolOperationMap.running.size());
+              poolOperationMap.running.size());
         assertEquals(numberOfPools - poolOperationMap.getMaxConcurrentRunning(),
-                        poolOperationMap.waiting.size());
+              poolOperationMap.waiting.size());
         assertTrue(poolOperationMap.idle.isEmpty());
     }
 
@@ -389,21 +388,21 @@ public class PoolOperationMapTest extends TestBase {
     private void givenPoolIsDown(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
+              new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
         poolOperationMap.update(update);
     }
 
     private void givenPoolIsRestarted(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.ENABLED));
+              new PoolV2Mode(PoolV2Mode.ENABLED));
         poolOperationMap.update(update);
     }
 
     private void givenPoolIsUp(String pool) {
         this.pool = pool;
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
+              new PoolV2Mode(PoolV2Mode.DISABLED_RDONLY));
         poolOperationMap.update(update);
     }
 
@@ -435,9 +434,9 @@ public class PoolOperationMapTest extends TestBase {
 
     private void whenOperationFails() {
         poolOperationMap.update(pool, children,
-                        CacheExceptionFactory.exceptionOf(
-                                        CacheException.NO_POOL_ONLINE,
-                                        "Cannot reach pool."));
+              CacheExceptionFactory.exceptionOf(
+                    CacheException.NO_POOL_ONLINE,
+                    "Cannot reach pool."));
     }
 
     private void whenOperationIsCancelled() {

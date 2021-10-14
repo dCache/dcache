@@ -1,16 +1,15 @@
 package org.dcache.auth;
 
+import java.io.Serializable;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.Objects;
+public class StaticOpenIdCredential implements OpenIdCredential, Serializable {
 
-public class StaticOpenIdCredential implements OpenIdCredential, Serializable
-{
     private static final long serialVersionUID = 1L;
     private static final Logger LOG =
-            LoggerFactory.getLogger(StaticOpenIdCredential.class);
+          LoggerFactory.getLogger(StaticOpenIdCredential.class);
 
     private final String accessToken;
     private final long expiresAt;
@@ -80,58 +79,64 @@ public class StaticOpenIdCredential implements OpenIdCredential, Serializable
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
-        if (!(o instanceof StaticOpenIdCredential))
+        }
+        if (!(o instanceof StaticOpenIdCredential)) {
             return false;
+        }
 
         StaticOpenIdCredential that = (StaticOpenIdCredential) o;
 
-        if (expiresAt != that.expiresAt)
+        if (expiresAt != that.expiresAt) {
             return false;
-        if (!accessToken.equals(that.accessToken))
+        }
+        if (!accessToken.equals(that.accessToken)) {
             return false;
-        if (!issuedTokenType.equals(that.issuedTokenType))
+        }
+        if (!issuedTokenType.equals(that.issuedTokenType)) {
             return false;
-        if (!refreshToken.equals(that.refreshToken))
+        }
+        if (!refreshToken.equals(that.refreshToken)) {
             return false;
-        if (!scope.equals(that.scope))
+        }
+        if (!scope.equals(that.scope)) {
             return false;
-        if (!tokenType.equals(that.tokenType))
+        }
+        if (!tokenType.equals(that.tokenType)) {
             return false;
-        if (!clientCredential.equals(that.clientCredential))
+        }
+        if (!clientCredential.equals(that.clientCredential)) {
             return false;
+        }
         return openidProvider.equals(that.openidProvider);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hash(accessToken,
-                            expiresAt,
-                            issuedTokenType,
-                            refreshToken,
-                            scope,
-                            tokenType,
-                            clientCredential, openidProvider);
+              expiresAt,
+              issuedTokenType,
+              refreshToken,
+              scope,
+              tokenType,
+              clientCredential, openidProvider);
     }
 
-    public static Builder copyOf(OpenIdCredential credential)
-    {
+    public static Builder copyOf(OpenIdCredential credential) {
         return new Builder().accessToken(credential.getAccessToken())
-                            .expiry(credential.getExpiresAt())
-                            .refreshToken(credential.getRefreshToken())
-                            .issuedTokenType(credential.getIssuedTokenType())
-                            .scope(credential.getScope())
-                            .tokenType(credential.getTokenType())
-                            .clientCredential(credential.getClientCredential())
-                            .provider(credential.getOpenidProvider());
+              .expiry(credential.getExpiresAt())
+              .refreshToken(credential.getRefreshToken())
+              .issuedTokenType(credential.getIssuedTokenType())
+              .scope(credential.getScope())
+              .tokenType(credential.getTokenType())
+              .clientCredential(credential.getClientCredential())
+              .provider(credential.getOpenidProvider());
     }
 
-    public static class Builder
-    {
+    public static class Builder {
+
         private String _accessToken = null;
         private long _expiresAt = 0L;
         private String _issuedTokenType = null;
@@ -141,60 +146,50 @@ public class StaticOpenIdCredential implements OpenIdCredential, Serializable
         private OpenIdClientSecret _clientCredential = null;
         private String _urlOpenidProvider = null;
 
-        public Builder()
-        {
+        public Builder() {
         }
 
-        public Builder accessToken(String accessToken)
-        {
+        public Builder accessToken(String accessToken) {
             this._accessToken = accessToken;
             return this;
         }
 
-        public Builder expiry(long expiresIn)
-        {
-            this._expiresAt = System.currentTimeMillis() + expiresIn*1000L;
+        public Builder expiry(long expiresIn) {
+            this._expiresAt = System.currentTimeMillis() + expiresIn * 1000L;
             return this;
         }
 
-        public Builder refreshToken(String refreshToken)
-        {
+        public Builder refreshToken(String refreshToken) {
             this._refreshToken = refreshToken;
             return this;
         }
 
-        public Builder issuedTokenType(String issuedTokenType)
-        {
+        public Builder issuedTokenType(String issuedTokenType) {
             this._issuedTokenType = issuedTokenType;
             return this;
         }
 
-        public Builder scope(String scope)
-        {
+        public Builder scope(String scope) {
             this._scope = scope;
             return this;
         }
 
-        public Builder tokenType(String tokenType)
-        {
+        public Builder tokenType(String tokenType) {
             this._tokenType = tokenType;
             return this;
         }
 
-        public Builder clientCredential(OpenIdClientSecret clientCredential)
-        {
+        public Builder clientCredential(OpenIdClientSecret clientCredential) {
             this._clientCredential = clientCredential;
             return this;
         }
 
-        public Builder provider(String url)
-        {
+        public Builder provider(String url) {
             this._urlOpenidProvider = url;
             return this;
         }
 
-        public StaticOpenIdCredential build()
-        {
+        public StaticOpenIdCredential build() {
             return new StaticOpenIdCredential(this);
         }
     }

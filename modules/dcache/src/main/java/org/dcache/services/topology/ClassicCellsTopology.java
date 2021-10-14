@@ -1,56 +1,49 @@
 package org.dcache.services.topology;
 
-import java.util.Collection;
-import java.util.concurrent.Callable;
-
 import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
-
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.util.command.Command;
+import java.util.Collection;
+import java.util.concurrent.Callable;
 
 /**
- * CellsTopology for dCache installation with classic cells
- * communication.
+ * CellsTopology for dCache installation with classic cells communication.
  */
 public class ClassicCellsTopology
-    extends AbstractCellsTopology
-    implements CellsTopology, CellCommandListener, CellIdentityAware
-{
+      extends AbstractCellsTopology
+      implements CellsTopology, CellCommandListener, CellIdentityAware {
+
     private volatile CellDomainNode[] _infoMap;
 
     private CellAddressCore _cellAddress;
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
 
         _cellAddress = address;
     }
 
     public void update()
-        throws InterruptedException
-    {
+          throws InterruptedException {
         Collection<CellDomainNode> nodes =
-                buildTopologyMap(_cellAddress.getCellDomainName()).values();
+              buildTopologyMap(_cellAddress.getCellDomainName()).values();
         _infoMap = nodes.toArray(CellDomainNode[]::new);
     }
 
     @Override
-    public CellDomainNode[] getInfoMap()
-    {
+    public CellDomainNode[] getInfoMap() {
         return _infoMap;
     }
 
     @Command(name = "update", hint = "initiates background update",
-            description = "Starts background thread to retrieve " +
-                    "and update the current domain map topology.")
-    public class UpdateCommand implements Callable<String>
-    {
+          description = "Starts background thread to retrieve " +
+                "and update the current domain map topology.")
+    public class UpdateCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             new Thread(() -> {
                 try {
                     update();

@@ -17,20 +17,18 @@
  */
 package org.dcache.auth.attributes;
 
-import org.junit.Test;
-
-import diskCacheV111.util.FsPath;
-
 import static org.dcache.auth.attributes.Activity.LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-public class PrefixRestrictionTest
-{
+import diskCacheV111.util.FsPath;
+import org.junit.Test;
+
+public class PrefixRestrictionTest {
+
     @Test
-    public void shouldNotHaveUnrestrictedChildFromRootForEmptyPrefix()
-    {
+    public void shouldNotHaveUnrestrictedChildFromRootForEmptyPrefix() {
         Restriction r = new PrefixRestriction();
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.ROOT), is(equalTo(false)));
@@ -38,48 +36,42 @@ public class PrefixRestrictionTest
 
 
     @Test
-    public void shouldNotHaveUnrestrictedChildFromPathForEmptyPrefix()
-    {
+    public void shouldNotHaveUnrestrictedChildFromPathForEmptyPrefix() {
         Restriction r = new PrefixRestriction();
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.create("/foo/bar")), is(equalTo(false)));
     }
 
     @Test
-    public void shouldHaveUnrestrictedChildFromRootForSinglePrefix()
-    {
+    public void shouldHaveUnrestrictedChildFromRootForSinglePrefix() {
         Restriction r = new PrefixRestriction(FsPath.create("/foo/bar"));
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.ROOT), is(equalTo(true)));
     }
 
     @Test
-    public void shouldHaveUnrestrictedChildFromParentForSinglePrefix()
-    {
+    public void shouldHaveUnrestrictedChildFromParentForSinglePrefix() {
         Restriction r = new PrefixRestriction(FsPath.create("/foo/bar"));
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.create("/foo")), is(equalTo(true)));
     }
 
     @Test
-    public void shouldHaveUnrestrictedChildFromSameDirForSinglePrefix()
-    {
+    public void shouldHaveUnrestrictedChildFromSameDirForSinglePrefix() {
         Restriction r = new PrefixRestriction(FsPath.create("/foo/bar"));
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.create("/foo/bar")), is(equalTo(false)));
     }
 
     @Test
-    public void shouldHaveUnrestrictedChildFromSiblingDirForSinglePrefix()
-    {
+    public void shouldHaveUnrestrictedChildFromSiblingDirForSinglePrefix() {
         Restriction r = new PrefixRestriction(FsPath.create("/foo/bar"));
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.create("/foo/baz")), is(equalTo(false)));
     }
 
     @Test
-    public void shouldHaveUnrestrictedChildFromChildForSinglePrefix()
-    {
+    public void shouldHaveUnrestrictedChildFromChildForSinglePrefix() {
         Restriction r = new PrefixRestriction(FsPath.create("/foo/bar"));
 
         assertThat(r.hasUnrestrictedChild(LIST, FsPath.create("/foo/bar/baz")), is(equalTo(false)));

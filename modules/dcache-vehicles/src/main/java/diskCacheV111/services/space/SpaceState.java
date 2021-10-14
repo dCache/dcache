@@ -66,49 +66,42 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
-public enum SpaceState
-{
+public enum SpaceState {
     /**
-     * RESERVED space reservations have not been released or expired.
-     * The reserved but unused space is tracked as reserved in the
-     * link group.
+     * RESERVED space reservations have not been released or expired. The reserved but unused space
+     * is tracked as reserved in the link group.
      */
     RESERVED(0, false),
 
     /**
-     * RELEASED space reservations are no longer considered for space
-     * management. The space is no longer tracked in the link group.
+     * RELEASED space reservations are no longer considered for space management. The space is no
+     * longer tracked in the link group.
      */
     RELEASED(1, true),
 
     /**
-     * EXPIRED is like RELEASED, except that the space reservation
-     * was not released by admin or used action, but expired due to
-     * its lifetime having been exceeded.
+     * EXPIRED is like RELEASED, except that the space reservation was not released by admin or used
+     * action, but expired due to its lifetime having been exceeded.
      */
     EXPIRED(2, true);
 
     private final int stateId;
     private final boolean isFinal;
 
-    SpaceState(int stateId, boolean isFinal)
-    {
+    SpaceState(int stateId, boolean isFinal) {
         this.stateId = stateId;
         this.isFinal = isFinal;
     }
 
-    public int getStateId()
-    {
+    public int getStateId() {
         return stateId;
     }
 
-    public boolean isFinal()
-    {
+    public boolean isFinal() {
         return isFinal;
     }
 
-    public static SpaceState valueOf(int stateId) throws IllegalArgumentException
-    {
+    public static SpaceState valueOf(int stateId) throws IllegalArgumentException {
         for (SpaceState state : values()) {
             if (state.stateId == stateId) {
                 return state;

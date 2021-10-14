@@ -18,9 +18,6 @@
  */
 package org.dcache.pool.repository.ceph;
 
-import org.dcache.rados4j.RadosException;
-import org.dcache.rados4j.Rbd;
-import org.dcache.rados4j.RbdImage;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
@@ -30,11 +27,14 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.rados4j.RadosException;
+import org.dcache.rados4j.Rbd;
+import org.dcache.rados4j.RbdImage;
 
 /**
- *  CEPH back-ended implementation of {@link RepositoryChannel}.
- *
- *  Uses CEPH's block device image interface to store the data.
+ * CEPH back-ended implementation of {@link RepositoryChannel}.
+ * <p>
+ * Uses CEPH's block device image interface to store the data.
  */
 public class CephRepositoryChannel implements RepositoryChannel {
 
@@ -43,19 +43,20 @@ public class CephRepositoryChannel implements RepositoryChannel {
     private long size;
     private long offset = 0;
 
-    public CephRepositoryChannel(Rbd rbd, String name, Set<? extends OpenOption> mode) throws RadosException {
-        if(mode.contains(StandardOpenOption.WRITE)) {
-                // REVISIT: we do not create image here as it already created by CephFileStore.
-                //rbd.create(name, 0);
-                rbdImage = rbd.open(name);
-                rdOnly = false;
-                size = 0;
-        } else if(mode.contains(StandardOpenOption.READ)) {
-                rbdImage = rbd.openReadOnly(name);
-                rdOnly = true;
-                size = rbdImage.stat().obj_size.get();
+    public CephRepositoryChannel(Rbd rbd, String name, Set<? extends OpenOption> mode)
+          throws RadosException {
+        if (mode.contains(StandardOpenOption.WRITE)) {
+            // REVISIT: we do not create image here as it already created by CephFileStore.
+            //rbd.create(name, 0);
+            rbdImage = rbd.open(name);
+            rdOnly = false;
+            size = 0;
+        } else if (mode.contains(StandardOpenOption.READ)) {
+            rbdImage = rbd.openReadOnly(name);
+            rdOnly = true;
+            size = rbdImage.stat().obj_size.get();
         } else {
-                throw new IllegalArgumentException("Illegal mode: " + mode);
+            throw new IllegalArgumentException("Illegal mode: " + mode);
         }
     }
 
@@ -124,12 +125,14 @@ public class CephRepositoryChannel implements RepositoryChannel {
     }
 
     @Override
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+    public long transferTo(long position, long count, WritableByteChannel target)
+          throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -165,12 +168,14 @@ public class CephRepositoryChannel implements RepositoryChannel {
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(
+              "Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException(
+              "Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

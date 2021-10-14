@@ -1,13 +1,13 @@
 package diskCacheV111.poolManager;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
-
 class LinkGroup implements SelectionLinkGroup, Serializable {
+
     private static final long serialVersionUID = 5425784079451748166L;
     private final String _name;
     private final Collection<SelectionLink> _links = new CopyOnWriteArraySet<>();
@@ -64,7 +64,8 @@ class LinkGroup implements SelectionLinkGroup, Serializable {
         sb.append("           ").append("onlineAllowed=").append(_isOnlineAllowed).append("\n");
         sb.append("           ").append("nearlineAllowed=").append(_isNearlineAllowed).append("\n");
         sb.append("    RetentionPolicy:\n");
-        sb.append("           ").append("custodialAllowed=").append(_isCustodialAllowed).append("\n");
+        sb.append("           ").append("custodialAllowed=").append(_isCustodialAllowed)
+              .append("\n");
         sb.append("           ").append("outputAllowed=").append(_isOutputAllowed).append("\n");
         sb.append("           ").append("replicaAllowed=").append(_isReplicaAllowed).append("\n");
         return sb.toString();

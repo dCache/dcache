@@ -72,19 +72,16 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+import static org.dcache.util.TimeUtils.relativeTimestamp;
+
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.function.LongFunction;
-
-import org.dcache.util.AtomicCounter;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMUser;
@@ -95,25 +92,23 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-
-import static org.dcache.srm.handler.ReturnStatuses.*;
-
-import static org.dcache.util.TimeUtils.relativeTimestamp;
+import org.dcache.util.AtomicCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This abstract class represents an "SRM request"
- * We currently support "get","put", and "copy" requests
- * which are the subclasses of this class
- * Each Requests contains a set (array) of FileRequests
- * each ContainerRequest is identified by its requestId
- * and each FileRequest within ContainerRequest is identified by its fileRequestId
- * The actual FileRequest arrays are in subclasses too.
+ * This abstract class represents an "SRM request" We currently support "get","put", and "copy"
+ * requests which are the subclasses of this class Each Requests contains a set (array) of
+ * FileRequests each ContainerRequest is identified by its requestId and each FileRequest within
+ * ContainerRequest is identified by its fileRequestId The actual FileRequest arrays are in
+ * subclasses too.
  *
  * @author timur
  * @version 1.0
  */
 
 public abstract class ContainerRequest<R extends FileRequest<?>> extends Request {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ContainerRequest.class);
     // dcache  requires that once client created a connection to a dcache door,
     // it uses the same door to make all following dcap transfers
@@ -123,9 +118,9 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     private final ImmutableList<R> fileRequests;
 
     /**
-     * Counter used for notification between file requests and the
-     * parent request. The counter is incremented whenever when one of
-     * the file requests changes to one of a set of predefined states.
+     * Counter used for notification between file requests and the parent request. The counter is
+     * incremented whenever when one of the file requests changes to one of a set of predefined
+     * states.
      */
     protected final transient AtomicCounter _stateChangeCounter = new AtomicCounter();
 
@@ -133,42 +128,41 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     /*
      * public constructors
      */
+
     /**
      * Create a  new request
-     * @param user
-     *  srm user
-     * @param configuration
-     *   srm configuration
+     *
+     * @param user          srm user
+     * @param configuration srm configuration
      */
     public ContainerRequest(@Nonnull String srmId, SRMUser user,
-            long max_update_period, long lifetime, @Nullable String description,
-            String client_host, LongFunction<ImmutableList<R>> factory)
-    {
-         super(srmId, user, max_update_period, lifetime, description, client_host);
-         fileRequests = factory.apply(getId());
+          long max_update_period, long lifetime, @Nullable String description,
+          String client_host, LongFunction<ImmutableList<R>> factory) {
+        super(srmId, user, max_update_period, lifetime, description, client_host);
+        fileRequests = factory.apply(getId());
     }
 
 
     /**
-     * this constructor is used for restoring the previously
-     * saved ContainerRequest from persitance storage
+     * this constructor is used for restoring the previously saved ContainerRequest from persitance
+     * storage
      */
     protected ContainerRequest(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            ImmutableList<R> fileRequests, int retryDeltaTime,
-            boolean should_updateretryDeltaTime, String description,
-            String client_host, String statusCodeString) {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          ImmutableList<R> fileRequests, int retryDeltaTime,
+          boolean should_updateretryDeltaTime, String description,
+          String client_host, String statusCodeString) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId, user, scheduelerId,
-                schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
-                jobHistoryArray, retryDeltaTime, should_updateretryDeltaTime,
-                description, client_host, statusCodeString);
+              schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
+              jobHistoryArray, retryDeltaTime, should_updateretryDeltaTime,
+              description, client_host, statusCodeString);
         this.fileRequests = fileRequests;
     }
 
-    protected final R getFileRequest(long fileRequestId){
-        for (R fileRequest: fileRequests) {
+    protected final R getFileRequest(long fileRequestId) {
+        for (R fileRequest : fileRequests) {
             if (fileRequest.getId() == fileRequestId) {
                 return fileRequest;
             }
@@ -181,12 +175,11 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      */
 
     /**
-     *  gets a number of file requests  in this request
-     * @return
-     * a number of file requests
+     * gets a number of file requests  in this request
+     *
+     * @return a number of file requests
      */
-    protected int getNumOfFileRequest()
-    {
+    protected int getNumOfFileRequest() {
         return fileRequests.size();
     }
 
@@ -209,8 +202,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     }
 
     @Override
-    public TReturnStatus abort(String reason)
-    {
+    public TReturnStatus abort(String reason) {
         boolean hasSuccess = false;
         boolean hasFailure = false;
         wlock();
@@ -260,16 +252,16 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             boolean haveDoneRequests = false;
             for (R fr : fileRequests) {
                 switch (fr.getState()) {
-                case DONE:
-                    haveDoneRequests = true;
-                    break;
-                case FAILED:
-                case CANCELED:
-                    haveFailedRequests = true;
-                    break;
-                default:
-                    haveNonFinalRequests = true;
-                    break;
+                    case DONE:
+                        haveDoneRequests = true;
+                        break;
+                    case FAILED:
+                    case CANCELED:
+                        haveFailedRequests = true;
+                        break;
+                    default:
+                        haveNonFinalRequests = true;
+                        break;
                 }
             }
 
@@ -304,7 +296,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         }
     }
 
-    protected TReturnStatus getTReturnStatus()  {
+    protected TReturnStatus getTReturnStatus() {
         updateStatus();
 
         String description;
@@ -315,7 +307,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             TStatusCode statusCode = getStatusCode();
             if (statusCode != null) {
                 return new TReturnStatus(statusCode, description);
-           }
+            }
         } finally {
             runlock();
         }
@@ -329,97 +321,86 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         // once file request reach their final state, this state does not change
         // so the combined logic
 
-        int failed_req           = 0;
+        int failed_req = 0;
         int failed_space_expired = 0;
         int failed_no_free_space = 0;
-        int canceled_req         = 0;
-        int pending_req          = 0;
-        int running_req          = 0;
-        int ready_req            = 0;
-        int done_req             = 0;
+        int canceled_req = 0;
+        int pending_req = 0;
+        int running_req = 0;
+        int ready_req = 0;
+        int done_req = 0;
         boolean failure = false;
         for (R fr : fileRequests) {
             TReturnStatus fileReqRS = fr.getReturnStatus();
-            TStatusCode fileReqSC   = fileReqRS.getStatusCode();
-            if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
+            TStatusCode fileReqSC = fileReqRS.getStatusCode();
+            if (fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
                 pending_req++;
-            }
-            else if(fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
+            } else if (fileReqSC == TStatusCode.SRM_REQUEST_INPROGRESS) {
                 running_req++;
-            }
-            else if(fileReqSC == TStatusCode.SRM_FILE_PINNED ||
-                    fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
+            } else if (fileReqSC == TStatusCode.SRM_FILE_PINNED ||
+                  fileReqSC == TStatusCode.SRM_SPACE_AVAILABLE) {
                 ready_req++;
-            }
-            else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
-                    fileReqSC == TStatusCode.SRM_RELEASED) {
+            } else if (fileReqSC == TStatusCode.SRM_SUCCESS ||
+                  fileReqSC == TStatusCode.SRM_RELEASED) {
                 done_req++;
-            }
-            else if(fileReqSC == TStatusCode.SRM_ABORTED) {
+            } else if (fileReqSC == TStatusCode.SRM_ABORTED) {
                 canceled_req++;
-                failure=true;
-            }
-            else if(fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
+                failure = true;
+            } else if (fileReqSC == TStatusCode.SRM_NO_FREE_SPACE) {
                 failed_no_free_space++;
-                failure=true;
-            }
-            else if(fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
+                failure = true;
+            } else if (fileReqSC == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
                 failed_space_expired++;
-                failure=true;
-            }
-            else if(RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
+                failure = true;
+            } else if (RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
                 failed_req++;
-                failure=true;
-            }
-            else {
-                LOGGER.error("Unknown request status code {} for request {}", fr.getState(), fr.getId());
+                failure = true;
+            } else {
+                LOGGER.error("Unknown request status code {} for request {}", fr.getState(),
+                      fr.getId());
             }
         }
 
         int len = getNumOfFileRequest();
-        if (canceled_req == len ) {
+        if (canceled_req == len) {
             return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
         }
 
-        if (failed_req==len) {
+        if (failed_req == len) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
         }
-        if (ready_req==len || done_req==len || ready_req+done_req==len ) {
+        if (ready_req == len || done_req == len || ready_req + done_req == len) {
             if (failure) {
                 return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
-            }
-            else {
+            } else {
                 return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
             }
         }
-        if (pending_req==len) {
+        if (pending_req == len) {
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         }
         // SRM space is not enough to hold all requested SURLs for free. (so me thinks one fails - all fail)
-        if (failed_no_free_space>0) {
+        if (failed_no_free_space > 0) {
             return new TReturnStatus(TStatusCode.SRM_NO_FREE_SPACE, description);
         }
         // space associated with the targetSpaceToken is expired. (so me thinks one fails - all fail)
-        if (failed_space_expired>0) {
+        if (failed_space_expired > 0) {
             return new TReturnStatus(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED, description);
         }
         // we still have work to do:
         if (running_req > 0 || pending_req > 0) {
             return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
-        }
-        else {
+        } else {
             // all are done here
             if (failure) {
-                if (ready_req > 0 || done_req > 0 ) {
+                if (ready_req > 0 || done_req > 0) {
                     //some succeeded some not
                     return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, null);
-                }
-                else {
+                } else {
                     //none succeeded
                     return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
                 }
-            }
-            else {
+            } else {
                 //no single failure - we should not get to this piece if code
                 return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
             }
@@ -434,10 +415,10 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         summary.setRequestToken(String.valueOf(getId()));
         int total_num = getNumOfFileRequest();
         summary.setTotalNumFilesInRequest(total_num);
-        int num_of_failed=0;
+        int num_of_failed = 0;
         int num_of_completed = 0;
         int num_of_waiting = 0;
-        for(int i = 0; i< total_num; ++i) {
+        for (int i = 0; i < total_num; ++i) {
             R fr;
             rlock();
             try {
@@ -447,13 +428,13 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             }
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC = fileReqRS.getStatusCode();
-            if( fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
+            if (fileReqSC == TStatusCode.SRM_REQUEST_QUEUED) {
                 num_of_waiting++;
-            } else if(fileReqSC == TStatusCode.SRM_SUCCESS ||
-                    fileReqSC == TStatusCode.SRM_RELEASED) {
-                num_of_completed ++;
+            } else if (fileReqSC == TStatusCode.SRM_SUCCESS ||
+                  fileReqSC == TStatusCode.SRM_RELEASED) {
+                num_of_completed++;
             } else if (RequestStatusTool.isFailedFileRequestStatus(fileReqRS)) {
-                num_of_failed ++;
+                num_of_failed++;
             }
         }
         summary.setNumOfFailedFiles(num_of_failed);
@@ -471,10 +452,9 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      * check the object for the equality with this request
      * <p>
      * we return true only if object is this request
-     * @param o
-     * object to check for equality with
-     * @return
-     * result of the check
+     *
+     * @param o object to check for equality with
+     * @return result of the check
      */
     @Override
     public boolean equals(Object o) {
@@ -505,40 +485,42 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         if (longformat) {
             sb.append('\n');
             long now = System.currentTimeMillis();
-            sb.append("   Submitted: ").append(relativeTimestamp(getCreationTime(), now)).append('\n');
-            sb.append("   Expires: ").append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
+            sb.append("   Submitted: ").append(relativeTimestamp(getCreationTime(), now))
+                  .append('\n');
+            sb.append("   Expires: ")
+                  .append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
             if (this instanceof DelegatedCredentialAware) {
-                Long id = ((DelegatedCredentialAware)this).getCredentialId();
+                Long id = ((DelegatedCredentialAware) this).getCredentialId();
                 RequestCredential credential = RequestCredential.getRequestCredential(id);
                 if (credential != null) {
-                    sb.append("   Credential: ").append(credential.getCredentialName()).append('\n');
+                    sb.append("   Credential: ").append(credential.getCredentialName())
+                          .append('\n');
                 }
             }
             sb.append("   History:\n");
             sb.append(getHistory("   "));
-            for (R fr:fileRequests) {
+            for (R fr : fileRequests) {
                 sb.append("\n");
                 fr.toString(sb, "   ", longformat);
             }
         }
     }
 
-    protected void fileRequestStateChanged(R request)
-    {
+    protected void fileRequestStateChanged(R request) {
         switch (request.getState()) {
-        case RQUEUED:
-        case READY:
-        case DONE:
-        case CANCELED:
-        case FAILED:
-            _stateChangeCounter.increment();
+            case RQUEUED:
+            case READY:
+            case DONE:
+            case CANCELED:
+            case FAILED:
+                _stateChangeCounter.increment();
         }
     }
 
     @Nonnull
     public abstract R getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException;
 
-    protected List<R> getFileRequests()  {
+    protected List<R> getFileRequests() {
         return fileRequests;
     }
 
@@ -548,18 +530,17 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     }
 
     /**
-     * Constructs a Date object using the given milliseconds time
-     * value relative to the current point in time.
-     *
-     * Equivalent to 'new Date(System.currentTimeMillis() + delta)'
-     * except that underflows and overflows are taken into account.
-     *
+     * Constructs a Date object using the given milliseconds time value relative to the current
+     * point in time.
+     * <p>
+     * Equivalent to 'new Date(System.currentTimeMillis() + delta)' except that underflows and
+     * overflows are taken into account.
+     * <p>
      * Used by subclasses.
      *
      * @param delta milliseconds relative to the current point in time
      */
-    protected Date getDateRelativeToNow(long delta)
-    {
+    protected Date getDateRelativeToNow(long delta) {
         long now = System.currentTimeMillis();
         if (delta >= 0 && now >= Long.MAX_VALUE - delta) {
             return new Date(Long.MAX_VALUE);

@@ -61,9 +61,10 @@ package org.dcache.resilience.data;
 
 /**
  * <p>Used by admin commands to select operations for cancellation or
- *      listing.</p>
+ * listing.</p>
  */
 public interface FileMatcher {
+
     /**
      * <p>Tells whether the matcher would potentially match all operations.</p>
      */
@@ -71,20 +72,19 @@ public interface FileMatcher {
 
     /**
      * <p>Used on cancellation to indicate the entry should be cancelled
-     *      in its entirety (as opposed to just the running task associated
-     *      with it).</p>
+     * in its entirety (as opposed to just the running task associated with it).</p>
      */
     boolean isForceRemoval();
 
     /**
      * <p>For short-circuiting the fuller match operation when
-     *      the filter is looking to match only a single pnfsId.</p>
+     * the filter is looking to match only a single pnfsId.</p>
      */
     boolean isSimplePnfsMatch();
 
     /**
      * @param operation to be matched by the filter,
-     * @param map to translate references to names.
+     * @param map       to translate references to names.
      * @return whether the operation matches or not.
      */
     boolean matches(FileOperation operation, PoolInfoMap map);

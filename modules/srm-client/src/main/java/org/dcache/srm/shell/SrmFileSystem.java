@@ -17,17 +17,14 @@
  */
 package org.dcache.srm.shell;
 
-import org.apache.axis.types.URI;
-import org.ietf.jgss.GSSCredential;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
+import eu.emi.security.authn.x509.X509Credential;
 import java.io.File;
 import java.rmi.RemoteException;
 import java.util.Map;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+import org.apache.axis.types.URI;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.v2_2.SrmPingResponse;
 import org.dcache.srm.v2_2.SrmRmResponse;
@@ -39,11 +36,10 @@ import org.dcache.srm.v2_2.TPermissionReturn;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TSupportedTransferProtocol;
-import eu.emi.security.authn.x509.X509Credential;
 
 @ParametersAreNonnullByDefault
-public interface SrmFileSystem extends AutoCloseable
-{
+public interface SrmFileSystem extends AutoCloseable {
+
     void start();
 
     void setCredential(X509Credential credential);
@@ -52,7 +48,8 @@ public interface SrmFileSystem extends AutoCloseable
     TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException, InterruptedException;
 
     @Nonnull
-    TMetaDataPathDetail[] stat(URI... surl) throws RemoteException, SRMException, InterruptedException;
+    TMetaDataPathDetail[] stat(URI... surl)
+          throws RemoteException, SRMException, InterruptedException;
 
     @Nonnull
     TPermissionMode checkPermission(URI surl) throws RemoteException, SRMException;
@@ -67,7 +64,8 @@ public interface SrmFileSystem extends AutoCloseable
     TPermissionReturn[] getPermissions(URI... surls) throws RemoteException, SRMException;
 
     @Nonnull
-    TMetaDataPathDetail[] list(URI surl, boolean verbose) throws RemoteException, SRMException, InterruptedException;
+    TMetaDataPathDetail[] list(URI surl, boolean verbose)
+          throws RemoteException, SRMException, InterruptedException;
 
     @Nonnull
     SrmPingResponse ping() throws RemoteException, SRMException;
@@ -89,8 +87,8 @@ public interface SrmFileSystem extends AutoCloseable
 
     @Nonnull
     TMetaDataSpace reserveSpace(long size, @Nullable String description,
-                                @Nullable TAccessLatency al, TRetentionPolicy rp,
-                                @Nullable Integer lifetime) throws SRMException, RemoteException, InterruptedException;
+          @Nullable TAccessLatency al, TRetentionPolicy rp,
+          @Nullable Integer lifetime) throws SRMException, RemoteException, InterruptedException;
 
     void releaseSpace(String spaceToken) throws RemoteException, SRMException;
 
@@ -107,7 +105,7 @@ public interface SrmFileSystem extends AutoCloseable
     FileTransfer put(File source, URI surl);
 
     @Nonnull
-    Map<String,String> getTransportOptions();
+    Map<String, String> getTransportOptions();
 
     void setTransportOption(String key, String value);
 }

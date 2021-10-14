@@ -59,18 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
-import javax.security.auth.Subject;
-
-import java.util.Map;
-import java.util.Objects;
+import static com.google.common.base.Strings.nullToEmpty;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.util.Map;
+import java.util.Objects;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
-
-import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * @author arossi
@@ -85,13 +82,13 @@ public final class MoverData extends PnfsStorageInfo {
 
     public String toString() {
         return "(" + dateString() + "," + cellName + "," + action + ","
-                        + transaction + "," + pnfsID + "," + fullSize + ","
-                        + transferSize + "," + storageClass + "," + isNew
-                        + "," + client + "," + connectionTime + ","
-                        + errorCode + "," + errorMessage + "," + protocol
-                        + "," + initiator + "," + p2p + ","
-                        + owner + "," + mappedUID + "," + mappedGID +","
-                        + nullToEmpty(fqan) + ")";
+              + transaction + "," + pnfsID + "," + fullSize + ","
+              + transferSize + "," + storageClass + "," + isNew
+              + "," + client + "," + connectionTime + ","
+              + errorCode + "," + errorMessage + "," + protocol
+              + "," + initiator + "," + p2p + ","
+              + owner + "," + mappedUID + "," + mappedGID + ","
+              + nullToEmpty(fqan) + ")";
     }
 
     private Long transferSize;
@@ -120,9 +117,9 @@ public final class MoverData extends PnfsStorageInfo {
 
         if (info.getProtocolInfo() instanceof IpProtocolInfo) {
             protocol = info.getProtocolInfo()
-                            .getVersionString();
+                  .getVersionString();
             client = ((IpProtocolInfo) info.getProtocolInfo()).
-                    getSocketAddress().getAddress().getHostAddress();
+                  getSocketAddress().getAddress().getHostAddress();
         } else {
             protocol = DEFAULT_PROTOCOL;
             client = DEFAULT_PROTOCOL;
@@ -131,8 +128,8 @@ public final class MoverData extends PnfsStorageInfo {
         StorageInfo sinfo = info.getStorageInfo();
         if (sinfo != null) {
             storageClass = sinfo.getStorageClass()
-                            + "@"
-                            + sinfo.getHsm();
+                  + "@"
+                  + sinfo.getHsm();
         }
 
         initiator = info.getInitiator();
@@ -147,7 +144,7 @@ public final class MoverData extends PnfsStorageInfo {
         mappedGID = (gids.length > 0) ? (int) gids[0] : -1;
         long[] uids = Subjects.getUids(subject);
         mappedUID = (uids.length > 0) ? (int) uids[0] : -1;
-        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()),null);
+        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()), null);
     }
 
     public Long getTransferSize() {

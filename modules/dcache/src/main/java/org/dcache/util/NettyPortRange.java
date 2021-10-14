@@ -22,7 +22,6 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
@@ -32,60 +31,53 @@ import java.util.concurrent.ExecutionException;
 /**
  * Immutable class representing a port range.
  */
-public class NettyPortRange extends PortRange
-{
+public class NettyPortRange extends PortRange {
+
     /**
-     * Creates a port range with the given bounds (both inclusive).
-     * Zero is excluded from non-empty port ranges.
+     * Creates a port range with the given bounds (both inclusive). Zero is excluded from non-empty
+     * port ranges.
      *
-     * @throws IllegalArgumentException is either bound is not between
-     *         0 and 65535, or if <code>high</code> is lower than
-     *         <code>low</code>.
+     * @throws IllegalArgumentException is either bound is not between 0 and 65535, or if
+     *                                  <code>high</code> is lower than
+     *                                  <code>low</code>.
      */
-    public NettyPortRange(int low, int high)
-    {
+    public NettyPortRange(int low, int high) {
         super(low, high);
     }
 
     /**
      * Creates a port range containing a single port.
      */
-    public NettyPortRange(int port)
-    {
+    public NettyPortRange(int port) {
         this(port, port);
     }
 
-    public NettyPortRange(PortRange range)
-    {
+    public NettyPortRange(PortRange range) {
         this(range.getLower(), range.getUpper());
     }
 
     /**
-     * Parse a port range. A port range consists of either a single
-     * integer, or two integers separated by either a comma or a
-     * colon.
-     *
+     * Parse a port range. A port range consists of either a single integer, or two integers
+     * separated by either a comma or a colon.
+     * <p>
      * The bounds must be between 0 and 65535, both inclusive.
      *
-     * @return The port range represented by <code>s</code>. Returns
-     * the range [0,0] if <code>s</code> is null or empty.
+     * @return The port range represented by <code>s</code>. Returns the range [0,0] if
+     * <code>s</code> is null or empty.
      */
     public static NettyPortRange valueOf(String s)
-        throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         return new NettyPortRange(PortRange.valueOf(s));
     }
 
     /**
-     * Binds <code>server</socket> to <code>address</code>. A port is
-     * chosen from this port range. If the port range is [0,0], then a
-     * free port is chosen by the OS.
+     * Binds <code>server</socket> to <code>address</code>. A port is chosen from this port range.
+     * If the port range is [0,0], then a free port is chosen by the OS.
      *
      * @throws IOException if the bind operation fails.
      */
     public Channel bind(ServerBootstrap server, InetAddress address)
-        throws IOException
-    {
+          throws IOException {
         int start = random();
         int port = start;
         do {
@@ -111,12 +103,10 @@ public class NettyPortRange extends PortRange
      * <code>address</code>. A port is chosen from this port range. If
      * the port range is [0,0], then a free port is chosen by the OS.
      *
-     * @throws IOException if the bind operation fails, or if the
-     * socket is already bound.
+     * @throws IOException if the bind operation fails, or if the socket is already bound.
      */
     public Channel bind(ServerBootstrap socket)
-        throws IOException
-    {
+          throws IOException {
         return bind(socket, null);
     }
 

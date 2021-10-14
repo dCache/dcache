@@ -60,20 +60,20 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import com.google.common.collect.ImmutableList;
-
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.pool.migration.RefreshablePoolList;
 
 /**
  * <p>A simplified degenerate implementation of {@link RefreshablePoolList}
- *      tailored for use by the resilience system. Provides a static list
- *      of the pool information to the migration task.</p>
+ * tailored for use by the resilience system. Provides a static list of the pool information to the
+ * migration task.</p>
  *
  * <p>As currently used, the pool list will actually contain
- *      only a single pool which has been precomputed for selection by the
- *      resilience task, already taking into account offline pools.</p>
+ * only a single pool which has been precomputed for selection by the resilience task, already
+ * taking into account offline pools.</p>
  */
 public final class StaticSinglePoolList implements RefreshablePoolList {
+
     private final ImmutableList<PoolManagerPoolInformation> pools;
     private final ImmutableList<String> offline = ImmutableList.of();
 

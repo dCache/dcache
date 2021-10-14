@@ -31,8 +31,7 @@ public class BackEndErrorChimeraFsException extends ChimeraFsException {
         super("BackEndErrorChimeraFsException (" + msg + ')');
     }
 
-    public BackEndErrorChimeraFsException(String msg, Throwable cause)
-    {
+    public BackEndErrorChimeraFsException(String msg, Throwable cause) {
         super("BackEndErrorChimeraFsException (" + msg + ')', cause);
     }
 }

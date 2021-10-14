@@ -66,10 +66,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
-public interface SrmReleaseSpaceCallback
-{
+public interface SrmReleaseSpaceCallback {
+
     void failed(String reason);
+
     void internalError(String reason);
+
     void invalidRequest(String reason);
+
     void success(String spaceReservationToken, long remainingSpaceSize);
 }

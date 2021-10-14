@@ -1,39 +1,37 @@
 package diskCacheV111.vehicles.transferManager;
+
 import diskCacheV111.vehicles.Message;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
  * @version 0.0, 28 Jun 2002
  */
 
-public  class CancelTransferMessage extends Message
-{
-  private static final long serialVersionUID = -4445578968029755510L;
-  long callerUniqueId;
-  private String explanation;
+public class CancelTransferMessage extends Message {
 
-  public CancelTransferMessage(long id,long callerUniqueId)
-  {
-    super();
-    setId(id);
-    this.callerUniqueId = callerUniqueId;
-    setReplyRequired(false);
-  }
+    private static final long serialVersionUID = -4445578968029755510L;
+    long callerUniqueId;
+    private String explanation;
 
-  public long getCallerUniqueId()
-  {
-      return callerUniqueId;
-  }
+    public CancelTransferMessage(long id, long callerUniqueId) {
+        super();
+        setId(id);
+        this.callerUniqueId = callerUniqueId;
+        setReplyRequired(false);
+    }
 
-  public void setExplanation(String explanation)
-  {
-      this.explanation = explanation;
-  }
+    public long getCallerUniqueId() {
+        return callerUniqueId;
+    }
 
-  public String getExplanation()
-  {
-      return explanation;
-  }
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
 }
 
 

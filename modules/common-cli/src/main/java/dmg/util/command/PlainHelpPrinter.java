@@ -20,23 +20,20 @@ package dmg.util.command;
 /**
  * Utility class to produce help texts in plain ASCII.
  */
-public class PlainHelpPrinter extends TextHelpPrinter
-{
+public class PlainHelpPrinter extends TextHelpPrinter {
+
     @Override
-    protected String value(String value)
-    {
+    protected String value(String value) {
         return "<" + value.toLowerCase() + ">";
     }
 
     @Override
-    protected String literal(String option)
-    {
+    protected String literal(String option) {
         return option;
     }
 
     @Override
-    protected String heading(String heading)
-    {
+    protected String heading(String heading) {
         return heading;
     }
 }

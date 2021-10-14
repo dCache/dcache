@@ -59,10 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import java.util.Set;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.resilience.data.FileOperation;
@@ -73,28 +72,29 @@ import org.dcache.resilience.util.CacheExceptionUtils;
  * <p>Simple implementation which raises an alarm.</p>
  */
 public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandler {
+
     private static final String INACCESSIBLE_FILE_MESSAGE
-                    = "Resilient pool {} is inaccessible but it contains  "
-                    + "one or more files with no currently readable locations. "
-                    + "Administrator intervention is required.  Run the command "
-                    + "'inaccessible {}' to produce a list of orphaned pnfsids.";
+          = "Resilient pool {} is inaccessible but it contains  "
+          + "one or more files with no currently readable locations. "
+          + "Administrator intervention is required.  Run the command "
+          + "'inaccessible {}' to produce a list of orphaned pnfsids.";
 
     private static final String MISSING_LOCATIONS_MESSAGE
-                    = "{} has no locations in the namespace (file is lost). "
-                    + "Administrator intervention is required.";
+          = "{} has no locations in the namespace (file is lost). "
+          + "Administrator intervention is required.";
 
     @Override
     protected Type handleNoLocationsForFile(FileOperation operation) {
         PnfsId pnfsId = operation.getPnfsId();
         LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOST_RESILIENT_FILE,
-                                                  pnfsId.toString()),
-                     MISSING_LOCATIONS_MESSAGE, pnfsId);
+                    pnfsId.toString()),
+              MISSING_LOCATIONS_MESSAGE, pnfsId);
         String error = String.format("%s has no locations.", pnfsId);
         CacheException exception
-                        = CacheExceptionUtils.getCacheException(
-                        CacheException.PANIC,
-                        FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                        pnfsId, Type.VOID, error, null);
+              = CacheExceptionUtils.getCacheException(
+              CacheException.PANIC,
+              FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+              pnfsId, Type.VOID, error, null);
         completionHandler.taskFailed(pnfsId, exception);
         return Type.VOID;
     }
@@ -109,24 +109,24 @@ public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandle
         if (pindex != null) {
             String pool = poolInfoMap.getPool(pindex);
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                                      pool),
-                         INACCESSIBLE_FILE_MESSAGE, pool, pool);
+                        pool),
+                  INACCESSIBLE_FILE_MESSAGE, pool, pool);
         }
 
         PnfsId pnfsId = operation.getPnfsId();
         String error = String.format("%s currently has no active locations.", pnfsId);
         CacheException exception
-                        = CacheExceptionUtils.getCacheException(
-                        CacheException.PANIC,
-                        FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                        pnfsId, Type.VOID, error, null);
+              = CacheExceptionUtils.getCacheException(
+              CacheException.PANIC,
+              FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+              pnfsId, Type.VOID, error, null);
         completionHandler.taskFailed(pnfsId, exception);
         return Type.VOID;
     }
 
     @Override
     protected boolean isInaccessible(Set<String> readableLocations,
-                                     FileOperation operation) {
+          FileOperation operation) {
         /*
          * Default implementation considers files stored on tape
          * to qualify for an alarm.  It does not, however, take any

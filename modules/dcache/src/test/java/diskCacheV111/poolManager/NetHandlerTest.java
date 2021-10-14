@@ -4,12 +4,13 @@
  */
 package diskCacheV111.poolManager;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.net.UnknownHostException;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class NetHandlerTest {
 
@@ -17,21 +18,20 @@ public class NetHandlerTest {
     private static final String IPV4_HOSTNAME_2 = "192.168.1.2";
     private static final String IPV4_MASKED_HOSTNAME = "192.168.1.0";
     private static final String IPV4_NETMASK = "24";
-    private static final String IPV4_SUBNET = IPV4_HOSTNAME_1+"/"+IPV4_NETMASK;
-    private static final String IPV4_MASKED_SUBNET = IPV4_MASKED_HOSTNAME+"/"+IPV4_NETMASK;
+    private static final String IPV4_SUBNET = IPV4_HOSTNAME_1 + "/" + IPV4_NETMASK;
+    private static final String IPV4_MASKED_SUBNET = IPV4_MASKED_HOSTNAME + "/" + IPV4_NETMASK;
 
     private static final String IPV6_HOSTNAME_1 = "feed::bad:f00d";
     private static final String IPV6_HOSTNAME_2 = "feed::bad:f00b";
     private static final String IPV6_MASKED_HOSTNAME = "feed::bad:f000";
     private static final String IPV6_NETMASK = "120";
-    private static final String IPV6_SUBNET = IPV6_HOSTNAME_1+"/"+IPV6_NETMASK;
-    private static final String IPV6_MASKED_SUBNET = IPV6_MASKED_HOSTNAME+"/"+IPV6_NETMASK;
+    private static final String IPV6_SUBNET = IPV6_HOSTNAME_1 + "/" + IPV6_NETMASK;
+    private static final String IPV6_MASKED_SUBNET = IPV6_MASKED_HOSTNAME + "/" + IPV6_NETMASK;
 
     NetHandler netHandler;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         netHandler = new NetHandler();
         netHandler.add(new NetUnit(IPV4_SUBNET));
         netHandler.add(new NetUnit(IPV6_SUBNET));
@@ -121,15 +121,14 @@ public class NetHandlerTest {
         assertCIDRSubnetMatches("131.169.252.76/32", "131.169.252.76");
     }
 
-    private void assertCIDRSubnetMatches(String subnet, String ip)
-    {
+    private void assertCIDRSubnetMatches(String subnet, String ip) {
         NetHandler nh = new NetHandler();
         NetUnit nu, matchedNu;
         try {
             nu = new NetUnit(subnet);
             nh.add(nu);
             matchedNu = nh.match(ip);
-        } catch(UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
         assertNotNull(matchedNu);

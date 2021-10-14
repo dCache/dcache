@@ -1,9 +1,9 @@
 package diskCacheV111.vehicles;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-
-import static java.util.Objects.requireNonNull;
 
 public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessage {
 
@@ -17,19 +17,20 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
     private final long _verifier;
 
     public PoolPassiveIoFileMessage(String pool, InetSocketAddress socketAddress, T challenge) {
-        this(pool, new InetSocketAddress[] { socketAddress }, challenge, 0);
+        this(pool, new InetSocketAddress[]{socketAddress}, challenge, 0);
     }
 
     /**
-     * Create message for given {@code pool}, {@code socketAddresses}, {@code challenge} and
-     * {@code boot verifier}.
+     * Create message for given {@code pool}, {@code socketAddresses}, {@code challenge} and {@code
+     * boot verifier}.
      *
      * @param pool
      * @param socketAddresses
      * @param challenge
      * @param verifier
      */
-    public PoolPassiveIoFileMessage(String pool, InetSocketAddress[] socketAddresses, T challenge,  long verifier) {
+    public PoolPassiveIoFileMessage(String pool, InetSocketAddress[] socketAddresses, T challenge,
+          long verifier) {
         super(pool);
         _socketAddresses = requireNonNull(socketAddresses, "Socket address is not defined.");
         _challange = challenge;

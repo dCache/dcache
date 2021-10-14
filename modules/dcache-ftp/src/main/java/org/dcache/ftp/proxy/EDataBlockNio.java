@@ -66,14 +66,14 @@
 
 package org.dcache.ftp.proxy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EDataBlockNio {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(EDataBlockNio.class);
 
     private ByteBuffer header;
@@ -152,8 +152,7 @@ public class EDataBlockNio {
 
     // Copy data from initial to target.  This behaves similarly to ByteBuffer#put
     // except that no exception is thrown if initial.remaining() > target.remaining()
-    private static void prefill(ByteBuffer initial, ByteBuffer target)
-    {
+    private static void prefill(ByteBuffer initial, ByteBuffer target) {
         if (initial.remaining() > 0) {
             int count = Math.min(initial.remaining(), target.remaining());
             LOGGER.debug("prefilling, initial data is {}", initial);
@@ -195,7 +194,7 @@ public class EDataBlockNio {
         }
 
         LOGGER.debug("Finish reading header: {} bytes read from {}", len,
-                socketChannel.socket().getRemoteSocketAddress());
+              socketChannel.socket().getRemoteSocketAddress());
 
         return len < HEADER_LENGTH ? -1 : HEADER_LENGTH;
     }

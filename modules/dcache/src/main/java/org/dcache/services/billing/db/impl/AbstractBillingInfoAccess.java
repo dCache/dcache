@@ -59,29 +59,28 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.dcache.services.billing.db.IBillingInfoAccess;
-import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.exceptions.RetryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Framework for database access; uses a blocking queue and N consumer
- * threads to process requests; consumer drains the queue up to max,
- * for batching.  Commit is implemented by the store.
+ * Framework for database access; uses a blocking queue and N consumer threads to process requests;
+ * consumer drains the queue up to max, for batching.  Commit is implemented by the store.
  *
  * @author arossi
  */
 public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
+
     class Consumer extends Thread {
+
         private Consumer(String name) {
             super(name);
         }
@@ -102,7 +101,7 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
                      * add to data and remove from queue any accumulated entries
                      */
                     logger.trace("calling queue.drainTo(), queue size {}",
-                                 queue.size());
+                          queue.size());
                     queue.drainTo(data, maxBatchSize);
 
                     if (isInterrupted()) {
@@ -120,8 +119,8 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
                             committed.addAndGet(data.size());
                         } catch (RetryException t1) {
                             logger.error("commit retry failed, {} inserts have "
-                                                         + "been lost",
-                                         data.size());
+                                        + "been lost",
+                                  data.size());
                             logger.debug("exception in run(), commit", t1);
                         }
                     }
@@ -134,15 +133,15 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final AtomicLong dropped   = new AtomicLong(0);
+    private final AtomicLong dropped = new AtomicLong(0);
     private final AtomicLong committed = new AtomicLong(0);
 
     private BlockingQueue<IHistogramData> queue;
-    private List<Consumer>                consumers;
-    private int                           maxQueueSize;
-    private int                           maxBatchSize;
-    private int                           numberOfConsumers;
-    private boolean                       dropMessagesAtLimit;
+    private List<Consumer> consumers;
+    private int maxQueueSize;
+    private int maxBatchSize;
+    private int numberOfConsumers;
+    private boolean dropMessagesAtLimit;
 
     public void close() {
         if (consumers != null) {
@@ -212,21 +211,21 @@ public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
      * Storage-implementation dependent.
      */
     public abstract void commit(Collection<IHistogramData> data)
-                    throws RetryException;
+          throws RetryException;
 
     private void processDroppedData(IHistogramData data) {
         dropped.incrementAndGet();
         logger.info("encountered max queue limit; "
-                                    + "{} entries have been dropped",
-                    dropped.get());
+                    + "{} entries have been dropped",
+              dropped.get());
         logger.debug("queue limit prevented storage of {}", data);
     }
 
     private void processInterrupted(IHistogramData data) {
         dropped.incrementAndGet();
         logger.warn("queueing of data was interrupted; "
-                                    + "{} entries have been dropped",
-                    dropped.get());
+                    + "{} entries have been dropped",
+              dropped.get());
         logger.debug("failed to store {}", data);
     }
 }

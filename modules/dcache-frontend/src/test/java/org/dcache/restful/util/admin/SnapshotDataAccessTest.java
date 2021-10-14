@@ -59,15 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.admin;
 
+import static org.dcache.restful.util.transfers.TransferCollectionUtils.transferKey;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.google.common.base.Strings;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.junit.Before;
-import org.junit.Test;
-
+import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.UserInfo;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -79,27 +84,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
-
-import diskCacheV111.util.TransferInfo;
-import diskCacheV111.util.UserInfo;
 import org.dcache.auth.FQAN;
 import org.dcache.restful.providers.SnapshotList;
-
-import static org.dcache.restful.util.transfers.TransferCollectionUtils.transferKey;
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class SnapshotDataAccessTest {
+
     static final String DATAFILE = "transfers.json";
 
-    static final int[] TO_REMOVE = { 113, 234, 397, 401 };
+    static final int[] TO_REMOVE = {113, 234, 397, 401};
 
     class TestTransferCollector {
+
         Map<String, TransferInfo> map;
 
         public void initialize() {
             JsonParser parser = new JsonParser();
             InputStream input = SnapshotDataAccessTest.class
-                                .getResourceAsStream(DATAFILE);
+                  .getResourceAsStream(DATAFILE);
             Reader reader = new InputStreamReader(input);
             Object obj = parser.parse(reader);
 
@@ -110,71 +113,71 @@ public final class SnapshotDataAccessTest {
                 JsonObject jsonTransfer = e.getAsJsonObject();
                 TransferInfo transferInfo = new TransferInfo();
                 transferInfo.setCellName(
-                                getString(jsonTransfer.get("cellName"),
-                                          null));
+                      getString(jsonTransfer.get("cellName"),
+                            null));
                 transferInfo.setDomainName(
-                                getString(jsonTransfer.get("domainName"),
-                                          null));
+                      getString(jsonTransfer.get("domainName"),
+                            null));
                 transferInfo.setSerialId(
-                                getLong(jsonTransfer.get("serialId"),
-                                        null));
+                      getLong(jsonTransfer.get("serialId"),
+                            null));
                 transferInfo.setProtocol(
-                                getString(jsonTransfer.get("protocol"),
-                                          null));
+                      getString(jsonTransfer.get("protocol"),
+                            null));
                 transferInfo.setProcess(
-                                getString(jsonTransfer.get("process"),
-                                          null));
+                      getString(jsonTransfer.get("process"),
+                            null));
                 transferInfo.setPnfsId(
-                                getString(jsonTransfer.get("pnfsId"),
-                                          null));
+                      getString(jsonTransfer.get("pnfsId"),
+                            null));
                 transferInfo.setPath(getString(jsonTransfer.get("path"),
-                                          null));
+                      null));
                 transferInfo.setPool(
-                                getString(jsonTransfer.get("pool"), null));
+                      getString(jsonTransfer.get("pool"), null));
                 transferInfo.setReplyHost(
-                                getString(jsonTransfer.get("replyHost"),
-                                          null));
+                      getString(jsonTransfer.get("replyHost"),
+                            null));
                 transferInfo.setSessionStatus(
-                                getString(jsonTransfer.get("sessionStatus"),
-                                          null));
+                      getString(jsonTransfer.get("sessionStatus"),
+                            null));
                 transferInfo.setWaitingSince(
-                                getLong(jsonTransfer.get("waitingSince"),
-                                        0L));
+                      getLong(jsonTransfer.get("waitingSince"),
+                            0L));
                 transferInfo.setMoverStatus(
-                                getString(jsonTransfer.get("moverStatus"),
-                                          null));
+                      getString(jsonTransfer.get("moverStatus"),
+                            null));
                 transferInfo.setMoverId(
-                                getLong(jsonTransfer.get("moverId"), null));
+                      getLong(jsonTransfer.get("moverId"), null));
                 transferInfo.setMoverSubmit(
-                                getLong(jsonTransfer.get("moverSubmit"),
-                                        0L));
+                      getLong(jsonTransfer.get("moverSubmit"),
+                            0L));
                 transferInfo.setTransferTime(
-                                getLong(jsonTransfer.get("transferTime"),
-                                        0L));
+                      getLong(jsonTransfer.get("transferTime"),
+                            0L));
                 transferInfo.setBytesTransferred(
-                                getLong(jsonTransfer.get(
-                                                "bytesTransferred"),
-                                        0L));
+                      getLong(jsonTransfer.get(
+                                  "bytesTransferred"),
+                            0L));
                 transferInfo.setMoverStart(
-                                getLong(jsonTransfer.get("moverStart"),
-                                        0L));
+                      getLong(jsonTransfer.get("moverStart"),
+                            0L));
 
                 UserInfo userInfo = new UserInfo();
                 userInfo.setUsername(
-                                getString(jsonTransfer.get("username"),
-                                          null));
+                      getString(jsonTransfer.get("username"),
+                            null));
                 userInfo.setUid(getLong(jsonTransfer.get("uid"), null));
                 userInfo.setGid(getLong(jsonTransfer.get("gid"), null));
                 userInfo.setPrimaryFqan(new FQAN(getString(
-                                jsonTransfer.get(
-                                                "primaryFqan"),
-                                "")));
+                      jsonTransfer.get(
+                            "primaryFqan"),
+                      "")));
 
                 transferInfo.setUserInfo(userInfo);
 
                 map.put(transferKey(transferInfo.getCellName(),
-                                    transferInfo.getSerialId()),
-                        transferInfo);
+                            transferInfo.getSerialId()),
+                      transferInfo);
             });
         }
 
@@ -194,15 +197,15 @@ public final class SnapshotDataAccessTest {
     }
 
     private SnapshotDataAccess<String, TransferInfo> snapshotDataAccess;
-    private TestTransferCollector                    collector;
-    private SnapshotList<TransferInfo>               snapshotList;
-    private List<TransferInfo>                       currentList;
-    private UUID                                     currentToken;
-    private Integer                                  offset;
-    private Integer                                  limit;
-    private Predicate<TransferInfo>                  filter;
-    private Comparator<TransferInfo>                 sorter;
-    private TransferInfo                             elementAtIndex;
+    private TestTransferCollector collector;
+    private SnapshotList<TransferInfo> snapshotList;
+    private List<TransferInfo> currentList;
+    private UUID currentToken;
+    private Integer offset;
+    private Integer limit;
+    private Predicate<TransferInfo> filter;
+    private Comparator<TransferInfo> sorter;
+    private TransferInfo elementAtIndex;
 
     @Before
     public void setUp() throws Exception {
@@ -229,7 +232,7 @@ public final class SnapshotDataAccessTest {
 
     @Test
     public void shouldReturnNewTokenWithCurrentListWhenSnaphotIsExpiredButRequestHasNoToken()
-                    throws Exception {
+          throws Exception {
         whenOffsetIsSetTo(100);
         whenLimitIsSetTo(100);
         whenAccessIsRead();
@@ -246,7 +249,7 @@ public final class SnapshotDataAccessTest {
 
     @Test
     public void shouldReturnNoTokenWithEmptyListWhenSnaphotIsExpired()
-                    throws Exception {
+          throws Exception {
         whenOffsetIsSetTo(100);
         whenLimitIsSetTo(100);
         whenAccessIsRead();
@@ -261,7 +264,7 @@ public final class SnapshotDataAccessTest {
 
     @Test
     public void shouldReturnPartialListOfEntriesOnlyMatchingPnfsid()
-                    throws Exception {
+          throws Exception {
         whenFilterIsSetToPnfsid("0000E387208AEB3746038A4B66CC6B528C52");
         whenOffsetIsSetTo(100);
         whenLimitIsSetTo(10);
@@ -283,7 +286,7 @@ public final class SnapshotDataAccessTest {
 
     @Test
     public void shouldReturnShortPageAndNegativeOffsetWhenLastPageIsRequested()
-                    throws Exception {
+          throws Exception {
         whenOffsetIsSetTo(1800);
         whenLimitIsSetTo(100);
         whenAccessIsRead();
@@ -293,7 +296,7 @@ public final class SnapshotDataAccessTest {
 
     private void assertThatCurrentOffSetIs(int i) {
         assertEquals("Returned current offset of snapshot incorrect",
-                     i, snapshotList.getCurrentOffset());
+              i, snapshotList.getCurrentOffset());
     }
 
     private void assertThatEachElementHasPnfsid(String s) {
@@ -304,57 +307,57 @@ public final class SnapshotDataAccessTest {
 
     private void assertThatElementHasChangedAtIndex(int i) {
         assertNotEquals("Element at index " + i + " is the same!",
-                        elementId(elementAtIndex),
-                        elementId(snapshotList.getItems().get(i)));
+              elementId(elementAtIndex),
+              elementId(snapshotList.getItems().get(i)));
     }
 
     private void assertThatFirstElementIsElement(int i) {
         assertEquals("First returned snapshot element is not correct",
-                     elementId(currentList.get(i)),
-                     elementId(snapshotList.getItems().get(0)));
+              elementId(currentList.get(i)),
+              elementId(snapshotList.getItems().get(0)));
     }
 
     private void assertThatNextOffSetIs(int i) {
         assertEquals("Returned next offset of snapshot incorrect",
-                     i, snapshotList.getNextOffset());
+              i, snapshotList.getNextOffset());
     }
 
     private void assertThatSizeOfReturnedListIs(int i) {
         assertEquals("Size of snapshot list is not correct",
-                     i,
-                     snapshotList.getItems().size());
+              i,
+              snapshotList.getItems().size());
     }
 
     private void assertThatReturnedTokenIsNotNull() {
         assertNotNull("Token returned was null!",
-                      snapshotList.getCurrentToken());
+              snapshotList.getCurrentToken());
     }
 
     private void assertThatReturnedTokenIsNull() {
         assertNull("Token returned was not null!",
-                      snapshotList.getCurrentToken());
+              snapshotList.getCurrentToken());
     }
 
     private void setCurrentList()
-                    throws InvocationTargetException, IllegalAccessException {
+          throws InvocationTargetException, IllegalAccessException {
         currentList = snapshotDataAccess.getSnapshot(null,
-                                                     null,
-                                                     null,
-                                                        filter ,
-                                                        sorter)
-                                                        .getItems();
+                    null,
+                    null,
+                    filter,
+                    sorter)
+              .getItems();
     }
 
     private void whenAccessIsRead() throws Exception {
         snapshotList = snapshotDataAccess.getSnapshot(currentToken,
-                                                      offset,
-                                                      limit,
-                                                      filter,
-                                                      sorter);
+              offset,
+              limit,
+              filter,
+              sorter);
     }
 
     private void whenAccessIsRefreshed()
-                    throws InvocationTargetException, IllegalAccessException {
+          throws InvocationTargetException, IllegalAccessException {
         snapshotDataAccess.refresh(collector.map);
         setCurrentList();
     }
@@ -376,7 +379,7 @@ public final class SnapshotDataAccessTest {
     }
 
     private void whenFilterIsSetToPnfsid(final String pnfsid) throws Exception {
-         filter = (t) -> Strings.nullToEmpty(t.getPnfsId()).contains(pnfsid);
+        filter = (t) -> Strings.nullToEmpty(t.getPnfsId()).contains(pnfsid);
     }
 
     private void whenOffsetIsSetTo(int i) {

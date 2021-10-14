@@ -1,31 +1,27 @@
 package org.dcache.vehicles;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
-
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsMessage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsMessage;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Requests a directory listing. Since the result set may be very
- * large, a single request may result in multiple replies. The request
- * is identified by a UUID and the replies will contain the same
- * UUID. The last reply is flagged as final. It is assumed that
- * point-to-point message ordering is guaranteed.
+ * Requests a directory listing. Since the result set may be very large, a single request may result
+ * in multiple replies. The request is identified by a UUID and the replies will contain the same
+ * UUID. The last reply is flagged as final. It is assumed that point-to-point message ordering is
+ * guaranteed.
  */
-public class PnfsListDirectoryMessage extends PnfsMessage
-{
+public class PnfsListDirectoryMessage extends PnfsMessage {
+
     private static final long serialVersionUID = -5774904472984157638L;
 
     private final Glob _pattern;
@@ -38,8 +34,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     private Collection<DirectoryEntry> _entries = new ArrayList<>();
 
     /**
-     * The last message has the following field set to true and a non-zero
-     * message count;
+     * The last message has the following field set to true and a non-zero message count;
      */
     private boolean _isFinal;
     private int _messageCount;
@@ -47,16 +42,15 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     /**
      * Constructs a new message.
      *
-     * @param path The full PNFS path of the directory to list
+     * @param path    The full PNFS path of the directory to list
      * @param pattern Optional glob pattern for filtering the result
-     * @param range Range for bracketing the result
-     * @param attr The file attributes to include for each entry
+     * @param range   Range for bracketing the result
+     * @param attr    The file attributes to include for each entry
      * @see diskCacheV111.namespace.NameSpaceProvider#list
      */
     public PnfsListDirectoryMessage(String path, Glob pattern,
-                                    Range<Integer> range,
-                                    Set<FileAttribute> attr)
-    {
+          Range<Integer> range,
+          Set<FileAttribute> attr) {
         setPnfsPath(requireNonNull(path));
         setReplyRequired(true);
         _pattern = pattern;
@@ -67,21 +61,24 @@ public class PnfsListDirectoryMessage extends PnfsMessage
         _requestedAttributes = attr;
     }
 
-    /** Returns the UUID identifying this request. */
-    public UUID getUUID()
-    {
+    /**
+     * Returns the UUID identifying this request.
+     */
+    public UUID getUUID() {
         return _uuid;
     }
 
-    /** Returns the pattern used to filter the result. */
-    public Glob getPattern()
-    {
+    /**
+     * Returns the pattern used to filter the result.
+     */
+    public Glob getPattern() {
         return _pattern;
     }
 
-    /** Returns the optional range bracketing the result. */
-    public Range<Integer> getRange()
-    {
+    /**
+     * Returns the optional range bracketing the result.
+     */
+    public Range<Integer> getRange() {
         if (_lower == null && _upper == null) {
             return Range.all();
         } else if (_lower == null) {
@@ -90,66 +87,66 @@ public class PnfsListDirectoryMessage extends PnfsMessage
             return Range.downTo(_lower, _lowerBoundType);
         } else {
             return Range.range(_lower, _lowerBoundType,
-                               _upper, _upperBoundType);
+                  _upper, _upperBoundType);
         }
     }
 
-    /** True if and only if the reply should include file meta data. */
-    public Set<FileAttribute> getRequestedAttributes()
-    {
+    /**
+     * True if and only if the reply should include file meta data.
+     */
+    public Set<FileAttribute> getRequestedAttributes() {
         return _requestedAttributes;
     }
 
-    /** Adds an entry to the entry list. */
-    public void addEntry(String name, FileAttributes attr)
-    {
+    /**
+     * Adds an entry to the entry list.
+     */
+    public void addEntry(String name, FileAttributes attr) {
         _entries.add(new DirectoryEntry(name, attr));
     }
 
-    /** Sets a new entry list. */
-    public void setEntries(Collection<DirectoryEntry> entries)
-    {
+    /**
+     * Sets a new entry list.
+     */
+    public void setEntries(Collection<DirectoryEntry> entries) {
         _entries = entries;
     }
 
-    /** Returns the entry list. */
-    public Collection<DirectoryEntry> getEntries()
-    {
+    /**
+     * Returns the entry list.
+     */
+    public Collection<DirectoryEntry> getEntries() {
         return _entries;
     }
 
-    /** Clears the entry list. */
-    public void clear()
-    {
+    /**
+     * Clears the entry list.
+     */
+    public void clear() {
         _entries.clear();
     }
 
     @Override
-    public void setSucceeded()
-    {
+    public void setSucceeded() {
         super.setSucceeded();
         _isFinal = true;
     }
 
-    public void setSucceeded(int messageCount)
-    {
+    public void setSucceeded(int messageCount) {
         setSucceeded();
         _messageCount = messageCount;
     }
 
-    public boolean isFinal()
-    {
+    public boolean isFinal() {
         return _isFinal;
     }
 
-    public int getMessageCount()
-    {
+    public int getMessageCount() {
         return _messageCount;
     }
 
     @Override
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return false;
     }
 }

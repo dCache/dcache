@@ -17,117 +17,99 @@
  */
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
 import java.util.Collection;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.vehicles.FileAttributes;
 
 /**
  * A ReplicaRecord that forwards all activity to some delegate ReplicaRecord.
  */
-public abstract class ForwardingReplicaRecord implements ReplicaRecord
-{
+public abstract class ForwardingReplicaRecord implements ReplicaRecord {
+
     abstract protected ReplicaRecord delegate();
 
     @Override
-    public PnfsId getPnfsId()
-    {
+    public PnfsId getPnfsId() {
         return delegate().getPnfsId();
     }
 
     @Override
-    public long getReplicaSize()
-    {
+    public long getReplicaSize() {
         return delegate().getReplicaSize();
     }
 
     @Override
-    public FileAttributes getFileAttributes() throws CacheException
-    {
+    public FileAttributes getFileAttributes() throws CacheException {
         return delegate().getFileAttributes();
     }
 
     @Override
-    public ReplicaState getState()
-    {
+    public ReplicaState getState() {
         return delegate().getState();
     }
 
     @Override
-    public URI getReplicaUri()
-    {
+    public URI getReplicaUri() {
         return delegate().getReplicaUri();
     }
 
     @Override
-    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
-    {
+    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException {
         return delegate().openChannel(mode);
     }
 
     @Override
-    public long getCreationTime()
-    {
+    public long getCreationTime() {
         return delegate().getCreationTime();
     }
 
     @Override
-    public long getLastAccessTime()
-    {
+    public long getLastAccessTime() {
         return delegate().getLastAccessTime();
     }
 
     @Override
-    public void setLastAccessTime(long time) throws CacheException
-    {
+    public void setLastAccessTime(long time) throws CacheException {
         delegate().setLastAccessTime(time);
     }
 
     @Override
-    public int decrementLinkCount()
-    {
+    public int decrementLinkCount() {
         return delegate().decrementLinkCount();
     }
 
     @Override
-    public int incrementLinkCount()
-    {
+    public int incrementLinkCount() {
         return delegate().incrementLinkCount();
     }
 
     @Override
-    public int getLinkCount()
-    {
+    public int getLinkCount() {
         return delegate().getLinkCount();
     }
 
     @Override
-    public boolean isSticky()
-    {
+    public boolean isSticky() {
         return delegate().isSticky();
     }
 
     @Override
-    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
-    {
+    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException {
         return delegate().removeExpiredStickyFlags();
     }
 
     @Override
-    public Collection<StickyRecord> stickyRecords()
-    {
+    public Collection<StickyRecord> stickyRecords() {
         return delegate().stickyRecords();
     }
 
     @Override
-    public <T> T update(String why, Update<T> update) throws CacheException
-    {
+    public <T> T update(String why, Update<T> update) throws CacheException {
         return delegate().update(why, update);
     }
 }

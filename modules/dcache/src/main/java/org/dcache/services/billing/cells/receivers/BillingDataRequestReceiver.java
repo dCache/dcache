@@ -118,13 +118,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells.receivers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import org.dcache.cells.MessageReply;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.BaseEntry;
@@ -154,8 +155,6 @@ import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * <p>Serves up billing time-series data.</p>
  *
@@ -170,7 +169,7 @@ import static java.util.Objects.requireNonNull;
 public final class BillingDataRequestReceiver implements CellMessageReceiver {
 
     private static <T extends BaseEntry> Class<T> mapClass(
-                    BillingDataRequestMessage data) {
+          BillingDataRequestMessage data) {
         requireNonNull(data);
         TimeFrame timeFrame = data.getTimeFrame();
         requireNonNull(timeFrame);
@@ -180,37 +179,37 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         switch (data.getType()) {
             case CACHED:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) PoolHitsHourly.class :
-                                (Class<T>) HitsDaily.class;
+                      (Class<T>) PoolHitsHourly.class :
+                      (Class<T>) HitsDaily.class;
             case P2P:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) PoolToPoolTransfersHourly.class :
-                                (Class<T>) PoolToPoolTransfersDaily.class;
+                      (Class<T>) PoolToPoolTransfersHourly.class :
+                      (Class<T>) PoolToPoolTransfersDaily.class;
             case WRITE:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) DcacheWritesHourly.class :
-                                (Class<T>) DcacheWritesDaily.class;
+                      (Class<T>) DcacheWritesHourly.class :
+                      (Class<T>) DcacheWritesDaily.class;
             case READ:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) DcacheReadsHourly.class :
-                                (Class<T>) DcacheReadsDaily.class;
+                      (Class<T>) DcacheReadsHourly.class :
+                      (Class<T>) DcacheReadsDaily.class;
             case STORE:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) HSMWritesHourly.class :
-                                (Class<T>) HSMWritesDaily.class;
+                      (Class<T>) HSMWritesHourly.class :
+                      (Class<T>) HSMWritesDaily.class;
             case RESTORE:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) HSMReadsHourly.class :
-                                (Class<T>) HSMReadsDaily.class;
+                      (Class<T>) HSMReadsHourly.class :
+                      (Class<T>) HSMReadsDaily.class;
             case CONNECTION:
                 return (binType == BinType.HOUR) ?
-                                (Class<T>) DcacheTimeHourly.class :
-                                (Class<T>) DcacheTimeDaily.class;
+                      (Class<T>) DcacheTimeHourly.class :
+                      (Class<T>) DcacheTimeDaily.class;
             default:
                 throw new IllegalArgumentException("No underlying data class "
-                                                                   + "found for "
-                                                                   +
-                                                                   data.getType());
+                      + "found for "
+                      +
+                      data.getType());
         }
     }
 
@@ -262,14 +261,14 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         }
 
         throw new IllegalArgumentException("Cannot get " + dataType
-                                                           + " + for histogram type "
-                                                           + type);
+              + " + for histogram type "
+              + type);
 
     }
 
-    private IBillingInfoAccess         access;
+    private IBillingInfoAccess access;
     private HourlyAggregateDataHandler hourlyAggregateDataHandler;
-    private ExecutorService            executor;
+    private ExecutorService executor;
 
     /**
      * <p>Asynchronous.  Returns reply future for the
@@ -279,11 +278,11 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
 
         if (access == null ||
-                        hourlyAggregateDataHandler == null ||
-                        executor == null) {
+              hourlyAggregateDataHandler == null ||
+              executor == null) {
             reply.fail(request, -1,
-                       "No database connection; cannot "
-                                       + "provide histogram data.");
+                  "No database connection; cannot "
+                        + "provide histogram data.");
         } else {
             executor.execute(() -> {
                 try {
@@ -308,18 +307,18 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
     }
 
     public void setHourlyAggregateDataHandler(
-                    HourlyAggregateDataHandler handler) {
+          HourlyAggregateDataHandler handler) {
         hourlyAggregateDataHandler = handler;
     }
 
     /**
      * <p>The hourly data is kept in memory, so the aggregate data handler
-     * is called instead of the database access in that case.  Otherwise,
-     * this is essentially a JDOQL pass-through.</p>
+     * is called instead of the database access in that case.  Otherwise, this is essentially a
+     * JDOQL pass-through.</p>
      */
     private <T extends BaseEntry> Collection<IHistogramData> getData(
-                    Class<T> dataClass,
-                    TimeFrame timeFrame) {
+          Class<T> dataClass,
+          TimeFrame timeFrame) {
         BinType binType = timeFrame.getTimebin();
 
         if (binType == BinType.HOUR) {
@@ -327,10 +326,10 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         }
 
         Collection<T> c = access.get(dataClass,
-                                     "date >= date1 && date <= date2",
-                                     "java.util.Date date1, "
-                                                     + "java.util.Date date2",
-                                     timeFrame.getLow(), timeFrame.getHigh());
+              "date >= date1 && date <= date2",
+              "java.util.Date date1, "
+                    + "java.util.Date date2",
+              timeFrame.getLow(), timeFrame.getHigh());
         Collection<IHistogramData> plotData = new ArrayList<>();
         plotData.addAll(c);
         return plotData;
@@ -342,7 +341,7 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         Collection<IHistogramData> values = getData(clzz, timeFrame);
 
         String identifier = request.getType().name()
-                        + "_" + timeFrame.getTimeframe();
+              + "_" + timeFrame.getTimeframe();
 
         /*
          * Create histogram from specifications.
@@ -361,7 +360,7 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
         String field = mapField(request);
         values.stream()
               .forEach((v) -> model.replace(v.data().get(field),
-                                            v.timestamp().getTime()));
+                    v.timestamp().getTime()));
 
         /*
          * The histogram is a fixed one on the receiving end,

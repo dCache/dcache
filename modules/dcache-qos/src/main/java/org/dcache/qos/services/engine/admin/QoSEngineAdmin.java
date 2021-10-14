@@ -69,109 +69,118 @@ import org.dcache.qos.util.MapInitializer;
 import org.dcache.qos.util.MessageGuard;
 
 public final class QoSEngineAdmin implements CellCommandListener {
-  @Command(name = "disable", hint = "turn off handling",
-           description = "Prevents external messages from being processed by the qos system.")
-  class DisableCommand extends InitializerAwareCommand {
-    @Option(name="drop", valueSpec = "true|false",
-            usage = "If true, do not store backlogged messages; false by default.")
-    Boolean drop = false;
 
-    DisableCommand() { super(initializer); }
+    @Command(name = "disable", hint = "turn off handling",
+          description = "Prevents external messages from being processed by the qos system.")
+    class DisableCommand extends InitializerAwareCommand {
 
-    @Override
-    protected String doCall() throws Exception {
-      if (messageGuard.isEnabled()) {
-        messageGuard.disable(drop);
-        if (drop) {
-          return "Processing of incoming messages has been disabled; "
-              + "backlogged messages will be dropped.";
+        @Option(name = "drop", valueSpec = "true|false",
+              usage = "If true, do not store backlogged messages; false by default.")
+        Boolean drop = false;
+
+        DisableCommand() {
+            super(initializer);
         }
-        return "Processing of incoming messages has been disabled; "
-            + "backlogged messages will be stored.";
-      }
 
-      return "Receiver already disabled.";
-    }
-  }
+        @Override
+        protected String doCall() throws Exception {
+            if (messageGuard.isEnabled()) {
+                messageGuard.disable(drop);
+                if (drop) {
+                    return "Processing of incoming messages has been disabled; "
+                          + "backlogged messages will be dropped.";
+                }
+                return "Processing of incoming messages has been disabled; "
+                      + "backlogged messages will be stored.";
+            }
 
-  @Command(name = "enable", hint = "turn on handling",
-           description = "Allows external messages to be received by the qos system.")
-  class EnableCommand extends InitializerAwareCommand {
-
-    EnableCommand() { super(initializer); }
-
-    @Override
-    protected String doCall() {
-      if (!messageGuard.isEnabled()) {
-        messageGuard.enable();
-        return "Processing of incoming messages has been re-enabled";
-      }
-      return "Receiver is already enabled.";
-    }
-  }
-
-  @Command(name = "engine stats", hint = "print diagnostic statistics",
-      description = "Reads in the contents of the file recording periodic statistics.")
-  class EngineStatsCommand extends InitializerAwareCommand {
-    @Option(name = "limit", usage = "Display up to this number of lines (default is 24 * 60).")
-    Integer limit = 24 * 60;
-
-    @Option(name = "order", valueSpec = "asc|desc",
-        usage = "Display lines in ascending (default) or descending order by timestamp.")
-    String order = "asc";
-
-    @Option(name = "enable",
-        usage = "Turn the recording of statistics to file on or off. Recording to file is "
-            + "off by default.")
-    Boolean enable = null;
-
-    EngineStatsCommand() { super(initializer); }
-
-    protected String doCall() throws Exception {
-      if (enable != null) {
-        counters.setToFile(enable);
-        if (enable) {
-          counters.scheduleStatistics();
+            return "Receiver already disabled.";
         }
-        return "Recording to file is now " + (enable ? "on." : "off.");
-      }
-
-      SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
-      StringBuilder builder = new StringBuilder();
-      counters.readStatistics(builder, 0, limit, order == SortOrder.DESC);
-      return builder.toString();
-    }
-  }
-
-  private final MapInitializer initializer = new MapInitializer() {
-    @Override
-    protected long getRefreshTimeout() {
-      return 0;
     }
 
-    @Override
-    protected TimeUnit getRefreshTimeoutUnit() {
-      return TimeUnit.MILLISECONDS;
+    @Command(name = "enable", hint = "turn on handling",
+          description = "Allows external messages to be received by the qos system.")
+    class EnableCommand extends InitializerAwareCommand {
+
+        EnableCommand() {
+            super(initializer);
+        }
+
+        @Override
+        protected String doCall() {
+            if (!messageGuard.isEnabled()) {
+                messageGuard.enable();
+                return "Processing of incoming messages has been re-enabled";
+            }
+            return "Receiver is already enabled.";
+        }
     }
 
-    @Override
-    public void run() {
+    @Command(name = "engine stats", hint = "print diagnostic statistics",
+          description = "Reads in the contents of the file recording periodic statistics.")
+    class EngineStatsCommand extends InitializerAwareCommand {
+
+        @Option(name = "limit", usage = "Display up to this number of lines (default is 24 * 60).")
+        Integer limit = 24 * 60;
+
+        @Option(name = "order", valueSpec = "asc|desc",
+              usage = "Display lines in ascending (default) or descending order by timestamp.")
+        String order = "asc";
+
+        @Option(name = "enable",
+              usage = "Turn the recording of statistics to file on or off. Recording to file is "
+                    + "off by default.")
+        Boolean enable = null;
+
+        EngineStatsCommand() {
+            super(initializer);
+        }
+
+        protected String doCall() throws Exception {
+            if (enable != null) {
+                counters.setToFile(enable);
+                if (enable) {
+                    counters.scheduleStatistics();
+                }
+                return "Recording to file is now " + (enable ? "on." : "off.");
+            }
+
+            SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
+            StringBuilder builder = new StringBuilder();
+            counters.readStatistics(builder, 0, limit, order == SortOrder.DESC);
+            return builder.toString();
+        }
     }
 
-    @Override
-    public boolean isInitialized() {
-      return true;
+    private final MapInitializer initializer = new MapInitializer() {
+        @Override
+        protected long getRefreshTimeout() {
+            return 0;
+        }
+
+        @Override
+        protected TimeUnit getRefreshTimeoutUnit() {
+            return TimeUnit.MILLISECONDS;
+        }
+
+        @Override
+        public void run() {
+        }
+
+        @Override
+        public boolean isInitialized() {
+            return true;
+        }
+    };
+
+    private MessageGuard messageGuard;
+    private QoSEngineCounters counters;
+
+    public void setCounters(QoSEngineCounters counters) {
+        this.counters = counters;
     }
-  };
 
-  private MessageGuard messageGuard;
-  private QoSEngineCounters counters;
-
-  public void setCounters(QoSEngineCounters counters) {
-    this.counters = counters;
-  }
-
-  public void setMessageGuard(MessageGuard messageGuard) {
-    this.messageGuard = messageGuard;
-  }
+    public void setMessageGuard(MessageGuard messageGuard) {
+        this.messageGuard = messageGuard;
+    }
 }

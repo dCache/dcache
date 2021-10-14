@@ -17,6 +17,7 @@
  */
 package org.dcache.services.httpd;
 
+import javax.servlet.http.HttpServletResponse;
 import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
@@ -25,16 +26,13 @@ import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletResponse;
-
 class HttpdRequestLog extends AbstractLifeCycle
-    implements RequestLog
-{
-    private final Logger ACCESS_LOGGER =
-            LoggerFactory.getLogger("org.dcache.access.httpd");
+      implements RequestLog {
 
-    public void log(Request request, Response response)
-    {
+    private final Logger ACCESS_LOGGER =
+          LoggerFactory.getLogger("org.dcache.access.httpd");
+
+    public void log(Request request, Response response) {
         NetLoggerBuilder log = new NetLoggerBuilder(logLevel(response), "org.dcache.httpd.request");
         log.add("request.method", request.getMethod());
         log.add("request.scheme", request.getScheme());
@@ -46,8 +44,7 @@ class HttpdRequestLog extends AbstractLifeCycle
         log.toLogger(ACCESS_LOGGER);
     }
 
-    private static NetLoggerBuilder.Level logLevel(HttpServletResponse response)
-    {
+    private static NetLoggerBuilder.Level logLevel(HttpServletResponse response) {
         int code = response.getStatus();
         if (code >= 500) {
             return NetLoggerBuilder.Level.ERROR;

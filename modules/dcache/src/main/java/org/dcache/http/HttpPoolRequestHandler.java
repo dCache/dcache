@@ -1,5 +1,29 @@
 package org.dcache.http;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.ACCEPT_RANGES;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LOCATION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_MD5;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_RANGE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.LOCATION;
+import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
+import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
+import static io.netty.handler.codec.http.HttpResponseStatus.INSUFFICIENT_STORAGE;
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.PARTIAL_CONTENT;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.Checksums.TO_RFC3230;
+import static org.dcache.util.StringMarkup.percentEncode;
+import static org.dcache.util.StringMarkup.quotedString;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
@@ -7,6 +31,12 @@ import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.HttpByteRange;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import dmg.util.HttpException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -26,9 +56,6 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,22 +64,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileCorruptedCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.HttpByteRange;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-
-import dmg.util.HttpException;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -60,24 +77,16 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
-
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
-import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.util.Checksums.TO_RFC3230;
-import static org.dcache.util.StringMarkup.percentEncode;
-import static org.dcache.util.StringMarkup.quotedString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
  */
-public class HttpPoolRequestHandler extends HttpRequestHandler
-{
+public class HttpPoolRequestHandler extends HttpRequestHandler {
+
     private static final Logger _logger =
-        LoggerFactory.getLogger(HttpPoolRequestHandler.class);
+          LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
     private static final String DIGEST = "Digest";
 
@@ -85,19 +94,20 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static final String RANGE_PRE_TOTAL = "/";
     private static final String RANGE_SP = " ";
     private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
-    private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + HttpPoolRequestHandler.BOUNDARY + "\"";
+    private static final String MULTIPART_TYPE =
+          "multipart/byteranges; boundary=\"" + HttpPoolRequestHandler.BOUNDARY + "\"";
     private static final String TWO_HYPHENS = "--";
     // See RFC 2045 for definition of 'tspecials'
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
     private static final List<String> SUPPORTED_CONTENT_HEADERS
-            = ImmutableList.of(CONTENT_LENGTH, CONTENT_MD5);
+          = ImmutableList.of(CONTENT_LENGTH, CONTENT_MD5);
 
     /**
      * The mover channels that were opened.
      */
     private final Multiset<NettyTransferService<HttpProtocolInfo>.NettyMoverChannel> _files =
-        HashMultiset.create();
+          HashMultiset.create();
 
     /**
      * The server in the context of which this handler is executed
@@ -107,55 +117,49 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private final int _chunkSize;
 
     /**
-     * The file being uploaded. Even though we only keep the file open
-     * for the processing of a single HTTP message, that one message may
-     * have been split into several chunks. Hence we have to keep a
-     * reference to the file in between channel events.
+     * The file being uploaded. Even though we only keep the file open for the processing of a
+     * single HTTP message, that one message may have been split into several chunks. Hence we have
+     * to keep a reference to the file in between channel events.
      */
     private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel _writeChannel;
 
     private Optional<ChecksumType> _wantedDigest;
 
     /**
-     * A simple data class to encapsulate the errors to return by the mover to
-     * the pool for file uploads and downloads, should transfers be aborted.
+     * A simple data class to encapsulate the errors to return by the mover to the pool for file
+     * uploads and downloads, should transfers be aborted.
      */
-    private static class FileReleaseErrors
-    {
+    private static class FileReleaseErrors {
+
         private Optional<? extends Exception> errorForDownload = Optional.empty();
         private Optional<? extends Exception> errorForUpload = Optional.empty();
 
-        public FileReleaseErrors downloadsSeeError(Exception e)
-        {
+        public FileReleaseErrors downloadsSeeError(Exception e) {
             errorForDownload = Optional.of(requireNonNull(e));
             return this;
         }
 
-        public FileReleaseErrors uploadsSeeError(Exception e)
-        {
+        public FileReleaseErrors uploadsSeeError(Exception e) {
             errorForUpload = Optional.of(requireNonNull(e));
             return this;
         }
     }
 
-    public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize)
-    {
+    public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize) {
         _server = server;
         _chunkSize = chunkSize;
     }
 
-    private static Optional<String> wantDigest(HttpRequest request)
-    {
+    private static Optional<String> wantDigest(HttpRequest request) {
         List<String> wantDigests = request.headers().getAll("Want-Digest");
         return wantDigests.isEmpty()
-                ? Optional.empty()
-                : Optional.of(wantDigests.stream()
-                        .filter(s -> !s.isEmpty())
-                        .collect(Collectors.joining(",")));
+              ? Optional.empty()
+              : Optional.of(wantDigests.stream()
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.joining(",")));
     }
 
-    private static Optional<Checksum> contentMd5Checksum(HttpRequest request) throws HttpException
-    {
+    private static Optional<Checksum> contentMd5Checksum(HttpRequest request) throws HttpException {
         try {
             Optional<String> contentMd5 = Optional.ofNullable(request.headers().get(CONTENT_MD5));
             return contentMd5.map(Checksums::parseContentMd5);
@@ -164,33 +168,31 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
     }
 
-    private static OptionalLong contentLength(HttpRequest request) throws HttpException
-    {
+    private static OptionalLong contentLength(HttpRequest request) throws HttpException {
         try {
             String contentLength = request.headers().get(CONTENT_LENGTH);
             return contentLength == null
-                    ? OptionalLong.empty()
-                    : OptionalLong.of(Long.parseLong(contentLength));
+                  ? OptionalLong.empty()
+                  : OptionalLong.of(Long.parseLong(contentLength));
         } catch (NumberFormatException e) {
             throw new HttpException(BAD_REQUEST.code(), "Bad " + CONTENT_LENGTH + " header: " + e);
         }
     }
 
-    private static ByteBuf createMultipartFragmentMarker(long lower, long upper, long total)
-    {
+    private static ByteBuf createMultipartFragmentMarker(long lower, long upper, long total) {
         return Unpooled.copiedBuffer(CRLF + TWO_HYPHENS + BOUNDARY + CRLF + CONTENT_RANGE + ": " +
-                                     BYTES + RANGE_SP + lower + RANGE_SEPARATOR + upper + RANGE_PRE_TOTAL + total + CRLF + CRLF,
-                                     StandardCharsets.UTF_8);
+                    BYTES + RANGE_SP + lower + RANGE_SEPARATOR + upper + RANGE_PRE_TOTAL + total + CRLF
+                    + CRLF,
+              StandardCharsets.UTF_8);
     }
 
-    private static ByteBuf createMultipartEnd()
-    {
-        return Unpooled.copiedBuffer(CRLF + TWO_HYPHENS + BOUNDARY + TWO_HYPHENS + CRLF, StandardCharsets.UTF_8);
+    private static ByteBuf createMultipartEnd() {
+        return Unpooled.copiedBuffer(CRLF + TWO_HYPHENS + BOUNDARY + TWO_HYPHENS + CRLF,
+              StandardCharsets.UTF_8);
     }
 
     private static String contentDisposition(HttpProtocolInfo.Disposition disposition,
-            String filename)
-    {
+          String filename) {
         StringBuilder sb = new StringBuilder();
         sb.append(disposition.toString().toLowerCase());
         appendDispositionParm(sb, "filename", filename);
@@ -198,14 +200,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return sb.toString();
     }
 
-    private static void appendDispositionParm(StringBuilder sb, String name, String value)
-    {
+    private static void appendDispositionParm(StringBuilder sb, String name, String value) {
         sb.append(';');
 
         // See RFC 2183 part 2. for description of when and how to encode
-        if(value.length() > 78 || !CharMatcher.ascii().matchesAllOf(value)) {
+        if (value.length() > 78 || !CharMatcher.ascii().matchesAllOf(value)) {
             appendUsingRfc2231Encoding(sb, name, "UTF-8", null, value);
-        } else if(TSPECIAL.matchesAnyOf(value)) {
+        } else if (TSPECIAL.matchesAnyOf(value)) {
             appendAsQuotedString(sb, name, value);
         } else {
             sb.append(name).append("=").append(value);
@@ -214,21 +215,19 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     // RFC 822 defines quoted-string: a simple markup using backslash
     private static void appendAsQuotedString(StringBuilder sb, String name,
-            String value)
-    {
+          String value) {
         sb.append(name).append("=");
         quotedString(sb, value);
     }
 
     private static void appendUsingRfc2231Encoding(StringBuilder sb, String name,
-            String charSet, String language, String value)
-    {
+          String charSet, String language, String value) {
         sb.append(name).append("*=");
-        if(charSet != null) {
+        if (charSet != null) {
             sb.append(charSet);
         }
         sb.append('\'');
-        if(language != null) {
+        if (language != null) {
             sb.append(language);
         }
         sb.append('\'');
@@ -241,43 +240,39 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * response in such cases.
      */
     private static void checkContentHeader(Collection<String> headerNames,
-                                           Collection<String> excludes)
-            throws HttpException
-    {
-        outer: for (String headerName: headerNames) {
+          Collection<String> excludes)
+          throws HttpException {
+        outer:
+        for (String headerName : headerNames) {
             if (headerName.toLowerCase().startsWith("content-")) {
-                for (String exclude: excludes) {
+                for (String exclude : excludes) {
                     if (exclude.equalsIgnoreCase(headerName)) {
                         continue outer;
                     }
                 }
                 throw new HttpException(NOT_IMPLEMENTED.code(),
-                        headerName + " is not implemented");
+                      headerName + " is not implemented");
             }
         }
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         _logger.debug("HTTP connection from {} established", ctx.channel().remoteAddress());
     }
 
-    private static FileReleaseErrors uploadsSeeError(Exception e)
-    {
+    private static FileReleaseErrors uploadsSeeError(Exception e) {
         return new FileReleaseErrors().uploadsSeeError(e);
     }
 
-    private static FileReleaseErrors downloadsSeeError(Exception e)
-    {
+    private static FileReleaseErrors downloadsSeeError(Exception e) {
         return new FileReleaseErrors().downloadsSeeError(e);
     }
 
-    private void releaseAllFiles(FileReleaseErrors errors)
-    {
-        for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file: _files) {
+    private void releaseAllFiles(FileReleaseErrors errors) {
+        for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file : _files) {
             Optional<? extends Exception> possibleError = file == _writeChannel
-                    ? errors.errorForUpload : errors.errorForDownload;
+                  ? errors.errorForUpload : errors.errorForDownload;
             if (possibleError.isPresent()) {
                 file.release(possibleError.get());
             } else {
@@ -288,19 +283,20 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
-        releaseAllFiles(uploadsSeeError(new FileCorruptedCacheException("Connection lost before end of file.")));
+        releaseAllFiles(uploadsSeeError(
+              new FileCorruptedCacheException("Connection lost before end of file.")));
     }
 
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
-    {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
             _logger.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
             releaseAllFiles(downloadsSeeError(new CacheException(t.toString(), t))
-                    .uploadsSeeError(new FileCorruptedCacheException("Connection lost before end of file: " + t, t)));
+                  .uploadsSeeError(
+                        new FileCorruptedCacheException("Connection lost before end of file: " + t,
+                              t)));
             ctx.close();
         } else {
             Thread me = Thread.currentThread();
@@ -310,23 +306,22 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception
-    {
+    public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception {
         if (event instanceof IdleStateEvent) {
             IdleStateEvent idleStateEvent = (IdleStateEvent) event;
             if (idleStateEvent.state() == IdleState.ALL_IDLE) {
                 if (_logger.isInfoEnabled()) {
                     _logger.info("Connection from {} id idle; disconnecting.",
-                                 ctx.channel().remoteAddress());
+                          ctx.channel().remoteAddress());
                 }
-                releaseAllFiles(uploadsSeeError(new FileCorruptedCacheException("Channel idle for too long during upload.")));
+                releaseAllFiles(uploadsSeeError(
+                      new FileCorruptedCacheException("Channel idle for too long during upload.")));
                 ctx.close();
             }
         }
     }
 
-    private static String escapeNonASCII(String input)
-    {
+    private static String escapeNonASCII(String input) {
         StringBuilder sb = new StringBuilder();
 
         for (byte b : input.getBytes()) {
@@ -343,16 +338,15 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return sb.toString();
     }
 
-    private static boolean isBadRequest(HttpObject object)
-    {
+    private static boolean isBadRequest(HttpObject object) {
         DecoderResult dr = object.decoderResult();
         if (dr.isSuccess()) {
             return false;
         }
 
         String type = object instanceof HttpRequest
-                ? (((HttpRequest)object).method() + " request")
-                : "entity";
+              ? (((HttpRequest) object).method() + " request")
+              : "entity";
 
         if (!dr.isFinished()) {
             _logger.warn("Client sent incomplete {}", type);
@@ -368,10 +362,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             // error message, which might be large and contain binary data.
             String message = cause.getMessage();
             description = message == null
-                    ? cause.getClass().getSimpleName()
-                    : (message.length() > 80
-                            ? escapeNonASCII(message.substring(0, 80)) + "[...]"
-                            : escapeNonASCII(message));
+                  ? cause.getClass().getSimpleName()
+                  : (message.length() > 80
+                        ? escapeNonASCII(message.substring(0, 80)) + "[...]"
+                        : escapeNonASCII(message));
         }
 
         _logger.warn("Client sent malformed {}: {}", type, description);
@@ -380,15 +374,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     /**
      * Single GET operation.
-     *
-     * Finds the correct mover channel using the UUID in the
-     * GET. Range queries are supported. The file will be sent to the
-     * remote peer in chunks to avoid server side memory issues.
+     * <p>
+     * Finds the correct mover channel using the UUID in the GET. Range queries are supported. The
+     * file will be sent to the remote peer in chunks to avoid server side memory issues.
      */
     @Override
     protected ChannelFuture doOnGet(ChannelHandlerContext context,
-                                    HttpRequest request)
-    {
+          HttpRequest request) {
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
         List<HttpByteRange> ranges;
         long fileSize;
@@ -402,7 +394,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
             if (file.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
-                        "Resource is not open for reading");
+                      "Resource is not open for reading");
             }
 
             fileSize = file.size();
@@ -410,24 +402,26 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         } catch (HttpException e) {
             return context.writeAndFlush(createErrorResponse(e.getErrorCode(), e.getMessage()));
         } catch (URISyntaxException e) {
-            return context.writeAndFlush(createErrorResponse(BAD_REQUEST, "URI not valid: " + e.getMessage()));
+            return context.writeAndFlush(
+                  createErrorResponse(BAD_REQUEST, "URI not valid: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (IOException e) {
-            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+            return context.writeAndFlush(
+                  createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
 
         Optional<String> digest = wantDigest(request)
-                .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
+              .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
 
         if (ranges == null || ranges.isEmpty()) {
             /*
              * GET for a whole file
              */
             context.write(new HttpGetResponse(fileSize, file, digest))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, 0, fileSize - 1))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } else if (ranges.size() == 1) {
             /* RFC 2616: 14.16. A response to a request for a single range
@@ -435,10 +429,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
              */
             HttpByteRange range = ranges.get(0);
             context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
-                                                         fileSize, digest))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                        fileSize, digest))
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, range.getLower(), range.getUpper()))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
             /*
@@ -453,28 +447,28 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 long lower = range.getLower();
                 totalLen += upper - lower + 1;
 
-                ByteBuf buffer = fragmentMarkers[i] = createMultipartFragmentMarker(lower, upper, fileSize);
+                ByteBuf buffer = fragmentMarkers[i] = createMultipartFragmentMarker(lower, upper,
+                      fileSize);
                 totalLen += buffer.readableBytes();
             }
             ByteBuf endMarker = createMultipartEnd();
             totalLen += endMarker.readableBytes();
 
             context.write(new HttpMultipartResponse(digest, totalLen))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             for (int i = 0; i < ranges.size(); i++) {
                 HttpByteRange range = ranges.get(i);
                 context.write(fragmentMarkers[i])
-                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
                 context.write(read(file, range.getLower(), range.getUpper()))
-                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
             return context.writeAndFlush(new DefaultLastHttpContent(endMarker));
         }
     }
 
     @Override
-    protected ChannelFuture doOnPut(ChannelHandlerContext context, HttpRequest request)
-    {
+    protected ChannelFuture doOnPut(ChannelHandlerContext context, HttpRequest request) {
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
@@ -489,7 +483,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
             if (!file.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
-                        "Resource is not open for writing");
+                      "Resource is not open for writing");
             }
 
             contentMd5Checksum(request).ifPresent(file::addChecksum);
@@ -507,7 +501,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
             if (is100ContinueExpected(request)) {
                 context.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE))
-                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
             _writeChannel = file;
             file = null;
@@ -515,17 +509,19 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         } catch (HttpException e) {
             exception = e;
             return context.writeAndFlush(
-                    createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()));
+                  createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()),
+                        e.getMessage()));
         } catch (URISyntaxException e) {
             exception = e;
             return context.writeAndFlush(
-                    createErrorResponse(BAD_REQUEST, "URI is not valid: " + e.getMessage()));
+                  createErrorResponse(BAD_REQUEST, "URI is not valid: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             exception = e;
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (IOException | RuntimeException e) {
             exception = e;
-            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+            return context.writeAndFlush(
+                  createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         } finally {
             if (file != null) {
                 file.release(exception);
@@ -535,8 +531,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     @Override
-    protected ChannelFuture doOnContent(ChannelHandlerContext context, HttpContent content)
-    {
+    protected ChannelFuture doOnContent(ChannelHandlerContext context, HttpContent content) {
         if (isBadRequest(content)) {
             return context.newSucceededFuture();
         }
@@ -549,7 +544,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 }
                 if (content instanceof LastHttpContent) {
                     checkContentHeader(((LastHttpContent) content).trailingHeaders().names(),
-                                       Collections.singletonList(CONTENT_LENGTH));
+                          Collections.singletonList(CONTENT_LENGTH));
 
                     context.channel().config().setAutoRead(false);
 
@@ -561,32 +556,36 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     URI location = writeChannel.getProtocolInfo().getLocation();
 
                     ChannelPromise promise = context.newPromise();
-                    Futures.addCallback(writeChannel.release(), new FutureCallback<Void>()
-                    {
+                    Futures.addCallback(writeChannel.release(), new FutureCallback<Void>() {
                         @Override
-                        public void onSuccess(Void result)
-                        {
+                        public void onSuccess(Void result) {
                             try {
                                 Optional<String> digest = _wantedDigest
-                                        .flatMap(t -> Checksums.digestHeader(t, writeChannel.getFileAttributes()));
-                                context.writeAndFlush(new HttpPutResponse(size, location, digest), promise);
+                                      .flatMap(t -> Checksums.digestHeader(t,
+                                            writeChannel.getFileAttributes()));
+                                context.writeAndFlush(new HttpPutResponse(size, location, digest),
+                                      promise);
                             } catch (IOException e) {
-                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()), promise);
+                                context.writeAndFlush(
+                                      createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()),
+                                      promise);
                             }
                             context.channel().config().setAutoRead(true);
                         }
 
                         @Override
-                        public void onFailure(Throwable t)
-                        {
+                        public void onFailure(Throwable t) {
                             if (t instanceof FileCorruptedCacheException) {
-                                context.writeAndFlush(createErrorResponse(BAD_REQUEST, t.getMessage()), promise);
+                                context.writeAndFlush(
+                                      createErrorResponse(BAD_REQUEST, t.getMessage()), promise);
                             } else if (t instanceof CacheException) {
-                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, t.getMessage()),
-                                                      promise);
+                                context.writeAndFlush(
+                                      createErrorResponse(INTERNAL_SERVER_ERROR, t.getMessage()),
+                                      promise);
                             } else {
-                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, t.toString()),
-                                                      promise);
+                                context.writeAndFlush(
+                                      createErrorResponse(INTERNAL_SERVER_ERROR, t.toString()),
+                                      promise);
                             }
                             context.channel().config().setAutoRead(true);
                         }
@@ -597,17 +596,21 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
-                return context.writeAndFlush(createErrorResponse(INSUFFICIENT_STORAGE, e.getMessage()));
+                return context.writeAndFlush(
+                      createErrorResponse(INSUFFICIENT_STORAGE, e.getMessage()));
             } catch (IOException e) {
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
-                return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+                return context.writeAndFlush(
+                      createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
             } catch (HttpException e) {
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
-                return context.writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()));
+                return context.writeAndFlush(
+                      createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()),
+                            e.getMessage()));
             }
         }
         return null;
@@ -624,44 +627,43 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
 
             Optional<String> digest = wantDigest(request)
-                    .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
+                  .flatMap(h -> Checksums.digestHeader(h, file.getFileAttributes()));
             context.write(new HttpGetResponse(file.size(), file, digest))
-                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                  .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException | IllegalArgumentException e) {
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (URISyntaxException e) {
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST,
-                                                             "URI not valid: " + e.getMessage()));
+                  "URI not valid: " + e.getMessage()));
         } catch (RuntimeException e) {
-            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+            return context.writeAndFlush(
+                  createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
     }
 
     /**
-     * Get the mover channel for a certain HTTP request. The mover
-     * channel is identified by UUID generated upon mover start and
-     * sent back to the door as a part of the address info.
+     * Get the mover channel for a certain HTTP request. The mover channel is identified by UUID
+     * generated upon mover start and sent back to the door as a part of the address info.
      *
-     * @param request HttpRequest that was sent by the client
-     * @param exclusive True if the mover channel exclusively is to be opened
-     *                  in exclusive mode. False if the mover channel can be
-     *                  shared with other requests.
+     * @param request   HttpRequest that was sent by the client
+     * @param exclusive True if the mover channel exclusively is to be opened in exclusive mode.
+     *                  False if the mover channel can be shared with other requests.
      * @return Mover channel for specified UUID
-     * @throws IllegalArgumentException Request did not include UUID or no
-     *         mover channel found for UUID in the request
+     * @throws IllegalArgumentException Request did not include UUID or no mover channel found for
+     *                                  UUID in the request
      */
-    private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel open(HttpRequest request, boolean exclusive)
-            throws IllegalArgumentException, URISyntaxException
-    {
+    private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel open(HttpRequest request,
+          boolean exclusive)
+          throws IllegalArgumentException, URISyntaxException {
         QueryStringDecoder queryStringDecoder =
-            new QueryStringDecoder(request.getUri());
+              new QueryStringDecoder(request.getUri());
 
         Map<String, List<String>> params = queryStringDecoder.parameters();
         if (!params.containsKey(HttpTransferService.UUID_QUERY_PARAM)) {
-            if(!request.getUri().equals("/favicon.ico")) {
+            if (!request.getUri().equals("/favicon.ico")) {
                 _logger.error("Received request without UUID in the query " +
-                        "string. Request-URI was {}", request.getUri());
+                      "string. Request-URI was {}", request.getUri());
             }
 
             throw new IllegalArgumentException("Query string does not include any UUID.");
@@ -673,10 +675,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         UUID uuid = UUID.fromString(uuidList.get(0));
-        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid, exclusive);
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid,
+              exclusive);
         if (file == null) {
             throw new IllegalArgumentException("Request is no longer valid. " +
-                                               "Please resubmit to door.");
+                  "Please resubmit to door.");
         }
 
         URI uri = new URI(request.getUri());
@@ -685,10 +688,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         if (!requestedFile.equals(transferFile)) {
             _logger.warn("Received an illegal request for file {}, while serving {}",
-                    requestedFile,
-                    transferFile);
+                  requestedFile,
+                  transferFile);
             throw new IllegalArgumentException("The file you specified does " +
-                    "not match the UUID you specified!");
+                  "not match the UUID you specified!");
         }
 
         _files.add(file);
@@ -697,66 +700,61 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     }
 
     /**
-     * Read the resources requested in HTTP-request from the pool. Return a
-     * ChunkedInput pointing to the requested portions of the file.
+     * Read the resources requested in HTTP-request from the pool. Return a ChunkedInput pointing to
+     * the requested portions of the file.
+     * <p>
+     * Renew the keep-alive heartbeat, meaning that the last transferred time will be updated,
+     * resetting the keep-alive timeout.
      *
-     * Renew the keep-alive heartbeat, meaning that the last transferred time
-     * will be updated, resetting the keep-alive timeout.
-     *
-     * @param file the mover channel to read from
-     * @param lowerRange The lower delimiter of the requested byte range of the
-     *                   file
-     * @param upperRange The upper delimiter of the requested byte range of the
-     *                   file
-     * @return ChunkedInput View upon the file suitable for sending with
-     *         netty and representing the requested parts.
+     * @param file       the mover channel to read from
+     * @param lowerRange The lower delimiter of the requested byte range of the file
+     * @param upperRange The upper delimiter of the requested byte range of the file
+     * @return ChunkedInput View upon the file suitable for sending with netty and representing the
+     * requested parts.
      */
     private ChunkedInput read(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
-                              long lowerRange, long upperRange)
-    {
+          long lowerRange, long upperRange) {
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
 
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);
     }
 
-    private static String buildDigest(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
-    {
+    private static String buildDigest(
+          NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file) {
         FileAttributes attributes = file.getFileAttributes();
         return attributes.getChecksumsIfPresent().map(TO_RFC3230::apply).orElse("");
     }
 
-    private static class HttpGetResponse extends DefaultHttpResponse
-    {
+    private static class HttpGetResponse extends DefaultHttpResponse {
+
         public HttpGetResponse(long fileSize,
-                NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
-                Optional<String> digest)
-        {
+              NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
+              Optional<String> digest) {
             super(HTTP_1_1, OK);
             HttpProtocolInfo protocolInfo = file.getProtocolInfo();
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, fileSize);
             digest.ifPresent(v -> headers().add(DIGEST, v));
             headers().add("Content-Disposition",
-                          contentDisposition(protocolInfo.getDisposition(),
-                                             FsPath.create(protocolInfo.getPath()).name()));
+                  contentDisposition(protocolInfo.getDisposition(),
+                        FsPath.create(protocolInfo.getPath()).name()));
             if (protocolInfo.getLocation() != null) {
                 headers().add(CONTENT_LOCATION, protocolInfo.getLocation());
             }
         }
     }
 
-    private static class HttpPartialContentResponse extends DefaultHttpResponse
-    {
+    private static class HttpPartialContentResponse extends DefaultHttpResponse {
+
         public HttpPartialContentResponse(long lower,
-                                          long upper,
-                                          long total,
-                                          Optional<String> digest)
-        {
+              long upper,
+              long total,
+              Optional<String> digest) {
             super(HTTP_1_1, PARTIAL_CONTENT);
 
             String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR +
-                                  upper + RANGE_PRE_TOTAL + total;
+                  upper + RANGE_PRE_TOTAL + total;
 
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
@@ -765,23 +763,21 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
     }
 
-    private static class HttpMultipartResponse extends DefaultHttpResponse
-    {
-        public HttpMultipartResponse(Optional<String> digest, long totalBytes)
-        {
+    private static class HttpMultipartResponse extends DefaultHttpResponse {
+
+        public HttpMultipartResponse(Optional<String> digest, long totalBytes) {
             super(HTTP_1_1, PARTIAL_CONTENT);
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, totalBytes);
             headers().add(CONTENT_TYPE, MULTIPART_TYPE);
-            digest.ifPresent(v ->headers().add(DIGEST, v));
+            digest.ifPresent(v -> headers().add(DIGEST, v));
         }
     }
 
-    private static class HttpPutResponse extends HttpTextResponse
-    {
+    private static class HttpPutResponse extends HttpTextResponse {
+
         public HttpPutResponse(long size, URI location, Optional<String> digest)
-                throws IOException
-        {
+              throws IOException {
             /* RFC 2616: 9.6. If a new resource is created, the origin server
              * MUST inform the user agent via the 201 (Created) response.
              */
@@ -798,8 +794,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             super(CREATED, size + " bytes uploaded\r\n");
 
             /* RFC 2616: 14.30. For 201 (Created) responses, the Location is
-            * that of the new resource which was created by the request.
-            */
+             * that of the new resource which was created by the request.
+             */
             if (location != null) {
                 headers().set(LOCATION, location);
             }

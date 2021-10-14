@@ -18,18 +18,17 @@
 package org.dcache.pool.classic;
 
 import java.nio.channels.CompletionHandler;
-
 import org.dcache.pool.movers.Mover;
 
 /**
  * Transfer service interface.
- *
- * Implementations of this interface have the ability to execute the transfer
- * described by a mover.
+ * <p>
+ * Implementations of this interface have the ability to execute the transfer described by a mover.
  */
-public interface TransferService<M extends Mover<?>>
-{
-    Cancellable executeMover(M mover, CompletionHandler<Void, Void> completionHandler) throws Exception;
+public interface TransferService<M extends Mover<?>> {
+
+    Cancellable executeMover(M mover, CompletionHandler<Void, Void> completionHandler)
+          throws Exception;
 
     void closeMover(M mover, CompletionHandler<Void, Void> completionHandler);
 }

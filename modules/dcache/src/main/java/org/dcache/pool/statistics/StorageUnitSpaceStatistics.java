@@ -7,108 +7,110 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 
 public class StorageUnitSpaceStatistics implements Serializable {
-  private static final long serialVersionUID = 2882047073656851531L;
 
-  public static void aggregate(Map<String, StorageUnitSpaceStatistics> current,
-                               Map<String, StorageUnitSpaceStatistics> using) {
-    using.keySet().stream()
-         .forEach(key -> {
-           StorageUnitSpaceStatistics nextValue = using.get(key);
-           StorageUnitSpaceStatistics currentValue
-               = current.computeIfAbsent(key, k->new StorageUnitSpaceStatistics());
-           currentValue.aggregateData(nextValue);
-         });
-  }
+    private static final long serialVersionUID = 2882047073656851531L;
 
-  final AtomicLong totalBytes = new AtomicLong(0L);
-  final AtomicInteger totalEntries = new AtomicInteger(0);
-  final AtomicLong preciousBytes = new AtomicLong(0L);
-  final AtomicInteger preciousEntries = new AtomicInteger(0);
-  final AtomicLong stickyBytes = new AtomicLong(0L);
-  final AtomicInteger stickyEntries = new AtomicInteger(0);
-  final AtomicLong otherBytes = new AtomicLong(0L);
-  final AtomicInteger otherEntries = new AtomicInteger(0);
+    public static void aggregate(Map<String, StorageUnitSpaceStatistics> current,
+          Map<String, StorageUnitSpaceStatistics> using) {
+        using.keySet().stream()
+              .forEach(key -> {
+                  StorageUnitSpaceStatistics nextValue = using.get(key);
+                  StorageUnitSpaceStatistics currentValue
+                        = current.computeIfAbsent(key, k -> new StorageUnitSpaceStatistics());
+                  currentValue.aggregateData(nextValue);
+              });
+    }
 
-  public StorageUnitSpaceStatistics() {
-  }
+    final AtomicLong totalBytes = new AtomicLong(0L);
+    final AtomicInteger totalEntries = new AtomicInteger(0);
+    final AtomicLong preciousBytes = new AtomicLong(0L);
+    final AtomicInteger preciousEntries = new AtomicInteger(0);
+    final AtomicLong stickyBytes = new AtomicLong(0L);
+    final AtomicInteger stickyEntries = new AtomicInteger(0);
+    final AtomicLong otherBytes = new AtomicLong(0L);
+    final AtomicInteger otherEntries = new AtomicInteger(0);
 
-  public void aggregateData(@Nonnull StorageUnitSpaceStatistics using) {
-    totalBytes.addAndGet(using.totalBytes.get());
-    totalEntries.addAndGet(using.totalEntries.get());
-    preciousBytes.addAndGet(using.preciousBytes.get());
-    preciousEntries.addAndGet(using.preciousEntries.get());
-    stickyBytes.addAndGet(using.stickyBytes.get());
-    stickyEntries.addAndGet(using.stickyEntries.get());
-    otherBytes.addAndGet(using.otherBytes.get());
-    otherEntries.addAndGet(using.otherEntries.get());
-  }
+    public StorageUnitSpaceStatistics() {
+    }
 
-  public Long getTotalBytes() {
-    return totalBytes.get();
-  }
+    public void aggregateData(@Nonnull StorageUnitSpaceStatistics using) {
+        totalBytes.addAndGet(using.totalBytes.get());
+        totalEntries.addAndGet(using.totalEntries.get());
+        preciousBytes.addAndGet(using.preciousBytes.get());
+        preciousEntries.addAndGet(using.preciousEntries.get());
+        stickyBytes.addAndGet(using.stickyBytes.get());
+        stickyEntries.addAndGet(using.stickyEntries.get());
+        otherBytes.addAndGet(using.otherBytes.get());
+        otherEntries.addAndGet(using.otherEntries.get());
+    }
 
-  public void setTotalBytes(Long totalBytes) {
-    this.totalBytes.set(totalBytes);
-  }
+    public Long getTotalBytes() {
+        return totalBytes.get();
+    }
 
-  public Integer getTotalEntries() {
-    return totalEntries.get();
-  }
+    public void setTotalBytes(Long totalBytes) {
+        this.totalBytes.set(totalBytes);
+    }
 
-  public void setTotalEntries(Integer totalEntries) {
-    this.totalEntries.set(totalEntries);
-  }
+    public Integer getTotalEntries() {
+        return totalEntries.get();
+    }
 
-  public Long getPreciousBytes() {
-    return preciousBytes.get();
-  }
+    public void setTotalEntries(Integer totalEntries) {
+        this.totalEntries.set(totalEntries);
+    }
 
-  public void setPreciousBytes(Long preciousBytes) {
-    this.preciousBytes.set(preciousBytes);
-  }
+    public Long getPreciousBytes() {
+        return preciousBytes.get();
+    }
 
-  public Integer getPreciousEntries() {
-    return preciousEntries.get();
-  }
+    public void setPreciousBytes(Long preciousBytes) {
+        this.preciousBytes.set(preciousBytes);
+    }
 
-  public void setPreciousEntries(Integer preciousEntries) {
-    this.preciousEntries.set(preciousEntries);
-  }
+    public Integer getPreciousEntries() {
+        return preciousEntries.get();
+    }
 
-  public Long getStickyBytes() {
-    return stickyBytes.get();
-  }
+    public void setPreciousEntries(Integer preciousEntries) {
+        this.preciousEntries.set(preciousEntries);
+    }
 
-  public void setStickyBytes(Long stickyBytes) {
-    this.stickyBytes.set(stickyBytes);
-  }
+    public Long getStickyBytes() {
+        return stickyBytes.get();
+    }
 
-  public Integer getStickyEntries() {
-    return stickyEntries.get();
-  }
+    public void setStickyBytes(Long stickyBytes) {
+        this.stickyBytes.set(stickyBytes);
+    }
 
-  public void setStickyEntries(Integer stickyEntries) {
-    this.stickyEntries.set(stickyEntries);
-  }
+    public Integer getStickyEntries() {
+        return stickyEntries.get();
+    }
 
-  public Long getOtherBytes() {
-    return otherBytes.get();
-  }
+    public void setStickyEntries(Integer stickyEntries) {
+        this.stickyEntries.set(stickyEntries);
+    }
 
-  public void setOtherBytes(Long otherBytes) {
-    this.otherBytes.set(otherBytes);
-  }
+    public Long getOtherBytes() {
+        return otherBytes.get();
+    }
 
-  public Integer getOtherEntries() {
-    return otherEntries.get();
-  }
+    public void setOtherBytes(Long otherBytes) {
+        this.otherBytes.set(otherBytes);
+    }
 
-  public void setOtherEntries(Integer otherEntries) {
-    this.otherEntries.set(otherEntries);
-  }
+    public Integer getOtherEntries() {
+        return otherEntries.get();
+    }
 
-  public long[] toArray() {
-    return new long[] { totalBytes.get(), totalEntries.get(), preciousBytes.get(), preciousEntries.get(),
-                        stickyBytes.get(), stickyEntries.get(), otherBytes.get(), otherEntries.get() };
-  }
+    public void setOtherEntries(Integer otherEntries) {
+        this.otherEntries.set(otherEntries);
+    }
+
+    public long[] toArray() {
+        return new long[]{totalBytes.get(), totalEntries.get(), preciousBytes.get(),
+              preciousEntries.get(),
+              stickyBytes.get(), stickyEntries.get(), otherBytes.get(), otherEntries.get()};
+    }
 }

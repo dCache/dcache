@@ -18,32 +18,28 @@
  */
 package org.dcache.gridsite;
 
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Set;
+import javax.security.auth.Subject;
 
-public class GetNewProxyReqRequest implements Serializable
-{
+public class GetNewProxyReqRequest implements Serializable {
+
     private static final long serialVersionUID = 6471454691192726435L;
     private final Subject subject;
     private final Set<Object> publicCredentials;
 
-    public GetNewProxyReqRequest(Subject subject)
-    {
+    public GetNewProxyReqRequest(Subject subject) {
         this.subject = subject;
         this.publicCredentials = subject.getPublicCredentials();
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 
     private void readObject(java.io.ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
         subject.getPublicCredentials().addAll(publicCredentials);
     }

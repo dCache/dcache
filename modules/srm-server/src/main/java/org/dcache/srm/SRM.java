@@ -66,17 +66,17 @@ documents or software obtained from this server.
 
 package org.dcache.srm;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.concat;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-
-import javax.annotation.Nonnull;
-
+import dmg.cells.nucleus.CellLifeCycleAware;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -94,9 +94,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
-
+import javax.annotation.Nonnull;
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -125,20 +123,19 @@ import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Iterables.concat;
-import static java.util.Arrays.asList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
 
 /**
- * SRM class creates an instance of SRM client class and publishes it on a
- * given port as a storage element.
+ * SRM class creates an instance of SRM client class and publishes it on a given port as a storage
+ * element.
  *
- * @author  timur
+ * @author timur
  */
-public class SRM implements CellLifeCycleAware
-{
+public class SRM implements CellLifeCycleAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SRM.class);
     private static final String SFN_STRING = "SFN=";
     private final Configuration configuration;
@@ -158,27 +155,28 @@ public class SRM implements CellLifeCycleAware
 
     /**
      * Creates a new instance of SRM
+     *
      * @throws IOException
      * @throws InterruptedException
      * @throws DataAccessException
      */
-    public SRM(Configuration config, AbstractStorageElement storage) throws IOException, InterruptedException,
-            DataAccessException
-    {
+    public SRM(Configuration config, AbstractStorageElement storage)
+          throws IOException, InterruptedException,
+          DataAccessException {
         this.configuration = config;
         //First of all decorate the storage with counters and
         // gauges to measure the performance of storage operations
-        abstractStorageElementCounters=
-                new RequestCounters<>(
-                        storage.getClass().getName());
+        abstractStorageElementCounters =
+              new RequestCounters<>(
+                    storage.getClass().getName());
         abstractStorageElementGauges =
-                new RequestExecutionTimeGauges<>(
-                        storage.getClass().getName());
+              new RequestExecutionTimeGauges<>(
+                    storage.getClass().getName());
         this.storage = MonitoringProxy.decorateWithMonitoringProxy(
-                new Class[]{AbstractStorageElement.class},
-                storage,
-                abstractStorageElementCounters,
-                abstractStorageElementGauges);
+              new Class[]{AbstractStorageElement.class},
+              storage,
+              abstractStorageElementCounters,
+              abstractStorageElementGauges);
 
         if (config.isGsissl()) {
             String protocol_property = System.getProperty("java.protocol.handler.pkgs");
@@ -192,7 +190,7 @@ public class SRM implements CellLifeCycleAware
 
         try {
             RequestsPropertyStorage.initPropertyStorage(
-                    config.getTransactionManager(), config.getDataSource());
+                  config.getTransactionManager(), config.getDataSource());
         } catch (IllegalStateException ise) {
             //already initialized
         }
@@ -201,48 +199,40 @@ public class SRM implements CellLifeCycleAware
     }
 
     @Required
-    public void setSrmId(@Nonnull String id)
-    {
+    public void setSrmId(@Nonnull String id) {
         srmId = requireNonNull(id);
     }
 
     @Nonnull
-    public String getSrmId()
-    {
+    public String getSrmId() {
         return srmId;
     }
 
-    public void setSchedulers(SchedulerContainer schedulers)
-    {
+    public void setSchedulers(SchedulerContainer schedulers) {
         this.schedulers = requireNonNull(schedulers);
     }
 
     @Required
-    public void setRequestCredentialStorage(RequestCredentialStorage store)
-    {
+    public void setRequestCredentialStorage(RequestCredentialStorage store) {
         RequestCredential.registerRequestCredentialStorage(store);
         requestCredentialStorage = store;
     }
 
     @Required
-    public void setSrmUserPersistenceManager(SRMUserPersistenceManager manager)
-    {
+    public void setSrmUserPersistenceManager(SRMUserPersistenceManager manager) {
         this.manager = requireNonNull(manager);
     }
 
-    public void setExecutor(java.util.concurrent.ScheduledExecutorService executor)
-    {
+    public void setExecutor(java.util.concurrent.ScheduledExecutorService executor) {
         this.executor = requireNonNull(executor);
     }
 
-    public static final synchronized void setSRM(SRM srm)
-    {
+    public static final synchronized void setSRM(SRM srm) {
         SRM.srm = srm;
         SRM.class.notifyAll();
     }
 
-    public static final synchronized SRM getSRM()
-    {
+    public static final synchronized SRM getSRM() {
         while (srm == null) {
             try {
                 SRM.class.wait();
@@ -253,8 +243,7 @@ public class SRM implements CellLifeCycleAware
         return srm;
     }
 
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
         databaseFactory = new DatabaseJobStorageFactory(srmId, configuration, manager);
@@ -272,8 +261,7 @@ public class SRM implements CellLifeCycleAware
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         databaseFactory.restoreJobsOnSrmStart(schedulers);
 
         /* Schedule expiration of active jobs individually for each job storage to
@@ -282,40 +270,37 @@ public class SRM implements CellLifeCycleAware
         for (JobStorage<?> jobStorage : databaseFactory.getJobStorages().values()) {
             tasks.add(executor.scheduleWithFixedDelay(() -> {
                 jobStorage.getActiveJobs().stream()
-                        .filter(Request.class::isInstance)
-                        .map(Request.class::cast)
-                        .forEach(Request::checkExpiration);
+                      .filter(Request.class::isInstance)
+                      .map(Request.class::cast)
+                      .forEach(Request::checkExpiration);
             }, expiryPeriod, expiryPeriod, TimeUnit.MILLISECONDS));
         }
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         tasks.forEach(f -> f.cancel(false));
     }
 
-    public void stop() throws Exception
-    {
+    public void stop() throws Exception {
         databaseFactory.shutdown();
     }
 
     @Required
-    public void setExpiredJobCheckPeriod(long delay)
-    {
+    public void setExpiredJobCheckPeriod(long delay) {
         checkArgument(delay > 0, "period must be non-negative number: %s", delay);
         checkState(tasks.isEmpty(), "cannot adjust period after SRM is started");
 
         expiryPeriod = delay;
     }
 
-    public long getExpiredJobCheckPeriod()
-    {
+    public long getExpiredJobCheckPeriod() {
         return expiryPeriod;
     }
 
     /**
      * Get the storage that this srm is working with
+     *
      * @return the storage
      */
     public final AbstractStorageElement getStorage() {
@@ -336,61 +321,54 @@ public class SRM implements CellLifeCycleAware
         return abstractStorageElementGauges;
     }
 
-    public String[] getProtocols() throws SRMInternalErrorException
-    {
+    public String[] getProtocols() throws SRMInternalErrorException {
         List<String> getProtocols = asList(storage.supportedGetProtocols());
         List<String> putProtocols = asList(storage.supportedPutProtocols());
         ImmutableList<String> protocols =
-                ImmutableSet.copyOf(concat(getProtocols, putProtocols)).asList();
+              ImmutableSet.copyOf(concat(getProtocols, putProtocols)).asList();
         return protocols.toArray(String[]::new);
     }
 
     /**
-     * Accept a newly created job.  This job will be added to the appropriate
-     * scheduler's queue to be processed.
+     * Accept a newly created job.  This job will be added to the appropriate scheduler's queue to
+     * be processed.
+     *
      * @param job The new job
      * @throws IllegalStateTransition Job state cannot be modified.
      */
-    public void acceptNewJob(Job job) throws IllegalStateTransition
-    {
+    public void acceptNewJob(Job job) throws IllegalStateTransition {
         schedulers.schedule(job);
     }
 
     public Set<Long> getGetRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(GetRequest.class,description);
+        return getActiveJobIds(GetRequest.class, description);
     }
 
     public Set<Long> getLsRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(LsRequest.class,description);
+        return getActiveJobIds(LsRequest.class, description);
     }
 
-    public CharSequence getSchedulerInfo()
-    {
+    public CharSequence getSchedulerInfo() {
         return schedulers.getInfo();
     }
 
-    public CharSequence getGetSchedulerInfo()
-    {
+    public CharSequence getGetSchedulerInfo() {
         return schedulers.getDetailedInfo(GetFileRequest.class);
     }
 
-    public CharSequence getLsSchedulerInfo()
-    {
+    public CharSequence getLsSchedulerInfo() {
         return schedulers.getDetailedInfo(LsFileRequest.class);
     }
 
-    public CharSequence getPutSchedulerInfo()
-    {
+    public CharSequence getPutSchedulerInfo() {
         return schedulers.getDetailedInfo(PutFileRequest.class);
     }
 
-    public CharSequence getCopySchedulerInfo()
-    {
+    public CharSequence getCopySchedulerInfo() {
         return schedulers.getDetailedInfo(CopyRequest.class);
     }
 
-    public CharSequence getBringOnlineSchedulerInfo()
-    {
+    public CharSequence getBringOnlineSchedulerInfo() {
         return schedulers.getDetailedInfo(BringOnlineFileRequest.class);
     }
 
@@ -398,34 +376,34 @@ public class SRM implements CellLifeCycleAware
         return getActiveJobIds(PutRequest.class, description);
     }
 
-    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(CopyRequest.class,description);
+    public Set<Long> getCopyRequestIds(SRMUser user, String description)
+          throws DataAccessException {
+        return getActiveJobIds(CopyRequest.class, description);
     }
 
-    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(BringOnlineRequest.class,description);
+    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description)
+          throws DataAccessException {
+        return getActiveJobIds(BringOnlineRequest.class, description);
     }
 
     public double getLoad() {
         return (schedulers.getLoad(CopyRequest.class) +
-                schedulers.getLoad(GetFileRequest.class) +
-                schedulers.getLoad(PutFileRequest.class)) / 3.0d;
+              schedulers.getLoad(GetFileRequest.class) +
+              schedulers.getLoad(PutFileRequest.class)) / 3.0d;
     }
 
     public void listRequest(StringBuilder sb, long requestId, boolean longformat)
-            throws DataAccessException, SRMInvalidRequestException
-    {
+          throws DataAccessException, SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
-        job.toString(sb,longformat);
+        job.toString(sb, longformat);
     }
 
     public void cancelRequest(StringBuilder sb, long requestId)
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
             sb.append("request with id ").append(requestId)
-                    .append(" is not found\n");
+                  .append(" is not found\n");
             return;
         }
         ContainerRequest<?> r = (ContainerRequest<?>) job;
@@ -440,46 +418,45 @@ public class SRM implements CellLifeCycleAware
     }
 
     public void cancelAllGetRequest(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, GetRequest.class);
     }
 
     public void cancelAllBringOnlineRequest(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, BringOnlineRequest.class);
     }
 
     public void cancelAllPutRequest(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, PutRequest.class);
     }
 
     public void cancelAllCopyRequest(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, CopyRequest.class);
     }
 
     public void cancelAllReserveSpaceRequest(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, ReserveSpaceRequest.class);
     }
 
     public void cancelAllLsRequests(StringBuilder sb, String pattern)
-            throws DataAccessException, SRMInvalidRequestException {
+          throws DataAccessException, SRMInvalidRequestException {
 
         cancelAllRequest(sb, pattern, LsRequest.class);
     }
 
     private void cancelAllRequest(StringBuilder sb,
-            String pattern,
-            Class<? extends Job> type)
-            throws DataAccessException, SRMInvalidRequestException
-    {
+          String pattern,
+          Class<? extends Job> type)
+          throws DataAccessException, SRMInvalidRequestException {
         Set<Long> jobsToKill = new HashSet<>();
         Pattern p = Pattern.compile(pattern);
         Set<Long> activeRequestIds = getActiveJobIds(type, null);
@@ -487,31 +464,32 @@ public class SRM implements CellLifeCycleAware
             Matcher m = p.matcher(String.valueOf(requestId));
             if (m.matches()) {
                 LOGGER.debug("cancelAllRequest: request Id #{} of type {} " +
-                        "matches pattern", requestId, type.getSimpleName());
+                      "matches pattern", requestId, type.getSimpleName());
                 jobsToKill.add(requestId);
             }
         }
         if (jobsToKill.isEmpty()) {
             sb.append("no requests of type ")
-                    .append(type.getSimpleName())
-                    .append(" matched the pattern \"").append(pattern)
-                    .append("\"\n");
+                  .append(type.getSimpleName())
+                  .append(" matched the pattern \"").append(pattern)
+                  .append("\"\n");
             return;
         }
         for (long requestId : jobsToKill) {
             try {
                 final ContainerRequest<?> job = Job.getJob(requestId, ContainerRequest.class);
                 sb.append("request #").append(requestId)
-                        .append(" matches pattern=\"").append(pattern)
-                        .append("\"; canceling request \n");
+                      .append(" matches pattern=\"").append(pattern)
+                      .append("\"; canceling request \n");
                 new Thread(() -> {
                     try {
-                        job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
+                        job.setState(State.CANCELED,
+                              "Canceled by admin through cancelall command.");
                     } catch (IllegalStateTransition ist) {
                         LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                     }
                 }).start();
-            } catch(SRMInvalidRequestException e) {
+            } catch (SRMInvalidRequestException e) {
                 LOGGER.error("request with request id {} is not found", requestId);
             }
         }
@@ -519,6 +497,7 @@ public class SRM implements CellLifeCycleAware
 
     /**
      * Getter for property configuration.
+     *
      * @return Value of property configuration.
      */
     public final Configuration getConfiguration() {
@@ -527,29 +506,26 @@ public class SRM implements CellLifeCycleAware
 
     /**
      * Getter for property requestCredentialStorage.
+     *
      * @return Value of property requestCredentialStorage.
      */
     public RequestCredentialStorage getRequestCredentialStorage() {
         return requestCredentialStorage;
     }
 
-    public void setPutMaxReadyJobs(int value)
-    {
+    public void setPutMaxReadyJobs(int value) {
         schedulers.setMaxReadyJobs(PutFileRequest.class, value);
     }
 
-    public void setGetMaxReadyJobs(int value)
-    {
+    public void setGetMaxReadyJobs(int value) {
         schedulers.setMaxReadyJobs(GetFileRequest.class, value);
     }
 
-    public void setBringOnlineMaxReadyJobs(int value)
-    {
+    public void setBringOnlineMaxReadyJobs(int value) {
         schedulers.setMaxReadyJobs(BringOnlineFileRequest.class, value);
     }
 
-    public void setLsMaxReadyJobs(int value)
-    {
+    public void setLsMaxReadyJobs(int value) {
         schedulers.setMaxReadyJobs(LsFileRequest.class, value);
     }
 
@@ -597,35 +573,33 @@ public class SRM implements CellLifeCycleAware
         return databaseFactory.getJobStorage(CopyFileRequest.class);
     }
 
-    public <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
-    {
+    public <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException {
         JobStorage<T> jobStorage = databaseFactory.getJobStorage(type);
         return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
     }
 
     public <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         Set<T> jobs = getActiveJobs(type);
         Set<Long> ids = new HashSet<>();
-        for(Job job: jobs) {
-            if(description != null ) {
-                if( job instanceof Request ) {
+        for (Job job : jobs) {
+            if (description != null) {
+                if (job instanceof Request) {
                     Request r = (Request) job;
-                    if(description.equals(r.getDescription())) {
-                        ids.add( job.getId());
+                    if (description.equals(r.getDescription())) {
+                        ids.add(job.getId());
                     }
                 }
             } else {
-                ids.add( job.getId());
+                ids.add(job.getId());
             }
         }
         return ids;
     }
 
-    public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
-            throws DataAccessException
-    {
+    public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type,
+          final URI surl)
+          throws DataAccessException {
         return Iterables.filter(getActiveJobs(type), request -> request.isTouchingSurl(surl));
     }
 
@@ -633,48 +607,44 @@ public class SRM implements CellLifeCycleAware
      * Returns PutFileRequests on the given SURL or within the directory tree of that SURL.
      */
     public Stream<PutFileRequest> getActivePutFileRequests(URI surl)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         String path = getPath(surl);
         return StreamSupport.stream(getActiveJobs(PutFileRequest.class).spliterator(), false)
-                .filter(r -> getPath(r.getSurl()).startsWith(path));
+              .filter(r -> getPath(r.getSurl()).startsWith(path));
     }
 
     /**
      * Returns true if an upload on the given SURL exists.
      */
-    public boolean isFileBusy(URI surl) throws SRMException
-    {
+    public boolean isFileBusy(URI surl) throws SRMException {
         return getActivePutFileRequests(surl).anyMatch(m -> m.getSurl().equals(surl));
     }
 
     /**
      * Returns true if multiple uploads on the given SURL exist.
      */
-    public boolean hasMultipleUploads(URI surl) throws SRMException
-    {
-        return getActivePutFileRequests(surl).filter(m -> m.getSurl().equals(surl)).limit(2).count() > 1;
+    public boolean hasMultipleUploads(URI surl) throws SRMException {
+        return getActivePutFileRequests(surl).filter(m -> m.getSurl().equals(surl)).limit(2).count()
+              > 1;
     }
 
     /**
      * Returns the file id of an active upload on the given SURL.
      */
-    public String getUploadFileId(URI surl) throws SRMException
-    {
+    public String getUploadFileId(URI surl) throws SRMException {
         return getActivePutFileRequests(surl)
-                .filter(m -> m.getSurl().equals(surl))
-                .map(PutFileRequest::getFileId)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+              .filter(m -> m.getSurl().equals(surl))
+              .map(PutFileRequest::getFileId)
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElse(null);
     }
 
     /**
-     * Aborts uploads and downloads on the given SURL. Returns true if and only if an
-     * upload was aborted.
+     * Aborts uploads and downloads on the given SURL. Returns true if and only if an upload was
+     * aborted.
      */
-    public boolean abortTransfers(URI surl, String reason) throws SRMException
-    {
+    public boolean abortTransfers(URI surl, String reason) throws SRMException {
         boolean didAbortUpload = false;
 
         for (PutFileRequest request : getActiveFileRequests(PutFileRequest.class, surl)) {
@@ -684,7 +654,7 @@ public class SRM implements CellLifeCycleAware
             } catch (IllegalStateTransition e) {
                 // The request likely aborted or finished before we could abort it
                 LOGGER.debug("Attempted to abort put request {}, but failed: {}",
-                             request.getId(), e.getMessage());
+                      request.getId(), e.getMessage());
             }
         }
 
@@ -694,7 +664,7 @@ public class SRM implements CellLifeCycleAware
             } catch (IllegalStateTransition e) {
                 // The request likely aborted or finished before we could abort it
                 LOGGER.debug("Attempted to abort get request {}, but failed: {}",
-                             request.getId(), e.getMessage());
+                      request.getId(), e.getMessage());
             }
         }
 
@@ -704,10 +674,9 @@ public class SRM implements CellLifeCycleAware
     /**
      * Checks if an active upload blocks the removal of a directory.
      */
-    public void checkRemoveDirectory(URI surl) throws SRMException
-    {
+    public void checkRemoveDirectory(URI surl) throws SRMException {
         Optional<URI> upload =
-                getActivePutFileRequests(surl).map(PutFileRequest::getSurl).min(URI::compareTo);
+              getActivePutFileRequests(surl).map(PutFileRequest::getSurl).min(URI::compareTo);
         if (upload.isPresent()) {
             if (upload.get().equals(surl)) {
                 throw new SRMInvalidPathException("Not a directory");
@@ -717,8 +686,7 @@ public class SRM implements CellLifeCycleAware
         }
     }
 
-    private static String getPath(URI surl)
-    {
+    private static String getPath(URI surl) {
         String path = surl.getPath();
         String query = surl.getQuery();
         if (query != null) {

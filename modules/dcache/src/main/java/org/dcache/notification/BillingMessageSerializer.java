@@ -1,20 +1,18 @@
 package org.dcache.notification;
 
-import org.apache.kafka.common.serialization.Serializer;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.MoverInfoMessage;
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
-import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.MoverInfoMessage;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.kafka.common.serialization.Serializer;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
 
@@ -23,7 +21,8 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         o.put("version", "1.0");
         o.put("msgType", data.getMessageType());
         o.put("date", DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                        .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
+              .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()),
+                    ZoneId.systemDefault())));
         o.put("queuingTime", data.getTimeQueued());
         o.put("cellName", data.getCellAddress().getCellName());
         o.put("cellType", data.getCellType());
@@ -56,12 +55,13 @@ public class BillingMessageSerializer implements Serializer<MoverInfoMessage> {
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
-        o.put("storageInfo", data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
+        o.put("storageInfo",
+              data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
         o.put("transferSize", data.getDataTransferred());
         o.put("transferTime", data.getConnectionTime());
         o.put("isWrite", data.isFileCreated() ? "write" : "read");
 
-        InetSocketAddress remoteHost = ((IpProtocolInfo)data.getProtocolInfo()).getSocketAddress();
+        InetSocketAddress remoteHost = ((IpProtocolInfo) data.getProtocolInfo()).getSocketAddress();
 
         JSONObject protocolInfo = new JSONObject();
         protocolInfo.put("protocol", data.getProtocolInfo().getProtocol());

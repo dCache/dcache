@@ -67,8 +67,7 @@ package org.dcache.util.backoff;
 public interface IBackoffAlgorithm {
 
     /**
-     * Value returned when the algorithm indicates no further waiting to be
-     * done
+     * Value returned when the algorithm indicates no further waiting to be done
      */
     long NO_WAIT = -1;
 
@@ -80,8 +79,7 @@ public interface IBackoffAlgorithm {
     }
 
     /**
-     * @return how long the caller should wait in milliseconds before
-     *         re-executing the callable
+     * @return how long the caller should wait in milliseconds before re-executing the callable
      */
     long getWaitDuration();
 }

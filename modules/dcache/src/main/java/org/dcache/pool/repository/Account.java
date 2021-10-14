@@ -4,16 +4,14 @@ package org.dcache.pool.repository;
 import diskCacheV111.util.PnfsId;
 
 /**
- * Encapsulation of space accounting information for a
- * repository.
- *
- * Used as a synchronisation point between several repository
- * components. The object is thread safe and external synchronisations
- * are allowed. Any modification of the object triggers a call to
+ * Encapsulation of space accounting information for a repository.
+ * <p>
+ * Used as a synchronisation point between several repository components. The object is thread safe
+ * and external synchronisations are allowed. Any modification of the object triggers a call to
  * notifyAll on the object.
  */
-public class Account
-{
+public class Account {
+
     private long _total;
     private long _used;
     private long _precious;
@@ -21,45 +19,38 @@ public class Account
     private long _requested;
     private long _timeOfLastFree;
 
-    public synchronized long getTotal()
-    {
+    public synchronized long getTotal() {
         return _total;
     }
 
-    public synchronized long getUsed()
-    {
+    public synchronized long getUsed() {
         return _used;
     }
 
-    public synchronized long getFree()
-    {
+    public synchronized long getFree() {
         return _total - _used;
     }
 
-    public synchronized long getRemovable()
-    {
+    public synchronized long getRemovable() {
         return _removable;
     }
 
-    public synchronized long getPrecious()
-    {
+    public synchronized long getPrecious() {
         return _precious;
     }
 
-    public synchronized long getRequested()
-    {
+    public synchronized long getRequested() {
         return _requested;
     }
 
-    public synchronized long getTimeOfLastFree()
-    {
+    public synchronized long getTimeOfLastFree() {
         return _timeOfLastFree;
     }
 
-    public synchronized void setTotal(long total)
-    {
+    public synchronized void setTotal(long total) {
         if (total < _used) {
-            throw new IllegalArgumentException("Cannot set repository size below amount of used space.");
+            throw new IllegalArgumentException(
+                  "Cannot set repository size below amount of used space.");
         }
         _total = total;
         notifyAll();
@@ -68,8 +59,7 @@ public class Account
     /**
      * Moves <code>space</code> bytes from used to free space.
      */
-    public synchronized void free(PnfsId id, long space)
-    {
+    public synchronized void free(PnfsId id, long space) {
         if (space < 0) {
             throw new IllegalArgumentException("Cannot free negative space.");
         }
@@ -83,14 +73,13 @@ public class Account
     }
 
     /**
-     * Allocates up to <code>request</code> bytes. If less space is
-     * free, then nothing is allocated.
+     * Allocates up to <code>request</code> bytes. If less space is free, then nothing is
+     * allocated.
      *
      * @return true if and only if the request was served
      */
     public synchronized boolean allocateNow(PnfsId id, long request)
-             throws InterruptedException
-    {
+          throws InterruptedException {
         if (request < 0) {
             throw new IllegalArgumentException("Cannot allocate negative space.");
         }
@@ -112,14 +101,12 @@ public class Account
     }
 
     /**
-     * Allocates <code>request</code> bytes. If less space is
-     * available, the request is added to the request pool and the
-     * call blocks. Space is not allocated until the complete request
-     * can be served. For this reason, large requests can starve.
+     * Allocates <code>request</code> bytes. If less space is available, the request is added to the
+     * request pool and the call blocks. Space is not allocated until the complete request can be
+     * served. For this reason, large requests can starve.
      */
     public synchronized void allocate(PnfsId id, long request)
-        throws InterruptedException
-    {
+          throws InterruptedException {
         if (request < 0) {
             throw new IllegalArgumentException("Cannot allocate negative space.");
         }
@@ -136,8 +123,7 @@ public class Account
         }
     }
 
-    public synchronized void growTotalAndUsed(PnfsId id, long delta)
-    {
+    public synchronized void growTotalAndUsed(PnfsId id, long delta) {
         if (delta < 0) {
             throw new IllegalArgumentException("Argument must be non-negative.");
         }
@@ -161,8 +147,7 @@ public class Account
         notifyAll();
     }
 
-    public synchronized void adjustRemovable(PnfsId id, long delta)
-    {
+    public synchronized void adjustRemovable(PnfsId id, long delta) {
         long removable = _removable + delta;
         if (removable < 0) {
             throw new IllegalArgumentException("Negative removable space is not allowed.");
@@ -174,8 +159,7 @@ public class Account
         notifyAll();
     }
 
-    public synchronized void adjustPrecious(PnfsId id, long delta)
-    {
+    public synchronized void adjustPrecious(PnfsId id, long delta) {
         long precious = _precious + delta;
         if (precious < 0) {
             throw new IllegalArgumentException("Negative precious space is not allowed.");
@@ -187,8 +171,7 @@ public class Account
         notifyAll();
     }
 
-    public synchronized SpaceRecord getSpaceRecord()
-    {
+    public synchronized SpaceRecord getSpaceRecord() {
         return new SpaceRecord(_total, getFree(), _precious, _removable, 0);
     }
 }

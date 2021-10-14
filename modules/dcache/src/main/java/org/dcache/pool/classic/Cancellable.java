@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 /**
  * An interface for object which allow to interrupt an operation in progress.
  */
-public interface Cancellable
-{
+public interface Cancellable {
+
     void cancel(@Nullable String explanation);
 }

@@ -18,6 +18,9 @@
  */
 package org.dcache.webdav;
 
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+
 import com.google.common.net.MediaType;
 import io.milton.http.HrefStatus;
 import io.milton.http.Range;
@@ -29,78 +32,66 @@ import io.milton.http.webdav.PropFindResponse;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
+import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Map;
-
 import org.mockito.BDDMockito;
-
-import java.util.List;
-
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.mock;
 
 public class AcceptAwareResponseHandlerTest {
 
     private AcceptAwareResponseHandler handler;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         handler = null;
     }
 
     @Test
-    public void shouldAcceptSimpleHandler()
-    {
+    public void shouldAcceptSimpleHandler() {
         given(aHandler());
 
         handler.addResponse(MediaType.HTML_UTF_8, mock(WebDavResponseHandler.class));
     }
 
-    @Test(expected=NullPointerException.class)
-    public void shouldRejectNullMediaType()
-    {
+    @Test(expected = NullPointerException.class)
+    public void shouldRejectNullMediaType() {
         given(aHandler());
 
         handler.addResponse(null, mock(WebDavResponseHandler.class));
     }
 
-    @Test(expected=NullPointerException.class)
-    public void shouldRejectNullHandler()
-    {
+    @Test(expected = NullPointerException.class)
+    public void shouldRejectNullHandler() {
         given(aHandler());
 
         handler.addResponse(MediaType.HTML_UTF_8, null);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectUnknownDefault()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectUnknownDefault() {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, inner));
 
         handler.setDefaultResponse(MediaType.PLAIN_TEXT_UTF_8);
     }
 
-    @Test(expected=IllegalStateException.class)
-    public void shouldRejectSecondDefault()
-    {
+    @Test(expected = IllegalStateException.class)
+    public void shouldRejectSecondDefault() {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
-        given(aHandler().withResponse(MediaType.HTML_UTF_8, inner).withDefaultResponse(MediaType.HTML_UTF_8));
+        given(aHandler().withResponse(MediaType.HTML_UTF_8, inner)
+              .withDefaultResponse(MediaType.HTML_UTF_8));
 
         handler.setDefaultResponse(MediaType.PLAIN_TEXT_UTF_8);
     }
 
     @Test
-    public void shouldSelectTextIfOnlyOption()
-    {
+    public void shouldSelectTextIfOnlyOption() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/plain");
         Response response = mock(Response.class);
@@ -112,13 +103,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectHtmlIfOnlyOption()
-    {
+    public void shouldSelectHtmlIfOnlyOption() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/html");
         Response response = mock(Response.class);
@@ -130,13 +120,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectDefaultIfMultipleMatch()
-    {
+    public void shouldSelectDefaultIfMultipleMatch() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("*/*");
         Response response = mock(Response.class);
@@ -148,13 +137,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectTextAsHighestPriorityWhenFirstItem()
-    {
+    public void shouldSelectTextAsHighestPriorityWhenFirstItem() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/plain, text/html;q=0.5");
         Response response = mock(Response.class);
@@ -166,13 +154,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectTextAsHighestPriorityWhenLastItem()
-    {
+    public void shouldSelectTextAsHighestPriorityWhenLastItem() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/html;q=0.5, text/plain");
         Response response = mock(Response.class);
@@ -184,13 +171,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectHtmlAsHighestPriorityWhenFirstItem()
-    {
+    public void shouldSelectHtmlAsHighestPriorityWhenFirstItem() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/html, text/plain;q=0.5");
         Response response = mock(Response.class);
@@ -202,13 +188,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectHtmlAsHighestPriorityWhenLastItem()
-    {
+    public void shouldSelectHtmlAsHighestPriorityWhenLastItem() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/plain;q=0.5, text/html");
         Response response = mock(Response.class);
@@ -220,13 +205,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectDefaultWhenNoAcceptHeader()
-    {
+    public void shouldSelectDefaultWhenNoAcceptHeader() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -238,13 +222,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectDefaultWhenNoneMatch()
-    {
+    public void shouldSelectDefaultWhenNoneMatch() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("application/json");
         Response response = mock(Response.class);
@@ -256,19 +239,19 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectShortestNameWhenMultipleMatchWithoutDefault()
-    {
+    public void shouldSelectShortestNameWhenMultipleMatchWithoutDefault() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         WebDavResponseHandler json = mock(WebDavResponseHandler.class);
         WebDavResponseHandler xml = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withResponse(MediaType.JSON_UTF_8, json)
-                .withResponse(MediaType.APPLICATION_XML_UTF_8, xml)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withResponse(MediaType.JSON_UTF_8, json)
+              .withResponse(MediaType.APPLICATION_XML_UTF_8, xml)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
-        Request request = aRequestWithAccept("application/*"); // matches application/json and application/xml
+        Request request = aRequestWithAccept(
+              "application/*"); // matches application/json and application/xml
         Response response = mock(Response.class);
         handler.respondNotFound(response, request);
 
@@ -280,13 +263,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldSelectUseQOfOneIfMalformed()
-    {
+    public void shouldSelectUseQOfOneIfMalformed() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("text/plain;q=0.5, text/html;q=foo");
         Response response = mock(Response.class);
@@ -298,13 +280,12 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldUseDefaultIfAcceptMalformed()
-    {
+    public void shouldUseDefaultIfAcceptMalformed() {
         WebDavResponseHandler html = mock(WebDavResponseHandler.class);
         WebDavResponseHandler text = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.HTML_UTF_8, html)
-                .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withResponse(MediaType.PLAIN_TEXT_UTF_8, text)
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = aRequestWithAccept("gobbledygook");
         Response response = mock(Response.class);
@@ -316,11 +297,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerBadRequest()
-    {
+    public void shouldCallInnerBadRequest() {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -332,11 +312,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerConflict()
-    {
+    public void shouldCallInnerConflict() {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -349,16 +328,15 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerContent() throws Exception
-    {
+    public void shouldCallInnerContent() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
         Response response = mock(Response.class);
-        Map<String,String> params = mock(Map.class);
+        Map<String, String> params = mock(Map.class);
         handler.respondContent(resource, response, request, params);
 
         then(inner).should().respondContent(resource, response, request, params);
@@ -366,11 +344,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerCreated() throws Exception
-    {
+    public void shouldCallInnerCreated() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -382,11 +359,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerDeleteFailed() throws Exception
-    {
+    public void shouldCallInnerDeleteFailed() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -399,11 +375,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerExpectationFailed() throws Exception
-    {
+    public void shouldCallInnerExpectationFailed() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -414,11 +389,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerForbidden() throws Exception
-    {
+    public void shouldCallInnerForbidden() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -430,11 +404,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerHead() throws Exception
-    {
+    public void shouldCallInnerHead() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -446,11 +419,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerInsufficientStorage() throws Exception
-    {
+    public void shouldCallInnerInsufficientStorage() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -462,11 +434,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerLocked() throws Exception
-    {
+    public void shouldCallInnerLocked() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -478,11 +449,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerMethodNotAllowed() throws Exception
-    {
+    public void shouldCallInnerMethodNotAllowed() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -494,11 +464,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerMethodNotImplemented() throws Exception
-    {
+    public void shouldCallInnerMethodNotImplemented() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -510,11 +479,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerNoContent() throws Exception
-    {
+    public void shouldCallInnerNoContent() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -526,11 +494,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerNotFound() throws Exception
-    {
+    public void shouldCallInnerNotFound() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -541,11 +508,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerNotModified() throws Exception
-    {
+    public void shouldCallInnerNotModified() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         GetableResource resource = mock(GetableResource.class);
         Request request = mock(Request.class);
@@ -557,16 +523,15 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerPartialContentList() throws Exception
-    {
+    public void shouldCallInnerPartialContentList() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         GetableResource resource = mock(GetableResource.class);
         Request request = mock(Request.class);
         Response response = mock(Response.class);
-        Map<String,String> params = mock(Map.class);
+        Map<String, String> params = mock(Map.class);
         List<Range> ranges = mock(List.class);
         handler.respondPartialContent(resource, response, request, params, ranges);
 
@@ -575,16 +540,15 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerPartialContentRange() throws Exception
-    {
+    public void shouldCallInnerPartialContentRange() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         GetableResource resource = mock(GetableResource.class);
         Request request = mock(Request.class);
         Response response = mock(Response.class);
-        Map<String,String> params = mock(Map.class);
+        Map<String, String> params = mock(Map.class);
         Range range = mock(Range.class);
         handler.respondPartialContent(resource, response, request, params, range);
 
@@ -593,11 +557,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerPreconditionFailed() throws Exception
-    {
+    public void shouldCallInnerPreconditionFailed() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         GetableResource resource = mock(GetableResource.class);
         Request request = mock(Request.class);
@@ -609,11 +572,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerPropFind() throws Exception
-    {
+    public void shouldCallInnerPropFind() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         List<PropFindResponse> responses = mock(List.class);
         Resource resource = mock(Resource.class);
@@ -626,11 +588,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerRedirect() throws Exception
-    {
+    public void shouldCallInnerRedirect() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -642,11 +603,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerServerError() throws Exception
-    {
+    public void shouldCallInnerServerError() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Request request = mock(Request.class);
         Response response = mock(Response.class);
@@ -658,11 +618,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerUnauthorised() throws Exception
-    {
+    public void shouldCallInnerUnauthorised() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -674,11 +633,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerWithOptions() throws Exception
-    {
+    public void shouldCallInnerWithOptions() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -691,11 +649,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerWithMultiStatus() throws Exception
-    {
+    public void shouldCallInnerWithMultiStatus() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         Request request = mock(Request.class);
@@ -708,11 +665,10 @@ public class AcceptAwareResponseHandlerTest {
     }
 
     @Test
-    public void shouldCallInnerWithGenerateETag() throws Exception
-    {
+    public void shouldCallInnerWithGenerateETag() throws Exception {
         WebDavResponseHandler inner = mock(WebDavResponseHandler.class);
         given(aHandler().withResponse(MediaType.PLAIN_TEXT_UTF_8, inner)
-                .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
+              .withDefaultResponse(MediaType.PLAIN_TEXT_UTF_8));
 
         Resource resource = mock(Resource.class);
         handler.generateEtag(resource);
@@ -721,13 +677,11 @@ public class AcceptAwareResponseHandlerTest {
         then(inner).shouldHaveNoMoreInteractions();
     }
 
-    private void given(AcceptAwareBuilder builder)
-    {
+    private void given(AcceptAwareBuilder builder) {
         handler = builder.build();
     }
 
-    private Request aRequestWithAccept(String accept)
-    {
+    private Request aRequestWithAccept(String accept) {
         Request request = mock(Request.class);
 
         BDDMockito.given(request.getAcceptHeader()).willReturn(accept);
@@ -737,29 +691,25 @@ public class AcceptAwareResponseHandlerTest {
         return request;
     }
 
-    private AcceptAwareBuilder aHandler()
-    {
+    private AcceptAwareBuilder aHandler() {
         return new AcceptAwareBuilder();
     }
 
-    private class AcceptAwareBuilder
-    {
+    private class AcceptAwareBuilder {
+
         AcceptAwareResponseHandler handler = new AcceptAwareResponseHandler();
 
-        AcceptAwareBuilder withResponse(MediaType type, WebDavResponseHandler handler)
-        {
+        AcceptAwareBuilder withResponse(MediaType type, WebDavResponseHandler handler) {
             this.handler.addResponse(type, handler);
             return this;
         }
 
-        AcceptAwareBuilder withDefaultResponse(MediaType type)
-        {
+        AcceptAwareBuilder withDefaultResponse(MediaType type) {
             handler.setDefaultResponse(type);
             return this;
         }
 
-        AcceptAwareResponseHandler build()
-        {
+        AcceptAwareResponseHandler build() {
             return handler;
         }
     }

@@ -20,21 +20,19 @@ package org.dcache.pool.classic;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
- * This class represents any TransferService that makes a secure connection
- * with some remote service.  This is achieved by the remote service
- * authenticating using X.509, which the pool must validate as having been
- * issued by a trustworthy certificate authority.
+ * This class represents any TransferService that makes a secure connection with some remote
+ * service.  This is achieved by the remote service authenticating using X.509, which the pool must
+ * validate as having been issued by a trustworthy certificate authority.
  */
 public abstract class SecureRemoteTransferService
-        extends AbstractMoverProtocolTransferService
-{
+      extends AbstractMoverProtocolTransferService {
+
     private String caPath;
     private OCSPCheckingMode ocspCheckingMode;
     private CrlCheckingMode crlCheckingMode;
@@ -44,69 +42,57 @@ public abstract class SecureRemoteTransferService
 
     protected final SecureRandom secureRandom = new SecureRandom();
 
-    public String getCertificateAuthorityPath()
-    {
+    public String getCertificateAuthorityPath() {
         return caPath;
     }
 
     @Required
-    public void setCertificateAuthorityPath(String certificateAuthorityPath)
-    {
+    public void setCertificateAuthorityPath(String certificateAuthorityPath) {
         this.caPath = certificateAuthorityPath;
     }
 
-    public OCSPCheckingMode getOcspCheckingMode()
-    {
+    public OCSPCheckingMode getOcspCheckingMode() {
         return ocspCheckingMode;
     }
 
     @Required
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
         this.ocspCheckingMode = ocspCheckingMode;
     }
 
-    public CrlCheckingMode getCrlCheckingMode()
-    {
+    public CrlCheckingMode getCrlCheckingMode() {
         return crlCheckingMode;
     }
 
     @Required
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
         this.crlCheckingMode = crlCheckingMode;
     }
 
-    public NamespaceCheckingMode getNamespaceMode()
-    {
+    public NamespaceCheckingMode getNamespaceMode() {
         return namespaceMode;
     }
 
     @Required
-    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
-    {
+    public void setNamespaceMode(NamespaceCheckingMode namespaceMode) {
         this.namespaceMode = namespaceMode;
     }
 
-    public long getCertificateAuthorityUpdateInterval()
-    {
+    public long getCertificateAuthorityUpdateInterval() {
         return certificateAuthorityUpdateInterval;
     }
 
     @Required
-    public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval)
-    {
+    public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval) {
         this.certificateAuthorityUpdateInterval = certificateAuthorityUpdateInterval;
     }
 
-    public TimeUnit getCertificateAuthorityUpdateIntervalUnit()
-    {
+    public TimeUnit getCertificateAuthorityUpdateIntervalUnit() {
         return certificateAuthorityUpdateIntervalUnit;
     }
 
     @Required
-    public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit unit)
-    {
+    public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit unit) {
         this.certificateAuthorityUpdateIntervalUnit = unit;
     }
 }

@@ -59,9 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -73,10 +70,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-
 import org.dcache.resilience.util.ExceptionMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TestSynchronousExecutor implements ScheduledExecutorService {
+
     public enum Mode {
         NOP, RUN, FAIL
     }
@@ -91,7 +90,7 @@ public final class TestSynchronousExecutor implements ScheduledExecutorService {
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit)
-                    throws InterruptedException {
+          throws InterruptedException {
         return false;
     }
 
@@ -108,22 +107,22 @@ public final class TestSynchronousExecutor implements ScheduledExecutorService {
 
     @Override
     public <T> List<Future<T>> invokeAll(
-                    Collection<? extends Callable<T>> tasks)
-                    throws InterruptedException {
+          Collection<? extends Callable<T>> tasks)
+          throws InterruptedException {
         return tasks.stream().map((t) -> submit(t)).collect(
-                        Collectors.toList());
+              Collectors.toList());
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(
-                    Collection<? extends Callable<T>> tasks, long timeout,
-                    TimeUnit unit) throws InterruptedException {
+          Collection<? extends Callable<T>> tasks, long timeout,
+          TimeUnit unit) throws InterruptedException {
         return invokeAll(tasks);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
-                    throws InterruptedException, ExecutionException {
+          throws InterruptedException, ExecutionException {
         Callable<T> chosen = tasks.iterator().next();
         submit(chosen);
         return null;
@@ -131,9 +130,9 @@ public final class TestSynchronousExecutor implements ScheduledExecutorService {
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
-                           long timeout, TimeUnit unit)
-                    throws InterruptedException, ExecutionException,
-                    TimeoutException {
+          long timeout, TimeUnit unit)
+          throws InterruptedException, ExecutionException,
+          TimeoutException {
         return invokeAny(tasks);
     }
 
@@ -149,7 +148,7 @@ public final class TestSynchronousExecutor implements ScheduledExecutorService {
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay,
-                                       TimeUnit unit) {
+          TimeUnit unit) {
 
         execute(command);
         return null;
@@ -157,24 +156,24 @@ public final class TestSynchronousExecutor implements ScheduledExecutorService {
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay,
-                                           TimeUnit unit) {
+          TimeUnit unit) {
         submit(callable);
         return null;
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
-                                                  long initialDelay,
-                                                  long period, TimeUnit unit) {
+          long initialDelay,
+          long period, TimeUnit unit) {
         execute(command);
         return null;
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
-                                                     long initialDelay,
-                                                     long delay,
-                                                     TimeUnit unit) {
+          long initialDelay,
+          long delay,
+          TimeUnit unit) {
         execute(command);
         return null;
     }

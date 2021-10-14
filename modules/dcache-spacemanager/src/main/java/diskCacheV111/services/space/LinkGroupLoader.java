@@ -1,5 +1,26 @@
 package diskCacheV111.services.space;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.VOInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.ParseException;
+import java.util.Collection;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.dcache.poolmanager.PoolLinkGroupInfo;
+import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.poolmanager.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -11,34 +32,10 @@ import org.springframework.remoting.RemoteAccessException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.TransactionException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.ParseException;
-import java.util.Collection;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.VOInfo;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.command.Command;
-import dmg.util.command.DelayedCommand;
-
-import org.dcache.poolmanager.PoolLinkGroupInfo;
-import org.dcache.poolmanager.RemotePoolMonitor;
-import org.dcache.poolmanager.Utils;
-
 public class LinkGroupLoader
-        implements CellCommandListener, CellLifeCycleAware, CellInfoProvider, CellIdentityAware, Runnable
-{
+      implements CellCommandListener, CellLifeCycleAware, CellInfoProvider, CellIdentityAware,
+      Runnable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkGroupLoader.class);
     private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
 
@@ -57,53 +54,44 @@ public class LinkGroupLoader
     private CellAddressCore cellAddress;
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         cellAddress = address;
     }
 
     @Required
-    public void setUpdateLinkGroupsPeriod(long updateLinkGroupsPeriod)
-    {
+    public void setUpdateLinkGroupsPeriod(long updateLinkGroupsPeriod) {
         this.updateLinkGroupsPeriod = updateLinkGroupsPeriod;
     }
 
     @Required
-    public void setDatabase(SpaceManagerDatabase db)
-    {
+    public void setDatabase(SpaceManagerDatabase db) {
         this.db = db;
     }
 
     @Required
-    public void setPoolMonitor(RemotePoolMonitor poolMonitor)
-    {
+    public void setPoolMonitor(RemotePoolMonitor poolMonitor) {
         this.poolMonitor = poolMonitor;
     }
 
     @Required
-    public void setAuthorizationFileName(File authorizationFileName)
-    {
+    public void setAuthorizationFileName(File authorizationFileName) {
         this.authorizationFileName = authorizationFileName;
     }
 
-    public long getLatestUpdateTime()
-    {
+    public long getLatestUpdateTime() {
         return latestUpdateTime;
     }
 
-    public void start()
-    {
+    public void start() {
         executor = Executors.newSingleThreadScheduledExecutor();
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         executor.schedule(this, 0, TimeUnit.MILLISECONDS);
     }
 
-    public void stop()
-    {
+    public void stop() {
         if (executor != null) {
             executor.shutdownNow();
         }
@@ -135,29 +123,31 @@ public class LinkGroupLoader
 
     private void loadLinkGroupAuthorizationFile() {
         File file = authorizationFileName;
-        if(file == null) {
+        if (file == null) {
             return;
         }
-        if(!file.exists()) {
+        if (!file.exists()) {
             linkGroupAuthorizationFile = null;
         }
         long lastModified = file.lastModified();
-        if (linkGroupAuthorizationFile == null|| lastModified >= authorizationFileLastUpdateTimestamp) {
+        if (linkGroupAuthorizationFile == null
+              || lastModified >= authorizationFileLastUpdateTimestamp) {
             authorizationFileLastUpdateTimestamp = lastModified;
             try {
                 linkGroupAuthorizationFile =
-                        new LinkGroupAuthorizationFile(file);
+                      new LinkGroupAuthorizationFile(file);
             } catch (IOException | ParseException e) {
                 LOGGER.error("Failed to read {}: {}", file, e.toString());
             }
         }
     }
 
-    private int updateLinkGroups() throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException
-    {
+    private int updateLinkGroups()
+          throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException {
         long currentTime = System.currentTimeMillis();
         Collection<PoolLinkGroupInfo> linkGroupInfos =
-                Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(), poolMonitor.getCostModule()).values();
+              Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(), poolMonitor.getCostModule())
+                    .values();
         if (!linkGroupInfos.isEmpty()) {
             loadLinkGroupAuthorizationFile();
             for (PoolLinkGroupInfo info : linkGroupInfos) {
@@ -170,8 +160,8 @@ public class LinkGroupLoader
         return linkGroupInfos.size();
     }
 
-    private void saveLinkGroup(long currentTime, PoolLinkGroupInfo info) throws InterruptedException
-    {
+    private void saveLinkGroup(long currentTime, PoolLinkGroupInfo info)
+          throws InterruptedException {
         String linkGroupName = info.getName();
         long avalSpaceInBytes = info.getAvailableSpaceInBytes();
         VOInfo[] vos = null;
@@ -182,8 +172,8 @@ public class LinkGroupLoader
         boolean custodialAllowed = info.isCustodialAllowed();
         if (linkGroupAuthorizationFile != null) {
             LinkGroupAuthorizationRecord record =
-                    linkGroupAuthorizationFile
-                            .getLinkGroupAuthorizationRecord(linkGroupName);
+                  linkGroupAuthorizationFile
+                        .getLinkGroupAuthorizationRecord(linkGroupName);
             if (record != null) {
                 vos = record.getVOInfoArray();
             }
@@ -191,41 +181,39 @@ public class LinkGroupLoader
         while (true) {
             try {
                 db.updateLinkGroup(linkGroupName,
-                                   avalSpaceInBytes,
-                                   currentTime,
-                                   onlineAllowed,
-                                   nearlineAllowed,
-                                   replicaAllowed,
-                                   outputAllowed,
-                                   custodialAllowed,
-                                   vos);
+                      avalSpaceInBytes,
+                      currentTime,
+                      onlineAllowed,
+                      nearlineAllowed,
+                      replicaAllowed,
+                      outputAllowed,
+                      custodialAllowed,
+                      vos);
                 break;
             } catch (DeadlockLoserDataAccessException e) {
                 LOGGER.info("Update of link group {} lost deadlock race and will be retried: {}",
-                            linkGroupName, e.toString());
+                      linkGroupName, e.toString());
             } catch (TransientDataAccessException | RecoverableDataAccessException | CannotCreateTransactionException e) {
                 LOGGER.warn("Update of link group {} failed and will be retried: {}",
-                            linkGroupName, e.getMessage());
+                      linkGroupName, e.getMessage());
             }
             Thread.sleep(500);
         }
     }
 
     @Command(name = "update link groups", hint = "update link group information",
-             description = "Link groups are periodically imported from pool manager and stored in " +
-                     "the space manager database. This command performs an immediate " +
-                     "update of the link group information.")
-    public class UpdateLinkGroupsCommand extends DelayedCommand<String>
-    {
-        public UpdateLinkGroupsCommand()
-        {
+          description = "Link groups are periodically imported from pool manager and stored in " +
+                "the space manager database. This command performs an immediate " +
+                "update of the link group information.")
+    public class UpdateLinkGroupsCommand extends DelayedCommand<String> {
+
+        public UpdateLinkGroupsCommand() {
             super(executor);
         }
 
         @Override
         protected String execute()
-                throws InterruptedException, DataAccessException, TransactionException, CacheException, NoRouteToCellException
-        {
+              throws InterruptedException, DataAccessException, TransactionException, CacheException, NoRouteToCellException {
             poolMonitor.refresh();
             int updated = updateLinkGroups();
             return updated + (updated == 1 ? " link group " : " link groups ") + "updated.";

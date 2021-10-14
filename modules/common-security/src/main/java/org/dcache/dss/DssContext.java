@@ -17,17 +17,16 @@
  */
 package org.dcache.dss;
 
-import javax.security.auth.Subject;
-
 import java.io.IOException;
+import javax.security.auth.Subject;
 
 /**
  * The dCache Security Services API.
- *
+ * <p>
  * A simplified version of GSSAPI suitable for the use in various dCache doors.
  */
-public interface DssContext
-{
+public interface DssContext {
+
     /**
      * Initiates a handshake with the peer.
      */
@@ -44,10 +43,9 @@ public interface DssContext
     byte[] wrap(byte[] data, int offset, int len) throws IOException;
 
     /**
-     * Maximum number of bytes (of application data) that may be send to a
-     * single invocation of {@link #wrap}.  This represents a limitation due
-     * to the encrypted token having a maximum size.  Returns Long.MAX_VALUE
-     * if no such limit.
+     * Maximum number of bytes (of application data) that may be send to a single invocation of
+     * {@link #wrap}.  This represents a limitation due to the encrypted token having a maximum
+     * size.  Returns Long.MAX_VALUE if no such limit.
      */
     long maxApplicationSize();
 
@@ -62,8 +60,8 @@ public interface DssContext
     Subject getSubject();
 
     /**
-     * Returns true if the handshake has been completed and a security
-     * context has been established.
+     * Returns true if the handshake has been completed and a security context has been
+     * established.
      */
     boolean isEstablished();
 

@@ -1,13 +1,14 @@
 package org.dcache.tests.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.util.FsPath;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+public class FsPathTest {
 
-public class FsPathTest
-{
     @Test
     public void testResolve() {
         FsPath path = FsPath.create("/pnfs/desy.de");
@@ -20,7 +21,8 @@ public class FsPathTest
 
         path = path.resolve("../trude");
 
-        assertEquals(".. should change 'current'", path.toString(), "/pnfs/desy.de/zeus/users/trude");
+        assertEquals(".. should change 'current'", path.toString(),
+              "/pnfs/desy.de/zeus/users/trude");
 
         path = path.resolve("/");
 
@@ -57,26 +59,23 @@ public class FsPathTest
     }
 
     @Test
-    public void testStrip()
-    {
-        assertEquals("/foo/bar", FsPath.create("/my/root/foo/bar/").stripPrefix(FsPath.create("/my/root")));
+    public void testStrip() {
+        assertEquals("/foo/bar",
+              FsPath.create("/my/root/foo/bar/").stripPrefix(FsPath.create("/my/root")));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testStripNoPrefix()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testStripNoPrefix() {
         FsPath.create("/my/root2/foo/bar/").stripPrefix(FsPath.create("/my/root"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testRelativePath()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testRelativePath() {
         FsPath.create("foo");
     }
 
     @Test
-    public void testContains()
-    {
+    public void testContains() {
         assertTrue(FsPath.create("/foo").contains("foo"));
         assertTrue(FsPath.create("/foo").contains(""));
         assertTrue(FsPath.create("/foo/bar").contains("foo"));
@@ -91,8 +90,7 @@ public class FsPathTest
     }
 
     @Test
-    public void testIsRoot()
-    {
+    public void testIsRoot() {
         assertTrue(FsPath.ROOT.isRoot());
         assertTrue(FsPath.create("/").isRoot());
         assertFalse(FsPath.create("/foo").isRoot());
@@ -100,37 +98,32 @@ public class FsPathTest
     }
 
     @Test
-    public void testParent()
-    {
+    public void testParent() {
         assertEquals(FsPath.ROOT, FsPath.create("/foo").parent());
         assertEquals(FsPath.ROOT.child("foo"), FsPath.create("/foo/bar").parent());
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testParentOnRoot()
-    {
+    public void testParentOnRoot() {
         FsPath.ROOT.parent();
     }
 
     @Test
-    public void testName()
-    {
+    public void testName() {
         assertEquals("/", FsPath.ROOT.name());
         assertEquals("foo", FsPath.ROOT.child("foo").name());
         assertEquals("bar", FsPath.ROOT.child("foo").child("bar").name());
     }
 
     @Test
-    public void testLength()
-    {
+    public void testLength() {
         assertEquals(0, FsPath.ROOT.length());
         assertEquals(1, FsPath.ROOT.child("foo").length());
         assertEquals(2, FsPath.ROOT.child("foo").child("bar").length());
     }
 
     @Test
-    public void testDrop()
-    {
+    public void testDrop() {
         assertEquals(FsPath.ROOT, FsPath.ROOT.drop(0));
         assertEquals(FsPath.ROOT, FsPath.ROOT.drop(1));
         assertEquals(FsPath.ROOT, FsPath.ROOT.child("foo").drop(1));
@@ -140,14 +133,12 @@ public class FsPathTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDropNegative()
-    {
+    public void testDropNegative() {
         assertEquals(FsPath.ROOT, FsPath.ROOT.drop(-1));
     }
 
     @Test
-    public void testPrefix()
-    {
+    public void testPrefix() {
         assertTrue(FsPath.ROOT.hasPrefix(FsPath.ROOT));
         assertFalse(FsPath.ROOT.hasPrefix(FsPath.ROOT.child("foo")));
         assertTrue(FsPath.ROOT.child("foo").hasPrefix(FsPath.ROOT));

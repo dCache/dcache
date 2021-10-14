@@ -19,44 +19,38 @@
 
 package dmg.cells.nucleus;
 
+import java.io.Serializable;
 import javax.annotation.concurrent.Immutable;
 
-import java.io.Serializable;
-
 @Immutable
-public class CellTunnelInfo implements Serializable
-{
+public class CellTunnelInfo implements Serializable {
+
     private static final long serialVersionUID = 6337314695599159656L;
 
     private final CellDomainInfo _remote;
     private final CellDomainInfo _local;
     private final CellAddressCore _tunnel;
 
-    public CellTunnelInfo(CellAddressCore tunnel, CellDomainInfo local, CellDomainInfo remote)
-    {
+    public CellTunnelInfo(CellAddressCore tunnel, CellDomainInfo local, CellDomainInfo remote) {
         _remote = remote;
         _local = local;
         _tunnel = tunnel;
     }
 
-    public CellDomainInfo getRemoteCellDomainInfo()
-    {
+    public CellDomainInfo getRemoteCellDomainInfo() {
         return _remote;
     }
 
-    public CellDomainInfo getLocalCellDomainInfo()
-    {
+    public CellDomainInfo getLocalCellDomainInfo() {
         return _local;
     }
 
-    public CellAddressCore getTunnel()
-    {
+    public CellAddressCore getTunnel() {
         return _tunnel;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return _tunnel + " L[" + (_local != null ? _local.toString() : "Unknown") +
-               "];R[" + (_remote != null ? _remote.toString() : "Unknown") + ']';
+              "];R[" + (_remote != null ? _remote.toString() : "Unknown") + ']';
     }
 }

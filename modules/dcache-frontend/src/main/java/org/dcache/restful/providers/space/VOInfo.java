@@ -61,7 +61,6 @@ package org.dcache.restful.providers.space;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 
 @ApiModel(description = "Virtual organization (VO) group and role associated with a link group.")

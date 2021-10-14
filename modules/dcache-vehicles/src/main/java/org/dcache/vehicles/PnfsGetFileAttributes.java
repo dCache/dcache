@@ -1,19 +1,17 @@
 package org.dcache.vehicles;
 
-import java.util.Set;
-
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsMessage;
-
+import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 
 
 /**
  * Vehicle for get files combined attributes.
- *
- * If the set of desired FileAttribute values includes FileAttribute.XATTR then
- * all extended attributes of the target are included in the reply.
+ * <p>
+ * If the set of desired FileAttribute values includes FileAttribute.XATTR then all extended
+ * attributes of the target are included in the reply.
  *
  * @since 1.9.4
  */
@@ -69,8 +67,9 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     }
 
     /**
-     * Get set of requested {@link FileAttributes}. An empty set
-     * indicates that client interested in file existence only.
+     * Get set of requested {@link FileAttributes}. An empty set indicates that client interested in
+     * file existence only.
+     *
      * @return
      */
     public Set<FileAttribute> getRequestedAttributes() {
@@ -78,24 +77,22 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     }
 
     @Override
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return false;
     }
 
     @Override
-    public boolean fold(Message message)
-    {
+    public boolean fold(Message message) {
         if (message instanceof PnfsGetFileAttributes) {
             PnfsId pnfsId = getPnfsId();
             String path = getPnfsPath();
             Set<FileAttribute> requested = getRequestedAttributes();
             PnfsGetFileAttributes other =
-                (PnfsGetFileAttributes) message;
+                  (PnfsGetFileAttributes) message;
             if ((pnfsId == null || pnfsId.equals(other.getPnfsId())) &&
-                (path == null || path.equals(other.getPnfsPath())) &&
-                (getSubject().equals(other.getSubject())) &&
-                (other.getRequestedAttributes().containsAll(requested))) {
+                  (path == null || path.equals(other.getPnfsPath())) &&
+                  (getSubject().equals(other.getSubject())) &&
+                  (other.getRequestedAttributes().containsAll(requested))) {
                 setPnfsId(other.getPnfsId());
                 setPnfsPath(other.getPnfsPath());
                 setFileAttributes(other.getFileAttributes());
@@ -108,28 +105,27 @@ public class PnfsGetFileAttributes extends PnfsMessage {
 
     /**
      * Tell namespace to update file's last access time on when file attributes are read.
+     *
      * @param update <tt>true</tt> if last access time must be updated.
      */
-    public void setUpdateAtime(boolean update)
-    {
+    public void setUpdateAtime(boolean update) {
         _updateAtime = update;
     }
 
     /**
      * Returns <tt>true</tt> if file's last access time must be updated.
+     *
      * @return <tt>true</tt> if file's last access time must be updated.
      */
-    public boolean getUpdateAtime()
-    {
+    public boolean getUpdateAtime() {
         return _updateAtime;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return super.toString() + ';' +
-               ((_fileAttributes == null)
-             ? "[noMetaData]"
-             : _fileAttributes.toString());
+              ((_fileAttributes == null)
+                    ? "[noMetaData]"
+                    : _fileAttributes.toString());
     }
 }

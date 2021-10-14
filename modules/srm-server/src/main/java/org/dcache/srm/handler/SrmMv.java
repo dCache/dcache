@@ -1,10 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -17,13 +15,13 @@ import org.dcache.srm.v2_2.SrmMvRequest;
 import org.dcache.srm.v2_2.SrmMvResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmMv {
 
-public class SrmMv
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmMv.class);
+          LoggerFactory.getLogger(SrmMv.class);
 
     private final AbstractStorageElement storage;
     private final SrmMvRequest request;
@@ -32,27 +30,24 @@ public class SrmMv
     private SrmMvResponse response;
 
     public SrmMv(SRMUser user,
-                 SrmMvRequest request,
-                 AbstractStorageElement storage,
-                 SRM srm,
-                 String clientHost)
-    {
+          SrmMvRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
         this.srm = requireNonNull(srm);
     }
 
-    public SrmMvResponse getResponse()
-    {
+    public SrmMvResponse getResponse() {
         if (response == null) {
             response = srmMv();
         }
         return response;
     }
 
-    private SrmMvResponse srmMv()
-    {
+    private SrmMvResponse srmMv() {
         TReturnStatus returnStatus;
         try {
             URI to_surl = URI.create(request.getToSURL().toString());
@@ -69,10 +64,10 @@ public class SrmMv
             // SURL is busy.
             if (srm.isFileBusy(from_surl)) {
                 returnStatus = new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
-                        "The source SURL is being used by another client.");
+                      "The source SURL is being used by another client.");
             } else if (srm.isFileBusy(to_surl)) {
                 returnStatus = new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR,
-                        "The target SURL is being used by another client.");
+                      "The target SURL is being used by another client.");
             } else {
                 storage.moveEntry(user, from_surl, to_surl);
                 returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
@@ -94,13 +89,11 @@ public class SrmMv
         return new SrmMvResponse(returnStatus);
     }
 
-    public static final SrmMvResponse getFailedResponse(String error)
-    {
+    public static final SrmMvResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmMvResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmMvResponse getFailedResponse(String error, TStatusCode statusCode) {
         SrmMvResponse response = new SrmMvResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

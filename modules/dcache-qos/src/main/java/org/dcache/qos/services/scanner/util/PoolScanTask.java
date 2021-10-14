@@ -67,19 +67,20 @@ import org.dcache.qos.services.scanner.handlers.PoolOpHandler;
 import org.dcache.qos.util.ErrorAwareTask;
 
 /**
- *  Executes call to scan a pool and dispatch verification requests.
+ * Executes call to scan a pool and dispatch verification requests.
  */
 public final class PoolScanTask extends ErrorAwareTask implements Cancellable {
-    private final PoolOpHandler   handler;
+
+    private final PoolOpHandler handler;
     private final PoolScanSummary scan;
-    private       Future          future;
+    private Future future;
 
     public PoolScanTask(String pool,
-                        QoSMessageType type,
-                        String group,
-                        String storageUnit,
-                        boolean forced,
-                        PoolOpHandler handler) {
+          QoSMessageType type,
+          String group,
+          String storageUnit,
+          boolean forced,
+          PoolOpHandler handler) {
         scan = new PoolScanSummary(pool, type, group, storageUnit, forced);
         this.handler = handler;
     }

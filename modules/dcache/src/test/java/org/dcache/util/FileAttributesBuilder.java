@@ -20,58 +20,49 @@ package org.dcache.util;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 
 /**
  * A fluent class to build a FileAttribute.
  */
-public class FileAttributesBuilder
-{
+public class FileAttributesBuilder {
+
     private final FileAttributes _attributes = new FileAttributes();
 
-    public static FileAttributesBuilder attributes()
-    {
+    public static FileAttributesBuilder attributes() {
         return new FileAttributesBuilder();
     }
 
-    public FileAttributesBuilder size(long size)
-    {
+    public FileAttributesBuilder size(long size) {
         _attributes.setSize(size);
         return this;
     }
 
-    public FileAttributesBuilder size(long size, ByteUnit units)
-    {
+    public FileAttributesBuilder size(long size, ByteUnit units) {
         return size(units.toBytes(size));
     }
 
-    public FileAttributesBuilder type(FileType type)
-    {
+    public FileAttributesBuilder type(FileType type) {
         _attributes.setFileType(type);
         return this;
     }
 
-    public FileAttributesBuilder id(PnfsId id)
-    {
+    public FileAttributesBuilder id(PnfsId id) {
         _attributes.setPnfsId(id);
         return this;
     }
 
-    public FileAttributesBuilder storageInfo(StorageInfoBuilder builder)
-    {
+    public FileAttributesBuilder storageInfo(StorageInfoBuilder builder) {
         return storageInfo(builder.build());
     }
 
-    public FileAttributesBuilder storageInfo(StorageInfo info)
-    {
+    public FileAttributesBuilder storageInfo(StorageInfo info) {
         _attributes.setStorageInfo(info);
         return this;
     }
 
-    public FileAttributes build()
-    {
+    public FileAttributes build() {
         return _attributes;
     }
 }

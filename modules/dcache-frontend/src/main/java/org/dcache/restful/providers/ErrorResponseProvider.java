@@ -21,8 +21,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.base.Throwables;
-import org.json.JSONObject;
-
+import java.net.URI;
+import java.util.Collections;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -30,85 +30,80 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
-
-import java.net.URI;
-import java.util.Collections;
+import org.json.JSONObject;
 
 /**
- * Map errors to the appropriate JSON response object.  It is the
- * responsibility of the resource to map any non-JAX-WS (e.g., dCache-specific)
- * exception to a generic exception.  Any non-JAX-WS exception is treated as a bug.
+ * Map errors to the appropriate JSON response object.  It is the responsibility of the resource to
+ * map any non-JAX-WS (e.g., dCache-specific) exception to a generic exception.  Any non-JAX-WS
+ * exception is treated as a bug.
  */
-public class ErrorResponseProvider implements ExceptionMapper<Exception>
-{
-    public static final Response NOT_IMPLEMENTED
-                    = Response.status(Status.NOT_IMPLEMENTED).build();
+public class ErrorResponseProvider implements ExceptionMapper<Exception> {
 
-    private static String firstLineOf(String in)
-    {
+    public static final Response NOT_IMPLEMENTED
+          = Response.status(Status.NOT_IMPLEMENTED).build();
+
+    private static String firstLineOf(String in) {
         int nl = in.indexOf('\n');
         return nl == -1 ? in : in.substring(0, nl);
     }
 
     @Override
-    public Response toResponse(Exception e)
-    {
+    public Response toResponse(Exception e) {
         if (e instanceof JsonParseException) {
             // Unfortunately Jackson builds multiline messages, we work around this.
             return buildResponse(Response.Status.BAD_REQUEST,
-                    "Supplied JSON is invalid: " + firstLineOf(e.getMessage()));
+                  "Supplied JSON is invalid: " + firstLineOf(e.getMessage()));
         } else if (e instanceof UnrecognizedPropertyException) {
             return buildResponse(Response.Status.BAD_REQUEST,
-                    "'" + ((UnrecognizedPropertyException)e).getPropertyName()
-                            + "' is an unrecognized field.");
+                  "'" + ((UnrecognizedPropertyException) e).getPropertyName()
+                        + "' is an unrecognized field.");
         } else if (e instanceof JsonMappingException) {
             // Unfortunately Jackson builds multiline messages, we work around this.
             return buildResponse(Response.Status.BAD_REQUEST,
-                    "Unable to interpret JSON: " + firstLineOf(e.getMessage()));
+                  "Unable to interpret JSON: " + firstLineOf(e.getMessage()));
         } else if (e instanceof BadRequestException) {
             return buildResponse(Response.Status.BAD_REQUEST,
-                                 getMessage(e, "Bad request"));
+                  getMessage(e, "Bad request"));
         } else if (e instanceof NotFoundException) {
             return buildResponse(Response.Status.NOT_FOUND,
-                                 getMessage(e, "Not found"));
+                  getMessage(e, "Not found"));
         } else if (e instanceof InternalServerErrorException) {
             return buildResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                                 getMessage(e, "Internal error"));
+                  getMessage(e, "Internal error"));
         } else if (e instanceof WebApplicationException) {
-            Response r = ((WebApplicationException)e).getResponse();
+            Response r = ((WebApplicationException) e).getResponse();
             String reasonPhrase = r.getStatusInfo().getReasonPhrase();
             return buildResponse(r.getStatus(), reasonPhrase, reasonPhrase,
-                                 r.getLocation());
+                  r.getLocation());
         } else {
             // All other Exceptions are bug -- log them.
             Thread t = Thread.currentThread();
             t.getUncaughtExceptionHandler().uncaughtException(t, e);
             return buildResponse(Response.Status.INTERNAL_SERVER_ERROR,
-                    "Internal error: " + e);
+                  "Internal error: " + e);
         }
     }
 
-    private Response buildResponse(Status status, String jsonMessage)
-    {
+    private Response buildResponse(Status status, String jsonMessage) {
         return buildResponse(status.getStatusCode(), null, jsonMessage, null);
     }
 
-    private Response buildResponse(int status, String reasonPhrase, String jsonMessage, URI location)
-    {
+    private Response buildResponse(int status, String reasonPhrase, String jsonMessage,
+          URI location) {
         JSONObject error = new JSONObject();
         error.put("status", String.valueOf(status));
         error.put("message", jsonMessage);
         JSONObject json = new JSONObject();
         json.put("errors", Collections.singletonList(error));
 
-        return (reasonPhrase == null ? Response.status(status) : Response.status(status, reasonPhrase))
-                .entity(json.toString())
-                .location(location)
-                .build();
+        return (reasonPhrase == null ? Response.status(status)
+              : Response.status(status, reasonPhrase))
+              .entity(json.toString())
+              .location(location)
+              .build();
     }
 
-    private String getMessage(Exception e, String defaultMessage)
-    {
+    private String getMessage(Exception e, String defaultMessage) {
         String message = null;
 
         Throwable cause = Throwables.getRootCause(e);

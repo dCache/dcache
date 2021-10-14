@@ -18,47 +18,46 @@
 package org.dcache.webdav.owncloud;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.jetty.rewrite.handler.RewriteHandler;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.util.StringUtil;
-import org.springframework.http.MediaType;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.rewrite.handler.RewriteHandler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.StringUtil;
+import org.springframework.http.MediaType;
 
 /**
- * Class mapping certain paths to confront to the requirements of the OwnCloud Sync client for finding out server status and capabilities.
+ * Class mapping certain paths to confront to the requirements of the OwnCloud Sync client for
+ * finding out server status and capabilities.
  *
  * @author ugrin
  */
-public class OwnCloudHandler extends RewriteHandler
-{
+public class OwnCloudHandler extends RewriteHandler {
+
     private static final String OWNCLOUD_STATUS_ENDPOINT = "/status.php";
     private static final String OWNCLOUD_CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities";
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
-    {
-        if (OwncloudClients.isSyncClient(request) && baseRequest.getMethod().equals(HttpMethod.GET.toString())) {
+    public void handle(String target, Request baseRequest, HttpServletRequest request,
+          HttpServletResponse response) throws IOException, ServletException {
+        if (OwncloudClients.isSyncClient(request) && baseRequest.getMethod()
+              .equals(HttpMethod.GET.toString())) {
 
             String json = null;
 
-            switch (target)
-            {
+            switch (target) {
                 case OWNCLOUD_STATUS_ENDPOINT:
-                json = buildStatusResponse();
-                break;
+                    json = buildStatusResponse();
+                    break;
 
                 case OWNCLOUD_CAPABILITIES_ENDPOINT:
-                json = buildCapabilitiesResponse();
-                break;
+                    json = buildCapabilitiesResponse();
+                    break;
 
             }
 
@@ -72,8 +71,7 @@ public class OwnCloudHandler extends RewriteHandler
         }
     }
 
-    String buildStatusResponse() throws IOException
-    {
+    String buildStatusResponse() throws IOException {
         Map<String, Object> paramsMap = new HashMap<>();
 
         paramsMap.put("edition", "");
@@ -85,8 +83,7 @@ public class OwnCloudHandler extends RewriteHandler
         return new ObjectMapper().writeValueAsString(paramsMap);
     }
 
-    String buildCapabilitiesResponse() throws IOException
-    {
+    String buildCapabilitiesResponse() throws IOException {
         Map<String, Object> paramsMap = new HashMap<>();
 
         Map<String, Object> metaMap = new HashMap<>();

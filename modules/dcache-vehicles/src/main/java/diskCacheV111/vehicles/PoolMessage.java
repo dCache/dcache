@@ -11,15 +11,16 @@ public class PoolMessage extends Message {
 
     private static final long serialVersionUID = 2092239799703859605L;
 
-    public PoolMessage(String poolName){
-	_poolName = poolName;
+    public PoolMessage(String poolName) {
+        _poolName = poolName;
     }
 
-    public String getPoolName(){
-	return _poolName;
+    public String getPoolName() {
+        return _poolName;
     }
-    public String toString(){
-        return "Pool="+_poolName ;
+
+    public String toString() {
+        return "Pool=" + _poolName;
     }
 }
 

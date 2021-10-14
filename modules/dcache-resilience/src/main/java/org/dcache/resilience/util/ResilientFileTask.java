@@ -59,16 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import com.google.common.annotations.VisibleForTesting;
+import static diskCacheV111.util.AccessLatency.ONLINE;
 
-import java.time.format.DateTimeFormatter;
+import com.google.common.annotations.VisibleForTesting;
+import diskCacheV111.util.PnfsId;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
@@ -78,42 +77,39 @@ import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
-import static diskCacheV111.util.AccessLatency.ONLINE;
-
 /**
  * <p>Main wrapper task for calling {@link FileOperationHandler}.</p>
  *
  * <p>First runs a verification on the pnfsId to see what kind of
- *      operation is required.  It then proceeds with either a single copy,
- *      remove, or NOP.  The operation is cancellable through its {@link Future}.</p>
+ * operation is required.  It then proceeds with either a single copy, remove, or NOP.  The
+ * operation is cancellable through its {@link Future}.</p>
  *
  * <p>In the case of a copy/migration operation, the completion message
- *      from the pool is relayed by this task object to the internal migration
- *      task object.</p>
+ * from the pool is relayed by this task object to the internal migration task object.</p>
  *
  * <p>In the case of a replica which needs staging, the call to the
- *      file operation handler results in a fire-and-forget request to
- *      PoolManager, at which point the task (and operation) is considered
- *      complete.</p>
+ * file operation handler results in a fire-and-forget request to PoolManager, at which point the
+ * task (and operation) is considered complete.</p>
  *
  * <p>If instead of a copy, a non-sticky replica is promoted to sticky,
- *    the same procedure as a remove is followed.</p>
+ * the same procedure as a remove is followed.</p>
  */
 public final class ResilientFileTask extends ErrorAwareTask implements Cancellable {
+
     private static final String STAT_FORMAT
-                    = "%-28s | %25s %25s | %25s %25s %25s | %9s %9s %9s | %15s\n";
+          = "%-28s | %25s %25s | %25s %25s %25s | %9s %9s %9s | %15s\n";
 
     private static final DateTimeFormatter DATE_FORMATER = DateTimeFormatter
-            .ofPattern("yyyy/MM/dd-HH:mm:ss")
-            .withZone(ZoneId.systemDefault());
+          .ofPattern("yyyy/MM/dd-HH:mm:ss")
+          .withZone(ZoneId.systemDefault());
 
-    private final PnfsId               pnfsId;
+    private final PnfsId pnfsId;
     private final FileOperationHandler handler;
-    private final int                  retry;
+    private final int retry;
 
-    private Task   migrationTask;
+    private Task migrationTask;
     private Future future;
-    private Type   type;
+    private Type type;
 
     private volatile boolean cancelled;
 
@@ -131,12 +127,12 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
         if (elapsed < 0) {
             return "-----";
         }
-        double delta = ((double)elapsed)/(1000.0);
+        double delta = ((double) elapsed) / (1000.0);
         return String.format("%.3f", delta);
     }
 
     public ResilientFileTask(PnfsId pnfsId, int retry,
-                             FileOperationHandler handler) {
+          FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.retry = retry;
         this.handler = handler;
@@ -151,8 +147,8 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
     public Void call() {
         startTime = System.currentTimeMillis();
         FileAttributes attributes = FileAttributes.of()
-                                                  .accessLatency(ONLINE)
-                                                  .pnfsId(pnfsId).build();
+              .accessLatency(ONLINE)
+              .pnfsId(pnfsId).build();
 
         if (cancelled) {
             return null;
@@ -172,8 +168,8 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
                  */
                 startSubTask = System.currentTimeMillis();
                 handler.getRemoveService()
-                       .schedule(new FireAndForgetTask(() -> runPromote(attributes)),
-                                 0, TimeUnit.MILLISECONDS);
+                      .schedule(new FireAndForgetTask(() -> runPromote(attributes)),
+                            0, TimeUnit.MILLISECONDS);
                 break;
             case WAIT_FOR_STAGE:
                 if (cancelled) {
@@ -218,8 +214,8 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
 
                 startSubTask = System.currentTimeMillis();
                 handler.getRemoveService()
-                       .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
-                                 0, TimeUnit.MILLISECONDS);
+                      .schedule(new FireAndForgetTask(() -> runRemove(attributes)),
+                            0, TimeUnit.MILLISECONDS);
                 break;
         }
 
@@ -240,7 +236,7 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
 
         endTime = System.currentTimeMillis();
 
-        switch(type) {
+        switch (type) {
             case SET_STICKY:
             case COPY:
                 inCopy = endTime - startSubTask;
@@ -253,23 +249,23 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
     }
 
     public String getFormattedStatistics(String status,
-                                         FailureType type,
-                                         String parent,
-                                         String source,
-                                         String target) {
+          FailureType type,
+          String parent,
+          String source,
+          String target) {
         return String.format(STAT_FORMAT,
-                        pnfsId,
-                        DATE_FORMATER.format(Instant.ofEpochMilli(startTime)),
-                        DATE_FORMATER.format(Instant.ofEpochMilli(endTime)),
-                        parent == null ? "-----" : parent,
-                        source == null ? "-----" : source,
-                        target == null ? "-----" : target,
-                        getTimeInSeconds(inVerify),
-                        getTimeInSeconds(inCopy),
-                        getTimeInSeconds(inRemove),
-                        cancelled ? "CANCELLED" :
-                                        (type == null ? status :
-                                                        status + ": " + type.name()));
+              pnfsId,
+              DATE_FORMATER.format(Instant.ofEpochMilli(startTime)),
+              DATE_FORMATER.format(Instant.ofEpochMilli(endTime)),
+              parent == null ? "-----" : parent,
+              source == null ? "-----" : source,
+              target == null ? "-----" : target,
+              getTimeInSeconds(inVerify),
+              getTimeInSeconds(inCopy),
+              getTimeInSeconds(inRemove),
+              cancelled ? "CANCELLED" :
+                    (type == null ? status :
+                          status + ": " + type.name()));
     }
 
     public Task getMigrationTask() {
@@ -277,7 +273,9 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
     }
 
     public Integer getTypeValue() {
-        if (type == null) return null;
+        if (type == null) {
+            return null;
+        }
         return type.ordinal();
     }
 
@@ -292,9 +290,9 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
 
         if (migrationTask == null) {
             String msg = String.format("Pool migration copy finished message "
-                                        + "arrived for %s, but migration task "
-                                        + "object has already been removed.",
-                                       pnfsId);
+                        + "arrived for %s, but migration task "
+                        + "object has already been removed.",
+                  pnfsId);
             throw new IllegalStateException(msg);
         }
 
@@ -323,7 +321,7 @@ public final class ResilientFileTask extends ErrorAwareTask implements Cancellab
         }
 
         future = handler.getTaskService()
-                        .schedule(createFireAndForgetTask(), delay, unit);
+              .schedule(createFireAndForgetTask(), delay, unit);
     }
 
     void runPromote(FileAttributes attributes) {

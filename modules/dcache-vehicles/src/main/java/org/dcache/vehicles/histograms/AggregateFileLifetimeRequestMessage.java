@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.vehicles.histograms;
 
 import diskCacheV111.vehicles.Message;
-
 import org.dcache.util.histograms.CountingHistogram;
 
 /**
@@ -68,7 +67,7 @@ import org.dcache.util.histograms.CountingHistogram;
  */
 public class AggregateFileLifetimeRequestMessage extends Message {
 
-    private final String            poolGroup;
+    private final String poolGroup;
     private CountingHistogram aggregateLifetime;
 
     public AggregateFileLifetimeRequestMessage(String poolGroup) {

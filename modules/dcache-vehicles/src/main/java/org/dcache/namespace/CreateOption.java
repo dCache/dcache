@@ -17,8 +17,7 @@
  */
 package org.dcache.namespace;
 
-public enum CreateOption
-{
+public enum CreateOption {
     OVERWRITE_EXISTING,
     CREATE_PARENTS
 }

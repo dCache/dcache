@@ -1,11 +1,10 @@
 package org.dcache.auth.attributes;
 
 /**
- * Login attributes describe various properties of a login session, e.g. a home
- * directory.
+ * Login attributes describe various properties of a login session, e.g. a home directory.
  */
-public interface LoginAttribute
-{
+public interface LoginAttribute {
+
     /**
      * Returns a string representation of this login principal.
      */

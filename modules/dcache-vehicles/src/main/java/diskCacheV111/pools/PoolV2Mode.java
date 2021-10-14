@@ -7,43 +7,43 @@ public class PoolV2Mode implements Serializable {
 
     private static final long serialVersionUID = -3620447515380724292L;
 
-    public static final int ENABLED                 = 0x00 ;
-    public static final int DISABLED                = 0x01 ;
-    public static final int DISABLED_FETCH          = 0x02 ;
-    public static final int DISABLED_STORE          = 0x04 ;
-    public static final int DISABLED_STAGE          = 0x08 ;
-    public static final int DISABLED_P2P_CLIENT     = 0x10 ;
-    public static final int DISABLED_P2P_SERVER     = 0x20 ;
-    public static final int DISABLED_DEAD           = 0x40 ;
-    public static final int DISABLED_STRICT         =
-                                     DISABLED |
-                                     DISABLED_FETCH |
-                                     DISABLED_STORE |
-                                     DISABLED_STAGE |
-                                     DISABLED_P2P_CLIENT |
-                                     DISABLED_P2P_SERVER;
-    public static final int DISABLED_RDONLY         =
-                                     DISABLED |
-                                     DISABLED_STORE |
-                                     DISABLED_STAGE |
-                                     DISABLED_P2P_CLIENT ;
+    public static final int ENABLED = 0x00;
+    public static final int DISABLED = 0x01;
+    public static final int DISABLED_FETCH = 0x02;
+    public static final int DISABLED_STORE = 0x04;
+    public static final int DISABLED_STAGE = 0x08;
+    public static final int DISABLED_P2P_CLIENT = 0x10;
+    public static final int DISABLED_P2P_SERVER = 0x20;
+    public static final int DISABLED_DEAD = 0x40;
+    public static final int DISABLED_STRICT =
+          DISABLED |
+                DISABLED_FETCH |
+                DISABLED_STORE |
+                DISABLED_STAGE |
+                DISABLED_P2P_CLIENT |
+                DISABLED_P2P_SERVER;
+    public static final int DISABLED_RDONLY =
+          DISABLED |
+                DISABLED_STORE |
+                DISABLED_STAGE |
+                DISABLED_P2P_CLIENT;
 
-    private static final int RESILIENCE_ENABLED = 0x7F ;
-    private static final int RESILIENCE_DISABLED = 0x80 ;
+    private static final int RESILIENCE_ENABLED = 0x7F;
+    private static final int RESILIENCE_DISABLED = 0x80;
 
     public static final int REPOSITORY_LOADING = 0x100;
     public static final int DISABLED_RDONLY_REPOSITORY_LOADING =
-                                     DISABLED_RDONLY |
-                                     REPOSITORY_LOADING;
+          DISABLED_RDONLY |
+                REPOSITORY_LOADING;
     public static final int DISABLED_STRICT_REPOSITORY_LOADING =
-                                     DISABLED_STRICT |
-                                     REPOSITORY_LOADING;
+          DISABLED_STRICT |
+                REPOSITORY_LOADING;
 
-    private static final String [] __modeString = {
-       "fetch" , "store" , "stage" , "p2p-client" , "p2p-server"  , "dead"
-    } ;
+    private static final String[] __modeString = {
+          "fetch", "store", "stage", "p2p-client", "p2p-server", "dead"
+    };
 
-    private int _mode = ENABLED ;
+    private int _mode = ENABLED;
 
     /*
      *  For convenience.
@@ -74,7 +74,7 @@ public class PoolV2Mode implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append("disabled(");
         boolean first = true;
-        for (String modeString: __modeString) {
+        for (String modeString : __modeString) {
             mode >>= 1;
             if ((mode & 1) != 0) {
                 if (first) {
@@ -104,7 +104,7 @@ public class PoolV2Mode implements Serializable {
     }
 
     public synchronized void setMode(int mode) {
-        if(isEnabled(mode)) {
+        if (isEnabled(mode)) {
             _mode = mode;
         } else {
             _mode = mode | DISABLED;
@@ -146,6 +146,6 @@ public class PoolV2Mode implements Serializable {
     }
 
     private static boolean isEnabled(int mode) {
-        return mode == ENABLED || mode == (ENABLED| RESILIENCE_DISABLED);
+        return mode == ENABLED || mode == (ENABLED | RESILIENCE_DISABLED);
     }
 }

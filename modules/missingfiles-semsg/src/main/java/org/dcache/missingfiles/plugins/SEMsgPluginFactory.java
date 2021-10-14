@@ -4,19 +4,17 @@ import org.dcache.util.configuration.ConfigurationProperties;
 
 
 /**
- *  Factory class for the SEMsg plugin
+ * Factory class for the SEMsg plugin
  */
-public class SEMsgPluginFactory implements PluginFactory
-{
+public class SEMsgPluginFactory implements PluginFactory {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "semsg";
     }
 
     @Override
-    public Plugin createPlugin(ConfigurationProperties properties)
-    {
+    public Plugin createPlugin(ConfigurationProperties properties) {
         return new SEMsgPlugin(properties);
     }
 }

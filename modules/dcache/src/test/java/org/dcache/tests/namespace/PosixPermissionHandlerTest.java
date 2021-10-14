@@ -1,20 +1,17 @@
 package org.dcache.tests.namespace;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
+import static org.junit.Assert.assertTrue;
 
 import java.security.Principal;
-
+import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class PosixPermissionHandlerTest {
 
@@ -71,18 +68,19 @@ public class PosixPermissionHandlerTest {
 
         attr = FileAttributes.of().uid(ROOT_UID).gid(ROOT_GID).mode(0755).build();
         assertTrue("Regular user is not allowed to create a file without sufficient permissions",
-                pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_DENIED);
+              pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_DENIED);
 
         attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0755).build();
         assertTrue("User should be allowed to create a file with sufficient permissions",
-                pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
+              pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testCreateDir() {
         FileAttributes attr = FileAttributes.of().uid(ROOT_UID).gid(ROOT_GID).mode(0755).build();
-        assertTrue("Regular user is not allowed to create a directory without sufficient permissions", //
-                pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
+        assertTrue(
+              "Regular user is not allowed to create a directory without sufficient permissions", //
+              pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
@@ -90,60 +88,70 @@ public class PosixPermissionHandlerTest {
         FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0600).build();
 
         assertTrue("Owner is allowed to write into his file with mode 0600", //
-                pdp.canWriteFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
+              pdp.canWriteFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
 
         assertTrue("Group member not allowed to write into a file with mode 0600", //
-                pdp.canWriteFile(subject_groupMember, attr) == AccessType.ACCESS_DENIED);
+              pdp.canWriteFile(subject_groupMember, attr) == AccessType.ACCESS_DENIED);
 
         assertTrue("Other not allowed to write into a file with mode 0600", //
-                pdp.canWriteFile(subject_other, attr) == AccessType.ACCESS_DENIED);
+              pdp.canWriteFile(subject_other, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testGroupCreate() {
         FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0770).build();
 
-        assertTrue("Group member is allowed to create a new directory in a parent with mode 0770", //
-                pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_ALLOWED);
+        assertTrue("Group member is allowed to create a new directory in a parent with mode 0770",
+              //
+              pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testNegativeGroup() {
         FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0707).build();
-        assertTrue("Negative group member not allowed to create a new directory in a parent with mode 0707", //
-                pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_DENIED);
+        assertTrue(
+              "Negative group member not allowed to create a new directory in a parent with mode 0707",
+              //
+              pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testNegativeOwner() {
         FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
-        assertTrue("Negative owner not allowed to create a new directory in a parent with mode 0077", //
-                pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
+        assertTrue(
+              "Negative owner not allowed to create a new directory in a parent with mode 0077", //
+              pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void shouldDenyChgrpWhenNotFileOwner() {
-        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID)
+              .mode(0077).build();
         FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
 
         assertTrue("non-owner should not be able to change group-ownership",
-                pdp.canSetAttributes(subject_groupMember, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+              pdp.canSetAttributes(subject_groupMember, currentAttributes, desiredAttributes)
+                    == AccessType.ACCESS_DENIED);
         assertTrue("non-owner should not be able to change group-ownership",
-                pdp.canSetAttributes(subject_other, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+              pdp.canSetAttributes(subject_other, currentAttributes, desiredAttributes)
+                    == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void shouldDenyChgrpWhenFileOwnerButNotMemberOfTargetGroup() {
-        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID)
+              .mode(0077).build();
         FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
 
         assertTrue("owner should not be able to change group-ownership to group not a member",
-                pdp.canSetAttributes(subject_owner, currentAttributes, desiredAttributes) == AccessType.ACCESS_DENIED);
+              pdp.canSetAttributes(subject_owner, currentAttributes, desiredAttributes)
+                    == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void shouldAllowChgrpWhenFileOwnerAndMemberOfTargetGroup() {
-        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
+        FileAttributes currentAttributes = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID)
+              .mode(0077).build();
         FileAttributes desiredAttributes = FileAttributes.ofGid(OTHER_GID);
 
         Subject ownerWithTargetGid = new Subject();
@@ -151,6 +159,7 @@ public class PosixPermissionHandlerTest {
         ownerWithTargetGid.getPrincipals().add(new GidPrincipal(OTHER_GID, false));
 
         assertTrue("owner should be able to change group-ownership to membership group",
-                pdp.canSetAttributes(ownerWithTargetGid, currentAttributes, desiredAttributes) == AccessType.ACCESS_ALLOWED);
+              pdp.canSetAttributes(ownerWithTargetGid, currentAttributes, desiredAttributes)
+                    == AccessType.ACCESS_ALLOWED);
     }
 }

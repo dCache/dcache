@@ -74,45 +74,46 @@ import org.dcache.qos.vehicles.QoSVerificationRequest;
 import org.dcache.qos.vehicles.QoSVerificationRequestMessage;
 
 /**
- *  Use this client when communicating with a remote verification service.
+ * Use this client when communicating with a remote verification service.
  */
 public final class RemoteQoSVerificationClient implements QoSVerificationListener {
-  private CellStub verificationService;
 
-  @Override
-  public void fileQoSVerificationRequested(QoSVerificationRequest verificationRequest) {
-    verificationService.send(new QoSVerificationRequestMessage(verificationRequest));
-  }
+    private CellStub verificationService;
 
-  @Override
-  public void fileQoSVerificationRequested(QoSScannerVerificationRequest verificationRequest) {
-    verificationService.send(new QoSScannerVerificationRequestMessage(verificationRequest));
-  }
+    @Override
+    public void fileQoSVerificationRequested(QoSVerificationRequest verificationRequest) {
+        verificationService.send(new QoSVerificationRequestMessage(verificationRequest));
+    }
 
-  @Override
-  public void fileQoSAdjustmentCompleted(QoSAdjustmentResponse adjustmentResponse)
-      throws QoSException {
-    verificationService.send(new QoSAdjustmentResponseMessage(adjustmentResponse));
-  }
+    @Override
+    public void fileQoSVerificationRequested(QoSScannerVerificationRequest verificationRequest) {
+        verificationService.send(new QoSScannerVerificationRequestMessage(verificationRequest));
+    }
 
-  @Override
-  public void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException {
-    verificationService.send(new QoSVerificationCancelledMessage(pnfsId));
-  }
+    @Override
+    public void fileQoSAdjustmentCompleted(QoSAdjustmentResponse adjustmentResponse)
+          throws QoSException {
+        verificationService.send(new QoSAdjustmentResponseMessage(adjustmentResponse));
+    }
 
-  public void fileQoSBatchedVerificationCancelled(String pool) {
-    verificationService.send(new QoSScannerVerificationCancelledMessage(pool));
-  }
+    @Override
+    public void fileQoSVerificationCancelled(PnfsId pnfsId) throws QoSException {
+        verificationService.send(new QoSVerificationCancelledMessage(pnfsId));
+    }
 
-  public void notifyLocationExclusion(String location) {
-    verificationService.send(new QoSLocationExcludedMessage(location, true));
-  }
+    public void fileQoSBatchedVerificationCancelled(String pool) {
+        verificationService.send(new QoSScannerVerificationCancelledMessage(pool));
+    }
 
-  public void notifyLocationInclusion(String location) {
-    verificationService.send(new QoSLocationExcludedMessage(location, false));
-  }
+    public void notifyLocationExclusion(String location) {
+        verificationService.send(new QoSLocationExcludedMessage(location, true));
+    }
 
-  public void setVerificationService(CellStub verificationService) {
-    this.verificationService = verificationService;
-  }
+    public void notifyLocationInclusion(String location) {
+        verificationService.send(new QoSLocationExcludedMessage(location, false));
+    }
+
+    public void setVerificationService(CellStub verificationService) {
+        this.verificationService = verificationService;
+    }
 }

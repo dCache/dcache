@@ -23,7 +23,8 @@ import java.net.InetSocketAddress;
 /**
  * Factory of DssContext implementations.
  */
-public interface DssContextFactory
-{
-    DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress) throws IOException;
+public interface DssContextFactory {
+
+    DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
+          throws IOException;
 }

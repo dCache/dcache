@@ -17,12 +17,10 @@
  */
 package org.dcache.pool.repository.checksums;
 
-import java.nio.file.OpenOption;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.nio.file.OpenOption;
+import java.util.Set;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.ForwardingReplicaStore;
@@ -30,30 +28,27 @@ import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
 
 /**
- * This class wraps some existing ReplicaStore and adds support for on-the-fly
- * checksum calculation.
+ * This class wraps some existing ReplicaStore and adds support for on-the-fly checksum
+ * calculation.
  */
-public class ChecksumReplicaStore extends ForwardingReplicaStore
-{
+public class ChecksumReplicaStore extends ForwardingReplicaStore {
+
     private final ReplicaStore inner;
     private final ChecksumModuleV1 csm;
 
-    public ChecksumReplicaStore(ReplicaStore inner, ChecksumModuleV1 csm)
-    {
+    public ChecksumReplicaStore(ReplicaStore inner, ChecksumModuleV1 csm) {
         this.inner = inner;
         this.csm = csm;
     }
 
     @Override
-    protected ReplicaStore delegate()
-    {
+    protected ReplicaStore delegate() {
         return inner;
     }
 
     @Override
     public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
-            throws DuplicateEntryException, CacheException
-    {
+          throws DuplicateEntryException, CacheException {
         return new ChecksumReplicaRecord(super.create(id, flags), csm.getDefaultChecksumTypes());
     }
 }

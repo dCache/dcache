@@ -59,20 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApiModel(description = "Information about a specific link.")
 public final class Link extends SelectionType {
+
     private static final long serialVersionUID = 950577255687796590L;
 
     @ApiModelProperty("The tag for this link.")
@@ -82,14 +81,14 @@ public final class Link extends SelectionType {
     private final UnitPreferences preferences;
 
     @ApiModelProperty("The unitgroups for this link.  "
-                    + "All unitgroups must be satisfied before the link is available.")
+          + "All unitgroups must be satisfied before the link is available.")
     private final List<String> unitGroups;
 
     @ApiModelProperty("A list of all poolgroups that this link selects.")
     private final List<String> poolGroups;
 
     @ApiModelProperty("A list of all pools that this link selects.  "
-                    + "This may not include all pools selected via poolgroups.")
+          + "This may not include all pools selected via poolgroups.")
     private final List<String> pools;
 
     public Link() {
@@ -105,20 +104,20 @@ public final class Link extends SelectionType {
         tag = link.getTag();
         preferences = new UnitPreferences(link.getPreferences());
         pools = link.getPools()
-                    .stream()
-                    .sorted(Comparator.comparing(SelectionPool::getName))
-                    .map(SelectionPool::getName)
-                    .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionPool::getName))
+              .map(SelectionPool::getName)
+              .collect(Collectors.toList());
         poolGroups = link.getPoolGroupsPointingTo()
-                         .stream()
-                         .sorted(Comparator.comparing(SelectionPoolGroup::getName))
-                         .map(SelectionPoolGroup::getName)
-                         .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionPoolGroup::getName))
+              .map(SelectionPoolGroup::getName)
+              .collect(Collectors.toList());
         unitGroups = link.getUnitGroupsTargetedBy()
-                         .stream()
-                         .sorted(Comparator.comparing(SelectionUnitGroup::getName))
-                         .map(SelectionUnitGroup::getName)
-                         .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionUnitGroup::getName))
+              .map(SelectionUnitGroup::getName)
+              .collect(Collectors.toList());
     }
 
     public List<String> getPoolGroups() {

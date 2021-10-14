@@ -59,10 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.alarms;
 
-import java.util.Map;
-
 import diskCacheV111.vehicles.Message;
-
+import java.util.Map;
 import org.dcache.alarms.AlarmPriority;
 
 /**
@@ -71,6 +69,7 @@ import org.dcache.alarms.AlarmPriority;
  * @author arossi
  */
 public final class AlarmPriorityMapRequestMessage extends Message {
+
     private static final long serialVersionUID = 1477619433971608910L;
 
     private Map<String, AlarmPriority> map;
@@ -86,9 +85,9 @@ public final class AlarmPriorityMapRequestMessage extends Message {
     @Override
     public String toString() {
         return "AlarmPriorityRequestMessage{"
-               + map
-               + "}{"
-               + super.toString()
-               + '}';
+              + map
+              + "}{"
+              + super.toString()
+              + '}';
     }
- }
+}

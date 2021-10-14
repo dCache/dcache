@@ -66,6 +66,41 @@ COPYRIGHT STATUS:
 
 package org.dcache.ftp.door;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import static org.dcache.auth.attributes.Activity.DELETE;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.MANAGE;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
+import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
+import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
+import static org.dcache.namespace.FileAttribute.ACCESS_TIME;
+import static org.dcache.namespace.FileAttribute.ACL;
+import static org.dcache.namespace.FileAttribute.CHANGE_TIME;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.CREATION_TIME;
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
+import static org.dcache.namespace.FileAttribute.NLINK;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIMPLE_TYPE;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.TYPE;
+import static org.dcache.util.Exceptions.genericCheck;
+import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+import static org.dcache.util.Strings.describe;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.TransferRetryPolicy.maximumTries;
+import static org.dcache.util.TransferRetryPolicy.tryOnce;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -78,13 +113,44 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.doors.LineBasedInterpreter;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.MissingResourceCacheException;
+import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.DoorCancelledUploadNotificationMessage;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.Pool;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.CommandExitException;
+import dmg.util.LineWriter;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -103,7 +169,6 @@ import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.ProtocolFamily;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.StandardProtocolFamily;
@@ -132,9 +197,9 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -142,47 +207,9 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import diskCacheV111.doors.LineBasedInterpreter;
-import diskCacheV111.services.space.Space;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.MissingResourceCacheException;
-import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.DoorCancelledUploadNotificationMessage;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.GFtpTransferStartedMessage;
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.Pool;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.CommandExitException;
-import dmg.util.LineWriter;
-
+import javax.security.auth.Subject;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -190,24 +217,19 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
-import org.dcache.util.ColumnWriter;
-import org.dcache.util.ColumnWriter.DateStyle;
-
-import static org.dcache.auth.attributes.Activity.*;
-
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.MaxUploadSize;
-import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.CellStub;
+import org.dcache.ftp.TransferMode;
 import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.PassiveConnectionHandler;
 import org.dcache.ftp.proxy.ProxyAdapter;
 import org.dcache.ftp.proxy.ProxyAdapter.Direction;
-import org.dcache.ftp.TransferMode;
 import org.dcache.ftp.proxy.SocketAdapter;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
@@ -227,6 +249,8 @@ import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.ColumnWriter;
+import org.dcache.util.ColumnWriter.DateStyle;
 import org.dcache.util.Glob;
 import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetLoggerBuilder;
@@ -240,114 +264,95 @@ import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
-import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
-import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
-import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileType.LINK;
-import static org.dcache.util.ByteUnit.MiB;
-import static org.dcache.util.Exceptions.genericCheck;
-import static org.dcache.util.NetLoggerBuilder.Level.INFO;
-import static org.dcache.util.Strings.describe;
-import static org.dcache.util.Strings.describeSize;
-import static org.dcache.util.TransferRetryPolicy.tryOnce;
-import static org.dcache.util.TransferRetryPolicy.maximumTries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Inherited
 @Retention(RUNTIME)
 @Target(METHOD)
-@interface Help
-{
+@interface Help {
+
     String value();
 }
 
 @Retention(RUNTIME)
 @Target(METHOD)
-@interface ConcurrentWithTransfer
-{
+@interface ConcurrentWithTransfer {
+
 }
 
-enum AnonymousPermission
-{
+enum AnonymousPermission {
     ALLOW_ANONYMOUS_USER, FORBID_ANONYMOUS_USER
 }
 
 /**
  * Cancelling a transfer by some other dCache component.
+ *
  * @see ClientAbortException
  */
-class CancelledUploadException extends Exception
-{
+class CancelledUploadException extends Exception {
+
 }
 
 /**
  * Exception indicating an error during processing of an FTP command.
  */
-class FTPCommandException extends Exception
-{
-    /** FTP reply code. */
+class FTPCommandException extends Exception {
+
+    /**
+     * FTP reply code.
+     */
     protected final int _code;
 
     /**
-     * Constructs a command exception with the given ftp reply code and
-     * message. The message will be used for both the public FTP reply
-     * string and for the exception message.
+     * Constructs a command exception with the given ftp reply code and message. The message will be
+     * used for both the public FTP reply string and for the exception message.
      */
-    public FTPCommandException(int code, String reply)
-    {
+    public FTPCommandException(int code, String reply) {
         super(requireNonNull(reply));
         _code = code;
     }
 
     /**
-     * Constructs a command exception with the given ftp reply code and
-     * message. The message will be used for both the public FTP reply
-     * string and for the exception message.
+     * Constructs a command exception with the given ftp reply code and message. The message will be
+     * used for both the public FTP reply string and for the exception message.
      */
-    public FTPCommandException(int code, String reply, Exception cause)
-    {
+    public FTPCommandException(int code, String reply, Exception cause) {
         super(requireNonNull(reply), cause);
         _code = code;
     }
 
-    /** Returns FTP reply code. */
-    public int getCode()
-    {
+    /**
+     * Returns FTP reply code.
+     */
+    public int getCode() {
         return _code;
     }
 }
 
 /**
- * An FTPCommandException that indicates some request is failing due to the
- * client's behaviour after making the request.  This is distinct from requests
- * that fail for dCache-internal reasons, bad syntax, etc.  An example where
- * ClientAbortException may be used is aborting a transfer due to the client
- * tearing down the control channel.
+ * An FTPCommandException that indicates some request is failing due to the client's behaviour after
+ * making the request.  This is distinct from requests that fail for dCache-internal reasons, bad
+ * syntax, etc.  An example where ClientAbortException may be used is aborting a transfer due to the
+ * client tearing down the control channel.
  */
-class ClientAbortException extends FTPCommandException
-{
-    public ClientAbortException(int code, String reply)
-    {
+class ClientAbortException extends FTPCommandException {
+
+    public ClientAbortException(int code, String reply) {
         super(code, reply);
     }
 }
 
 public abstract class AbstractFtpDoorV1
-        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener,
-        CellInfoProvider, CellMessageSender, CellIdentityAware
-{
+      implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener,
+      CellInfoProvider, CellMessageSender, CellIdentityAware {
+
     private static final long MINIMUM_PERFORMANCE_MARKER_PERIOD = 2;
     private static final long MAXIMUM_PERFORMANCE_MARKER_PERIOD = TimeUnit.MINUTES.toSeconds(5);
-    private static final ImmutableMap<ProtocolFamily,String> PROTOCOLFAMILY_TO_STRING = ImmutableMap.<ProtocolFamily,String>builder()
-            .put(StandardProtocolFamily.INET, "IP v4")
-            .put(StandardProtocolFamily.INET6, "IP v6")
-            .build();
+    private static final ImmutableMap<ProtocolFamily, String> PROTOCOLFAMILY_TO_STRING = ImmutableMap.<ProtocolFamily, String>builder()
+          .put(StandardProtocolFamily.INET, "IP v4")
+          .put(StandardProtocolFamily.INET6, "IP v6")
+          .build();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -360,7 +365,7 @@ public abstract class AbstractFtpDoorV1
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
     private LoadingCache<GetSpaceTokensKey, long[]> _spaceDescriptionCache;
-    private LoadingCache<String,Optional<Space>> _spaceLookupCache;
+    private LoadingCache<String, Optional<Space>> _spaceLookupCache;
     protected Executor _executor;
     private IdentityResolverFactory _identityResolverFactory;
     private IdentityResolver _identityResolver;
@@ -368,8 +373,7 @@ public abstract class AbstractFtpDoorV1
     private String _clientInfo;
     private boolean _logAbortedTransfers;
 
-    private enum WorkAround
-    {
+    private enum WorkAround {
         /* If globus-url-copy is organising a third-party copy then it will
          * issue a QUIT command to the destination endpoint before
          * disconnecting.  For the source endpoint and all second-party copies
@@ -401,32 +405,26 @@ public abstract class AbstractFtpDoorV1
         NO_REPLY_ON_QUIT,
 
         /**
-         * Some clients (e.g., Globus) require that files returned during
-         * directory listing have a definite size.  When dCache is accepting a
-         * new file, the namespace does not know the final file's size so no
-         * file size is returned to the door.  Normally, dCache simply omits the
-         * file size information when building the response; however, this
-         * work-around results in such incomplete files being reported as having
-         * zero length.
+         * Some clients (e.g., Globus) require that files returned during directory listing have a
+         * definite size.  When dCache is accepting a new file, the namespace does not know the
+         * final file's size so no file size is returned to the door.  Normally, dCache simply omits
+         * the file size information when building the response; however, this work-around results
+         * in such incomplete files being reported as having zero length.
          */
         USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES,
 
         /**
-         * Some clients (e.g., Globus) will always request an MD5 checksum
-         * after uploading data, but do no let dCache know this via the
-         * OPTS CKSM command.  Without such a hint, the pool will calculate a
-         * default set of checksum values.  Historically, this does not include
-         * MD5.
+         * Some clients (e.g., Globus) will always request an MD5 checksum after uploading data, but
+         * do no let dCache know this via the OPTS CKSM command.  Without such a hint, the pool will
+         * calculate a default set of checksum values.  Historically, this does not include MD5.
          * <p>
-         * The door will calculate the MD5 checksum dynamically if the client
-         * requests the MD5 checksum and the pool didn't calculated the value.
-         * However, this on-demand checksum calculation slows down the transfers
-         * and places unnecessary load on dCache.
+         * The door will calculate the MD5 checksum dynamically if the client requests the MD5
+         * checksum and the pool didn't calculated the value. However, this on-demand checksum
+         * calculation slows down the transfers and places unnecessary load on dCache.
          * <p>
-         * This work-around informs the pool to calculate the MD5 checksum for
-         * any uploaded files.  The OPT CKSM command, SITE CHKSUM command and
-         * SCKS command continue to be supported.  Any specified algorithm
-         * specified through these commands will be calculated instead of MD5.
+         * This work-around informs the pool to calculate the MD5 checksum for any uploaded files.
+         * The OPT CKSM command, SITE CHKSUM command and SCKS command continue to be supported.  Any
+         * specified algorithm specified through these commands will be calculated instead of MD5.
          */
         REQUEST_MD5_WHEN_UPLOADING_FILES
     }
@@ -435,74 +433,66 @@ public abstract class AbstractFtpDoorV1
     /**
      * Simple class to allow easy accumulation of space usage.
      */
-    private class SpaceAccount
-    {
+    private class SpaceAccount {
+
         private final long used;
         private final long available;
         private final long allocated;
         private final long total;
 
-        public SpaceAccount(Space space)
-        {
+        public SpaceAccount(Space space) {
             used = space.getUsedSizeInBytes();
             available = space.getAvailableSpaceInBytes();
             allocated = space.getAllocatedSpaceInBytes();
             total = space.getSizeInBytes();
         }
 
-        public SpaceAccount(long used, long available, long allocated, long total)
-        {
+        public SpaceAccount(long used, long available, long allocated, long total) {
             this.used = used;
             this.available = available;
             this.allocated = allocated;
             this.total = total;
         }
 
-        public SpaceAccount()
-        {
+        public SpaceAccount() {
             used = 0L;
             available = 0L;
             allocated = 0L;
             total = 0L;
         }
 
-        public SpaceAccount plus(SpaceAccount other)
-        {
+        public SpaceAccount plus(SpaceAccount other) {
             long combinedUsed = used + other.used;
             long combinedAvailable = available + other.available;
             long combinedAllocated = allocated + other.allocated;
             long combinedTotal = total + other.total;
-            return new SpaceAccount(combinedUsed, combinedAvailable, combinedAllocated, combinedTotal);
+            return new SpaceAccount(combinedUsed, combinedAvailable, combinedAllocated,
+                  combinedTotal);
         }
 
-        public long getUsed()
-        {
+        public long getUsed() {
             return used;
         }
 
-        public long getAvailable()
-        {
+        public long getAvailable() {
             return available;
         }
 
-        public long getAllocated()
-        {
+        public long getAllocated() {
             return allocated;
         }
 
-        public long getTotal()
-        {
+        public long getTotal() {
             return total;
         }
     }
 
-    public enum ReplyType
-    {
+    public enum ReplyType {
         CLEAR, MIC, ENC, CONF, TLS
     }
 
-    protected class CommandRequest
-    {
+    protected class CommandRequest {
+
         private final String commandLine;
         private final String commandLineDescription;
         private final String name;
@@ -515,8 +505,7 @@ public abstract class AbstractFtpDoorV1
         private List<String> delayedReplies;
         private boolean hasProxyRequest;
 
-        public CommandRequest(String commandLine, ReplyType replyType, Object commandContext)
-        {
+        public CommandRequest(String commandLine, ReplyType replyType, Object commandContext) {
             this.replyType = replyType;
             this.commandContext = commandContext;
 
@@ -529,13 +518,13 @@ public abstract class AbstractFtpDoorV1
                 method = null;
             } else {
                 int l = (commandLine.length() == 3 || commandLine.charAt(3) == ' ') ? 3 : 4;
-                name = commandLine.substring(0,l).toLowerCase();
+                name = commandLine.substring(0, l).toLowerCase();
                 arg = commandLine.length() > l + 1 ? commandLine.substring(l + 1) : "";
                 method = _methodDict.get(name);
 
                 this.commandLine = (name.equals("adat") || name.equals("pass")) && !arg.isEmpty()
-                        ? commandLine.substring(0, 4) + " ..."
-                        : commandLine;
+                      ? commandLine.substring(0, 4) + " ..."
+                      : commandLine;
 
                 if (replyType == ReplyType.CLEAR) {
                     commandLineDescription = this.commandLine;
@@ -549,49 +538,40 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        public void setHasProxyRequest()
-        {
+        public void setHasProxyRequest() {
             hasProxyRequest = true;
             captureReply = false;
         }
 
-        public boolean hasProxyRequest()
-        {
+        public boolean hasProxyRequest() {
             return hasProxyRequest;
         }
 
-        public boolean isConcurrentCommand()
-        {
+        public boolean isConcurrentCommand() {
             return method != null && method.isAnnotationPresent(ConcurrentWithTransfer.class);
         }
 
-        public String getCommandLineDescription()
-        {
+        public String getCommandLineDescription() {
             return commandLineDescription;
         }
 
-        public String getName()
-        {
+        public String getName() {
             return name;
         }
 
-        public ReplyType getReplyType()
-        {
+        public ReplyType getReplyType() {
             return replyType;
         }
 
-        public CommandRequest getOriginalRequest()
-        {
+        public CommandRequest getOriginalRequest() {
             return originalRequest;
         }
 
-        public boolean isReplyCapturing()
-        {
+        public boolean isReplyCapturing() {
             return captureReply;
         }
 
-        public void storeReply(String reply)
-        {
+        public void storeReply(String reply) {
             if (delayedReplies == null) {
                 delayedReplies = new ArrayList<>();
             }
@@ -600,11 +580,10 @@ public abstract class AbstractFtpDoorV1
         }
 
         /**
-         * Run the command and capture the output.  Subsequent call to
-         * {@code #run} returns output to client.
+         * Run the command and capture the output.  Subsequent call to {@code #run} returns output
+         * to client.
          */
-        public void runCapturingReply() throws CommandExitException
-        {
+        public void runCapturingReply() throws CommandExitException {
             if (!captureReply) {
                 captureReply = true;
                 runCommand();
@@ -612,11 +591,10 @@ public abstract class AbstractFtpDoorV1
         }
 
         /**
-         * Emit captured output if command has captured output, otherwise
-         * run the command and return output to client.
+         * Emit captured output if command has captured output, otherwise run the command and return
+         * output to client.
          */
-        public void run() throws CommandExitException
-        {
+        public void run() throws CommandExitException {
             if (hasProxyRequest) {
                 // do nothing: the proxy handles all output
             } else if (captureReply) {
@@ -631,8 +609,7 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        private void runCommand() throws CommandExitException
-        {
+        private void runCommand() throws CommandExitException {
             _lastCommand = commandLine;
             _commandCounter++;
 
@@ -656,7 +633,8 @@ public abstract class AbstractFtpDoorV1
                           te.getMessage());
                 } catch (RuntimeException | IllegalAccessException e) {
                     LOGGER.error("This is a bug. Please report it.", e);
-                    throw new FTPCommandException(500, "Operation failed due to internal error: " + e.getMessage());
+                    throw new FTPCommandException(500,
+                          "Operation failed due to internal error: " + e.getMessage());
                 } finally {
                     _currentRequest = null;
                 }
@@ -670,8 +648,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return commandLine;
         }
     }
@@ -679,40 +656,35 @@ public abstract class AbstractFtpDoorV1
 
     /**
      * Enumeration type for representing the connection mode.
-     *
-     * For PASSIVE transfers the client establishes the data
-     * connection.
-     *
+     * <p>
+     * For PASSIVE transfers the client establishes the data connection.
+     * <p>
      * For ACTIVE transfers dCache establishes the data connection.
-     *
+     * <p>
      * When INVALID, the client most reset the mode.
-     *
-     * Depending on the values of _isProxyRequiredOnActive and
-     * _isProxyRequiredOnPassive, the data connection with the client
-     * will be established either to an adapter (proxy) at the FTP
-     * door, or to the pool directly.
+     * <p>
+     * Depending on the values of _isProxyRequiredOnActive and _isProxyRequiredOnPassive, the data
+     * connection with the client will be established either to an adapter (proxy) at the FTP door,
+     * or to the pool directly.
      */
-    protected enum Mode
-    {
+    protected enum Mode {
         PASSIVE, ACTIVE, INVALID
     }
 
 
     /**
      * Enumeration type for representing RFC 3659 facts.
-     *
-     * Note that the Globus Online service erroneously requires fact
-     * names to be capitalised, whereas RFC 3659 makes no such
-     * requirement.  This bug has been reported:
-     *
-     *    https://ggus.eu/tech/ticket_show.php?ticket=72601
-     *
+     * <p>
+     * Note that the Globus Online service erroneously requires fact names to be capitalised,
+     * whereas RFC 3659 makes no such requirement.  This bug has been reported:
+     * <p>
+     * https://ggus.eu/tech/ticket_show.php?ticket=72601
+     * <p>
      * and, within Globus' internal tracker, as:
-     *
-     *    http://jira.globus.org/browse/OPS-1
+     * <p>
+     * http://jira.globus.org/browse/OPS-1
      */
-    protected enum Fact
-    {
+    protected enum Fact {
         SIZE("Size"),
         MODIFY("Modify"),
         CREATE("Create"),
@@ -730,19 +702,16 @@ public abstract class AbstractFtpDoorV1
 
         private final String _name;
 
-        Fact(String name)
-        {
+        Fact(String name) {
             _name = name;
         }
 
-        public String getName()
-        {
+        public String getName() {
             return _name;
         }
 
-        public static Fact find(String s)
-        {
-            for (Fact fact: values()) {
+        public static Fact find(String s) {
+            for (Fact fact : values()) {
                 if (s.equalsIgnoreCase(fact.getName())) {
                     return fact;
                 }
@@ -754,7 +723,7 @@ public abstract class AbstractFtpDoorV1
 
     /**
      * Enumeration type for representing RFC 2428 protocol families.
-     *
+     * <p>
      * EPSV and EPRT commands
      */
     public enum Protocol {
@@ -766,7 +735,8 @@ public abstract class AbstractFtpDoorV1
         private int _code;
         private ProtocolFamily _protocolFamily;
 
-        Protocol(Class<? extends InetAddress> addressClass, int code, ProtocolFamily protocolFamily) {
+        Protocol(Class<? extends InetAddress> addressClass, int code,
+              ProtocolFamily protocolFamily) {
             _class = addressClass;
             _code = code;
             _protocolFamily = protocolFamily;
@@ -774,29 +744,34 @@ public abstract class AbstractFtpDoorV1
 
         public static Protocol fromAddress(InetAddress c) {
             if (c.getClass().equals(Inet4Address.class)) {
-               return IPV4;
+                return IPV4;
             } else {
-               return IPV6;
+                return IPV6;
             }
         }
 
         /**
          * find finds the matching enum element for a given protocol code
+         *
          * @param code protocol code as defined in RFC2428: 1 for IPv4, 2 for IPv6
          * @return Protocol (IPV4 or IPV6)
          * @throws FTPCommandException if a code other than 1 or 2 is passed as argument
          */
         public static Protocol find(String code) throws FTPCommandException {
             switch (code) {
-                case "1": return IPV4;
-                case "2": return IPV6;
-                default: throw new FTPCommandException(522, "Unknown protocol family '"+code+". "+
-                        "Known protocol families are 1: IPv4 and 2: IPv6, use one of (1,2)");
+                case "1":
+                    return IPV4;
+                case "2":
+                    return IPV6;
+                default:
+                    throw new FTPCommandException(522, "Unknown protocol family '" + code + ". " +
+                          "Known protocol families are 1: IPv4 and 2: IPv6, use one of (1,2)");
             }
         }
 
         /**
          * getAddressClass gets the address class associated with this enum element
+         *
          * @return class type (Inet4Address or Inet6Address)
          */
         public Class<? extends InetAddress> getAddressClass() {
@@ -813,24 +788,23 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Feature strings returned when the client sends the FEAT
-     * command.
+     * Feature strings returned when the client sends the FEAT command.
      */
     private static final String[] FEATURES = {
-        "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
-        "ERET", "ESTO", "GETPUT", "MDTM",
-        "CKSUM " + buildChecksumList(),  "MODEX",
-        "TVFS",
-        "MFMT",
-        "MFCT",
-        "MFF " + buildSemiColonList(Fact.MODIFY, Fact.CREATE, Fact.MODE),
-        "PASV AllowDelayed",
-        "MLSC"
-        /*
-         * do not publish DCAU as supported feature. This will force
-         * some clients to always encrypt data channel
-         */
-        // "DCAU"
+          "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
+          "ERET", "ESTO", "GETPUT", "MDTM",
+          "CKSUM " + buildChecksumList(), "MODEX",
+          "TVFS",
+          "MFMT",
+          "MFCT",
+          "MFF " + buildSemiColonList(Fact.MODIFY, Fact.CREATE, Fact.MODE),
+          "PASV AllowDelayed",
+          "MLSC"
+          /*
+           * do not publish DCAU as supported feature. This will force
+           * some clients to always encrypt data channel
+           */
+          // "DCAU"
     };
 
     private static final int DEFAULT_DATA_PORT = 20;
@@ -839,10 +813,9 @@ public abstract class AbstractFtpDoorV1
      * Time stamp format as defined in RFC 3659.
      */
     private final DateFormat TIMESTAMP_FORMAT =
-        new SimpleDateFormat("yyyyMMddHHmmss");
+          new SimpleDateFormat("yyyyMMddHHmmss");
 
-    private static String buildSemiColonList(Fact... facts)
-    {
+    private static String buildSemiColonList(Fact... facts) {
         StringBuilder sb = new StringBuilder();
         for (Fact fact : facts) {
             sb.append(fact.getName()).append(';');
@@ -850,10 +823,10 @@ public abstract class AbstractFtpDoorV1
         return sb.toString();
     }
 
-    private static String buildChecksumList(){
+    private static String buildChecksumList() {
         String result = "";
         int mod = 0;
-        for (ChecksumType type: ChecksumType.values()) {
+        for (ChecksumType type : ChecksumType.values()) {
             result += type.getName() + ",";
             mod = 1;
         }
@@ -885,13 +858,13 @@ public abstract class AbstractFtpDoorV1
 
     protected PassiveConnectionHandler _clientConnectionHandler;
 
-    private final Map<String,Method>  _methodDict =
-        new HashMap<>();
-    private final Map<String,Help>  _helpDict = new HashMap<>();
+    private final Map<String, Method> _methodDict =
+          new HashMap<>();
+    private final Map<String, Help> _helpDict = new HashMap<>();
     private final Queue<CommandRequest> _pendingCommands = new ArrayDeque<>();
 
-    protected int            _commandCounter;
-    protected String         _lastCommand    = "<init>";
+    protected int _commandCounter;
+    protected String _lastCommand = "<init>";
     protected CommandRequest _currentRequest;
     private boolean _isHello = true;
 
@@ -903,7 +876,7 @@ public abstract class AbstractFtpDoorV1
     protected long prm_size = -1;
 
 
-    protected long   _skipBytes;
+    protected long _skipBytes;
 
     protected boolean _confirmEOFs;
 
@@ -930,7 +903,9 @@ public abstract class AbstractFtpDoorV1
 
     protected KafkaProducer _kafkaProducer;
 
-    /** Tape Protection */
+    /**
+     * Tape Protection
+     */
     protected CheckStagePermission _checkStagePermission;
 
     protected LoginStrategy _loginStrategy;
@@ -938,24 +913,28 @@ public abstract class AbstractFtpDoorV1
     protected Mode _mode = Mode.ACTIVE;
 
     /**
-     * if _sessionAllPassive is set to true, all
-     * future transfers in the session will use
-     * passive mode. The flag is set by ftp_epsv.
+     * if _sessionAllPassive is set to true, all future transfers in the session will use passive
+     * mode. The flag is set by ftp_epsv.
      */
     protected boolean _sessionAllPassive = false;
 
     /**
      * Defines passive replies that have been delayed.
      */
-    private enum DelayedPassiveReply
-    {
-        /** No passive reply was delayed. */
+    private enum DelayedPassiveReply {
+        /**
+         * No passive reply was delayed.
+         */
         NONE,
 
-        /** A 127/227 reply was delayed. */
+        /**
+         * A 127/227 reply was delayed.
+         */
         PASV,
 
-        /** A 129/229 reply was delayed. */
+        /**
+         * A 129/229 reply was delayed.
+         */
         EPSV
     }
 
@@ -981,16 +960,18 @@ public abstract class AbstractFtpDoorV1
     protected ChecksumType _optCheckSumType;
     protected OptionalLong _allo = OptionalLong.empty();
 
-    /** List of selected RFC 3659 facts. */
+    /**
+     * List of selected RFC 3659 facts.
+     */
     protected Set<Fact> _currentFacts = Sets.newHashSet(
-            Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
-            Fact.OWNER, Fact.GROUP, Fact.UID, Fact.GID, Fact.MODE );
+          Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
+          Fact.OWNER, Fact.GROUP, Fact.UID, Fact.GID, Fact.MODE);
 
     /**
      * Encapsulation of an FTP transfer.
      */
-    protected class FtpTransfer extends AsynchronousRedirectedTransfer<GFtpTransferStartedMessage>
-    {
+    protected class FtpTransfer extends AsynchronousRedirectedTransfer<GFtpTransferStartedMessage> {
+
         private final Mode _mode;
         private final TransferMode _xferMode;
         private final int _parallel;
@@ -1013,23 +994,21 @@ public abstract class AbstractFtpDoorV1
         protected ProxyAdapter _adapter;
 
         /**
-         * Task that periodically generates performance markers. May
-         * be null.
+         * Task that periodically generates performance markers. May be null.
          */
         protected PerfMarkerTask _perfMarkerTask;
 
         public FtpTransfer(FsPath path,
-                           long offset,
-                           long size,
-                           Mode mode,
-                           TransferMode xferMode,
-                           int parallel,
-                           InetSocketAddress client,
-                           int bufSize,
-                           DelayedPassiveReply delayedPassive,
-                           ProtocolFamily protocolFamily,
-                           int version)
-        {
+              long offset,
+              long size,
+              Mode mode,
+              TransferMode xferMode,
+              int parallel,
+              InetSocketAddress client,
+              int bufSize,
+              DelayedPassiveReply delayedPassive,
+              ProtocolFamily protocolFamily,
+              int version) {
             super(AbstractFtpDoorV1.this._executor,
                   AbstractFtpDoorV1.this._pnfs,
                   AbstractFtpDoorV1.this._subject,
@@ -1043,10 +1022,10 @@ public abstract class AbstractFtpDoorV1
             setPoolStub(AbstractFtpDoorV1.this._poolStub);
             setBillingStub(_billingStub);
 
-            if (_settings.isKafkaEnabled())
-            {
+            if (_settings.isKafkaEnabled()) {
                 setKafkaSender(m -> {
-                   _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>(_settings.getKafkaTopic(), m));
+                    _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>(
+                          _settings.getKafkaTopic(), m));
                 });
             }
 
@@ -1067,35 +1046,33 @@ public abstract class AbstractFtpDoorV1
             setTransfer(this);
         }
 
-        public int getVersion()
-        {
+        public int getVersion() {
             return _version;
         }
 
         /**
          * Create an adapter, if needed.
-         *
-         * Since a pool may reject to be passive, we need to set up an
-         * adapter even when we can use passive pools.
+         * <p>
+         * Since a pool may reject to be passive, we need to set up an adapter even when we can use
+         * passive pools.
          */
         private synchronized void createAdapter()
-            throws IOException
-        {
+              throws IOException {
             switch (_mode) {
-            case PASSIVE:
-                _adapter =
-                    new SocketAdapter(_clientConnectionHandler, _internalInetAddress);
-                break;
-
-            case ACTIVE:
-                if (_settings.isProxyRequiredOnActive()) {
-                    LOGGER.info("Creating adapter for active mode");
+                case PASSIVE:
                     _adapter =
-                        new ActiveAdapter(_internalInetAddress,
-                                          _client.getAddress().getHostAddress(),
-                                          _client.getPort());
-                }
-                break;
+                          new SocketAdapter(_clientConnectionHandler, _internalInetAddress);
+                    break;
+
+                case ACTIVE:
+                    if (_settings.isProxyRequiredOnActive()) {
+                        LOGGER.info("Creating adapter for active mode");
+                        _adapter =
+                              new ActiveAdapter(_internalInetAddress,
+                                    _client.getAddress().getHostAddress(),
+                                    _client.getPort());
+                    }
+                    break;
             }
 
             if (_adapter != null) {
@@ -1106,13 +1083,11 @@ public abstract class AbstractFtpDoorV1
         }
 
         /**
-         * Sanity check offset and size parameters. Must be done after
-         * the name space entry has been read because we need the size
-         * of the file first.
+         * Sanity check offset and size parameters. Must be done after the name space entry has been
+         * read because we need the size of the file first.
          */
         public synchronized void checkAndDeriveOffsetAndSize()
-            throws FTPCommandException
-        {
+              throws FTPCommandException {
             long fileSize = getFileAttributes().getSize();
             if (_offset == -1) {
                 _offset = 0;
@@ -1123,31 +1098,30 @@ public abstract class AbstractFtpDoorV1
             checkFTPCommand(_offset >= 0, 500, "prm offset is %d", _offset);
             checkFTPCommand(_size >= 0, 500, "prm_size is  %d", _size);
             checkFTPCommand(_offset + _size <= fileSize,
-                    500, "invalid prm_offset=%d and prm_size %d for file of size %d",
-                    _offset, _size, fileSize);
+                  500, "invalid prm_offset=%d and prm_size %d for file of size %d",
+                  _offset, _size, fileSize);
         }
 
         @Override
-        protected synchronized ProtocolInfo getProtocolInfoForPoolManager()
-        {
+        protected synchronized ProtocolInfo getProtocolInfoForPoolManager() {
             return new GFtpProtocolInfo("GFtp",
-                                        _version,
-                                        0,
-                                        _client,
-                                        _parallel,
-                                        _parallel,
-                                        _parallel,
-                                        _bufSize, 0, 0);
+                  _version,
+                  0,
+                  _client,
+                  _parallel,
+                  _parallel,
+                  _parallel,
+                  _bufSize, 0, 0);
         }
 
         @Override
-        protected synchronized ProtocolInfo getProtocolInfoForPool()
-        {
+        protected synchronized ProtocolInfo getProtocolInfoForPool() {
             /* We can only let the pool be passive if this has been
              * enabled and if we can provide the address to the client
              * using a 127 response.
              */
-            boolean usePassivePool = !_settings.isProxyRequiredOnPassive() && _delayedPassive != DelayedPassiveReply.NONE;
+            boolean usePassivePool = !_settings.isProxyRequiredOnPassive()
+                  && _delayedPassive != DelayedPassiveReply.NONE;
 
             /* Construct protocol info. For backward compatibility, when
              * an adapter could be used we put the adapter address into
@@ -1156,26 +1130,26 @@ public abstract class AbstractFtpDoorV1
             GFtpProtocolInfo protocolInfo;
             if (_adapter != null) {
                 protocolInfo =
-                    new GFtpProtocolInfo("GFtp",
-                                         _version, 0,
-                                         _adapter.getInternalAddress(),
-                                         _parallel,
-                                         _parallel,
-                                         _parallel,
-                                         _bufSize,
-                                         _offset,
-                                         _size);
+                      new GFtpProtocolInfo("GFtp",
+                            _version, 0,
+                            _adapter.getInternalAddress(),
+                            _parallel,
+                            _parallel,
+                            _parallel,
+                            _bufSize,
+                            _offset,
+                            _size);
             } else {
                 protocolInfo =
-                    new GFtpProtocolInfo("GFtp",
-                                         _version, 0,
-                                         _client,
-                                         _parallel,
-                                         _parallel,
-                                         _parallel,
-                                         _bufSize,
-                                         _offset,
-                                         _size);
+                      new GFtpProtocolInfo("GFtp",
+                            _version, 0,
+                            _client,
+                            _parallel,
+                            _parallel,
+                            _parallel,
+                            _bufSize,
+                            _offset,
+                            _size);
             }
 
             protocolInfo.setDoorCellName(getCellName());
@@ -1201,33 +1175,32 @@ public abstract class AbstractFtpDoorV1
         }
 
 
-        public void abort(int replyCode, String msg)
-        {
+        public void abort(int replyCode, String msg) {
             abort(new FTPCommandException(replyCode, msg));
         }
 
-        public void abort(int replyCode, String msg, Exception exception)
-        {
+        public void abort(int replyCode, String msg, Exception exception) {
             abort(new FTPCommandException(replyCode, msg, exception));
         }
 
         @Override
-        protected void onQueued()
-        {
+        protected void onQueued() {
             setStatus("Mover " + getPool() + "/" + getMoverId());
         }
 
         @Override
-        protected synchronized void onRedirect(GFtpTransferStartedMessage redirect) throws FTPCommandException
-        {
+        protected synchronized void onRedirect(GFtpTransferStartedMessage redirect)
+              throws FTPCommandException {
             if (redirect != null) {
                 if (_version != 2) {
-                    LOGGER.error("Received unexpected GFtpTransferStartedMessage for {}", redirect.getPnfsId());
+                    LOGGER.error("Received unexpected GFtpTransferStartedMessage for {}",
+                          redirect.getPnfsId());
                     return;
                 }
 
                 if (!redirect.getPnfsId().equals(getPnfsId().toString())) {
-                    LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), redirect.getPnfsId());
+                    LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}",
+                          getPnfsId(), redirect.getPnfsId());
                     throw new FTPCommandException(451, "Transient internal failure");
                 }
 
@@ -1240,8 +1213,9 @@ public abstract class AbstractFtpDoorV1
                  * it, then we have to fail for now. REVISIT: We should
                  * use the other adapter in this case.
                  */
-                checkFTPCommand(_mode != Mode.PASSIVE || redirect.getPassive() || _xferMode != TransferMode.MODE_X,
-                        504, "Cannot use passive X mode");
+                checkFTPCommand(_mode != Mode.PASSIVE || redirect.getPassive()
+                            || _xferMode != TransferMode.MODE_X,
+                      504, "Cannot use passive X mode");
 
                 /* Determine the 127 response address to send back to the
                  * client. When the pool is passive, this is the address of
@@ -1254,14 +1228,14 @@ public abstract class AbstractFtpDoorV1
                     assert _adapter != null;
 
                     replyDelayedPassive(_request, _delayedPassive,
-                                        redirect.getPoolAddress());
+                          redirect.getPoolAddress());
 
                     LOGGER.info("Closing adapter");
                     _adapter.close();
                     _adapter = null;
                 } else if (_mode == Mode.PASSIVE) {
                     replyDelayedPassive(_request, _delayedPassive,
-                                        _clientConnectionHandler.getLocalAddress());
+                          _clientConnectionHandler.getLocalAddress());
                 }
             }
 
@@ -1270,21 +1244,20 @@ public abstract class AbstractFtpDoorV1
             }
 
             setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
-                      (isWrite() ? "Receiving" : "Sending"));
+                  (isWrite() ? "Receiving" : "Sending"));
             whenMoverStarted = Optional.of(Instant.now());
 
             reply(_request, "150 Opening BINARY data connection for " + _path);
 
             if (isWrite() && _xferMode == TransferMode.MODE_E && _performanceMarkerPeriod > 0) {
                 _perfMarkerTask = new PerfMarkerTask(_request, getPool().getAddress(),
-                        getMoverId(), _performanceMarkerPeriod / 2);
+                      getMoverId(), _performanceMarkerPeriod / 2);
                 TIMER.schedule(_perfMarkerTask, _performanceMarkerPeriod, _performanceMarkerPeriod);
             }
         }
 
         @Override
-        protected void onFinish() throws FTPCommandException
-        {
+        protected void onFinish() throws FTPCommandException {
             try {
                 ProxyAdapter adapter;
                 synchronized (this) {
@@ -1296,7 +1269,8 @@ public abstract class AbstractFtpDoorV1
                         LOGGER.info("Waiting for adapter to finish.");
                         adapter.join(300000); // 5 minutes
                         checkFTPCommand(!adapter.isAlive(), 451, "FTP proxy did not shut down");
-                        checkFTPCommand(!adapter.hasError(), 451, "FTP proxy failed: %s", adapter.getError());
+                        checkFTPCommand(!adapter.hasError(), 451, "FTP proxy failed: %s",
+                              adapter.getError());
                     } finally {
                         LOGGER.debug("Closing adapter");
                         adapter.close();
@@ -1320,26 +1294,23 @@ public abstract class AbstractFtpDoorV1
         }
 
         /**
-         * Aborts a transfer and performs all necessary cleanup steps,
-         * including killing movers and removing incomplete files. A
-         * failure message is send to the client. Both the reply code
+         * Aborts a transfer and performs all necessary cleanup steps, including killing movers and
+         * removing incomplete files. A failure message is send to the client. Both the reply code
          * and reply message are logged as errors.
-         *
-         * If an exception is specified, then the error message in the
-         * exception is logged too and the exception itself is logged
-         * at a debug level. The intention is that an exception is
-         * only specified for exceptional cases, i.e. errors we would
-         * not expect to appear in normal use (potential
-         * bugs). Communication errors and the like should not be
-         * logged with an exception.
+         * <p>
+         * If an exception is specified, then the error message in the exception is logged too and
+         * the exception itself is logged at a debug level. The intention is that an exception is
+         * only specified for exceptional cases, i.e. errors we would not expect to appear in normal
+         * use (potential bugs). Communication errors and the like should not be logged with an
+         * exception.
          */
         @Override
-        protected synchronized void onFailure(Throwable t)
-        {
+        protected synchronized void onFailure(Throwable t) {
             if (_logAbortedTransfers && t instanceof ClientAbortException) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new LineIndentingPrintWriter(sw, "    ");
-                pw.println("Control channel: remote " + describe(_remoteSocketAddress) + "; local " + describe(_localSocketAddress));
+                pw.println("Control channel: remote " + describe(_remoteSocketAddress) + "; local "
+                      + describe(_localSocketAddress));
                 pw.println("Work-arounds: " + _activeWorkarounds);
                 if (_clientInfo != null) {
                     pw.println("Client info: " + _clientInfo);
@@ -1347,7 +1318,7 @@ public abstract class AbstractFtpDoorV1
                 getInfo(pw);
                 String info = sw.toString();
                 _log.warn("Client aborted transfer, details follow:\n{}",
-                        info.substring(0, info.length()-1)); // remove trailing '\n'
+                      info.substring(0, info.length() - 1)); // remove trailing '\n'
             }
 
             if (_perfMarkerTask != null) {
@@ -1405,8 +1376,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        protected String explain(Throwable t)
-        {
+        protected String explain(Throwable t) {
             if (t instanceof FTPCommandException) {
                 return t.getMessage();
             }
@@ -1414,17 +1384,18 @@ public abstract class AbstractFtpDoorV1
             return super.explain(t);
         }
 
-        public void getInfo(PrintWriter pw)
-        {
+        public void getInfo(PrintWriter pw) {
             pw.println("Transaction: " + getTransaction());
             pw.println("Transfer command: " + _request);
             pw.println("Transfer direction: " + (isWrite() ? "UPLOAD" : "DOWNLOAD"));
             pw.println("Transfer started: " + TimeUtils.relativeTimestamp(whenCreated));
-            pw.println("Mover started: " + whenMoverStarted.map(TimeUtils::relativeTimestamp).orElse("not started"));
+            pw.println("Mover started: " + whenMoverStarted.map(TimeUtils::relativeTimestamp)
+                  .orElse("not started"));
             String dataChannel = _mode + "; mode " + _xferMode.getLabel() + "; ";
             if (_mode == Mode.ACTIVE) {
                 // _parallel only has an effect if the pool is active and is not using a proxy.
-                dataChannel = dataChannel + _parallel + " stream" + (_parallel == 1 ? "" : "s") + "; connecting to";
+                dataChannel = dataChannel + _parallel + " stream" + (_parallel == 1 ? "" : "s")
+                      + "; connecting to";
             } else {
                 dataChannel = dataChannel + "expecting connections from";
             }
@@ -1469,15 +1440,14 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected interface CommandMethodVisitor
-    {
+    protected interface CommandMethodVisitor {
+
         void acceptCommand(Method method, String name);
     }
 
     protected Transfer _transfer;
 
-    public AbstractFtpDoorV1(String ftpDoorName)
-    {
+    public AbstractFtpDoorV1(String ftpDoorName) {
         _ftpDoorName = ftpDoorName;
         /**
          * RFC 3659 requires GMT
@@ -1493,8 +1463,7 @@ public abstract class AbstractFtpDoorV1
         });
     }
 
-    final protected void visitFtpCommands(CommandMethodVisitor visitor)
-    {
+    final protected void visitFtpCommands(CommandMethodVisitor visitor) {
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
             if (name.startsWith("ftp_")) {
@@ -1503,104 +1472,92 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected void checkFTPCommand(boolean isOK, int code, String format, Object... arguments) throws FTPCommandException
-    {
+    protected void checkFTPCommand(boolean isOK, int code, String format, Object... arguments)
+          throws FTPCommandException {
         genericCheck(isOK, m -> new FTPCommandException(code, m), format, arguments);
     }
 
     /**
      * Get current user's name, as used by the transaction log.
      */
-    protected String getUserName()
-    {
+    protected String getUserName() {
         return Subjects.getUserName(_subject);
     }
 
-    public void setSettings(FtpDoorSettings settings)
-    {
+    public void setSettings(FtpDoorSettings settings) {
         _settings = settings;
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         _cellEndpoint = endpoint;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         _cellAddress = address;
     }
 
-    public void setWriter(LineWriter writer)
-    {
+    public void setWriter(LineWriter writer) {
         _out = writer;
     }
 
-    public void setRemoteSocketAddress(InetSocketAddress remoteAddress)
-    {
+    public void setRemoteSocketAddress(InetSocketAddress remoteAddress) {
         _remoteSocketAddress = remoteAddress;
     }
 
-    public void setLocalSocketAddress(InetSocketAddress localAddress)
-    {
+    public void setLocalSocketAddress(InetSocketAddress localAddress) {
         _localSocketAddress = localAddress;
     }
 
-    public void setProxySocketAddress(InetSocketAddress localAddress)
-    {
+    public void setProxySocketAddress(InetSocketAddress localAddress) {
         _proxySocketAddress = localAddress;
     }
 
-    public void setExecutor(Executor executor)
-    {
+    public void setExecutor(Executor executor) {
         _executor = new CDCExecutorDecorator<>(executor);
     }
 
-    public void setSpaceDescriptionCache(LoadingCache<GetSpaceTokensKey, long[]> cache)
-    {
+    public void setSpaceDescriptionCache(LoadingCache<GetSpaceTokensKey, long[]> cache) {
         _spaceDescriptionCache = cache;
     }
 
-    public void setSpaceLookupCache(LoadingCache<String,Optional<Space>> cache)
-    {
+    public void setSpaceLookupCache(LoadingCache<String, Optional<Space>> cache) {
         _spaceLookupCache = cache;
     }
 
-    public void setPoolManagerHandler(PoolManagerHandler poolManagerHandler)
-    {
+    public void setPoolManagerHandler(PoolManagerHandler poolManagerHandler) {
         _poolManagerHandler = poolManagerHandler;
     }
 
-    public void setIdentityResolverFactory(IdentityResolverFactory factory)
-    {
+    public void setIdentityResolverFactory(IdentityResolverFactory factory) {
         _identityResolverFactory = factory;
         _identityResolver = factory.withoutSubject();
     }
 
-    public void init() throws Exception
-    {
+    public void init() throws Exception {
         if (_settings.getPerformanceMarkerPeriod() > 0) {
-            _performanceMarkerPeriod = _settings.getPerformanceMarkerPeriodUnit().toMillis(_settings.getPerformanceMarkerPeriod());
+            _performanceMarkerPeriod = _settings.getPerformanceMarkerPeriodUnit()
+                  .toMillis(_settings.getPerformanceMarkerPeriod());
         }
 
         _logAbortedTransfers = _settings.logAbortedTransfers();
 
         _clientDataAddress =
-            new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
+              new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
 
         _internalInetAddress =
-                (_settings.getInternalAddress() == null)
-                ? InetAddress.getLocalHost()
-                : InetAddress.getByName(_settings.getInternalAddress());
+              (_settings.getInternalAddress() == null)
+                    ? InetAddress.getLocalHost()
+                    : InetAddress.getByName(_settings.getInternalAddress());
 
         _billingStub = _settings.createBillingStub(_cellEndpoint);
 
         if (_settings.isKafkaEnabled()) {
             _kafkaProducer = _settings.getKafkaProducer();
         }
-        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress, _poolManagerHandler);
+        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress,
+              _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
         _gPlazmaStub = _settings.createGplazmaStub(_cellEndpoint);
 
@@ -1616,8 +1573,8 @@ public abstract class AbstractFtpDoorV1
         _origin = new Origin(_remoteSocketAddress.getAddress());
 
         _readRetryPolicy = maximumTries(_settings.getMaxRetries())
-                .pauseBeforeRetrying(_settings.getRetryWait(), TimeUnit.SECONDS)
-                .doNotTimeout();
+              .pauseBeforeRetrying(_settings.getRetryWait(), TimeUnit.SECONDS)
+              .doNotTimeout();
         _writeRetryPolicy = tryOnce().doNotTimeout();
 
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
@@ -1630,37 +1587,37 @@ public abstract class AbstractFtpDoorV1
     }
 
     @VisibleForTesting
-    protected void buildClientConnectionHandler()
-    {
+    protected void buildClientConnectionHandler() {
         checkState(_clientConnectionHandler == null);
 
-        _clientConnectionHandler = new PassiveConnectionHandler(_localSocketAddress.getAddress(), _settings.getPortRange());
+        _clientConnectionHandler = new PassiveConnectionHandler(_localSocketAddress.getAddress(),
+              _settings.getPortRange());
         _clientConnectionHandler.setAddressSupplier(() -> {
-                    try {
-                        return getLocalAddressInterfaces();
-                    } catch (SocketException e) {
-                        LOGGER.warn("Problem listing local interfaces: {}", e.toString());
-                        return Collections.emptyList();
-                    }});
-        _clientConnectionHandler.setPreferredProtocol(Protocol.fromAddress(_remoteSocketAddress.getAddress()));
+            try {
+                return getLocalAddressInterfaces();
+            } catch (SocketException e) {
+                LOGGER.warn("Problem listing local interfaces: {}", e.toString());
+                return Collections.emptyList();
+            }
+        });
+        _clientConnectionHandler.setPreferredProtocol(
+              Protocol.fromAddress(_remoteSocketAddress.getAddress()));
     }
 
     /**
      * Subject is logged in using the current login strategy.
      */
-    protected void login(Subject subject) throws CacheException
-    {
+    protected void login(Subject subject) throws CacheException {
         LoginReply login = _loginStrategy.login(subject);
         acceptLogin(login.getSubject(), login.getLoginAttributes(), login.getRestriction(),
-                _settings.getRoot() == null ? null : FsPath.create(_settings.getRoot()));
+              _settings.getRoot() == null ? null : FsPath.create(_settings.getRoot()));
     }
 
     protected void acceptLogin(Subject mappedSubject, Set<LoginAttribute> loginAttributes,
-            Restriction restriction, FsPath doorRootPath)
-    {
+          Restriction restriction, FsPath doorRootPath) {
         FsPath userRootPath = FsPath.ROOT;
         String userHomePath = "/";
-        for (LoginAttribute attribute: loginAttributes) {
+        for (LoginAttribute attribute : loginAttributes) {
             if (attribute instanceof RootDirectory) {
                 userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
@@ -1699,18 +1656,18 @@ public abstract class AbstractFtpDoorV1
     }
 
     public static final String hh_get_door_info = "[-binary]";
-    public Object ac_get_door_info(Args args)
-    {
+
+    public Object ac_get_door_info(Args args) {
         IoDoorInfo doorInfo = new IoDoorInfo(_cellAddress);
         long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
         doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
         doorInfo.setProcess("0");
         Transfer transfer = getTransfer();
         if (transfer instanceof FtpTransfer) {
-            IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
+            IoDoorEntry[] entries = {transfer.getIoDoorEntry()};
             doorInfo.setIoDoorEntries(entries);
             doorInfo.setProtocol("GFtp",
-                    String.valueOf(((FtpTransfer)transfer).getVersion()));
+                  String.valueOf(((FtpTransfer) transfer).getVersion()));
         } else {
             IoDoorEntry[] entries = {};
             doorInfo.setIoDoorEntries(entries);
@@ -1725,14 +1682,12 @@ public abstract class AbstractFtpDoorV1
     }
 
     protected void checkCommandAllowed(CommandRequest command, Object commandContext)
-            throws FTPCommandException
-    {
+          throws FTPCommandException {
         // all commands are allowed by default.
     }
 
     public void ftpcommand(String cmdline, Object commandContext, ReplyType replyType)
-        throws CommandExitException
-    {
+          throws CommandExitException {
         CommandRequest request = new CommandRequest(cmdline, replyType, commandContext);
 
         synchronized (_pendingCommands) {
@@ -1749,8 +1704,7 @@ public abstract class AbstractFtpDoorV1
         request.run();
     }
 
-    void runPendingCommands()
-    {
+    void runPendingCommands() {
         synchronized (_pendingCommands) {
             boolean queuingCommands = isTransferring();
 
@@ -1764,7 +1718,8 @@ public abstract class AbstractFtpDoorV1
                     try {
                         request.run();
                     } catch (CommandExitException e) {
-                        LOGGER.error("Bug detected: blocking command issued CommandExitException", e);
+                        LOGGER.error("Bug detected: blocking command issued CommandExitException",
+                              e);
                     }
                     queuingCommands |= isTransferring();
                 }
@@ -1773,14 +1728,14 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         try {
             /* In case of failure, we may have a transfer hanging around.
              */
             Transfer transfer = getTransfer();
             if (transfer instanceof FtpTransfer) {
-                ((FtpTransfer)transfer).abort(new ClientAbortException(451, "Aborting transfer due to session termination"));
+                ((FtpTransfer) transfer).abort(new ClientAbortException(451,
+                      "Aborting transfer due to session termination"));
             }
 
             /*The producer consists of a pool of buffer space that holds records that haven't yet been
@@ -1794,7 +1749,8 @@ public abstract class AbstractFtpDoorV1
             _sessionAllPassive = false; // REVISIT see RFC 2428 Section 4.
 
             if (ACCESS_LOGGER.isInfoEnabled()) {
-                NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
+                NetLoggerBuilder log = new NetLoggerBuilder(INFO,
+                      "org.dcache.ftp.disconnect").omitNullValues();
                 log.add("host.remote", _remoteSocketAddress);
                 log.add("session", CDC.getSession());
                 log.toLogger(ACCESS_LOGGER);
@@ -1802,26 +1758,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected void println(String str)
-    {
+    protected void println(String str) {
         _out.writeLine(str);
     }
 
     @Override
     public void execute(String command)
-            throws CommandExitException
-    {
+          throws CommandExitException {
         ftpcommand(command, null, ReplyType.CLEAR);
     }
 
-    protected String getUser()
-    {
+    protected String getUser() {
         return Subjects.getUserName(_subject);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         String user = getUser();
         String address = _clientDataAddress.getAddress().getHostAddress();
         if (user == null) {
@@ -1832,13 +1784,14 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         String user = getUser();
         if (user != null) {
             pw.println("          User  : " + user);
         }
-        pw.println("Control channel : remote " + describe(_remoteSocketAddress) + "; local " + describe(_localSocketAddress));
+        pw.println(
+              "Control channel : remote " + describe(_remoteSocketAddress) + "; local " + describe(
+                    _localSocketAddress));
         if (_clientInfo != null) {
             pw.println("   Client info  : " + _clientInfo);
         }
@@ -1849,88 +1802,81 @@ public abstract class AbstractFtpDoorV1
         pw.println("  Work-arounds  : " + _activeWorkarounds);
         Transfer transfer = _transfer;
         if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).getInfo(pw);
+            ((FtpTransfer) transfer).getInfo(pw);
         }
         pw.println(ac_get_door_info(new Args("")));
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 
     public void messageArrived(CellMessage envelope,
-                                GFtpTransferStartedMessage message)
-     {
-         LOGGER.debug("Received TransferStarted message");
-         Transfer transfer = getTransfer();
-         if (transfer instanceof FtpTransfer) {
-             ((FtpTransfer)transfer).redirect(message);
-         }
-     }
+          GFtpTransferStartedMessage message) {
+        LOGGER.debug("Received TransferStarted message");
+        Transfer transfer = getTransfer();
+        if (transfer instanceof FtpTransfer) {
+            ((FtpTransfer) transfer).redirect(message);
+        }
+    }
 
-    public void messageArrived(DoorTransferFinishedMessage message)
-    {
+    public void messageArrived(DoorTransferFinishedMessage message) {
         LOGGER.debug("Received TransferFinished message [rc={}]",
-                message.getReturnCode());
+              message.getReturnCode());
         Transfer transfer = getTransfer();
         if (transfer != null) {
             transfer.finished(message);
         }
     }
 
-    public void messageArrived(PnfsListDirectoryMessage message)
-    {
+    public void messageArrived(PnfsListDirectoryMessage message) {
         ListDirectoryHandler listSource = _listSource;
         if (listSource != null) {
             listSource.messageArrived(message);
         }
     }
 
-    public void messageArrived(DoorCancelledUploadNotificationMessage message)
-    {
+    public void messageArrived(DoorCancelledUploadNotificationMessage message) {
         Transfer transfer = getTransfer();
         if (transfer instanceof FtpTransfer && transfer.isWrite() &&
-                message.getPnfsId().equals(transfer.getPnfsId())) {
-            ((FtpTransfer)transfer).abort(555, message.getExplanation(),
-                    new CancelledUploadException());
+              message.getPnfsId().equals(transfer.getPnfsId())) {
+            ((FtpTransfer) transfer).abort(555, message.getExplanation(),
+                  new CancelledUploadException());
         }
     }
 
     //
     // GSS authentication
     //
-    protected void reply(CommandRequest request, String answer)
-    {
+    protected void reply(CommandRequest request, String answer) {
         if (!_isHello && request.isReplyCapturing()) {
             request.storeReply(answer);
         } else {
             logReply(request, answer);
 
             switch (_isHello ? ReplyType.CLEAR : request.getReplyType()) {
-            case CLEAR:
-            case TLS:
-                println(answer);
-                break;
-            case MIC:
-                secure_reply(request, answer, "631");
-                break;
-            case ENC:
-                secure_reply(request, answer, "633");
-                break;
-            case CONF:
-                secure_reply(request, answer, "632");
-                break;
+                case CLEAR:
+                case TLS:
+                    println(answer);
+                    break;
+                case MIC:
+                    secure_reply(request, answer, "631");
+                    break;
+                case ENC:
+                    secure_reply(request, answer, "633");
+                    break;
+                case CONF:
+                    secure_reply(request, answer, "632");
+                    break;
             }
         }
     }
 
-    private void logReply(CommandRequest request, String response)
-    {
+    private void logReply(CommandRequest request, String response) {
         if (ACCESS_LOGGER.isInfoEnabled()) {
             String event = _isHello ? "org.dcache.ftp.hello" :
-                    "org.dcache.ftp.response";
+                  "org.dcache.ftp.response";
 
             if (response.startsWith("335 ADAT=")) {
                 response = "335 ADAT=...";
@@ -1940,7 +1886,8 @@ public abstract class AbstractFtpDoorV1
             log.add("session", CDC.getSession());
             if (_isHello) {
                 log.add("socket.remote", _remoteSocketAddress);
-                if (_proxySocketAddress != null && !_proxySocketAddress.equals(_localSocketAddress)) {
+                if (_proxySocketAddress != null && !_proxySocketAddress.equals(
+                      _localSocketAddress)) {
                     log.add("socket.proxy", _proxySocketAddress);
                 }
                 log.add("socket.local", _localSocketAddress);
@@ -1962,23 +1909,20 @@ public abstract class AbstractFtpDoorV1
 
     protected abstract void logSubject(NetLoggerBuilder log, Subject subject);
 
-    protected void reply(String answer)
-    {
+    protected void reply(String answer) {
         reply(_currentRequest, answer);
     }
 
     protected abstract void secure_reply(CommandRequest request, String answer, String code);
 
-    protected void checkLoggedIn(AnonymousPermission mode) throws FTPCommandException
-    {
+    protected void checkLoggedIn(AnonymousPermission mode) throws FTPCommandException {
         checkFTPCommand(_subject != null, 530, "Not logged in.");
         checkFTPCommand(mode != FORBID_ANONYMOUS_USER || !Subjects.isNobody(_subject),
-                554, "Anonymous usage not permitted.");
+              554, "Anonymous usage not permitted.");
     }
 
     @Help("FEAT - List available features.")
-    public void ftp_feat(String arg)
-    {
+    public void ftp_feat(String arg) {
         StringBuilder builder = new StringBuilder();
         builder.append("211-OK\r\n");
         buildFeatList(builder);
@@ -1986,9 +1930,8 @@ public abstract class AbstractFtpDoorV1
         reply(builder.toString());
     }
 
-    protected StringBuilder buildFeatList(StringBuilder builder)
-    {
-        for (String feature: FEATURES) {
+    protected StringBuilder buildFeatList(StringBuilder builder) {
+        for (String feature : FEATURES) {
             builder.append(' ').append(feature).append("\r\n");
         }
 
@@ -1997,7 +1940,7 @@ public abstract class AbstractFtpDoorV1
          * suffixed by an asterix.
          */
         builder.append(" MLST ");
-        for (Fact fact: Fact.values()) {
+        for (Fact fact : Fact.values()) {
             builder.append(fact.getName());
             if (_currentFacts.contains(fact)) {
                 builder.append('*');
@@ -2008,64 +1951,62 @@ public abstract class AbstractFtpDoorV1
         return builder;
     }
 
-    public void opts_retr(String opt) throws FTPCommandException
-    {
+    public void opts_retr(String opt) throws FTPCommandException {
         String[] st = opt.split("=");
         checkFTPCommand(st.length == 2, 500, "OPTS failed.");
 
         String key = st[0];
-        String value = st[1].split(",|;") [0];
+        String value = st[1].split(",|;")[0];
         switch (key.toLowerCase()) {
-        case "parallelism":
-            _parallel = Integer.parseInt(value);
-            if (_settings.getMaxStreamsPerClient() > 0) {
-                _parallel = Math.min(_parallel, _settings.getMaxStreamsPerClient());
-            }
-            reply("200 Parallel streams set (" + opt + ")");
-            break;
+            case "parallelism":
+                _parallel = Integer.parseInt(value);
+                if (_settings.getMaxStreamsPerClient() > 0) {
+                    _parallel = Math.min(_parallel, _settings.getMaxStreamsPerClient());
+                }
+                reply("200 Parallel streams set (" + opt + ")");
+                break;
 
-        case "markers":
-            try {
-                long period = Integer.parseInt(value);
-                checkFTPCommand(period >= MINIMUM_PERFORMANCE_MARKER_PERIOD && period <= MAXIMUM_PERFORMANCE_MARKER_PERIOD,
-                        500, "Value \"%s\" not acceptable", value);
-                _performanceMarkerPeriod = TimeUnit.SECONDS.toMillis(period);
-                reply("200 OPTS Command Successful.");
-            } catch (NumberFormatException e) {
-                throw new FTPCommandException(500, "Value \"" + value + "\" not an integer");
-            }
-            break;
+            case "markers":
+                try {
+                    long period = Integer.parseInt(value);
+                    checkFTPCommand(period >= MINIMUM_PERFORMANCE_MARKER_PERIOD
+                                && period <= MAXIMUM_PERFORMANCE_MARKER_PERIOD,
+                          500, "Value \"%s\" not acceptable", value);
+                    _performanceMarkerPeriod = TimeUnit.SECONDS.toMillis(period);
+                    reply("200 OPTS Command Successful.");
+                } catch (NumberFormatException e) {
+                    throw new FTPCommandException(500, "Value \"" + value + "\" not an integer");
+                }
+                break;
 
-        default:
-            throw new FTPCommandException(501, "Unrecognized RETR option: " + key);
+            default:
+                throw new FTPCommandException(501, "Unrecognized RETR option: " + key);
         }
     }
 
-    public void opts_stor(String opt, String val) throws FTPCommandException
-    {
+    public void opts_stor(String opt, String val) throws FTPCommandException {
         checkFTPCommand(opt.equalsIgnoreCase("EOF"),
-                501, "Unrecognized option: %s (%s)", opt, val);
+              501, "Unrecognized option: %s (%s)", opt, val);
 
         switch (val) {
-        case "0":
-            _confirmEOFs = false;
-            reply("200 EOF confirmation is OFF");
-            break;
-        case "1":
-            _confirmEOFs = true;
-            reply("200 EOF confirmation is ON");
-            break;
-        default:
-            throw new FTPCommandException(501, "Unrecognized option value: " + val);
+            case "0":
+                _confirmEOFs = false;
+                reply("200 EOF confirmation is OFF");
+                break;
+            case "1":
+                _confirmEOFs = true;
+                reply("200 EOF confirmation is ON");
+                break;
+            default:
+                throw new FTPCommandException(501, "Unrecognized option value: " + val);
         }
     }
 
-    private void opts_cksm(String algo) throws FTPCommandException
-    {
+    private void opts_cksm(String algo) throws FTPCommandException {
         checkFTPCommand(algo != null, 501, "CKSM option command requires algorithm type");
 
         if (algo.startsWith("markers=")) {
-            _checksumProgressPeriod = Long.parseLong(algo.substring(8).split(";") [0]);
+            _checksumProgressPeriod = Long.parseLong(algo.substring(8).split(";")[0]);
             reply("200 OK");
             return;
         }
@@ -2080,10 +2021,9 @@ public abstract class AbstractFtpDoorV1
         reply("200 OK");
     }
 
-    private void opts_mlst(String facts)
-    {
+    private void opts_mlst(String facts) {
         Set<Fact> newFacts = new HashSet<>();
-        for (String s: facts.split(";")) {
+        for (String s : facts.split(";")) {
             Fact fact = Fact.find(s);
             if (fact != null) {
                 newFacts.add(fact);
@@ -2096,27 +2036,26 @@ public abstract class AbstractFtpDoorV1
             reply("200 MLST");
         } else {
             StringBuilder s = new StringBuilder("200 MLST ");
-            for (Fact fact: _currentFacts) {
+            for (Fact fact : _currentFacts) {
                 s.append(fact.getName()).append(';');
             }
             reply(s.toString());
         }
     }
 
-    public void opts_pasv(String s) throws FTPCommandException
-    {
-        Map<String, String> options = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(s);
+    public void opts_pasv(String s) throws FTPCommandException {
+        Map<String, String> options = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=')
+              .split(s);
         for (Map.Entry<String, String> option : options.entrySet()) {
             checkFTPCommand(option.getKey().equalsIgnoreCase("AllowDelayed"),
-                    501, "Unrecognized option: %s (%s)", option.getKey(), option.getValue());
+                  501, "Unrecognized option: %s (%s)", option.getKey(), option.getValue());
             _allowDelayed = option.getValue().equals("1");
         }
         reply("200 OK");
     }
 
     @Help("OPTS <SP> <feat> [<SP> <arg>] - Select desired behaviour for a feature.")
-    public void ftp_opts(String arg) throws FTPCommandException
-    {
+    public void ftp_opts(String arg) throws FTPCommandException {
         String[] st = arg.split("\\s+");
         if (st.length == 2 && st[0].equalsIgnoreCase("RETR")) {
             opts_retr(st[1]);
@@ -2136,8 +2075,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("DELE <SP> <pathname> - Delete a file or symbolic link.")
-    public void ftp_dele(String arg) throws FTPCommandException
-    {
+    public void ftp_dele(String arg) throws FTPCommandException {
         /**
          * DELE
          *    250
@@ -2149,24 +2087,20 @@ public abstract class AbstractFtpDoorV1
         FsPath path = absolutePath(arg);
         try {
             PnfsId pnfsId =
-                    _pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.REGULAR, FileType.LINK));
+                  _pnfs.deletePnfsEntry(path.toString(),
+                        EnumSet.of(FileType.REGULAR, FileType.LINK));
             reply("250 OK");
             sendRemoveInfoToBilling(pnfsId, path);
-        }
-        catch (PermissionDeniedCacheException e) {
-            throw new FTPCommandException(550,"Permission denied");
-        }
-        catch (FileNotFoundCacheException e) {
-            throw new FTPCommandException(550,"No such file or directory");
-        }
-        catch (NotFileCacheException e) {
-            throw new FTPCommandException(550,"Not a file: "+arg);
-        }
-        catch (TimeoutCacheException e) {
-            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
-        }
-        catch (CacheException e) {
-            throw new FTPCommandException(550,"Cannot delete file, reason:"+e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550, "Permission denied");
+        } catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550, "No such file or directory");
+        } catch (NotFileCacheException e) {
+            throw new FTPCommandException(550, "Not a file: " + arg);
+        } catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451, "Internal timeout, reason:" + e);
+        } catch (CacheException e) {
+            throw new FTPCommandException(550, "Cannot delete file, reason:" + e);
         }
     }
 
@@ -2177,14 +2111,12 @@ public abstract class AbstractFtpDoorV1
     public abstract void ftp_pass(String arg) throws FTPCommandException;
 
     @Help("PBSZ <SP> <size> - Protection buffer size.")
-    public void ftp_pbsz(String arg)
-    {
+    public void ftp_pbsz(String arg) {
         reply("200 OK");
     }
 
     @Help("PROT <SP> <level> - Set data channel protection level.")
-    public void ftp_prot(String arg) throws FTPCommandException
-    {
+    public void ftp_prot(String arg) throws FTPCommandException {
         checkFTPCommand(arg.equals("C"), 534, "Will accept only Clear protection level");
 
         reply("200 OK");
@@ -2196,8 +2128,7 @@ public abstract class AbstractFtpDoorV1
     //                                                                       //
 
 
-    private FsPath absolutePath(String path) throws FTPCommandException
-    {
+    private FsPath absolutePath(String path) throws FTPCommandException {
         String absPath;
 
         if (path.startsWith("/")) {
@@ -2215,8 +2146,7 @@ public abstract class AbstractFtpDoorV1
 
 
     @Help("RMD <SP> <path> - Remove an empty directory.")
-    public void ftp_rmd(String arg) throws FTPCommandException
-    {
+    public void ftp_rmd(String arg) throws FTPCommandException {
         /**
          * RMD
          *   250
@@ -2229,28 +2159,22 @@ public abstract class AbstractFtpDoorV1
             FsPath path = absolutePath(arg);
             _pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.DIR));
             reply("250 OK");
-        }
-        catch (PermissionDeniedCacheException e) {
-            throw new FTPCommandException(550,"Permission denied");
-        }
-        catch (FileNotFoundCacheException e) {
-            throw new FTPCommandException(550,"No such file or directory");
-        }
-        catch (NotDirCacheException e) {
-            throw new FTPCommandException(550,"Not a directory: "+arg);
-        }
-        catch (TimeoutCacheException e) {
-            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
-        }
-        catch (CacheException e) {
-            throw new FTPCommandException(550,"Cannot remove directory, reason:"+e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550, "Permission denied");
+        } catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550, "No such file or directory");
+        } catch (NotDirCacheException e) {
+            throw new FTPCommandException(550, "Not a directory: " + arg);
+        } catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451, "Internal timeout, reason:" + e);
+        } catch (CacheException e) {
+            throw new FTPCommandException(550, "Cannot remove directory, reason:" + e);
         }
     }
 
 
     @Help("MKD <SP> <path> - Create a directory.")
-    public void ftp_mkd(String arg) throws FTPCommandException
-    {
+    public void ftp_mkd(String arg) throws FTPCommandException {
         /**
          * MKD
          *   257
@@ -2260,7 +2184,8 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(!arg.isEmpty(), 500, "Missing path argument");
 
         FsPath path = absolutePath(arg);
-        String properDirectoryStringReply = path.stripPrefix(_doorRootPath).replaceAll("\"","\"\"");
+        String properDirectoryStringReply = path.stripPrefix(_doorRootPath)
+              .replaceAll("\"", "\"\"");
         try {
             _pnfs.createPnfsDirectory(path.toString());
             /*
@@ -2290,29 +2215,25 @@ public abstract class AbstractFtpDoorV1
                 CWD /usr/dm/foo"bar
                 200 directory changed to /usr/dm/foo"bar
             */
-            reply("257 \"" +properDirectoryStringReply+"\" directory created");
-        }
-        catch (PermissionDeniedCacheException e) {
-            throw new FTPCommandException(550,"Permission denied");
-        }
-        catch (FileExistsCacheException e) {
-            throw new FTPCommandException(550,"\""+properDirectoryStringReply+
-                                          "\" directory already exists");
-        }
-        catch (TimeoutCacheException e) {
-            throw new FTPCommandException(451,"Internal timeout, reason:"+e);
-        }
-        catch (CacheException e) {
-            throw new FTPCommandException(550,"Cannot create directory, reason:"+e);
+            reply("257 \"" + properDirectoryStringReply + "\" directory created");
+        } catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550, "Permission denied");
+        } catch (FileExistsCacheException e) {
+            throw new FTPCommandException(550, "\"" + properDirectoryStringReply +
+                  "\" directory already exists");
+        } catch (TimeoutCacheException e) {
+            throw new FTPCommandException(451, "Internal timeout, reason:" + e);
+        } catch (CacheException e) {
+            throw new FTPCommandException(550, "Cannot create directory, reason:" + e);
         }
     }
 
     @Help("HELP [<SP> <string>] - Help about a command, or all commands if <string> isn't specified.")
-    public void ftp_help(String arg) throws FTPCommandException
-    {
+    public void ftp_help(String arg) throws FTPCommandException {
         String lowerCaseCmd = arg.toLowerCase();
-        checkFTPCommand(arg.indexOf('_') == -1 && (arg.isEmpty() || _methodDict.containsKey(lowerCaseCmd)),
-                501, "Unknown command %s", arg.toUpperCase());
+        checkFTPCommand(
+              arg.indexOf('_') == -1 && (arg.isEmpty() || _methodDict.containsKey(lowerCaseCmd)),
+              501, "Unknown command %s", arg.toUpperCase());
 
         StringWriter sr = new StringWriter();
         PrintWriter pw = new PrintWriter(sr);
@@ -2321,7 +2242,7 @@ public abstract class AbstractFtpDoorV1
             pw.print("214-The following commands are supported:\r\n");
 
             List<String> commands =
-                    Ordering.natural().sortedCopy(_methodDict.keySet());
+                  Ordering.natural().sortedCopy(_methodDict.keySet());
 
             StringBuilder sb = new StringBuilder();
             for (String command : commands) {
@@ -2371,36 +2292,31 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Apache Commons FTPClient uses the output of SYST to determine how
-     * to parse the output from the LIST command.  Any response with the
-     * keyword "UNIX" ensures the client parses LIST output as if it is the
-     * output from "ls -l", as will including the phrase "Type: L8".
+     * Apache Commons FTPClient uses the output of SYST to determine how to parse the output from
+     * the LIST command.  Any response with the keyword "UNIX" ensures the client parses LIST output
+     * as if it is the output from "ls -l", as will including the phrase "Type: L8".
      */
     @Help("SYST - Return system type.")
-    public void ftp_syst(String arg)
-    {
+    public void ftp_syst(String arg) {
         reply("215 UNIX Type: L8 Version: FTPDoor");
     }
 
     @Help("TYPE - Sets the transfer mode.")
-    public void ftp_type(String arg)
-    {
+    public void ftp_type(String arg) {
         reply("200 Type set to I");
     }
 
     @Help("NOOP - Does nothing.")
-    public void ftp_noop(String arg)
-    {
+    public void ftp_noop(String arg) {
         reply(ok("NOOP"));
     }
 
     private static final Pattern ALLO_PATTERN =
-        Pattern.compile("(\\d+)( R \\d+)?");
+          Pattern.compile("(\\d+)( R \\d+)?");
 
     @Help("ALLO <SP> <size> [<SP> R <SP> <size>] - Allocate sufficient disk space to receive a file.")
     public void ftp_allo(String arg)
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
         _allo = OptionalLong.empty();
@@ -2419,16 +2335,14 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("PWD - Returns the current directory of the host.")
-    public void ftp_pwd(String arg) throws FTPCommandException
-    {
+    public void ftp_pwd(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(arg.isEmpty(), 500, "No argument expected");
         reply("257 \"" + _cwd + "\" is current directory");
     }
 
     @Help("CWD <SP> <path> - Change working directory.")
-    public void ftp_cwd(String arg) throws FTPCommandException
-    {
+    public void ftp_cwd(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         try {
@@ -2447,13 +2361,11 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("CDUP - Change to parent directory.")
-    public void ftp_cdup(String arg) throws FTPCommandException
-    {
+    public void ftp_cdup(String arg) throws FTPCommandException {
         ftp_cwd("..");
     }
 
-    private InetSocketAddress getAddressOf(String[] s)
-    {
+    private InetSocketAddress getAddressOf(String[] s) {
         try {
             byte address[] = new byte[4];
             for (int i = 0; i < 4; ++i) {
@@ -2462,34 +2374,36 @@ public abstract class AbstractFtpDoorV1
             int port = Integer.parseInt(s[4]) * 256 + Integer.parseInt(s[5]);
             return new InetSocketAddress(InetAddress.getByAddress(address), port);
         } catch (UnknownHostException e) {
-            throw new RuntimeException("Bug detected (UnknownHostException should only be thrown if address has wrong length): " + e.toString());
+            throw new RuntimeException(
+                  "Bug detected (UnknownHostException should only be thrown if address has wrong length): "
+                        + e.toString());
         }
     }
 
-    protected InetSocketAddress getExtendedAddressOf(String arg) throws FTPCommandException
-    {
+    protected InetSocketAddress getExtendedAddressOf(String arg) throws FTPCommandException {
         try {
             checkFTPCommand(!arg.isEmpty(), 501, "Syntax error: empty arguments.");
             ArrayList<String> splitted = Lists.newArrayList(Splitter.on(arg.charAt(0)).split(arg));
-            checkFTPCommand(splitted.size() == 5, 501, "Syntax error: Wrong number of arguments in '%s'.", arg);
+            checkFTPCommand(splitted.size() == 5, 501,
+                  "Syntax error: Wrong number of arguments in '%s'.", arg);
             Protocol protocol = Protocol.find(splitted.get(1));
             checkFTPCommand(InetAddresses.isInetAddress(splitted.get(2)), 501,
-                    "Syntax error: '%s' is no valid address.", splitted.get(2));
+                  "Syntax error: '%s' is no valid address.", splitted.get(2));
             InetAddress address = InetAddresses.forString(splitted.get(2));
             checkFTPCommand(protocol.getAddressClass().equals(address.getClass()),
-                    501, "Protocol code does not match address: '%s'.", arg);
+                  501, "Protocol code does not match address: '%s'.", arg);
             int port = Integer.parseInt(splitted.get(3));
             checkFTPCommand(port >= 1 && port <= 65536, 501,
-                    "Port number '%d' out of range [1,65536].", port);
+                  "Port number '%d' out of range [1,65536].", port);
             return new InetSocketAddress(address, port);
 
         } catch (NumberFormatException nfe) {
-            throw new FTPCommandException(501, "Syntax error: no valid port number in '"+arg+"'.");
+            throw new FTPCommandException(501,
+                  "Syntax error: no valid port number in '" + arg + "'.");
         }
     }
 
-    protected void setActive(InetSocketAddress address) throws FTPCommandException
-    {
+    protected void setActive(InetSocketAddress address) throws FTPCommandException {
         checkFTPCommand(!_sessionAllPassive, 503, "PORT and EPRT not allowed after EPSV ALL.");
 
         _mode = Mode.ACTIVE;
@@ -2500,8 +2414,7 @@ public abstract class AbstractFtpDoorV1
 
     @VisibleForTesting
     InetSocketAddress setPassive()
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         try {
             _clientConnectionHandler.open();
             _mode = Mode.PASSIVE;
@@ -2513,7 +2426,7 @@ public abstract class AbstractFtpDoorV1
                 iface = "Interface " + NetworkInterface.getByInetAddress(address).getName();
             } catch (SocketException se) {
                 LOGGER.warn("Unable to discover interface for address {}: {}",
-                        InetAddresses.toUriString(address), se.toString());
+                      InetAddresses.toUriString(address), se.toString());
                 iface = "Interface";
             }
             ProtocolFamily family = _clientConnectionHandler.getPreferredProtocolFamily();
@@ -2521,7 +2434,8 @@ public abstract class AbstractFtpDoorV1
             _mode = Mode.ACTIVE;
             _clientConnectionHandler.close();
             _sessionAllPassive = false; // REVISIT see RFC 2428 Section 4.
-            throw new FTPCommandException(522, iface + " does not support " + ipVersion + " addresses");
+            throw new FTPCommandException(522,
+                  iface + " does not support " + ipVersion + " addresses");
         } catch (IOException e) {
             _mode = Mode.ACTIVE;
             _clientConnectionHandler.close();
@@ -2531,27 +2445,24 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Provides the addresses of (logical) interfaces that share the same
-     * network interface (often a physical NIC socket) as the (logical)
-     * interface to which the client connected.  The order of the addresses is
-     * not guaranteed.  Typically a "single stack" machine will return a single
-     * address (either IPv4 or IPv6 address) and a "dual stack" machine will
-     * return both an IPv4 and an IPv6 address.
-     *
-     * This method exists to allow a mock of this class to isolate itself
-     * from the testing machine's network configuration.
+     * Provides the addresses of (logical) interfaces that share the same network interface (often a
+     * physical NIC socket) as the (logical) interface to which the client connected.  The order of
+     * the addresses is not guaranteed.  Typically a "single stack" machine will return a single
+     * address (either IPv4 or IPv6 address) and a "dual stack" machine will return both an IPv4 and
+     * an IPv6 address.
+     * <p>
+     * This method exists to allow a mock of this class to isolate itself from the testing machine's
+     * network configuration.
      */
     protected Collection<InterfaceAddress> getLocalAddressInterfaces()
-            throws SocketException
-    {
+          throws SocketException {
         return NetworkInterface.getByInetAddress(_localSocketAddress.getAddress())
-                .getInterfaceAddresses();
+              .getInterfaceAddresses();
     }
 
     @Help("PORT <SP> <target> - The address and port to which the server should connect.")
     public void ftp_port(String arg)
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         String[] st = arg.split(",");
@@ -2565,8 +2476,7 @@ public abstract class AbstractFtpDoorV1
 
     @Help("PASV - Enter passive mode.")
     public void ftp_pasv(String arg)
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!_sessionAllPassive, 503, "PASV not allowed after EPSV ALL");
 
@@ -2595,19 +2505,18 @@ public abstract class AbstractFtpDoorV1
                 host[i] = hostb[i] & 0_377;
             }
             reply("227 OK (" +
-                          host[0] + ',' +
-                          host[1] + ',' +
-                          host[2] + ',' +
-                          host[3] + ',' +
-                          port / 256 + ',' +
-                          port % 256 + ')');
+                  host[0] + ',' +
+                  host[1] + ',' +
+                  host[2] + ',' +
+                  host[3] + ',' +
+                  port / 256 + ',' +
+                  port % 256 + ')');
         }
     }
 
     @Help("EPRT <SP> <target> - The extended address and port to which the server should connect.")
     public void ftp_eprt(String arg)
-            throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         setActive(getExtendedAddressOf(arg));
@@ -2618,13 +2527,13 @@ public abstract class AbstractFtpDoorV1
 
     @Help("EPSV - Enter extended passive mode.")
     public void ftp_epsv(String arg)
-        throws FTPCommandException
-    {
-        checkFTPCommand(_allowDelayed || _remoteSocketAddress.getAddress().getClass().equals(Inet6Address.class),
-                502, "Command only supported for IPv6");
+          throws FTPCommandException {
+        checkFTPCommand(_allowDelayed || _remoteSocketAddress.getAddress().getClass()
+                    .equals(Inet6Address.class),
+              502, "Command only supported for IPv6");
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
-        if  ("ALL".equalsIgnoreCase(arg)) {
+        if ("ALL".equalsIgnoreCase(arg)) {
             _sessionAllPassive = true;
             reply(ok("EPSV ALL"));
             return;
@@ -2648,29 +2557,26 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
                 _clientConnectionHandler.setPreferredProtocol(Protocol.find(arg));
-                reply(ok("EPSV" +arg));
+                reply(ok("EPSV" + arg));
             } catch (NumberFormatException nfe) {
-                throw new FTPCommandException(501, "Syntax error: '"+
-                        arg+"' is not a valid argument for EPSV.");
+                throw new FTPCommandException(501, "Syntax error: '" +
+                      arg + "' is not a valid argument for EPSV.");
             } catch (IllegalArgumentException e) {
-                throw new FTPCommandException(522, "Protocol family '"+
-                        arg+"'is not supported, use one of (1,2)");
+                throw new FTPCommandException(522, "Protocol family '" +
+                      arg + "'is not supported, use one of (1,2)");
             }
         }
     }
 
-    private static TransferMode asTransferMode(String label) throws FTPCommandException
-    {
+    private static TransferMode asTransferMode(String label) throws FTPCommandException {
         return TransferMode.forLabel(label.toUpperCase())
-                .orElseThrow((Supplier<FTPCommandException>)()
-                        -> new FTPCommandException(501, "Unsupported transfer mode"));
+              .orElseThrow((Supplier<FTPCommandException>) ()
+                    -> new FTPCommandException(501, "Unsupported transfer mode"));
     }
 
 
-
     @Help("MODE <SP> <mode> - Sets the transfer mode.")
-    public void ftp_mode(String arg) throws FTPCommandException
-    {
+    public void ftp_mode(String arg) throws FTPCommandException {
         _xferMode = asTransferMode(arg);
         reply("200 Will use " + _xferMode.getDescription());
     }
@@ -2685,8 +2591,7 @@ public abstract class AbstractFtpDoorV1
 
 
     @Help("MFMT <SP> <time-val> <SP> <path> - Adjust modify timestamp")
-    public void ftp_mfmt(String arg) throws FTPCommandException
-    {
+    public void ftp_mfmt(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
@@ -2697,18 +2602,17 @@ public abstract class AbstractFtpDoorV1
         long when = parseTimeval(timeval, "");
 
         FileAttributes updated = updateAttributesFromPath(pathname,
-                FileAttributes.ofModificationTime(when));
+              FileAttributes.ofModificationTime(when));
 
         String updatedTimeval =
-                TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime()));
+              TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime()));
 
         reply("213 Modify=" + updatedTimeval + "; " + pathname);
     }
 
 
     @Help("MFCT <SP> <time-val> <SP> <path> - Adjust creation timestamp")
-    public void ftp_mfct(String arg) throws FTPCommandException
-    {
+    public void ftp_mfct(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
@@ -2719,18 +2623,17 @@ public abstract class AbstractFtpDoorV1
         long when = parseTimeval(timeval, "");
 
         FileAttributes updated = updateAttributesFromPath(pathname,
-                FileAttributes.ofCreationTime(when));
+              FileAttributes.ofCreationTime(when));
 
         String updatedTimeval =
-                TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime()));
+              TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime()));
 
         reply("213 Create=" + updatedTimeval + "; " + pathname);
     }
 
 
     @Help("MFF <SP> <fact> = <value> ; [<fact> = <value> ; ...] <SP> <path> - Update facts about file or directory")
-    public void ftp_mff(String arg) throws FTPCommandException
-    {
+    public void ftp_mff(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
@@ -2740,55 +2643,55 @@ public abstract class AbstractFtpDoorV1
         String facts = arg.substring(0, spaceIndex);
 
         FileAttributes updates = new FileAttributes();
-        Map<String,String> changes = Splitter.on(';').omitEmptyStrings().
-                withKeyValueSeparator('=').split(facts);
-        for (Map.Entry<String,String> change : changes.entrySet()) {
+        Map<String, String> changes = Splitter.on(';').omitEmptyStrings().
+              withKeyValueSeparator('=').split(facts);
+        for (Map.Entry<String, String> change : changes.entrySet()) {
             Fact fact = Fact.find(change.getKey());
             checkFTPCommand(fact != null, 504, "Unsupported fact %s", change.getKey());
             switch (fact) {
-            case MODE:
-                try {
-                    updates.setMode(Integer.parseInt(change.getValue(), 8));
-                } catch (NumberFormatException e) {
-                    throw new FTPCommandException(504, "value not in octal for UNIX.mode");
-                }
-                break;
-            case MODIFY:
-                updates.setModificationTime(parseTimeval(change.getValue(),
-                        " for MODIFY"));
-                break;
-            case CREATE:
-                updates.setCreationTime(parseTimeval(change.getValue(),
-                        " for CREATE"));
-                break;
-            case ACCESS:
-                updates.setAccessTime(parseTimeval(change.getValue(),
-                        " for UNIX.atime"));
-                break;
-            default:
-                throw new FTPCommandException(504, "Unmodifable fact " + change.getKey());
+                case MODE:
+                    try {
+                        updates.setMode(Integer.parseInt(change.getValue(), 8));
+                    } catch (NumberFormatException e) {
+                        throw new FTPCommandException(504, "value not in octal for UNIX.mode");
+                    }
+                    break;
+                case MODIFY:
+                    updates.setModificationTime(parseTimeval(change.getValue(),
+                          " for MODIFY"));
+                    break;
+                case CREATE:
+                    updates.setCreationTime(parseTimeval(change.getValue(),
+                          " for CREATE"));
+                    break;
+                case ACCESS:
+                    updates.setAccessTime(parseTimeval(change.getValue(),
+                          " for UNIX.atime"));
+                    break;
+                default:
+                    throw new FTPCommandException(504, "Unmodifable fact " + change.getKey());
             }
         }
 
         FileAttributes updated = updateAttributesFromPath(pathname, updates);
 
         StringBuilder sb = new StringBuilder("213 ");
-        for (Map.Entry<String,String> change : changes.entrySet()) {
+        for (Map.Entry<String, String> change : changes.entrySet()) {
             Fact fact = Fact.find(change.getKey());
             sb.append(fact.getName()).append('=');
             switch (fact) {
-            case MODE:
-                sb.append(Integer.toOctalString(updated.getMode() & 0777));
-                break;
-            case MODIFY:
-                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime())));
-                break;
-            case CREATE:
-                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime())));
-                break;
-            case ACCESS:
-                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getAccessTime())));
-                break;
+                case MODE:
+                    sb.append(Integer.toOctalString(updated.getMode() & 0777));
+                    break;
+                case MODIFY:
+                    sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime())));
+                    break;
+                case CREATE:
+                    sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime())));
+                    break;
+                case ACCESS:
+                    sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getAccessTime())));
+                    break;
             }
             sb.append(';');
         }
@@ -2797,12 +2700,11 @@ public abstract class AbstractFtpDoorV1
 
 
     private FileAttributes updateAttributesFromPath(String path, FileAttributes updates)
-            throws FTPCommandException
-    {
+          throws FTPCommandException {
         FsPath absolutePath = absolutePath(path);
         try {
             return _pnfs.setFileAttributes(absolutePath, updates,
-                    updates.getDefinedAttributes());
+                  updates.getDefinedAttributes());
         } catch (FileNotFoundCacheException e) {
             throw new FTPCommandException(550, "file not found");
         } catch (CacheException e) {
@@ -2811,12 +2713,11 @@ public abstract class AbstractFtpDoorV1
              *        make this easy.  So we mark all such failures as permanent.
              */
             throw new FTPCommandException(501, "internal problem: " +
-                    e.toString());
+                  e.toString());
         }
     }
 
-    private long parseTimeval(String timeval, String errorSuffix) throws FTPCommandException
-    {
+    private long parseTimeval(String timeval, String errorSuffix) throws FTPCommandException {
         String fractionalPart = null;
         int dotIndex = timeval.indexOf('.');
         if (dotIndex != -1) {
@@ -2848,20 +2749,24 @@ public abstract class AbstractFtpDoorV1
      */
 
     @Help("The following site-specific commands are supported:\r\n" +
-            "SITE <SP> HELP - Information about SITE commands\r\n" +
-            "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
-            "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
-            "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n" +
-            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
-            "SITE <SP> CLIENTINFO <SP> <id> - Provide server with information about the client\r\n" +
-            "SITE <SP> SYMLINK <SP> <dest> <SP> <path> - Register symlink at <path>, pointing to <dest>\r\n" +
-            "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
-            "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
-            "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
-            "SITE <SP> USAGE <SP> [TOKEN <SP> <token> <SP> ] <path>\r\n" +
-            "SITE <SP> WHOAMI - Provides the username or uid of the user")
-    public void ftp_site(String arg) throws FTPCommandException
-    {
+          "SITE <SP> HELP - Information about SITE commands\r\n" +
+          "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
+          "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
+          "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n"
+          +
+          "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n"
+          +
+          "SITE <SP> CLIENTINFO <SP> <id> - Provide server with information about the client\r\n" +
+          "SITE <SP> SYMLINK <SP> <dest> <SP> <path> - Register symlink at <path>, pointing to <dest>\r\n"
+          +
+          "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n"
+          +
+          "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n"
+          +
+          "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
+          "SITE <SP> USAGE <SP> [TOKEN <SP> <token> <SP> ] <path>\r\n" +
+          "SITE <SP> WHOAMI - Provides the username or uid of the user")
+    public void ftp_site(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!arg.isEmpty(), 500, "must supply the site specific command");
 
@@ -2879,28 +2784,36 @@ public abstract class AbstractFtpDoorV1
              */
             ftp_help("SITE");
         } else if (args[0].equalsIgnoreCase("BUFSIZE")) {
-            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE BUFSIZE <number>'");
+            checkFTPCommand(args.length == 2, 500,
+                  "command must be in the form 'SITE BUFSIZE <number>'");
             ftp_sbuf(args[1]);
-        } else if ( args[0].equalsIgnoreCase("CHKSUM")) {
-            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE CHKSUM <value>'");
-            doCheckSum("adler32",args[1]);
+        } else if (args[0].equalsIgnoreCase("CHKSUM")) {
+            checkFTPCommand(args.length == 2, 500,
+                  "command must be in the form 'SITE CHKSUM <value>'");
+            doCheckSum("adler32", args[1]);
         } else if (args[0].equalsIgnoreCase("CHGRP")) {
-            checkFTPCommand(args.length == 3, 504, "command must be in the form 'SITE CHGRP <group/gid> <file/dir>'");
+            checkFTPCommand(args.length == 3, 504,
+                  "command must be in the form 'SITE CHGRP <group/gid> <file/dir>'");
             doChgrp(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CHMOD")) {
-            checkFTPCommand(args.length == 3, 500, "command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
+            checkFTPCommand(args.length == 3, 500,
+                  "command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
             doChmod(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CLIENTINFO")) {
-            checkFTPCommand(args.length >= 2, 500, "command must be in the form 'SITE CLIENTINFO <info>'");
+            checkFTPCommand(args.length >= 2, 500,
+                  "command must be in the form 'SITE CLIENTINFO <info>'");
             doClientinfo(arg.substring(11));
         } else if (args[0].equalsIgnoreCase("SYMLINK")) {
-            checkFTPCommand(args.length >= 3, 500, "command must be in the form 'SITE SYMLINK <dest> <path>'");
+            checkFTPCommand(args.length >= 3, 500,
+                  "command must be in the form 'SITE SYMLINK <dest> <path>'");
             doSymlink(arg.substring(8));
         } else if (args[0].equalsIgnoreCase("SYMLINKFROM")) {
-            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKFROM <path>'");
+            checkFTPCommand(args.length == 2, 500,
+                  "command must be in the form 'SITE SYMLINKFROM <path>'");
             doSymlinkFrom(args[1]);
         } else if (args[0].equalsIgnoreCase("SYMLINKTO")) {
-            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKTO <path>'");
+            checkFTPCommand(args.length == 2, 500,
+                  "command must be in the form 'SITE SYMLINKTO <path>'");
             doSymlinkTo(args[1]);
         } else if (args[0].equalsIgnoreCase("TASKID")) {
             checkFTPCommand(args.length >= 2, 501, "Syntax error in parameters or arguments.");
@@ -2918,8 +2831,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("CKSM <SP> <alg> <SP> <off> <SP> <len> <SP> <path> - Return checksum of file.")
-    public void ftp_cksm(String arg) throws FTPCommandException
-    {
+    public void ftp_cksm(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         List<String> st = Splitter.on(' ').limit(4).splitToList(arg);
@@ -2949,8 +2861,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void doCksm(String algo, String path, long offsetL, long lengthL)
-            throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkFTPCommand(lengthL == -1, 504, "Unsupported checksum over partial file length");
         checkFTPCommand(offsetL == 0, 504, "Unsupported checksum over partial file offset");
 
@@ -2961,16 +2872,16 @@ public abstract class AbstractFtpDoorV1
             }
             ChecksumType type = ChecksumType.getChecksumType(algo);
             FileAttributes attributes =
-                _pnfs.getFileAttributes(absPath, EnumSet.of(CHECKSUM));
+                  _pnfs.getFileAttributes(absPath, EnumSet.of(CHECKSUM));
             Checksum checksum = attributes.getChecksums().stream()
-                    .filter(c -> c.getType() == type)
-                    .findFirst()
-                    .orElse(null);
+                  .filter(c -> c.getType() == type)
+                  .findFirst()
+                  .orElse(null);
 
             if (checksum == null) {
                 ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs,
-                        _subject, _authz, absPath, type, _internalInetAddress,
-                        new PortRange(0,0));
+                      _subject, _authz, absPath, type, _internalInetAddress,
+                      new PortRange(0, 0));
                 setTransfer(cct);
                 TimerTask sendProgress = null;
                 try {
@@ -2978,13 +2889,12 @@ public abstract class AbstractFtpDoorV1
                     cct.setPoolStub(_poolStub);
                     cct.setAllowStaging(false);
                     if (_checksumProgressPeriod > 0) {
-                        sendProgress = new TimerTask(){
-                                    @Override
-                                    public void run()
-                                    {
-                                        reply(cct.getReply());
-                                    }
-                                };
+                        sendProgress = new TimerTask() {
+                            @Override
+                            public void run() {
+                                reply(cct.getReply());
+                            }
+                        };
                         long period = TimeUnit.SECONDS.toMillis(_checksumProgressPeriod);
                         TIMER.schedule(sendProgress, period, period);
                     }
@@ -3003,21 +2913,20 @@ public abstract class AbstractFtpDoorV1
                  * calculated checksum value as user ROOT with no restrictions.
                  */
                 new PnfsHandler(_pnfs, Subjects.ROOT, Restrictions.none())
-                        .setFileAttributes(absPath, FileAttributes.ofChecksum(checksum));
+                      .setFileAttributes(absPath, FileAttributes.ofChecksum(checksum));
             }
 
             reply("213 " + checksum.getValue());
         } catch (InterruptedException | IOException | CacheException e) {
             throw new FTPCommandException(550, "Error retrieving " + path
-                                          + ": " + e.getMessage());
+                  + ": " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         }
     }
 
     @Help("SCKS <SP> <alg> <SP> <value> - Fail next upload if checksum does not match.")
-    public void ftp_scks(String arg) throws FTPCommandException
-    {
+    public void ftp_scks(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         String[] st = arg.split("\\s+");
@@ -3026,8 +2935,7 @@ public abstract class AbstractFtpDoorV1
     }
 
 
-    public void doCheckSum(String type, String value) throws FTPCommandException
-    {
+    public void doCheckSum(String type, String value) throws FTPCommandException {
         checkFTPCommand(ChecksumType.isValid(type), 504, "Unsupported checksum type");
 
         try {
@@ -3039,8 +2947,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void doChmod(String permstring, String path) throws FTPCommandException
-    {
+    public void doChmod(String permstring, String path) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
         checkFTPCommand(!path.isEmpty(), 500, "Missing path");
 
@@ -3051,10 +2958,10 @@ public abstract class AbstractFtpDoorV1
 
             FsPath absPath = absolutePath(path);
             attributes =
-                _pnfs.getFileAttributes(absPath, EnumSet.of(TYPE));
+                  _pnfs.getFileAttributes(absPath, EnumSet.of(TYPE));
 
             checkFTPCommand(attributes.getFileType() != FileType.LINK,
-                    502, "chmod of symbolic links is not yet supported.");
+                  502, "chmod of symbolic links is not yet supported.");
 
             _pnfs.setFileAttributes(absPath, FileAttributes.ofMode(newperms));
 
@@ -3072,8 +2979,7 @@ public abstract class AbstractFtpDoorV1
      *  If the return code is (>=500 && <= 509 && !504) || 202 then UberFTP
      *  disables support for this comand.
      */
-    public void doChgrp(String group, String path) throws FTPCommandException
-    {
+    public void doChgrp(String group, String path) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
         checkFTPCommand(!path.isEmpty(), 500, "Missing path");
 
@@ -3086,11 +2992,11 @@ public abstract class AbstractFtpDoorV1
                 checkFTPCommand(principal != null, 504, "Unknown group '%s'", group);
                 if (!(principal instanceof GidPrincipal)) {
                     LOGGER.warn("Received non-GID {} principal from map request",
-                            principal.getClass().getCanonicalName());
+                          principal.getClass().getCanonicalName());
                     throw new FTPCommandException(431, "Internal error " +
-                            "identifying group '" + group + "'");
+                          "identifying group '" + group + "'");
                 }
-                gid = (int)((GidPrincipal)principal).getGid();
+                gid = (int) ((GidPrincipal) principal).getGid();
             } catch (CacheException e) {
                 LOGGER.warn("Unable to map group '{}' to gid: {}", group, e.toString());
                 throw new FTPCommandException(451, "Unable to process: " + e, e);
@@ -3105,7 +3011,7 @@ public abstract class AbstractFtpDoorV1
             attributes = _pnfs.getFileAttributes(absPath, EnumSet.of(TYPE));
 
             checkFTPCommand(attributes.getFileType() != FileType.LINK,
-                    504, "chgrp of symbolic links is not yet supported.");
+                  504, "chgrp of symbolic links is not yet supported.");
 
             _pnfs.setFileAttributes(absPath, FileAttributes.ofGid(gid));
 
@@ -3119,8 +3025,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void doSymlink(String arg) throws FTPCommandException
-    {
+    public void doSymlink(String arg) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
         int idx = arg.indexOf(' ');
@@ -3129,14 +3034,13 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(idx < arg.length(), 501, "<path> argument too short");
 
         String destination = arg.substring(0, idx).replace("%20", " ");
-        String path = arg.substring(idx+1);
+        String path = arg.substring(idx + 1);
 
         createSymLink(path, destination);
-        reply ("257 symlink '" + path + "' created.");
+        reply("257 symlink '" + path + "' created.");
     }
 
-    public void doSymlinkFrom(String path) throws FTPCommandException
-    {
+    public void doSymlinkFrom(String path) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
         checkFTPCommand(!path.isEmpty(), 501, "Command requires path argument.");
 
@@ -3145,8 +3049,7 @@ public abstract class AbstractFtpDoorV1
         reply("350 Send SITE SYMLINKTO to continue.");
     }
 
-    public void doSymlinkTo(String target) throws FTPCommandException
-    {
+    public void doSymlinkTo(String target) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
         checkFTPCommand(!target.isEmpty(), 501, "Command requires path.");
         checkFTPCommand(_symlinkPath != null, 503, "Command must follow SITE SYMLINKFROM command.");
@@ -3156,15 +3059,14 @@ public abstract class AbstractFtpDoorV1
 
         try {
             createSymLink(_symlinkPath, target);
-            reply ("257 symlink '" + _symlinkPath + "' created.");
+            reply("257 symlink '" + _symlinkPath + "' created.");
         } finally {
             _symlinkPath = null;
         }
     }
 
     private void createSymLink(String path, String target)
-            throws FTPCommandException
-    {
+          throws FTPCommandException {
         String absPath = absolutePath(path).toString();
         FileAttributes attr = FileAttributes.of().uid(_subject).gid(_subject).build();
 
@@ -3185,21 +3087,19 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Create a map from a semi-colon list of chunks, with each chunk
-     * having the form "key=value", "key=\"value\"", or "value".  For the
-     * last type, we assume the key should be "appname".
+     * Create a map from a semi-colon list of chunks, with each chunk having the form "key=value",
+     * "key=\"value\"", or "value".  For the last type, we assume the key should be "appname".
      */
-    private static Map<String,String> splitToMap(String info)
-    {
-        Map<String,String> items = new HashMap<>();
+    private static Map<String, String> splitToMap(String info) {
+        Map<String, String> items = new HashMap<>();
         for (String chunk : Splitter.on(';').omitEmptyStrings().split(info)) {
             int index = chunk.indexOf('=');
             if (index == -1) {
                 items.put("appname", chunk.trim());
             } else {
-                String value = chunk.substring(index+1).trim();
-                if (value.charAt(0) == '\"' && value.charAt(value.length()-1) == '\"') {
-                    value = value.substring(1, value.length()-1);
+                String value = chunk.substring(index + 1).trim();
+                if (value.charAt(0) == '\"' && value.charAt(value.length() - 1) == '\"') {
+                    value = value.substring(1, value.length() - 1);
                 }
                 items.put(chunk.substring(0, index).trim(), value);
             }
@@ -3207,12 +3107,11 @@ public abstract class AbstractFtpDoorV1
         return items;
     }
 
-    public void doClientinfo(String description)
-    {
+    public void doClientinfo(String description) {
         LOGGER.debug("client-info: {}", description);
         _clientInfo = description;
 
-        Map<String,String> items = splitToMap(description);
+        Map<String, String> items = splitToMap(description);
 
         // If items.get("appname") is "globusonline-fxp" then client is the
         // Globus transfer service agent responsible for coordinating
@@ -3223,37 +3122,36 @@ public abstract class AbstractFtpDoorV1
         //     identifiers in billing. (See doTaskid)
 
         switch (Strings.nullToEmpty(items.get("appname"))) {
-        case "globus-url-copy":
-            _activeWorkarounds.add(WorkAround.NO_REPLY_ON_QUIT);
-            break;
+            case "globus-url-copy":
+                _activeWorkarounds.add(WorkAround.NO_REPLY_ON_QUIT);
+                break;
 
-        // Globus (Online) agent for:
-        //     Providing web-portal with directory listing,
-        //     Deleting contents.
-        // Observed commands: MLST, MLSC, DELE, RMD
-        case "globusonline-dirlist":
-            _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
-            break;
+            // Globus (Online) agent for:
+            //     Providing web-portal with directory listing,
+            //     Deleting contents.
+            // Observed commands: MLST, MLSC, DELE, RMD
+            case "globusonline-dirlist":
+                _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+                break;
 
-        // Globus (Online) agent that seems to do a recursive directory listing
-        // in preparation of data transfer.
-        // Observed commands: MLSC, MLST
-        case "gshtest":
-            _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
+            // Globus (Online) agent that seems to do a recursive directory listing
+            // in preparation of data transfer.
+            // Observed commands: MLSC, MLST
+            case "gshtest":
+                _activeWorkarounds.add(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES);
 
-        // Globus (Online) transfer management agent, responsible for initiating
-        // third-party copy.
-        // Observed commands: RETR, STOR, ALLO, CKSM MD5, NOOP, MLST, MODE E,
-        //     PASV, MLST, MKD, PBSZ, TYPE I, DCAU N, PBSZ, OPTS RETR
-        case "globusonline-fxp":
-            _activeWorkarounds.add(WorkAround.REQUEST_MD5_WHEN_UPLOADING_FILES);
-            break;
+                // Globus (Online) transfer management agent, responsible for initiating
+                // third-party copy.
+                // Observed commands: RETR, STOR, ALLO, CKSM MD5, NOOP, MLST, MODE E,
+                //     PASV, MLST, MKD, PBSZ, TYPE I, DCAU N, PBSZ, OPTS RETR
+            case "globusonline-fxp":
+                _activeWorkarounds.add(WorkAround.REQUEST_MD5_WHEN_UPLOADING_FILES);
+                break;
         }
         reply("250 OK");
     }
 
-    public void doTaskid(String arg)
-    {
+    public void doTaskid(String arg) {
         // REVISIT: the task id is recorded in the access log, so may be
         //     discoverable, provided this file still exists.  In future, we
         //     may want to record client-supplied identifiers in billing.
@@ -3262,11 +3160,10 @@ public abstract class AbstractFtpDoorV1
 
     /**
      * Process a "SITE USAGE" command.  The format is described here:
-     *
-     *     https://github.com/bbockelm/globus-gridftp-osg-extensions/
+     * <p>
+     * https://github.com/bbockelm/globus-gridftp-osg-extensions/
      */
-    public void doUsage(String arg, boolean hasToken) throws FTPCommandException
-    {
+    public void doUsage(String arg, boolean hasToken) throws FTPCommandException {
         String token;
         String requestPath;
 
@@ -3284,45 +3181,47 @@ public abstract class AbstractFtpDoorV1
             List<String> spaceIds;
 
             if (token.equalsIgnoreCase("default")) {
-                FileAttributes attr = _pnfs.getFileAttributes(absolutePath(requestPath), EnumSet.of(FileAttribute.STORAGEINFO));
+                FileAttributes attr = _pnfs.getFileAttributes(absolutePath(requestPath),
+                      EnumSet.of(FileAttribute.STORAGEINFO));
                 String id = attr.getStorageInfo().getMap().get("writeToken");
                 checkFTPCommand(id != null, 501, "Path is not under space management");
                 spaceIds = Collections.singletonList(id);
             } else {
-                long[] ids = _spaceDescriptionCache.get(new GetSpaceTokensKey(_subject.getPrincipals(), token));
+                long[] ids = _spaceDescriptionCache.get(
+                      new GetSpaceTokensKey(_subject.getPrincipals(), token));
                 checkFTPCommand(ids.length > 0, 501, "Unknown TOKEN " + token);
                 spaceIds = Arrays.stream(ids).mapToObj(Long::toString).collect(Collectors.toList());
             }
 
             SpaceAccount combined = _spaceLookupCache.getAll(spaceIds).values().stream()
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(SpaceAccount::new)
-                    .reduce(new SpaceAccount(), (a,b) -> a.plus(b));
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .map(SpaceAccount::new)
+                  .reduce(new SpaceAccount(), (a, b) -> a.plus(b));
 
             reply("250 USAGE " + (combined.getUsed() + combined.getAllocated()) +
-                    " FREE " + combined.getAvailable() +
-                    " TOTAL " + combined.getTotal());
+                  " FREE " + combined.getAvailable() +
+                  " TOTAL " + combined.getTotal());
         } catch (CacheException e) {
             switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                throw new FTPCommandException(550, "File not found", e);
-            case CacheException.TIMEOUT:
-                throw new FTPCommandException(451, "Internal timeout", e);
-            case CacheException.NOT_DIR:
-                throw new FTPCommandException(550, "Not a directory", e);
-            default:
-                throw new FTPCommandException(451, "Operation failed: " + e.getMessage(), e);
+                case CacheException.FILE_NOT_FOUND:
+                    throw new FTPCommandException(550, "File not found", e);
+                case CacheException.TIMEOUT:
+                    throw new FTPCommandException(451, "Internal timeout", e);
+                case CacheException.NOT_DIR:
+                    throw new FTPCommandException(550, "Not a directory", e);
+                default:
+                    throw new FTPCommandException(451, "Operation failed: " + e.getMessage(), e);
             }
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             Throwables.throwIfUnchecked(cause);
-            throw new FTPCommandException(451, "Failed to fetch space details: " + cause.getMessage(), e);
+            throw new FTPCommandException(451,
+                  "Failed to fetch space details: " + cause.getMessage(), e);
         }
     }
 
-    public void doWhoami()
-    {
+    public void doWhoami() {
         String name = Subjects.getUserName(_subject);
         if (name == null) {
             name = Long.toString(Subjects.getUid(_subject));
@@ -3331,8 +3230,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("SBUF <SP> <size> - Set buffer size.")
-    public void ftp_sbuf(String arg) throws FTPCommandException
-    {
+    public void ftp_sbuf(String arg) throws FTPCommandException {
         checkFTPCommand(!arg.isEmpty(), 500, "must supply a buffer size");
 
         int bufsize;
@@ -3342,23 +3240,23 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(500, "bufsize argument must be integer");
         }
 
-        checkFTPCommand(bufsize > 0, 500, "bufsize must be positive.  Probably large, but at least positive");
+        checkFTPCommand(bufsize > 0, 500,
+              "bufsize must be positive.  Probably large, but at least positive");
 
         _bufSize = bufsize;
         reply("200 bufsize set to " + arg);
     }
 
     @Help("ERET <SP> <mode> <SP> <path> - Extended file retrieval.")
-    public void ftp_eret(String arg) throws FTPCommandException
-    {
+    public void ftp_eret(String arg) throws FTPCommandException {
         String[] st = arg.split("\\s+");
         checkFTPCommand(st.length >= 2, 500, "Missing argument");
 
         String extended_retrieve_mode = st[0];
         String cmd = "eret_" + extended_retrieve_mode.toLowerCase();
-        Object args[] = { arg };
+        Object args[] = {arg};
         checkFTPCommand(_methodDict.containsKey(cmd),
-                504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
+              504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
         Method m = _methodDict.get(cmd);
         try {
             LOGGER.info("Error return invoking: {}({})", m.getName(), arg);
@@ -3371,16 +3269,15 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("ESTO <SP> <mode> <SP> <path> - Extended store.")
-    public void ftp_esto(String arg) throws FTPCommandException
-    {
+    public void ftp_esto(String arg) throws FTPCommandException {
         String[] st = arg.split("\\s+");
         checkFTPCommand(st.length >= 2, 500, "Missing argument");
 
         String extended_store_mode = st[0];
         String cmd = "esto_" + extended_store_mode.toLowerCase();
-        Object args[] = { arg };
+        Object args[] = {arg};
         checkFTPCommand(_methodDict.containsKey(cmd),
-                504, "ESTO is not implemented for store mode: %s", extended_store_mode);
+              504, "ESTO is not implemented for store mode: %s", extended_store_mode);
         Method m = _methodDict.get(cmd);
         try {
             LOGGER.info("Esto invoking: {} ({})", m.getName(), arg);
@@ -3398,14 +3295,13 @@ public abstract class AbstractFtpDoorV1
     // other modes identified by string "MODE" can be implemented by adding
     // void method ftp_esto_"MODE"(String arg)
     //
-    public void ftp_esto_a(String arg) throws FTPCommandException
-    {
+    public void ftp_esto_a(String arg) throws FTPCommandException {
         String[] st = arg.split("\\s+");
         checkFTPCommand(st.length == 3, 500, "Missing argument");
 
         String extended_store_mode = st[0];
         checkFTPCommand(extended_store_mode.equalsIgnoreCase("a"),
-                504, "ESTO is not implemented for store mode: %s", extended_store_mode);
+              504, "ESTO is not implemented for store mode: %s", extended_store_mode);
         String offset = st[1];
         String filename = st[2];
         long asm_offset;
@@ -3415,7 +3311,7 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(501, "Adjusted Store Mode: invalid offset " + offset);
         }
         checkFTPCommand(asm_offset == 0,
-                504, "ESTO Adjusted Store Mode does not work with nonzero offset: %s", offset);
+              504, "ESTO Adjusted Store Mode does not work with nonzero offset: %s", offset);
         LOGGER.info("Performing esto in \"a\" mode with offset = {}", offset);
         ftp_stor(filename);
     }
@@ -3426,14 +3322,13 @@ public abstract class AbstractFtpDoorV1
     // other modes identified by string "MODE" can be implemented by adding
     // void method ftp_eret_"MODE"(String arg)
     //
-    public void ftp_eret_p(String arg) throws FTPCommandException
-    {
+    public void ftp_eret_p(String arg) throws FTPCommandException {
         String[] st = arg.split("\\s+");
         checkFTPCommand(st.length == 4, 500, "Missing argument");
 
         String extended_retrieve_mode = st[0];
         checkFTPCommand(extended_retrieve_mode.equalsIgnoreCase("p"),
-                504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
+              504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
         String offset = st[1];
         String size = st[2];
         String filename = st[3];
@@ -3448,43 +3343,38 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(501, "invalid size " + size + ": " + e);
         }
         LOGGER.info("Performing eret in \"p\" mode with offset = {} size = {}",
-                offset, size);
+              offset, size);
         ftp_retr(filename);
     }
 
     @Help("RETR <SP> <path> - Retrieve a copy of the file.")
-    public void ftp_retr(String arg) throws FTPCommandException
-    {
+    public void ftp_retr(String arg) throws FTPCommandException {
         try {
             checkFTPCommand(_skipBytes <= 0, 504, "RESTART not implemented");
             retrieve(arg, prm_offset, prm_size, _mode,
-                     _xferMode, _parallel, _clientDataAddress, _bufSize,
-                     _delayedPassive, _clientConnectionHandler.getPreferredProtocolFamily(),
-                     _delayedPassive == DelayedPassiveReply.NONE ? 1 : 2);
+                  _xferMode, _parallel, _clientDataAddress, _bufSize,
+                  _delayedPassive, _clientConnectionHandler.getPreferredProtocolFamily(),
+                  _delayedPassive == DelayedPassiveReply.NONE ? 1 : 2);
         } finally {
-            prm_offset=-1;
-            prm_size=-1;
+            prm_offset = -1;
+            prm_size = -1;
         }
     }
 
-    protected synchronized Transfer getTransfer()
-    {
+    protected synchronized Transfer getTransfer() {
         return _transfer;
     }
 
-    private synchronized boolean isTransferring()
-    {
+    private synchronized boolean isTransferring() {
         return _transfer != null;
     }
 
-    protected synchronized void setTransfer(Transfer transfer)
-    {
+    protected synchronized void setTransfer(Transfer transfer) {
         _transfer = transfer;
         notifyAll();
     }
 
-    protected synchronized void joinTransfer() throws InterruptedException
-    {
+    protected synchronized void joinTransfer() throws InterruptedException {
         while (_transfer != null) {
             wait();
         }
@@ -3493,50 +3383,47 @@ public abstract class AbstractFtpDoorV1
     /**
      * Transfers a file from a pool to the client.
      *
-     * @param file          the LFN of the file to transfer
-     * @param offset        the position at which to begin the transfer
-     * @param size          the number of bytes to transfer (whole
-     *                      file when -1).
-     * @param mode          indicates the direction of connection
-     *                      establishment
-     * @param xferMode      the transfer mode to use
-     * @param parallel      number of simultaneous streams to use
-     * @param client        address of the client (for active servers)
-     * @param bufSize       TCP buffers size to use (send and receive),
-     *                      or auto scaling when -1.
+     * @param file           the LFN of the file to transfer
+     * @param offset         the position at which to begin the transfer
+     * @param size           the number of bytes to transfer (whole file when -1).
+     * @param mode           indicates the direction of connection establishment
+     * @param xferMode       the transfer mode to use
+     * @param parallel       number of simultaneous streams to use
+     * @param client         address of the client (for active servers)
+     * @param bufSize        TCP buffers size to use (send and receive), or auto scaling when -1.
      * @param delayedPassive whether to generate delayed passive reply in passive mode
      * @param protocolFamily Protocol family to use for passive mode
-     * @param version       The mover version to use for the transfer
+     * @param version        The mover version to use for the transfer
      */
     private void retrieve(String file, long offset, long size,
-                          Mode mode, TransferMode xferMode,
-                          int parallel,
-                          InetSocketAddress client, int bufSize,
-                          DelayedPassiveReply delayedPassive,
-                          ProtocolFamily protocolFamily, int version) throws FTPCommandException
-    {
+          Mode mode, TransferMode xferMode,
+          int parallel,
+          InetSocketAddress client, int bufSize,
+          DelayedPassiveReply delayedPassive,
+          ProtocolFamily protocolFamily, int version) throws FTPCommandException {
         /* Check preconditions.
          */
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!file.isEmpty(), 501, "Missing path");
         checkFTPCommand(xferMode != TransferMode.MODE_E || mode != Mode.PASSIVE,
-                500, "Cannot do passive retrieve in E mode");
-        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
-                504, "Cannot use passive X mode");
+              500, "Cannot do passive retrieve in E mode");
+        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE
+                    || !_settings.isProxyRequiredOnPassive(),
+              504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
         checkFTPCommand(_checkSum == null, 503, "Expecting STOR ESTO PUT commands");
 
         FtpTransfer transfer =
-            new FtpTransfer(absolutePath(file),
-                            offset, size,
-                            mode,
-                            xferMode,
-                            parallel,
-                            client,
-                            bufSize,
-                            delayedPassive,
-                            protocolFamily,
-                            version);
+              new FtpTransfer(absolutePath(file),
+                    offset, size,
+                    mode,
+                    xferMode,
+                    parallel,
+                    client,
+                    bufSize,
+                    delayedPassive,
+                    protocolFamily,
+                    version);
         try {
             LOGGER.info("retrieve user={}", getUser());
             LOGGER.info("retrieve addr={}", _remoteSocketAddress);
@@ -3558,31 +3445,31 @@ public abstract class AbstractFtpDoorV1
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                transfer.abort(550, "File not found");
-                break;
-            case CacheException.TIMEOUT:
-                transfer.abort(451, "Internal timeout", e);
-                break;
-            case CacheException.NOT_DIR:
-                transfer.abort(550, "Not a directory");
-                break;
-            case CacheException.NO_POOL_CONFIGURED:
-                transfer.abort(552, "No read pool configured for this transfer", e);
-                break;
-            case CacheException.FILE_NOT_IN_REPOSITORY:
-            case CacheException.NO_POOL_ONLINE:
-                transfer.abort(452, "File is unavailable", e);
-                break;
-            case CacheException.INVALID_ARGS:
-                transfer.abort(500, "Invalid request: " + e.getMessage(), e);
-                break;
-            case CacheException.RESOURCE:
-                transfer.abort(452, e.getMessage(), e);
-                break;
-            default:
-                transfer.abort(451, "Operation failed: " + e.getMessage(), e);
-                break;
+                case CacheException.FILE_NOT_FOUND:
+                    transfer.abort(550, "File not found");
+                    break;
+                case CacheException.TIMEOUT:
+                    transfer.abort(451, "Internal timeout", e);
+                    break;
+                case CacheException.NOT_DIR:
+                    transfer.abort(550, "Not a directory");
+                    break;
+                case CacheException.NO_POOL_CONFIGURED:
+                    transfer.abort(552, "No read pool configured for this transfer", e);
+                    break;
+                case CacheException.FILE_NOT_IN_REPOSITORY:
+                case CacheException.NO_POOL_ONLINE:
+                    transfer.abort(452, "File is unavailable", e);
+                    break;
+                case CacheException.INVALID_ARGS:
+                    transfer.abort(500, "Invalid request: " + e.getMessage(), e);
+                    break;
+                case CacheException.RESOURCE:
+                    transfer.abort(452, e.getMessage(), e);
+                    break;
+                default:
+                    transfer.abort(451, "Operation failed: " + e.getMessage(), e);
+                    break;
             }
         } catch (FTPCommandException e) {
             transfer.abort(e);
@@ -3599,8 +3486,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("STOR <SP> <path> - Tell server to start accepting data.")
-    public void ftp_stor(String arg) throws FTPCommandException
-    {
+    public void ftp_stor(String arg) throws FTPCommandException {
         checkFTPCommand(_clientDataAddress != null, 504, "Host somehow not set");
         checkFTPCommand(_skipBytes == 0, 504, "RESTART not implemented for STORE");
 
@@ -3612,46 +3498,45 @@ public abstract class AbstractFtpDoorV1
     /**
      * Transfers a file from the client to a pool.
      *
-     * @param file          the LFN of the file to transfer
-     * @param mode          indicates the direction of connection
-     *                      establishment
-     * @param xferMode      the transfer mode to use
-     * @param parallel      number of simultaneous streams to use
-     * @param client        address of the client (for active servers)
-     * @param bufSize       TCP buffers size to use (send and receive),
-     *                      or auto scaling when -1.
+     * @param file           the LFN of the file to transfer
+     * @param mode           indicates the direction of connection establishment
+     * @param xferMode       the transfer mode to use
+     * @param parallel       number of simultaneous streams to use
+     * @param client         address of the client (for active servers)
+     * @param bufSize        TCP buffers size to use (send and receive), or auto scaling when -1.
      * @param delayedPassive whether to generate delayed passive reply in passive mode
      * @param protocolFamily Protocol family to use for passive mode
-     * @param version       The mover version to use for the transfer
+     * @param version        The mover version to use for the transfer
      */
     private void store(String file, Mode mode, TransferMode xferMode,
-                       int parallel,
-                       InetSocketAddress client, int bufSize,
-                       DelayedPassiveReply delayedPassive,
-                       ProtocolFamily protocolFamily, int version) throws FTPCommandException
-    {
+          int parallel,
+          InetSocketAddress client, int bufSize,
+          DelayedPassiveReply delayedPassive,
+          ProtocolFamily protocolFamily, int version) throws FTPCommandException {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
         checkFTPCommand(!file.equals(""), 501, "STOR command not understood");
         checkFTPCommand(xferMode != TransferMode.MODE_E || mode != Mode.ACTIVE,
-                504, "Cannot store in active E mode");
-        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
-                504, "Cannot use passive X mode");
+              504, "Cannot store in active E mode");
+        checkFTPCommand(xferMode != TransferMode.MODE_X || mode != Mode.PASSIVE
+                    || !_settings.isProxyRequiredOnPassive(),
+              504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
-        checkFTPCommand(!_maximumUploadSize.isPresent() || !_allo.isPresent() || _allo.getAsLong() <= _maximumUploadSize.getAsLong(),
-                552, "File exceeds allowed size");
+        checkFTPCommand(!_maximumUploadSize.isPresent() || !_allo.isPresent()
+                    || _allo.getAsLong() <= _maximumUploadSize.getAsLong(),
+              552, "File exceeds allowed size");
 
         FtpTransfer transfer =
-            new FtpTransfer(absolutePath(file),
-                            0, 0,
-                            mode,
-                            xferMode,
-                            parallel,
-                            client,
-                            bufSize,
-                            delayedPassive,
-                            protocolFamily,
-                            version);
+              new FtpTransfer(absolutePath(file),
+                    0, 0,
+                    mode,
+                    xferMode,
+                    parallel,
+                    client,
+                    bufSize,
+                    delayedPassive,
+                    protocolFamily,
+                    version);
         try {
             LOGGER.info("store receiving with mode {}", xferMode);
 
@@ -3672,33 +3557,33 @@ public abstract class AbstractFtpDoorV1
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                transfer.abort(550, "File not found");
-                break;
-            case CacheException.FILE_EXISTS:
-                transfer.abort(550, "File exists");
-                break;
-            case CacheException.TIMEOUT:
-                transfer.abort(451, "Internal timeout", e);
-                break;
-            case CacheException.NOT_DIR:
-                transfer.abort(501, "Not a directory");
-                break;
-            case CacheException.NO_POOL_CONFIGURED:
-                transfer.abort(552, "No write pool configured for this transfer", e);
-                break;
-            case CacheException.NO_POOL_ONLINE:
-                transfer.abort(452, "No write pool available", e);
-                break;
-            case CacheException.INVALID_ARGS:
-                transfer.abort(500, "Invalid request: " + e.getMessage(), e);
-                break;
-            case CacheException.RESOURCE:
-                transfer.abort(452, e.getMessage(), e);
-                break;
-            default:
-                transfer.abort(451, "Operation failed: " + e.getMessage(), e);
-                break;
+                case CacheException.FILE_NOT_FOUND:
+                    transfer.abort(550, "File not found");
+                    break;
+                case CacheException.FILE_EXISTS:
+                    transfer.abort(550, "File exists");
+                    break;
+                case CacheException.TIMEOUT:
+                    transfer.abort(451, "Internal timeout", e);
+                    break;
+                case CacheException.NOT_DIR:
+                    transfer.abort(501, "Not a directory");
+                    break;
+                case CacheException.NO_POOL_CONFIGURED:
+                    transfer.abort(552, "No write pool configured for this transfer", e);
+                    break;
+                case CacheException.NO_POOL_ONLINE:
+                    transfer.abort(452, "No write pool available", e);
+                    break;
+                case CacheException.INVALID_ARGS:
+                    transfer.abort(500, "Invalid request: " + e.getMessage(), e);
+                    break;
+                case CacheException.RESOURCE:
+                    transfer.abort(452, e.getMessage(), e);
+                    break;
+                default:
+                    transfer.abort(451, "Operation failed: " + e.getMessage(), e);
+                    break;
             }
         } catch (RuntimeException e) {
             LOGGER.error("Store failed", e);
@@ -3710,8 +3595,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("SIZE <SP> <path> - Return the size of a file.")
-    public void ftp_size(String arg) throws FTPCommandException
-    {
+    public void ftp_size(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
 
@@ -3719,7 +3603,7 @@ public abstract class AbstractFtpDoorV1
         long filelength;
         try {
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));
+                  _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));
             filelength = attributes.getSizeIfPresent().orElse(0L);
         } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied");
@@ -3730,8 +3614,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("MDTM <SP> <path> - Return the last-modified time of a specified file.")
-    public void ftp_mdtm(String arg) throws FTPCommandException
-    {
+    public void ftp_mdtm(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
         checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
 
@@ -3739,81 +3622,77 @@ public abstract class AbstractFtpDoorV1
             FsPath path = absolutePath(arg);
             long modification_time;
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path.toString(),
-                                        EnumSet.of(MODIFICATION_TIME));
+                  _pnfs.getFileAttributes(path.toString(),
+                        EnumSet.of(MODIFICATION_TIME));
             modification_time = attributes.getModificationTime();
             String time_val =
-                TIMESTAMP_FORMAT.format(new Date(modification_time));
+                  TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);
         } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
-            case CacheException.FILE_NOT_FOUND:
-                throw new FTPCommandException(550, "File not found");
-            case CacheException.TIMEOUT:
-                LOGGER.warn("Timeout in MDTM: {}", e);
-                throw new FTPCommandException(451, "Internal timeout");
-            default:
-                LOGGER.error("Error in MDTM: {}", e);
-                throw new FTPCommandException(451, "Internal failure: " + e.getMessage());
+                case CacheException.FILE_NOT_FOUND:
+                    throw new FTPCommandException(550, "File not found");
+                case CacheException.TIMEOUT:
+                    LOGGER.warn("Timeout in MDTM: {}", e);
+                    throw new FTPCommandException(451, "Internal timeout");
+                default:
+                    LOGGER.error("Error in MDTM: {}", e);
+                    throw new FTPCommandException(451, "Internal failure: " + e.getMessage());
             }
         }
     }
 
-    private void openDataSocket() throws IOException, FTPCommandException
-    {
+    private void openDataSocket() throws IOException, FTPCommandException {
         /* Mode being PASSIVE means the client did a PASV.  Otherwise
          * we establish the data connection to the client.
          */
         switch (_mode) {
-        case PASSIVE:
-            replyDelayedPassive(_delayedPassive, _clientConnectionHandler.getLocalAddress());
-            reply("150 Ready to accept ASCII mode data connection");
-            _dataSocket = _clientConnectionHandler.accept().socket();
-            break;
-        case ACTIVE:
-            reply("150 Opening ASCII mode data connection");
-            _dataSocket = new Socket();
-            _dataSocket.connect(_clientDataAddress);
-            break;
-        default:
-            throw new FTPCommandException(425, "Issue PASV or PORT to reset data channel.");
+            case PASSIVE:
+                replyDelayedPassive(_delayedPassive, _clientConnectionHandler.getLocalAddress());
+                reply("150 Ready to accept ASCII mode data connection");
+                _dataSocket = _clientConnectionHandler.accept().socket();
+                break;
+            case ACTIVE:
+                reply("150 Opening ASCII mode data connection");
+                _dataSocket = new Socket();
+                _dataSocket.connect(_clientDataAddress);
+                break;
+            default:
+                throw new FTPCommandException(425, "Issue PASV or PORT to reset data channel.");
         }
     }
 
-    private void closeDataSocket()
-    {
+    private void closeDataSocket() {
         Socket socket = _dataSocket;
         if (socket != null) {
             try {
                 socket.close();
             } catch (IOException e) {
                 LOGGER.warn("Got I/O exception closing socket: {}",
-                        e.getMessage());
+                      e.getMessage());
             }
             _dataSocket = null;
         }
     }
 
     /**
-     * Provide a directory listing in some unspecified format.  Historically
-     * Unix-like systems returned the output from "ls -l" and some clients
-     * attempt to parse the output on this basis.  Below we document the
-     * format expectations of various clients.
+     * Provide a directory listing in some unspecified format.  Historically Unix-like systems
+     * returned the output from "ls -l" and some clients attempt to parse the output on this basis.
+     * Below we document the format expectations of various clients.
      * <p>
      * <b>Apache Commons FTPClient</b> Although FTPClient supports MLSD & MLST,
-     * it doesn't provide this transparently; therefore clients using FTPClient
-     * may well issue a LIST command and attempt to parse the response.
-     * FTPClient has an option to request the server shows all files; enabling
-     * this option results in the client issuing the non-standard option "-a";
-     * e.g., "LIST -a". FTPClient uses the output from the SYST command to
-     * determine how to parse the LIST response.
+     * it doesn't provide this transparently; therefore clients using FTPClient may well issue a
+     * LIST command and attempt to parse the response. FTPClient has an option to request the server
+     * shows all files; enabling this option results in the client issuing the non-standard option
+     * "-a"; e.g., "LIST -a". FTPClient uses the output from the SYST command to determine how to
+     * parse the LIST response.
+     *
      * @see ftp_syst
      */
     @Help("LIST [<SP> <path>] - Returns information on <path> or the current working directory.")
-    public void ftp_list(String arg) throws FTPCommandException
-    {
+    public void ftp_list(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         Args args = new Args(arg);
@@ -3822,7 +3701,7 @@ public abstract class AbstractFtpDoorV1
 
         // REVISIT: do any clients require shortList output?
         boolean listLong =
-            args.options().isEmpty() || args.hasOption("l");
+              args.options().isEmpty() || args.hasOption("l");
         if (args.argc() == 0) {
             arg = "";
         } else {
@@ -3841,20 +3720,22 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), StandardCharsets.UTF_8));
+                      new PrintWriter(new OutputStreamWriter(
+                            new BufferedOutputStream(_dataSocket.getOutputStream()),
+                            StandardCharsets.UTF_8));
 
                 DirectoryListPrinter printer;
                 if (listLong) {
                     printer = _settings.getListFormat().equals("legacy")
-                            ? new LegacyListPrinter(writer)
-                            : new LongListPrinter(writer);
+                          ? new LegacyListPrinter(writer)
+                          : new LongListPrinter(writer);
                 } else {
                     printer = new ShortListPrinter(writer);
                 }
 
                 try {
                     total = _listSource.printDirectory(_subject, _authz, printer,
-                            path, null, Range.<Integer>all());
+                          path, null, Range.<Integer>all());
                 } catch (NotDirCacheException e) {
                     /* path exists, but it is not a directory.
                      */
@@ -3866,7 +3747,7 @@ public abstract class AbstractFtpDoorV1
                      * repeat the list.
                      */
                     total =
-                        _listSource.printDirectory(_subject, _authz, printer,
+                          _listSource.printDirectory(_subject, _authz, printer,
                                 path.parent(), new Glob(path.name()),
                                 Range.<Integer>all());
                 }
@@ -3896,8 +3777,7 @@ public abstract class AbstractFtpDoorV1
     private static final Pattern GLOB_PATTERN = Pattern.compile("[*?]");
 
     @Help("NLST [<SP> <path>] - Returns a list of file names in a specified directory.")
-    public void ftp_nlst(String arg) throws FTPCommandException
-    {
+    public void ftp_nlst(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         if (arg.equals("")) {
@@ -3915,7 +3795,7 @@ public abstract class AbstractFtpDoorV1
              */
             Matcher m = GLOB_PATTERN.matcher(path.name());
             boolean pathIsPattern = m.find();
-            if ( !pathIsPattern ) {
+            if (!pathIsPattern) {
                 checkIsDirectory(path);
             }
             try {
@@ -3927,15 +3807,16 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
+                      new PrintWriter(new OutputStreamWriter(
+                            new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
                 DirectoryListPrinter printer = new ShortListPrinter(writer);
-                if ( pathIsPattern ) {
+                if (pathIsPattern) {
                     total = _listSource.printDirectory(_subject, _authz,
-                            printer, path.parent(), new Glob(path.name()),
-                            Range.<Integer>all());
+                          printer, path.parent(), new Glob(path.name()),
+                          Range.<Integer>all());
                 } else {
                     total = _listSource.printDirectory(_subject, _authz,
-                            printer, path, null, Range.<Integer>all());
+                          printer, path, null, Range.<Integer>all());
                 }
                 writer.close();
             } finally {
@@ -3963,8 +3844,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("MLST [<SP> <path>] - Returns data about exactly one object.")
-    public void ftp_mlst(String arg) throws FTPCommandException
-    {
+    public void ftp_mlst(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         try {
@@ -3994,8 +3874,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("MLSC [<SP> <path>] - List the contents of a directory on control channel")
-    public void ftp_mlsc(String arg) throws FTPCommandException
-    {
+    public void ftp_mlsc(String arg) throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         try {
@@ -4005,7 +3884,7 @@ public abstract class AbstractFtpDoorV1
             PrintWriter pw = new PrintWriter(sw);
             pw.print("250- Contents of " + path + "\r\n");
             int total = _listSource.printDirectory(_subject, _authz,
-                    new MlscFactPrinter(pw), path, null, Range.<Integer>all());
+                  new MlscFactPrinter(pw), path, null, Range.<Integer>all());
             pw.print("250 MLSC completed for " + total + " files");
             reply(sw.toString());
         } catch (InterruptedException e) {
@@ -4024,8 +3903,7 @@ public abstract class AbstractFtpDoorV1
 
     @Help("MLSD [<SP> <path>] - Lists the contents of a directory.")
     public void ftp_mlsd(String arg)
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         try {
@@ -4052,11 +3930,12 @@ public abstract class AbstractFtpDoorV1
             int total;
             try {
                 PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
+                      new PrintWriter(new OutputStreamWriter(
+                            new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
                 total = _listSource.printDirectory(_subject, _authz,
-                        new MlsdFactPrinter(writer), path, null,
-                        Range.<Integer>all());
+                      new MlsdFactPrinter(writer), path, null,
+                      Range.<Integer>all());
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -4121,14 +4000,15 @@ public abstract class AbstractFtpDoorV1
             _fileId = null;
         }
     }
+
     //----------------------------------------------
     // DCAU: data channel authtication
     // currently ( 07.04.2008 ) it's not supported
     //----------------------------------------------
     @Help("DCAU <SP> <enable> - Data channel authentication.")
-    public void ftp_dcau(String arg) throws FTPCommandException
-    {
-        checkFTPCommand(arg.equalsIgnoreCase("N"), 202, "data channel authentication not supported");
+    public void ftp_dcau(String arg) throws FTPCommandException {
+        checkFTPCommand(arg.equalsIgnoreCase("N"), 202,
+              "data channel authentication not supported");
 
         reply("200 data channel authentication switched off");
     }
@@ -4142,8 +4022,7 @@ public abstract class AbstractFtpDoorV1
     @ConcurrentWithTransfer
     @Help("QUIT - Disconnect.")
     public void ftp_quit(String arg)
-        throws CommandExitException
-    {
+          throws CommandExitException {
 
         if (!_activeWorkarounds.contains(WorkAround.NO_REPLY_ON_QUIT)) {
             reply("221 Goodbye");
@@ -4174,8 +4053,7 @@ public abstract class AbstractFtpDoorV1
     // ---------------------------------------------
     @ConcurrentWithTransfer
     @Help("BYE - Disconnect.")
-    public void ftp_bye( String arg ) throws CommandExitException
-    {
+    public void ftp_bye(String arg) throws CommandExitException {
         ftp_quit(arg);
     }
 
@@ -4185,42 +4063,38 @@ public abstract class AbstractFtpDoorV1
     @ConcurrentWithTransfer
     @Help("ABOR - Abort transfer.")
     public void ftp_abor(String arg)
-        throws FTPCommandException
-    {
+          throws FTPCommandException {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         Transfer transfer = getTransfer();
         if (transfer instanceof FtpTransfer) {
-            ((FtpTransfer)transfer).abort(new ClientAbortException(426, "Transfer aborted"));
+            ((FtpTransfer) transfer).abort(new ClientAbortException(426, "Transfer aborted"));
         }
         closeDataSocket();
         reply("226 Abort successful");
     }
 
-    public String ok(String cmd)
-    {
-        return "200 "+cmd+" command successful";
+    public String ok(String cmd) {
+        return "200 " + cmd + " command successful";
     }
 
     /**
-     * Throws NotDirCacheException if the given path is not a
-     * directory. Throws FileNotFoundCacheException if the path does
-     * not exist.
+     * Throws NotDirCacheException if the given path is not a directory. Throws
+     * FileNotFoundCacheException if the path does not exist.
      */
-    private void checkIsDirectory(FsPath path) throws CacheException
-    {
+    private void checkIsDirectory(FsPath path) throws CacheException {
         FileAttributes attributes =
-            _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIMPLE_TYPE));
+              _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIMPLE_TYPE));
         if (attributes.getFileType() != FileType.DIR) {
             throw new NotDirCacheException("Not a directory");
         }
     }
 
     private class PerfMarkerTask
-        extends TimerTask implements CellMessageAnswerable
-    {
+          extends TimerTask implements CellMessageAnswerable {
+
         private final GFtpPerfMarkersBlock _perfMarkersBlock
-            = new GFtpPerfMarkersBlock(1);
+              = new GFtpPerfMarkersBlock(1);
         private final long _timeout;
         private final CellAddressCore _pool;
         private final int _moverId;
@@ -4235,8 +4109,8 @@ public abstract class AbstractFtpDoorV1
         private Optional<Instant> _lastQueryError = Optional.empty();
         private Optional<Instant> _lastQuerySent = Optional.empty();
 
-        public PerfMarkerTask(CommandRequest request, CellAddressCore pool, int moverId, long timeout)
-        {
+        public PerfMarkerTask(CommandRequest request, CellAddressCore pool, int moverId,
+              long timeout) {
             _pool = pool;
             _moverId = moverId;
             _timeout = timeout;
@@ -4250,16 +4124,12 @@ public abstract class AbstractFtpDoorV1
         }
 
         /**
-         * Stops the task, preventing it from sending any further
-         * performance markers.
-         *
-         * Since the task obtains performance information
-         * asynchronously, cancelling the task is not enough to
-         * prevent it from sending further performance markers to the
-         * client.
+         * Stops the task, preventing it from sending any further performance markers.
+         * <p>
+         * Since the task obtains performance information asynchronously, cancelling the task is not
+         * enough to prevent it from sending further performance markers to the client.
          */
-        public synchronized void stop()
-        {
+        public synchronized void stop() {
             cancel();
             _stopped = true;
         }
@@ -4267,16 +4137,15 @@ public abstract class AbstractFtpDoorV1
         /**
          * Like stop() but sends a final performance marker.
          *
-         * @param info Information about the completed transfer used
-         * to generate the final performance marker.
+         * @param info Information about the completed transfer used to generate the final
+         *             performance marker.
          */
-        public synchronized void stop(GFtpProtocolInfo info)
-        {
+        public synchronized void stop(GFtpProtocolInfo info) {
             /* The protocol info does not contain a timestamp, so
              * we use the current time instead.
              */
             setProgressInfo(info.getBytesTransferred(),
-                            System.currentTimeMillis());
+                  System.currentTimeMillis());
             sendMarker();
             stop();
         }
@@ -4284,8 +4153,7 @@ public abstract class AbstractFtpDoorV1
         /**
          * Send markers to client.
          */
-        protected synchronized void sendMarker()
-        {
+        protected synchronized void sendMarker() {
             if (!_stopped) {
                 reply(_request, _perfMarkersBlock.markers(0).getReply());
                 _lastMarkerSent = Optional.of(Instant.now());
@@ -4293,14 +4161,12 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        private void recordQueryError(String message)
-        {
+        private void recordQueryError(String message) {
             _lastQueryErrorMessage = message;
             _lastQueryError = Optional.of(Instant.now());
         }
 
-        protected synchronized void setProgressInfo(long bytes, long timeStamp)
-        {
+        protected synchronized void setProgressInfo(long bytes, long timeStamp) {
             /* Since the timestamp in some cases is generated at the
              * pool and in some cases at the door, we need to ensure
              * that time stamps are never decreasing.
@@ -4311,8 +4177,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public synchronized void run()
-        {
+        public synchronized void run() {
             try (CDC ignored = _cdc.restore()) {
                 try {
                     CellMessage msg = new CellMessage(_pool, "mover ls -binary " + _moverId);
@@ -4326,8 +4191,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public synchronized void exceptionArrived(CellMessage request, Exception exception)
-        {
+        public synchronized void exceptionArrived(CellMessage request, Exception exception) {
             _queryFailCount++;
             recordQueryError("Received exception: " + exception);
             if (exception instanceof NoRouteToCellException) {
@@ -4338,24 +4202,22 @@ public abstract class AbstractFtpDoorV1
                 sendMarker();
             } else {
                 LOGGER.error("PerfMarkerEngine got exception {}",
-                        exception.getMessage());
+                      exception.getMessage());
             }
         }
 
         @Override
-        public synchronized void answerTimedOut(CellMessage request)
-        {
+        public synchronized void answerTimedOut(CellMessage request) {
             sendMarker();
             _queryFailCount++;
             recordQueryError("Answer timed out");
         }
 
         @Override
-        public synchronized void answerArrived(CellMessage req, CellMessage answer)
-        {
+        public synchronized void answerArrived(CellMessage req, CellMessage answer) {
             Object msg = answer.getMessageObject();
             if (msg instanceof IoJobInfo) {
-                IoJobInfo ioJobInfo = (IoJobInfo)msg;
+                IoJobInfo ioJobInfo = (IoJobInfo) msg;
                 String status = ioJobInfo.getStatus();
 
                 if (status == null) {
@@ -4363,7 +4225,7 @@ public abstract class AbstractFtpDoorV1
                 } else if (status.equals("A") || status.equals("RUNNING")) {
                     // "Active" job
                     setProgressInfo(ioJobInfo.getBytesTransferred(),
-                                    ioJobInfo.getLastTransferred());
+                          ioJobInfo.getLastTransferred());
                     sendMarker();
                 } else if (status.equals("K") || status.equals("R")) {
                     // "Killed" or "Removed" job
@@ -4372,14 +4234,15 @@ public abstract class AbstractFtpDoorV1
                 } else if (status.equals("W") || status.equals("QUEUED")) {
                     sendMarker();
                 } else {
-                    LOGGER.error("Performance marker engine received unexcepted status from mover: {}",
-                            status);
+                    LOGGER.error(
+                          "Performance marker engine received unexcepted status from mover: {}",
+                          status);
                     _queryFailCount++;
                     recordQueryError("Mover has unknown status " + status);
                 }
             } else if (msg instanceof Exception) {
                 LOGGER.warn("Performance marker engine: {}",
-                        ((Exception) msg).getMessage());
+                      ((Exception) msg).getMessage());
                 _queryFailCount++;
                 recordQueryError("Pool responded exceptionally: " + msg);
             } else if (msg instanceof String) {
@@ -4391,21 +4254,20 @@ public abstract class AbstractFtpDoorV1
                 recordQueryError("Pool responded with message \"" + msg + "\"");
             } else {
                 LOGGER.error("Performance marker engine: {}",
-                        msg.getClass().getName());
+                      msg.getClass().getName());
                 _queryFailCount++;
                 recordQueryError("Unexpected pool responded: " + msg);
             }
         }
 
-        public long getBytesTransferred()
-        {
+        public long getBytesTransferred() {
             return _perfMarkersBlock.getBytesTransferred();
         }
 
-        public void getInfo(PrintWriter pw)
-        {
+        public void getInfo(PrintWriter pw) {
             pw.println("Status: " + (_stopped ? "stopped" : "active"));
-            CharSequence period = TimeUtils.duration(_performanceMarkerPeriod, TimeUnit.MILLISECONDS, TimeUnitFormat.SHORT);
+            CharSequence period = TimeUtils.duration(_performanceMarkerPeriod,
+                  TimeUnit.MILLISECONDS, TimeUnitFormat.SHORT);
             pw.println("Period: " + _performanceMarkerPeriod + " ms (" + period + ")");
             pw.println("Mover status queries:");
             pw.println("    Sent: " + _querySendCount);
@@ -4415,7 +4277,7 @@ public abstract class AbstractFtpDoorV1
             if (_queryFailCount > 0) {
                 pw.println("    Failures: " + _queryFailCount);
                 pw.println("    Last failure: " + describe(_lastQueryError)
-                        + " " + _lastQueryErrorMessage);
+                      + " " + _lastQueryErrorMessage);
             }
             pw.println("Markers sent to client:");
             pw.println("    Sent: " + _markerSendCount);
@@ -4433,70 +4295,64 @@ public abstract class AbstractFtpDoorV1
     // =========================                                        //
 
     /**
-     * Regular expression for parsing parameters of GET and PUT
-     * commands. The GridFTP 2 specification is unclear on the format
-     * of the keyword, the value and whether white space is
-     * allowed. Here we assume keywords are limited to word
-     * characters. Values do not contain semicolons.
-     *
-     * Although RFC 3659 does not cover the GET and PUT commands, we
-     * use RFC 3659 as justification to consider white space to be
-     * part of the value, that is, we do not strip any white space.
+     * Regular expression for parsing parameters of GET and PUT commands. The GridFTP 2
+     * specification is unclear on the format of the keyword, the value and whether white space is
+     * allowed. Here we assume keywords are limited to word characters. Values do not contain
+     * semicolons.
+     * <p>
+     * Although RFC 3659 does not cover the GET and PUT commands, we use RFC 3659 as justification
+     * to consider white space to be part of the value, that is, we do not strip any white space.
      */
     private static final Pattern _parameterPattern =
-        Pattern.compile("(\\w+)(?:=([^;]+))?;");
+          Pattern.compile("(\\w+)(?:=([^;]+))?;");
 
     /**
-     * Patterns for checking the format of values to parameters of GET
-     * and PUT commands.
+     * Patterns for checking the format of values to parameters of GET and PUT commands.
      */
-    private static final Map<String,Pattern> _valuePatterns =
-        new HashMap<>();
+    private static final Map<String, Pattern> _valuePatterns =
+          new HashMap<>();
 
-    static
-    {
-        _valuePatterns.put("mode",  Pattern.compile("[Ee]|[Ss]|[Xx]"));
-        _valuePatterns.put("pasv",  null);
+    static {
+        _valuePatterns.put("mode", Pattern.compile("[Ee]|[Ss]|[Xx]"));
+        _valuePatterns.put("pasv", null);
         _valuePatterns.put("cksum", Pattern.compile("NONE"));
-        _valuePatterns.put("path",  Pattern.compile(".+"));
-        _valuePatterns.put("port",  Pattern.compile("(\\d+)(,(\\d+)){5}"));
+        _valuePatterns.put("path", Pattern.compile(".+"));
+        _valuePatterns.put("port", Pattern.compile("(\\d+)(,(\\d+)){5}"));
 
         //      tid is ignored until we implement mode X
         //      _valuePatterns.put("tid",   Pattern.compile("\\d+"));
     }
 
     /**
-     * Parses parameters of GET and PUT commands. The result is
-     * returned as a map from parameter keywords to values. The
-     * GridFTP 2 specification does not specify if parameter keywords
-     * are case sensitive or not. We assume that they are. The GridFTP
-     * 2 specification is unclear whether unknown parameters should be
-     * ignored. We silently ignore unknown parameters.
+     * Parses parameters of GET and PUT commands. The result is returned as a map from parameter
+     * keywords to values. The GridFTP 2 specification does not specify if parameter keywords are
+     * case sensitive or not. We assume that they are. The GridFTP 2 specification is unclear
+     * whether unknown parameters should be ignored. We silently ignore unknown parameters.
      *
      * @param s the parameter string of a GET or PUT command
-     * @return  a map from parameter names to parameter values
-     * @throws FTPCommandException If the parameter string cannot be
-     *                             parsed.
+     * @return a map from parameter names to parameter values
+     * @throws FTPCommandException If the parameter string cannot be parsed.
      */
-    protected Map<String,String> parseGetPutParameters(String s)
-        throws FTPCommandException
-    {
-        Map<String,String> parameters = new HashMap<>();
+    protected Map<String, String> parseGetPutParameters(String s)
+          throws FTPCommandException {
+        Map<String, String> parameters = new HashMap<>();
 
         /* For each parameter.
          */
         Matcher matcher = _parameterPattern.matcher(s);
         while (matcher.lookingAt()) {
             String keyword = matcher.group(1);
-            String value   = matcher.group(2);
+            String value = matcher.group(2);
             if (_valuePatterns.containsKey(keyword)) {
                 /* Check format of value.
                  */
                 Pattern valuePattern = _valuePatterns.get(keyword);
                 checkFTPCommand(value == null || valuePattern != null,
-                        501, "Unexpected value '%s' for %s", value, keyword);
-                checkFTPCommand(valuePattern == null || valuePattern.matcher(value != null ? value : "").matches(),
-                        501, "Illegal value for %s=%s", keyword, value);
+                      501, "Unexpected value '%s' for %s", value, keyword);
+                checkFTPCommand(
+                      valuePattern == null || valuePattern.matcher(value != null ? value : "")
+                            .matches(),
+                      501, "Illegal value for %s=%s", keyword, value);
                 parameters.put(keyword, value);
             }
             matcher.region(matcher.end(), matcher.regionEnd());
@@ -4505,53 +4361,51 @@ public abstract class AbstractFtpDoorV1
         /* Detect trailing garbage.
          */
         checkFTPCommand(matcher.regionStart() == matcher.regionEnd(),
-                501, "Cannot parse '%s'", s.substring(matcher.regionStart()));
+              501, "Cannot parse '%s'", s.substring(matcher.regionStart()));
         return parameters;
     }
 
 
     /**
-     * Generate '127 PORT (a,b,c,d,e,f)' command as specified in the
-     * GridFTP v2 spec.
-     *
-     * The GridFTP v2 spec does not specify the reply code to
-     * use. However, since the PASV command uses 227, it seems
-     * reasonable to use 127 here.
-     *
-     * GFD.47 specifies the format to be 'PORT=a,b,c,d,e,f', however
-     * after consultation with the authors of GFD.47, it was decided
-     * to use the typical '(a,b,c,d,e,f)' format instead.
+     * Generate '127 PORT (a,b,c,d,e,f)' command as specified in the GridFTP v2 spec.
+     * <p>
+     * The GridFTP v2 spec does not specify the reply code to use. However, since the PASV command
+     * uses 227, it seems reasonable to use 127 here.
+     * <p>
+     * GFD.47 specifies the format to be 'PORT=a,b,c,d,e,f', however after consultation with the
+     * authors of GFD.47, it was decided to use the typical '(a,b,c,d,e,f)' format instead.
      *
      * @param socketAddress the address and port on which we listen
      */
-    protected void replyDelayedPassive(DelayedPassiveReply format, InetSocketAddress socketAddress)
-    {
+    protected void replyDelayedPassive(DelayedPassiveReply format,
+          InetSocketAddress socketAddress) {
         replyDelayedPassive(_currentRequest, format, socketAddress);
     }
 
-    protected void replyDelayedPassive(CommandRequest request, DelayedPassiveReply format, InetSocketAddress socketAddress)
-    {
+    protected void replyDelayedPassive(CommandRequest request, DelayedPassiveReply format,
+          InetSocketAddress socketAddress) {
         InetAddress address = socketAddress.getAddress();
         Protocol protocol = Protocol.fromAddress(address);
         switch (format) {
-        case NONE:
-            break;
-        case PASV:
-            checkArgument(protocol == Protocol.IPV4, "PASV required IPv4 data channel.");
-            int port = socketAddress.getPort();
-            byte[] host = address.getAddress();
-            reply(request, String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
-                                (host[0] & 0377),
-                                (host[1] & 0377),
-                                (host[2] & 0377),
-                                (host[3] & 0377),
-                                (port / 256),
-                                (port % 256)));
-            break;
-        case EPSV:
-            reply(request, String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
-                                protocol.getCode(), InetAddresses.toAddrString(address), socketAddress.getPort()));
-            break;
+            case NONE:
+                break;
+            case PASV:
+                checkArgument(protocol == Protocol.IPV4, "PASV required IPv4 data channel.");
+                int port = socketAddress.getPort();
+                byte[] host = address.getAddress();
+                reply(request, String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
+                      (host[0] & 0377),
+                      (host[1] & 0377),
+                      (host[2] & 0377),
+                      (host[3] & 0377),
+                      (port / 256),
+                      (port % 256)));
+                break;
+            case EPSV:
+                reply(request, String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
+                      protocol.getCode(), InetAddresses.toAddrString(address),
+                      socketAddress.getPort()));
+                break;
         }
     }
 
@@ -4561,15 +4415,14 @@ public abstract class AbstractFtpDoorV1
      * @param arg the argument string of the GET command.
      */
     @Help("GET <SP> <args> - Flexible transfer of data to client.")
-    public void ftp_get(String arg) throws FTPCommandException
-    {
+    public void ftp_get(String arg) throws FTPCommandException {
         try {
             checkFTPCommand(_skipBytes == 0, 501, "RESTART not implemented");
 
-            Map<String,String> parameters = parseGetPutParameters(arg);
+            Map<String, String> parameters = parseGetPutParameters(arg);
 
             checkFTPCommand(!parameters.containsKey("pasv") || !parameters.containsKey("port"),
-                    501, "Cannot use both 'pasv' and 'port'");
+                  501, "Cannot use both 'pasv' and 'port'");
             checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
             if (parameters.containsKey("mode")) {
@@ -4590,11 +4443,11 @@ public abstract class AbstractFtpDoorV1
             /* Now do the transfer...
              */
             retrieve(parameters.get("path"), prm_offset, prm_size, _mode,
-                     _xferMode, _parallel, _clientDataAddress, _bufSize,
-                     _delayedPassive, _clientConnectionHandler.getPreferredProtocolFamily(), 2);
+                  _xferMode, _parallel, _clientDataAddress, _bufSize,
+                  _delayedPassive, _clientConnectionHandler.getPreferredProtocolFamily(), 2);
         } finally {
-            prm_offset=-1;
-            prm_size=-1;
+            prm_offset = -1;
+            prm_size = -1;
         }
     }
 
@@ -4604,12 +4457,11 @@ public abstract class AbstractFtpDoorV1
      * @param arg the argument string of the PUT command.
      */
     @Help("PUT <SP> <args> - Flexible transfer of data to server.")
-    public void ftp_put(String arg) throws FTPCommandException
-    {
-        Map<String,String> parameters = parseGetPutParameters(arg);
+    public void ftp_put(String arg) throws FTPCommandException {
+        Map<String, String> parameters = parseGetPutParameters(arg);
 
         checkFTPCommand(!parameters.containsKey("pasv") || !parameters.containsKey("port"),
-                501, "Cannot use both 'pasv' and 'port'");
+              501, "Cannot use both 'pasv' and 'port'");
         checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
         if (parameters.containsKey("mode")) {
@@ -4629,7 +4481,7 @@ public abstract class AbstractFtpDoorV1
 
         /* Now do the transfer...
          */
-        store(parameters.get("path"), _mode, _xferMode, _parallel,  _clientDataAddress,
+        store(parameters.get("path"), _mode, _xferMode, _parallel, _clientDataAddress,
               _bufSize, _delayedPassive, _clientConnectionHandler.getPreferredProtocolFamily(), 2);
     }
 
@@ -4643,82 +4495,82 @@ public abstract class AbstractFtpDoorV1
         _billingStub.notify(infoRemove);
 
         if (_settings.isKafkaEnabled()) {
-            _kafkaProducer.send(new ProducerRecord<String, DoorRequestInfoMessage>("billing", infoRemove), (rm, e) -> {
-                if (e != null) {
-                    LOGGER.error("Unable to send message to topic {} on  partition {}: {}",
-                            rm.topic(), rm.partition(), e.getMessage());
-                }
-            });
+            _kafkaProducer.send(
+                  new ProducerRecord<String, DoorRequestInfoMessage>("billing", infoRemove),
+                  (rm, e) -> {
+                      if (e != null) {
+                          LOGGER.error("Unable to send message to topic {} on  partition {}: {}",
+                                rm.topic(), rm.partition(), e.getMessage());
+                      }
+                  });
         }
 
     }
 
-    /** A short format which only includes the file name. */
-    static class ShortListPrinter implements DirectoryListPrinter
-    {
+    /**
+     * A short format which only includes the file name.
+     */
+    static class ShortListPrinter implements DirectoryListPrinter {
+
         private final PrintWriter _out;
 
-        public ShortListPrinter(PrintWriter writer)
-        {
+        public ShortListPrinter(PrintWriter writer) {
             _out = writer;
         }
 
         @Override
-        public Set<FileAttribute> getRequiredAttributes()
-        {
+        public Set<FileAttribute> getRequiredAttributes() {
             return EnumSet.noneOf(FileAttribute.class);
         }
 
         @Override
-        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-        {
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
             _out.append(entry.getName()).append("\r\n");
         }
     }
 
-    /** The output previously used for FTP LIST command. */
-    class LegacyListPrinter implements DirectoryListPrinter
-    {
+    /**
+     * The output previously used for FTP LIST command.
+     */
+    class LegacyListPrinter implements DirectoryListPrinter {
+
         private final String _userName;
         private final PrintWriter _out;
         private final PermissionHandler _pdp =
-            new ChainedPermissionHandler
-            (
-                new ACLPermissionHandler(),
-                new PosixPermissionHandler()
-            );
+              new ChainedPermissionHandler
+                    (
+                          new ACLPermissionHandler(),
+                          new PosixPermissionHandler()
+                    );
 
-        public LegacyListPrinter(PrintWriter writer)
-        {
+        public LegacyListPrinter(PrintWriter writer) {
             _out = writer;
             _userName = Subjects.getUserName(_subject);
         }
 
         @Override
-        public Set<FileAttribute> getRequiredAttributes()
-        {
+        public Set<FileAttribute> getRequiredAttributes() {
             Set<FileAttribute> attributes =
-                EnumSet.of(SIMPLE_TYPE, MODIFICATION_TIME, SIZE);
+                  EnumSet.of(SIMPLE_TYPE, MODIFICATION_TIME, SIZE);
             attributes.addAll(_pdp.getRequiredAttributes());
             return attributes;
         }
 
         @Override
-        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-        {
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
             StringBuilder mode = new StringBuilder();
             FileAttributes attr = entry.getFileAttributes();
             FsPath path = (dir == null) ? FsPath.ROOT : dir.child(entry.getName());
 
             if (attr.getFileType() == FileType.DIR) {
                 boolean canListDir = _pdp.canListDir(_subject, attr) == ACCESS_ALLOWED &&
-                        !isRestricted(LIST, path);
+                      !isRestricted(LIST, path);
                 boolean canLookup = _pdp.canLookup(_subject, attr) == ACCESS_ALLOWED &&
-                        !isRestricted(READ_METADATA, path);
+                      !isRestricted(READ_METADATA, path);
                 boolean canCreateFile = _pdp.canCreateFile(_subject, attr) == ACCESS_ALLOWED &&
-                        !isRestricted(UPLOAD, path);
+                      !isRestricted(UPLOAD, path);
                 boolean canCreateDir = _pdp.canCreateSubDir(_subject, attr) == ACCESS_ALLOWED &&
-                        !isRestricted(MANAGE, path);
+                      !isRestricted(MANAGE, path);
                 mode.append('d');
                 mode.append(canListDir ? 'r' : '-');
                 mode.append(canCreateFile || canCreateDir ? 'w' : '-');
@@ -4726,7 +4578,7 @@ public abstract class AbstractFtpDoorV1
                 mode.append("------");
             } else {
                 boolean canReadFile = _pdp.canReadFile(_subject, attr) == ACCESS_ALLOWED &&
-                        !isRestricted(DOWNLOAD, path);
+                      !isRestricted(DOWNLOAD, path);
                 mode.append('-');
                 mode.append(canReadFile ? 'r' : '-');
                 mode.append('-');
@@ -4744,68 +4596,65 @@ public abstract class AbstractFtpDoorV1
             }
 
             _out.format(format,
-                        mode,
-                        _userName,
-                        _userName,
-                        attr.getSizeIfPresent().orElse(0L),
-                        modified,
-                        entry.getName());
+                  mode,
+                  _userName,
+                  _userName,
+                  attr.getSizeIfPresent().orElse(0L),
+                  modified,
+                  entry.getName());
             _out.append("\r\n");
         }
     }
 
-    /** A list printer that provides output as close to 'ls -l' as possible. */
-    class LongListPrinter implements DirectoryListPrinter
-    {
+    /**
+     * A list printer that provides output as close to 'ls -l' as possible.
+     */
+    class LongListPrinter implements DirectoryListPrinter {
+
         private final PrintWriter _out;
         private final ColumnWriter _columns = new ColumnWriter()
-                    .left("type")
-                    .left("mode")
-                    .space().right("ncount")
-                    .space().left("owner")
-                    .space().left("group")
-                    .space().bytes("size", ByteUnit.Type.DECIMAL)
-                    .space().date("time", DateStyle.LS)
-                    .space().left("name");
+              .left("type")
+              .left("mode")
+              .space().right("ncount")
+              .space().left("owner")
+              .space().left("group")
+              .space().bytes("size", ByteUnit.Type.DECIMAL)
+              .space().date("time", DateStyle.LS)
+              .space().left("name");
 
-        public LongListPrinter(PrintWriter writer)
-        {
+        public LongListPrinter(PrintWriter writer) {
             _out = writer;
         }
 
         @Override
-        public Set<FileAttribute> getRequiredAttributes()
-        {
+        public Set<FileAttribute> getRequiredAttributes() {
             Set<FileAttribute> attributes =
-                EnumSet.of(TYPE, MODIFICATION_TIME, SIZE, MODE, NLINK,
+                  EnumSet.of(TYPE, MODIFICATION_TIME, SIZE, MODE, NLINK,
                         OWNER_GROUP, OWNER, MODIFICATION_TIME);
             return attributes;
         }
 
-        private void appendPermissions(StringBuilder sb, int mode)
-        {
+        private void appendPermissions(StringBuilder sb, int mode) {
             sb.append((mode & 4) == 4 ? 'r' : '-');
             sb.append((mode & 2) == 2 ? 'w' : '-');
             sb.append((mode & 1) == 1 ? 'x' : '-');
         }
 
-        private String typeFor(FileType type)
-        {
+        private String typeFor(FileType type) {
             switch (type) {
-            case REGULAR:
-                return "-";
-            case DIR:
-                return "d";
-            case LINK:
-                return "l";
-            case SPECIAL:
-                return "s";
+                case REGULAR:
+                    return "-";
+                case DIR:
+                    return "d";
+                case LINK:
+                    return "l";
+                case SPECIAL:
+                    return "s";
             }
             return "?";
         }
 
-        private String permissionsFor(int mode)
-        {
+        private String permissionsFor(int mode) {
             StringBuilder sb = new StringBuilder();
             appendPermissions(sb, mode >> 6 & 7);
             appendPermissions(sb, mode >> 3 & 7);
@@ -4814,25 +4663,23 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-        {
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
             FileAttributes attr = entry.getFileAttributes();
             _columns.row()
-                    .value("type", typeFor(attr.getFileType()))
-                    .value("mode", permissionsFor(attr.getMode()))
-                    .value("ncount", attr.getNlink())
-                    .value("owner", _identityResolver.uidToName(attr.getOwner())
-                                    .orElseGet(() -> Integer.toString(attr.getOwner())))
-                    .value("group", _identityResolver.gidToName(attr.getGroup())
-                                    .orElseGet(() -> Integer.toString(attr.getGroup())))
-                    .value("size", attr.getSizeIfPresent().orElse(0L))
-                    .value("time", new Date(attr.getModificationTime()))
-                    .value("name", entry.getName());
+                  .value("type", typeFor(attr.getFileType()))
+                  .value("mode", permissionsFor(attr.getMode()))
+                  .value("ncount", attr.getNlink())
+                  .value("owner", _identityResolver.uidToName(attr.getOwner())
+                        .orElseGet(() -> Integer.toString(attr.getOwner())))
+                  .value("group", _identityResolver.gidToName(attr.getGroup())
+                        .orElseGet(() -> Integer.toString(attr.getGroup())))
+                  .value("size", attr.getSizeIfPresent().orElse(0L))
+                  .value("time", new Date(attr.getModificationTime()))
+                  .value("name", entry.getName());
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             String output = _columns.toString("\r\n");
             _out.print(output);
             if (!output.isEmpty()) {
@@ -4844,81 +4691,79 @@ public abstract class AbstractFtpDoorV1
     /**
      * ListPrinter using the RFC 3659 fact line format.
      */
-    private abstract class FactPrinter implements DirectoryListPrinter
-    {
+    private abstract class FactPrinter implements DirectoryListPrinter {
+
         private static final int MODE_MASK = 07777;
 
         protected final PrintWriter _out;
 
         private final PermissionHandler _pdp =
-            new ChainedPermissionHandler
-            (
-                new ACLPermissionHandler(),
-                new PosixPermissionHandler()
-            );
+              new ChainedPermissionHandler
+                    (
+                          new ACLPermissionHandler(),
+                          new PosixPermissionHandler()
+                    );
 
-        public FactPrinter(PrintWriter writer)
-        {
+        public FactPrinter(PrintWriter writer) {
             _out = writer;
         }
 
         @Override
-        public Set<FileAttribute> getRequiredAttributes()
-        {
+        public Set<FileAttribute> getRequiredAttributes() {
             Set<FileAttribute> attributes =
-                EnumSet.noneOf(FileAttribute.class);
-            for (Fact fact: _currentFacts) {
+                  EnumSet.noneOf(FileAttribute.class);
+            for (Fact fact : _currentFacts) {
                 switch (fact) {
-                case SIZE:
-                    attributes.add(SIZE);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case CREATE:
-                    attributes.add(CREATION_TIME);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case MODIFY:
-                    attributes.add(MODIFICATION_TIME);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case CHANGE:
-                    attributes.add(CHANGE_TIME);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case ACCESS:
-                    attributes.add(ACCESS_TIME);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case TYPE:
-                    attributes.add(SIMPLE_TYPE);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case PERM:
-                    attributes.add(SIMPLE_TYPE);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case UNIQUE:
-                    attributes.add(PNFSID);
-                    break;
-                case UID:
-                case OWNER:
-                    attributes.add(OWNER);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case GID:
-                case GROUP:
-                    attributes.add(OWNER_GROUP);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
-                case MODE:
-                    attributes.add(MODE);
-                    attributes.addAll(_pdp.getRequiredAttributes());
-                    break;
+                    case SIZE:
+                        attributes.add(SIZE);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case CREATE:
+                        attributes.add(CREATION_TIME);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case MODIFY:
+                        attributes.add(MODIFICATION_TIME);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case CHANGE:
+                        attributes.add(CHANGE_TIME);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case ACCESS:
+                        attributes.add(ACCESS_TIME);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case TYPE:
+                        attributes.add(SIMPLE_TYPE);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case PERM:
+                        attributes.add(SIMPLE_TYPE);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case UNIQUE:
+                        attributes.add(PNFSID);
+                        break;
+                    case UID:
+                    case OWNER:
+                        attributes.add(OWNER);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case GID:
+                    case GROUP:
+                        attributes.add(OWNER_GROUP);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
+                    case MODE:
+                        attributes.add(MODE);
+                        attributes.addAll(_pdp.getRequiredAttributes());
+                        break;
                 }
             }
 
             if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
-                    && _currentFacts.contains(Fact.SIZE)) {
+                  && _currentFacts.contains(Fact.SIZE)) {
                 attributes.add(SIMPLE_TYPE);
             }
 
@@ -4926,13 +4771,12 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-        {
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
             FileAttributes attr = entry.getFileAttributes();
 
             if (_activeWorkarounds.contains(WorkAround.USE_PLACEHOLDER_SIZE_FOR_INCOMPLETE_FILES)
-                    && attr.isDefined(TYPE) && attr.getFileType() == FileType.REGULAR
-                    && attr.isUndefined(SIZE)) {
+                  && attr.isDefined(TYPE) && attr.getFileType() == FileType.REGULAR
+                  && attr.isUndefined(SIZE)) {
                 attr.setSize(0L);
             }
 
@@ -4941,105 +4785,111 @@ public abstract class AbstractFtpDoorV1
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
 
-                for (Fact fact: _currentFacts) {
+                for (Fact fact : _currentFacts) {
                     switch (fact) {
-                    case SIZE:
-                        if (attr.isDefined(SIZE)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(SIZE));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printSizeFact(attr);
+                        case SIZE:
+                            if (attr.isDefined(SIZE)) {
+                                access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(SIZE));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printSizeFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case CREATE:
-                        if (attr.isDefined(CREATION_TIME)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(CREATION_TIME));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printCreateFact(attr);
+                            break;
+                        case CREATE:
+                            if (attr.isDefined(CREATION_TIME)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(CREATION_TIME));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printCreateFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case MODIFY:
-                        if (attr.isDefined(MODIFICATION_TIME)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(MODIFICATION_TIME));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printModifyFact(attr);
+                            break;
+                        case MODIFY:
+                            if (attr.isDefined(MODIFICATION_TIME)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(MODIFICATION_TIME));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printModifyFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case CHANGE:
-                        if (attr.isDefined(CHANGE_TIME)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(CHANGE_TIME));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printChangeFact(attr);
+                            break;
+                        case CHANGE:
+                            if (attr.isDefined(CHANGE_TIME)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(CHANGE_TIME));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printChangeFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case ACCESS:
-                        if (attr.isDefined(ACCESS_TIME)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(ACCESS_TIME));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printAccessFact(attr);
+                            break;
+                        case ACCESS:
+                            if (attr.isDefined(ACCESS_TIME)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(ACCESS_TIME));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printAccessFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case TYPE:
-                        if (attr.isDefined(TYPE)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(TYPE));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printTypeFact(attr);
+                            break;
+                        case TYPE:
+                            if (attr.isDefined(TYPE)) {
+                                access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(TYPE));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printTypeFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case UNIQUE:
-                        printUniqueFact(attr);
-                        break;
-                    case PERM:
-                        access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(MODE, ACL));
-                        if (access == AccessType.ACCESS_ALLOWED) {
-                            printPermFact(dirAttr, attr, path);
-                        }
-                        break;
-                    case OWNER:
-                        if (attr.isDefined(OWNER)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER));
+                            break;
+                        case UNIQUE:
+                            printUniqueFact(attr);
+                            break;
+                        case PERM:
+                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(MODE, ACL));
                             if (access == AccessType.ACCESS_ALLOWED) {
-                                printOwnerFact(attr);
+                                printPermFact(dirAttr, attr, path);
                             }
-                        }
-                        break;
-                    case GROUP:
-                        if (attr.isDefined(OWNER_GROUP)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER_GROUP));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printGroupFact(attr);
+                            break;
+                        case OWNER:
+                            if (attr.isDefined(OWNER)) {
+                                access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printOwnerFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case UID:
-                        if (attr.isDefined(OWNER)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printUidFact(attr);
+                            break;
+                        case GROUP:
+                            if (attr.isDefined(OWNER_GROUP)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(OWNER_GROUP));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printGroupFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case GID:
-                        if (attr.isDefined(OWNER_GROUP)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER_GROUP));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printGidFact(attr);
+                            break;
+                        case UID:
+                            if (attr.isDefined(OWNER)) {
+                                access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printUidFact(attr);
+                                }
                             }
-                        }
-                        break;
-                    case MODE:
-                        if (attr.isDefined(MODE)) {
-                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(MODE));
-                            if (access == AccessType.ACCESS_ALLOWED) {
-                                printModeFact(attr);
+                            break;
+                        case GID:
+                            if (attr.isDefined(OWNER_GROUP)) {
+                                access = _pdp.canGetAttributes(_subject, attr,
+                                      EnumSet.of(OWNER_GROUP));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printGidFact(attr);
+                                }
                             }
-                        }
-                        break;
+                            break;
+                        case MODE:
+                            if (attr.isDefined(MODE)) {
+                                access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(MODE));
+                                if (access == AccessType.ACCESS_ALLOWED) {
+                                    printModeFact(attr);
+                                }
+                            }
+                            break;
                     }
                 }
             }
@@ -5048,145 +4898,155 @@ public abstract class AbstractFtpDoorV1
             _out.print("\r\n");
         }
 
-        /** Writes an RFC 3659 fact to a writer. */
-        private void printFact(Fact fact, Object value)
-        {
+        /**
+         * Writes an RFC 3659 fact to a writer.
+         */
+        private void printFact(Fact fact, Object value) {
             _out.print(fact.getName());
             _out.print('=');
             _out.print(value);
             _out.print(';');
         }
 
-        /** Writes a RFC 3659 create fact to a writer. */
-        private void printCreateFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 create fact to a writer.
+         */
+        private void printCreateFact(FileAttributes attr) {
             long time = attr.getCreationTime();
             printFact(Fact.CREATE, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
-        /** Writes a RFC 3659 modify fact to a writer. */
-        private void printModifyFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 modify fact to a writer.
+         */
+        private void printModifyFact(FileAttributes attr) {
             long time = attr.getModificationTime();
             printFact(Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
-        /** Writes UNIX.ctime fact to a writer. */
-        private void printChangeFact(FileAttributes attr)
-        {
+        /**
+         * Writes UNIX.ctime fact to a writer.
+         */
+        private void printChangeFact(FileAttributes attr) {
             long time = attr.getChangeTime();
             printFact(Fact.CHANGE, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
-        /** Writes UNIX.atime fact to a writer. */
-        private void printAccessFact(FileAttributes attr)
-        {
+        /**
+         * Writes UNIX.atime fact to a writer.
+         */
+        private void printAccessFact(FileAttributes attr) {
             long time = attr.getAccessTime();
             printFact(Fact.ACCESS, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
-        /** Writes a RFC 3659 size fact to a writer. */
-        private void printSizeFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 size fact to a writer.
+         */
+        private void printSizeFact(FileAttributes attr) {
             printFact(Fact.SIZE, attr.getSize());
         }
 
-        /** Writes a RFC 3659 UNIX.Owner fact to a writer. */
-        private void printOwnerFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 UNIX.Owner fact to a writer.
+         */
+        private void printOwnerFact(FileAttributes attr) {
             long uid = attr.getOwner();
-            printFact(Fact.OWNER, _identityResolver.uidToName(uid).orElseGet(() -> Long.toString(uid)));
+            printFact(Fact.OWNER,
+                  _identityResolver.uidToName(uid).orElseGet(() -> Long.toString(uid)));
         }
 
-        /** Writes a RFC 3659 UNIX.group fact to a writer. */
-        private void printGroupFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 UNIX.group fact to a writer.
+         */
+        private void printGroupFact(FileAttributes attr) {
             long gid = attr.getGroup();
-            printFact(Fact.GROUP,  _identityResolver.gidToName(gid).orElseGet(() -> Long.toString(gid)));
+            printFact(Fact.GROUP,
+                  _identityResolver.gidToName(gid).orElseGet(() -> Long.toString(gid)));
         }
 
-        /** Writes a numerical uid fact to a writer. */
-        private void printUidFact(FileAttributes attr)
-        {
+        /**
+         * Writes a numerical uid fact to a writer.
+         */
+        private void printUidFact(FileAttributes attr) {
             printFact(Fact.UID, attr.getOwner());
         }
 
-        /** Writes a numerical gid fact to a writer. */
-        private void printGidFact(FileAttributes attr)
-        {
+        /**
+         * Writes a numerical gid fact to a writer.
+         */
+        private void printGidFact(FileAttributes attr) {
             printFact(Fact.GID, attr.getGroup());
         }
 
-        /** Writes a RFC 3659 UNIX.mode fact to a writer. */
-        private void printModeFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 UNIX.mode fact to a writer.
+         */
+        private void printModeFact(FileAttributes attr) {
             /* ncftp client v3.2.5 requires that the mode fact starts with a '0'
              * otherwise the value is interpreted as a base-10 value.
              *
              * This seems to be consistent with what Globus server does.
              */
             printFact(Fact.MODE,
-                      "0" + Integer.toOctalString(attr.getMode() & MODE_MASK));
+                  "0" + Integer.toOctalString(attr.getMode() & MODE_MASK));
         }
 
-        /** Writes a RFC 3659 type fact to a writer. */
-        private void printTypeFact(FileAttributes attr)
-        {
+        /**
+         * Writes a RFC 3659 type fact to a writer.
+         */
+        private void printTypeFact(FileAttributes attr) {
             switch (attr.getFileType()) {
-            case DIR:
-                printFact(Fact.TYPE, "dir");
-                break;
-            case REGULAR:
-                printFact(Fact.TYPE, "file");
-                break;
-            case LINK:
-                printFact(Fact.TYPE, "OS.UNIX=slink");
-                break;
+                case DIR:
+                    printFact(Fact.TYPE, "dir");
+                    break;
+                case REGULAR:
+                    printFact(Fact.TYPE, "file");
+                    break;
+                case LINK:
+                    printFact(Fact.TYPE, "OS.UNIX=slink");
+                    break;
             }
         }
 
         /**
-         * Writes a RFC 3659 unique fact to a writer. The value of the
-         * unique fact is the PNFS ID.
+         * Writes a RFC 3659 unique fact to a writer. The value of the unique fact is the PNFS ID.
          */
-        private void printUniqueFact(FileAttributes attr)
-        {
+        private void printUniqueFact(FileAttributes attr) {
             printFact(Fact.UNIQUE, attr.getPnfsId());
         }
 
         /**
-         * Writes a RFC 3659 perm fact to a writer. This operation is
-         * rather expensive as the permission information must be
-         * retrieved.
+         * Writes a RFC 3659 perm fact to a writer. This operation is rather expensive as the
+         * permission information must be retrieved.
          */
-        private void printPermFact(FileAttributes parentAttr, FileAttributes attr, FsPath path)
-        {
+        private void printPermFact(FileAttributes parentAttr, FileAttributes attr, FsPath path) {
             StringBuilder s = new StringBuilder();
             if (attr.getFileType() == FileType.DIR) {
                 if (_pdp.canCreateFile(_subject, attr) == ACCESS_ALLOWED
-                        && !isRestricted(UPLOAD, path)) {
+                      && !isRestricted(UPLOAD, path)) {
                     s.append('c');
                 }
                 if (_pdp.canDeleteDir(_subject, parentAttr, attr) == ACCESS_ALLOWED
-                        && !isRestricted(DELETE, path)) {
+                      && !isRestricted(DELETE, path)) {
                     s.append('d');
                 }
                 s.append('e');
                 if (_pdp.canListDir(_subject, attr) == ACCESS_ALLOWED
-                        && !isRestricted(LIST, path)) {
+                      && !isRestricted(LIST, path)) {
                     s.append('l');
                 }
                 if (_pdp.canCreateSubDir(_subject, attr) == ACCESS_ALLOWED
-                        && !isRestricted(MANAGE, path)) {
+                      && !isRestricted(MANAGE, path)) {
                     s.append('m');
                 }
             } else {
                 if (_pdp.canDeleteFile(_subject, parentAttr, attr) == ACCESS_ALLOWED
-                        && !isRestricted(DELETE, path)) {
+                      && !isRestricted(DELETE, path)) {
                     s.append('d');
                 }
                 if (_pdp.canReadFile(_subject, attr) == ACCESS_ALLOWED
-                        && !isRestricted(DOWNLOAD, path)) {
+                      && !isRestricted(DOWNLOAD, path)) {
                     s.append('r');
                 }
             }
@@ -5196,54 +5056,47 @@ public abstract class AbstractFtpDoorV1
         protected abstract void printName(FsPath dir, DirectoryEntry entry);
     }
 
-    private class MlscFactPrinter extends MlsdFactPrinter
-    {
-        public MlscFactPrinter(PrintWriter writer)
-        {
+    private class MlscFactPrinter extends MlsdFactPrinter {
+
+        public MlscFactPrinter(PrintWriter writer) {
             super(writer);
         }
 
         @Override
-        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-        {
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
             _out.print(' ');
             super.print(dir, dirAttr, entry);
         }
     }
 
-    private class MlsdFactPrinter extends FactPrinter
-    {
-        public MlsdFactPrinter(PrintWriter writer)
-        {
+    private class MlsdFactPrinter extends FactPrinter {
+
+        public MlsdFactPrinter(PrintWriter writer) {
             super(writer);
         }
 
         @Override
-        protected void printName(FsPath dir, DirectoryEntry entry)
-        {
+        protected void printName(FsPath dir, DirectoryEntry entry) {
             _out.print(entry.getName());
         }
     }
 
-    private class MlstFactPrinter extends FactPrinter
-    {
-        public MlstFactPrinter(PrintWriter writer)
-        {
+    private class MlstFactPrinter extends FactPrinter {
+
+        public MlstFactPrinter(PrintWriter writer) {
             super(writer);
         }
 
         @Override
-        protected void printName(FsPath dir, DirectoryEntry entry)
-        {
+        protected void printName(FsPath dir, DirectoryEntry entry) {
             String name = entry.getName();
             FsPath path = (dir == null) ? FsPath.ROOT : dir.child(name);
             _out.print(path.stripPrefix(_doorRootPath));
         }
     }
 
-    private boolean isRestricted(Activity activity, FsPath path)
-    {
+    private boolean isRestricted(Activity activity, FsPath path) {
         return !Subjects.isRoot(_subject) && path != null &&
-            _authz.isRestricted(activity, path);
+              _authz.isRestricted(activity, path);
     }
 }

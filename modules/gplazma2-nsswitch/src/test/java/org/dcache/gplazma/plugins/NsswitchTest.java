@@ -1,20 +1,22 @@
 package org.dcache.gplazma.plugins;
 
-import com.sun.jna.ptr.IntByReference;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Sets.newHashSet;
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import com.sun.jna.ptr.IntByReference;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -27,17 +29,15 @@ import org.dcache.gplazma.plugins.Nsswitch.LibC;
 import org.dcache.gplazma.plugins.Nsswitch.__group;
 import org.dcache.gplazma.plugins.Nsswitch.__password;
 import org.dcache.util.PrincipalSetMaker;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-import static com.google.common.collect.Sets.newHashSet;
-import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
 @RunWith(PowerMockRunner.class)
 @SuppressStaticInitializationFor({"com.sun.jna.Structure"})
@@ -65,8 +65,8 @@ import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
  * Unfortunately, doing this requires employing a "large hammer" (in the
  * form of PowerMock) to beat the dependent classes into submission.
  */
-public class NsswitchTest
-{
+public class NsswitchTest {
+
     private LibC _libc;
     private Nsswitch _plugin;
     private Principal _identityMapResult;
@@ -75,8 +75,7 @@ public class NsswitchTest
     private Set<Object> _attributes;
 
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         _libc = mock(LibC.class);
         _plugin = new Nsswitch(_libc);
         _identityMapResult = null;
@@ -90,8 +89,7 @@ public class NsswitchTest
 
 
     @Test
-    public void shouldIdentityMapNameToUid() throws NoSuchPrincipalException
-    {
+    public void shouldIdentityMapNameToUid() throws NoSuchPrincipalException {
         given(aUser().withName("kermit").withUid(100));
 
         whenIdentityMap(userNamePrincipal("kermit"));
@@ -99,10 +97,9 @@ public class NsswitchTest
         assertThat(_identityMapResult, is(equalTo(uidPrincipal(100))));
     }
 
-    @Test(expected=NoSuchPrincipalException.class)
+    @Test(expected = NoSuchPrincipalException.class)
     public void shouldFailWhenIdentityMapUnknownName()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(noUser().withName("kermit"));
 
         whenIdentityMap(userNamePrincipal("kermit"));
@@ -110,8 +107,7 @@ public class NsswitchTest
 
     @Test
     public void shouldIdentityReverseMapUidToName()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(aUser().withName("kermit").withUid(100));
 
         whenIdentityReverseMap(uidPrincipal(100));
@@ -119,18 +115,16 @@ public class NsswitchTest
         assertThat(_identityReverseMapResult, hasItem(userNamePrincipal("kermit")));
     }
 
-    @Test(expected=NoSuchPrincipalException.class)
+    @Test(expected = NoSuchPrincipalException.class)
     public void shouldFailWhenIdentityReverseMapUnknownUid()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(noUser().withUid(100));
 
         whenIdentityReverseMap(uidPrincipal(100));
     }
 
     @Test
-    public void shouldIdentityMapNameToGid() throws NoSuchPrincipalException
-    {
+    public void shouldIdentityMapNameToGid() throws NoSuchPrincipalException {
         given(aGroup().withName("it").withGid(200));
 
         whenIdentityMap(groupNamePrincipal("it"));
@@ -139,10 +133,9 @@ public class NsswitchTest
         assertThat(_identityMapResult, is(nonPrimaryGidPrincipal(200)));
     }
 
-    @Test(expected=NoSuchPrincipalException.class)
+    @Test(expected = NoSuchPrincipalException.class)
     public void shouldFailWhenIdentityMapUnknownGroupName()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(noGroup().withName("it"));
 
         whenIdentityMap(groupNamePrincipal("it"));
@@ -150,8 +143,7 @@ public class NsswitchTest
 
     @Test
     public void shouldIdentityReverseMapPrimaryGidToName()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(aGroup().withName("it").withGid(200));
 
         whenIdentityReverseMap(primaryGidPrincipal(200));
@@ -161,8 +153,7 @@ public class NsswitchTest
 
     @Test
     public void shouldIdentityReverseMapGidToName()
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         given(aGroup().withName("it").withGid(200));
 
         whenIdentityReverseMap(nonPrimaryGidPrincipal(200));
@@ -173,8 +164,7 @@ public class NsswitchTest
 
     @Test
     public void shouldLoginMapForUserWithSingleGroup()
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         given(aUser().withName("kermit").withUid(100).withGid(200));
 
         // REVISIT consider using PrincipalSetMaker
@@ -186,8 +176,7 @@ public class NsswitchTest
 
     @Test
     public void shouldLoginMapForUserWithSingleGroupAndExistingPrimaryGid()
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         given(aUser().withName("kermit").withUid(100).withGid(200));
 
         whenLoginMap(aSetOfPrincipals().withUsername("kermit").withPrimaryGid(300));
@@ -199,9 +188,8 @@ public class NsswitchTest
 
     @Test
     public void shouldLoginMapForUserWithMultipleGroups()
-            throws AuthenticationException
-    {
-        given(aUser().withName("kermit").withUid(100).withGid(200).withExtraGids(210,220));
+          throws AuthenticationException {
+        given(aUser().withName("kermit").withUid(100).withGid(200).withExtraGids(210, 220));
 
         // REVISIT consider using PrincipalSetMaker
         whenLoginMap(newHashSet(userNamePrincipal("kermit")));
@@ -214,9 +202,8 @@ public class NsswitchTest
 
     @Test
     public void shouldLoginMapForUserWithMultipleGroupsAndExistingPrimaryGid()
-            throws AuthenticationException
-    {
-        given(aUser().withName("kermit").withUid(100).withGid(200).withExtraGids(210,220));
+          throws AuthenticationException {
+        given(aUser().withName("kermit").withUid(100).withGid(200).withExtraGids(210, 220));
 
         whenLoginMap(aSetOfPrincipals().withUsername("kermit").withPrimaryGid(300));
 
@@ -228,8 +215,7 @@ public class NsswitchTest
     }
 
     @Test
-    public void shouldLoginSession() throws AuthenticationException
-    {
+    public void shouldLoginSession() throws AuthenticationException {
         // no "given"s since behaviour is independent of system state
 
         whenLoginSession(null); // null is OK since principals are ignored
@@ -239,35 +225,29 @@ public class NsswitchTest
     }
 
 
-    private void whenIdentityMap(Principal p) throws NoSuchPrincipalException
-    {
+    private void whenIdentityMap(Principal p) throws NoSuchPrincipalException {
         _identityMapResult = _plugin.map(p);
     }
 
-    private void whenIdentityReverseMap(Principal p) throws NoSuchPrincipalException
-    {
+    private void whenIdentityReverseMap(Principal p) throws NoSuchPrincipalException {
         _identityReverseMapResult = _plugin.reverseMap(p);
     }
 
-    private void whenLoginMap(PrincipalSetMaker maker) throws AuthenticationException
-    {
+    private void whenLoginMap(PrincipalSetMaker maker) throws AuthenticationException {
         whenLoginMap(maker.build());
     }
 
-    private void whenLoginMap(Set<Principal> principals) throws AuthenticationException
-    {
+    private void whenLoginMap(Set<Principal> principals) throws AuthenticationException {
         _loginMapResult = new HashSet<>(principals);
         _plugin.map(_loginMapResult);
     }
 
-    private void whenLoginSession(Set<Principal> principals) throws AuthenticationException
-    {
+    private void whenLoginSession(Set<Principal> principals) throws AuthenticationException {
         _attributes = new HashSet<>();
         _plugin.session(principals, _attributes);
     }
 
-    private void given(UserInfo user)
-    {
+    private void given(UserInfo user) {
         if (user.hasName()) {
             when(_libc.getpwnam(user.getName())).thenReturn(user.buildPassword());
         }
@@ -278,13 +258,12 @@ public class NsswitchTest
 
         if (user.hasName() && user.hasGid()) {
             when(_libc.getgrouplist(eq(user.getName()), eq(user.getGid()),
-                    any(int[].class), any(IntByReference.class))).
-                    thenAnswer(new GetGroupListAnswer(user._extraGids));
+                  any(int[].class), any(IntByReference.class))).
+                  thenAnswer(new GetGroupListAnswer(user._extraGids));
         }
     }
 
-    private void given(GroupInfo group)
-    {
+    private void given(GroupInfo group) {
         if (group.hasName()) {
             when(_libc.getgrnam(group.getName())).thenReturn(group.buildGroup());
         }
@@ -294,68 +273,57 @@ public class NsswitchTest
         }
     }
 
-    private Principal uidPrincipal(int uid)
-    {
+    private Principal uidPrincipal(int uid) {
         return new UidPrincipal(uid);
     }
 
-    private Principal primaryGidPrincipal(int uid)
-    {
+    private Principal primaryGidPrincipal(int uid) {
         return new GidPrincipal(uid, true);
     }
 
-    private Principal nonPrimaryGidPrincipal(int uid)
-    {
+    private Principal nonPrimaryGidPrincipal(int uid) {
         return new GidPrincipal(uid, false);
     }
 
-    private Principal userNamePrincipal(String name)
-    {
+    private Principal userNamePrincipal(String name) {
         return new UserNamePrincipal(name);
     }
 
-    private Principal groupNamePrincipal(String name)
-    {
+    private Principal groupNamePrincipal(String name) {
         return new GroupNamePrincipal(name);
     }
 
-    private Object homeDirectory(String dir)
-    {
+    private Object homeDirectory(String dir) {
         return new HomeDirectory(dir);
     }
 
-    private Object rootDirectory(String dir)
-    {
+    private Object rootDirectory(String dir) {
         return new RootDirectory(dir);
     }
 
-    private UserInfo aUser()
-    {
+    private UserInfo aUser() {
         return new UserInfo();
     }
 
-    private UserInfo noUser()
-    {
+    private UserInfo noUser() {
         return new UserInfo().isAbsent();
     }
 
-    private GroupInfo aGroup()
-    {
+    private GroupInfo aGroup() {
         return new GroupInfo();
     }
 
-    private GroupInfo noGroup()
-    {
+    private GroupInfo noGroup() {
         return new GroupInfo().isAbsent();
     }
 
     /**
-     * Fluent class for collecting information about a POSIX user, which is
-     * used to build a __password object.  It is also used to hold additional
-     * group membership (the gids) of this user.
+     * Fluent class for collecting information about a POSIX user, which is used to build a
+     * __password object.  It is also used to hold additional group membership (the gids) of this
+     * user.
      */
-    private class UserInfo
-    {
+    private class UserInfo {
+
         String _name;
         boolean _hasName;
         int _uid;
@@ -365,74 +333,62 @@ public class NsswitchTest
         int[] _extraGids = new int[0];
         boolean _isAbsent;
 
-        UserInfo withName(String name)
-        {
+        UserInfo withName(String name) {
             _name = name;
             _hasName = true;
             return this;
         }
 
-        UserInfo withUid(int uid)
-        {
+        UserInfo withUid(int uid) {
             _uid = uid;
             _hasUid = true;
             return this;
         }
 
-        UserInfo withGid(int gid)
-        {
+        UserInfo withGid(int gid) {
             _gid = gid;
             _hasGid = true;
             return this;
         }
 
-        UserInfo withExtraGids(int... gids)
-        {
+        UserInfo withExtraGids(int... gids) {
             _extraGids = gids;
             return this;
         }
 
-        UserInfo isAbsent()
-        {
+        UserInfo isAbsent() {
             _isAbsent = true;
             return this;
         }
 
-        boolean hasName()
-        {
+        boolean hasName() {
             return _hasName;
         }
 
-        boolean hasUid()
-        {
+        boolean hasUid() {
             return _hasUid;
         }
 
-        boolean hasGid()
-        {
+        boolean hasGid() {
             return _hasGid;
         }
 
-        String getName()
-        {
+        String getName() {
             checkState(_hasName, "no name");
             return _name;
         }
 
-        int getUid()
-        {
+        int getUid() {
             checkState(_hasUid, "no uid");
             return _uid;
         }
 
-        int getGid()
-        {
+        int getGid() {
             checkState(_hasGid, "no gid");
             return _gid;
         }
 
-        __password buildPassword()
-        {
+        __password buildPassword() {
             if (_isAbsent) {
                 return null;
             }
@@ -446,61 +402,53 @@ public class NsswitchTest
     }
 
     /**
-     * Fluent class to hold information about a POSIX group and build a
-     * corresponding __group object.
+     * Fluent class to hold information about a POSIX group and build a corresponding __group
+     * object.
      */
-    private class GroupInfo
-    {
+    private class GroupInfo {
+
         private String _name;
         private int _gid;
         private boolean _hasName;
         private boolean _hasGid;
         private boolean _isAbsent;
 
-        GroupInfo withName(String name)
-        {
+        GroupInfo withName(String name) {
             _name = name;
             _hasName = true;
             return this;
         }
 
-        GroupInfo withGid(int gid)
-        {
+        GroupInfo withGid(int gid) {
             _gid = gid;
             _hasGid = true;
             return this;
         }
 
-        GroupInfo isAbsent()
-        {
+        GroupInfo isAbsent() {
             _isAbsent = true;
             return this;
         }
 
-        boolean hasName()
-        {
+        boolean hasName() {
             return _hasName;
         }
 
-        boolean hasGid()
-        {
+        boolean hasGid() {
             return _hasGid;
         }
 
-        int getGid()
-        {
+        int getGid() {
             checkState(_hasGid, "gid not set");
             return _gid;
         }
 
-        String getName()
-        {
+        String getName() {
             checkState(_hasName, "name not set");
             return _name;
         }
 
-        __group buildGroup()
-        {
+        __group buildGroup() {
             if (_isAbsent) {
                 return null;
             }
@@ -512,25 +460,22 @@ public class NsswitchTest
     }
 
     /**
-     * Class to hold login for the getgrouplist method of _libc.  The Nsswitch
-     * class makes use of the getgrouplist(3) function, which uses
-     * negotiation to establishing how many groups a user has membership.  In
-     * general, the Nsswitch class invokes getgrouplist twice; once to discover
-     * the number of gids and the second time to acquire the list.  Therefore
-     * logic is needed to respond correctly.
+     * Class to hold login for the getgrouplist method of _libc.  The Nsswitch class makes use of
+     * the getgrouplist(3) function, which uses negotiation to establishing how many groups a user
+     * has membership.  In general, the Nsswitch class invokes getgrouplist twice; once to discover
+     * the number of gids and the second time to acquire the list.  Therefore logic is needed to
+     * respond correctly.
      */
-    private class GetGroupListAnswer implements Answer
-    {
+    private class GetGroupListAnswer implements Answer {
+
         private final int[] _gids;
 
-        GetGroupListAnswer(int[] gids)
-        {
+        GetGroupListAnswer(int[] gids) {
             _gids = gids;
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation)
-        {
+        public Object answer(InvocationOnMock invocation) {
             Object[] args = invocation.getArguments();
             IntByReference ngroups = (IntByReference) args[3];
             int count = _gids.length;
@@ -547,27 +492,23 @@ public class NsswitchTest
     }
 
     /**
-     * The IntByReference class provides pointer-like behaviour that allows
-     * a method to update the supplied argument.  The JNA implementation
-     * achieves this using JNA code, which we wish to avoid.  This method
-     * is a stand-in replacement that, while useless for JNA, provides the same
-     * Java-side functionality.  Although this class works, it requires
-     * additional PowerMock magic to suppress the default constructor of the
-     * super class.
+     * The IntByReference class provides pointer-like behaviour that allows a method to update the
+     * supplied argument.  The JNA implementation achieves this using JNA code, which we wish to
+     * avoid.  This method is a stand-in replacement that, while useless for JNA, provides the same
+     * Java-side functionality.  Although this class works, it requires additional PowerMock magic
+     * to suppress the default constructor of the super class.
      */
-    private class SimpleIntStorage extends IntByReference
-    {
+    private class SimpleIntStorage extends IntByReference {
+
         private int _value;
 
         @Override
-        public int getValue()
-        {
+        public int getValue() {
             return _value;
         }
 
         @Override
-        public void setValue(int value)
-        {
+        public void setValue(int value) {
             _value = value;
         }
     }

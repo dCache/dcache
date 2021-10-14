@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.delete;
 
+import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
+
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
@@ -66,33 +68,31 @@ import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.BulkJobProvider;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
-
 public class DeleteFileJobProvider extends BulkJobProvider<DeleteFileJob> {
 
-  static final BulkJobArgumentDescriptor SKIP_DIRS =
-      new BulkJobArgumentDescriptor("skip-dirs",
-                                "do not attempt to remove directories",
-                                 "true|false",
-                                   false,
-                                "false");
+    static final BulkJobArgumentDescriptor SKIP_DIRS =
+          new BulkJobArgumentDescriptor("skip-dirs",
+                "do not attempt to remove directories",
+                "true|false",
+                false,
+                "false");
 
-  public DeleteFileJobProvider() {
-    super("DELETE", BOTH, ExpansionType.DEPTH_FIRST);
-  }
+    public DeleteFileJobProvider() {
+        super("DELETE", BOTH, ExpansionType.DEPTH_FIRST);
+    }
 
-  @Override
-  public DeleteFileJob createJob(BulkJobKey key, BulkJobKey parentKey) {
-    return new DeleteFileJob(key, parentKey, activity);
-  }
+    @Override
+    public DeleteFileJob createJob(BulkJobKey key, BulkJobKey parentKey) {
+        return new DeleteFileJob(key, parentKey, activity);
+    }
 
-  @Override
-  public Class<DeleteFileJob> getJobClass() {
-    return DeleteFileJob.class;
-  }
+    @Override
+    public Class<DeleteFileJob> getJobClass() {
+        return DeleteFileJob.class;
+    }
 
-  @Override
-  public Set<BulkJobArgumentDescriptor> getArguments() {
-    return ImmutableSet.of(SKIP_DIRS);
-  }
+    @Override
+    public Set<BulkJobArgumentDescriptor> getArguments() {
+        return ImmutableSet.of(SKIP_DIRS);
+    }
 }

@@ -18,7 +18,10 @@
  */
 package org.dcache.webdav;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Lists;
+import diskCacheV111.util.FsPath;
 import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.http.AuthenticationService;
 import io.milton.http.Range;
@@ -33,58 +36,47 @@ import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
-
-import javax.xml.namespace.QName;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.util.FsPath;
-
+import javax.xml.namespace.QName;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * A wrapping response handler that implements various work-arounds for bugs
- * in Milton.
+ * A wrapping response handler that implements various work-arounds for bugs in Milton.
  */
-public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
-{
+public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler {
+
     private AuthenticationService _authenticationService;
     private PathMapper pathMapper;
 
-    public static WorkaroundsResponseHandler wrap(WebDavResponseHandler inner)
-    {
+    public static WorkaroundsResponseHandler wrap(WebDavResponseHandler inner) {
         WorkaroundsResponseHandler handler = new WorkaroundsResponseHandler();
         handler.setWrapped(inner);
         return handler;
     }
 
 
-    public void setPathMapper(PathMapper mapper)
-    {
+    public void setPathMapper(PathMapper mapper) {
         pathMapper = requireNonNull(mapper);
     }
 
-    public void setAuthenticationService(AuthenticationService authenticationService)
-    {
+    public void setAuthenticationService(AuthenticationService authenticationService) {
         _authenticationService = authenticationService;
     }
 
     @Override
-    public void respondUnauthorised(Resource resource, Response response, Request request)
-    {
+    public void respondUnauthorised(Resource resource, Response response, Request request) {
         // If GET on the root results in an authorization failure, we redirect to the users
         // home directory for convenience.
         if (request.getAbsolutePath().equals("/") && request.getMethod() == Request.Method.GET) {
-            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(ServletRequest.getRequest());
+            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(
+                  ServletRequest.getRequest());
             FsPath userRoot = FsPath.ROOT;
             String userHome = "/";
             for (LoginAttribute attribute : login) {
@@ -96,7 +88,8 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
             }
             try {
                 FsPath redirectFullPath = userRoot.chroot(userHome);
-                String redirectPath = pathMapper.asRequestPath(ServletRequest.getRequest(), redirectFullPath);
+                String redirectPath = pathMapper.asRequestPath(ServletRequest.getRequest(),
+                      redirectFullPath);
                 if (!redirectPath.equals("/")) {
                     respondRedirect(response, request, redirectPath);
                 }
@@ -112,8 +105,7 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
 
     @Override
     public void respondPropFind(List<PropFindResponse> propFindResponses,
-                                Response response, Request request, Resource r)
-    {
+          Response response, Request request, Resource r) {
         /* Milton adds properties with a null value to the PROPFIND response.
          * gvfs doesn't like this and it is unclear whether or not this violates
          * RFC 2518.
@@ -123,18 +115,18 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
          *
          * See http://lists.justthe.net/pipermail/milton-users/2012-June/001363.html
          */
-        for (PropFindResponse propFindResponse: propFindResponses) {
-            Map<Response.Status,List<PropFindResponse.NameAndError>> errors =
-                    propFindResponse.getErrorProperties();
+        for (PropFindResponse propFindResponse : propFindResponses) {
+            Map<Response.Status, List<PropFindResponse.NameAndError>> errors =
+                  propFindResponse.getErrorProperties();
             List<PropFindResponse.NameAndError> unknownProperties =
-                    errors.get(Response.Status.SC_NOT_FOUND);
+                  errors.get(Response.Status.SC_NOT_FOUND);
             if (unknownProperties == null) {
                 unknownProperties = Lists.newArrayList();
                 errors.put(Response.Status.SC_NOT_FOUND, unknownProperties);
             }
 
             Iterator<Map.Entry<QName, ValueAndType>> iterator =
-                    propFindResponse.getKnownProperties().entrySet().iterator();
+                  propFindResponse.getKnownProperties().entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<QName, ValueAndType> entry = iterator.next();
                 if (entry.getValue().getValue() == null) {
@@ -149,10 +141,9 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
 
     @Override
     public void respondPartialContent(GetableResource resource,
-            Response response, Request request, Map<String,String> params,
-            Range range) throws NotAuthorizedException, BadRequestException,
-            NotFoundException
-    {
+          Response response, Request request, Map<String, String> params,
+          Range range) throws NotAuthorizedException, BadRequestException,
+          NotFoundException {
         Long contentLength = resource.getContentLength();
         /* [RFC 2616, section 14.35.1]
          *
@@ -162,7 +153,8 @@ public class WorkaroundsResponseHandler extends AbstractWrappingResponseHandler
          *
          * Milton ought to do this, but it doesn't.
          */
-        if (contentLength != null && range.getFinish() != null && range.getFinish() >= contentLength) {
+        if (contentLength != null && range.getFinish() != null
+              && range.getFinish() >= contentLength) {
             range = new Range(range.getStart(), contentLength - 1);
         }
         super.respondPartialContent(resource, response, request, params, range);

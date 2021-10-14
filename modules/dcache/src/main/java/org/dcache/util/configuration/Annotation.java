@@ -17,18 +17,16 @@
  */
 package org.dcache.util.configuration;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- *  This enum represents a property key annotation.  Each annotation has
- *  an associated label that is present as a comma-separated list within
- *  parentheses.
+ * This enum represents a property key annotation.  Each annotation has an associated label that is
+ * present as a comma-separated list within parentheses.
  */
-public enum Annotation
-{
+public enum Annotation {
     FORBIDDEN("forbidden"),
     OBSOLETE("obsolete"),
     ONE_OF("one-of", true),
@@ -38,38 +36,34 @@ public enum Annotation
     ANY_OF("any-of", true),
     PREFIX("prefix");
 
-    private static final Map<String,Annotation> ANNOTATION_LABELS =
-            new HashMap<>();
+    private static final Map<String, Annotation> ANNOTATION_LABELS =
+          new HashMap<>();
 
     private final String _label;
     private final boolean _isParameterRequired;
 
     static {
-        for( Annotation annotation : Annotation.values()) {
+        for (Annotation annotation : Annotation.values()) {
             ANNOTATION_LABELS.put(annotation._label, annotation);
         }
     }
 
-    public static Annotation forLabel(String label)
-    {
+    public static Annotation forLabel(String label) {
         checkArgument(ANNOTATION_LABELS.containsKey(label),
-                "Unknown annotation: " + label);
+              "Unknown annotation: " + label);
         return ANNOTATION_LABELS.get(label);
     }
 
-    Annotation(String label)
-    {
+    Annotation(String label) {
         this(label, false);
     }
 
-    Annotation(String label, boolean isParameterRequired)
-    {
+    Annotation(String label, boolean isParameterRequired) {
         _label = label;
         _isParameterRequired = isParameterRequired;
     }
 
-    public boolean isParameterRequired()
-    {
+    public boolean isParameterRequired() {
         return _isParameterRequired;
     }
 }

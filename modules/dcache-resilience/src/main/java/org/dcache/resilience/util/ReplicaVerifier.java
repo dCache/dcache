@@ -59,32 +59,28 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.SpreadAndWait;
+import dmg.cells.nucleus.CellPath;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SpreadAndWait;
-
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.cells.CellStub;
 import org.dcache.vehicles.resilience.ReplicaStatusMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>For handling messages to the pools to verify replicas.</p>
  *
  * <p>Provides methods for collecting pools by replica state: EXISTS, BROKEN,
- *    READABLE (i.e., CACHED or PRECIOUS), REMOVABLE (not PRECIOUS),
- *    and SYSTEM STICKY.</p>
+ * READABLE (i.e., CACHED or PRECIOUS), REMOVABLE (not PRECIOUS), and SYSTEM STICKY.</p>
  */
 public class ReplicaVerifier {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(ReplicaVerifier.class);
+          = LoggerFactory.getLogger(ReplicaVerifier.class);
 
     /**
      * Scatter-gather on pools to determine gather replica status.
@@ -93,29 +89,29 @@ public class ReplicaVerifier {
      * @return the messages as returned by the pools
      */
     public Collection<ReplicaStatusMessage>
-            verifyLocations(PnfsId pnfsId,
-                            Collection<String> locations,
-                            CellStub stub)
-                    throws InterruptedException {
+    verifyLocations(PnfsId pnfsId,
+          Collection<String> locations,
+          CellStub stub)
+          throws InterruptedException {
         SpreadAndWait<ReplicaStatusMessage> controller
-                        = new SpreadAndWait<>(stub);
+              = new SpreadAndWait<>(stub);
 
-        for(String pool: locations) {
+        for (String pool : locations) {
             LOGGER.trace("Sending query to {} to verify replica.", pool);
             ReplicaStatusMessage request
-                            = new ReplicaStatusMessage(pool, pnfsId);
+                  = new ReplicaStatusMessage(pool, pnfsId);
             controller.send(new CellPath(pool),
-                            ReplicaStatusMessage.class,
-                            request);
+                  ReplicaStatusMessage.class,
+                  request);
         }
 
         controller.waitForReplies();
 
         Collection<ReplicaStatusMessage> replies
-                        = controller.getReplies().values();
+              = controller.getReplies().values();
 
         LOGGER.trace("Got {} replies for {}; {} replicas exist.",
-                     replies, pnfsId, getExists(replies).size());
+              replies, pnfsId, getExists(replies).size());
 
         return replies;
     }
@@ -144,79 +140,79 @@ public class ReplicaVerifier {
         return filter(messages, m -> m.isSystemSticky());
     }
 
-    public  Set<String> exist(Collection<String> pools,
-                              Collection<ReplicaStatusMessage> messages) {
+    public Set<String> exist(Collection<String> pools,
+          Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> exists(p, messages)));
     }
 
-    public  Set<String> areAccessible(Collection<String> pools,
-                                      Collection<ReplicaStatusMessage> messages) {
+    public Set<String> areAccessible(Collection<String> pools,
+          Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> isAccessible(p, messages)));
     }
 
-    public  Set<String> areReadable(Collection<String> pools,
-                                    Collection<ReplicaStatusMessage> messages) {
+    public Set<String> areReadable(Collection<String> pools,
+          Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> isReadable(p, messages)));
     }
 
-    public  Set<String> areRemovable(Collection<String> pools,
-                                     Collection<ReplicaStatusMessage> messages) {
+    public Set<String> areRemovable(Collection<String> pools,
+          Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> isRemovable(p, messages)));
     }
 
-    public  Set<String> areSticky(Collection<String> pools,
-                                  Collection<ReplicaStatusMessage> messages) {
+    public Set<String> areSticky(Collection<String> pools,
+          Collection<ReplicaStatusMessage> messages) {
         return find(pools, messages, (p -> isSticky(p, messages)));
     }
 
-    public  boolean exists(String pool,
-                           Collection<ReplicaStatusMessage> messages) {
+    public boolean exists(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.exists());
     }
 
-    public  boolean isAccessible(String pool,
-                                 Collection<ReplicaStatusMessage> messages) {
+    public boolean isAccessible(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.isReadable() || m.isWaiting());
     }
 
-    public  boolean isBroken(String pool,
-                             Collection<ReplicaStatusMessage> messages) {
+    public boolean isBroken(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.isBroken());
     }
 
-    public  boolean isReadable(String pool,
-                               Collection<ReplicaStatusMessage> messages) {
+    public boolean isReadable(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.isReadable());
     }
 
-    public  boolean isRemovable(String pool,
-                                Collection<ReplicaStatusMessage> messages) {
+    public boolean isRemovable(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.isRemovable());
     }
 
-    public  boolean isSticky(String pool,
-                             Collection<ReplicaStatusMessage> messages) {
+    public boolean isSticky(String pool,
+          Collection<ReplicaStatusMessage> messages) {
         return test(pool, messages, m -> m.isSystemSticky());
     }
 
-    private  Set<String> filter(Collection<ReplicaStatusMessage> messages,
-                                Predicate<ReplicaStatusMessage> predicate) {
+    private Set<String> filter(Collection<ReplicaStatusMessage> messages,
+          Predicate<ReplicaStatusMessage> predicate) {
         return messages.stream().filter(predicate)
-                       .map(ReplicaStatusMessage::getPool)
-                       .collect(Collectors.toSet());
+              .map(ReplicaStatusMessage::getPool)
+              .collect(Collectors.toSet());
     }
 
-    private  Set<String> find(Collection<String> pools,
-                              Collection<ReplicaStatusMessage> message,
-                              Predicate<String> predicate) {
+    private Set<String> find(Collection<String> pools,
+          Collection<ReplicaStatusMessage> message,
+          Predicate<String> predicate) {
         return pools.stream()
-                    .filter(p -> predicate.test(p))
-                    .collect(Collectors.toSet());
+              .filter(p -> predicate.test(p))
+              .collect(Collectors.toSet());
     }
 
-    private  boolean test(String pool,
-                          Collection<ReplicaStatusMessage> message,
-                          Predicate<ReplicaStatusMessage> predicate) {
+    private boolean test(String pool,
+          Collection<ReplicaStatusMessage> message,
+          Predicate<ReplicaStatusMessage> predicate) {
         for (ReplicaStatusMessage replica : message) {
             if (pool.equals(replica.getPool()) && predicate.test(replica)) {
                 return true;

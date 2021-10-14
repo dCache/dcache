@@ -22,10 +22,9 @@ import io.milton.resource.Resource;
 /**
  * Return 405 Method Not Allowed to client.
  */
-public class MethodNotAllowedException extends WebDavException
-{
-    public MethodNotAllowedException(String message, Throwable cause, Resource resource)
-    {
+public class MethodNotAllowedException extends WebDavException {
+
+    public MethodNotAllowedException(String message, Throwable cause, Resource resource) {
         super(message, cause, resource);
     }
 }

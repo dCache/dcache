@@ -17,29 +17,24 @@
  */
 package diskCacheV111.srm;
 
-import javax.annotation.Nonnull;
-
-import java.util.Objects;
-
 import diskCacheV111.srm.dcache.DcacheUser;
-
+import java.util.Objects;
+import javax.annotation.Nonnull;
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.strategy.UserDiscriminator;
 
-public class PrimaryFqanJobDiscriminator extends UserDiscriminator
-{
+public class PrimaryFqanJobDiscriminator extends UserDiscriminator {
+
     @Nonnull
     @Override
-    protected String getDiscriminatingValue(SRMUser user)
-    {
+    protected String getDiscriminatingValue(SRMUser user) {
         return Objects.toString(Subjects.getPrimaryFqan(((DcacheUser) user).getSubject()), "");
     }
 
     @Nonnull
     @Override
-    public String getKey()
-    {
+    public String getKey() {
         return "fqan";
     }
 }

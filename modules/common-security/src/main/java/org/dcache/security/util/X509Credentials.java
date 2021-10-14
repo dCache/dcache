@@ -19,13 +19,6 @@ package org.dcache.security.util;
 
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
-import org.bouncycastle.asn1.x509.AttributeCertificate;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSError;
-import org.italiangrid.voms.asn1.VOMSACUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -35,39 +28,45 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.bouncycastle.asn1.x509.AttributeCertificate;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSError;
+import org.italiangrid.voms.asn1.VOMSACUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Utility methods for X509Credential objects.
+ * Utility methods for X509Credential objects.
  */
-public class X509Credentials
-{
+public class X509Credentials {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(X509Credentials.class);
 
     private static final AttributeCertificate[] EMPTY_ARRAY = {};
 
-    private X509Credentials()
-    {
+    private X509Credentials() {
         // Prevent instantiation
     }
 
     /**
-     * Calculate when this credential will expire.  If the credential contains
-     * AttributeCertificates then this is taken into account.
+     * Calculate when this credential will expire.  If the credential contains AttributeCertificates
+     * then this is taken into account.
+     *
      * @param credential the credential to examine
      * @return when this credential will expire
      */
-    public static Optional<Instant> calculateExpiry(X509Credential credential)
-    {
+    public static Optional<Instant> calculateExpiry(X509Credential credential) {
         Optional<Instant> expiry = Stream.of(credential.getCertificateChain())
-                        .map(X509Certificate::getNotAfter)
-                        .min(Date::compareTo)
-                        .map(Date::toInstant);
+              .map(X509Certificate::getNotAfter)
+              .min(Date::compareTo)
+              .map(Date::toInstant);
 
-        Map<String,Instant> expiryPerVo = new HashMap<>();
+        Map<String, Instant> expiryPerVo = new HashMap<>();
         try {
             ProxyChainInfo info = new ProxyChainInfo(credential.getCertificateChain());
             for (AttributeCertificate[] acForCertificateOrNull : info.getAttributeCertificateExtensions()) {
-                AttributeCertificate[] acForCertificate = acForCertificateOrNull == null ? EMPTY_ARRAY : acForCertificateOrNull;
+                AttributeCertificate[] acForCertificate =
+                      acForCertificateOrNull == null ? EMPTY_ARRAY : acForCertificateOrNull;
                 for (AttributeCertificate ac : acForCertificate) {
                     try {
                         VOMSAttribute attribute = VOMSACUtils.deserializeVOMSAttributes(ac);
@@ -87,7 +86,7 @@ public class X509Credentials
                          * the future.
                          */
                         String vo = attribute.getVO();
-                        expiryPerVo.merge(vo, acExpires, (a,b) -> a.isAfter(b) ? a : b);
+                        expiryPerVo.merge(vo, acExpires, (a, b) -> a.isAfter(b) ? a : b);
                     } catch (VOMSError e) {
                         LOGGER.warn("Badly formatted VOMS AC: {}", e.toString());
                     }
@@ -101,7 +100,8 @@ public class X509Credentials
         // contains multiple, consider the ACs expired if any VO has expired.
         Optional<Instant> acExpiry = expiryPerVo.values().stream().sorted().findFirst();
 
-        if (!expiry.isPresent() || (acExpiry.isPresent() && acExpiry.get().isBefore(expiry.get()))) {
+        if (!expiry.isPresent() || (acExpiry.isPresent() && acExpiry.get()
+              .isBefore(expiry.get()))) {
             expiry = acExpiry;
         }
 

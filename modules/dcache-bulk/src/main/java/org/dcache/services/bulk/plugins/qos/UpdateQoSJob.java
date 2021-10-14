@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.qos;
 
+import static org.dcache.services.bulk.plugins.qos.UpdateQoSJobProvider.TARGET_QOS;
+
 import diskCacheV111.poolManager.PoolManagerAware;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NamespaceHandlerAware;
@@ -76,133 +78,134 @@ import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.SingleTargetJob;
 import org.dcache.util.NetworkUtils;
 
-import static org.dcache.services.bulk.plugins.qos.UpdateQoSJobProvider.TARGET_QOS;
-
 /**
  * Transition as single file from its current QoS to a new one.
  */
 public class UpdateQoSJob extends SingleTargetJob implements NamespaceHandlerAware,
-                                                             PinManagerAware,
-                                                             PoolManagerAware,
-                                                             PoolMonitorAware {
-  private CellStub pinManager;
-  private CellStub poolManager;
-  private PnfsHandler pnfsHandler;
-  private PoolMonitor poolMonitor;
+      PinManagerAware,
+      PoolManagerAware,
+      PoolMonitorAware {
 
-  private QoSReplyHandler replyHandler;
+    private CellStub pinManager;
+    private CellStub poolManager;
+    private PnfsHandler pnfsHandler;
+    private PoolMonitor poolMonitor;
 
-  public UpdateQoSJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
-    super(key, parentKey, activity);
-  }
+    private QoSReplyHandler replyHandler;
 
-  @Override
-  public synchronized boolean cancel() {
-    replyHandler.cancel();
-    return super.cancel();
-  }
-
-  @Override
-  public void setPinManager(CellStub pinManager) {
-    this.pinManager = pinManager;
-  }
-
-  @Override
-  public void setNamespaceHandler(PnfsHandler pnfsHandler) {
-    this.pnfsHandler = pnfsHandler;
-  }
-
-  @Override
-  public void setPoolManager(CellStub poolManager) {
-    this.poolManager = poolManager;
-  }
-
-  @Override
-  public void setPoolMonitor(PoolMonitor poolMonitor) {
-    this.poolMonitor = poolMonitor;
-  }
-
-  @Override
-  protected void doRun() {
-    if (arguments == null) {
-      setError(new IllegalArgumentException("no target qos given."));
-      return;
-    }
-
-    String targetQos = arguments.get(TARGET_QOS.getName());
-
-    if (targetQos == null) {
-      setError(new IllegalArgumentException("no target qos given."));
-      return;
-    }
-
-    QoSTransitionEngine engine = new QoSTransitionEngine(poolManager,
-                                                         poolMonitor,
-                                                         pnfsHandler,
-                                                         pinManager);
-    replyHandler = new QoSJobReplyHandler(executorService);
-    engine.setReplyHandler(replyHandler);
-
-    try {
-      engine.adjustQoS(path, targetQos, NetworkUtils.getCanonicalHostName());
-    } catch (URISyntaxException | CacheException | NoRouteToCellException e) {
-      setError(e);
-      return;
-    } catch (InterruptedException e) {
-      errorObject = e;
-      setState(State.CANCELLED);
-      completionHandler.jobInterrupted(this);
-      LOGGER.trace("doRun interrupted.");
-      return;
-    }
-
-    if (replyHandler.done()) {
-      setState(State.COMPLETED);
-    } else {
-      setState(State.WAITING);
-    }
-  }
-
-  private class QoSJobReplyHandler extends QoSReplyHandler {
-    public QoSJobReplyHandler(Executor executor) {
-      super(executor);
+    public UpdateQoSJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
+        super(key, parentKey, activity);
     }
 
     @Override
-    protected void migrationFailure(Object error) {
-      LOGGER.error("QoS migration failed: {}, {}.", migrationReply.getPnfsId(), error.toString());
-      if (!done()) {
-        cancel();
-      }
-      setError(error);
+    public synchronized boolean cancel() {
+        replyHandler.cancel();
+        return super.cancel();
     }
 
     @Override
-    protected void migrationSuccess() {
-      LOGGER.debug("QoS migration succeeded: {}, {}.",
-                    migrationReply.getPnfsId(),
-                    migrationReply.getPool());
-      if (done()) {
-        setState(State.COMPLETED);
-      }
+    public void setPinManager(CellStub pinManager) {
+        this.pinManager = pinManager;
     }
 
     @Override
-    protected void pinFailure(Object error) {
-      LOGGER.error("QoS pin failed: {}, {}.", pinReply.getPnfsId(), error.toString());
-      if (!done()) {
-        cancel();
-      }
-      setError(error);
+    public void setNamespaceHandler(PnfsHandler pnfsHandler) {
+        this.pnfsHandler = pnfsHandler;
     }
 
     @Override
-    protected void pinSuccess() {
-      LOGGER.debug("QoS pinned: {}, {}.", pinReply.getPnfsId(), pinReply.getPinId());
-
-      if (done()) {
-        setState(State.COMPLETED);
-      }
+    public void setPoolManager(CellStub poolManager) {
+        this.poolManager = poolManager;
     }
-  }
+
+    @Override
+    public void setPoolMonitor(PoolMonitor poolMonitor) {
+        this.poolMonitor = poolMonitor;
+    }
+
+    @Override
+    protected void doRun() {
+        if (arguments == null) {
+            setError(new IllegalArgumentException("no target qos given."));
+            return;
+        }
+
+        String targetQos = arguments.get(TARGET_QOS.getName());
+
+        if (targetQos == null) {
+            setError(new IllegalArgumentException("no target qos given."));
+            return;
+        }
+
+        QoSTransitionEngine engine = new QoSTransitionEngine(poolManager,
+              poolMonitor,
+              pnfsHandler,
+              pinManager);
+        replyHandler = new QoSJobReplyHandler(executorService);
+        engine.setReplyHandler(replyHandler);
+
+        try {
+            engine.adjustQoS(path, targetQos, NetworkUtils.getCanonicalHostName());
+        } catch (URISyntaxException | CacheException | NoRouteToCellException e) {
+            setError(e);
+            return;
+        } catch (InterruptedException e) {
+            errorObject = e;
+            setState(State.CANCELLED);
+            completionHandler.jobInterrupted(this);
+            LOGGER.trace("doRun interrupted.");
+            return;
+        }
+
+        if (replyHandler.done()) {
+            setState(State.COMPLETED);
+        } else {
+            setState(State.WAITING);
+        }
+    }
+
+    private class QoSJobReplyHandler extends QoSReplyHandler {
+
+        public QoSJobReplyHandler(Executor executor) {
+            super(executor);
+        }
+
+        @Override
+        protected void migrationFailure(Object error) {
+            LOGGER.error("QoS migration failed: {}, {}.", migrationReply.getPnfsId(),
+                  error.toString());
+            if (!done()) {
+                cancel();
+            }
+            setError(error);
+        }
+
+        @Override
+        protected void migrationSuccess() {
+            LOGGER.debug("QoS migration succeeded: {}, {}.",
+                  migrationReply.getPnfsId(),
+                  migrationReply.getPool());
+            if (done()) {
+                setState(State.COMPLETED);
+            }
+        }
+
+        @Override
+        protected void pinFailure(Object error) {
+            LOGGER.error("QoS pin failed: {}, {}.", pinReply.getPnfsId(), error.toString());
+            if (!done()) {
+                cancel();
+            }
+            setError(error);
+        }
+
+        @Override
+        protected void pinSuccess() {
+            LOGGER.debug("QoS pinned: {}, {}.", pinReply.getPnfsId(), pinReply.getPinId());
+
+            if (done()) {
+                setState(State.COMPLETED);
+            }
+        }
+    }
 }

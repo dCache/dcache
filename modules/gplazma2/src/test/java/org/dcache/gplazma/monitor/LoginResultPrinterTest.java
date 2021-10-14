@@ -1,16 +1,16 @@
 package org.dcache.gplazma.monitor;
 
-import com.google.common.collect.Sets;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import static com.google.common.collect.Iterables.concat;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
+import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
+import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 
+import com.google.common.collect.Sets;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
-
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -29,14 +29,14 @@ import org.dcache.gplazma.monitor.LoginResult.MapPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.MapPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
 
-import static com.google.common.collect.Iterables.concat;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
-import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
+public class LoginResultPrinterTest {
 
-public class LoginResultPrinterTest
-{
     // Allow printing of resulting tree
     private static final boolean IS_OUTPUT_STDOUT_ENABLED = false;
 //            "true".equals(System.getenv("DCACHE_UNITTEST_PRINT_ENABLED"));
@@ -44,15 +44,15 @@ public class LoginResultPrinterTest
     private static final Set<Principal> NO_PRINCIPALS = Collections.emptySet();
 
     private static final Principal DN =
-            new GlobusPrincipal("/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar");
+          new GlobusPrincipal("/C=DE/O=GermanGrid/OU=DESY/CN=Alexander Paul Millar");
 
     private static final Principal ATLAS = new FQANPrincipal("/atlas");
     private static final Principal ATLAS_PROD =
-            new FQANPrincipal("/atlas/Role=production", true);
+          new FQANPrincipal("/atlas/Role=production", true);
     private static final Principal UID = new UidPrincipal(1000);
     private static final Principal GID_ATLAS_PROD = new GidPrincipal(5000, false);
     private static final Principal NAME_ATLAS_PROD
-            = new GroupNamePrincipal("atlas-prod");
+          = new GroupNamePrincipal("atlas-prod");
 
     private static final HomeDirectory HOMEDIR = new HomeDirectory("/home/paul");
     private static final RootDirectory ROOTDIR = new RootDirectory("/");
@@ -65,21 +65,18 @@ public class LoginResultPrinterTest
     LoginResultPrinter _printer;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         _result = new LoginResult();
         _printer = new LoginResultPrinter(_result);
     }
 
     @Test
-    public void shouldWorkForEmptyResult()
-    {
+    public void shouldWorkForEmptyResult() {
         print();
     }
 
     @Test
-    public void shouldWorkForFailingAuth()
-    {
+    public void shouldWorkForFailingAuth() {
         givenAuthPhaseWith(FAIL);
         givenAuthPhaseRuns(authPlugin("foo", REQUIRED, FAIL, "bar needed"));
         givenValidation(FAIL, "missing uid");
@@ -88,48 +85,46 @@ public class LoginResultPrinterTest
     }
 
     @Test
-    public void shouldWorkForSuccessfulLogin()
-    {
+    public void shouldWorkForSuccessfulLogin() {
         Set<Principal> identified = principals(DN, ATLAS, ATLAS_PROD);
         Set<Principal> authorized = principals(DN, ATLAS, ATLAS_PROD, UID,
-                NAME_ATLAS_PROD, GID_ATLAS_PROD);
+              NAME_ATLAS_PROD, GID_ATLAS_PROD);
 
         givenAuthPhaseWith(SUCCESS, NO_PRINCIPALS,
-                principals(DN, ATLAS, ATLAS_PROD));
+              principals(DN, ATLAS, ATLAS_PROD));
 
         givenAuthPhaseRuns(
-                authPlugin("x509", OPTIONAL, SUCCESS, null,
-                        NO_PRINCIPALS, principals(DN)),
-                authPlugin("voms", OPTIONAL, SUCCESS, null,
-                        principals(DN), identified));
-
+              authPlugin("x509", OPTIONAL, SUCCESS, null,
+                    NO_PRINCIPALS, principals(DN)),
+              authPlugin("voms", OPTIONAL, SUCCESS, null,
+                    principals(DN), identified));
 
         givenMapPhaseWith(SUCCESS, identified, authorized);
 
         givenMapPhaseRuns(
-                mapPlugin("kerberos", OPTIONAL, FAIL,
-                        "no kerberos principal found", identified, identified),
-                mapPlugin("vorolemap", OPTIONAL, SUCCESS, null, identified,
-                        concat(identified, principals(NAME_ATLAS_PROD))),
-                mapPlugin("authzdb", SUFFICIENT, SUCCESS, null,
-                        concat(identified, principals(NAME_ATLAS_PROD)),
-                        concat(identified, principals(NAME_ATLAS_PROD, UID, GID_ATLAS_PROD))));
+              mapPlugin("kerberos", OPTIONAL, FAIL,
+                    "no kerberos principal found", identified, identified),
+              mapPlugin("vorolemap", OPTIONAL, SUCCESS, null, identified,
+                    concat(identified, principals(NAME_ATLAS_PROD))),
+              mapPlugin("authzdb", SUFFICIENT, SUCCESS, null,
+                    concat(identified, principals(NAME_ATLAS_PROD)),
+                    concat(identified, principals(NAME_ATLAS_PROD, UID, GID_ATLAS_PROD))));
 
         givenAccountPhaseWith(SUCCESS, authorized, authorized);
 
         givenAccountPhaseRuns(
-                accountPlugin("argus", REQUIRED, SUCCESS,
-                        authorized, authorized)
-                );
+              accountPlugin("argus", REQUIRED, SUCCESS,
+                    authorized, authorized)
+        );
 
         Set<Object> attributes = attributes(HOMEDIR, ROOTDIR, POLICY);
 
         givenSessionPhaseWith(SUCCESS, authorized, authorized, attributes);
 
         givenSessionPhaseRuns(
-                sessionPlugin("authzdb", OPTIONAL, SUCCESS, authorized,
-                        authorized, attributes)
-                );
+              sessionPlugin("authzdb", OPTIONAL, SUCCESS, authorized,
+                    authorized, attributes)
+        );
 
         givenValidation(SUCCESS, null);
 
@@ -137,12 +132,11 @@ public class LoginResultPrinterTest
     }
 
 
-    public void print()
-    {
+    public void print() {
         String output = _printer.print();
 
-        if(IS_OUTPUT_STDOUT_ENABLED) {
-            System.out.println("\n\nFrom test " + name.getMethodName()+"\n");
+        if (IS_OUTPUT_STDOUT_ENABLED) {
+            System.out.println("\n\nFrom test " + name.getMethodName() + "\n");
             System.out.append(output);
         }
     }
@@ -151,41 +145,36 @@ public class LoginResultPrinterTest
      * AUTH support
      */
 
-    void givenAuthPhaseWith(Result result)
-    {
+    void givenAuthPhaseWith(Result result) {
         givenAuthPhaseWith(result, NO_PRINCIPALS, NO_PRINCIPALS);
     }
 
     void givenAuthPhaseWith(Result result, Set<Principal> before,
-            Set<Principal> after)
-    {
+          Set<Principal> after) {
         AuthPhaseResult auth = _result.getAuthPhase();
         auth.setResult(result);
         auth.setPrincipals(before, after);
     }
 
-    void givenAuthPhaseRuns(AuthPluginResult... results)
-    {
+    void givenAuthPhaseRuns(AuthPluginResult... results) {
         AuthPhaseResult auth = _result.getAuthPhase();
-        for(AuthPluginResult result : results) {
+        for (AuthPluginResult result : results) {
             auth.addPluginResult(result);
         }
     }
 
     AuthPluginResult authPlugin(String name, ConfigurationItemControl control,
-            Result result, String error)
-    {
+          Result result, String error) {
         return authPlugin(name, control, result, error, NO_PRINCIPALS,
-                NO_PRINCIPALS);
+              NO_PRINCIPALS);
     }
 
     AuthPluginResult authPlugin(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> before,
-            Set<Principal> after)
-    {
+          Result result, String error, Set<Principal> before,
+          Set<Principal> after) {
         AuthPluginResult plugin = new AuthPluginResult(name, control);
         plugin.setResult(result);
-        if(result == Result.FAIL) {
+        if (result == Result.FAIL) {
             plugin.setError(error);
         }
         plugin.setIdentified(before, after);
@@ -197,29 +186,26 @@ public class LoginResultPrinterTest
      */
 
     void givenMapPhaseWith(Result result, Set<Principal> before,
-            Set<Principal> after)
-    {
+          Set<Principal> after) {
         MapPhaseResult map = _result.getMapPhase();
         map.setResult(result);
         map.setPrincipals(before, after);
     }
 
-    void givenMapPhaseRuns(MapPluginResult... results)
-    {
+    void givenMapPhaseRuns(MapPluginResult... results) {
         MapPhaseResult map = _result.getMapPhase();
-        for(MapPluginResult result : results) {
+        for (MapPluginResult result : results) {
             map.addPluginResult(result);
         }
     }
 
     MapPluginResult mapPlugin(String name, ConfigurationItemControl control,
-            Result result, String error, Iterable<Principal> principalsBefore,
-            Iterable<Principal> principalsAfter)
-    {
+          Result result, String error, Iterable<Principal> principalsBefore,
+          Iterable<Principal> principalsAfter) {
         MapPluginResult plugin = new MapPluginResult(name, control);
         plugin.setPrincipals(principalsBefore, principalsAfter);
         plugin.setResult(result);
-        if(result == Result.FAIL) {
+        if (result == Result.FAIL) {
             plugin.setError(error);
         }
         return plugin;
@@ -230,26 +216,23 @@ public class LoginResultPrinterTest
      */
 
     void givenAccountPhaseWith(Result result, Set<Principal> before,
-            Set<Principal> after)
-    {
+          Set<Principal> after) {
         AccountPhaseResult account = _result.getAccountPhase();
         account.setResult(result);
         account.setPrincipals(before, after);
     }
 
 
-    void givenAccountPhaseRuns(AccountPluginResult... results)
-    {
+    void givenAccountPhaseRuns(AccountPluginResult... results) {
         AccountPhaseResult account = _result.getAccountPhase();
-        for(AccountPluginResult result : results) {
+        for (AccountPluginResult result : results) {
             account.addPluginResult(result);
         }
     }
 
     AccountPluginResult accountPlugin(String name,
-            ConfigurationItemControl control, Result result,
-            Set<Principal> before, Set<Principal> after)
-    {
+          ConfigurationItemControl control, Result result,
+          Set<Principal> before, Set<Principal> after) {
         AccountPluginResult plugin = new AccountPluginResult(name, control);
         plugin.setAuthorized(before, after);
         plugin.setResult(result);
@@ -261,27 +244,24 @@ public class LoginResultPrinterTest
      */
 
     void givenSessionPhaseWith(Result result, Set<Principal> before,
-            Set<Principal> after, Set<Object> attributes)
-    {
+          Set<Principal> after, Set<Object> attributes) {
         SessionPhaseResult session = _result.getSessionPhase();
         session.setResult(result);
         session.setPrincipals(before, after);
         session.setAttributes(attributes);
     }
 
-    void givenSessionPhaseRuns(SessionPluginResult... results)
-    {
+    void givenSessionPhaseRuns(SessionPluginResult... results) {
         SessionPhaseResult session = _result.getSessionPhase();
-        for(SessionPluginResult result : results) {
+        for (SessionPluginResult result : results) {
             session.addPluginResult(result);
         }
     }
 
     SessionPluginResult sessionPlugin(String name,
-            ConfigurationItemControl control, Result result,
-            Set<Principal> before, Set<Principal> after,
-            Set<Object> attributes)
-    {
+          ConfigurationItemControl control, Result result,
+          Set<Principal> before, Set<Principal> after,
+          Set<Object> attributes) {
         SessionPluginResult plugin = new SessionPluginResult(name, control);
         plugin.setResult(result);
         plugin.setAuthorized(before, after);
@@ -289,21 +269,18 @@ public class LoginResultPrinterTest
         return plugin;
     }
 
-    void givenValidation(Result result, String error)
-    {
+    void givenValidation(Result result, String error) {
         _result.setValidationResult(result);
-        if(result == Result.FAIL) {
+        if (result == Result.FAIL) {
             _result.setValidationError(error);
         }
     }
 
-    static Set<Principal> principals(Principal... principals)
-    {
+    static Set<Principal> principals(Principal... principals) {
         return Sets.newHashSet(principals);
     }
 
-    static Set<Object> attributes(Object... attributes)
-    {
+    static Set<Object> attributes(Object... attributes) {
         return Sets.newHashSet(attributes);
     }
 }

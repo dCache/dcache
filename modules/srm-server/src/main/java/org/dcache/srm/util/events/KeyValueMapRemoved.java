@@ -7,21 +7,19 @@
 package org.dcache.srm.util.events;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class KeyValueMapRemoved extends OneToManyMapEvent {
-    
+
     private static final long serialVersionUID = -410827494513923881L;
-    
-    public KeyValueMapRemoved(Object source,Object key, Object value) 
-    {
-        super(source,"KeyValueMapRemoved",key,value);
+
+    public KeyValueMapRemoved(Object source, Object key, Object value) {
+        super(source, "KeyValueMapRemoved", key, value);
     }
-    
+
     @Override
     public String getEventName() {
         return "KeyValueMapRemoved";
     }
-    
+
 }

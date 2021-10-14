@@ -19,7 +19,7 @@ package dmg.cells.services;
 
 import java.io.Serializable;
 
-public class GetAllDomainsRequest implements Serializable
-{
+public class GetAllDomainsRequest implements Serializable {
+
     private static final long serialVersionUID = 6709938224289181893L;
 }

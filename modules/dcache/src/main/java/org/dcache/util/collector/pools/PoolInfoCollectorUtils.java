@@ -59,10 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector.pools;
 
-import org.apache.commons.math3.util.FastMath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.services.history.pools.PoolListingService.ALL;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.pools.json.PoolQueueData;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,13 +73,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.pools.json.PoolCostData;
-import diskCacheV111.pools.json.PoolQueueData;
-
+import org.apache.commons.math3.util.FastMath;
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
@@ -86,23 +83,25 @@ import org.dcache.util.histograms.HistogramMetadata;
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.util.histograms.TimeFrame.BinType;
 import org.dcache.util.histograms.TimeseriesHistogram;
-
-import static org.dcache.services.history.pools.PoolListingService.ALL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Utility class aiding in the extraction and updating of
- * information relevant to pools.  These mainly have to do
- * with updating and aggregating histogram data.</p>
+ * information relevant to pools.  These mainly have to do with updating and aggregating histogram
+ * data.</p>
  */
 public final class PoolInfoCollectorUtils {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(PoolInfoCollectorUtils.class);
+          = LoggerFactory.getLogger(PoolInfoCollectorUtils.class);
 
     /**
      * <p>Placeholder used internally for updating and aggregating
      * queue request counts for pool groups.</p>
      */
     static class QueueData {
+
         Double activeMovers;
         Double queuedMovers;
         Double activeP2P;
@@ -164,10 +163,10 @@ public final class PoolInfoCollectorUtils {
 
             if (poolInfo != null) {
                 poolInfo.stream()
-                        .map(PoolInfoWrapper::getInfo)
-                        .map(PoolData::getDetailsData)
-                        .map(PoolDataDetails::getCostData)
-                        .forEach(this::increment);
+                      .map(PoolInfoWrapper::getInfo)
+                      .map(PoolData::getDetailsData)
+                      .map(PoolDataDetails::getCostData)
+                      .forEach(this::increment);
             }
         }
 
@@ -246,10 +245,10 @@ public final class PoolInfoCollectorUtils {
         }
 
         return poolSelectionUnit.getPoolGroups().values()
-                                .stream()
-                                .sorted(Comparator.comparing(SelectionPoolGroup::getName))
-                                .map(SelectionPoolGroup::getName)
-                                .toArray(String[]::new);
+              .stream()
+              .sorted(Comparator.comparing(SelectionPoolGroup::getName))
+              .map(SelectionPoolGroup::getName)
+              .toArray(String[]::new);
     }
 
     /**
@@ -261,10 +260,10 @@ public final class PoolInfoCollectorUtils {
         }
 
         return poolSelectionUnit.getPools().values()
-                                .stream()
-                                .sorted(Comparator.comparing(SelectionPool::getName))
-                                .map(SelectionPool::getName)
-                                .toArray(String[]::new);
+              .stream()
+              .sorted(Comparator.comparing(SelectionPool::getName))
+              .map(SelectionPool::getName)
+              .toArray(String[]::new);
     }
 
     /**
@@ -280,10 +279,10 @@ public final class PoolInfoCollectorUtils {
         }
 
         return poolSelectionUnit.getPoolsByPoolGroup(group)
-                                .stream()
-                                .sorted(Comparator.comparing(SelectionPool::getName))
-                                .map(SelectionPool::getName)
-                                .toArray(String[]::new);
+              .stream()
+              .sorted(Comparator.comparing(SelectionPool::getName))
+              .map(SelectionPool::getName)
+              .toArray(String[]::new);
     }
 
     /**
@@ -294,17 +293,17 @@ public final class PoolInfoCollectorUtils {
      */
     public static CountingHistogram mergeLastAccess(List<PoolInfoWrapper> pools) {
         List<CountingHistogram> allHistograms =
-                        pools.stream()
-                             .map(PoolInfoWrapper::getInfo)
-                             .filter(Objects::nonNull)
-                             .map(PoolData::getSweeperData)
-                             .filter(Objects::nonNull)
-                             .map(SweeperData::getLastAccessHistogram)
-                             .filter(Objects::nonNull)
-                             .collect(Collectors.toList());
+              pools.stream()
+                    .map(PoolInfoWrapper::getInfo)
+                    .filter(Objects::nonNull)
+                    .map(PoolData::getSweeperData)
+                    .filter(Objects::nonNull)
+                    .map(SweeperData::getLastAccessHistogram)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
         CountingHistogram groupHistogram
-                        = SweeperData.createUnconfiguredLastAccessHistogram();
+              = SweeperData.createUnconfiguredLastAccessHistogram();
 
         if (allHistograms.isEmpty()) {
             groupHistogram.setData(Collections.EMPTY_LIST);
@@ -354,7 +353,7 @@ public final class PoolInfoCollectorUtils {
             int numBins = currentData.size();
             for (int bin = 0; bin < numBins; ++bin) {
                 int groupBin = (int) FastMath.floor(
-                                (bin * currentBinSize) / binSize);
+                      (bin * currentBinSize) / binSize);
                 dataArray[groupBin] += currentData.get(bin);
             }
         }
@@ -371,8 +370,8 @@ public final class PoolInfoCollectorUtils {
 
     /**
      * <p>Generates a histogram model which tracks
-     * the average, maximum, minimum or standard deviation of lifetime
-     * values over a fixed window of two months.</p>
+     * the average, maximum, minimum or standard deviation of lifetime values over a fixed window of
+     * two months.</p>
      *
      * <p>An empty list of values is used to initialize the bins.</p>
      *
@@ -381,11 +380,11 @@ public final class PoolInfoCollectorUtils {
      * @return the corresponding histogram model
      */
     public static TimeseriesHistogram newLifetimeTimeSeriesHistogram(
-                    String type,
-                    String identifier) {
+          String type,
+          String identifier) {
         double highestBin = (double) TimeFrame.computeHighTimeFromNow(
-                        BinType.DAY)
-                                              .getTimeInMillis();
+                    BinType.DAY)
+              .getTimeInMillis();
         double unit = (double) TimeUnit.DAYS.toMillis(1);
         TimeseriesHistogram histogram = new TimeseriesHistogram();
         histogram.setData(Collections.EMPTY_LIST);
@@ -401,9 +400,8 @@ public final class PoolInfoCollectorUtils {
 
     /**
      * <p>Generates a histogram model which tracks
-     * the request count for active or queued movers, stores, restores or
-     * p2ps over a fixed window of 48 hours.  Time intervals of 5
-     * minutes are used for the bins.</p>
+     * the request count for active or queued movers, stores, restores or p2ps over a fixed window
+     * of 48 hours.  Time intervals of 5 minutes are used for the bins.</p>
      *
      * <p>An empty list of values is used to initialize the bins.</p>
      *
@@ -411,7 +409,7 @@ public final class PoolInfoCollectorUtils {
      * @return the corresponding histogram model
      */
     public static TimeseriesHistogram newQueueTimeSeriesHistogram(
-                    String identifier) {
+          String identifier) {
         long now = System.currentTimeMillis();
         long modulo = TimeUnit.MINUTES.toMillis(5);
         double highestBin = now - (now % modulo);
@@ -441,9 +439,9 @@ public final class PoolInfoCollectorUtils {
      * @return the current or new model
      */
     public static TimeseriesHistogram updateFileLifetimeSeries(String series,
-                                                               Double newValue,
-                                                               TimeseriesHistogram model,
-                                                               long timestamp) {
+          Double newValue,
+          TimeseriesHistogram model,
+          long timestamp) {
         if (model == null) {
             model = newLifetimeTimeSeriesHistogram(series, series);
         }
@@ -455,18 +453,18 @@ public final class PoolInfoCollectorUtils {
 
     /**
      * <p>From the lifetime (last accessed) time interval values, builds
-     * a new binned histogram and updates the time series tracking maximum,
-     * minimum, average and standard deviation for file lifetime. These
-     * are added to /updated on the persistent pool data object.</p>
+     * a new binned histogram and updates the time series tracking maximum, minimum, average and
+     * standard deviation for file lifetime. These are added to /updated on the persistent pool data
+     * object.</p>
      *
      * @param lifetimeHistogram of the (current) files in the pool's repository
      * @param info              the storage object to update
      * @param timestamp         of update
      */
     public static void updateFstatHistograms(
-                    CountingHistogram lifetimeHistogram,
-                    PoolInfoWrapper info,
-                    long timestamp) {
+          CountingHistogram lifetimeHistogram,
+          PoolInfoWrapper info,
+          long timestamp) {
         updateFstatTimeSeries(lifetimeHistogram.getMetadata(), info, timestamp);
     }
 
@@ -474,14 +472,13 @@ public final class PoolInfoCollectorUtils {
      * <p>Extracts the statistics from the model and updates the
      * time series histograms.</p>
      *
-     * @param metadata  containing the relevant statistics (usually the
-     *                  binned counts)
+     * @param metadata  containing the relevant statistics (usually the binned counts)
      * @param info      persistent/cached data for the pool
      * @param timestamp of update
      */
     public static void updateFstatTimeSeries(HistogramMetadata metadata,
-                                             PoolInfoWrapper info,
-                                             long timestamp) {
+          PoolInfoWrapper info,
+          long timestamp) {
         long count = metadata.getCount();
         Double min = metadata.getMinValue().orElse(null);
         Double max = metadata.getMaxValue().orElse(null);
@@ -490,19 +487,19 @@ public final class PoolInfoCollectorUtils {
         if (count != 0L) {
             double avg = metadata.getSum() / count;
             info.setFileLiftimeAvg(updateFileLifetimeSeries("AVG", avg,
-                                                            info.getFileLiftimeAvg(),
-                                                            timestamp));
+                  info.getFileLiftimeAvg(),
+                  timestamp));
         }
 
         info.setFileLiftimeMax(updateFileLifetimeSeries("MAX", max,
-                                                        info.getFileLiftimeMax(),
-                                                        timestamp));
+              info.getFileLiftimeMax(),
+              timestamp));
         info.setFileLiftimeMin(updateFileLifetimeSeries("MIN", min,
-                                                        info.getFileLiftimeMin(),
-                                                        timestamp));
+              info.getFileLiftimeMin(),
+              timestamp));
         info.setFileLiftimeStddev(updateFileLifetimeSeries("STD DEV", stddev,
-                                                           info.getFileLiftimeStddev(),
-                                                           timestamp));
+              info.getFileLiftimeStddev(),
+              timestamp));
     }
 
     /**
@@ -513,23 +510,22 @@ public final class PoolInfoCollectorUtils {
      * @param timestamp of update
      */
     public static void updateQstatTimeSeries(List<PoolInfoWrapper> poolInfo,
-                                             PoolInfoWrapper groupInfo,
-                                             long timestamp) {
+          PoolInfoWrapper groupInfo,
+          long timestamp) {
         updateQstatTimeSeries(new QueueData(poolInfo), groupInfo, timestamp);
     }
 
     /**
      * <p>From the latest pool queue values, updates or creates the time series
-     * tracking each type. These are added to / updated on the persistent
-     * pool data object.</p>
+     * tracking each type. These are added to / updated on the persistent pool data object.</p>
      *
      * @param poolCostData containing the data for pool queues.
      * @param info         the storage object to update
      * @param timestamp    of update
      */
     public static void updateQstatTimeSeries(PoolCostData poolCostData,
-                                             PoolInfoWrapper info,
-                                             long timestamp) {
+          PoolInfoWrapper info,
+          long timestamp) {
         updateQstatTimeSeries(new QueueData(poolCostData), info, timestamp);
     }
 
@@ -537,8 +533,8 @@ public final class PoolInfoCollectorUtils {
      * <p>If the model does not exist, a new one is created.</p>
      *
      * <p>The model is then updated with the provided value.  The current
-     * value replaces rather than averages because we want to see
-     * when the queues drop to an effective zero.</p>
+     * value replaces rather than averages because we want to see when the queues drop to an
+     * effective zero.</p>
      *
      * @param series       active or queued movers, p2ps, p2pclients, stores or restores
      * @param currentCount the number of requests running or waiting
@@ -547,9 +543,9 @@ public final class PoolInfoCollectorUtils {
      * @return the current or new model
      */
     public static TimeseriesHistogram updateQueueSeries(String series,
-                                                        Double currentCount,
-                                                        TimeseriesHistogram model,
-                                                        long timestamp) {
+          Double currentCount,
+          TimeseriesHistogram model,
+          long timestamp) {
         if (model == null) {
             model = newQueueTimeSeriesHistogram(series);
         }
@@ -562,47 +558,47 @@ public final class PoolInfoCollectorUtils {
     }
 
     private static void updateQstatTimeSeries(QueueData data,
-                                              PoolInfoWrapper info,
-                                              long timestamp) {
+          PoolInfoWrapper info,
+          long timestamp) {
         info.setActiveMovers(updateQueueSeries("Active Movers",
-                                               data.activeMovers,
-                                               info.getActiveMovers(),
-                                               timestamp));
+              data.activeMovers,
+              info.getActiveMovers(),
+              timestamp));
         info.setQueuedMovers(updateQueueSeries("Queued Movers",
-                                               data.queuedMovers,
-                                               info.getQueuedMovers(),
-                                               timestamp));
+              data.queuedMovers,
+              info.getQueuedMovers(),
+              timestamp));
         info.setActiveP2P(updateQueueSeries("Active P2P",
-                                            data.activeP2P,
-                                            info.getActiveP2P(),
-                                            timestamp));
+              data.activeP2P,
+              info.getActiveP2P(),
+              timestamp));
         info.setQueuedP2P(updateQueueSeries("Queued P2P",
-                                            data.queuedP2P,
-                                            info.getQueuedP2P(),
-                                            timestamp));
+              data.queuedP2P,
+              info.getQueuedP2P(),
+              timestamp));
         info.setActiveP2PClient(updateQueueSeries("Active P2P Client",
-                                                  data.activeP2PClient,
-                                                  info.getActiveP2PClient(),
-                                                  timestamp));
+              data.activeP2PClient,
+              info.getActiveP2PClient(),
+              timestamp));
         info.setQueuedP2PClient(updateQueueSeries("Queued P2P Client",
-                                                  data.queuedP2PClient,
-                                                  info.getQueuedP2PClient(),
-                                                  timestamp));
+              data.queuedP2PClient,
+              info.getQueuedP2PClient(),
+              timestamp));
         info.setActiveFlush(updateQueueSeries("Active Stores",
-                                              data.activeFlush,
-                                              info.getActiveFlush(),
-                                              timestamp));
+              data.activeFlush,
+              info.getActiveFlush(),
+              timestamp));
         info.setQueuedFlush(updateQueueSeries("Queued Stores",
-                                              data.queuedFlush,
-                                              info.getQueuedFlush(),
-                                              timestamp));
+              data.queuedFlush,
+              info.getQueuedFlush(),
+              timestamp));
         info.setActiveStage(updateQueueSeries("Active Restores",
-                                              data.activeStage,
-                                              info.getActiveStage(),
-                                              timestamp));
+              data.activeStage,
+              info.getActiveStage(),
+              timestamp));
         info.setQueuedStage(updateQueueSeries("Queued Restores",
-                                              data.queuedStage,
-                                              info.getQueuedStage(),
-                                              timestamp));
+              data.queuedStage,
+              info.getQueuedStage(),
+              timestamp));
     }
 }

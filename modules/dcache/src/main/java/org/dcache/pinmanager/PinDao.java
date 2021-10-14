@@ -1,27 +1,23 @@
 package org.dcache.pinmanager;
 
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
-
+import diskCacheV111.util.PnfsId;
+import java.util.Date;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import javax.security.auth.Subject;
-
-import java.util.Date;
-import java.util.List;
-
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.pinmanager.model.Pin;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 
 /**
  * Data Access Object abstraction for pin persistence.
- *
+ * <p>
  * Provides a fluent API for CRUD operations.
  */
 @ParametersAreNonnullByDefault
-public interface PinDao
-{
+public interface PinDao {
+
     /**
      * Returns a criterion builder.
      */
@@ -43,8 +39,8 @@ public interface PinDao
     List<Pin> get(PinCriterion criterion);
 
     /**
-     * Returns the pins matching a selection criterion with an
-     * upper limit on the number of pins returned.
+     * Returns the pins matching a selection criterion with an upper limit on the number of pins
+     * returned.
      */
     List<Pin> get(PinCriterion criterion, int limit);
 
@@ -52,8 +48,8 @@ public interface PinDao
      * Returns the pin matching a unique criterion.
      *
      * @return The matching pin or null if the criterion did not match a pin
-     * @throws IncorrectResultSizeDataAccessException if more than one
-     * pin has been found for the given criterion.
+     * @throws IncorrectResultSizeDataAccessException if more than one pin has been found for the
+     *                                                given criterion.
      */
     @Nullable
     Pin get(UniquePinCriterion criterion);
@@ -75,8 +71,7 @@ public interface PinDao
     }
 
     /**
-     * Updates a pin matching a unique criterion with the given field
-     * values.
+     * Updates a pin matching a unique criterion with the given field values.
      *
      * @return The updated pin or null if the criterion did not match a pin
      * @throws JdbcUpdateAffectedIncorrectNumberOfRowsException if more than one row is updated.
@@ -85,8 +80,7 @@ public interface PinDao
     Pin update(UniquePinCriterion criterion, PinUpdate update);
 
     /**
-     * Updates all pins matching a selection criterion with the given field
-     * values.
+     * Updates all pins matching a selection criterion with the given field values.
      */
     int update(PinCriterion criterion, PinUpdate update);
 
@@ -108,17 +102,17 @@ public interface PinDao
     void foreach(PinCriterion c, InterruptibleConsumer<Pin> f) throws InterruptedException;
 
     /**
-     * Performs the given action for pins matching the selection criterion
-     * with an upper limit on the number of pins processed.
-     * The limit must be a positive value.
+     * Performs the given action for pins matching the selection criterion with an upper limit on
+     * the number of pins processed. The limit must be a positive value.
      */
-    void foreach(PinCriterion c, InterruptibleConsumer<Pin> f, int limit) throws InterruptedException;
+    void foreach(PinCriterion c, InterruptibleConsumer<Pin> f, int limit)
+          throws InterruptedException;
 
     /**
      * Fluent interface to construct selection criteria.
      */
-    interface PinCriterion
-    {
+    interface PinCriterion {
+
         UniquePinCriterion id(long id);
 
         PnfsIdPinCriterion pnfsId(PnfsId id);
@@ -139,11 +133,10 @@ public interface PinDao
     }
 
     /**
-     * Fluent interface to construct selection criteria where the
-     * PnfsId has been fixed.
+     * Fluent interface to construct selection criteria where the PnfsId has been fixed.
      */
-    interface PnfsIdPinCriterion extends PinCriterion
-    {
+    interface PnfsIdPinCriterion extends PinCriterion {
+
         UniquePinCriterion requestId(String requestId);
 
         PnfsIdPinCriterion expirationTimeBefore(Date date);
@@ -158,11 +151,10 @@ public interface PinDao
     }
 
     /**
-     * Fluent interface to construct selection criteria where the
-     * request ID has been fixed.
+     * Fluent interface to construct selection criteria where the request ID has been fixed.
      */
-    interface RequestIdPinCriterion extends PinCriterion
-    {
+    interface RequestIdPinCriterion extends PinCriterion {
+
         UniquePinCriterion pnfsId(PnfsId id);
 
         RequestIdPinCriterion expirationTimeBefore(Date date);
@@ -177,11 +169,10 @@ public interface PinDao
     }
 
     /**
-     * Fluent interface to construct selection criteria matching at
-     * most a single pin.
+     * Fluent interface to construct selection criteria matching at most a single pin.
      */
-    interface UniquePinCriterion extends PinCriterion, PnfsIdPinCriterion, RequestIdPinCriterion
-    {
+    interface UniquePinCriterion extends PinCriterion, PnfsIdPinCriterion, RequestIdPinCriterion {
+
         UniquePinCriterion id(long id);
 
         UniquePinCriterion pnfsId(PnfsId id);
@@ -202,20 +193,25 @@ public interface PinDao
     /**
      * Fluent interface to define pin field values.
      */
-    interface PinUpdate
-    {
+    interface PinUpdate {
+
         PinUpdate expirationTime(@Nullable Date date);
+
         PinUpdate pool(@Nullable String pool);
+
         PinUpdate requestId(@Nullable String requestId);
+
         PinUpdate state(Pin.State state);
+
         PinUpdate sticky(@Nullable String sticky);
+
         PinUpdate subject(Subject subject);
 
         PinUpdate pnfsId(PnfsId pnfsId);
     }
 
-    interface InterruptibleConsumer<T>
-    {
+    interface InterruptibleConsumer<T> {
+
         void accept(T v) throws InterruptedException;
     }
 }

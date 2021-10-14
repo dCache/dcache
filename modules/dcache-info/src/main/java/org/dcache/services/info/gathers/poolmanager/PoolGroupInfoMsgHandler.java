@@ -1,8 +1,5 @@
 package org.dcache.services.info.gathers.poolmanager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dmg.cells.nucleus.UOID;
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.StateComposite;
@@ -11,21 +8,21 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
-{
+public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolGroupInfoMsgHandler.class);
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
 
     public PoolGroupInfoMsgHandler(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgMetaRepo)
-    {
+          MessageMetadataRepository<UOID> msgMetaRepo) {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime)
-    {
+    public void process(Object msgPayload, long metricLifetime) {
         LOGGER.trace("processing new poolgroup information");
 
         if (!msgPayload.getClass().isArray()) {
@@ -33,17 +30,17 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
             return;
         }
 
-        Object array[] = (Object []) msgPayload;
+        Object array[] = (Object[]) msgPayload;
 
-	    if (array.length != 4) {
+        if (array.length != 4) {
             LOGGER.error("Pool group info, unexpected array size: {}", array.length);
-		    return;
-	    }
+            return;
+        }
 
         // Map the array into slightly more meaningful components.
         String poolgroupName = (String) array[0];
-        Object poolNames[] = (Object []) array[1];
-        Object linkNames[] = (Object []) array[2];
+        Object poolNames[] = (Object[]) array[1];
+        Object linkNames[] = (Object[]) array[2];
         Boolean resilient = (Boolean) array[3];
 
         StateUpdate update = new StateUpdate();
@@ -57,7 +54,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
             addItems(update, thisPoolGroupPath.newChild("pools"), poolNames, metricLifetime);
             addItems(update, thisPoolGroupPath.newChild("links"), linkNames, metricLifetime);
             update.appendUpdate(thisPoolGroupPath.newChild("resilient"),
-                                new BooleanStateValue(resilient, metricLifetime));
+                  new BooleanStateValue(resilient, metricLifetime));
         }
 
         applyUpdates(update);

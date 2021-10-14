@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import java.util.concurrent.ExecutorService;
-
 import diskCacheV111.util.CacheException;
+import java.util.concurrent.ExecutorService;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.PoolStatusForResilience;
@@ -70,16 +69,16 @@ import org.dcache.resilience.db.ScanSummary;
 
 /**
  * <p>Responsible for calling the scan method on the {@link NamespaceAccess},
- *      as well as for updating the {@link PoolOperationMap} when
- *      a pool status change event occurs.</p>
+ * as well as for updating the {@link PoolOperationMap} when a pool status change event occurs.</p>
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class PoolOperationHandler {
-    private PoolOperationMap          operationMap;
-    private NamespaceAccess           namespace;
-    private ExecutorService           scanService;
-    private ExecutorService           submitService;
+
+    private PoolOperationMap operationMap;
+    private NamespaceAccess namespace;
+    private ExecutorService scanService;
+    private ExecutorService submitService;
     private PoolTaskCompletionHandler completionHandler;
 
     public ExecutorService getScanService() {
@@ -107,7 +106,7 @@ public class PoolOperationHandler {
     }
 
     public void setCompletionHandler(
-                    PoolTaskCompletionHandler completionHandler) {
+          PoolTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 

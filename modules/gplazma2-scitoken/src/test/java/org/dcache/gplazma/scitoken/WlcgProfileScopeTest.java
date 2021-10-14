@@ -17,48 +17,44 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import org.junit.Test;
-
-import java.util.Optional;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.util.FsPath;
-
+import java.util.Optional;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
+import org.junit.Test;
 
-import static org.dcache.auth.attributes.Activity.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+public class WlcgProfileScopeTest {
 
-public class WlcgProfileScopeTest
-{
     @Test
-    public void shouldIdentifyStorageReadScope()
-    {
+    public void shouldIdentifyStorageReadScope() {
         assertTrue(WlcgProfileScope.isWlcgProfileScope("storage.read:/"));
     }
 
     @Test
-    public void shouldIdentifyStorageCreateScope()
-    {
+    public void shouldIdentifyStorageCreateScope() {
         assertTrue(WlcgProfileScope.isWlcgProfileScope("storage.create:/"));
     }
 
     @Test
-    public void shouldIdentifyStorageModifyScope()
-    {
+    public void shouldIdentifyStorageModifyScope() {
         assertTrue(WlcgProfileScope.isWlcgProfileScope("storage.modify:/"));
     }
 
     @Test
-    public void shouldNotIdentifyStorageWriteScope()
-    {
+    public void shouldNotIdentifyStorageWriteScope() {
         assertFalse(WlcgProfileScope.isWlcgProfileScope("storage.write:/"));
     }
 
     @Test
-    public void shouldParseReadScope()
-    {
+    public void shouldParseReadScope() {
         WlcgProfileScope scope = new WlcgProfileScope("storage.read:/");
 
         Optional<Authorisation> maybeAuth = scope.authorisation(FsPath.create("/VOs/wlcg"));

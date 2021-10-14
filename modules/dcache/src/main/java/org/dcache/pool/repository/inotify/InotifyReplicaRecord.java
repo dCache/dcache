@@ -18,16 +18,14 @@
 package org.dcache.pool.repository.inotify;
 
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.namespace.events.EventType;
 import org.dcache.pool.repository.ForwardingReplicaRecord;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -35,54 +33,48 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 
 /**
- * Wrap some existing ReplicaRecord and add support for optionally wrapping
- * a RepositoryChannel with an InotifyChannel.
+ * Wrap some existing ReplicaRecord and add support for optionally wrapping a RepositoryChannel with
+ * an InotifyChannel.
  */
-public class InotifyReplicaRecord extends ForwardingReplicaRecord
-{
+public class InotifyReplicaRecord extends ForwardingReplicaRecord {
+
     private final ReplicaRecord inner;
     private final NotificationAmplifier notification;
 
     private Duration suppressDuration = Duration.ZERO;
 
-    public enum OpenFlags implements OpenOption
-    {
+    public enum OpenFlags implements OpenOption {
         /**
-         * Specifying this flag results in the ReplicaRecord being wrapped by
-         * a InotifyChannel, which monitors client activity and generates
-         * inotify events if a client is monitoring that file or its parent
-         * directory.
+         * Specifying this flag results in the ReplicaRecord being wrapped by a InotifyChannel,
+         * which monitors client activity and generates inotify events if a client is monitoring
+         * that file or its parent directory.
          */
         ENABLE_INOTIFY_MONITORING;
     }
 
 
     public InotifyReplicaRecord(ReplicaRecord inner, NotificationAmplifier notification,
-            PnfsId target)
-    {
+          PnfsId target) {
         this.inner = inner;
         this.notification = notification;
     }
 
     /**
-     * Update the suppression period for all subsequently opened
-     * RepositoryChannel. Any already opened channels are not affected.
+     * Update the suppression period for all subsequently opened RepositoryChannel. Any already
+     * opened channels are not affected.
      */
-    public void setSuppressDuration(Duration duration)
-    {
+    public void setSuppressDuration(Duration duration) {
         suppressDuration = duration;
     }
 
     @Override
-    protected ReplicaRecord delegate()
-    {
+    protected ReplicaRecord delegate() {
         return inner;
     }
 
     @Override
     public RepositoryChannel openChannel(Set<? extends OpenOption> mode)
-            throws IOException
-    {
+          throws IOException {
         boolean inotifyRequested = mode.contains(OpenFlags.ENABLE_INOTIFY_MONITORING);
 
         if (!inotifyRequested) {
@@ -96,15 +88,14 @@ public class InotifyReplicaRecord extends ForwardingReplicaRecord
         boolean openForWrite = mode.contains(StandardOpenOption.WRITE);
 
         InotifyChannel channel = new InotifyChannel(innerChannel, notification,
-                getPnfsId(), openForWrite);
+              getPnfsId(), openForWrite);
         channel.setSuppressDuration(suppressDuration);
         channel.sendOpenEvent();
         return channel;
     }
 
     @Override
-    public <T> T update(String why, Update<T> update) throws CacheException
-    {
+    public <T> T update(String why, Update<T> update) throws CacheException {
         /*
          * This code relies on this update happening after the namespace is
          * updated.

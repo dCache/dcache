@@ -68,13 +68,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Object stored in the pool operation map.
+ * Object stored in the pool operation map.
  */
 public final class PoolOperation {
-    private static final Logger LOGGER    = LoggerFactory.getLogger(PoolOperation.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolOperation.class);
 
     private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
-                    + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
+          + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
 
     enum State {
         IDLE,       /* NEXT OPERATION READY TO RUN               */
@@ -93,17 +94,17 @@ public final class PoolOperation {
 
     final long initializationGracePeriod;
 
-    boolean                 forceScan;  /* Overrides non-handling of restarts */
-    long                    lastUpdate;
-    long                    lastScan;
-    String                  group;      /* Only set when the psuAction != NONE */
-    String                  unit;       /* Set when unit has changed, or scan
+    boolean forceScan;  /* Overrides non-handling of restarts */
+    long lastUpdate;
+    long lastScan;
+    String group;      /* Only set when the psuAction != NONE */
+    String unit;       /* Set when unit has changed, or scan
                                            is periodic or initiated by command */
-    State                   state;
-    PoolQoSStatus           lastStatus;
-    PoolQoSStatus           currStatus;
-    PoolScanTask            task;
-    CacheException          exception;
+    State state;
+    PoolQoSStatus lastStatus;
+    PoolQoSStatus currStatus;
+    PoolScanTask task;
+    CacheException exception;
 
     private int children;
     private int completed;
@@ -126,14 +127,14 @@ public final class PoolOperation {
 
     public String toString() {
         return String.format(TO_STRING,
-                             completed,
-                             children == 0 && completed > 0 ? "?" : children,
-                             getFormattedPercentDone(),
-                             FileQoSUpdate.getFormattedDateFromMillis(lastUpdate),
-                             FileQoSUpdate.getFormattedDateFromMillis(lastScan),
-                             lastStatus, currStatus, state,
-                             exception == null ? getFailedMessage() :
-                                             new ExceptionMessage(exception));
+              completed,
+              children == 0 && completed > 0 ? "?" : children,
+              getFormattedPercentDone(),
+              FileQoSUpdate.getFormattedDateFromMillis(lastUpdate),
+              FileQoSUpdate.getFormattedDateFromMillis(lastScan),
+              lastStatus, currStatus, state,
+              exception == null ? getFailedMessage() :
+                    new ExceptionMessage(exception));
     }
 
     public synchronized boolean isExcluded() {
@@ -141,8 +142,8 @@ public final class PoolOperation {
     }
 
     /**
-     *  Provides a transition table for determining what to do when
-     *  a successive status change notification is received.
+     * Provides a transition table for determining what to do when a successive status change
+     * notification is received.
      */
     synchronized NextAction getNextAction(PoolQoSStatus incoming) {
         if (state == State.EXCLUDED) {
@@ -153,7 +154,7 @@ public final class PoolOperation {
         lastStatus = currStatus;
         currStatus = incoming;
 
-        switch(lastStatus) {
+        switch (lastStatus) {
             case DOWN:
                 switch (currStatus) {
                     case READ_ONLY:
@@ -205,8 +206,8 @@ public final class PoolOperation {
 
     synchronized void incrementCompleted(boolean failed) {
         LOGGER.trace("entering incrementCompleted, state {}, failed {}, "
-                                     + "children {}, completed = {}.",
-                     state, failed, children, completed );
+                    + "children {}, completed = {}.",
+              state, failed, children, completed);
         if (state == State.RUNNING) {
             ++completed;
             if (failed) {
@@ -214,14 +215,14 @@ public final class PoolOperation {
             }
         }
         LOGGER.trace("leaving incrementCompleted, state {}, failed {}, "
-                                     + "children {}, completed = {}.",
-                     state, failed, children, completed );
+                    + "children {}, completed = {}.",
+              state, failed, children, completed);
     }
 
     synchronized boolean isComplete() {
         boolean isComplete = children > 0 && children == completed;
         LOGGER.trace("isComplete {}, children {}, completed = {}.",
-                     isComplete, children, completed );
+              isComplete, children, completed);
         return isComplete;
     }
 
@@ -229,7 +230,9 @@ public final class PoolOperation {
         return failed;
     }
 
-    synchronized int getCompleted() { return completed; }
+    synchronized int getCompleted() {
+        return completed;
+    }
 
     synchronized void resetChildren() {
         children = 0;
@@ -256,10 +259,10 @@ public final class PoolOperation {
 
     private String getFormattedPercentDone() {
         String percent = children == 0 ?
-                        "?" :
-                        (children == completed ? "100" :
-                        String.format("%.1f", 100 * (double) completed
-                                        / (double) children));
+              "?" :
+              (children == completed ? "100" :
+                    String.format("%.1f", 100 * (double) completed
+                          / (double) children));
         if ("100.0".equals(percent)) {
             return "99.9";
         }

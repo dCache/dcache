@@ -59,11 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.db;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.SqlHelper.tryToClose;
 
-import javax.sql.DataSource;
-
+import diskCacheV111.namespace.NameSpaceProvider;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -74,12 +75,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-
-import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-
+import javax.sql.DataSource;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.BackEndErrorChimeraFsException;
 import org.dcache.chimera.ChimeraFsException;
@@ -91,38 +87,39 @@ import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.dcache.util.SqlHelper.tryToClose;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Provides handling of specialized resilience-related queries which require
- *      direct access to the underlying database. </p>
+ * direct access to the underlying database. </p>
  *
  * <p>The {@link #handlePnfsidsForPool} uses a callback to
- *      the {@link FileOperationHandler} to add
- *      an entry in the pnfsid operation tables for each pnfsid.</p>
+ * the {@link FileOperationHandler} to add an entry in the pnfsid operation tables for each
+ * pnfsid.</p>
  *
  * <p>Class is not marked final so that a test version can be
- *      implemented by extension.</p>
+ * implemented by extension.</p>
  *
  * <p>Class is not marked final for the purpose of test extension.</p>
  */
 public class LocalNamespaceAccess implements NamespaceAccess {
+
     static final String SQL_GET_ONLINE_FOR_LOCATION
-                    = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-                                    + "WHERE l.inumber = n.inumber "
-                                    + "AND l.itype = 1 AND n.iaccess_latency = 1 "
-                                    + "AND l.ilocation = ?";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
+          + "WHERE l.inumber = n.inumber "
+          + "AND l.itype = 1 AND n.iaccess_latency = 1 "
+          + "AND l.ilocation = ?";
 
     static final String SQL_GET_CONTAINED_IN
-                    = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
-                                    + "WHERE n.inumber = l.inumber "
-                                    + "AND l.ilocation IN (%s) "
-                                    + "AND NOT EXISTS "
-                                    + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
-                                    + "WHERE n.inumber = l1.inumber "
-                                    + "AND n.inumber = n1.inumber "
-                                    + "AND l1.ilocation NOT IN (%s))";
+          = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
+          + "WHERE n.inumber = l.inumber "
+          + "AND l.ilocation IN (%s) "
+          + "AND NOT EXISTS "
+          + "(SELECT n1.ipnfsid FROM t_locationinfo l1, t_inodes n1 "
+          + "WHERE n.inumber = l1.inumber "
+          + "AND n.inumber = n1.inumber "
+          + "AND l1.ilocation NOT IN (%s))";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
 
@@ -133,9 +130,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
     /**
      * <p>Database connection pool for queries returning multiple pnfsid
-     *      info.  This may be independent of the main pool
-     *      for the namespace (in embedded mode), or may be shared
-     *      (in standalone mode).</p>
+     * info.  This may be independent of the main pool for the namespace (in embedded mode), or may
+     * be shared (in standalone mode).</p>
      */
     private DataSource connectionPool;
 
@@ -151,9 +147,9 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
     @Override
     public void printInaccessibleFiles(String location,
-                                       PoolInfoMap poolInfoMap,
-                                       PrintWriter printWriter)
-                    throws CacheException, InterruptedException {
+          PoolInfoMap poolInfoMap,
+          PrintWriter printWriter)
+          throws CacheException, InterruptedException {
         try {
             Connection connection = getConnection();
             try {
@@ -165,15 +161,15 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
-                            String.format("Could not handle pnfsids for %s",
-                                            location), e);
+                  String.format("Could not handle pnfsids for %s",
+                        location), e);
         }
     }
 
     @Override
     public void printContainedInFiles(List<String> locations,
-                                      PrintWriter printWriter)
-                    throws CacheException, InterruptedException {
+          PrintWriter printWriter)
+          throws CacheException, InterruptedException {
         try {
             Connection connection = getConnection();
             try {
@@ -185,25 +181,25 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
-                                     String.format("Could not handle pnfsids for %s",
-                                                   locations), e);
+                  String.format("Could not handle pnfsids for %s",
+                        locations), e);
         }
     }
 
     @Override
     public FileAttributes getRequiredAttributes(PnfsId pnfsId)
-                    throws CacheException {
+          throws CacheException {
         return namespace.getFileAttributes(Subjects.ROOT,
-                                           pnfsId,
-                                           REQUIRED_ATTRIBUTES);
+              pnfsId,
+              REQUIRED_ATTRIBUTES);
     }
 
     @Override
     public FileAttributes getRequiredAttributesForStaging(PnfsId pnfsId)
-                    throws CacheException {
+          throws CacheException {
         return namespace.getFileAttributes(Subjects.ROOT,
-                                           pnfsId,
-                                           PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+              pnfsId,
+              PoolMgrSelectReadPoolMsg.getRequiredAttributes());
     }
 
     /**
@@ -211,7 +207,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
      */
     @Override
     public void handlePnfsidsForPool(ScanSummary scan)
-                    throws CacheException {
+          throws CacheException {
         try {
             Connection connection = getConnection();
             try {
@@ -223,18 +219,18 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             }
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
-                                     String.format("Could not handle pnfsids for %s",
-                                                   scan.getPool()), e);
+                  String.format("Could not handle pnfsids for %s",
+                        scan.getPool()), e);
         }
     }
 
     @Override
     public void refreshAttributes(FileAttributes attributes)
-                    throws CacheException {
+          throws CacheException {
         FileAttributes refreshed =
-                        namespace.getFileAttributes(Subjects.ROOT,
-                                                    attributes.getPnfsId(),
-                                                    REFRESHABLE_ATTRIBUTES);
+              namespace.getFileAttributes(Subjects.ROOT,
+                    attributes.getPnfsId(),
+                    REFRESHABLE_ATTRIBUTES);
         attributes.setLocations(refreshed.getLocations());
         attributes.setRetentionPolicy(refreshed.getRetentionPolicy());
         attributes.setAccessLatency(refreshed.getAccessLatency());
@@ -270,12 +266,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
     /**
      * <p>The query processes all pnfsids for the given location which
-     *      have access latency = ONLINE.  These are sent one-by-one to the
-     *      {@link FileOperationHandler} to either create or update a
-     *      corresponding entry in the {@link FileOperationMap}.</p>
+     * have access latency = ONLINE.  These are sent one-by-one to the {@link FileOperationHandler}
+     * to either create or update a corresponding entry in the {@link FileOperationMap}.</p>
      */
     private void handleQuery(Connection connection, ScanSummary scan)
-                    throws SQLException, CacheException {
+          throws SQLException, CacheException {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         String pool = scan.getPool();
@@ -302,7 +297,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                     if (handler.handleScannedLocation(data, storageUnit)) {
                         scan.incrementCount();
                     }
-                    LOGGER.debug("after checking {}, {}, count is {}.", pool, pnfsId, scan.getCount());
+                    LOGGER.debug("after checking {}, {}, count is {}.", pool, pnfsId,
+                          scan.getCount());
                 } catch (CacheException e) {
                     LOGGER.debug("{}: {}", data, new ExceptionMessage(e));
                 }
@@ -319,10 +315,10 @@ public class LocalNamespaceAccess implements NamespaceAccess {
      * <p>Log at info level so that progress is visible in pinboard.</p>
      */
     private void printResults(Connection connection,
-                    String location,
-                    PoolInfoMap poolInfoMap,
-                    PrintWriter writer)
-                    throws SQLException, InterruptedException {
+          String location,
+          PoolInfoMap poolInfoMap,
+          PrintWriter writer)
+          throws SQLException, InterruptedException {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
 
@@ -348,7 +344,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 try {
                     FileAttributes attributes = getRequiredAttributes(pnfsId);
                     Collection<String> locations = attributes.getLocations();
-                    for (Iterator<String> i = locations.iterator(); i.hasNext();) {
+                    for (Iterator<String> i = locations.iterator(); i.hasNext(); ) {
                         String pool = i.next();
                         try {
                             int index = poolInfoMap.getPoolIndex(pool);
@@ -376,15 +372,15 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     }
 
     private void printResults(Connection connection,
-                              List<String> locations,
-                              PrintWriter writer)
-                    throws SQLException, InterruptedException {
+          List<String> locations,
+          PrintWriter writer)
+          throws SQLException, InterruptedException {
         String placeholders = String.join(",", locations.stream()
-                        .map(l -> "?").collect(Collectors.toList()));
+              .map(l -> "?").collect(Collectors.toList()));
 
         String query = String.format(SQL_GET_CONTAINED_IN,
-                                     placeholders,
-                                     placeholders);
+              placeholders,
+              placeholders);
 
         PreparedStatement statement = null;
         ResultSet resultSet = null;
@@ -393,8 +389,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         try {
             statement = connection.prepareStatement(query);
             for (int i = 1; i <= len; ++i) {
-                statement.setString(i, locations.get(i-1));
-                statement.setString(i+len, locations.get(i-1));
+                statement.setString(i, locations.get(i - 1));
+                statement.setString(i + len, locations.get(i - 1));
             }
             statement.setFetchSize(fetchSize);
 

@@ -20,23 +20,20 @@ package org.dcache.pool.nearline.filesystem;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 
-public class LinkNearlineStorageProvider implements NearlineStorageProvider
-{
+public class LinkNearlineStorageProvider implements NearlineStorageProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "link";
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Hard links flushed files in another directory.";
     }
 
     @Override
-    public NearlineStorage createNearlineStorage(String type, String name)
-    {
+    public NearlineStorage createNearlineStorage(String type, String name) {
         return new LinkNearlineStorage(type, name);
     }
 }

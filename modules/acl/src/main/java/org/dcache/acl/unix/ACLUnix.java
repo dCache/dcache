@@ -4,7 +4,6 @@ package org.dcache.acl.unix;
  * Unix Access Control List (ACL).
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
 public class ACLUnix {
 
@@ -38,36 +37,31 @@ public class ACLUnix {
     ACEUnix defaultAceOther;
 
     /**
-     * @param rsId
-     *            Resource Identifier
-     * @param isDir
-     *            True if resource is a directory
+     * @param rsId  Resource Identifier
+     * @param isDir True if resource is a directory
      */
     public ACLUnix(boolean isDir) {
-        _isDir= isDir;
+        _isDir = isDir;
         if (_isDir) {
             defaultAceOwner = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.USER_OBJ.getValue());
-            defaultAceOwnerGroup = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.GROUP_OBJ.getValue());
+            defaultAceOwnerGroup = new ACEUnix(
+                  AceTag.DEFAULT.getValue() | AceTag.GROUP_OBJ.getValue());
             defaultAceOther = new ACEUnix(AceTag.DEFAULT.getValue() | AceTag.OTHER_OBJ.getValue());
         }
     }
 
     /**
-     * @param rsId
-     *            Resource Identifier
-     * @param isDir
-     *            True if resource is a directory
-     * @param accessMasks
-     *            Array of access masks
-     * @param defaultMasks
-     *            Array of default masks
+     * @param rsId         Resource Identifier
+     * @param isDir        True if resource is a directory
+     * @param accessMasks  Array of access masks
+     * @param defaultMasks Array of default masks
      */
     public ACLUnix(boolean isDir, int[] accessMasks, int[] defaultMasks) {
         this(isDir);
         accessAceOwner.setAccessMsk(accessMasks[OWNER_INDEX]);
         accessAceOwnerGroup.setAccessMsk(accessMasks[GROUP_OWNER_INDEX]);
         accessAceOther.setAccessMsk(accessMasks[OTHER_INDEX]);
-        if ( _isDir ) {
+        if (_isDir) {
             defaultAceOwner.setAccessMsk(defaultMasks[OWNER_INDEX]);
             defaultAceOwnerGroup.setAccessMsk(defaultMasks[GROUP_OWNER_INDEX]);
             defaultAceOther.setAccessMsk(defaultMasks[OTHER_INDEX]);
@@ -93,7 +87,7 @@ public class ACLUnix {
         sb.append(", ").append(accessAceOther.toString());
         sb.append(LINE_SEPARATOR);
 
-        if ( _isDir ) {
+        if (_isDir) {
             sb.append(defaultAceOwner.toString());
             sb.append(", ").append(defaultAceOwnerGroup.toString());
             sb.append(", ").append(defaultAceOther.toString());

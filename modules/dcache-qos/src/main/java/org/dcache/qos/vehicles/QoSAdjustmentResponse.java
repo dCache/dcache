@@ -66,41 +66,41 @@ import org.dcache.qos.data.QoSAdjustmentStatus;
 
 public class QoSAdjustmentResponse implements Serializable {
 
-  private static final long serialVersionUID = 3943968291579133834L;
-  private QoSAdjustmentStatus status;
-  private PnfsId pnfsId;
-  private QoSAction action;
-  private Serializable error;
+    private static final long serialVersionUID = 3943968291579133834L;
+    private QoSAdjustmentStatus status;
+    private PnfsId pnfsId;
+    private QoSAction action;
+    private Serializable error;
 
-  public Serializable getError() {
-    return error;
-  }
+    public Serializable getError() {
+        return error;
+    }
 
-  public void setError(Serializable error) {
-    this.error = error;
-  }
+    public void setError(Serializable error) {
+        this.error = error;
+    }
 
-  public QoSAdjustmentStatus getStatus() {
-    return status;
-  }
+    public QoSAdjustmentStatus getStatus() {
+        return status;
+    }
 
-  public void setStatus(QoSAdjustmentStatus status) {
-    this.status = status;
-  }
+    public void setStatus(QoSAdjustmentStatus status) {
+        this.status = status;
+    }
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public void setPnfsId(PnfsId pnfsId) {
-    this.pnfsId = pnfsId;
-  }
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
 
-  public QoSAction getAction() {
-    return action;
-  }
+    public QoSAction getAction() {
+        return action;
+    }
 
-  public void setAction(QoSAction action) {
-    this.action = action;
-  }
+    public void setAction(QoSAction action) {
+        this.action = action;
+    }
 }

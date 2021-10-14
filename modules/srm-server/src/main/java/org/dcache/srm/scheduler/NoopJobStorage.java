@@ -3,21 +3,20 @@ package org.dcache.srm.scheduler;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.Set;
-
 import org.dcache.srm.request.Job;
 
 /**
  * Noop (No Operation) implementation of the JobStorage interface
+ *
  * @author timur
  */
 public class NoopJobStorage<J extends Job> implements JobStorage<J> {
 
-    public NoopJobStorage( ) {
+    public NoopJobStorage() {
     }
 
     @Override
-    public void init()
-    {
+    public void init() {
     }
 
     @Override
@@ -35,26 +34,22 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum)
-    {
+    public Set<Long> getLatestCompletedJobIds(int maxNum) {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum)
-    {
+    public Set<Long> getLatestFailedJobIds(int maxNum) {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum)
-    {
+    public Set<Long> getLatestCanceledJobIds(int maxNum) {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<J> getActiveJobs()
-    {
+    public Set<J> getActiveJobs() {
         return Collections.emptySet();
     }
 

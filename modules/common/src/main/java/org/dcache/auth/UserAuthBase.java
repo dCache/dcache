@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 public abstract class UserAuthBase implements Serializable {
+
     private static final long serialVersionUID = -7700110348980815506L;
 
     public final List<Integer> GIDs = new ArrayList<>();
@@ -24,48 +25,48 @@ public abstract class UserAuthBase implements Serializable {
     private FQAN fqan;
 
     public UserAuthBase(String user,
-                        boolean readOnly,
-                        int uid,
-                        int gid,
-                        String home,
-                        String root,
-                        String fsroot) {
+          boolean readOnly,
+          int uid,
+          int gid,
+          String home,
+          String root,
+          String fsroot) {
         this(user, null, null, readOnly, 0, uid, gid, home, root, fsroot);
     }
 
     public UserAuthBase(String user,
-                        boolean readOnly,
-                        int uid,
-                        int[] gids,
-                        String home,
-                        String root,
-                        String fsroot) {
+          boolean readOnly,
+          int uid,
+          int[] gids,
+          String home,
+          String root,
+          String fsroot) {
         this(user, null, null, readOnly, 0, uid, gids, home, root, fsroot);
     }
 
     public UserAuthBase(String user,
-                        String DN,
-                        String fqan,
-                        boolean readOnly,
-                        int priority,
-                        int uid,
-                        int gid,
-                        String home,
-                        String root,
-                        String fsroot) {
+          String DN,
+          String fqan,
+          boolean readOnly,
+          int priority,
+          int uid,
+          int gid,
+          String home,
+          String root,
+          String fsroot) {
         this(user, DN, fqan, readOnly, priority, uid, new int[]{gid}, home, root, fsroot);
     }
 
     public UserAuthBase(String user,
-                        String DN,
-                        String fqan,
-                        boolean readOnly,
-                        int priority,
-                        int uid,
-                        int[] gids,
-                        String home,
-                        String root,
-                        String fsroot) {
+          String DN,
+          String fqan,
+          boolean readOnly,
+          int priority,
+          int uid,
+          int[] gids,
+          String home,
+          String root,
+          String fsroot) {
         Username = user;
         this.DN = DN;
         if (fqan != null) {
@@ -82,7 +83,7 @@ public abstract class UserAuthBase implements Serializable {
         if (gids == null) {
             GIDs.add(-1);
         } else {
-            for (int gid: gids) {
+            for (int gid : gids) {
                 GIDs.add(gid);
             }
         }

@@ -82,26 +82,24 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMRmdirClientV2 extends SRMClient
-{
+public class SRMRmdirClientV2 extends SRMClient {
+
     private final java.net.URI surl;
     private final String surl_string;
 
     public SRMRmdirClientV2(Configuration configuration, java.net.URI surl, String surl_string) {
         super(configuration);
-        this.surl      = surl;
-        this.surl_string=surl_string;
+        this.surl = surl;
+        this.surl_string = surl_string;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surl;
     }
 
@@ -111,17 +109,16 @@ public class SRMRmdirClientV2 extends SRMClient
         SrmRmdirRequest req = new SrmRmdirRequest();
         if (configuration.isRecursive()) {
             req.setRecursive(Boolean.TRUE);
-        }
-        else {
+        } else {
             req.setRecursive(Boolean.FALSE);
         }
         URI uri = new URI(surl_string);
         req.setSURL(uri);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmRmdirResponse resp = srm.srmRmdir(req);
-        TReturnStatus rs   = resp.getReturnStatus();
+        TReturnStatus rs = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-            TStatusCode rc  = rs.getStatusCode();
+            TStatusCode rc = rs.getStatusCode();
             StringBuilder sb = new StringBuilder();
             sb.append("Return code: ").append(rc.toString()).append("\n");
             sb.append("Explanation: ").append(rs.getExplanation()).append("\n");

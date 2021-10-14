@@ -59,51 +59,46 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static org.dcache.services.bulk.plugins.TreeWalkJobProvider.SIMULATE_FAILURE;
+import static org.dcache.services.bulk.plugins.TreeWalkJobProvider.USE_PING;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import diskCacheV111.vehicles.Message;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-
-import diskCacheV111.vehicles.Message;
-
 import org.dcache.cells.CellStub;
 import org.dcache.services.bulk.PingMessage;
 import org.dcache.services.bulk.PingServiceAware;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.SingleTargetJob;
-
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
-import static org.dcache.services.bulk.plugins.TreeWalkJobProvider.SIMULATE_FAILURE;
-import static org.dcache.services.bulk.plugins.TreeWalkJobProvider.USE_PING;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  A test job that can be run through the admin interface.
- *  <p>
- *  To simulate delayed response, uses the ping service.
+ * A test job that can be run through the admin interface.
+ * <p>
+ * To simulate delayed response, uses the ping service.
  */
 public class TreeWalkJob extends SingleTargetJob implements PingServiceAware,
-                Callable<Void>
-{
+      Callable<Void> {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(TreeWalkJob.class);
+          = LoggerFactory.getLogger(TreeWalkJob.class);
     protected static final Random RANDOM = new Random(System.currentTimeMillis());
 
     protected CellStub pingService;
 
     public TreeWalkJob(BulkJobKey key,
-                          BulkJobKey parentKey,
-                          String activity)
-    {
+          BulkJobKey parentKey,
+          String activity) {
         super(key, parentKey, activity);
     }
 
     @Override
-    public Void call()
-    {
+    public Void call() {
         try {
             Message reply = getUninterruptibly(waitable);
             if (reply.getReturnCode() != 0) {
@@ -124,20 +119,18 @@ public class TreeWalkJob extends SingleTargetJob implements PingServiceAware,
     }
 
     @Override
-    public void setPingService(CellStub pingService)
-    {
+    public void setPingService(CellStub pingService) {
         this.pingService = pingService;
     }
 
     @Override
-    protected void doRun()
-    {
+    protected void doRun() {
         if (usePing()) {
             setState(State.WAITING);
             LOGGER.debug("{} : sending message.", key.getKey());
             ListenableFuture<Message> future
-                            = pingService.send(new PingMessage(key.getKey(),
-                                                               path.toString()));
+                  = pingService.send(new PingMessage(key.getKey(),
+                  path.toString()));
             this.waitable = future;
             future.addListener(() -> call(), executorService);
             LOGGER.debug("{} : waiting for reply.", key.getKey());
@@ -147,23 +140,21 @@ public class TreeWalkJob extends SingleTargetJob implements PingServiceAware,
         }
     }
 
-    private void printFileMetadata()
-    {
+    private void printFileMetadata() {
         if (failJob()) {
             setError("Randomized failured.");
         } else {
             LOGGER.info("{} : {} [{}] [{}] [{}]",
-                        key.getKey(),
-                        activity,
-                        attributes.getPnfsId(),
-                        attributes.getFileType(),
-                        path);
+                  key.getKey(),
+                  activity,
+                  attributes.getPnfsId(),
+                  attributes.getFileType(),
+                  path);
             setState(State.COMPLETED);
         }
     }
 
-    private boolean failJob()
-    {
+    private boolean failJob() {
         String simulateFailure;
         if (arguments != null) {
             simulateFailure = arguments.get(SIMULATE_FAILURE.getName());
@@ -178,8 +169,7 @@ public class TreeWalkJob extends SingleTargetJob implements PingServiceAware,
         return false;
     }
 
-    private boolean usePing()
-    {
+    private boolean usePing() {
         String usePing;
         if (arguments != null) {
             usePing = arguments.get(USE_PING.getName());

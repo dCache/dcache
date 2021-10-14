@@ -18,21 +18,18 @@
 package diskCacheV111.srm.dcache;
 
 import java.util.function.DoubleSupplier;
-
 import org.dcache.srm.SRM;
 
-public class SrmLoadProvider implements DoubleSupplier
-{
+public class SrmLoadProvider implements DoubleSupplier {
+
     private SRM srm;
 
-    public void setSrm(SRM srm)
-    {
+    public void setSrm(SRM srm) {
         this.srm = srm;
     }
 
     @Override
-    public double getAsDouble()
-    {
+    public double getAsDouble() {
         return srm.getLoad();
     }
 }

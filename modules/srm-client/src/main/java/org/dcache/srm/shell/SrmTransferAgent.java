@@ -1,15 +1,16 @@
 package org.dcache.srm.shell;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
+import static org.dcache.util.Exceptions.genericCheck;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.axis.types.URI;
-import org.apache.axis.types.UnsignedLong;
-
-import javax.annotation.Nonnull;
-
 import java.io.File;
 import java.rmi.RemoteException;
 import java.util.Map;
@@ -17,7 +18,9 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.Nonnull;
+import org.apache.axis.types.URI;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
@@ -55,37 +58,28 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
-import static java.util.Objects.requireNonNull;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
-import static org.dcache.util.Exceptions.genericCheck;
-
 /**
- *  Support for transferring a file using SRM.
+ * Support for transferring a file using SRM.
  */
-public class SrmTransferAgent extends AbstractFileTransferAgent
-{
+public class SrmTransferAgent extends AbstractFileTransferAgent {
+
     private final ScheduledExecutorService _srmExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private ISRM srm;
     private FileTransferAgent agent;
     private ImmutableList<String> protocols;
 
-    public void setSrm(ISRM srm)
-    {
+    public void setSrm(ISRM srm) {
         this.srm = requireNonNull(srm);
     }
 
-    public void setFileTransferAgent(FileTransferAgent agent)
-    {
+    public void setFileTransferAgent(FileTransferAgent agent) {
         this.agent = requireNonNull(agent);
     }
 
     @Nonnull
     @Override
-    public Map<String,String> getOptions()
-    {
+    public Map<String, String> getOptions() {
         return agent.getOptions();
     }
 
@@ -93,14 +87,12 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
      * Alter an option.
      */
     @Override
-    public void setOption(String key, String value)
-    {
+    public void setOption(String key, String value) {
         agent.setOption(key, value);
     }
 
 
-    protected synchronized ImmutableList<String> getProtocolPreference()
-    {
+    protected synchronized ImmutableList<String> getProtocolPreference() {
         if (protocols == null) {
             protocols = buildProtocolPreference(agent);
         }
@@ -108,14 +100,14 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
         return protocols;
     }
 
-    private static ImmutableList<String> buildProtocolPreference(FileTransferAgent agent)
-    {
-        Ordering<Map.Entry<String,Integer>> order = Ordering.natural().
-                onResultOf((Map.Entry<String,Integer> input) -> input.getValue()).reverse();
+    private static ImmutableList<String> buildProtocolPreference(FileTransferAgent agent) {
+        Ordering<Map.Entry<String, Integer>> order = Ordering.natural().
+              onResultOf((Map.Entry<String, Integer> input) -> input.getValue()).reverse();
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
 
-        for (Map.Entry<String,Integer> entry : order.sortedCopy(agent.getSupportedProtocols().entrySet())) {
+        for (Map.Entry<String, Integer> entry : order.sortedCopy(
+              agent.getSupportedProtocols().entrySet())) {
             builder.add(entry.getKey());
         }
 
@@ -123,15 +115,13 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     }
 
     @Override
-    public void close() throws Exception
-    {
+    public void close() throws Exception {
         MoreExecutors.shutdownAndAwaitTermination(_srmExecutor, 500, TimeUnit.MILLISECONDS);
         agent.close();
     }
 
     @Override
-    public FileTransfer download(URI source, File destination)
-    {
+    public FileTransfer download(URI source, File destination) {
         if (source.getScheme().equals("srm")) {
             GetTransfer transfer = new GetTransfer(source, destination);
             transfer.start();
@@ -142,8 +132,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     }
 
     @Override
-    public FileTransfer upload(File source, URI destination)
-    {
+    public FileTransfer upload(File source, URI destination) {
         if (destination.getScheme().equals("srm")) {
             PutTransfer transfer = new PutTransfer(source, destination);
             transfer.start();
@@ -154,16 +143,15 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     }
 
     @Override
-    public String getTransportName()
-    {
+    public String getTransportName() {
         return "srm";
     }
 
     /**
      * Base class for uploads and downloads.
      */
-    abstract private class AbstractSRMTransfer extends AbstractFileTransfer
-    {
+    abstract private class AbstractSRMTransfer extends AbstractFileTransfer {
+
         private final URI _surl;
         private final File _localFile;
 
@@ -171,20 +159,17 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
         private String _token;
         private FileTransfer _transfer;
 
-        AbstractSRMTransfer(URI surl, File localFile)
-        {
+        AbstractSRMTransfer(URI surl, File localFile) {
             _surl = surl;
             _localFile = localFile;
 
-            Futures.addCallback(this, new FutureCallback<Void>(){
+            Futures.addCallback(this, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Void result)
-                {
+                public void onSuccess(Void result) {
                 }
 
                 @Override
-                public void onFailure(Throwable t)
-                {
+                public void onFailure(Throwable t) {
                     if (t instanceof CancellationException) {
                         onCancel();
                     }
@@ -192,8 +177,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             });
         }
 
-        private void onCancel()
-        {
+        private void onCancel() {
             FileTransfer transfer = getTransfer();
             if (transfer != null) {
                 transfer.cancel(true);
@@ -203,8 +187,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
         }
 
         @Override
-        public String getStatus()
-        {
+        public String getStatus() {
             StringBuilder sb = new StringBuilder();
 
             sb.append(_surl).append(": ");
@@ -218,59 +201,48 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             return sb.toString();
         }
 
-        public ArrayOfString getProtocolPreference()
-        {
+        public ArrayOfString getProtocolPreference() {
             ImmutableList<String> protocols = SrmTransferAgent.this.getProtocolPreference();
             return new ArrayOfString(protocols.toArray(new String[protocols.size()]));
         }
 
-        public void setTransfer(FileTransfer transfer)
-        {
+        public void setTransfer(FileTransfer transfer) {
             _transfer = transfer;
         }
 
-        public FileTransfer getTransfer()
-        {
+        public FileTransfer getTransfer() {
             return _transfer;
         }
 
-        protected void setRequestToken(String token)
-        {
+        protected void setRequestToken(String token) {
             _token = token;
         }
 
-        public String getRequestToken()
-        {
+        public String getRequestToken() {
             return _token;
         }
 
-        public URI getSurl()
-        {
+        public URI getSurl() {
             return _surl;
         }
 
-        public File getLocalFile()
-        {
+        public File getLocalFile() {
             return _localFile;
         }
 
-        public void setDescription(String description)
-        {
+        public void setDescription(String description) {
             _description = description;
         }
 
-        protected void fail(RemoteException e)
-        {
+        protected void fail(RemoteException e) {
             setDescription("Problem contacting remote server : " + e.toString());
         }
 
-        protected void fail(SRMException e)
-        {
+        protected void fail(SRMException e) {
             setDescription(e.getMessage() == null ? "Unspecified problem" : e.getMessage());
         }
 
-        protected void abortRequest()
-        {
+        protected void abortRequest() {
             String token = getRequestToken();
             if (token != null) {
                 try {
@@ -279,26 +251,24 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
                 } catch (RemoteException e) {
                     setDescription(_description + ", failed to abort request: " +
-                            e.getMessage());
+                          e.getMessage());
                 } catch (SRMException e) {
                     setDescription(_description + ", failed to abort request: " +
-                            "[" + e.getStatusCode() + "] " + e.getMessage());
+                          "[" + e.getStatusCode() + "] " + e.getMessage());
                 }
             }
         }
 
-        class FailOnBugTask implements Runnable
-        {
+        class FailOnBugTask implements Runnable {
+
             private final Runnable _inner;
 
-            FailOnBugTask(Runnable inner)
-            {
+            FailOnBugTask(Runnable inner) {
                 _inner = inner;
             }
 
             @Override
-            public void run()
-            {
+            public void run() {
                 try {
                     _inner.run();
                 } catch (RuntimeException e) {
@@ -314,51 +284,48 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     /**
      * Class for handling downloads specifically.
      */
-    public class PutTransfer extends AbstractSRMTransfer
-    {
-        public PutTransfer(File source, URI target)
-        {
+    public class PutTransfer extends AbstractSRMTransfer {
+
+        public PutTransfer(File source, URI target) {
             super(target, source);
         }
 
-        private void start()
-        {
+        private void start() {
             _srmExecutor.execute(new FailOnBugTask(() -> prepareToPut()));
         }
 
-        private void prepareToPut()
-        {
+        private void prepareToPut() {
             setDescription("requesting transfer URL.");
 
             ArrayOfTPutFileRequest fileRequests = new ArrayOfTPutFileRequest(new TPutFileRequest[]{
-                new TPutFileRequest(getSurl(), new UnsignedLong(getLocalFile().length())),
+                  new TPutFileRequest(getSurl(), new UnsignedLong(getLocalFile().length())),
             });
             TTransferParameters params = new TTransferParameters(TAccessPattern.TRANSFER_MODE,
-                    TConnectionType.WAN, null, getProtocolPreference());
+                  TConnectionType.WAN, null, getProtocolPreference());
 
             // FIXME: make target ALRP configurable
             TRetentionPolicyInfo retention = new TRetentionPolicyInfo(TRetentionPolicy.REPLICA,
-                    TAccessLatency.ONLINE);
+                  TAccessLatency.ONLINE);
 
             // FIXME: add user-description to allow rediscovery of ongoing requests
             // FIXME: add overwrite option
             // FIXME: add space-token option
             SrmPrepareToPutRequest request = new SrmPrepareToPutRequest(
-                    null, fileRequests, null, TOverwriteMode.NEVER, null,
-                    (int)TimeUnit.DAYS.toSeconds(1), null, null, null, null,
-                    retention, params);
+                  null, fileRequests, null, TOverwriteMode.NEVER, null,
+                  (int) TimeUnit.DAYS.toSeconds(1), null, null, null, null,
+                  retention, params);
 
             try {
                 SrmPrepareToPutResponse response = srm.srmPrepareToPut(request);
                 setRequestToken(response.getRequestToken());
 
-
                 TStatusCode requestStatus = response.getReturnStatus().getStatusCode();
                 if (requestStatus != TStatusCode.SRM_REQUEST_QUEUED &&
-                        requestStatus != TStatusCode.SRM_REQUEST_INPROGRESS &&
-                        requestStatus != TStatusCode.SRM_SUCCESS) {
+                      requestStatus != TStatusCode.SRM_REQUEST_INPROGRESS &&
+                      requestStatus != TStatusCode.SRM_SUCCESS) {
                     if (response.getArrayOfFileStatuses() != null) {
-                        TPutRequestFileStatus file = getFileStatus(response.getArrayOfFileStatuses());
+                        TPutRequestFileStatus file = getFileStatus(
+                              response.getArrayOfFileStatuses());
                         throw new SRMException(file.getStatus().getExplanation());
                     } else {
                         throw new SRMException(response.getReturnStatus().getExplanation());
@@ -370,19 +337,19 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                 TStatusCode requestStatusCode = response.getReturnStatus().getStatusCode();
 
                 if (requestStatusCode == TStatusCode.SRM_REQUEST_QUEUED ||
-                        requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
+                      requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
 
                     TStatusCode fileStatusCode = file.getStatus().getStatusCode();
                     if (fileStatusCode != requestStatusCode) {
                         throw new SRMException("mismatch between file and response status: " +
-                                fileStatusCode + " != " + requestStatusCode);
+                              fileStatusCode + " != " + requestStatusCode);
                     }
 
                     setDescription("waiting to request status update.");
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToPut()),
-                            delay, TimeUnit.SECONDS);
+                          delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_SPACE_AVAILABLE);
                     initiateTransfer(file.getTransferURL());
@@ -398,27 +365,26 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             }
         }
 
-        private void statusOfPrepareToPut()
-        {
+        private void statusOfPrepareToPut() {
             setDescription("request status update.");
             SrmStatusOfPutRequestRequest request =
-                    new SrmStatusOfPutRequestRequest(getRequestToken(), null,
-                            new ArrayOfAnyURI(new URI[]{getSurl()}));
+                  new SrmStatusOfPutRequestRequest(getRequestToken(), null,
+                        new ArrayOfAnyURI(new URI[]{getSurl()}));
             try {
                 SrmStatusOfPutRequestResponse response = srm.srmStatusOfPutRequest(request);
 
                 checkSuccess(response.getReturnStatus(), TStatusCode.SRM_REQUEST_QUEUED,
-                        TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
+                      TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
 
                 TStatusCode requestStatusCode = response.getReturnStatus().getStatusCode();
                 TPutRequestFileStatus file = getFileStatus(response.getArrayOfFileStatuses());
 
                 if (requestStatusCode == TStatusCode.SRM_REQUEST_QUEUED ||
-                        requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
+                      requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
                     TStatusCode fileStatusCode = file.getStatus().getStatusCode();
                     if (fileStatusCode != requestStatusCode) {
                         throw new SRMException("mismatch between file and response status: " +
-                                fileStatusCode + " != " + requestStatusCode);
+                              fileStatusCode + " != " + requestStatusCode);
                     }
 
                     setDescription("waiting to request status update.");
@@ -426,7 +392,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToPut()),
-                            delay, TimeUnit.SECONDS);
+                          delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_SPACE_AVAILABLE);
                     initiateTransfer(file.getTransferURL());
@@ -442,8 +408,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             }
         }
 
-        private void initiateTransfer(URI turl)
-        {
+        private void initiateTransfer(URI turl) {
             FileTransfer transfer = agent.upload(getLocalFile(), turl);
 
             if (transfer == null) {
@@ -452,10 +417,9 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             } else {
                 setDescription("preparing for transfer using " + turl);
                 setTransfer(transfer);
-                Futures.addCallback(transfer, new FutureCallback<Void>(){
+                Futures.addCallback(transfer, new FutureCallback<Void>() {
                     @Override
-                    public void onSuccess(Void result)
-                    {
+                    public void onSuccess(Void result) {
                         setDescription("file transfer complete.");
                         setTransfer(null);
                         putDone();
@@ -463,8 +427,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     }
 
                     @Override
-                    public void onFailure(Throwable t)
-                    {
+                    public void onFailure(Throwable t) {
                         setDescription(t.getMessage());
                         setTransfer(null);
                         abortRequest();
@@ -474,10 +437,9 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             }
         }
 
-        private void putDone()
-        {
+        private void putDone() {
             SrmPutDoneRequest request = new SrmPutDoneRequest(getRequestToken(),
-                    null, new ArrayOfAnyURI(new URI[]{getSurl()}));
+                  null, new ArrayOfAnyURI(new URI[]{getSurl()}));
 
             try {
                 SrmPutDoneResponse response = srm.srmPutDone(request);
@@ -486,44 +448,49 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                 checkSuccess(status.getStatus(), TStatusCode.SRM_SUCCESS);
             } catch (RemoteException e) {
                 setDescription(_description + ", failed to release lock: " +
-                        e.getMessage());
+                      e.getMessage());
             } catch (SRMException e) {
                 setDescription(_description + ", failed to finalise upload: " +
-                        "[" + e.getStatusCode() + "] " + e.getMessage());
+                      "[" + e.getStatusCode() + "] " + e.getMessage());
             }
         }
 
         @Nonnull
-        private TPutRequestFileStatus getFileStatus(ArrayOfTPutRequestFileStatus container) throws SRMException
-        {
-            checkForFailure(container != null, "bad reply: null array-container of RequestFileStatus.");
+        private TPutRequestFileStatus getFileStatus(ArrayOfTPutRequestFileStatus container)
+              throws SRMException {
+            checkForFailure(container != null,
+                  "bad reply: null array-container of RequestFileStatus.");
 
             TPutRequestFileStatus[] statusArray = container.getStatusArray();
 
             checkForFailure(statusArray != null, "bad reply: null RequestFileStatus array.");
 
             if (statusArray.length != 1) {
-                throw new SRMException("bad reply: RequestFileStatus array with length " + statusArray.length + ".");
+                throw new SRMException(
+                      "bad reply: RequestFileStatus array with length " + statusArray.length + ".");
             }
 
             TPutRequestFileStatus status = statusArray[0];
 
-            checkForFailure(status != null, "bad reply: RequestFileStatus array with null element.");
+            checkForFailure(status != null,
+                  "bad reply: RequestFileStatus array with null element.");
 
             return status;
         }
 
         @Nonnull
-        private TSURLReturnStatus getSURLStatus(ArrayOfTSURLReturnStatus container) throws SRMException
-        {
-            checkForFailure(container != null, "bad reply: null array-container of SURLReturnStatus.");
+        private TSURLReturnStatus getSURLStatus(ArrayOfTSURLReturnStatus container)
+              throws SRMException {
+            checkForFailure(container != null,
+                  "bad reply: null array-container of SURLReturnStatus.");
 
             TSURLReturnStatus[] statusArray = container.getStatusArray();
 
             checkForFailure(statusArray != null, "bad reply: null SURLReturnStatus.");
 
             if (statusArray.length != 1) {
-                throw new SRMException("bad reply: SURLReturnStatus array with length " + statusArray.length + ".");
+                throw new SRMException(
+                      "bad reply: SURLReturnStatus array with length " + statusArray.length + ".");
             }
 
             TSURLReturnStatus status = statusArray[0];
@@ -538,59 +505,56 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     /**
      * Class for handling downloads specifically.
      */
-    public class GetTransfer extends AbstractSRMTransfer
-    {
-        public GetTransfer(URI source, File target)
-        {
+    public class GetTransfer extends AbstractSRMTransfer {
+
+        public GetTransfer(URI source, File target) {
             super(source, target);
         }
 
-        private void start()
-        {
+        private void start() {
             _srmExecutor.execute(new FailOnBugTask(() -> prepareToGet()));
         }
 
-        private void prepareToGet()
-        {
+        private void prepareToGet() {
             setDescription("requesting transfer URL.");
 
             // DPM requires TDirOption to have null value.
             ArrayOfTGetFileRequest fileRequests = new ArrayOfTGetFileRequest(new TGetFileRequest[]{
-                new TGetFileRequest(getSurl(), null),
+                  new TGetFileRequest(getSurl(), null),
             });
             TTransferParameters params = new TTransferParameters(TAccessPattern.TRANSFER_MODE,
-                    TConnectionType.WAN, null, getProtocolPreference());
+                  TConnectionType.WAN, null, getProtocolPreference());
 
             // FIXME: add user-description to allow rediscovery of ongoing requests
             SrmPrepareToGetRequest request = new SrmPrepareToGetRequest(
-                    null, fileRequests, null, null, null, (int)TimeUnit.DAYS.toSeconds(1), -1, null,
-                    null, params);
+                  null, fileRequests, null, null, null, (int) TimeUnit.DAYS.toSeconds(1), -1, null,
+                  null, params);
 
             try {
                 SrmPrepareToGetResponse response = srm.srmPrepareToGet(request);
                 setRequestToken(response.getRequestToken());
 
                 checkSuccess(response.getReturnStatus(), TStatusCode.SRM_REQUEST_QUEUED,
-                        TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
+                      TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
 
                 TGetRequestFileStatus file = getFileStatus(response.getArrayOfFileStatuses());
 
                 TStatusCode requestStatusCode = response.getReturnStatus().getStatusCode();
 
                 if (requestStatusCode == TStatusCode.SRM_REQUEST_QUEUED ||
-                        requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
+                      requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
 
                     TStatusCode fileStatusCode = file.getStatus().getStatusCode();
                     if (fileStatusCode != requestStatusCode) {
                         throw new SRMException("mismatch between file and response status: " +
-                                fileStatusCode + " != " + requestStatusCode);
+                              fileStatusCode + " != " + requestStatusCode);
                     }
 
                     setDescription("waiting to request status update.");
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToGet()),
-                            delay, TimeUnit.SECONDS);
+                          delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_FILE_PINNED);
                     initiateTransfer(file.getTransferURL());
@@ -607,46 +571,48 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
         }
 
         @Nonnull
-        private TGetRequestFileStatus getFileStatus(ArrayOfTGetRequestFileStatus fileStatus) throws SRMException
-        {
-            checkForFailure(fileStatus != null, "bad reply: null array-container of RequestFileStatus.");
+        private TGetRequestFileStatus getFileStatus(ArrayOfTGetRequestFileStatus fileStatus)
+              throws SRMException {
+            checkForFailure(fileStatus != null,
+                  "bad reply: null array-container of RequestFileStatus.");
 
             TGetRequestFileStatus[] statuses = fileStatus.getStatusArray();
 
             checkForFailure(statuses != null, "bad reply: null RequestFileStatus array.");
 
             if (statuses.length != 1) {
-                throw new SRMException("bad reply: RequestFileStatus array with length " + statuses.length + ".");
+                throw new SRMException(
+                      "bad reply: RequestFileStatus array with length " + statuses.length + ".");
             }
 
             TGetRequestFileStatus status = statuses[0];
 
-            checkForFailure(status != null, "bad reply: RequestFileStatus array with null element.");
+            checkForFailure(status != null,
+                  "bad reply: RequestFileStatus array with null element.");
 
             return status;
         }
 
-        private void statusOfPrepareToGet()
-        {
+        private void statusOfPrepareToGet() {
             setDescription("request status update.");
             SrmStatusOfGetRequestRequest request =
-                    new SrmStatusOfGetRequestRequest(getRequestToken(), null,
-                            new ArrayOfAnyURI(new URI[]{getSurl()}));
+                  new SrmStatusOfGetRequestRequest(getRequestToken(), null,
+                        new ArrayOfAnyURI(new URI[]{getSurl()}));
             try {
                 SrmStatusOfGetRequestResponse response = srm.srmStatusOfGetRequest(request);
 
                 checkSuccess(response.getReturnStatus(), TStatusCode.SRM_REQUEST_QUEUED,
-                        TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
+                      TStatusCode.SRM_REQUEST_INPROGRESS, TStatusCode.SRM_SUCCESS);
 
                 TStatusCode requestStatusCode = response.getReturnStatus().getStatusCode();
                 TGetRequestFileStatus file = getFileStatus(response.getArrayOfFileStatuses());
 
                 if (requestStatusCode == TStatusCode.SRM_REQUEST_QUEUED ||
-                        requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
+                      requestStatusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
                     TStatusCode fileStatusCode = file.getStatus().getStatusCode();
                     if (fileStatusCode != requestStatusCode) {
                         throw new SRMException("mismatch between file and response status: " +
-                                fileStatusCode + " != " + requestStatusCode);
+                              fileStatusCode + " != " + requestStatusCode);
                     }
 
                     setDescription("waiting to request status update.");
@@ -654,7 +620,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     Integer waitTime = file.getEstimatedWaitTime();
                     int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(() -> statusOfPrepareToGet()),
-                            delay, TimeUnit.SECONDS);
+                          delay, TimeUnit.SECONDS);
                 } else {
                     checkSuccess(file.getStatus(), TStatusCode.SRM_FILE_PINNED);
                     initiateTransfer(file.getTransferURL());
@@ -670,8 +636,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             }
         }
 
-        private void initiateTransfer(URI turl)
-        {
+        private void initiateTransfer(URI turl) {
             FileTransfer transfer = agent.download(turl, getLocalFile());
 
             if (transfer == null) {
@@ -680,10 +645,9 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             } else {
                 setDescription("preparing for transfer using " + turl);
                 setTransfer(transfer);
-                Futures.addCallback(transfer, new FutureCallback<Void>(){
+                Futures.addCallback(transfer, new FutureCallback<Void>() {
                     @Override
-                    public void onSuccess(Void result)
-                    {
+                    public void onSuccess(Void result) {
                         setDescription("file transfer complete.");
                         setTransfer(null);
                         releaseFiles();
@@ -691,8 +655,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     }
 
                     @Override
-                    public void onFailure(Throwable t)
-                    {
+                    public void onFailure(Throwable t) {
                         setDescription(t.getMessage());
                         setTransfer(null);
                         releaseFiles();
@@ -702,8 +665,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             }
         }
 
-        private void releaseFiles()
-        {
+        private void releaseFiles() {
             if (getRequestToken() == null) {
                 return;
             }
@@ -712,12 +674,12 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
             String description = transferDescription;
             if (description.endsWith(".")) {
-                description = description.substring(0, description.length()-1);
+                description = description.substring(0, description.length() - 1);
             }
             setDescription(description + ", finalising transfer");
 
             SrmReleaseFilesRequest request = new SrmReleaseFilesRequest(getRequestToken(),
-                    null, new ArrayOfAnyURI(new URI[]{getSurl()}), false);
+                  null, new ArrayOfAnyURI(new URI[]{getSurl()}), false);
 
             try {
                 SrmReleaseFilesResponse response = srm.srmReleaseFiles(request);
@@ -725,16 +687,15 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                 setDescription(transferDescription);
             } catch (SRMException e) {
                 setDescription(_description + " but failed to release lock: " +
-                        "[" + e.getStatusCode() + "] " + e.getMessage());
+                      "[" + e.getStatusCode() + "] " + e.getMessage());
             } catch (RemoteException e) {
                 setDescription(_description + " but failed to release lock: " +
-                        e.getMessage());
+                      e.getMessage());
             }
         }
     }
 
-    private void checkForFailure(boolean isOk, String message) throws SRMException
-    {
+    private void checkForFailure(boolean isOk, String message) throws SRMException {
         genericCheck(isOk, SRMException::new, message);
     }
 }

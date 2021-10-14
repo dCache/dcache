@@ -1,5 +1,7 @@
 package org.dcache.chimera.spi;
 
+import static org.dcache.util.SqlHelper.tryToClose;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,8 +9,6 @@ import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
 import org.dcache.chimera.PgSQL95FsSqlDriver;
-
-import static org.dcache.util.SqlHelper.tryToClose;
 
 public class PgSQLDrivertProvider implements DBDriverProvider {
 
@@ -27,10 +27,10 @@ public class PgSQLDrivertProvider implements DBDriverProvider {
                  * server-side optimizations. IOW, CockroachDB is not PostgreSQL.
                  */
                 try (ResultSet rs = dbConnection.getMetaData().getSchemas()) {
-                    while(rs.next()) {
+                    while (rs.next()) {
                         String schema = rs.getString("TABLE_SCHEM");
                         if (schema.equalsIgnoreCase("crdb_internal")) {
-                             return false;
+                            return false;
                         }
                     }
                 }

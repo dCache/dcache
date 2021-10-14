@@ -1,8 +1,7 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
+import static java.util.Arrays.asList;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 import java.net.URI;
 import java.util.Collection;
@@ -10,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
@@ -30,12 +28,12 @@ import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
-import static java.util.Arrays.asList;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+public class SrmReleaseFiles {
 
-public class SrmReleaseFiles
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmReleaseFiles.class);
 
     private final AbstractStorageElement storage;
@@ -44,24 +42,23 @@ public class SrmReleaseFiles
     private SrmReleaseFilesResponse response;
 
     public SrmReleaseFiles(SRMUser user,
-                           SrmReleaseFilesRequest srmReleaseFilesRequest,
-                           AbstractStorageElement storage,
-                           SRM srm,
-                           String clientHost)
-    {
+          SrmReleaseFilesRequest srmReleaseFilesRequest,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.srmReleaseFilesRequest = srmReleaseFilesRequest;
         this.user = user;
         this.storage = storage;
     }
 
-    public SrmReleaseFilesResponse getResponse()
-    {
+    public SrmReleaseFilesResponse getResponse() {
         if (response == null) {
             try {
                 response = srmReleaseFiles();
             } catch (DataAccessException e) {
                 LOGGER.error(e.toString());
-                response = getFailedResponse("Internal database error, please try again.", TStatusCode.SRM_INTERNAL_ERROR);
+                response = getFailedResponse("Internal database error, please try again.",
+                      TStatusCode.SRM_INTERNAL_ERROR);
             } catch (SRMInvalidRequestException e) {
                 response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
             } catch (SRMInternalErrorException e) {
@@ -73,8 +70,7 @@ public class SrmReleaseFiles
     }
 
     private SrmReleaseFilesResponse srmReleaseFiles()
-            throws DataAccessException, SRMInvalidRequestException, SRMInternalErrorException
-    {
+          throws DataAccessException, SRMInvalidRequestException, SRMInternalErrorException {
         ArrayOfAnyURI arrayOfSURLs = srmReleaseFilesRequest.getArrayOfSURLs();
         org.apache.axis.types.URI[] surls;
         if (arrayOfSURLs != null) {
@@ -120,46 +116,45 @@ public class SrmReleaseFiles
                 }
                 bringOnlineRequest.updateStatus();
             } else {
-                throw new SRMInvalidRequestException("No such get or bring online request: " + requestToken);
+                throw new SRMInvalidRequestException(
+                      "No such get or bring online request: " + requestToken);
             }
             return new SrmReleaseFilesResponse(
-                    getSummaryReturnStatus(surlReturnStatuses),
-                    new ArrayOfTSURLReturnStatus(surlReturnStatuses));
+                  getSummaryReturnStatus(surlReturnStatuses),
+                  new ArrayOfTSURLReturnStatus(surlReturnStatuses));
         }
     }
 
-    private SrmReleaseFilesResponse unpinBySURLAndRequestToken(String requestToken, org.apache.axis.types.URI[] surls)
-            throws SRMInternalErrorException
-    {
+    private SrmReleaseFilesResponse unpinBySURLAndRequestToken(String requestToken,
+          org.apache.axis.types.URI[] surls)
+          throws SRMInternalErrorException {
         TSURLReturnStatus[] surlReturnStatusArray =
-                new TSURLReturnStatus[surls.length];
+              new TSURLReturnStatus[surls.length];
         for (int i = 0; i < surls.length; ++i) {
             org.apache.axis.types.URI surl = surls[i];
             TReturnStatus returnStatus = BringOnlineFileRequest.unpinBySURLandRequestToken(
-                    storage, user, requestToken, URI.create(surl.toString()));
+                  storage, user, requestToken, URI.create(surl.toString()));
             surlReturnStatusArray[i] = new TSURLReturnStatus(surl, returnStatus);
         }
 
         return new SrmReleaseFilesResponse(
-                getSummaryReturnStatus(surlReturnStatusArray),
-                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
+              getSummaryReturnStatus(surlReturnStatusArray),
+              new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
     }
 
     private SrmReleaseFilesResponse releaseBySURLs(org.apache.axis.types.URI[] surls)
-            throws DataAccessException, SRMInternalErrorException, SRMInvalidRequestException
-    {
+          throws DataAccessException, SRMInternalErrorException, SRMInvalidRequestException {
         URI[] uris = toUris(surls);
         Map<URI, TReturnStatus> returnStatuses = new HashMap<>();
         releaseFileRequestsBySURLs(uris, returnStatuses);
         unpinBySURLs(uris, returnStatuses);
         TSURLReturnStatus[] surlReturnStatusArray = toTSURLReturnStatus(surls, returnStatuses);
         return new SrmReleaseFilesResponse(
-                getSummaryReturnStatus(surlReturnStatusArray),
-                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
+              getSummaryReturnStatus(surlReturnStatusArray),
+              new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
     }
 
-    private void unpinBySURLs(URI[] surls, Map<URI, TReturnStatus> surlsMap)
-    {
+    private void unpinBySURLs(URI[] surls, Map<URI, TReturnStatus> surlsMap) {
         for (URI surl : surls) {
             try {
                 BringOnlineFileRequest.unpinBySURL(storage, user, surl);
@@ -167,21 +162,25 @@ public class SrmReleaseFiles
             } catch (Exception e) {
                 LOGGER.warn(e.toString());
                 TReturnStatus existingStatus = surlsMap.get(surl);
-                if (existingStatus == null || existingStatus.getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
-                    surlsMap.put(surl, new TReturnStatus(TStatusCode.SRM_FAILURE, "release failed: " + e));
+                if (existingStatus == null || existingStatus.getStatusCode()
+                      .equals(TStatusCode.SRM_SUCCESS)) {
+                    surlsMap.put(surl,
+                          new TReturnStatus(TStatusCode.SRM_FAILURE, "release failed: " + e));
                 }
             }
         }
     }
 
-    private static void releaseFileRequestsBySURLs(URI[] surls, Map<URI, TReturnStatus> returnStatuses)
-            throws DataAccessException, SRMInvalidRequestException, SRMInternalErrorException
-    {
+    private static void releaseFileRequestsBySURLs(URI[] surls,
+          Map<URI, TReturnStatus> returnStatuses)
+          throws DataAccessException, SRMInvalidRequestException, SRMInternalErrorException {
         for (BringOnlineFileRequest fileRequest : findBringOnlineFileRequestBySURLs(surls)) {
-            TReturnStatus returnStatus = fileRequest.release(fileRequest.getContainerRequest().getUser());
+            TReturnStatus returnStatus = fileRequest.release(
+                  fileRequest.getContainerRequest().getUser());
             URI surl = fileRequest.getSurl();
             TReturnStatus existingStatus = returnStatuses.get(surl);
-            if (existingStatus == null || existingStatus.getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
+            if (existingStatus == null || existingStatus.getStatusCode()
+                  .equals(TStatusCode.SRM_SUCCESS)) {
                 returnStatuses.put(surl, returnStatus);
             }
         }
@@ -190,18 +189,20 @@ public class SrmReleaseFiles
             TReturnStatus returnStatus = fileRequest.release();
             URI surl = fileRequest.getSurl();
             TReturnStatus existingStatus = returnStatuses.get(surl);
-            if (existingStatus == null || existingStatus.getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
+            if (existingStatus == null || existingStatus.getStatusCode()
+                  .equals(TStatusCode.SRM_SUCCESS)) {
                 returnStatuses.put(surl, returnStatus);
             }
         }
     }
 
     private static Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls)
-            throws DataAccessException
-    {
-        Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
+          throws DataAccessException {
+        Collection<URI> surlList =
+              (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<BringOnlineFileRequest> requests = new HashSet<>();
-        for (BringOnlineFileRequest request : SRM.getSRM().getActiveJobs(BringOnlineFileRequest.class)) {
+        for (BringOnlineFileRequest request : SRM.getSRM()
+              .getActiveJobs(BringOnlineFileRequest.class)) {
             if (surlList.contains(request.getSurl())) {
                 requests.add(request);
             }
@@ -209,9 +210,10 @@ public class SrmReleaseFiles
         return requests;
     }
 
-    private static Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls) throws DataAccessException
-    {
-        Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
+    private static Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls)
+          throws DataAccessException {
+        Collection<URI> surlList =
+              (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<GetFileRequest> requests = new HashSet<>();
         for (GetFileRequest request : SRM.getSRM().getActiveJobs(GetFileRequest.class)) {
             if (surlList.contains(request.getSurl())) {
@@ -221,8 +223,7 @@ public class SrmReleaseFiles
         return requests;
     }
 
-    private static URI[] toUris(org.apache.axis.types.URI[] uris)
-    {
+    private static URI[] toUris(org.apache.axis.types.URI[] uris) {
         URI[] result = new URI[uris.length];
         for (int i = 0; i < uris.length; i++) {
             result[i] = URI.create(uris[i].toString());
@@ -231,8 +232,7 @@ public class SrmReleaseFiles
     }
 
     private static TSURLReturnStatus[] toTSURLReturnStatus(org.apache.axis.types.URI[] surls,
-                                                           Map<URI, TReturnStatus> returnStatuses)
-    {
+          Map<URI, TReturnStatus> returnStatuses) {
         TSURLReturnStatus[] surlReturnStatusArray = new TSURLReturnStatus[surls.length];
         for (int i = 0; i < surls.length; i++) {
             TReturnStatus status = returnStatuses.get(URI.create(surls[i].toString()));
@@ -244,14 +244,12 @@ public class SrmReleaseFiles
         return surlReturnStatusArray;
     }
 
-    public static final SrmReleaseFilesResponse getFailedResponse(String error)
-    {
+    public static final SrmReleaseFilesResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
     public static final SrmReleaseFilesResponse getFailedResponse(String error,
-                                                                  TStatusCode statusCode)
-    {
+          TStatusCode statusCode) {
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
         srmReleaseFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmReleaseFilesResponse;

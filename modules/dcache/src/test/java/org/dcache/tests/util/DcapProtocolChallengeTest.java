@@ -1,11 +1,10 @@
 package org.dcache.tests.util;
 
-import org.junit.Test;
-
-import diskCacheV111.util.DCapProrocolChallenge;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import diskCacheV111.util.DCapProrocolChallenge;
+import org.junit.Test;
 
 public class DcapProtocolChallengeTest {
 
@@ -15,7 +14,6 @@ public class DcapProtocolChallengeTest {
 
         int id = 17;
         byte[] challenge = "DcapProtocolChallengeTest".getBytes();
-
 
         DCapProrocolChallenge challenge1 = new DCapProrocolChallenge(id, challenge);
         DCapProrocolChallenge challenge2 = new DCapProrocolChallenge(id, challenge);
@@ -31,7 +29,6 @@ public class DcapProtocolChallengeTest {
         int id1 = 17;
         int id2 = 19;
         byte[] challenge = "DcapProtocolChallengeTest".getBytes();
-
 
         DCapProrocolChallenge challenge1 = new DCapProrocolChallenge(id1, challenge);
         DCapProrocolChallenge challenge2 = new DCapProrocolChallenge(id2, challenge);
@@ -51,7 +48,8 @@ public class DcapProtocolChallengeTest {
         DCapProrocolChallenge pChallenge1 = new DCapProrocolChallenge(id, challenge1);
         DCapProrocolChallenge pChallenge2 = new DCapProrocolChallenge(id, challenge2);
 
-        assertFalse("Challenges with differ challenge can't be equal", pChallenge1.equals(pChallenge2));
+        assertFalse("Challenges with differ challenge can't be equal",
+              pChallenge1.equals(pChallenge2));
 
     }
 

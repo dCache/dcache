@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.billing.db;
 
 import java.util.Collection;
-
 import org.dcache.services.billing.db.data.IHistogramData;
 
 /**
@@ -73,36 +72,28 @@ public interface IBillingInfoAccess {
     void close();
 
     /**
-     * @param type
-     *            class of object to be retrieved
+     * @param type class of object to be retrieved
      * @return all existing objects of this type
      */
     <T> Collection<T> get(Class<T> type);
 
     /**
-     * @param type
-     *            class of object to be retrieved
-     * @param filter
-     *            expression
-     * @param values
-     *            to bind to filter
+     * @param type   class of object to be retrieved
+     * @param filter expression
+     * @param values to bind to filter
      * @return all matching objects of this type
      */
     <T> Collection<T> get(Class<T> type, String filter, Object... values);
 
     /**
-     * @param type
-     *            class of object to be retrieved
-     * @param filter
-     *            expression
-     * @param type
-     *            definitions for variables in filter
-     * @param values
-     *            to bind to parameters
+     * @param type   class of object to be retrieved
+     * @param filter expression
+     * @param type   definitions for variables in filter
+     * @param values to bind to parameters
      * @return all matching objects of this type
      */
     <T> Collection<T> get(Class<T> type, String filter, String parameters,
-                    Object... values);
+          Object... values);
 
     void initialize();
 
@@ -113,42 +104,33 @@ public interface IBillingInfoAccess {
     long getDroppedMessages();
 
     /**
-     * @param data
-     *            mapped type to be stored
+     * @param data mapped type to be stored
      */
     void put(IHistogramData data);
 
     /**
-     * @param type
-     *            class of object to be deleted
+     * @param type class of object to be deleted
      * @return number of objects deleted
      */
     <T> long remove(Class<T> type);
 
     /**
-     * @param type
-     *            class of object to be deleted
-     * @param filter
-     *            expression
-     * @param values
-     *            to bind to parameters
-      * @return number of objects deleted
+     * @param type   class of object to be deleted
+     * @param filter expression
+     * @param values to bind to parameters
+     * @return number of objects deleted
      */
     <T> long remove(Class<T> type, String filter, Object... values);
 
     /**
-     * @param type
-     *            class of object to be deleted
-     * @param filter
-     *            expression
-     * @param type
-     *            definitions for variables in filter
-     * @param values
-     *            to bind to parameters
-      * @return number of objects deleted
+     * @param type   class of object to be deleted
+     * @param filter expression
+     * @param type   definitions for variables in filter
+     * @param values to bind to parameters
+     * @return number of objects deleted
      */
     <T> long remove(Class<T> type, String filter, String parameters,
-                    Object... values);
+          Object... values);
 
     void aggregateDaily();
 

@@ -21,28 +21,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class LinkNearlineStorage extends FileSystemNearlineStorage
-{
-    public LinkNearlineStorage(String type, String name)
-    {
+public class LinkNearlineStorage extends FileSystemNearlineStorage {
+
+    public LinkNearlineStorage(String type, String name) {
         super(type, name);
     }
 
     @Override
-    protected void flush(Path path, Path externalPath) throws IOException
-    {
+    protected void flush(Path path, Path externalPath) throws IOException {
         Files.createLink(externalPath, path);
     }
 
     @Override
-    protected void stage(Path externalPath, Path path) throws IOException
-    {
+    protected void stage(Path externalPath, Path path) throws IOException {
         Files.createLink(path, externalPath);
     }
 
     @Override
-    protected void remove(Path externalPath) throws IOException
-    {
+    protected void remove(Path externalPath) throws IOException {
         Files.deleteIfExists(externalPath);
     }
 }

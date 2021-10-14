@@ -17,22 +17,21 @@
  */
 package org.dcache.util;
 
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
  * A variant of Spring's ThreadPoolTaskScheduler that preserves the CDC.
  */
-public class CDCThreadPoolTaskScheduler extends ThreadPoolTaskScheduler
-{
+public class CDCThreadPoolTaskScheduler extends ThreadPoolTaskScheduler {
+
     @Override
     protected ScheduledExecutorService createExecutor(int poolSize,
-            ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler)
-    {
-        ScheduledExecutorService service = super.createExecutor(poolSize, threadFactory, rejectedExecutionHandler);
+          ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler) {
+        ScheduledExecutorService service = super.createExecutor(poolSize, threadFactory,
+              rejectedExecutionHandler);
         return new CDCScheduledExecutorServiceDecorator(service);
     }
 }

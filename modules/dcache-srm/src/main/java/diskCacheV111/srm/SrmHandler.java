@@ -19,6 +19,38 @@
 
 package diskCacheV111.srm;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_ABORTED;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_AUTHENTICATION_FAILURE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_AUTHORIZATION_FAILURE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_CUSTOM_STATUS;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_DUPLICATION_ERROR;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_EXCEED_ALLOCATION;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FAILURE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FATAL_INTERNAL_ERROR;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FILE_BUSY;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FILE_LIFETIME_EXPIRED;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FILE_LOST;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_FILE_UNAVAILABLE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_INTERNAL_ERROR;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_INVALID_PATH;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_INVALID_REQUEST;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_NON_EMPTY_DIRECTORY;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_NOT_SUPPORTED;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_NO_FREE_SPACE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_NO_USER_SPACE;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_PARTIAL_SUCCESS;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_REQUEST_TIMED_OUT;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_SPACE_LIFETIME_EXPIRED;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_SUCCESS;
+import static org.dcache.srm.v2_2.TStatusCode.SRM_TOO_MANY_RESULTS;
+
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -31,19 +63,13 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import eu.emi.security.authn.x509.X509Credential;
-import org.apache.axis.types.URI;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
@@ -64,15 +90,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.security.auth.Subject;
+import org.apache.axis.types.URI;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
@@ -197,51 +221,51 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.stream.Collectors.*;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
-import static org.dcache.srm.v2_2.TStatusCode.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Utility class to submit requests to the SRM backend service.
  */
-public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
-{
+public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmHandler.class);
 
     private static final Set<TStatusCode> FAILURES =
-            ImmutableSet.of(SRM_FAILURE,
-                            SRM_AUTHENTICATION_FAILURE, SRM_AUTHORIZATION_FAILURE, SRM_INVALID_REQUEST, SRM_INVALID_PATH,
-                            SRM_FILE_LIFETIME_EXPIRED, SRM_SPACE_LIFETIME_EXPIRED, SRM_EXCEED_ALLOCATION, SRM_NO_USER_SPACE,
-                            SRM_NO_FREE_SPACE, SRM_DUPLICATION_ERROR, SRM_NON_EMPTY_DIRECTORY, SRM_TOO_MANY_RESULTS,
-                            SRM_INTERNAL_ERROR, SRM_FATAL_INTERNAL_ERROR, SRM_NOT_SUPPORTED, SRM_ABORTED,
-                            SRM_REQUEST_TIMED_OUT, SRM_FILE_BUSY, SRM_FILE_LOST, SRM_FILE_UNAVAILABLE, SRM_CUSTOM_STATUS);
+          ImmutableSet.of(SRM_FAILURE,
+                SRM_AUTHENTICATION_FAILURE, SRM_AUTHORIZATION_FAILURE, SRM_INVALID_REQUEST,
+                SRM_INVALID_PATH,
+                SRM_FILE_LIFETIME_EXPIRED, SRM_SPACE_LIFETIME_EXPIRED, SRM_EXCEED_ALLOCATION,
+                SRM_NO_USER_SPACE,
+                SRM_NO_FREE_SPACE, SRM_DUPLICATION_ERROR, SRM_NON_EMPTY_DIRECTORY,
+                SRM_TOO_MANY_RESULTS,
+                SRM_INTERNAL_ERROR, SRM_FATAL_INTERNAL_ERROR, SRM_NOT_SUPPORTED, SRM_ABORTED,
+                SRM_REQUEST_TIMED_OUT, SRM_FILE_BUSY, SRM_FILE_LOST, SRM_FILE_UNAVAILABLE,
+                SRM_CUSTOM_STATUS);
 
     private final RequestLogger[] loggers =
-            { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
+          {new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger()};
 
     private final RequestCounters<Class<?>> srmServerCounters = new RequestCounters<>("srmv2");
-    private final RequestExecutionTimeGauges<Class<?>> srmServerGauges = new RequestExecutionTimeGauges<>("srmv2");
+    private final RequestExecutionTimeGauges<Class<?>> srmServerGauges = new RequestExecutionTimeGauges<>(
+          "srmv2");
 
     private final CertificateFactory cf = CertificateFactories.newX509CertificateFactory();
 
     private final LoadingCache<Class, Optional<Field>> requestTokenFieldCache = CacheBuilder.newBuilder()
-            .build(new CacheLoader<Class, Optional<Field>>()
-            {
-                @Override
-                public Optional<Field> load(Class clazz)
-                {
-                    try {
-                        Field field = clazz.getDeclaredField("requestToken");
-                        field.setAccessible(true);
-                        return Optional.of(field);
-                    } catch (NoSuchFieldException e) {
-                        return Optional.empty();
-                    }
-                }
-            });
+          .build(new CacheLoader<Class, Optional<Field>>() {
+              @Override
+              public Optional<Field> load(Class clazz) {
+                  try {
+                      Field field = clazz.getDeclaredField("requestToken");
+                      field.setAccessible(true);
+                      return Optional.of(field);
+                  } catch (NoSuchFieldException e) {
+                      return Optional.empty();
+                  }
+              }
+          });
 
     private PathChildrenCache backends;
 
@@ -253,80 +277,70 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     private CuratorFramework client;
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         this.client = client;
     }
 
-    public void setClientDNSLookup(boolean clientDNSLookup)
-    {
+    public void setClientDNSLookup(boolean clientDNSLookup) {
         isClientDNSLookup = clientDNSLookup;
     }
 
     @Required
-    public void setSrmManagerStub(CellStub srmManagerStub)
-    {
+    public void setSrmManagerStub(CellStub srmManagerStub) {
         this.srmManagerStub = srmManagerStub;
     }
 
     @Required
-    public void setPingExtraInfo(ImmutableMap<String, String> pingExtraInfo)
-    {
+    public void setPingExtraInfo(ImmutableMap<String, String> pingExtraInfo) {
         this.pingExtraInfo = buildExtraInfo(pingExtraInfo);
     }
 
     @PostConstruct
-    public void init() throws Exception
-    {
+    public void init() throws Exception {
         backends = new PathChildrenCache(client, "/dcache/srm/backends", true);
         backends.start();
     }
 
     @PreDestroy
-    public void shutdown() throws IOException
-    {
+    public void shutdown() throws IOException {
         if (backends != null) {
             backends.close();
         }
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println(srmServerCounters);
         pw.println(srmServerGauges);
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 
-    private ArrayOfTExtraInfo buildExtraInfo(Map<String,String> items)
-    {
+    private ArrayOfTExtraInfo buildExtraInfo(Map<String, String> items) {
         if (items.isEmpty()) {
             return null;
         }
 
         TExtraInfo[] extraInfo = new TExtraInfo[items.size()];
         int i = 0;
-        for (Map.Entry<String,String> item : items.entrySet()) {
-            extraInfo [i++] = new TExtraInfo(item.getKey(), Strings.emptyToNull(item.getValue()));
+        for (Map.Entry<String, String> item : items.entrySet()) {
+            extraInfo[i++] = new TExtraInfo(item.getKey(), Strings.emptyToNull(item.getValue()));
         }
 
         return new ArrayOfTExtraInfo(extraInfo);
     }
 
-    public Object handleRequest(String requestName, Object request)  throws RemoteException
-    {
+    public Object handleRequest(String requestName, Object request) throws RemoteException {
         long startTimeStamp = System.currentTimeMillis();
         // requestName values all start "srm".  This is redundant, so may
         // be removed when creating the session id.  The initial character is
         // converted to lowercase, so "srmPrepareToPut" becomes "prepareToPut".
         String session = "srm2:" +
-                Character.toLowerCase(requestName.charAt(3)) +
-                requestName.substring(4);
+              Character.toLowerCase(requestName.charAt(3)) +
+              requestName.substring(4);
         try (JDC ignored = JDC.createSession(session)) {
             for (RequestLogger logger : loggers) {
                 logger.request(requestName, request);
@@ -343,26 +357,30 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 } catch (SRMInternalErrorException e) {
                     LOGGER.error(e.getMessage());
                     response = getFailedResponse(requestName, e.getStatusCode(),
-                                                 "Authentication failed (server log contains additional information).");
+                          "Authentication failed (server log contains additional information).");
                 } catch (SRMAuthorizationException e) {
                     LOGGER.info(e.getMessage());
-                    response = getFailedResponse(requestName, e.getStatusCode(), "Permission denied.");
+                    response = getFailedResponse(requestName, e.getStatusCode(),
+                          "Permission denied.");
                 } catch (SRMAuthenticationException e) {
                     LOGGER.warn(e.getMessage());
                     response = getFailedResponse(requestName, e.getStatusCode(),
-                                                 "Authentication failed (server log contains additional information).");
+                          "Authentication failed (server log contains additional information).");
                 } catch (SRMException e) {
                     response = getFailedResponse(requestName, e.getStatusCode(), e.getMessage());
                 } catch (PermissionDeniedCacheException e) {
-                    response = getFailedResponse(requestName, TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                    response = getFailedResponse(requestName, TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                          e.getMessage());
                 } catch (CacheException e) {
-                    response = getFailedResponse(requestName, TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
+                    response = getFailedResponse(requestName, TStatusCode.SRM_INTERNAL_ERROR,
+                          e.getMessage());
                 } catch (InterruptedException e) {
-                    response = getFailedResponse(requestName, TStatusCode.SRM_FATAL_INTERNAL_ERROR, "Server shutdown.");
+                    response = getFailedResponse(requestName, TStatusCode.SRM_FATAL_INTERNAL_ERROR,
+                          "Server shutdown.");
                 } catch (NoRouteToCellException e) {
                     LOGGER.error(e.getMessage());
                     response = getFailedResponse(requestName, TStatusCode.SRM_INTERNAL_ERROR,
-                                                 "SRM backend serving this request is currently offline.");
+                          "SRM backend serving this request is currently offline.");
                 }
             }
             long time = System.currentTimeMillis() - startTimeStamp;
@@ -374,33 +392,33 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     }
 
     private Object dispatch(Subject subject, String requestName, Object request)
-            throws CacheException, InterruptedException, SRMException, NoRouteToCellException
-    {
+          throws CacheException, InterruptedException, SRMException, NoRouteToCellException {
         X509Credential credential = Axis.getDelegatedCredential().orElse(null);
         String remoteIP = Axis.getRemoteAddress();
         String remoteHost = isClientDNSLookup ?
-                            InetAddresses.forUriString(remoteIP).getCanonicalHostName() : remoteIP;
+              InetAddresses.forUriString(remoteIP).getCanonicalHostName() : remoteIP;
 
-        Set<LoginAttribute> loginAttributes = AuthenticationHandler.getLoginAttributes(Axis.getHttpServletRequest());
+        Set<LoginAttribute> loginAttributes = AuthenticationHandler.getLoginAttributes(
+              Axis.getHttpServletRequest());
 
-        Function<Object,SrmRequest> toMessage =
-                req -> new SrmRequest(subject, loginAttributes, credential,
-                                      remoteHost, requestName, req);
+        Function<Object, SrmRequest> toMessage =
+              req -> new SrmRequest(subject, loginAttributes, credential,
+                    remoteHost, requestName, req);
         try {
             switch (requestName) {
-            case "srmGetRequestTokens":
-                return dispatch((SrmGetRequestTokensRequest) request, toMessage);
-            case "srmGetRequestSummary":
-                return dispatch((SrmGetRequestSummaryRequest) request, toMessage);
-            case "srmReleaseFiles":
-                return dispatch((SrmReleaseFilesRequest) request, toMessage);
-            case "srmExtendFileLifeTime":
-                // The token in extend file life time is optional, however since we do
-                // not support this request anyway, there is no harm in not doing any
-                // special processing.
-                return dispatch(request, toMessage);
-            default:
-                return dispatch(request, toMessage);
+                case "srmGetRequestTokens":
+                    return dispatch((SrmGetRequestTokensRequest) request, toMessage);
+                case "srmGetRequestSummary":
+                    return dispatch((SrmGetRequestSummaryRequest) request, toMessage);
+                case "srmReleaseFiles":
+                    return dispatch((SrmReleaseFilesRequest) request, toMessage);
+                case "srmExtendFileLifeTime":
+                    // The token in extend file life time is optional, however since we do
+                    // not support this request anyway, there is no harm in not doing any
+                    // special processing.
+                    return dispatch(request, toMessage);
+                default:
+                    return dispatch(request, toMessage);
             }
         } catch (ExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
@@ -411,39 +429,40 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
     }
 
-    private Object dispatch(SrmGetRequestTokensRequest request, Function<Object, SrmRequest> toMessage)
-            throws InterruptedException, ExecutionException
-    {
+    private Object dispatch(SrmGetRequestTokensRequest request,
+          Function<Object, SrmRequest> toMessage)
+          throws InterruptedException, ExecutionException {
         List<ListenableFuture<SrmResponse>> futures =
-                backends.getCurrentData().stream()
-                        .map(this::toCellPath)
-                        .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
-                        .collect(toList());
+              backends.getCurrentData().stream()
+                    .map(this::toCellPath)
+                    .map(path -> srmManagerStub.send(path, toMessage.apply(request),
+                          SrmResponse.class))
+                    .collect(toList());
         return mapGetRequestTokensResponse(Futures.allAsList(futures).get());
     }
 
-    private Object dispatch(SrmGetRequestSummaryRequest summaryRequest, Function<Object, SrmRequest> toMessage)
-            throws SRMInvalidRequestException, InterruptedException, CacheException, NoRouteToCellException
-    {
+    private Object dispatch(SrmGetRequestSummaryRequest summaryRequest,
+          Function<Object, SrmRequest> toMessage)
+          throws SRMInvalidRequestException, InterruptedException, CacheException, NoRouteToCellException {
         String[] requestTokens = summaryRequest.getArrayOfRequestTokens().getStringArray();
         if (requestTokens == null || requestTokens.length == 0) {
             throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
         }
         Map<String, ListenableFuture<TRequestSummary>> futureMap =
-                provideRequestSummary(toMessage, summaryRequest.getAuthorizationID(), requestTokens);
+              provideRequestSummary(toMessage, summaryRequest.getAuthorizationID(), requestTokens);
         return toGetRequestSummaryResponse(futureMap);
     }
 
     private Object dispatch(SrmReleaseFilesRequest request, Function<Object, SrmRequest> toMessage)
-            throws InterruptedException, ExecutionException, SRMInternalErrorException
-    {
+          throws InterruptedException, ExecutionException, SRMInternalErrorException {
         if (request.getRequestToken() == null) {
             // TODO: We could do the unpin calls here to avoid that each backend does that repeatedly
             List<ListenableFuture<SrmResponse>> futures =
-                    backends.getCurrentData().stream()
-                            .map(this::toCellPath)
-                            .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
-                            .collect(toList());
+                  backends.getCurrentData().stream()
+                        .map(this::toCellPath)
+                        .map(path -> srmManagerStub.send(path, toMessage.apply(request),
+                              SrmResponse.class))
+                        .collect(toList());
             return mapReleaseFilesResponse(request, Futures.allAsList(futures).get());
         } else {
             return dispatch((Object) request, toMessage);
@@ -451,21 +470,20 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     }
 
     private Object dispatch(Object request, Function<Object, SrmRequest> toMessage)
-            throws InterruptedException, ExecutionException, SRMInternalErrorException
-    {
+          throws InterruptedException, ExecutionException, SRMInternalErrorException {
         try (MappedRequest mapped = mapRequest(request)) {
             ListenableFuture<SrmResponse> future =
-                    (mapped == null)
-                    ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
-                    : srmManagerStub.send(mapped.getBackend(), toMessage.apply(mapped.getRequest()), SrmResponse.class);
+                  (mapped == null)
+                        ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
+                        : srmManagerStub.send(mapped.getBackend(),
+                              toMessage.apply(mapped.getRequest()), SrmResponse.class);
             return mapResponse(future.get());
         }
     }
 
     private SrmGetRequestSummaryResponse toGetRequestSummaryResponse(
-            Map<String, ListenableFuture<TRequestSummary>> futureMap)
-            throws InterruptedException, CacheException, NoRouteToCellException
-    {
+          Map<String, ListenableFuture<TRequestSummary>> futureMap)
+          throws InterruptedException, CacheException, NoRouteToCellException {
         boolean hasFailure = false;
         boolean hasSuccess = false;
         List<TRequestSummary> summaries = new ArrayList<>();
@@ -477,7 +495,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 Throwable cause = e.getCause();
                 if (cause instanceof SRMException) {
                     summaries.add(createRequestSummaryFailure(
-                            entry.getKey(), ((SRMException) cause).getStatusCode(), cause.getMessage()));
+                          entry.getKey(), ((SRMException) cause).getStatusCode(),
+                          cause.getMessage()));
                     hasFailure = true;
                 } else {
                     Throwables.throwIfInstanceOf(cause, CacheException.class);
@@ -492,78 +511,84 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         if (!hasFailure) {
             status = new TReturnStatus(SRM_SUCCESS, "All request statuses have been retrieved.");
         } else if (hasSuccess) {
-            status = new TReturnStatus(SRM_PARTIAL_SUCCESS, "Some request statuses have been retrieved.");
+            status = new TReturnStatus(SRM_PARTIAL_SUCCESS,
+                  "Some request statuses have been retrieved.");
         } else {
             status = new TReturnStatus(SRM_FAILURE, "No request statuses have been retrieved.");
         }
         return new SrmGetRequestSummaryResponse(
-                status, new ArrayOfTRequestSummary(summaries.toArray(TRequestSummary[]::new)));
+              status, new ArrayOfTRequestSummary(summaries.toArray(TRequestSummary[]::new)));
     }
 
     /**
-     * Provide request summaries for a collection of request tokens. The result is
-     * provided as a map from request token to a future request summary as the result is
-     * typically fetched asynchronously from the backends.
+     * Provide request summaries for a collection of request tokens. The result is provided as a map
+     * from request token to a future request summary as the result is typically fetched
+     * asynchronously from the backends.
      */
     private Map<String, ListenableFuture<TRequestSummary>> provideRequestSummary(
-            Function<Object,SrmRequest> toMessage, String authorizationId, String[] tokens)
-    {
+          Function<Object, SrmRequest> toMessage, String authorizationId, String[] tokens) {
         Function<String, Optional<CellPath>> optionalBackendOf =
-                token -> Optional.ofNullable(hasPrefix(token) ? backendOf(token) : null);
+              token -> Optional.ofNullable(hasPrefix(token) ? backendOf(token) : null);
         Map<Optional<CellPath>, Set<String>> tokensByBackend =
-                Stream.of(tokens).collect(groupingBy(optionalBackendOf, toSet()));
+              Stream.of(tokens).collect(groupingBy(optionalBackendOf, toSet()));
 
         return tokensByBackend.entrySet().stream()
-                .map(e -> e.getKey().isPresent()
-                          ? provideRequestSummaryForTokenWithBackend(toMessage, authorizationId, e.getValue(), e.getKey().get())
-                          : provideRequestSummaryForTokenWithoutBackend(e.getValue()))
-                .flatMap(m -> m.entrySet().stream())
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+              .map(e -> e.getKey().isPresent()
+                    ? provideRequestSummaryForTokenWithBackend(toMessage, authorizationId,
+                    e.getValue(), e.getKey().get())
+                    : provideRequestSummaryForTokenWithoutBackend(e.getValue()))
+              .flatMap(m -> m.entrySet().stream())
+              .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     /**
      * Returns a map of responses for a list of tokens that cannot be mapped to a backend.
      */
     private Map<String, ? extends ListenableFuture<TRequestSummary>> provideRequestSummaryForTokenWithoutBackend(
-            Collection<String> tokens)
-    {
-        return tokens.stream().collect(toMap(Function.identity(), this::provideRequestSummaryForTokenWithoutBackend));
+          Collection<String> tokens) {
+        return tokens.stream().collect(
+              toMap(Function.identity(), this::provideRequestSummaryForTokenWithoutBackend));
     }
 
     /**
-     * Returns a response for a token that cannot be mapped to a backend. The response depends
-     * on whether the token has a valid backend id prefix (backend if offline) or not (token is invalid).
+     * Returns a response for a token that cannot be mapped to a backend. The response depends on
+     * whether the token has a valid backend id prefix (backend if offline) or not (token is
+     * invalid).
      */
-    private ListenableFuture<TRequestSummary> provideRequestSummaryForTokenWithoutBackend(String token)
-    {
+    private ListenableFuture<TRequestSummary> provideRequestSummaryForTokenWithoutBackend(
+          String token) {
         if (!hasPrefix(token)) {
-            return Futures.immediateFailedFuture(new SRMInvalidRequestException("No such request token: " + token));
+            return Futures.immediateFailedFuture(
+                  new SRMInvalidRequestException("No such request token: " + token));
         }
         return Futures.immediateFailedFuture(
-                new SRMInvalidRequestException("Backend for request " + token + " is currently unavailable."));
+              new SRMInvalidRequestException(
+                    "Backend for request " + token + " is currently unavailable."));
     }
 
     /**
      * Returns a map of summaries from backends for a list of tokens.
      */
     private Map<String, ? extends ListenableFuture<TRequestSummary>> provideRequestSummaryForTokenWithBackend(
-            Function<Object, SrmRequest> toMessage, String authorizationId, Collection<String> tokens, CellPath backend)
-    {
+          Function<Object, SrmRequest> toMessage, String authorizationId, Collection<String> tokens,
+          CellPath backend) {
         SrmRequest msg = toMessage.apply(createRequestSummaryRequest(authorizationId, tokens));
-        ListenableFuture<SrmResponse> futureResponse = srmManagerStub.send(backend, msg, SrmResponse.class);
-        return transformToMap(tokens, futureResponse, r -> toRequestSummaries(tokens, r), this::translateBackendError);
+        ListenableFuture<SrmResponse> futureResponse = srmManagerStub.send(backend, msg,
+              SrmResponse.class);
+        return transformToMap(tokens, futureResponse, r -> toRequestSummaries(tokens, r),
+              this::translateBackendError);
     }
 
     /**
      * Injects a summary into a settable future, translating errors that indicate failure to obtain
      * a summary to a failure future.
      */
-    private void translateBackendError(TRequestSummary summary, SettableFuture<TRequestSummary> future)
-    {
+    private void translateBackendError(TRequestSummary summary,
+          SettableFuture<TRequestSummary> future) {
         TStatusCode statusCode = summary.getStatus().getStatusCode();
         if (statusCode == SRM_INVALID_REQUEST) {
             future.setException(new SRMInvalidRequestException(
-                    "No such request token: " + summary.getRequestToken()));
+                  "No such request token: " + summary.getRequestToken()));
         } else if (statusCode == SRM_FAILURE && summary.getRequestType() == null) {
             future.setException(new SRMException(summary.getStatus().getExplanation()));
         } else {
@@ -574,94 +599,94 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
     /**
      * Returns a backend request summary request for a list of tokens.
      */
-    private SrmGetRequestSummaryRequest createRequestSummaryRequest(String authorizationId, Collection<String> tokens)
-    {
-        String[] backendTokens = tokens.stream().map(SrmHandler::backendTokenOf).toArray(String[]::new);
+    private SrmGetRequestSummaryRequest createRequestSummaryRequest(String authorizationId,
+          Collection<String> tokens) {
+        String[] backendTokens = tokens.stream().map(SrmHandler::backendTokenOf)
+              .toArray(String[]::new);
         return new SrmGetRequestSummaryRequest(new ArrayOfString(backendTokens), authorizationId);
     }
 
     /**
      * Returns a map of request summaries for a backend response.
      */
-    private Map<String, TRequestSummary> toRequestSummaries(Collection<String> tokens, SrmResponse response)
-    {
-        TRequestSummary[] summaries = ((SrmGetRequestSummaryResponse) response.getResponse()).getArrayOfRequestSummaries().getSummaryArray();
+    private Map<String, TRequestSummary> toRequestSummaries(Collection<String> tokens,
+          SrmResponse response) {
+        TRequestSummary[] summaries = ((SrmGetRequestSummaryResponse) response.getResponse()).getArrayOfRequestSummaries()
+              .getSummaryArray();
         Map<String, TRequestSummary> summaryByBackendToken =
-                Stream.of(summaries).collect(toMap(TRequestSummary::getRequestToken, Function.identity()));
+              Stream.of(summaries)
+                    .collect(toMap(TRequestSummary::getRequestToken, Function.identity()));
         return tokens.stream()
-                .collect(toMap(token -> token,
-                               token -> mapRequestSummary(token, summaryByBackendToken.get(backendTokenOf(token)))));
+              .collect(toMap(token -> token,
+                    token -> mapRequestSummary(token,
+                          summaryByBackendToken.get(backendTokenOf(token)))));
     }
 
     /**
      * Map a backend request summary to a frontend request summary.
      */
-    private TRequestSummary mapRequestSummary(String token, TRequestSummary summary)
-    {
+    private TRequestSummary mapRequestSummary(String token, TRequestSummary summary) {
         return (summary == null)
-               ? createRequestSummaryFailure(token, SRM_INVALID_REQUEST, "No such request token: " + token)
-               : new TRequestSummary(token, summary.getStatus(), summary.getRequestType(),
-                                     summary.getTotalNumFilesInRequest(), summary.getNumOfCompletedFiles(),
-                                     summary.getNumOfWaitingFiles(), summary.getNumOfFailedFiles());
+              ? createRequestSummaryFailure(token, SRM_INVALID_REQUEST,
+              "No such request token: " + token)
+              : new TRequestSummary(token, summary.getStatus(), summary.getRequestType(),
+                    summary.getTotalNumFilesInRequest(), summary.getNumOfCompletedFiles(),
+                    summary.getNumOfWaitingFiles(), summary.getNumOfFailedFiles());
     }
 
-    private static TRequestSummary createRequestSummaryFailure(String token, TStatusCode status, String explanation)
-    {
+    private static TRequestSummary createRequestSummaryFailure(String token, TStatusCode status,
+          String explanation) {
         return new TRequestSummary(token, new TReturnStatus(status, explanation),
-                                   null, null, null, null, null);
+              null, null, null, null, null);
     }
 
     /**
      * Transforms a future to a map of future values.
-     *
+     * <p>
      * The return map contains {@code keys} elements. Each key is mapped to a future value. If
      * {@code future} fails, all returned futures fail with the same error. Otherwise {@code mapper}
      * maps the return value of {@code future} to a map of values. {@code acceptor} is called for
      * each value, applying the value to the settable future in the returned map.
      *
-     * @param keys The keys of the map to return.
-     * @param future The future providing the input value.
-     * @param mapper A function that maps the future input to a map of output values.
+     * @param keys       The keys of the map to return.
+     * @param future     The future providing the input value.
+     * @param mapper     A function that maps the future input to a map of output values.
      * @param applicator Consumer that applies an output value to a future output value.
      */
     private static <K, T, V> Map<K, ? extends ListenableFuture<V>> transformToMap(
-            Collection<K> keys, ListenableFuture<T> future,
-            Function<T, Map<K, V>> mapper,
-            BiConsumer<V, SettableFuture<V>> applicator)
-    {
-        Map<K, SettableFuture<V>> result = keys.stream().collect(toMap(key -> key, key -> SettableFuture.create()));
-        Futures.addCallback(future, new FutureCallback<T>()
-        {
+          Collection<K> keys, ListenableFuture<T> future,
+          Function<T, Map<K, V>> mapper,
+          BiConsumer<V, SettableFuture<V>> applicator) {
+        Map<K, SettableFuture<V>> result = keys.stream()
+              .collect(toMap(key -> key, key -> SettableFuture.create()));
+        Futures.addCallback(future, new FutureCallback<T>() {
             @Override
-            public void onSuccess(T t)
-            {
+            public void onSuccess(T t) {
                 Map<K, V> map = mapper.apply(t);
                 result.forEach((key, f) -> applicator.accept(map.get(key), f));
             }
 
             @Override
-            public void onFailure(Throwable t)
-            {
+            public void onFailure(Throwable t) {
                 result.values().forEach(f -> f.setException(t));
             }
         });
         return result;
     }
 
-    private CellPath toCellPath(ChildData data)
-    {
+    private CellPath toCellPath(ChildData data) {
         return new CellPath(new String(data.getData(), US_ASCII));
     }
 
     /**
      * Encapsulates the result of mapping a request to a backend.
-     *
-     * The request is modified inline to reflect the internal request token. This
-     * avoids copying the request, however the modification must be undone by
-     * closing this MappedRequest once the mapped request is no longer needed.
+     * <p>
+     * The request is modified inline to reflect the internal request token. This avoids copying the
+     * request, however the modification must be undone by closing this MappedRequest once the
+     * mapped request is no longer needed.
      */
-    private class MappedRequest implements AutoCloseable
-    {
+    private class MappedRequest implements AutoCloseable {
+
         private final Object request;
 
         private final CellPath backend;
@@ -670,8 +695,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 
         private final String token;
 
-        MappedRequest(Object request, CellPath backend, Field field, String token) throws IllegalAccessException
-        {
+        MappedRequest(Object request, CellPath backend, Field field, String token)
+              throws IllegalAccessException {
             this.request = request;
             this.backend = backend;
             this.field = field;
@@ -679,19 +704,16 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             field.set(request, backendTokenOf(token));
         }
 
-        CellPath getBackend()
-        {
+        CellPath getBackend() {
             return backend;
         }
 
-        Object getRequest()
-        {
+        Object getRequest() {
             return request;
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             try {
                 field.set(request, token);
             } catch (IllegalAccessException e) {
@@ -700,8 +722,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
     }
 
-    private MappedRequest mapRequest(Object request) throws SRMInternalErrorException
-    {
+    private MappedRequest mapRequest(Object request) throws SRMInternalErrorException {
         Optional<Field> field = requestTokenFieldCache.getUnchecked(request.getClass());
         if (field.isPresent()) {
             try {
@@ -710,7 +731,8 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 if (hasPrefix(token)) {
                     CellPath path = backendOf(token);
                     if (path == null) {
-                        throw new SRMInternalErrorException("SRM backend serving this request token is currently offline.");
+                        throw new SRMInternalErrorException(
+                              "SRM backend serving this request token is currently offline.");
                     }
                     return new MappedRequest(request, path, f, token);
                 }
@@ -721,28 +743,30 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
-    private SrmGetRequestTokensResponse mapGetRequestTokensResponse(List<SrmResponse> responses)
-    {
+    private SrmGetRequestTokensResponse mapGetRequestTokensResponse(List<SrmResponse> responses) {
         List<TRequestTokenReturn> tokens = new ArrayList<>();
         for (SrmResponse srmResponse : responses) {
             SrmGetRequestTokensResponse response =
-                    (SrmGetRequestTokensResponse) srmResponse.getResponse();
+                  (SrmGetRequestTokensResponse) srmResponse.getResponse();
             if (response.getReturnStatus().getStatusCode() != SRM_SUCCESS) {
                 return response;
             }
             for (TRequestTokenReturn token : response.getArrayOfRequestTokens().getTokenArray()) {
-                tokens.add(new TRequestTokenReturn(prefix(srmResponse.getId(), token.getRequestToken()),
-                                                   token.getCreatedAtTime()));
+                tokens.add(
+                      new TRequestTokenReturn(prefix(srmResponse.getId(), token.getRequestToken()),
+                            token.getCreatedAtTime()));
             }
         }
         ArrayOfTRequestTokenReturn arrayOfRequestTokens = new ArrayOfTRequestTokenReturn(
-                tokens.toArray(TRequestTokenReturn[]::new));
-        return new SrmGetRequestTokensResponse(new TReturnStatus(SRM_SUCCESS, "Request processed successfully."), arrayOfRequestTokens);
+              tokens.toArray(TRequestTokenReturn[]::new));
+        return new SrmGetRequestTokensResponse(
+              new TReturnStatus(SRM_SUCCESS, "Request processed successfully."),
+              arrayOfRequestTokens);
     }
 
-    private SrmReleaseFilesResponse mapReleaseFilesResponse(SrmReleaseFilesRequest request, List<SrmResponse> responses)
-    {
-        Map<URI,TSURLReturnStatus> map = new HashMap<>();
+    private SrmReleaseFilesResponse mapReleaseFilesResponse(SrmReleaseFilesRequest request,
+          List<SrmResponse> responses) {
+        Map<URI, TSURLReturnStatus> map = new HashMap<>();
         for (SrmResponse srmResponse : responses) {
             SrmReleaseFilesResponse response = (SrmReleaseFilesResponse) srmResponse.getResponse();
             for (TSURLReturnStatus status : response.getArrayOfFileStatuses().getStatusArray()) {
@@ -761,18 +785,19 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
 
         TSURLReturnStatus[] statuses = Stream.of(request.getArrayOfSURLs().getUrlArray())
-                .map(surl -> {
-                    TSURLReturnStatus status = map.get(surl);
-                    return (status != null) ? status : new TSURLReturnStatus(surl, new TReturnStatus(SRM_INVALID_PATH,
-                                                                                                     "File not found"));
-                })
-                .toArray(TSURLReturnStatus[]::new);
+              .map(surl -> {
+                  TSURLReturnStatus status = map.get(surl);
+                  return (status != null) ? status
+                        : new TSURLReturnStatus(surl, new TReturnStatus(SRM_INVALID_PATH,
+                              "File not found"));
+              })
+              .toArray(TSURLReturnStatus[]::new);
 
-        return new SrmReleaseFilesResponse(getSummaryReturnStatus(statuses), new ArrayOfTSURLReturnStatus(statuses));
+        return new SrmReleaseFilesResponse(getSummaryReturnStatus(statuses),
+              new ArrayOfTSURLReturnStatus(statuses));
     }
 
-    private Object mapResponse(SrmResponse response)
-    {
+    private Object mapResponse(SrmResponse response) {
         Object o = response.getResponse();
         Optional<Field> field = requestTokenFieldCache.getUnchecked(o.getClass());
         field.ifPresent(f -> {
@@ -785,8 +810,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return o;
     }
 
-    private CellPath backendOf(String prefixedToken)
-    {
+    private CellPath backendOf(String prefixedToken) {
         checkArgument(hasPrefix(prefixedToken));
         String path = SrmService.getZooKeeperBackendPath(backendIdOf(prefixedToken));
         ChildData data = backends.getCurrentData(path);
@@ -796,36 +820,33 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
-    private static String backendIdOf(String prefixedToken)
-    {
+    private static String backendIdOf(String prefixedToken) {
         return prefixedToken.substring(0, 8);
     }
 
-    private static String backendTokenOf(String prefixedToken)
-    {
+    private static String backendTokenOf(String prefixedToken) {
         checkArgument(hasPrefix(prefixedToken));
         return prefixedToken.substring(9);
     }
 
-    private static boolean hasPrefix(String token)
-    {
+    private static boolean hasPrefix(String token) {
         return token != null && token.length() > 9 && token.charAt(8) == ':';
     }
 
-    private static String prefix(String backend, String backendToken)
-    {
+    private static String prefix(String backend, String backendToken) {
         return backend + ":" + backendToken;
     }
 
-    private Object getFailedResponse(String requestName, TStatusCode statusCode, String errorMessage)
-            throws RemoteException
-    {
+    private Object getFailedResponse(String requestName, TStatusCode statusCode,
+          String errorMessage)
+          throws RemoteException {
         char first = requestName.charAt(0);
-        String capitalizedRequestName =  Character.isUpperCase(first) ? requestName :
-                                         (Character.toUpperCase(first) + requestName.substring(1));
+        String capitalizedRequestName = Character.isUpperCase(first) ? requestName :
+              (Character.toUpperCase(first) + requestName.substring(1));
 
         try {
-            Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
+            Class<?> responseClass = Class.forName(
+                  "org.dcache.srm.v2_2." + capitalizedRequestName + "Response");
             Constructor<?> responseConstructor = responseClass.getConstructor();
             Object response;
             try {
@@ -836,7 +857,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             }
             try {
                 Method setReturnStatus = responseClass
-                        .getMethod("setReturnStatus", TReturnStatus.class);
+                      .getMethod("setReturnStatus", TReturnStatus.class);
                 setReturnStatus.setAccessible(true);
                 try {
                     setReturnStatus.invoke(response, new TReturnStatus(statusCode, errorMessage));
@@ -859,24 +880,24 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
     }
 
-    private interface RequestLogger
-    {
+    private interface RequestLogger {
+
         void request(String requestName, Object request);
+
         void response(String requestName, Object request, Object response, Subject user, long time);
     }
 
-    public class AccessLogger implements RequestLogger
-    {
+    public class AccessLogger implements RequestLogger {
+
         private final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.srm");
 
         @Override
-        public void request(String requestName, Object request)
-        {
+        public void request(String requestName, Object request) {
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, Subject user, long time)
-        {
+        public void response(String requestName, Object request, Object response, Subject user,
+              long time) {
             if (ACCESS_LOGGER.isErrorEnabled()) {
                 TReturnStatus status = getReturnStatus(response);
                 boolean isFailure = status != null && FAILURES.contains(status.getStatusCode());
@@ -884,8 +905,10 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                     return;
                 }
 
-                NetLoggerBuilder.Level level = isFailure ? NetLoggerBuilder.Level.ERROR : NetLoggerBuilder.Level.INFO;
-                NetLoggerBuilder log = new NetLoggerBuilder(level, "org.dcache.srm.request").omitNullValues();
+                NetLoggerBuilder.Level level =
+                      isFailure ? NetLoggerBuilder.Level.ERROR : NetLoggerBuilder.Level.INFO;
+                NetLoggerBuilder log = new NetLoggerBuilder(level,
+                      "org.dcache.srm.request").omitNullValues();
                 log.add("session", JDC.getSession());
                 log.add("socket.remote", Axis.getRemoteSocketAddress());
                 log.add("request.method", requestName);
@@ -911,308 +934,317 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
 
         private void logOperationSpecific(NetLoggerBuilder log, String operation,
-                Object request, Object response)
-        {
+              Object request, Object response) {
             switch (operation) {
-            case "srmAbortFiles":
-                log(log, (SrmAbortFilesRequest) request, (SrmAbortFilesResponse) response);
-                break;
-            case "srmAbortRequest":
-                log(log, (SrmAbortRequestRequest) request, (SrmAbortRequestResponse) response);
-                break;
-            case "srmBringOnline":
-                log(log, (SrmBringOnlineRequest) request, (SrmBringOnlineResponse) response);
-                break;
-            case "srmChangeSpaceForFiles":
-                log(log, (SrmChangeSpaceForFilesRequest) request, (SrmChangeSpaceForFilesResponse) response);
-                break;
-            case "srmCheckPermission":
-                log(log, (SrmCheckPermissionRequest) request, (SrmCheckPermissionResponse) response);
-                break;
-            case "srmCopy":
-                log(log, (SrmCopyRequest) request, (SrmCopyResponse) response);
-                break;
-            case "srmExtendFileLifeTimeInSpace":
-                log(log, (SrmExtendFileLifeTimeInSpaceRequest) request, (SrmExtendFileLifeTimeInSpaceResponse) response);
-                break;
-            case "srmExtendFileLifeTime":
-                log(log, (SrmExtendFileLifeTimeRequest) request, (SrmExtendFileLifeTimeResponse) response);
-                break;
-            case "srmGetPermission":
-                log(log, (SrmGetPermissionRequest) request, (SrmGetPermissionResponse) response);
-                break;
-            case "srmGetRequestSummary":
-                log(log, (SrmGetRequestSummaryRequest) request, (SrmGetRequestSummaryResponse) response);
-                break;
-            case "srmGetRequestTokens":
-                log(log, (SrmGetRequestTokensRequest) request, (SrmGetRequestTokensResponse) response);
-                break;
-            case "srmGetSpaceMetaData":
-                log(log, (SrmGetSpaceMetaDataRequest) request, (SrmGetSpaceMetaDataResponse) response);
-                break;
-            case "srmGetSpaceTokens":
-                log(log, (SrmGetSpaceTokensRequest) request, (SrmGetSpaceTokensResponse) response);
-                break;
-            case "srmGetTransferProtocols":
-                log(log, (SrmGetTransferProtocolsRequest) request, (SrmGetTransferProtocolsResponse) response);
-                break;
-            case "srmLs":
-                log(log, (SrmLsRequest) request, (SrmLsResponse) response);
-                break;
-            case "srmMkdir":
-                log(log, (SrmMkdirRequest) request, (SrmMkdirResponse) response);
-                break;
-            case "srmMv":
-                log(log, (SrmMvRequest) request, (SrmMvResponse) response);
-                break;
-            case "srmPing":
-                log(log, (SrmPingRequest) request, (SrmPingResponse) response);
-                break;
-            case "srmPrepareToGet":
-                log(log, (SrmPrepareToGetRequest) request, (SrmPrepareToGetResponse) response);
-                break;
-            case "srmPrepareToPut":
-                log(log, (SrmPrepareToPutRequest) request, (SrmPrepareToPutResponse) response);
-                break;
-            case "srmPurgeFromSpace":
-                log(log, (SrmPurgeFromSpaceRequest) request, (SrmPurgeFromSpaceResponse) response);
-                break;
-            case "srmPutDone":
-                log(log, (SrmPutDoneRequest) request, (SrmPutDoneResponse) response);
-                break;
-            case "srmReleaseFiles":
-                log(log, (SrmReleaseFilesRequest) request, (SrmReleaseFilesResponse) response);
-                break;
-            case "srmReleaseSpace":
-                log(log, (SrmReleaseSpaceRequest) request, (SrmReleaseSpaceResponse) response);
-                break;
-            case "srmReserveSpace":
-                log(log, (SrmReserveSpaceRequest) request, (SrmReserveSpaceResponse) response);
-                break;
-            case "srmResumeRequest":
-                log(log, (SrmResumeRequestRequest) request, (SrmResumeRequestResponse) response);
-                break;
-            case "srmRmdir":
-                log(log, (SrmRmdirRequest) request, (SrmRmdirResponse) response);
-                break;
-            case "srmRm":
-                log(log, (SrmRmRequest) request, (SrmRmResponse) response);
-                break;
-            case "srmSetPermission":
-                log(log, (SrmSetPermissionRequest) request, (SrmSetPermissionResponse) response);
-                break;
-            case "srmStatusOfBringOnlineRequest":
-                log(log, (SrmStatusOfBringOnlineRequestRequest) request, (SrmStatusOfBringOnlineRequestResponse) response);
-                break;
-            case "srmStatusOfChangeSpaceForFilesRequest":
-                log(log, (SrmStatusOfChangeSpaceForFilesRequestRequest) request, (SrmStatusOfChangeSpaceForFilesRequestResponse) response);
-                break;
-            case "srmStatusOfCopyRequest":
-                log(log, (SrmStatusOfCopyRequestRequest) request, (SrmStatusOfCopyRequestResponse) response);
-                break;
-            case "srmStatusOfGetRequest":
-                log(log, (SrmStatusOfGetRequestRequest) request, (SrmStatusOfGetRequestResponse) response);
-                break;
-            case "srmStatusOfLsRequest":
-                log(log, (SrmStatusOfLsRequestRequest) request, (SrmStatusOfLsRequestResponse) response);
-                break;
-            case "srmStatusOfPutRequest":
-                log(log, (SrmStatusOfPutRequestRequest) request, (SrmStatusOfPutRequestResponse) response);
-                break;
-            case "srmStatusOfReserveSpaceRequest":
-                log(log, (SrmStatusOfReserveSpaceRequestRequest) request, (SrmStatusOfReserveSpaceRequestResponse) response);
-                break;
-            case "srmStatusOfUpdateSpaceRequest":
-                log(log, (SrmStatusOfUpdateSpaceRequestRequest) request, (SrmStatusOfUpdateSpaceRequestResponse) response);
-                break;
-            case "srmSuspendRequest":
-                log(log, (SrmSuspendRequestRequest) request, (SrmSuspendRequestResponse) response);
-                break;
-            case "srmUpdateSpace":
-                log(log, (SrmUpdateSpaceRequest) request, (SrmUpdateSpaceResponse) response);
-                break;
-            default:
-                LOGGER.error("Unknown SRM request {}", operation);
+                case "srmAbortFiles":
+                    log(log, (SrmAbortFilesRequest) request, (SrmAbortFilesResponse) response);
+                    break;
+                case "srmAbortRequest":
+                    log(log, (SrmAbortRequestRequest) request, (SrmAbortRequestResponse) response);
+                    break;
+                case "srmBringOnline":
+                    log(log, (SrmBringOnlineRequest) request, (SrmBringOnlineResponse) response);
+                    break;
+                case "srmChangeSpaceForFiles":
+                    log(log, (SrmChangeSpaceForFilesRequest) request,
+                          (SrmChangeSpaceForFilesResponse) response);
+                    break;
+                case "srmCheckPermission":
+                    log(log, (SrmCheckPermissionRequest) request,
+                          (SrmCheckPermissionResponse) response);
+                    break;
+                case "srmCopy":
+                    log(log, (SrmCopyRequest) request, (SrmCopyResponse) response);
+                    break;
+                case "srmExtendFileLifeTimeInSpace":
+                    log(log, (SrmExtendFileLifeTimeInSpaceRequest) request,
+                          (SrmExtendFileLifeTimeInSpaceResponse) response);
+                    break;
+                case "srmExtendFileLifeTime":
+                    log(log, (SrmExtendFileLifeTimeRequest) request,
+                          (SrmExtendFileLifeTimeResponse) response);
+                    break;
+                case "srmGetPermission":
+                    log(log, (SrmGetPermissionRequest) request,
+                          (SrmGetPermissionResponse) response);
+                    break;
+                case "srmGetRequestSummary":
+                    log(log, (SrmGetRequestSummaryRequest) request,
+                          (SrmGetRequestSummaryResponse) response);
+                    break;
+                case "srmGetRequestTokens":
+                    log(log, (SrmGetRequestTokensRequest) request,
+                          (SrmGetRequestTokensResponse) response);
+                    break;
+                case "srmGetSpaceMetaData":
+                    log(log, (SrmGetSpaceMetaDataRequest) request,
+                          (SrmGetSpaceMetaDataResponse) response);
+                    break;
+                case "srmGetSpaceTokens":
+                    log(log, (SrmGetSpaceTokensRequest) request,
+                          (SrmGetSpaceTokensResponse) response);
+                    break;
+                case "srmGetTransferProtocols":
+                    log(log, (SrmGetTransferProtocolsRequest) request,
+                          (SrmGetTransferProtocolsResponse) response);
+                    break;
+                case "srmLs":
+                    log(log, (SrmLsRequest) request, (SrmLsResponse) response);
+                    break;
+                case "srmMkdir":
+                    log(log, (SrmMkdirRequest) request, (SrmMkdirResponse) response);
+                    break;
+                case "srmMv":
+                    log(log, (SrmMvRequest) request, (SrmMvResponse) response);
+                    break;
+                case "srmPing":
+                    log(log, (SrmPingRequest) request, (SrmPingResponse) response);
+                    break;
+                case "srmPrepareToGet":
+                    log(log, (SrmPrepareToGetRequest) request, (SrmPrepareToGetResponse) response);
+                    break;
+                case "srmPrepareToPut":
+                    log(log, (SrmPrepareToPutRequest) request, (SrmPrepareToPutResponse) response);
+                    break;
+                case "srmPurgeFromSpace":
+                    log(log, (SrmPurgeFromSpaceRequest) request,
+                          (SrmPurgeFromSpaceResponse) response);
+                    break;
+                case "srmPutDone":
+                    log(log, (SrmPutDoneRequest) request, (SrmPutDoneResponse) response);
+                    break;
+                case "srmReleaseFiles":
+                    log(log, (SrmReleaseFilesRequest) request, (SrmReleaseFilesResponse) response);
+                    break;
+                case "srmReleaseSpace":
+                    log(log, (SrmReleaseSpaceRequest) request, (SrmReleaseSpaceResponse) response);
+                    break;
+                case "srmReserveSpace":
+                    log(log, (SrmReserveSpaceRequest) request, (SrmReserveSpaceResponse) response);
+                    break;
+                case "srmResumeRequest":
+                    log(log, (SrmResumeRequestRequest) request,
+                          (SrmResumeRequestResponse) response);
+                    break;
+                case "srmRmdir":
+                    log(log, (SrmRmdirRequest) request, (SrmRmdirResponse) response);
+                    break;
+                case "srmRm":
+                    log(log, (SrmRmRequest) request, (SrmRmResponse) response);
+                    break;
+                case "srmSetPermission":
+                    log(log, (SrmSetPermissionRequest) request,
+                          (SrmSetPermissionResponse) response);
+                    break;
+                case "srmStatusOfBringOnlineRequest":
+                    log(log, (SrmStatusOfBringOnlineRequestRequest) request,
+                          (SrmStatusOfBringOnlineRequestResponse) response);
+                    break;
+                case "srmStatusOfChangeSpaceForFilesRequest":
+                    log(log, (SrmStatusOfChangeSpaceForFilesRequestRequest) request,
+                          (SrmStatusOfChangeSpaceForFilesRequestResponse) response);
+                    break;
+                case "srmStatusOfCopyRequest":
+                    log(log, (SrmStatusOfCopyRequestRequest) request,
+                          (SrmStatusOfCopyRequestResponse) response);
+                    break;
+                case "srmStatusOfGetRequest":
+                    log(log, (SrmStatusOfGetRequestRequest) request,
+                          (SrmStatusOfGetRequestResponse) response);
+                    break;
+                case "srmStatusOfLsRequest":
+                    log(log, (SrmStatusOfLsRequestRequest) request,
+                          (SrmStatusOfLsRequestResponse) response);
+                    break;
+                case "srmStatusOfPutRequest":
+                    log(log, (SrmStatusOfPutRequestRequest) request,
+                          (SrmStatusOfPutRequestResponse) response);
+                    break;
+                case "srmStatusOfReserveSpaceRequest":
+                    log(log, (SrmStatusOfReserveSpaceRequestRequest) request,
+                          (SrmStatusOfReserveSpaceRequestResponse) response);
+                    break;
+                case "srmStatusOfUpdateSpaceRequest":
+                    log(log, (SrmStatusOfUpdateSpaceRequestRequest) request,
+                          (SrmStatusOfUpdateSpaceRequestResponse) response);
+                    break;
+                case "srmSuspendRequest":
+                    log(log, (SrmSuspendRequestRequest) request,
+                          (SrmSuspendRequestResponse) response);
+                    break;
+                case "srmUpdateSpace":
+                    log(log, (SrmUpdateSpaceRequest) request, (SrmUpdateSpaceResponse) response);
+                    break;
+                default:
+                    LOGGER.error("Unknown SRM request {}", operation);
             }
         }
 
-        private void log(NetLoggerBuilder log, Object request, Object response)
-        {
+        private void log(NetLoggerBuilder log, Object request, Object response) {
             // by default, add no additional logging.
         }
 
         private void log(NetLoggerBuilder log, SrmAbortFilesRequest request,
-                SrmAbortFilesResponse response)
-        {
+              SrmAbortFilesResponse response) {
             logArray(log, "request.surl", request.getArrayOfSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTSURLReturnStatus::getStatusArray,
-                    TSURLReturnStatus::getStatus);
+                  ArrayOfTSURLReturnStatus::getStatusArray,
+                  TSURLReturnStatus::getStatus);
         }
 
-        private void log(NetLoggerBuilder log, SrmRmRequest request, SrmRmResponse response)
-        {
+        private void log(NetLoggerBuilder log, SrmRmRequest request, SrmRmResponse response) {
             logArray(log, "request.surl", request.getArrayOfSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTSURLReturnStatus::getStatusArray,
-                    TSURLReturnStatus::getStatus);
+                  ArrayOfTSURLReturnStatus::getStatusArray,
+                  TSURLReturnStatus::getStatus);
         }
 
-        private void log(NetLoggerBuilder log, SrmLsRequest request, SrmLsResponse response)
-        {
+        private void log(NetLoggerBuilder log, SrmLsRequest request, SrmLsResponse response) {
             logCountAndOffset(log, request.getCount(), request.getOffset());
             logArray(log, "request.surl", request.getArrayOfSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getDetails(),
-                    ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
+                  ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmStatusOfLsRequestRequest request,
-                SrmStatusOfLsRequestResponse response)
-        {
+              SrmStatusOfLsRequestResponse response) {
             logCountAndOffset(log, request.getCount(), request.getOffset());
 
             logFileStatus(log, response.getDetails(),
-                    ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
+                  ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmPrepareToGetRequest request,
-                SrmPrepareToGetResponse response)
-        {
+              SrmPrepareToGetResponse response) {
             log.add("request.pin", request.getDesiredPinLifeTime());
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
             logArray(log, "request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTGetFileRequest::getRequestArray,
-                    TGetFileRequest::getSourceSURL);
+                  ArrayOfTGetFileRequest::getRequestArray,
+                  TGetFileRequest::getSourceSURL);
             log.add("request.protocols",
-                    describeTransferProtocols(request.getTransferParameters()));
+                  describeTransferProtocols(request.getTransferParameters()));
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
+                  ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmStatusOfGetRequestRequest request,
-                SrmStatusOfGetRequestResponse response)
-        {
+              SrmStatusOfGetRequestResponse response) {
             logArray(log, "request.surl", request.getArrayOfSourceSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
+                  ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmPrepareToPutRequest request,
-                SrmPrepareToPutResponse response)
-        {
+              SrmPrepareToPutResponse response) {
             log.add("request.pin", request.getDesiredPinLifeTime());
             log.add("request.lifetime", request.getDesiredTotalRequestTime());
             logArray(log, "request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTPutFileRequest::getRequestArray,
-                    TPutFileRequest::getTargetSURL);
+                  ArrayOfTPutFileRequest::getRequestArray,
+                  TPutFileRequest::getTargetSURL);
             log.add("request.protocols",
-                    describeTransferProtocols(request.getTransferParameters()));
+                  describeTransferProtocols(request.getTransferParameters()));
 
             ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
             log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
-                    TPutRequestFileStatus::getTransferURL);
+                  TPutRequestFileStatus::getTransferURL);
             logFileStatus(log, statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
-                    TPutRequestFileStatus::getStatus);
+                  TPutRequestFileStatus::getStatus);
         }
 
-        private void log(NetLoggerBuilder log, SrmStatusOfPutRequestRequest request, SrmStatusOfPutRequestResponse response)
-        {
+        private void log(NetLoggerBuilder log, SrmStatusOfPutRequestRequest request,
+              SrmStatusOfPutRequestResponse response) {
             logArray(log, "request.surl", request.getArrayOfTargetSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
             log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
-                    TPutRequestFileStatus::getTransferURL);
+                  TPutRequestFileStatus::getTransferURL);
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTPutRequestFileStatus::getStatusArray, TPutRequestFileStatus::getStatus);
+                  ArrayOfTPutRequestFileStatus::getStatusArray, TPutRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmPutDoneRequest request,
-                SrmPutDoneResponse response)
-        {
+              SrmPutDoneResponse response) {
             logArray(log, "request.surl", request.getArrayOfSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
+                  ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmCopyRequest request,
-                SrmCopyResponse response)
-        {
+              SrmCopyResponse response) {
             logArray(log, "request.src-surl", request.getArrayOfFileRequests(),
-                    ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getSourceSURL);
+                  ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getSourceSURL);
             logArray(log, "request.dst-surl", request.getArrayOfFileRequests(),
-                    ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getTargetSURL);
+                  ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getTargetSURL);
 
-            logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                  ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
         }
 
-        private void log(NetLoggerBuilder log, SrmReserveSpaceRequest request, SrmReserveSpaceResponse response)
-        {
+        private void log(NetLoggerBuilder log, SrmReserveSpaceRequest request,
+              SrmReserveSpaceResponse response) {
             log.add("request.protocols",
-                    describeTransferProtocols(request.getTransferParameters()));
+                  describeTransferProtocols(request.getTransferParameters()));
         }
 
-        private void log(NetLoggerBuilder log, SrmStatusOfCopyRequestRequest request, SrmStatusOfCopyRequestResponse response)
-        {
+        private void log(NetLoggerBuilder log, SrmStatusOfCopyRequestRequest request,
+              SrmStatusOfCopyRequestResponse response) {
             logArray(log, "request.src-surl", request.getArrayOfSourceSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
-            logArray(log,"request.dst-surl", request.getArrayOfTargetSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
+            logArray(log, "request.dst-surl", request.getArrayOfTargetSURLs(),
+                  ArrayOfAnyURI::getUrlArray);
 
-            logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                  ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmReleaseFilesRequest request,
-                SrmReleaseFilesResponse response)
-        {
+              SrmReleaseFilesResponse response) {
             logArray(log, "request.surl", request.getArrayOfSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
+                  ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log, SrmBringOnlineRequest request,
-                SrmBringOnlineResponse response)
-        {
+              SrmBringOnlineResponse response) {
             logArray(log, "request.surl", request.getArrayOfFileRequests(),
-                    ArrayOfTGetFileRequest::getRequestArray,
-                    TGetFileRequest::getSourceSURL);
+                  ArrayOfTGetFileRequest::getRequestArray,
+                  TGetFileRequest::getSourceSURL);
             log.add("request.desiredLifeTime", request.getDesiredLifeTime());
             log.add("request.desiredTotalRequestTime", request.getDesiredTotalRequestTime());
             log.add("request.protocols",
-                    describeTransferProtocols(request.getTransferParameters()));
+                  describeTransferProtocols(request.getTransferParameters()));
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
-                    TBringOnlineRequestFileStatus::getStatus);
+                  ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
+                  TBringOnlineRequestFileStatus::getStatus);
         }
 
         private void log(NetLoggerBuilder log,
-                SrmStatusOfBringOnlineRequestRequest request,
-                SrmStatusOfBringOnlineRequestResponse response)
-        {
+              SrmStatusOfBringOnlineRequestRequest request,
+              SrmStatusOfBringOnlineRequestResponse response) {
             logArray(log, "request.surl", request.getArrayOfSourceSURLs(),
-                    ArrayOfAnyURI::getUrlArray);
+                  ArrayOfAnyURI::getUrlArray);
 
             logFileStatus(log, response.getArrayOfFileStatuses(),
-                    ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
-                    TBringOnlineRequestFileStatus::getStatus);
+                  ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
+                  TBringOnlineRequestFileStatus::getStatus);
         }
 
-        private String describeTransferProtocols(TTransferParameters parameters)
-        {
+        private String describeTransferProtocols(TTransferParameters parameters) {
             if (parameters == null) {
                 return null;
             }
@@ -1228,15 +1260,15 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             }
 
             if (transferProtocols.length == 1) {
-                return transferProtocols [0];
+                return transferProtocols[0];
             }
 
-            Map<String,Integer> listedProtocols = new HashMap<>();
-            int lastIndex = transferProtocols.length-1;
+            Map<String, Integer> listedProtocols = new HashMap<>();
+            int lastIndex = transferProtocols.length - 1;
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i <= lastIndex; i++) {
-                String protocol = transferProtocols [i];
+                String protocol = transferProtocols[i];
 
                 Integer previousIndex = listedProtocols.get(protocol);
                 if (previousIndex == null) {
@@ -1253,56 +1285,53 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
 
         /**
-         * Log an SRM array type.  If the array is present and contains a
-         * single item then log that item.  If the array is present and
-         * is empty or contains more than one item then log the number of items
-         * with a suffix "-count" to the log label.
-         * @param <U> The type of SRM request
-         * @param <A> The type of the array
-         * @param log The NetLoggerBuilder object
-         * @param label The label for a single item array's log entry.
+         * Log an SRM array type.  If the array is present and contains a single item then log that
+         * item.  If the array is present and is empty or contains more than one item then log the
+         * number of items with a suffix "-count" to the log label.
+         *
+         * @param <U>     The type of SRM request
+         * @param <A>     The type of the array
+         * @param log     The NetLoggerBuilder object
+         * @param label   The label for a single item array's log entry.
          * @param request The SRM request object.
          * @param toArray The method that converts the request to an array.
          */
-        private <U,A> void logArray(NetLoggerBuilder log, String label, U request,
-                Function<U,A[]> toArray)
-        {
-            logArray(log, label, request, toArray, A->A);
+        private <U, A> void logArray(NetLoggerBuilder log, String label, U request,
+              Function<U, A[]> toArray) {
+            logArray(log, label, request, toArray, A -> A);
         }
 
         /**
-         * Log an SRM array type.  If the array is present and contains a
-         * single item then a display a derived version of the item.  If the
-         * array is present and is empty or contains more than one item then
-         * the log the number of items with a suffix "-count" to the log label.
-         * @param <U> The type of SRM request.
-         * @param <A> The type of the array.
-         * @param <L> The type of the logged item.
-         * @param log The log entry to update.
-         * @param label The label for a single item array's log entry.
-         * @param request The SRM request object.
-         * @param toArray The method that converts the request to an array.
+         * Log an SRM array type.  If the array is present and contains a single item then a display
+         * a derived version of the item.  If the array is present and is empty or contains more
+         * than one item then the log the number of items with a suffix "-count" to the log label.
+         *
+         * @param <U>           The type of SRM request.
+         * @param <A>           The type of the array.
+         * @param <L>           The type of the logged item.
+         * @param log           The log entry to update.
+         * @param label         The label for a single item array's log entry.
+         * @param request       The SRM request object.
+         * @param toArray       The method that converts the request to an array.
          * @param toLoggedValue The method that converts the array item to the logged value.
          */
-        private <U,A,L> void logArray(NetLoggerBuilder log, String label, U request,
-                Function<U,A[]> toArray, Function<A,L> toLoggedValue)
-        {
+        private <U, A, L> void logArray(NetLoggerBuilder log, String label, U request,
+              Function<U, A[]> toArray, Function<A, L> toLoggedValue) {
             A[] array = request == null ? null : toArray.apply(request);
 
             if (array != null) {
                 if (array.length == 1) {
                     A item = array[0];
                     String logValue = item == null ? "(null)"
-                            : String.valueOf(toLoggedValue.apply(item));
+                          : String.valueOf(toLoggedValue.apply(item));
                     log.add(label, logValue);
                 } else {
-                    log.add(label+"-count", array.length);
+                    log.add(label + "-count", array.length);
                 }
             }
         }
 
-        private void logCountAndOffset(NetLoggerBuilder log, Integer count, Integer offset)
-        {
+        private void logCountAndOffset(NetLoggerBuilder log, Integer count, Integer offset) {
             if (count != null || offset != null) {
                 StringBuilder sb = new StringBuilder();
                 if (count != null) {
@@ -1315,24 +1344,25 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             }
         }
 
-        private <U,A> void logFileStatus(NetLoggerBuilder log, U source, Function<U,A[]> toArray, Function <A,TReturnStatus> toFileStatus)
-        {
-            log.addSingleValue("file-status.code", source, toArray, toFileStatus.andThen(TReturnStatus::getStatusCode));
-            log.addSingleValue("file-status.explanation", source, toArray, toFileStatus.andThen(TReturnStatus::getExplanation));
+        private <U, A> void logFileStatus(NetLoggerBuilder log, U source, Function<U, A[]> toArray,
+              Function<A, TReturnStatus> toFileStatus) {
+            log.addSingleValue("file-status.code", source, toArray,
+                  toFileStatus.andThen(TReturnStatus::getStatusCode));
+            log.addSingleValue("file-status.explanation", source, toArray,
+                  toFileStatus.andThen(TReturnStatus::getExplanation));
         }
     }
 
-    public class CounterLogger implements RequestLogger
-    {
+    public class CounterLogger implements RequestLogger {
+
         @Override
-        public void request(String requestName, Object request)
-        {
+        public void request(String requestName, Object request) {
             srmServerCounters.incrementRequests(request.getClass());
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, Subject user, long time)
-        {
+        public void response(String requestName, Object request, Object response, Subject user,
+              long time) {
             TReturnStatus status = getReturnStatus(response);
             if (status != null && FAILURES.contains(status.getStatusCode())) {
                 srmServerCounters.incrementFailed(request.getClass());
@@ -1340,22 +1370,20 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         }
     }
 
-    private class RequestExecutionTimeGaugeLogger implements RequestLogger
-    {
+    private class RequestExecutionTimeGaugeLogger implements RequestLogger {
+
         @Override
-        public void request(String requestName, Object request)
-        {
+        public void request(String requestName, Object request) {
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, Subject user, long time)
-        {
+        public void response(String requestName, Object request, Object response, Subject user,
+              long time) {
             srmServerGauges.update(request.getClass(), time);
         }
     }
 
-    private static String getSurl(Object request)
-    {
+    private static String getSurl(Object request) {
         try {
             Method getReturnStatus = request.getClass().getDeclaredMethod("getSURL");
             Class<?> returnType = getReturnStatus.getReturnType();
@@ -1375,8 +1403,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
-    private static String getRequestToken(Object request, Object response)
-    {
+    private static String getRequestToken(Object request, Object response) {
         String requestToken = getRequestToken(response);
         if (requestToken != null) {
             return requestToken;
@@ -1388,8 +1415,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
-    private static String getRequestToken(Object response)
-    {
+    private static String getRequestToken(Object response) {
         try {
             Method getReturnStatus = response.getClass().getDeclaredMethod("getRequestToken");
             Class<?> returnType = getReturnStatus.getReturnType();
@@ -1406,8 +1432,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
-    private static TReturnStatus getReturnStatus(Object response)
-    {
+    private static TReturnStatus getReturnStatus(Object response) {
         try {
             Method getReturnStatus = response.getClass().getDeclaredMethod("getReturnStatus");
             Class<?> returnType = getReturnStatus.getReturnType();

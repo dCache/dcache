@@ -17,7 +17,7 @@
  */
 package javatunnel;
 
-public interface UserValidatable
-{
+public interface UserValidatable {
+
     boolean validateUser(String userName, String password);
 }

@@ -22,45 +22,38 @@ import java.security.cert.X509Certificate;
 import java.util.UUID;
 
 /**
- *  A placeholder similar to the one used by gridsite but without
- *  gridsite dependencies.
+ * A placeholder similar to the one used by gridsite but without gridsite dependencies.
  */
-public class X509Delegation
-{
-    private final String            id;
-    private final X509Certificate[] certificates;
-    private final KeyPair           keyPair;
-    private       String            pemRequest;
+public class X509Delegation {
 
-    public X509Delegation(KeyPair keyPair, X509Certificate[] certificates)
-    {
+    private final String id;
+    private final X509Certificate[] certificates;
+    private final KeyPair keyPair;
+    private String pemRequest;
+
+    public X509Delegation(KeyPair keyPair, X509Certificate[] certificates) {
         this.keyPair = keyPair;
         this.certificates = certificates;
         id = UUID.randomUUID().toString();
     }
 
-    public X509Certificate[] getCertificates()
-    {
+    public X509Certificate[] getCertificates() {
         return certificates;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public KeyPair getKeyPair()
-    {
+    public KeyPair getKeyPair() {
         return keyPair;
     }
 
-    public String getPemRequest()
-    {
+    public String getPemRequest() {
         return pemRequest;
     }
 
-    public void setPemRequest(String pemRequest)
-    {
+    public void setPemRequest(String pemRequest) {
         this.pemRequest = pemRequest;
     }
 }

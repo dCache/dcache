@@ -76,52 +76,54 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Use this client when communicating with a remote requirements engine.
+ * Use this client when communicating with a remote requirements engine.
  */
 public final class RemoteQoSRequirementsClient implements QoSRequirementsListener {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteQoSRequirementsClient.class);
 
-  private CellStub requirementsService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteQoSRequirementsClient.class);
 
-  @Override
-  public FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update) throws QoSException {
-    QoSRequirementsRequestMessage message = new QoSRequirementsRequestMessage(update);
-    ListenableFuture<QoSRequirementsRequestMessage> future = requirementsService.send(message);
+    private CellStub requirementsService;
 
-    try {
-      message = future.get();
-      LOGGER.trace("Received reply for requirements request {}.", message);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new QoSException("Failed to request requirements for " + update, e);
+    @Override
+    public FileQoSRequirements fileQoSRequirementsRequested(FileQoSUpdate update)
+          throws QoSException {
+        QoSRequirementsRequestMessage message = new QoSRequirementsRequestMessage(update);
+        ListenableFuture<QoSRequirementsRequestMessage> future = requirementsService.send(message);
+
+        try {
+            message = future.get();
+            LOGGER.trace("Received reply for requirements request {}.", message);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new QoSException("Failed to request requirements for " + update, e);
+        }
+
+        Serializable error = message.getErrorObject();
+
+        if (error != null) {
+            throw new QoSException("Failed to request requirements for " + update,
+                  CacheExceptionUtils.getCacheExceptionFrom(error));
+        }
+
+        return message.getRequirements();
     }
 
-    Serializable error = message.getErrorObject();
-
-    if (error != null) {
-      throw new QoSException("Failed to request requirements for " + update,
-                              CacheExceptionUtils.getCacheExceptionFrom(error));
+    @Override
+    public void fileQoSRequirementsModified(FileQoSRequirements newRequirements) {
+        /*
+         *  Fire and forget. The sender will need to listen for a response.
+         */
+        requirementsService.send(new QoSRequirementsModifiedMessage(newRequirements));
     }
 
-    return message.getRequirements();
-  }
+    @Override
+    public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException {
+        /*
+         *  Fire and forget. The sender will need to listen for a response.
+         */
+        requirementsService.send(new QoSCancelRequirementsModifiedMessage(pnfsid));
+    }
 
-  @Override
-  public void fileQoSRequirementsModified(FileQoSRequirements newRequirements) {
-    /*
-     *  Fire and forget. The sender will need to listen for a response.
-     */
-    requirementsService.send(new QoSRequirementsModifiedMessage(newRequirements));
-  }
-
-  @Override
-  public void fileQoSRequirementsModifiedCancelled(PnfsId pnfsid) throws QoSException {
-    /*
-     *  Fire and forget. The sender will need to listen for a response.
-     */
-    requirementsService.send(new QoSCancelRequirementsModifiedMessage(pnfsid));
-  }
-
-  public void setRequirementsService(CellStub requirementsService) {
-    this.requirementsService = requirementsService;
-  }
+    public void setRequirementsService(CellStub requirementsService) {
+        this.requirementsService = requirementsService;
+    }
 }

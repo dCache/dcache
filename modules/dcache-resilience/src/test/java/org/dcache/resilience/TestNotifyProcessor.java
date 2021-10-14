@@ -62,5 +62,6 @@ package org.dcache.resilience;
 import java.io.Serializable;
 
 public interface TestNotifyProcessor {
+
     void processMessage(Serializable message);
 }

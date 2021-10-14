@@ -23,11 +23,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A skeleton implementation that implements a close method and that allows for
- * registering "clean up" activity.
+ * A skeleton implementation that implements a close method and that allows for registering "clean
+ * up" activity.
  */
-public class CloseableWithTasks
-{
+public class CloseableWithTasks {
     /*
      * NB. Tasks must not be run from within the closeTasks monitor.  The task
      * could (attempt to) acquire other locks/monitors, which has the potential
@@ -38,12 +37,11 @@ public class CloseableWithTasks
     private boolean isClosed;
 
     /**
-     * Run any registered onClose tasks.  This method may be called multiple
-     * times and has the same effect as calling once.
+     * Run any registered onClose tasks.  This method may be called multiple times and has the same
+     * effect as calling once.
      */
-    public void close()
-    {
-       List<Runnable> todo;
+    public void close() {
+        List<Runnable> todo;
         synchronized (closeTasks) {
             if (!isClosed) {
                 isClosed = true;
@@ -72,8 +70,7 @@ public class CloseableWithTasks
         }
     }
 
-    public boolean isClosed()
-    {
+    public boolean isClosed() {
         synchronized (closeTasks) {
             return isClosed;
         }
@@ -81,11 +78,10 @@ public class CloseableWithTasks
 
 
     /**
-     * Register some activity that should run when close is called.  If close
-     * has already been called then the task is executed straight away.
+     * Register some activity that should run when close is called.  If close has already been
+     * called then the task is executed straight away.
      */
-    public final void onClose(Runnable task)
-    {
+    public final void onClose(Runnable task) {
         boolean runNow;
         synchronized (closeTasks) {
             runNow = isClosed;

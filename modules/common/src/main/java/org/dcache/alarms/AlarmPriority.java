@@ -63,38 +63,46 @@ package org.dcache.alarms;
  * For marking alert level.
  */
 public enum AlarmPriority {
-    LOW
-                    {
-                        @Override
-                        public int getLevel() { return 0; }
-                    },
-    MODERATE
-                    {
-                        @Override
-                        public int getLevel() { return 1; }
-                    },
-    HIGH
-                    {
-                        @Override
-                        public int getLevel() { return 2; }
-                    },
-    CRITICAL
-                    {
-                        @Override
-                        public int getLevel() { return 3; }
-                    };
+    LOW {
+        @Override
+        public int getLevel() {
+            return 0;
+        }
+    },
+    MODERATE {
+        @Override
+        public int getLevel() {
+            return 1;
+        }
+    },
+    HIGH {
+        @Override
+        public int getLevel() {
+            return 2;
+        }
+    },
+    CRITICAL {
+        @Override
+        public int getLevel() {
+            return 3;
+        }
+    };
 
     public abstract int getLevel();
 
     public static AlarmPriority get(int level) {
         switch (level) {
-            case 3: return CRITICAL;
-            case 2: return HIGH;
-            case 1: return MODERATE;
-            case 0: return LOW;
+            case 3:
+                return CRITICAL;
+            case 2:
+                return HIGH;
+            case 1:
+                return MODERATE;
+            case 0:
+                return LOW;
             default:
                 throw new IllegalArgumentException("unrecognized Alarm Priority level: "
-                                                                   + level);
+                      + level);
         }
     }
 }

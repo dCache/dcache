@@ -20,38 +20,32 @@ package org.dcache.services.billing.text;
 
 import dmg.cells.nucleus.CellAddressCore;
 
-public class CellAddressWrapper
-{
+public class CellAddressWrapper {
+
     private final CellAddressCore address;
 
-    public CellAddressWrapper(CellAddressCore address)
-    {
+    public CellAddressWrapper(CellAddressCore address) {
         this.address = address;
     }
 
-    public String getCell()
-    {
+    public String getCell() {
         return address.getCellName();
     }
 
-    public String getDomain()
-    {
+    public String getDomain() {
         return address.getCellDomainName();
     }
 
-    public boolean isDomainAddress()
-    {
+    public boolean isDomainAddress() {
         return address.isDomainAddress();
     }
 
-    public boolean isQualified()
-    {
+    public boolean isQualified() {
         return !address.isLocalAddress();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return address.isLocalAddress() ? address.getCellName() : address.toString();
     }
 }

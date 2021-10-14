@@ -90,40 +90,40 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMAbortedException extends SRMException {
-    
+
     private static final long serialVersionUID = 2435147283310855838L;
-    
+
     /**
      * Creates a new instance of <code>SRMAuthorizationException</code> without detail message.
      */
     public SRMAbortedException() {
     }
-    
-    
+
+
     /**
-     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail message.
+     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail
+     * message.
+     *
      * @param msg the detail message.
      */
     public SRMAbortedException(String msg) {
         super(msg);
     }
-        
-    
-    public SRMAbortedException(String message,Throwable cause) {
-        super(message,cause);
+
+
+    public SRMAbortedException(String message, Throwable cause) {
+        super(message, cause);
     }
-    
+
     public SRMAbortedException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_ABORTED;
     }
 }

@@ -2,14 +2,13 @@ package diskCacheV111.util;
 
 import org.dcache.srm.v2_2.TFileLocality;
 
-public enum FileLocality
-{
-    ONLINE             (TFileLocality.ONLINE, true),
-    NEARLINE           (TFileLocality.NEARLINE, false),
+public enum FileLocality {
+    ONLINE(TFileLocality.ONLINE, true),
+    NEARLINE(TFileLocality.NEARLINE, false),
     ONLINE_AND_NEARLINE(TFileLocality.ONLINE_AND_NEARLINE, true),
-    LOST               (TFileLocality.LOST, false),
-    NONE               (TFileLocality.NONE, false),
-    UNAVAILABLE        (TFileLocality.UNAVAILABLE,false);
+    LOST(TFileLocality.LOST, false),
+    NONE(TFileLocality.NONE, false),
+    UNAVAILABLE(TFileLocality.UNAVAILABLE, false);
 
     private final TFileLocality _locality;
     private final boolean _isCached;

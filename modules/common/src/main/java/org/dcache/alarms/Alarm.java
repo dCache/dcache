@@ -65,6 +65,7 @@ package org.dcache.alarms;
  * @author arossi
  */
 public interface Alarm {
+
     /**
      * MDC properties added during processing of the event by the server.
      */

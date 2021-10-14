@@ -5,19 +5,18 @@
 
 package diskCacheV111.services.space;
 
+import diskCacheV111.util.VOInfo;
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.VOInfo;
-
 /**
- *
  * @author timur
  */
 public interface SpaceManagerAuthorizationPolicy {
 
     void checkReleasePermission(Subject subject, Space space)
-        throws SpaceAuthorizationException;
+          throws SpaceAuthorizationException;
+
     VOInfo checkReservePermission(Subject subject, LinkGroup linkGroup)
-        throws SpaceAuthorizationException;
+          throws SpaceAuthorizationException;
 
 }

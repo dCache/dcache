@@ -64,15 +64,15 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.pool.migration.RefreshablePoolList;
 
 /**
- *  A simplified degenerate implementation of {@link RefreshablePoolList}
- *  tailored for use by the qos system. Provides a static list
- *  of the pool information to the migration task.
- *  <p/>
- *  As currently used, the pool list will actually contain
- *  only a single pool which has been precomputed for selection by the
- *  verification service, already taking into account offline pools.
+ * A simplified degenerate implementation of {@link RefreshablePoolList} tailored for use by the qos
+ * system. Provides a static list of the pool information to the migration task.
+ * <p/>
+ * As currently used, the pool list will actually contain only a single pool which has been
+ * precomputed for selection by the verification service, already taking into account offline
+ * pools.
  */
 public final class StaticSinglePoolList implements RefreshablePoolList {
+
     private final ImmutableList<PoolManagerPoolInformation> pools;
     private final ImmutableList<String> offline = ImmutableList.of();
 

@@ -1,8 +1,5 @@
 package org.dcache.services.info.base;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,36 +8,35 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This singleton class provides a (best-effort) complete representation of
- * dCache instance's current state.
+ * This singleton class provides a (best-effort) complete representation of dCache instance's
+ * current state.
  * <p>
- * It receives fresh information through the updateState() method, which
- * accepts a StateUpdate object. StateUpdate objects are created by classes
- * in the org.dcache.services.info.gathers package, either synchronously (see
- * DataGatheringScheduler), or by dCache messages received asynchronously
- * (see MessageHandlerChain).
+ * It receives fresh information through the updateState() method, which accepts a StateUpdate
+ * object. StateUpdate objects are created by classes in the org.dcache.services.info.gathers
+ * package, either synchronously (see DataGatheringScheduler), or by dCache messages received
+ * asynchronously (see MessageHandlerChain).
  * <p>
- * There is preliminary support for triggering activity on state changes
- * through StateWatcher interface. Some class may use this to publish
- * aggregated (or otherwise, derived) data in a timely fashion (see
- * org.dcache.services.info.secondaryInfoProvider package). Other classes may
- * use StateWatcher interface to trigger external events, although future
- * work may include adding support for asynchronous event-based monitoring
- * that would interface with, but remain separate from this state.
+ * There is preliminary support for triggering activity on state changes through StateWatcher
+ * interface. Some class may use this to publish aggregated (or otherwise, derived) data in a timely
+ * fashion (see org.dcache.services.info.secondaryInfoProvider package). Other classes may use
+ * StateWatcher interface to trigger external events, although future work may include adding
+ * support for asynchronous event-based monitoring that would interface with, but remain separate
+ * from this state.
  * <p>
- * The State object allows a visitor pattern, through the StateVisitor
- * interface. The principle usage of this is to serialise the current content
- * (see classes under org.dcache.services.info.serialisation package), but
- * some synchronous classes also use this to build lists from dCache current
- * state (e.g., to send a message requesting data to each currently known
- * pool).
+ * The State object allows a visitor pattern, through the StateVisitor interface. The principle
+ * usage of this is to serialise the current content (see classes under
+ * org.dcache.services.info.serialisation package), but some synchronous classes also use this to
+ * build lists from dCache current state (e.g., to send a message requesting data to each currently
+ * known pool).
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class State implements StateCaretaker, StateExhibitor, StateObservatory
-{
+public class State implements StateCaretaker, StateExhibitor, StateObservatory {
+
     /**
      * Constants used for persistent metadata
      */
@@ -53,13 +49,20 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      * Class member variables...
      */
 
-    /** The root branch of the dCache state */
+    /**
+     * The root branch of the dCache state
+     */
     private final StateComposite _state;
 
-    /** All registered StateWatchers */
+    /**
+     * All registered StateWatchers
+     */
     private volatile Collection<StateWatcherInfo> _watchers = new ArrayList<>();
 
-    /** Our read/write lock: we use the fair version to reduce the risk of writers constantly blocking a reader */
+    /**
+     * Our read/write lock: we use the fair version to reduce the risk of writers constantly
+     * blocking a reader
+     */
     private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock(true);
     private final Lock _stateReadLock = _stateRWLock.readLock();
     private final Lock _stateWriteLock = _stateRWLock.writeLock();
@@ -68,8 +71,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     // metrics
     private StateUpdateManager _updateManager;
 
-    public State()
-    {
+    public State() {
         // Build our persistent State metadata tree, with default contents
         StatePersistentMetadata metadata = new StatePersistentMetadata();
         metadata.addDefault();
@@ -79,14 +81,12 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Record a new StateUpdateManager. This will be used to enqueue
-     * StateUpdates from secondary information providers.
+     * Record a new StateUpdateManager. This will be used to enqueue StateUpdates from secondary
+     * information providers.
      *
-     * @param sum
-     *            the StateUpdateManager
+     * @param sum the StateUpdateManager
      */
-    public void setStateUpdateManager(StateUpdateManager sum)
-    {
+    public void setStateUpdateManager(StateUpdateManager sum) {
         _updateManager = sum;
     }
 
@@ -96,8 +96,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      * @return the Date when a metric or branch will next need to be expired.
      */
     @Override
-    public Date getEarliestMetricExpiryDate()
-    {
+    public Date getEarliestMetricExpiryDate() {
         Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
 
         if (LOGGER.isTraceEnabled()) {
@@ -105,7 +104,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
                 LOGGER.trace("reporting that earliest expiry time is never");
             } else {
                 LOGGER.trace("reporting that earliest expiry time is {}s in the future",
-                        (earliestExpiryDate.getTime() - System.currentTimeMillis())/1000);
+                      (earliestExpiryDate.getTime() - System.currentTimeMillis()) / 1000);
             }
         }
 
@@ -113,10 +112,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Update the current dCache state by applying, at most, a single
-     * StateUpdate from a Stack of pending updates. If no updates are needed,
-     * the routine will return quickly, although there is the cost of
-     * entering the Stack's monitor.
+     * Update the current dCache state by applying, at most, a single StateUpdate from a Stack of
+     * pending updates. If no updates are needed, the routine will return quickly, although there is
+     * the cost of entering the Stack's monitor.
      * <p>
      * Updating dCache state, by adding additional metrics, has three phases:
      * <ol>
@@ -128,8 +126,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      * </ol>
      */
     @Override
-    public void processUpdate(StateUpdate update)
-    {
+    public void processUpdate(StateUpdate update) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("beginning to process update: \n{}", update.debugInfo());
         }
@@ -178,18 +175,16 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Apply a StateTransition to dCache state. This is the final step in
-     * updating the dCache state where the proposed changes are made
-     * permanent. This requires obtaining a writer-lock on the state.
+     * Apply a StateTransition to dCache state. This is the final step in updating the dCache state
+     * where the proposed changes are made permanent. This requires obtaining a writer-lock on the
+     * state.
      *
-     * @param transition
-     *            the StateTransition to apply.
+     * @param transition the StateTransition to apply.
      */
-    private void applyTransition(StateTransition transition)
-    {
+    private void applyTransition(StateTransition transition) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("now applying following transition to state:\n\n{}",
-                    transition.dumpContents());
+                  transition.dumpContents());
         }
 
         try {
@@ -203,25 +198,21 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * For a given a StateTransition, check all registered StateWatchers to
-     * see if they are affected. This is achieved by checking each
-     * StateWatcher's Collection of StatePathPredicates.
+     * For a given a StateTransition, check all registered StateWatchers to see if they are
+     * affected. This is achieved by checking each StateWatcher's Collection of
+     * StatePathPredicates.
      * <p>
-     * If the StatePathPredicate matches some significant change within the
-     * StateTransition, the corresponding StateWatcher's
+     * If the StatePathPredicate matches some significant change within the StateTransition, the
+     * corresponding StateWatcher's
      * <code>trigger()</code> method is called. The trigger method is
-     * provided with a StateUpdate within which it may register additional
-     * metrics.
+     * provided with a StateUpdate within which it may register additional metrics.
      * <p>
      *
-     * @param transition
-     *            The StateTransition to apply
-     * @return a StateUpdate containing new metrics, or null if there are no
-     *         new metrics to update.
+     * @param transition The StateTransition to apply
+     * @return a StateUpdate containing new metrics, or null if there are no new metrics to update.
      */
     @Override
-    public StateUpdate checkWatchers(StateTransition transition)
-    {
+    public StateUpdate checkWatchers(StateTransition transition) {
         StateUpdate update = new StateUpdate();
         StateExhibitor currentState = this;
         StateExhibitor futureState = null;
@@ -242,8 +233,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
                 LOGGER.trace("checking watcher {} predicate {}", thisWatcher, thisPredicate);
 
                 hasBeenTriggered = _state.predicateHasBeenTriggered(null,
-                        thisPredicate,
-                        transition);
+                      thisPredicate,
+                      transition);
 
                 if (hasBeenTriggered) {
                     break; // we only need one predicate to match, so quit
@@ -267,8 +258,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
 
 
     @Override
-    public void setStateWatchers(List<StateWatcher> watchers)
-    {
+    public void setStateWatchers(List<StateWatcher> watchers) {
         List<StateWatcherInfo> newList = new ArrayList<>(watchers.size());
 
         for (StateWatcher watcher : watchers) {
@@ -282,13 +272,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     /**
      * Return a String containing a list of all state watchers.
      *
-     * @param prefix
-     *            a String to prefix each line of the output
+     * @param prefix a String to prefix each line of the output
      * @return the list of watchers.
      */
     @Override
-    public String[] listStateWatcher()
-    {
+    public String[] listStateWatcher() {
         String[] watchers = new String[_watchers.size()];
 
         int i = 0;
@@ -302,13 +290,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     /**
      * Enable all registered StateWatchers that match a given name
      *
-     * @param name
-     *            the StateWatcher name to enable.
+     * @param name the StateWatcher name to enable.
      * @return the number of matching entries.
      */
     @Override
-    public int enableStateWatcher(String name)
-    {
+    public int enableStateWatcher(String name) {
         int count = 0;
 
         for (StateWatcherInfo thisWatcherInfo : _watchers) {
@@ -324,13 +310,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     /**
      * Disable all registered StateWatchers that match a given name
      *
-     * @param name
-     *            the StateWatcher name to disable.
+     * @param name the StateWatcher name to disable.
      * @return the number of matching entries.
      */
     @Override
-    public int disableStateWatcher(String name)
-    {
+    public int disableStateWatcher(String name) {
         int count = 0;
 
         for (StateWatcherInfo thisWatcherInfo : _watchers) {
@@ -344,9 +328,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Check for, and remove, expired (mortal) StateComponents. This will
-     * also remove all ephemeral children of moral StateComposites
-     * (branches).
+     * Check for, and remove, expired (mortal) StateComponents. This will also remove all ephemeral
+     * children of moral StateComposites (branches).
      * <p>
      * The process of removing data from dCache tree is similar to
      * <code>processUpdateStack()</code> and may trigger StateWatchers. This
@@ -358,8 +341,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      * <ol>
      */
     @Override
-    public synchronized void removeExpiredMetrics()
-    {
+    public synchronized void removeExpiredMetrics() {
         // A quick check before obtaining the lock
         Date expDate = getEarliestMetricExpiryDate();
 
@@ -391,21 +373,17 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Allow an arbitrary algorithm to visit the current dCache state, that
-     * is, to receive call-backs describing the process of walking over the
-     * state and the contents therein.
+     * Allow an arbitrary algorithm to visit the current dCache state, that is, to receive
+     * call-backs describing the process of walking over the state and the contents therein.
      * <p>
-     * The data obtained from a single call of <code>visitState()</code> is
-     * protected from inconsistencies due to data being updated whilst the
-     * iteration is taking place. No such protection is available for
-     * multiple calls to <code>visitState()</code>.
+     * The data obtained from a single call of <code>visitState()</code> is protected from
+     * inconsistencies due to data being updated whilst the iteration is taking place. No such
+     * protection is available for multiple calls to <code>visitState()</code>.
      *
-     * @param visitor
-     *            the algorithm that wishes to visit our current state
+     * @param visitor the algorithm that wishes to visit our current state
      */
     @Override
-    public void visitState(StateVisitor visitor)
-    {
+    public void visitState(StateVisitor visitor) {
         LOGGER.trace("visitor {} wishing to visit current state", visitor);
 
         try {
@@ -417,7 +395,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             long afterLock = System.currentTimeMillis();
 
             LOGGER.trace("visitor {} acquired read lock (took {} ms), starting visit.",
-                    visitor, (afterLock - beforeLock) / 1000.0);
+                  visitor, (afterLock - beforeLock) / 1000.0);
 
             if (visitor.isVisitable(null)) {
                 _state.acceptVisitor(null, visitor);
@@ -426,7 +404,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             long afterVisit = System.currentTimeMillis();
 
             LOGGER.trace("visitor {} completed visit (took {} ms), releasing read lock.",
-                    visitor, (afterVisit - afterLock) / 1000.0);
+                  visitor, (afterVisit - afterLock) / 1000.0);
         } finally {
             _stateReadLock.unlock();
         }
@@ -435,49 +413,41 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     }
 
     /**
-     * Small, simple class to hold information about our registered
-     * StateWatchers, whether they are enabled and how many times they've
-     * been triggered.
+     * Small, simple class to hold information about our registered StateWatchers, whether they are
+     * enabled and how many times they've been triggered.
      */
-    private static class StateWatcherInfo
-    {
+    private static class StateWatcherInfo {
+
         StateWatcher _watcher;
         boolean _isEnabled = true;
         long _counter;
 
-        StateWatcherInfo(StateWatcher watcher)
-        {
+        StateWatcherInfo(StateWatcher watcher) {
             _watcher = watcher;
         }
 
-        boolean isEnabled()
-        {
+        boolean isEnabled() {
             return _isEnabled;
         }
 
-        void enable()
-        {
+        void enable() {
             _isEnabled = true;
         }
 
-        void disable()
-        {
+        void disable() {
             _isEnabled = false;
         }
 
-        void incrementCounter()
-        {
+        void incrementCounter() {
             _counter++;
         }
 
-        StateWatcher getWatcher()
-        {
+        StateWatcher getWatcher() {
             return _watcher;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             StringBuilder sb = new StringBuilder();
 
             sb.append(_watcher.toString()).append(" ");
@@ -495,8 +465,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      *
      * @param pw
      */
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.print(listStateWatcher().length);
         pw.println(" state watchers.");
 

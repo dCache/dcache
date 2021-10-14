@@ -18,24 +18,20 @@
 package org.dcache.pool.classic;
 
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.pool.repository.Account;
 
 /**
- * An Allocator that blocks if there is insufficient space.  This strategy
- * will accept data and rely on the admin to shuffle data around if there is
- * insufficient capacity.
+ * An Allocator that blocks if there is insufficient space.  This strategy will accept data and rely
+ * on the admin to shuffle data around if there is insufficient capacity.
  */
-public class BlockingAllocator extends AccountAllocator
-{
-    public BlockingAllocator(Account account)
-    {
+public class BlockingAllocator extends AccountAllocator {
+
+    public BlockingAllocator(Account account) {
         super(account);
     }
 
     @Override
-    public void allocate(PnfsId id, long size) throws InterruptedException
-    {
+    public void allocate(PnfsId id, long size) throws InterruptedException {
         _account.allocate(id, size);
     }
 }

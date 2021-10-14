@@ -17,14 +17,15 @@
  */
 package org.dcache.util.configuration;
 
-import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ConfigurationMapFactoryBeanTest {
 
@@ -38,14 +39,13 @@ public class ConfigurationMapFactoryBeanTest {
     @Test
     public void testPrefixSubstitution() {
 
-
         String prefix = "someprefix";
         String realKey = "key1";
         String envKey = prefix + "!" + realKey;
         String value = "value1";
 
         Map<String, Object> env = ImmutableMap.of(
-                envKey, value
+              envKey, value
         );
 
         configuration.setPrefix(prefix);
@@ -64,7 +64,6 @@ public class ConfigurationMapFactoryBeanTest {
     @Test
     public void testObjectType() {
 
-
         String prefix = "someprefix";
         String realKey = "key1";
         String envKey = prefix + "!" + realKey;
@@ -76,7 +75,6 @@ public class ConfigurationMapFactoryBeanTest {
         configuration.setEnvironment(env);
         configuration.buildMap();
 
-
         Class<?> effectiveEnvType = configuration.getObjectType();
 
         assertEquals(Map.class, effectiveEnvType);
@@ -84,7 +82,6 @@ public class ConfigurationMapFactoryBeanTest {
 
     @Test
     public void testIsSingleton() {
-
 
         String prefix = "someprefix";
         String realKey = "key1";
@@ -103,11 +100,8 @@ public class ConfigurationMapFactoryBeanTest {
     }
 
 
-
-
     @Test
     public void testKeyNull() {
-
 
         String prefix = "someprefix";
         String realKey = "key1";
@@ -115,7 +109,7 @@ public class ConfigurationMapFactoryBeanTest {
         String value = "value1";
 
         Map<String, Object> env = ImmutableMap.of(
-                envKey, value
+              envKey, value
         );
 
         configuration.setPrefix(prefix);
@@ -132,20 +126,17 @@ public class ConfigurationMapFactoryBeanTest {
     @Test
     public void testWrongPrefix() {
 
-
         String prefix = "someprefix";
         String realKey = "key1";
         String envKey = "*" + realKey;
         String value = "value1";
 
-
         String envKey2 = "key2";
         Integer value2 = 2;
 
-
         Map<String, Object> env = ImmutableMap.of(
-                envKey, value,
-                envKey2, value2
+              envKey, value,
+              envKey2, value2
         );
 
         configuration.setPrefix(prefix);
@@ -167,19 +158,15 @@ public class ConfigurationMapFactoryBeanTest {
         String envKey = prefix + "!" + realKey;
         String value = "value1";
 
-
         String statisEnvKey = "key2";
         String statisEnvValue = "value2";
 
-
-
         Map<String, Object> env = ImmutableMap.of(
-                envKey, value
+              envKey, value
         );
 
-
         Map<String, String> constants = ImmutableMap.of(
-                statisEnvKey, statisEnvValue
+              statisEnvKey, statisEnvValue
 
         );
 
@@ -206,10 +193,8 @@ public class ConfigurationMapFactoryBeanTest {
         String envKey = prefix + "!" + realKey;
         String value = "value1";
 
-
         String staticEnvKey = "key1";
         String staticEnvValue = "value2";
-
 
         Map<String, Object> env = new HashMap<>();
         env.put(envKey, value);
@@ -225,12 +210,10 @@ public class ConfigurationMapFactoryBeanTest {
 
         Map<String, String> effectiveEnv = configuration.getObject();
 
-
         assertEquals(staticEnvValue, effectiveEnv.get(realKey));
         assertEquals(staticEnvValue, effectiveEnv.get(staticEnvKey));
 
     }
-
 
 
 }

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+
 import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.vehicles.Message;
 import java.util.concurrent.Callable;
@@ -69,46 +71,45 @@ import org.dcache.pinmanager.PinManagerAware;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.SingleTargetJob;
 
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
-
 abstract class PinManagerJob extends SingleTargetJob implements PinManagerAware, Callable<Void> {
-  private CellStub pinManager;
 
-  protected PinManagerJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
-    super(key, parentKey, activity);
-  }
+    private CellStub pinManager;
 
-  @Override
-  public void setPinManager(CellStub pinManager) {
-    this.pinManager = pinManager;
-  }
-
-  @Override
-  public Void call() {
-    Message reply;
-
-    try {
-      reply = getUninterruptibly(waitable);
-      if (reply.getReturnCode() != 0) {
-        setError(reply.getErrorObject());
-      } else {
-        setState(State.COMPLETED);
-      }
-    } catch (CancellationException e) {
-      /*
-       *  CANCELLED is set elsewhere
-       */
-    } catch (ExecutionException e) {
-      setError(e.getCause());
+    protected PinManagerJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
+        super(key, parentKey, activity);
     }
 
-    return null;
-  }
+    @Override
+    public void setPinManager(CellStub pinManager) {
+        this.pinManager = pinManager;
+    }
 
-  protected <M extends Message> void sendToPinManager(M message) {
-    setState(State.WAITING);
-    ListenableFuture<M> future = pinManager.send(message);
-    this.waitable = future;
-    future.addListener(() -> call(), executorService);
-  }
+    @Override
+    public Void call() {
+        Message reply;
+
+        try {
+            reply = getUninterruptibly(waitable);
+            if (reply.getReturnCode() != 0) {
+                setError(reply.getErrorObject());
+            } else {
+                setState(State.COMPLETED);
+            }
+        } catch (CancellationException e) {
+            /*
+             *  CANCELLED is set elsewhere
+             */
+        } catch (ExecutionException e) {
+            setError(e.getCause());
+        }
+
+        return null;
+    }
+
+    protected <M extends Message> void sendToPinManager(M message) {
+        setState(State.WAITING);
+        ListenableFuture<M> future = pinManager.send(message);
+        this.waitable = future;
+        future.addListener(() -> call(), executorService);
+    }
 }

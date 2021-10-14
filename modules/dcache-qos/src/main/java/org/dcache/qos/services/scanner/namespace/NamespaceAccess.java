@@ -59,39 +59,36 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.namespace;
 
-import javax.sql.DataSource;
-
-import java.io.PrintWriter;
-import java.util.List;
-
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
-
+import java.io.PrintWriter;
+import java.util.List;
+import javax.sql.DataSource;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
 
 /**
- *  Specialized namespace API for scan handling.
+ * Specialized namespace API for scan handling.
  */
 public interface NamespaceAccess {
+
     /**
-     *  The main query.
+     * The main query.
      *
      * @param scan for initializing scan and tracking progress.
-     *
      * @throws CacheException
      */
     void handlePnfsidsForPool(PoolScanSummary scan) throws CacheException;
 
     /**
-     *  Used by the admin command to create a file of all the pnfsids on a pool which
-     *  currently have replicas only on the pools in the list.
+     * Used by the admin command to create a file of all the pnfsids on a pool which currently have
+     * replicas only on the pools in the list.
      *
-     *  @param locations pool name.
-     *  @param printWriter to write the results to.
+     * @param locations   pool name.
+     * @param printWriter to write the results to.
      */
     void printContainedInFiles(List<String> locations,
-                               PrintWriter printWriter)
-                    throws CacheException, InterruptedException;
+          PrintWriter printWriter)
+          throws CacheException, InterruptedException;
 
     void setConnectionPool(DataSource connectionPool);
 

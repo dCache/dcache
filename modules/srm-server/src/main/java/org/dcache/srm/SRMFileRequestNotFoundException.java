@@ -13,8 +13,8 @@ public class SRMFileRequestNotFoundException extends SRMException {
         super(msg);
     }
 
-    public SRMFileRequestNotFoundException(String message,Throwable cause) {
-        super(message,cause);
+    public SRMFileRequestNotFoundException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public SRMFileRequestNotFoundException(Throwable cause) {
@@ -22,8 +22,7 @@ public class SRMFileRequestNotFoundException extends SRMException {
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_INVALID_PATH;
     }
 }

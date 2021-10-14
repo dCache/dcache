@@ -1,30 +1,27 @@
 package org.dcache.pool.movers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.IOException;
-import java.nio.file.OpenOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.atomic.AtomicLong;
+import java.nio.file.OpenOption;
 import java.util.Set;
-
-import diskCacheV111.vehicles.ProtocolInfo;
-
+import java.util.concurrent.atomic.AtomicLong;
 import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A wrapper for RepositoryChannel adding features used by movers.
  */
-public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryChannel
-{
+public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryChannel {
+
     private static final Logger _logSpaceAllocation =
-        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
-                                MoverChannel.class.getName());
+          LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+                MoverChannel.class.getName());
 
     /**
      * Inner channel to which most operations are delegated.
@@ -40,19 +37,19 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
      * Timestamp of when the transfer started.
      */
     private final long _transferStarted =
-        System.currentTimeMillis();
+          System.currentTimeMillis();
 
     /**
      * Timestamp of when the last block was transferred.
      */
     private final AtomicLong _lastTransferred =
-        new AtomicLong(_transferStarted);
+          new AtomicLong(_transferStarted);
 
     /**
      * The number of bytes transferred.
      */
     private final AtomicLong _bytesTransferred =
-        new AtomicLong(0);
+          new AtomicLong(0);
 
     /**
      * ProtocolInfo associated with the transfer.
@@ -64,14 +61,12 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
      */
     private final FileAttributes _fileAttributes;
 
-    public MoverChannel(Mover<T> mover, RepositoryChannel channel)
-    {
+    public MoverChannel(Mover<T> mover, RepositoryChannel channel) {
         this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel);
     }
 
     public MoverChannel(Set<? extends OpenOption> mode, FileAttributes attributes, T protocolInfo,
-            RepositoryChannel channel)
-    {
+          RepositoryChannel channel) {
         _mode = mode;
         _protocolInfo = protocolInfo;
         _channel = channel;
@@ -85,15 +80,13 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
 
     @Override
     public synchronized MoverChannel<T> position(long position)
-        throws IOException
-    {
+          throws IOException {
         _channel.position(position);
         return this;
     }
 
     @Override
-    public synchronized MoverChannel<T> truncate(long size) throws IOException
-    {
+    public synchronized MoverChannel<T> truncate(long size) throws IOException {
         try {
             _channel.truncate(size);
             return this;
@@ -103,15 +96,13 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         _lastTransferred.set(System.currentTimeMillis());
         _channel.close();
     }
 
     @Override
-    public synchronized int read(ByteBuffer dst) throws IOException
-    {
+    public synchronized int read(ByteBuffer dst) throws IOException {
         try {
             int bytes = _channel.read(dst);
             _bytesTransferred.getAndAdd(bytes);
@@ -199,7 +190,8 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     }
 
     @Override
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+    public long transferTo(long position, long count, WritableByteChannel target)
+          throws IOException {
         try {
             long bytes = _channel.transferTo(position, count, target);
             _bytesTransferred.getAndAdd(bytes);
@@ -210,7 +202,8 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         try {
             long bytes = _channel.transferFrom(src, position, count);
             _bytesTransferred.getAndAdd(bytes);
@@ -238,8 +231,8 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
 
     public long getTransferTime() {
         return (_channel.isOpen()
-                ? System.currentTimeMillis()
-                : getLastTransferred()) - _transferStarted;
+              ? System.currentTimeMillis()
+              : getLastTransferred()) - _transferStarted;
     }
 
     public long getLastTransferred() {
