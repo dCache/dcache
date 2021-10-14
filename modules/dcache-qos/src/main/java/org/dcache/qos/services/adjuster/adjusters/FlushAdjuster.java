@@ -65,26 +65,26 @@ import org.dcache.pool.migration.TaskParameters;
 import org.dcache.pool.repository.ReplicaState;
 
 /**
- *  This adjustment usually will be in response to a user/admin request to
- *  change a disk-only file to tape, but could also involve an initial write
- *  of a CUSTODIAL file which did not land on an HSM pool.  A suitable HSM pool
- *  will have been found by the verification service.
- *  <p/>
- *  As with its parent, task state does not change to completed until it receives a response
- *  from the module.  However, in the case of FLUSH, this response occurs immediately
- *  after the file has either been copied or its PRECIOUS bit has been set.
+ * This adjustment usually will be in response to a user/admin request to change a disk-only file to
+ * tape, but could also involve an initial write of a CUSTODIAL file which did not land on an HSM
+ * pool.  A suitable HSM pool will have been found by the verification service.
+ * <p/>
+ * As with its parent, task state does not change to completed until it receives a response from the
+ * module.  However, in the case of FLUSH, this response occurs immediately after the file has
+ * either been copied or its PRECIOUS bit has been set.
  */
 public final class FlushAdjuster extends CopyAdjuster {
-  @Override
-  protected void createTask(TaskParameters taskParameters, String source) {
-    migrationTask = new Task(taskParameters,
-                             completionHandler,
-                             source,
-                             pnfsId,
-        ReplicaState.PRECIOUS,
-        Collections.EMPTY_LIST,
-        Collections.EMPTY_LIST,
-        attributes,
-        attributes.getAccessTime());
-  }
+
+    @Override
+    protected void createTask(TaskParameters taskParameters, String source) {
+        migrationTask = new Task(taskParameters,
+              completionHandler,
+              source,
+              pnfsId,
+              ReplicaState.PRECIOUS,
+              Collections.EMPTY_LIST,
+              Collections.EMPTY_LIST,
+              attributes,
+              attributes.getAccessTime());
+    }
 }

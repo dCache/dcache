@@ -117,244 +117,245 @@ import org.springframework.stereotype.Component;
 @Path("/bulk-requests")
 public final class BulkResources {
 
-  @Context
-  private HttpServletRequest request;
+    @Context
+    private HttpServletRequest request;
 
-  @Inject
-  private BulkServiceCommunicator service;
+    @Inject
+    private BulkServiceCommunicator service;
 
-  /**
-   * @return List of absolute URLs of bulk requests made by this user and that have not been
-   * cleared. If the client includes no query string then the response contains all bulk requests
-   * made by this user that have not been cleared.  If the user has made no bulk requests or all
-   * bulk requests have been cleared then the response is an empty array. If the client specified a
-   * query string then the response contains  all bulk requests that match the query string
-   * arguments and have not been cleared.  If the user has no bulk requests that match the query
-   * string and have not been cleared then the response is an empty array.
-   * <p>
-   * NOTE: users logged in with the admin role will see all users' requests.
-   * @status A comma-separated list of non-repeating elements, each of which is one of: queued,
-   * started, completed, cancelled.
-   */
-  @GET
-  @ApiOperation("Get the status of bulk operations submitted by the user.")
-  @ApiResponses({
-      @ApiResponse(code = 400, message = "Bad request"),
-      @ApiResponse(code = 401, message = "Not authorized"),
-      @ApiResponse(code = 500, message = "Internal Server Error")
-  })
-  @Produces(MediaType.APPLICATION_JSON)
-  public List<String> getRequests(@ApiParam("A comma-separated list of non-repeating elements, "
-                                            + "each of which is one of: queued, started, completed, "
-                                            + "cancelled.")
-  @QueryParam("status") String status) {
-    Subject subject = getSubject();
-    Restriction restriction = getRestriction();
-
-    Set<Status> filter;
-    if (Strings.emptyToNull(status) != null) {
-        filter = new HashSet<>();
-        Splitter.on(",").split(status).forEach(o -> filter.add(Status.valueOf(o)));
-    } else {
-      filter = null;
-    }
-
-    BulkRequestListMessage message = new BulkRequestListMessage(filter, restriction);
-    message.setSubject(subject);
-    message = service.send(message);
-
-    return message.getRequests();
-  }
-
-  /**
-   * Submit a bulk request.  See {@link BulkRequest}.
-   * <p>
-   * NOTE:  users logged in with the admin role will be submitting the request as ROOT (0:0).
-   *
-   * @return response which includes a location HTTP response header with a value that is the
-   * absolute URL for the resource associated with this bulk request.
-   */
-  @POST
-  @ApiOperation(value = "Submit a bulk request.")
-  @ApiResponses({
-      @ApiResponse(code = 201, message = "Created"),
-      @ApiResponse(code = 400, message = "Bad request"),
-      @ApiResponse(code = 401, message = "Unauthorized"),
-      @ApiResponse(code = 403, message = "Forbidden"),
-      @ApiResponse(code = 429, message = "Too many requests"),
-      @ApiResponse(code = 500, message = "Internal Server Error")
-  })
-  @Consumes({MediaType.APPLICATION_JSON})
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response submit(@ApiParam(value = "Description of the request, which defines the following: "
-                                    + "target, targetPrefix, activity, cancelOnFailure, "
-                                    + "clearOnSuccess, clearOnFailure, delayClear, expandDirectories "
-                                    + "(NONE, TARGETS, ALL), and arguments (map of name:value "
-                                    + "pairs) if required.", required = true)
-                                   String requestPayload) {
-    Subject subject = getSubject();
-    Restriction restriction = getRestriction();
-
-    BulkRequest request;
-
-    try {
-      request = new ObjectMapper().readValue(requestPayload, BulkRequest.class);
-    } catch (IOException e) {
-      throw new BadRequestException(e);
-    }
-
-    /*
-     *  Frontend sets the URL.  The backend service provides the UUID.
+    /**
+     * @return List of absolute URLs of bulk requests made by this user and that have not been
+     * cleared. If the client includes no query string then the response contains all bulk requests
+     * made by this user that have not been cleared.  If the user has made no bulk requests or all
+     * bulk requests have been cleared then the response is an empty array. If the client specified
+     * a query string then the response contains  all bulk requests that match the query string
+     * arguments and have not been cleared.  If the user has no bulk requests that match the query
+     * string and have not been cleared then the response is an empty array.
+     * <p>
+     * NOTE: users logged in with the admin role will see all users' requests.
+     * @status A comma-separated list of non-repeating elements, each of which is one of: queued,
+     * started, completed, cancelled.
      */
-    request.setUrlPrefix(this.request.getRequestURL().toString());
+    @GET
+    @ApiOperation("Get the status of bulk operations submitted by the user.")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Not authorized"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getRequests(@ApiParam("A comma-separated list of non-repeating elements, "
+          + "each of which is one of: queued, started, completed, "
+          + "cancelled.")
+    @QueryParam("status") String status) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
-    BulkRequestMessage message = new BulkRequestMessage(request, restriction);
-    message.setSubject(subject);
-    message = service.send(message);
+        Set<Status> filter;
+        if (Strings.emptyToNull(status) != null) {
+            filter = new HashSet<>();
+            Splitter.on(",").split(status).forEach(o -> filter.add(Status.valueOf(o)));
+        } else {
+            filter = null;
+        }
 
-    return Response.status(Response.Status.CREATED)
-                   .header("request-url", message.getRequestUrl())
-                   .type(MediaType.APPLICATION_JSON)
-                   .build();
-  }
+        BulkRequestListMessage message = new BulkRequestListMessage(filter, restriction);
+        message.setSubject(subject);
+        message = service.send(message);
 
-  /**
-   * Get status information for an individual request.
-   * <p>
-   * NOTE: users logged in with the admin role can obtain info on any request.
-   *
-   * @param id of the request.
-   * @return Object which describes the status of the request. See {@link BulkRequestStatus} for the
-   * data fields.
-   */
-  @GET
-  @ApiOperation("Get the status information for an individual bulk request.")
-  @ApiResponses({
-      @ApiResponse(code = 400, message = "Bad request"),
-      @ApiResponse(code = 401, message = "Unauthorized"),
-      @ApiResponse(code = 403, message = "Forbidden"),
-      @ApiResponse(code = 404, message = "Not found"),
-      @ApiResponse(code = 500, message = "Internal Server Error")
-  })
-  @Path("/{id}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public BulkRequestStatus getBulkRequestStatus(@ApiParam("The unique id of the request.")
-                                                @PathParam("id") String id) {
-    Subject subject = getSubject();
-    Restriction restriction = getRestriction();
-
-    BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
-    message.setSubject(subject);
-    message = service.send(message);
-    return message.getStatus();
-  }
-
-  /**
-   * Currently supports only 'action: cancel'.
-   * <p>
-   * If the bulk operation is in state started then all dCache activity for this bulk request is
-   * stopped.
-   * <p>
-   * The corresponding bulk request status is updated to cancelled if it is currently queued or
-   * started.  It does not change in the status is cancelled or completed.
-   * <p>
-   * NOTE: users logged in with the admin role can cancel any request.
-   *
-   * @param id             of the request.
-   * @param requestPayload A JSON Object with an 'action' item specifying an action to take.
-   * @return response
-   */
-  @PATCH
-  @ApiOperation("Take some action on a bulk request.")
-  @ApiResponses({
-      @ApiResponse(code = 200, message = "Successful"),
-      @ApiResponse(code = 400, message = "Bad request"),
-      @ApiResponse(code = 401, message = "Unauthorized"),
-      @ApiResponse(code = 403, message = "Forbidden"),
-      @ApiResponse(code = 404, message = "Not found"),
-      @ApiResponse(code = 500, message = "Internal Server Error")
-  })
-  @Path("/{id}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response update(@ApiParam("The unique id of the request.")
-                         @PathParam("id") String id,
-                         @ApiParam(value = "A JSON Object with an 'action' item specifying an "
-                                   + "action to take.", examples = @Example({
-                                                                    @ExampleProperty("{\"action\" : "
-                                                                    + "\"cancel\" }")}))
-                                   String requestPayload) {
-    Subject subject = getSubject();
-    Restriction restriction = getRestriction();
-
-    JSONObject reqPayload = new JSONObject(requestPayload);
-
-    String action = reqPayload.getString("action");
-
-    if (!"cancel".equalsIgnoreCase(action)) {
-      throw new BadRequestException(action + " not supported.");
+        return message.getRequests();
     }
 
-    BulkRequestCancelMessage message = new BulkRequestCancelMessage(id, restriction);
-    message.setSubject(subject);
-    service.send(message);
+    /**
+     * Submit a bulk request.  See {@link BulkRequest}.
+     * <p>
+     * NOTE:  users logged in with the admin role will be submitting the request as ROOT (0:0).
+     *
+     * @return response which includes a location HTTP response header with a value that is the
+     * absolute URL for the resource associated with this bulk request.
+     */
+    @POST
+    @ApiOperation(value = "Submit a bulk request.")
+    @ApiResponses({
+          @ApiResponse(code = 201, message = "Created"),
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 429, message = "Too many requests"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response submit(
+          @ApiParam(value = "Description of the request, which defines the following: "
+                + "target, targetPrefix, activity, cancelOnFailure, "
+                + "clearOnSuccess, clearOnFailure, delayClear, expandDirectories "
+                + "(NONE, TARGETS, ALL), and arguments (map of name:value "
+                + "pairs) if required.", required = true)
+                String requestPayload) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
-    return Response.ok().build();
-  }
+        BulkRequest request;
 
-  /**
-   * If the bulk operation was in state started then all dCache activity triggered by this bulk
-   * request is stopped.
-   * <p>
-   * The bulk request is cleared.  No further activity will take place for this request.  The server
-   * will respond to subsequent GET requests targeting this resource with a 404 (Not Found) status
-   * code.
-   * <p>
-   * NOTE: users logged in with the admin role can clear any request.
-   *
-   * @param id of the request.
-   * @return response
-   */
-  @DELETE
-  @ApiOperation("Clear all resources pertaining to the given bulk request id.")
-  @ApiResponses({
-      @ApiResponse(code = 204, message = "No content"),
-      @ApiResponse(code = 400, message = "Bad request"),
-      @ApiResponse(code = 401, message = "Unauthorized"),
-      @ApiResponse(code = 403, message = "Forbidden"),
-      @ApiResponse(code = 500, message = "Internal Server Error")
-  })
-  @Path("/{id}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response clearRequest(@ApiParam("The unique id of the request.")
-                               @PathParam("id") String id) {
-    Subject subject = getSubject();
-    Restriction restriction = getRestriction();
+        try {
+            request = new ObjectMapper().readValue(requestPayload, BulkRequest.class);
+        } catch (IOException e) {
+            throw new BadRequestException(e);
+        }
 
-    BulkRequestClearMessage message = new BulkRequestClearMessage(id, restriction);
-    message.setSubject(subject);
-    service.send(message);
+        /*
+         *  Frontend sets the URL.  The backend service provides the UUID.
+         */
+        request.setUrlPrefix(this.request.getRequestURL().toString());
 
-    return Response.noContent().build();
-  }
+        BulkRequestMessage message = new BulkRequestMessage(request, restriction);
+        message.setSubject(subject);
+        message = service.send(message);
 
-  private Subject getSubject() {
-    if (RequestUser.isAnonymous()) {
-      throw new NotAuthorizedException("User cannot be anonymous.");
+        return Response.status(Response.Status.CREATED)
+              .header("request-url", message.getRequestUrl())
+              .type(MediaType.APPLICATION_JSON)
+              .build();
     }
 
-    if (RequestUser.isAdmin()) {
-      return Subjects.ROOT;
+    /**
+     * Get status information for an individual request.
+     * <p>
+     * NOTE: users logged in with the admin role can obtain info on any request.
+     *
+     * @param id of the request.
+     * @return Object which describes the status of the request. See {@link BulkRequestStatus} for
+     * the data fields.
+     */
+    @GET
+    @ApiOperation("Get the status information for an individual bulk request.")
+    @ApiResponses({
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public BulkRequestStatus getBulkRequestStatus(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+
+        BulkRequestStatusMessage message = new BulkRequestStatusMessage(id, restriction);
+        message.setSubject(subject);
+        message = service.send(message);
+        return message.getStatus();
     }
 
-    return RequestUser.getSubject();
-  }
+    /**
+     * Currently supports only 'action: cancel'.
+     * <p>
+     * If the bulk operation is in state started then all dCache activity for this bulk request is
+     * stopped.
+     * <p>
+     * The corresponding bulk request status is updated to cancelled if it is currently queued or
+     * started.  It does not change in the status is cancelled or completed.
+     * <p>
+     * NOTE: users logged in with the admin role can cancel any request.
+     *
+     * @param id             of the request.
+     * @param requestPayload A JSON Object with an 'action' item specifying an action to take.
+     * @return response
+     */
+    @PATCH
+    @ApiOperation("Take some action on a bulk request.")
+    @ApiResponses({
+          @ApiResponse(code = 200, message = "Successful"),
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not found"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response update(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id,
+          @ApiParam(value = "A JSON Object with an 'action' item specifying an "
+                + "action to take.", examples = @Example({
+                @ExampleProperty("{\"action\" : "
+                      + "\"cancel\" }")}))
+                String requestPayload) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
-  private Restriction getRestriction() {
-    if (RequestUser.isAdmin()) {
-      return Restrictions.none();
+        JSONObject reqPayload = new JSONObject(requestPayload);
+
+        String action = reqPayload.getString("action");
+
+        if (!"cancel".equalsIgnoreCase(action)) {
+            throw new BadRequestException(action + " not supported.");
+        }
+
+        BulkRequestCancelMessage message = new BulkRequestCancelMessage(id, restriction);
+        message.setSubject(subject);
+        service.send(message);
+
+        return Response.ok().build();
     }
 
-    return RequestUser.getRestriction();
-  }
+    /**
+     * If the bulk operation was in state started then all dCache activity triggered by this bulk
+     * request is stopped.
+     * <p>
+     * The bulk request is cleared.  No further activity will take place for this request.  The
+     * server will respond to subsequent GET requests targeting this resource with a 404 (Not Found)
+     * status code.
+     * <p>
+     * NOTE: users logged in with the admin role can clear any request.
+     *
+     * @param id of the request.
+     * @return response
+     */
+    @DELETE
+    @ApiOperation("Clear all resources pertaining to the given bulk request id.")
+    @ApiResponses({
+          @ApiResponse(code = 204, message = "No content"),
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 500, message = "Internal Server Error")
+    })
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearRequest(@ApiParam("The unique id of the request.")
+    @PathParam("id") String id) {
+        Subject subject = getSubject();
+        Restriction restriction = getRestriction();
+
+        BulkRequestClearMessage message = new BulkRequestClearMessage(id, restriction);
+        message.setSubject(subject);
+        service.send(message);
+
+        return Response.noContent().build();
+    }
+
+    private Subject getSubject() {
+        if (RequestUser.isAnonymous()) {
+            throw new NotAuthorizedException("User cannot be anonymous.");
+        }
+
+        if (RequestUser.isAdmin()) {
+            return Subjects.ROOT;
+        }
+
+        return RequestUser.getSubject();
+    }
+
+    private Restriction getRestriction() {
+        if (RequestUser.isAdmin()) {
+            return Restrictions.none();
+        }
+
+        return RequestUser.getRestriction();
+    }
 }

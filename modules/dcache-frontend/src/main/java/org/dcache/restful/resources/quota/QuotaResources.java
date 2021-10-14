@@ -59,6 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.quota;
 
+import static diskCacheV111.util.CacheException.ATTRIBUTE_EXISTS;
+import static diskCacheV111.util.CacheException.NO_ATTRIBUTE;
+import static diskCacheV111.util.CacheException.SERVICE_UNAVAILABLE;
+import static org.dcache.restful.util.RequestUser.checkAuthenticated;
+
 import com.google.common.base.Strings;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -105,9 +110,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import static diskCacheV111.util.CacheException.*;
-import static org.dcache.restful.util.RequestUser.checkAuthenticated;
-
 /**
  * <p>RESTful API to the PnfsManager user/group quota management.</p>
  *
@@ -117,6 +119,7 @@ import static org.dcache.restful.util.RequestUser.checkAuthenticated;
 @Api(value = "quota", authorizations = {@Authorization("basicAuth")})
 @Path("/quota")
 public final class QuotaResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(QuotaResources.class);
 
     @Inject
@@ -125,25 +128,26 @@ public final class QuotaResources {
 
     @GET
     @ApiOperation("Get information about all user quotas known to the system."
-                    + " Results sorted lexicographically by user id.")
+          + " Results sorted lexicographically by user id.")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 500, message = "Internal Server Error"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Path("/user")
     @Produces(MediaType.APPLICATION_JSON)
     public List<QuotaInfo> getUserQuotas(@ApiParam(value = "Return user quota associated with "
-                                                                + "calling user only.")
-                                         @DefaultValue("false")
-                                         @QueryParam("user") boolean user) {
+          + "calling user only.")
+    @DefaultValue("false")
+    @QueryParam("user") boolean user) {
         checkAuthenticated();
 
         PnfsManagerGetQuotaMessage message;
 
         if (user) {
-            message = new PnfsManagerGetQuotaMessage((int)Subjects.getUid(RequestUser.getSubject()),
-                                                    QuotaType.USER);
+            message = new PnfsManagerGetQuotaMessage(
+                  (int) Subjects.getUid(RequestUser.getSubject()),
+                  QuotaType.USER);
         } else {
             message = new PnfsManagerGetQuotaMessage(QuotaType.USER);
         }
@@ -153,18 +157,18 @@ public final class QuotaResources {
 
     @GET
     @ApiOperation("Get information about all group quotas known to the system."
-        + " Results sorted lexicographically by group id.")
+          + " Results sorted lexicographically by group id.")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 500, message = "Internal Server Error"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Path("/group")
     @Produces(MediaType.APPLICATION_JSON)
     public List<QuotaInfo> getGroupQuotas(@ApiParam(value = "Return group quota associated with "
-                                                                + "calling user only.")
-                                          @DefaultValue("false")
-                                          @QueryParam("user") boolean user) {
+          + "calling user only.")
+    @DefaultValue("false")
+    @QueryParam("user") boolean user) {
         checkAuthenticated();
 
         PnfsManagerGetQuotaMessage message;
@@ -173,8 +177,9 @@ public final class QuotaResources {
          * REVISIT --- we may eventually want another option to return all the user's gids.
          */
         if (user) {
-            message = new PnfsManagerGetQuotaMessage((int)Subjects.getPrimaryGid(RequestUser.getSubject()),
-                                                     QuotaType.GROUP);
+            message = new PnfsManagerGetQuotaMessage(
+                  (int) Subjects.getPrimaryGid(RequestUser.getSubject()),
+                  QuotaType.GROUP);
         } else {
             message = new PnfsManagerGetQuotaMessage(QuotaType.GROUP);
         }
@@ -185,15 +190,16 @@ public final class QuotaResources {
     @GET
     @ApiOperation("Get information about quota for given user. User must be authenticated.")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 500, message = "Internal Server Error"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Path("/user/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getUserQuota(@ApiParam(value = "The user id to which the quota corresponds.",
-                                                    required = true)
-                                        @PathParam("id") int id) {
+    public List<QuotaInfo> getUserQuota(
+          @ApiParam(value = "The user id to which the quota corresponds.",
+                required = true)
+          @PathParam("id") int id) {
         checkAuthenticated();
 
         return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.USER));
@@ -202,110 +208,113 @@ public final class QuotaResources {
     @GET
     @ApiOperation("Get information about quota for given group. User must be authenticated.")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 500, message = "Internal Server Error"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Path("/group/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QuotaInfo> getGroupQuota(@ApiParam(value = "The group id to which the quota corresponds.",
-                                                    required = true)
-                                         @PathParam("id") int id) {
+    public List<QuotaInfo> getGroupQuota(
+          @ApiParam(value = "The group id to which the quota corresponds.",
+                required = true)
+          @PathParam("id") int id) {
         checkAuthenticated();
 
         return getQuotas(new PnfsManagerGetQuotaMessage(id, QuotaType.GROUP));
     }
 
     @POST
-    @ApiOperation(value="Add a new quota for the given user. Requires admin privileges.")
+    @ApiOperation(value = "Add a new quota for the given user. Requires admin privileges.")
     @Path("/user/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 403, message = "Forbidden"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management."),
-        @ApiResponse(code = 509, message = "Conflict (quota exists)")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management."),
+          @ApiResponse(code = 509, message = "Conflict (quota exists)")
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createUserQuota(@ApiParam(value="The user id for which the quota is created.",
-                                                required=true)
-                                    @PathParam("id") int id,
-                                    @ApiParam(value = "A JSON object that has at least "
-                                                + "one of 'custodialLimit', 'outputLimit' or "
-                                                + "'replicaLimit' defined. The object can "
-                                                + "be null or empty, in which case the quota "
-                                                + "will be created for the id with undefined "
-                                                + "limit values. The value can be a number "
-                                                + "interpreted as bytes or one followed by a byte "
-                                                + "unit suffix using either SI or IEEE 1541, "
-                                                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
-                                    String requestPayload) {
+    public Response createUserQuota(@ApiParam(value = "The user id for which the quota is created.",
+          required = true)
+    @PathParam("id") int id,
+          @ApiParam(value = "A JSON object that has at least "
+                + "one of 'custodialLimit', 'outputLimit' or "
+                + "'replicaLimit' defined. The object can "
+                + "be null or empty, in which case the quota "
+                + "will be created for the id with undefined "
+                + "limit values. The value can be a number "
+                + "interpreted as bytes or one followed by a byte "
+                + "unit suffix using either SI or IEEE 1541, "
+                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
+                String requestPayload) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
 
         return sendQuotaRequest(new PnfsManagerSetQuotaMessage(id,
-                                                               QuotaType.USER,
-                                                               toQuotaRequest(requestPayload),
-                                                        true));
+              QuotaType.USER,
+              toQuotaRequest(requestPayload),
+              true));
     }
 
     @POST
-    @ApiOperation(value="Add a new quota for the given group. Requires admin privileges.")
+    @ApiOperation(value = "Add a new quota for the given group. Requires admin privileges.")
     @Path("/group/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 403, message = "Forbidden"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management."),
-        @ApiResponse(code = 509, message = "Conflict (quota exists)")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management."),
+          @ApiResponse(code = 509, message = "Conflict (quota exists)")
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createGroupQuota(@ApiParam(value="The group id for which the quota is created.",
-                                                    required=true)
-                                     @PathParam("id") int id,
-                                     @ApiParam(value = "A JSON object that has at least "
-                                                + "one of 'custodialLimit', 'outputLimit' or "
-                                                + "'replicaLimit' defined. The object can "
-                                                + "be null or empty, in which case the quota "
-                                                + "will be created for the id with undefined "
-                                                + "limit values. The value can be a number "
-                                                + "interpreted as bytes or one followed by a byte "
-                                                + "unit suffix using either SI or IEEE 1541, "
-                                                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
-                                     String requestPayload) {
+    public Response createGroupQuota(
+          @ApiParam(value = "The group id for which the quota is created.",
+                required = true)
+          @PathParam("id") int id,
+          @ApiParam(value = "A JSON object that has at least "
+                + "one of 'custodialLimit', 'outputLimit' or "
+                + "'replicaLimit' defined. The object can "
+                + "be null or empty, in which case the quota "
+                + "will be created for the id with undefined "
+                + "limit values. The value can be a number "
+                + "interpreted as bytes or one followed by a byte "
+                + "unit suffix using either SI or IEEE 1541, "
+                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
+                String requestPayload) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
 
         return sendQuotaRequest(new PnfsManagerSetQuotaMessage(id,
-                                                               QuotaType.GROUP,
-                                                               toQuotaRequest(requestPayload),
-                                                        true));
+              QuotaType.GROUP,
+              toQuotaRequest(requestPayload),
+              true));
     }
 
     @PATCH
-    @ApiOperation(value="Modify the existing quota for the given user. Requires admin privileges.")
+    @ApiOperation(value = "Modify the existing quota for the given user. Requires admin privileges.")
     @Path("/user/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 403, message = "Forbidden"),
-        @ApiResponse(code = 404, message = "Not Found"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response modifyUserQuota(@ApiParam(value="The user id for which the quota is to be modified.",
-                                                    required=true)
-                                      @PathParam("id") int id,
-                                      @ApiParam(value = "A JSON object that has at least "
-                                                 + "one of 'custodialLimit', 'outputLimit' or "
-                                                 + "'replicaLimit' defined. The object cannot "
-                                                 + "be null or empty. The value can be a number "
-                                                 + "interpreted as bytes or one followed by a byte "
-                                                 + "unit suffix using either SI or IEEE 1541, "
-                                                 + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
-                                      String requestPayload) {
+    public Response modifyUserQuota(
+          @ApiParam(value = "The user id for which the quota is to be modified.",
+                required = true)
+          @PathParam("id") int id,
+          @ApiParam(value = "A JSON object that has at least "
+                + "one of 'custodialLimit', 'outputLimit' or "
+                + "'replicaLimit' defined. The object cannot "
+                + "be null or empty. The value can be a number "
+                + "interpreted as bytes or one followed by a byte "
+                + "unit suffix using either SI or IEEE 1541, "
+                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
+                String requestPayload) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
@@ -315,33 +324,34 @@ public final class QuotaResources {
         }
 
         return sendQuotaRequest(new PnfsManagerSetQuotaMessage(id,
-                                                               QuotaType.USER,
-                                                               toQuotaRequest(requestPayload),
-                                                        false));
+              QuotaType.USER,
+              toQuotaRequest(requestPayload),
+              false));
     }
 
     @PATCH
-    @ApiOperation(value="Modify the existing quota for the given group. Requires admin privileges.")
+    @ApiOperation(value = "Modify the existing quota for the given group. Requires admin privileges.")
     @Path("/group/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 403, message = "Forbidden"),
-        @ApiResponse(code = 404, message = "Not Found"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response modifyGroupQuota(@ApiParam(value="The group id for which the quota is to be modified.",
-                                                    required=true)
-                                     @PathParam("id") int id,
-                                     @ApiParam(value = "A JSON object that has at least "
-                                                + "one of 'custodialLimit', 'outputLimit' or "
-                                                + "'replicaLimit' defined. The object cannot "
-                                                + "be null or empty. The value can be a number "
-                                                + "interpreted as bytes or one followed by a byte "
-                                                + "unit suffix using either SI or IEEE 1541, "
-                                                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
-                                     String requestPayload) {
+    public Response modifyGroupQuota(
+          @ApiParam(value = "The group id for which the quota is to be modified.",
+                required = true)
+          @PathParam("id") int id,
+          @ApiParam(value = "A JSON object that has at least "
+                + "one of 'custodialLimit', 'outputLimit' or "
+                + "'replicaLimit' defined. The object cannot "
+                + "be null or empty. The value can be a number "
+                + "interpreted as bytes or one followed by a byte "
+                + "unit suffix using either SI or IEEE 1541, "
+                + "such as KB, KiB, MB, MiB, etc. 'none' means no limit.")
+                String requestPayload) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
@@ -351,22 +361,23 @@ public final class QuotaResources {
         }
 
         return sendQuotaRequest(new PnfsManagerSetQuotaMessage(id,
-                                                               QuotaType.GROUP,
-                                                               toQuotaRequest(requestPayload),
-                                                        false));
+              QuotaType.GROUP,
+              toQuotaRequest(requestPayload),
+              false));
     }
 
     @DELETE
-    @ApiOperation(value="Remove the existing quota for the given user. Requires admin privileges.")
+    @ApiOperation(value = "Remove the existing quota for the given user. Requires admin privileges.")
     @Path("/user/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 404, message = "Not Found"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
-    public Response removeUserQuota(@ApiParam(value="The user id for which the quota is to be removed.",
-                                                        required=true)
-                                    @PathParam("id") int id) {
+    public Response removeUserQuota(
+          @ApiParam(value = "The user id for which the quota is to be removed.",
+                required = true)
+          @PathParam("id") int id) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
@@ -375,16 +386,17 @@ public final class QuotaResources {
     }
 
     @DELETE
-    @ApiOperation(value="Remove the existing quota for the given group. Requires admin privileges.")
+    @ApiOperation(value = "Remove the existing quota for the given group. Requires admin privileges.")
     @Path("/group/{id}")
     @ApiResponses({
-        @ApiResponse(code = 401, message = "Unauthorized"),
-        @ApiResponse(code = 404, message = "Not Found"),
-        @ApiResponse(code = 503, message = "DCache not configured for quota management.")
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 503, message = "DCache not configured for quota management.")
     })
-    public Response removeGroupQuota(@ApiParam(value="The group id for which the quota is to be removed..",
-                                                        required=true)
-                                     @PathParam("id") int id) {
+    public Response removeGroupQuota(
+          @ApiParam(value = "The group id for which the quota is to be removed..",
+                required = true)
+          @PathParam("id") int id) {
         if (!RequestUser.isAdmin()) {
             throw new ForbiddenException("Requires admin privileges.");
         }
@@ -402,15 +414,15 @@ public final class QuotaResources {
              *            out those settings (just in case).
              */
             return message.getQuotaInfos().stream().map(quotaInfo -> {
-                                                            quotaInfo.setOutput(null);
-                                                            quotaInfo.setOutputLimit(null);
-                                                            return quotaInfo;
-                                                    }).collect(Collectors.toList());
+                quotaInfo.setOutput(null);
+                quotaInfo.setOutputLimit(null);
+                return quotaInfo;
+            }).collect(Collectors.toList());
         } catch (CacheException e) {
-            switch(e.getRc()) {
+            switch (e.getRc()) {
                 case SERVICE_UNAVAILABLE:
                     throw new WebApplicationException(Response.status(503,
-                        "Service unavailable").build());
+                          "Service unavailable").build());
                 case NO_ATTRIBUTE:
                     throw new NotFoundException("No such quota exists");
                 default:
@@ -429,10 +441,10 @@ public final class QuotaResources {
             switch (e.getRc()) {
                 case SERVICE_UNAVAILABLE:
                     throw new WebApplicationException(Response.status(503,
-                        "Service unavailable").build());
+                          "Service unavailable").build());
                 case ATTRIBUTE_EXISTS:
                     throw new WebApplicationException(Response.status(509,
-                            "Quota already exists").build());
+                          "Quota already exists").build());
                 case NO_ATTRIBUTE:
                     throw new NotFoundException("No such quota exists");
                 default:
@@ -447,7 +459,7 @@ public final class QuotaResources {
     }
 
     private static QuotaRequest toQuotaRequest(String requestPayload) {
-        if ( Strings.emptyToNull(requestPayload) == null) {
+        if (Strings.emptyToNull(requestPayload) == null) {
             return null;
         }
 

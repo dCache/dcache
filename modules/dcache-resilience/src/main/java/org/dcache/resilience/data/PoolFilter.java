@@ -64,31 +64,32 @@ import java.util.regex.Pattern;
 
 /**
  * <p>Simple implementation of both matchers.  This is necessary
- *      because a pools operation cancellation may cancel all its
- *      running children (pnfsid) operations.</p>
+ * because a pools operation cancellation may cancel all its running children (pnfsid)
+ * operations.</p>
  */
 public final class PoolFilter implements FileMatcher, PoolMatcher {
+
     private Set<String> state;
-    private Pattern     pools;
-    private boolean     parent;
-    private boolean     source;
-    private boolean     target;
+    private Pattern pools;
+    private boolean parent;
+    private boolean source;
+    private boolean target;
 
     private String poolStatus;
-    private Long   lastUpdateBefore;
-    private Long   lastUpdateAfter;
-    private Long   lastScanBefore;
-    private Long   lastScanAfter;
+    private Long lastUpdateBefore;
+    private Long lastUpdateAfter;
+    private Long lastScanBefore;
+    private Long lastScanAfter;
 
     @Override
     public boolean isUndefined() {
-        return          null == state &&
-                        null == pools &&
-                        null == poolStatus &&
-                        null == lastUpdateBefore &&
-                        null == lastUpdateAfter &&
-                        null == lastScanBefore &&
-                        null == lastScanAfter;
+        return null == state &&
+              null == pools &&
+              null == poolStatus &&
+              null == lastUpdateBefore &&
+              null == lastUpdateAfter &&
+              null == lastScanBefore &&
+              null == lastScanAfter;
     }
 
     @Override
@@ -108,19 +109,19 @@ public final class PoolFilter implements FileMatcher, PoolMatcher {
 
         Integer index = operation.getParent();
         if (parent && index != null &&
-                        pools.matcher(map.getPool(index)).find()) {
+              pools.matcher(map.getPool(index)).find()) {
             return true;
         }
 
         index = operation.getSource();
         if (source && index != null &&
-                        pools.matcher(map.getPool(index)).find()) {
+              pools.matcher(map.getPool(index)).find()) {
             return true;
         }
 
         index = operation.getTarget();
         if (target && index != null &&
-                        pools.matcher(map.getPool(index)).find()) {
+              pools.matcher(map.getPool(index)).find()) {
             return true;
         }
 
@@ -137,17 +138,17 @@ public final class PoolFilter implements FileMatcher, PoolMatcher {
         }
 
         if (poolStatus != null &&
-                        !poolStatus.equals(operation.currStatus.name())) {
+              !poolStatus.equals(operation.currStatus.name())) {
             return false;
         }
 
         if (lastUpdateBefore != null
-                        && lastUpdateBefore <= operation.lastUpdate) {
+              && lastUpdateBefore <= operation.lastUpdate) {
             return false;
         }
 
         if (lastUpdateAfter != null
-                        && lastUpdateAfter >= operation.lastUpdate) {
+              && lastUpdateAfter >= operation.lastUpdate) {
             return false;
         }
 
@@ -164,12 +165,12 @@ public final class PoolFilter implements FileMatcher, PoolMatcher {
 
     public boolean matchesIdle() {
         return state == null
-                        || state.isEmpty()
-                        || state.contains("IDLE")
-                        || state.contains("FAILED")
-                        || state.contains("CANCELED")
-                        || state.contains("EXCLUDED")
-                        || state.contains("INACTIVE");
+              || state.isEmpty()
+              || state.contains("IDLE")
+              || state.contains("FAILED")
+              || state.contains("CANCELED")
+              || state.contains("EXCLUDED")
+              || state.contains("INACTIVE");
     }
 
     public boolean matchesRunning() {

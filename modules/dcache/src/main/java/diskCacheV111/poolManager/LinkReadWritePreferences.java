@@ -1,8 +1,8 @@
 package diskCacheV111.poolManager;
 
 /**
- * Simple Datacontainer - Clumps together all sort of read- writepreferences a
- * link in dCache has
+ * Simple Datacontainer - Clumps together all sort of read- writepreferences a link in dCache has
+ *
  * @author jans
  */
 public class LinkReadWritePreferences {

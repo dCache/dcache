@@ -20,7 +20,6 @@ package dmg.util.command;
 /**
  * Output format for help text.
  */
-public enum HelpFormat
-{
+public enum HelpFormat {
     PLAIN, ANSI
 }

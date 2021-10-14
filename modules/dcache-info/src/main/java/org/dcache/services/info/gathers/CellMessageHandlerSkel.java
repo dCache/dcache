@@ -1,34 +1,31 @@
 package org.dcache.services.info.gathers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
-
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
- * This Class introduces a number of useful utilities common to all
- * CellMessageHandler parsing implementations.
+ * This Class introduces a number of useful utilities common to all CellMessageHandler parsing
+ * implementations.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
-{
+public abstract class CellMessageHandlerSkel implements CellMessageAnswerable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CellMessageHandlerSkel.class);
 
     private static final String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
@@ -38,17 +35,17 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
      * Adds a standard set of metrics that represent some point in time.  We add three metrics that
      * are (in essence) the same date to allow dumb clients (e.g., xslt) to select which one makes
      * sense to them.
-     * @param update  The StateUpdate the three additional metrics will be added to.
+     *
+     * @param update     The StateUpdate the three additional metrics will be added to.
      * @param parentPath the StatePath of the parent branch.
-     * @param theTime the Date describing the time to record.
-     * @param lifetime how long, in seconds, the metric should last.
+     * @param theTime    the Date describing the time to record.
+     * @param lifetime   how long, in seconds, the metric should last.
      */
     protected static void addTimeMetrics(StateUpdate update, StatePath parentPath,
-            Date theTime, long lifetime)
-    {
+          Date theTime, long lifetime) {
         // Supply time as seconds since 1970
         update.appendUpdate(parentPath.newChild("unix"),
-                new IntegerStateValue(theTime.getTime() / 1000, lifetime));
+              new IntegerStateValue(theTime.getTime() / 1000, lifetime));
 
         DateFormat simpleDateFormat = new SimpleDateFormat(SIMPLE_DATE_FORMAT);
         DateFormat iso8601DateFormat = new SimpleDateFormat(ISO_8601_DATE_FORMAT);
@@ -56,11 +53,11 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
 
         // Supply the time in a simple format
         update.appendUpdate(parentPath.newChild("simple"),
-                new StringStateValue(simpleDateFormat.format(theTime), lifetime));
+              new StringStateValue(simpleDateFormat.format(theTime), lifetime));
 
         // Supply the time in UTC in a standard format
         update.appendUpdate(parentPath.newChild("ISO-8601"),
-                new StringStateValue(iso8601DateFormat.format(theTime), lifetime));
+              new StringStateValue(iso8601DateFormat.format(theTime), lifetime));
     }
 
 
@@ -70,32 +67,31 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
     private String _domain;
 
     public CellMessageHandlerSkel(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgHandlerChain)
-    {
+          MessageMetadataRepository<UOID> msgHandlerChain) {
         _sum = sum;
         _msgMetadataRepo = msgHandlerChain;
     }
 
     /**
-     *  Process the information payload.  The metricLifetime gives how long
-     *  the metrics should last, in seconds.
-     *
-     *  We guarantee that msgPayload is never null and is never instanceof Exception.
+     * Process the information payload.  The metricLifetime gives how long the metrics should last,
+     * in seconds.
+     * <p>
+     * We guarantee that msgPayload is never null and is never instanceof Exception.
      */
     public abstract void process(Object msgPayload, long metricLifetime);
 
 
     /**
-     * Build a list of items under a specific path.  These are recorded as
-     * StateComposites (branch nodes).
-     * @param update the StateUpdate to append
-     * @param parentPath the StatePath pointing to the parent of these items
-     * @param items an array of items.
+     * Build a list of items under a specific path.  These are recorded as StateComposites (branch
+     * nodes).
+     *
+     * @param update         the StateUpdate to append
+     * @param parentPath     the StatePath pointing to the parent of these items
+     * @param items          an array of items.
      * @param metricLifetime how long the metric should last, in seconds.
      */
     protected void addItems(StateUpdate update, StatePath parentPath,
-            Object[] items, long metricLifetime)
-    {
+          Object[] items, long metricLifetime) {
         LOGGER.trace("appending list-items under {}", parentPath);
 
         for (Object item : items) {
@@ -104,23 +100,22 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
             LOGGER.trace("    adding item {}", listItem);
 
             update.appendUpdate(parentPath
-                    .newChild(listItem), new StateComposite(metricLifetime));
+                  .newChild(listItem), new StateComposite(metricLifetime));
         }
     }
 
 
     /**
-     * Send a StateUpdate object to our State singleton.  If we get this wrong, log this
-     * fact somewhere.
+     * Send a StateUpdate object to our State singleton.  If we get this wrong, log this fact
+     * somewhere.
+     *
      * @param update the StateUpdate to apply to the state tree.
      */
-    protected void applyUpdates(StateUpdate update)
-    {
+    protected void applyUpdates(StateUpdate update) {
         LOGGER.trace("adding update to state's to-do stack with {} updates for {}",
-                update.count(), getClass().getSimpleName());
+              update.count(), getClass().getSimpleName());
         _sum.enqueueUpdate(update);
     }
-
 
     /**
      * The following methods are needed for CellMessageAnswerable.
@@ -130,13 +125,12 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
      * Incoming message: look it up and call the (abstract) process() method.
      */
     @Override
-    public void answerArrived(CellMessage request, CellMessage answer)
-    {
+    public void answerArrived(CellMessage request, CellMessage answer) {
         Object payload = answer.getMessageObject();
 
         if (payload == null) {
             LOGGER.warn("ignoring incoming message for {} will null payload",
-                    getClass().getSimpleName());
+                  getClass().getSimpleName());
             return;
         }
 
@@ -162,8 +156,7 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
     /**
      * @return the domain from which the message was sent.
      */
-    public String getDomain()
-    {
+    public String getDomain() {
         return _domain;
     }
 
@@ -171,12 +164,11 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
      * Exception arrived, record it and carry on.
      */
     @Override
-    public void exceptionArrived(CellMessage request, Exception exception)
-    {
+    public void exceptionArrived(CellMessage request, Exception exception) {
         if (exception instanceof NoRouteToCellException) {
             LOGGER.info("Sending message to {} failed: {}",
-                    ((NoRouteToCellException)exception).getDestinationPath(),
-                    exception.getMessage());
+                  ((NoRouteToCellException) exception).getDestinationPath(),
+                  exception.getMessage());
         } else {
             LOGGER.error("Received remote exception: {}", exception);
         }
@@ -186,8 +178,7 @@ public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
      * Timeouts we just ignore.
      */
     @Override
-    public void answerTimedOut(CellMessage request)
-    {
+    public void answerTimedOut(CellMessage request) {
         LOGGER.info("Message timed out");
         _msgMetadataRepo.remove(request.getLastUOID());
     }

@@ -9,20 +9,18 @@ import static org.dcache.util.Exceptions.genericCheck;
  */
 public class MissingResourceCacheException extends CacheException {
 
-	private static final long serialVersionUID = 4728338447299397298L;
+    private static final long serialVersionUID = 4728338447299397298L;
 
     public static void checkResourceNotMissing(boolean isOK, String format,
-            Object...arguments) throws MissingResourceCacheException
-    {
+          Object... arguments) throws MissingResourceCacheException {
         genericCheck(isOK, MissingResourceCacheException::new, format, arguments);
     }
 
-	public MissingResourceCacheException(String msg) {
-		super(CacheException.RESOURCE, msg);
-	}
+    public MissingResourceCacheException(String msg) {
+        super(CacheException.RESOURCE, msg);
+    }
 
-    public MissingResourceCacheException(String msg, Throwable cause)
-    {
+    public MissingResourceCacheException(String msg, Throwable cause) {
         super(CacheException.RESOURCE, msg, cause);
     }
 }

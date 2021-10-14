@@ -2,11 +2,20 @@
 
 package diskCacheV111.cells;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.ByteUnit.BYTES;
 
-import javax.annotation.concurrent.GuardedBy;
-
+import diskCacheV111.poolManager.PoolManagerCellInfo;
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.util.HTMLBuilder;
+import dmg.cells.network.PingMessage;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerInfo;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,81 +26,62 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import diskCacheV111.poolManager.PoolManagerCellInfo;
-import diskCacheV111.pools.PoolCellInfo;
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.util.HTMLBuilder;
-
-import dmg.cells.network.PingMessage;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginBrokerInfo;
-
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.util.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.util.ByteUnit.BYTES;
+public class WebCollectorV3 extends CellAdapter implements Runnable {
 
-public class WebCollectorV3 extends CellAdapter implements Runnable
-{
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(WebCollectorV3.class);
+          LoggerFactory.getLogger(WebCollectorV3.class);
 
     protected static final String OPTION_REPEATHEADER = "repeatHeader";
 
     private final CellNucleus _nucleus;
-    private final Args       _args;
+    private final Args _args;
     @GuardedBy("_infoLock")
-    private final Map<CellAddressCore,CellQueryInfo> _infoMap
-        = new TreeMap<>(); // TreeMap because we need it sorted
+    private final Map<CellAddressCore, CellQueryInfo> _infoMap
+          = new TreeMap<>(); // TreeMap because we need it sorted
     @GuardedBy("_infoLock")
     private final Set<CellAddressCore> _queues = new HashSet<>();
-    private final Object     _infoLock  = new Object();
-    private Thread     _collectThread;
-    private Thread     _senderThread;
-    private long       _counter;
-    private int        _repeatHeader    = 30;
+    private final Object _infoLock = new Object();
+    private Thread _collectThread;
+    private Thread _senderThread;
+    private long _counter;
+    private int _repeatHeader = 30;
 
-    private static class SleepHandler
-    {
-        private boolean _enabled         = true;
-        private boolean _mode            = true;
-        private long    _started;
-        private long    _shortPeriod     = 20000L;
-        private long    _regularPeriod   = 120000L;
-        private final long    _retentionFactor = 4;
+    private static class SleepHandler {
 
-        private SleepHandler(boolean aggressive)
-        {
+        private boolean _enabled = true;
+        private boolean _mode = true;
+        private long _started;
+        private long _shortPeriod = 20000L;
+        private long _regularPeriod = 120000L;
+        private final long _retentionFactor = 4;
+
+        private SleepHandler(boolean aggressive) {
             _enabled = aggressive;
-            _mode    = aggressive;
+            _mode = aggressive;
         }
 
-        private synchronized void sleep() throws InterruptedException
-        {
+        private synchronized void sleep() throws InterruptedException {
             long start = System.currentTimeMillis();
             wait(_mode ? _shortPeriod / 2 : _regularPeriod / 2);
             LOGGER.debug("Woke up after {} millis", (System.currentTimeMillis() - start));
         }
 
-        private synchronized void setShortPeriod(long shortPeriod)
-        {
+        private synchronized void setShortPeriod(long shortPeriod) {
             _shortPeriod = shortPeriod;
             notifyAll();
         }
 
-        private synchronized void setRegularPeriod(long regularPeriod)
-        {
+        private synchronized void setRegularPeriod(long regularPeriod) {
             _regularPeriod = regularPeriod;
             notifyAll();
         }
 
-        private synchronized void topologyChanged(boolean modified)
-        {
+        private synchronized void topologyChanged(boolean modified) {
             // _log.info("Topology changed : {}", modified);
             if (!_enabled) {
                 return;
@@ -105,8 +95,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 }
 
             } else if (_mode &&
-                      (System.currentTimeMillis() - _started) >
-                       (_shortPeriod * _retentionFactor)) {
+                  (System.currentTimeMillis() - _started) >
+                        (_shortPeriod * _retentionFactor)) {
                 _mode = false;
                 notifyAll();
                 LOGGER.info("Aggressive changed to OFF");
@@ -115,103 +105,92 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "E=" + _enabled +
-                   ";A=" + _mode +
-                   ";S=" + _shortPeriod +
-                   ";Ret" + _retentionFactor +
-                   ";R=" + _regularPeriod;
+                  ";A=" + _mode +
+                  ";S=" + _shortPeriod +
+                  ";Ret" + _retentionFactor +
+                  ";R=" + _regularPeriod;
         }
     }
 
-    private SleepHandler     _sleepHandler;
-    private final SimpleDateFormat _formatter    = new SimpleDateFormat ("MM/dd HH:mm:ss");
+    private SleepHandler _sleepHandler;
+    private final SimpleDateFormat _formatter = new SimpleDateFormat("MM/dd HH:mm:ss");
 
-    private class CellQueryInfo
-    {
+    private class CellQueryInfo {
+
         private final CellAddressCore _destination;
-        private       long        _diff        = -1;
-        private       long        _start;
-        private       CellInfo    _info;
-        private       long        _lastMessage;
-        private       boolean     _present;
+        private long _diff = -1;
+        private long _start;
+        private CellInfo _info;
+        private long _lastMessage;
+        private boolean _present;
 
-        private CellQueryInfo(CellAddressCore destination)
-        {
+        private CellQueryInfo(CellAddressCore destination) {
             _destination = destination;
         }
 
-        private CellAddressCore getDestination()
-        {
+        private CellAddressCore getDestination() {
             return _destination;
         }
 
-        private String      getName()
-        {
+        private String getName() {
             return _destination.getCellName();
         }
 
-        private CellInfo    getCellInfo()
-        {
+        private CellInfo getCellInfo() {
             return _info;
         }
 
-        private long        getPingTime()
-        {
+        private long getPingTime() {
             return _diff;
         }
 
-        private CellMessage getCellMessage()
-        {
+        private CellMessage getCellMessage() {
             _start = System.currentTimeMillis();
             return new CellMessage(_destination, "xgetcellinfo");
         }
 
-        private void infoArrived(CellInfo info)
-        {
+        private void infoArrived(CellInfo info) {
             _info = info;
             _diff = (_lastMessage = System.currentTimeMillis()) - _start;
             _present = true;
         }
 
-        private boolean isOk()
-        {
+        private boolean isOk() {
             return (System.currentTimeMillis() - _lastMessage) <
-                (3 * _sleepHandler._regularPeriod);
+                  (3 * _sleepHandler._regularPeriod);
         }
 
-        private boolean isPresent()
-        {
+        private boolean isPresent() {
             return _present;
         }
     }
 
-    public WebCollectorV3(String name, String args)
-    {
+    public WebCollectorV3(String name, String args) {
         super(name, WebCollectorV3.class.getName(), args);
         _args = getArgs();
         _nucleus = getNucleus();
     }
 
     @Override
-    protected void starting()
-    {
+    protected void starting() {
         if (_args.hasOption(OPTION_REPEATHEADER)) {
             String optionString = null;
             try {
                 optionString = _args.getOpt(OPTION_REPEATHEADER);
                 _repeatHeader = Math.max(0, Integer.parseInt(optionString));
             } catch (NumberFormatException e) {
-                LOGGER.warn("Parsing error in in {} command : {}", OPTION_REPEATHEADER, optionString);
+                LOGGER.warn("Parsing error in in {} command : {}", OPTION_REPEATHEADER,
+                      optionString);
             }
             LOGGER.info("Repeat header set to {}", _repeatHeader);
         }
 
         String optionString = _args.getOpt("aggressive");
         boolean aggressive =
-                (optionString != null) &&
-                (optionString.equals("off") || optionString.equals("false"));
+              (optionString != null) &&
+                    (optionString.equals("off") || optionString.equals("false"));
 
         aggressive = !aggressive;
 
@@ -221,8 +200,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    protected void started()
-    {
+    protected void started() {
         synchronized (_infoLock) {
             for (int i = 0; i < _args.argc(); i++) {
                 addQuery(new CellAddressCore(_args.argv(i)));
@@ -237,8 +215,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @GuardedBy("_infoLock")
-    private boolean addQuery(CellAddressCore address)
-    {
+    private boolean addQuery(CellAddressCore address) {
         if (_infoMap.containsKey(address) || _queues.contains(address)) {
             return false;
         }
@@ -254,8 +231,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         return true;
     }
 
-    private void removeQuery(String destination)
-    {
+    private void removeQuery(String destination) {
         LOGGER.debug("Removing {}", destination);
         synchronized (_infoLock) {
             _infoMap.remove(new CellAddressCore(destination));
@@ -263,8 +239,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         Thread x = Thread.currentThread();
         if (x == _senderThread) {
             runSender();
@@ -273,8 +248,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
-    private void runCollector()
-    {
+    private void runCollector() {
         try {
             Thread.sleep(30000L);
         } catch (InterruptedException e1) {
@@ -294,8 +268,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
-    private void runSender()
-    {
+    private void runSender() {
         //CellMessage loginBrokerMessage = new CellMessage(new CellPath
 
         try {
@@ -316,21 +289,18 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
-    private void sendPing(CellAddressCore address)
-    {
+    private void sendPing(CellAddressCore address) {
         LOGGER.debug("Sending ping to : {}", address);
         sendMessage(new CellMessage(address, new PingMessage()));
     }
 
-    private void sendQuery(CellQueryInfo info)
-    {
+    private void sendQuery(CellQueryInfo info) {
         LOGGER.debug("Sending query to : {}", info.getDestination());
         sendMessage(info.getCellMessage());
     }
 
     @Override
-    public void messageArrived(CellMessage message)
-    {
+    public void messageArrived(CellMessage message) {
         Object reply = message.getMessageObject();
 
         int modified = 0;
@@ -338,8 +308,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         if (reply instanceof LoginBrokerInfo) {
             LoginBrokerInfo brokerInfo = (LoginBrokerInfo) reply;
             synchronized (_infoLock) {
-                LOGGER.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
-                if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
+                LOGGER.debug("Login broker reports: {}@{}", brokerInfo.getCellName(),
+                      brokerInfo.getDomainName());
+                if (addQuery(
+                      new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
                     modified++;
                 }
             }
@@ -383,19 +355,19 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     public static final String hh_set_repeat_header = "<repeatHeaderCount>|0";
-    public synchronized String ac_set_repeat_header_$_1(Args args)
-    {
+
+    public synchronized String ac_set_repeat_header_$_1(Args args) {
         _repeatHeader = Integer.parseInt(args.argv(0));
         return "";
     }
 
-    private final Map<String,Map<?,?>> _poolGroup = new HashMap<>();
+    private final Map<String, Map<?, ?>> _poolGroup = new HashMap<>();
     public static final String hh_define_poolgroup = "<poolgroup> [poolName | /regExpr/ ] ... ";
-    public String ac_define_poolgroup_$_1_99(Args args)
-    {
+
+    public String ac_define_poolgroup_$_1_99(Args args) {
         String poolGroupName = args.argv(0);
         synchronized (_poolGroup) {
-            Map<?,?> map = _poolGroup.get( poolGroupName);
+            Map<?, ?> map = _poolGroup.get(poolGroupName);
             if (map == null) {
                 _poolGroup.put(poolGroupName, map = new HashMap<>());
             }
@@ -408,8 +380,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     public static final String hh_watch = "<CellAddress> [...]";
-    public String ac_watch_$_1_99(Args args)
-    {
+
+    public String ac_watch_$_1_99(Args args) {
         synchronized (_infoLock) {
             for (int i = 0; i < args.argc(); i++) {
                 addQuery(new CellAddressCore(args.argv(i)));
@@ -419,12 +391,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     public static final String hh_dump_info = "[minPingTime] # dumps all info about watched cells";
-    public String ac_dump_info_$_0_1(Args args)
-    {
-        long     minPingTime = 0;
+
+    public String ac_dump_info_$_0_1(Args args) {
+        long minPingTime = 0;
         StringBuilder buf = new StringBuilder();
         if (args.argc() > 0) {
-            minPingTime  = Long.parseLong(args.argv(0));
+            minPingTime = Long.parseLong(args.argv(0));
         }
 
         for (CellQueryInfo info : _infoMap.values()) {
@@ -433,11 +405,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             if (pingTime > minPingTime) {
                 if (info.isOk()) {
                     buf.append("").append(cellInfo.getDomainName()).append(" ")
-                            .append(cellInfo).append(" ").append(pingTime)
-                            .append("\n");
+                          .append(cellInfo).append(" ").append(pingTime)
+                          .append("\n");
                 } else if (info.isPresent()) {
                     buf.append("").append(cellInfo.getDomainName()).append(" ")
-                            .append(cellInfo).append("\n");
+                          .append(cellInfo).append("\n");
                 }
             }
         }
@@ -445,8 +417,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     public static final String hh_unwatch = "<CellAddress> [...]";
-    public String ac_unwatch_$_1_99(Args args)
-    {
+
+    public String ac_unwatch_$_1_99(Args args) {
         for (int i = 0; i < args.argc(); i++) {
             removeQuery(args.argv(i));
         }
@@ -454,8 +426,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     public static final String hh_set_interval = "[<pingInteval/sec>] [-short=<aggressiveInterval>]";
-    public String ac_set_interval_$_1(Args args)
-    {
+
+    public String ac_set_interval_$_1(Args args) {
 
         if (args.argc() > 0) {
             _sleepHandler.setRegularPeriod(1000L * Long.parseLong(args.argv(0)));
@@ -465,30 +437,28 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _sleepHandler.setShortPeriod(1000L * Long.parseLong(opt));
         }
         long _interval = 1000 * Long.parseLong(args.argv(0));
-        return "Interval set to "+_interval+" [msecs]";
+        return "Interval set to " + _interval + " [msecs]";
     }
 
-    private static final int HEADER_TOP    = 0;
+    private static final int HEADER_TOP = 0;
     private static final int HEADER_MIDDLE = 1;
     private static final int HEADER_BOTTOM = 2;
 
-    private static class ActionHeaderExtension
-    {
-        private final TreeMap<String,int[]> _map;  // TreeMap because we need it sorted
-        private ActionHeaderExtension(TreeMap<String,int[]> map)
-        {
+    private static class ActionHeaderExtension {
+
+        private final TreeMap<String, int[]> _map;  // TreeMap because we need it sorted
+
+        private ActionHeaderExtension(TreeMap<String, int[]> map) {
             _map = map == null ? new TreeMap<>() : map;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return _map.toString();
         }
 
-        int [] [] getSortedMovers(
-                Map<String, PoolCostInfo.NamedPoolQueueInfo> moverMap)
-        {
+        int[][] getSortedMovers(
+              Map<String, PoolCostInfo.NamedPoolQueueInfo> moverMap) {
             int[][] rows = new int[_map.size()][];
             if (moverMap == null) {
                 for (int i = 0; i < _map.size(); i++) {
@@ -498,13 +468,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 int i = 0;
                 for (String key : _map.keySet()) {
                     PoolCostInfo.PoolQueueInfo mover = moverMap.get(key);
-                    if (mover == null ) {
-                        rows[i] = new int[] { -1, -1, -1 };
+                    if (mover == null) {
+                        rows[i] = new int[]{-1, -1, -1};
                     } else {
-                        rows[i] = new int[] {
-                            mover.getActive(),
-                            mover.getMaxActive(),
-                            mover.getQueued()
+                        rows[i] = new int[]{
+                              mover.getActive(),
+                              mover.getMaxActive(),
+                              mover.getQueued()
                         };
                     }
                     i++;
@@ -513,28 +483,25 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             return rows;
         }
 
-        public Set<String> getSet()
-        {
+        public Set<String> getSet() {
             return _map.keySet();
         }
 
-        public Map<String,int[]> getTotals()
-        {
+        public Map<String, int[]> getTotals() {
             return _map;
         }
     }
 
     private void printPoolActionTableHeader(HTMLBuilder page, ActionHeaderExtension ext,
-                                            int position)
-    {
-        assert HEADER_TOP    == 0;
+          int position) {
+        assert HEADER_TOP == 0;
         assert HEADER_MIDDLE == 1;
         assert HEADER_BOTTOM == 2;
 
         int[][] program = {
-            { 0, 1, 2, 3 },
-            { 0, 3, 2, 1, 2, 3 },
-            { 0, 3, 2, 1 }
+              {0, 1, 2, 3},
+              {0, 3, 2, 1, 2, 3},
+              {0, 3, 2, 1}
         };
 
         Set<String> moverSet = ext != null ? ext.getSet() : null;
@@ -542,53 +509,52 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         for (int i : program[position]) {
             switch (i) {
-            case 0:
-                int rowspan = program[position].length / 2;
-                page.beginRow();
-                page.th(rowspan, 1, "cell",   "CellName");
-                page.th(rowspan, 1, "domain", "DomainName");
-                break;
+                case 0:
+                    int rowspan = program[position].length / 2;
+                    page.beginRow();
+                    page.th(rowspan, 1, "cell", "CellName");
+                    page.th(rowspan, 1, "domain", "DomainName");
+                    break;
 
-            case 1:
-                page.th(3, null, "Movers");
-                page.th(3, null, "Restores");
-                page.th(3, null, "Stores");
-                page.th(3, null, "P2P-Server");
-                page.th(3, null, "P2P-Client");
+                case 1:
+                    page.th(3, null, "Movers");
+                    page.th(3, null, "Restores");
+                    page.th(3, null, "Stores");
+                    page.th(3, null, "P2P-Server");
+                    page.th(3, null, "P2P-Client");
 
-                if (moverSet != null) {
-                    for (String s : moverSet) {
-                        page.th(3, null, s);
+                    if (moverSet != null) {
+                        for (String s : moverSet) {
+                            page.th(3, null, s);
+                        }
                     }
-                }
-                page.endRow();
-                break;
+                    page.endRow();
+                    break;
 
-            case 2:
-                page.beginRow();
-                break;
+                case 2:
+                    page.beginRow();
+                    break;
 
-            case 3:
-                for (int h = 0, n = 5 + diff; h < n; h++) {
-                    page.th("active", "Active");
-                    page.th("max",    "Max");
-                    page.th("queued", "Queued");
-                }
-                page.endRow();
-                break;
+                case 3:
+                    for (int h = 0, n = 5 + diff; h < n; h++) {
+                        page.th("active", "Active");
+                        page.th("max", "Max");
+                        page.th("queued", "Queued");
+                    }
+                    page.endRow();
+                    break;
             }
         }
     }
 
-    private void printCellInfoRow(CellInfo info, long ping, HTMLBuilder page)
-    {
+    private void printCellInfoRow(CellInfo info, long ping, HTMLBuilder page) {
         page.beginRow(null, "odd");
-        page.td("cell",   info.getCellName());
+        page.td("cell", info.getCellName());
         page.td("domain", info.getDomainName());
-        page.td("rp",     info.getEventQueueSize());
-        page.td("th",     info.getThreadCount());
-        page.td("ping",   ping + " msec");
-        page.td("time",   _formatter.format(info.getCreationTime()));
+        page.td("rp", info.getEventQueueSize());
+        page.td("th", info.getThreadCount());
+        page.td("ping", ping + " msec");
+        page.td("time", _formatter.format(info.getCreationTime()));
         try {
             page.td("version", info.getCellVersion());
         } catch (NoSuchMethodError e) {
@@ -601,12 +567,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     //
     //               the pool queue info table(s)
     //
+
     /**
-     *       convert the pool cost info (xgetcellinfo) into the
-     *       int [] []   array.
+     * convert the pool cost info (xgetcellinfo) into the int [] []   array.
      */
-    private int [] []  decodePoolCostInfo(PoolCostInfo costInfo)
-    {
+    private int[][] decodePoolCostInfo(PoolCostInfo costInfo) {
 
         PoolCostInfo.PoolQueueInfo mover = costInfo.getMoverQueue();
         PoolCostInfo.PoolQueueInfo restore = costInfo.getRestoreQueue();
@@ -617,84 +582,85 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         int[][] rows = new int[5][];
 
         rows[0] = new int[]{
-                    mover.getActive(),
-                    mover.getMaxActive(),
-                    mover.getQueued()
-                };
+              mover.getActive(),
+              mover.getMaxActive(),
+              mover.getQueued()
+        };
         rows[1] = new int[]{
-                    restore.getActive(),
-                    -1,
-                    restore.getQueued()
-                };
+              restore.getActive(),
+              -1,
+              restore.getQueued()
+        };
         rows[2] = new int[]{
-                    store.getActive(),
-                    -1,
-                    store.getQueued()
-                };
+              store.getActive(),
+              -1,
+              store.getQueued()
+        };
 
         if (p2pServer == null) {
             rows[3] = null;
         } else {
             rows[3] = new int[]{
-                        p2pServer.getActive(),
-                        p2pServer.getMaxActive(),
-                        p2pServer.getQueued()
-                    };
+                  p2pServer.getActive(),
+                  p2pServer.getMaxActive(),
+                  p2pServer.getQueued()
+            };
         }
 
         rows[4] = new int[]{
-                    p2pClient.getActive(),
-                    -1,
-                    -1
-                };
+              p2pClient.getActive(),
+              -1,
+              -1
+        };
 
         return rows;
     }
 
-    private double round(double value)
-    {
+    private double round(double value) {
         return Math.floor(value * 10) / 10.0;
     }
 
-    private void printPoolInfoRow(PoolCellInfo cellInfo, HTMLBuilder page)
-    {
+    private void printPoolInfoRow(PoolCellInfo cellInfo, HTMLBuilder page) {
         PoolCostInfo.PoolSpaceInfo info =
-            cellInfo.getPoolCostInfo().getSpaceInfo();
-
+              cellInfo.getPoolCostInfo().getSpaceInfo();
 
         if (cellInfo.getErrorCode() == 0) {
-            long total     = info.getTotalSpace();
+            long total = info.getTotalSpace();
             long freespace = info.getFreeSpace();
-            long precious  = info.getPreciousSpace();
+            long precious = info.getPreciousSpace();
             long removable = info.getRemovableSpace();
 
-            double red     = round(100 * precious / (float)total);
-            double green   = round(100 * removable / (float)total);
-            double yellow  = round(100 * freespace / (float)total);
+            double red = round(100 * precious / (float) total);
+            double green = round(100 * removable / (float) total);
+            double yellow = round(100 * freespace / (float) total);
             double magenta = Math.max(0, 100 - red - green - yellow);
 
             LOGGER.info(cellInfo.getCellName() + " : " +
-                ";total=" + total + ";free=" + freespace +
-                ";precious=" + precious + ";removable=" + removable);
+                  ";total=" + total + ";free=" + freespace +
+                  ";precious=" + precious + ";removable=" + removable);
 
             page.beginRow(null, "odd");
-            page.td("cell",     cellInfo.getCellName());
-            page.td("domain",   cellInfo.getDomainName());
-            page.td("total",    BYTES.toMiB(total));
-            page.td("free",     BYTES.toMiB(freespace));
+            page.td("cell", cellInfo.getCellName());
+            page.td("domain", cellInfo.getDomainName());
+            page.td("total", BYTES.toMiB(total));
+            page.td("free", BYTES.toMiB(freespace));
             page.td("precious", BYTES.toMiB(precious));
             page.td("layout",
-                    "<div>",
-                    "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",
-                    "<div class=\"layout_sticky\" style=\"width: ", String.format(Locale.US, "%.1f", magenta), "%\"></div>",
-                    "<div class=\"layout_cached\" style=\"width: ", String.format(Locale.US, "%.1f", green), "%\"></div>",
-                    "<div class=\"layout_free\" style=\"width: ", String.format(Locale.US, "%.1f", yellow), "%\"></div>",
-                    "</div>");
+                  "<div>",
+                  "<div class=\"layout_precious\" style=\"width: ",
+                  String.format(Locale.US, "%.1f", red), "%\"></div>",
+                  "<div class=\"layout_sticky\" style=\"width: ",
+                  String.format(Locale.US, "%.1f", magenta), "%\"></div>",
+                  "<div class=\"layout_cached\" style=\"width: ",
+                  String.format(Locale.US, "%.1f", green), "%\"></div>",
+                  "<div class=\"layout_free\" style=\"width: ",
+                  String.format(Locale.US, "%.1f", yellow), "%\"></div>",
+                  "</div>");
             page.endRow();
         } else {
             page.beginRow(null, "odd");
-            page.td("cell",      cellInfo.getCellName());
-            page.td("domain",    cellInfo.getDomainName());
+            page.td("cell", cellInfo.getCellName());
+            page.td("domain", cellInfo.getDomainName());
             page.td("errorcode", "[", cellInfo.getErrorCode(), "]");
             page.td(3, "errormessage", cellInfo.getErrorMessage());
             page.endRow();
@@ -702,8 +668,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     private void printPoolActionRow(PoolCostEntry info,
-            ActionHeaderExtension ext,
-            HTMLBuilder page) {
+          ActionHeaderExtension ext,
+          HTMLBuilder page) {
         page.beginRow(null, "odd");
         page.td("cell", info._cellName);
         page.td("domain", info._domainName);
@@ -745,25 +711,23 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     private void printOfflineCellInfoRow(String name, String domain,
-                                         HTMLBuilder page)
-    {
+          HTMLBuilder page) {
         page.beginRow(null, "odd");
-        page.td("cell",   name);
+        page.td("cell", name);
         page.td("domain", domain);
         page.td(5, "offline", "OFFLINE");
         page.endRow();
     }
 
-    private void printCellInfoTable(HTMLBuilder page)
-    {
+    private void printCellInfoTable(HTMLBuilder page) {
         page.beginTable("sortable",
-                "cell", "CellName",
-                "domain", "DomainName",
-                "rp", "RP",
-                "th", "TH",
-                "ping", "Ping",
-                "time", "Creation Time",
-                "version", "Version");
+              "cell", "CellName",
+              "domain", "DomainName",
+              "rp", "RP",
+              "th", "TH",
+              "ping", "Ping",
+              "time", "Creation Time",
+              "version", "Version");
 
         for (CellQueryInfo info : _infoMap.values()) {
             CellInfo cellInfo = info.getCellInfo();
@@ -772,29 +736,28 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 printCellInfoRow(cellInfo, pingTime, page);
             } else if (info.isPresent()) {
                 printOfflineCellInfoRow(info.getName(),
-                        (cellInfo == null ||
-                         cellInfo.getDomainName().isEmpty())
-                        ? "&lt;unknown&gt"
-                        : cellInfo.getDomainName(),
-                        page);
+                      (cellInfo == null ||
+                            cellInfo.getDomainName().isEmpty())
+                            ? "&lt;unknown&gt"
+                            : cellInfo.getDomainName(),
+                      page);
             }
         }
         page.endTable();
     }
 
-    private synchronized void printPoolInfoTable(HTMLBuilder page)
-    {
+    private synchronized void printPoolInfoTable(HTMLBuilder page) {
         page.beginTable("sortable",
-                        "cell",     "CellName",
-                        "domain",   "DomainName",
-                        "total",    "Total Space/MiB",
-                        "free",     "Free Space/MiB",
-                        "precious", "Precious Space/MiB",
-                        "layout",   "<span>Layout   " +
-                          "(<span class=\"layout_precious\">precious/</span>" +
-                          "<span class=\"layout_sticky\">sticky/</span>" +
-                          "<span class=\"layout_cached\">cached/</span>" +
-                          "<span class=\"layout_free\">free</span>)</span>");
+              "cell", "CellName",
+              "domain", "DomainName",
+              "total", "Total Space/MiB",
+              "free", "Free Space/MiB",
+              "precious", "Precious Space/MiB",
+              "layout", "<span>Layout   " +
+                    "(<span class=\"layout_precious\">precious/</span>" +
+                    "<span class=\"layout_sticky\">sticky/</span>" +
+                    "<span class=\"layout_cached\">cached/</span>" +
+                    "<span class=\"layout_free\">free</span>)</span>");
 
         for (CellQueryInfo info : _infoMap.values()) {
             CellInfo cellInfo = info.getCellInfo();
@@ -806,24 +769,23 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         page.endTable();
     }
 
-    private static class PoolCostEntry
-    {
-        final String  _cellName;
-        final String  _domainName;
-        final int[][] _row;
-        final Map<String,PoolCostInfo.NamedPoolQueueInfo> _movers;
+    private static class PoolCostEntry {
 
-        PoolCostEntry(String name, String domain, int[][] row, Map<String, PoolCostInfo.NamedPoolQueueInfo> movers)
-        {
-            _cellName   = name;
+        final String _cellName;
+        final String _domainName;
+        final int[][] _row;
+        final Map<String, PoolCostInfo.NamedPoolQueueInfo> _movers;
+
+        PoolCostEntry(String name, String domain, int[][] row,
+              Map<String, PoolCostInfo.NamedPoolQueueInfo> movers) {
+            _cellName = name;
             _domainName = domain;
-            _row        = row;
-            _movers     = movers;
+            _row = row;
+            _movers = movers;
         }
     }
 
-    private synchronized List<PoolCostEntry> preparePoolCostTable()
-    {
+    private synchronized List<PoolCostEntry> preparePoolCostTable() {
         List<PoolCostEntry> list = new ArrayList<>();
 
         for (CellQueryInfo info : _infoMap.values()) {
@@ -835,17 +797,16 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
                 if (status != null) {
                     list.add(new PoolCostEntry(pci.getCellName(),
-                                               pci.getDomainName(),
-                                               status,
-                                               pci.getPoolCostInfo().getExtendedMoverHash()));
+                          pci.getDomainName(),
+                          status,
+                          pci.getPoolCostInfo().getExtendedMoverHash()));
                 }
             }
         }
         return list;
     }
 
-    private synchronized void printPoolActionTable2(HTMLBuilder page)
-    {
+    private synchronized void printPoolActionTable2(HTMLBuilder page) {
         // get the translated list
         LOGGER.debug("Preparing pool cost table");
         List<PoolCostEntry> list = preparePoolCostTable();
@@ -857,8 +818,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         for (PoolCostEntry e : list) {
             if (e._movers != null) {
                 for (Map.Entry<String, PoolCostInfo.NamedPoolQueueInfo> entry : e._movers.entrySet()) {
-                    String    queueName = entry.getKey();
-                    int [] t = moverMap.get(queueName);
+                    String queueName = entry.getKey();
+                    int[] t = moverMap.get(queueName);
                     if (t == null) {
                         moverMap.put(queueName, t = new int[3]);
                     }
@@ -900,9 +861,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     private void printPoolActionTableTotals(HTMLBuilder page,
-                                            ActionHeaderExtension extension,
-                                            int [] [] total)
-    {
+          ActionHeaderExtension extension,
+          int[][] total) {
         page.beginRow("total");
         page.th(2, null, "Total");
 
@@ -920,8 +880,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             }
         }
 
-        Map<String,int[]> map =
-            extension == null ? null : extension.getTotals();
+        Map<String, int[]> map =
+              extension == null ? null : extension.getTotals();
         if (map != null) {
             for (int[] row : map.values()) {
                 page.td("active", row[0]);
@@ -931,36 +891,35 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
         page.endRow();
     }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////
     //
     //                Prepare the info tables in the context
     //
-    private void preparePage()
-    {
-            HTMLBuilder page;
-            // cell info tabel (request, threads, ping and creating time)
-            page = new HTMLBuilder(_nucleus.getDomainContext());
-            page.addHeader("/styles/cellInfo.css", "Services");
-            printCellInfoTable(page);
-            page.addFooter(getClass().getName());
-            page.writeToContext("cellInfoTable.html");
-            // disk usage page
-            page = new HTMLBuilder(_nucleus.getDomainContext());
-            page.addHeader("/styles/usageInfo.css", "Disk Space Usage");
-            printPoolInfoTable(page);
-            page.addFooter(getClass().getName());
-            page.writeToContext("poolUsageTable.html");
-            // pool queue page
-            page = new HTMLBuilder(_nucleus.getDomainContext());
-            page.addHeader("/styles/queueInfo.css", "Pool Request Queues");
-            printPoolActionTable2(page);
-            page.addFooter(getClass().getName());
-            page.writeToContext("poolQueueTable.html");
+    private void preparePage() {
+        HTMLBuilder page;
+        // cell info tabel (request, threads, ping and creating time)
+        page = new HTMLBuilder(_nucleus.getDomainContext());
+        page.addHeader("/styles/cellInfo.css", "Services");
+        printCellInfoTable(page);
+        page.addFooter(getClass().getName());
+        page.writeToContext("cellInfoTable.html");
+        // disk usage page
+        page = new HTMLBuilder(_nucleus.getDomainContext());
+        page.addHeader("/styles/usageInfo.css", "Disk Space Usage");
+        printPoolInfoTable(page);
+        page.addFooter(getClass().getName());
+        page.writeToContext("poolUsageTable.html");
+        // pool queue page
+        page = new HTMLBuilder(_nucleus.getDomainContext());
+        page.addHeader("/styles/queueInfo.css", "Pool Request Queues");
+        printPoolActionTable2(page);
+        page.addFooter(getClass().getName());
+        page.writeToContext("poolQueueTable.html");
     }
 
     @Override
-    protected void stopping()
-    {
+    protected void stopping() {
         LOGGER.info("Clean Up sequence started");
         //
         // wait for the worker to be done
@@ -977,8 +936,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    public void stopped()
-    {
+    public void stopped() {
         _nucleus.getDomainContext().remove("cellInfoTable.html");
         LOGGER.info("cellInfoTable.html removed from domain context");
 
@@ -986,11 +944,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
-        pw.println("        Version : $Id: WebCollectorV3.java,v 1.30 2007-10-29 14:19:08 behrmann Exp $");
-        pw.println("Update Interval : "+_sleepHandler);
-        pw.println("        Updates : "+_counter);
-        pw.println("       Watching : "+_infoMap.size()+" cells");
+    public void getInfo(PrintWriter pw) {
+        pw.println(
+              "        Version : $Id: WebCollectorV3.java,v 1.30 2007-10-29 14:19:08 behrmann Exp $");
+        pw.println("Update Interval : " + _sleepHandler);
+        pw.println("        Updates : " + _counter);
+        pw.println("       Watching : " + _infoMap.size() + " cells");
     }
 }

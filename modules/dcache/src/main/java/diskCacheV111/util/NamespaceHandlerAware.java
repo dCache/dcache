@@ -60,5 +60,6 @@ documents or software obtained from this server.
 package diskCacheV111.util;
 
 public interface NamespaceHandlerAware {
-  void setNamespaceHandler(PnfsHandler pnfsHandler);
+
+    void setNamespaceHandler(PnfsHandler pnfsHandler);
 }

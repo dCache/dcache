@@ -21,26 +21,22 @@ import com.google.common.collect.ImmutableMap;
 
 
 /**
- * A "Level of authentication Assurance" (commonly abbreviated to
- * "Level of Assurance" or just "LoA") provides a measure of the
- * likelihood that the person who is authenticating is the person
+ * A "Level of authentication Assurance" (commonly abbreviated to "Level of Assurance" or just
+ * "LoA") provides a measure of the likelihood that the person who is authenticating is the person
  * described in public credentials used in that authentication process.
  * <p>
- * Public credentials, such as a SAML assertion or an X.509 certificate carry
- * information about a person, such as their name.  When authenticating (and
- * ultimately authorising) a user, there should be some appreciation of the
- * likelihood that this information is wrong; for example, that the user has
- * stolen the corresponding private material (private key for X.509, usually
- * username & password for SAML), by establishing a false identity when
- * registering with the registrar (the Certificate Authority for X.509, the IdP
- * for SAML), or simply by authenticating with a mechanism where the registrar
- * does not investigate the person's identity.
+ * Public credentials, such as a SAML assertion or an X.509 certificate carry information about a
+ * person, such as their name.  When authenticating (and ultimately authorising) a user, there
+ * should be some appreciation of the likelihood that this information is wrong; for example, that
+ * the user has stolen the corresponding private material (private key for X.509, usually username &
+ * password for SAML), by establishing a false identity when registering with the registrar (the
+ * Certificate Authority for X.509, the IdP for SAML), or simply by authenticating with a mechanism
+ * where the registrar does not investigate the person's identity.
  * <p>
- * Different profiles exist that provide some common appreciation of this risk.
- * These are described as one of the LoA profiles described below.
+ * Different profiles exist that provide some common appreciation of this risk. These are described
+ * as one of the LoA profiles described below.
  */
-public enum LoA
-{
+public enum LoA {
     /*
      * The International Grid Trust Federation (IGTF) Authentication Profiles
      * (APs) describe the different policies a Certificate Authority must
@@ -51,6 +47,7 @@ public enum LoA
 
     /**
      * Classic X.509 Authorities with secured infrastructure.
+     *
      * @see <a href="https://www.eugridpma.org/guidelines/classic">IGTF
      * documentation</a>.
      */
@@ -58,32 +55,34 @@ public enum LoA
 
     /**
      * Short-Lived Credential Services (SLCS).
+     *
      * @see <a href="https://www.igtf.net/ap/slcs/">IGTF documentation</a>.
      */
     IGTF_AP_SLCS("IGTF-AP:SLCS"),
 
     /**
-     * Member Integrated X.509 Credential Services (MICS) with Secured
-     * Infrastructure.
+     * Member Integrated X.509 Credential Services (MICS) with Secured Infrastructure.
+     *
      * @see <a href="https://www.igtf.net/ap/mics/>IGTF documentation</a>.
      */
     IGTF_AP_MICS("IGTF-AP:MICS"),
 
     /**
      * Identifier-Only Trust Assurance (IOTA) with Secured Infrastructure.
+     *
      * @see <a href="https://www.igtf.net/ap/iota/">IGTF documentation</a>.
      */
     IGTF_AP_IOTA("IGTF-AP:IOTA"),
 
     /**
      * Short-lived Credential Generation Services (SGCS). Discontinued.
+     *
      * @see <a href="http://www.tagpma.org/node/5">IGTF documentation</a>.
      */
     IGTF_AP_SGCS("IGTF-AP:SGCS"),
 
     /**
-     * Experimental Authorities.
-     * Currently undocumented by IGTF.
+     * Experimental Authorities. Currently undocumented by IGTF.
      */
     IGTF_AP_EXPERIMENTAL("IGTF-AP:Experimental"),
 
@@ -102,6 +101,7 @@ public enum LoA
 
     /**
      * The IGTF ASPEN LoA profile.  This is derived from {@link #IGTF_AP_SLCS}.
+     *
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
@@ -109,6 +109,7 @@ public enum LoA
 
     /**
      * The IGTF BIRCH LoA profile.  This is derived from {@link #IGTF_AP_MICS}.
+     *
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
@@ -116,20 +117,21 @@ public enum LoA
 
     /**
      * The IGTF CEDAR LoA profile.  This is derived from {@link #IGTF_AP_CLASSIC}.
+     *
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
     IGTF_LOA_CEDAR("IGTF:CEDAR"),
 
     /**
-     * DO NOT USE.  This is an incorrect label.  It is included here only for
-     * backwards compatibility when deserializing LoA; for example, within
-     * an LoAPrincipal.
+     * DO NOT USE.  This is an incorrect label.  It is included here only for backwards
+     * compatibility when deserializing LoA; for example, within an LoAPrincipal.
      */
     IGTF_LOA_CEDER("IGTF:CEDER"),
 
     /**
      * The IGTF DOGWOOD LoA profile.  This is derived from {@link #IGTF_AP_IOTA}.
+     *
      * @see <a href="http://wiki.eugridpma.org/Main/IGTFLoAGeneralisation">Overview
      * of generalisation</a>.
      */
@@ -175,12 +177,12 @@ public enum LoA
      */
 
     /**
-     * Identity substantially derived from social media or self-signup identity
-     * providers (outside the R&E community) on which no further policy controls
-     * or qualities are placed. Identity proofing and authenticator are
-     * substantially derived from upstream CSPs that are not under the control
-     * of the Infrastructure. The Infrastructure ensures uniqueness on the
-     * identifiers based on proprietary heuristics.
+     * Identity substantially derived from social media or self-signup identity providers (outside
+     * the R&E community) on which no further policy controls or qualities are placed. Identity
+     * proofing and authenticator are substantially derived from upstream CSPs that are not under
+     * the control of the Infrastructure. The Infrastructure ensures uniqueness on the identifiers
+     * based on proprietary heuristics.
+     *
      * @see <a href="https://aarc-project.eu/guidelines/aarc-g021/">AARC-G021</a>
      */
     AARC_PROFILE_ASSAM("AARC:profile:assam"),
@@ -196,8 +198,7 @@ public enum LoA
      */
 
     /**
-     * Authentication through a social identity provider or other low identity
-     * assurance provider.
+     * Authentication through a social identity provider or other low identity assurance provider.
      */
     EGI_LOW("EGI:low"),
 
@@ -211,11 +212,11 @@ public enum LoA
      */
     EGI_HIGH("EGI:high");
 
-    private static final ImmutableMap<String,LoA> NAME_MAP;
+    private static final ImmutableMap<String, LoA> NAME_MAP;
 
     static {
-        ImmutableMap.Builder<String,LoA> builder = ImmutableMap.builder();
-        for (LoA loa :LoA.values()) {
+        ImmutableMap.Builder<String, LoA> builder = ImmutableMap.builder();
+        for (LoA loa : LoA.values()) {
             builder.put(loa.getName(), loa);
         }
         NAME_MAP = builder.build();
@@ -223,18 +224,15 @@ public enum LoA
 
     private final String _name;
 
-    LoA(String name)
-    {
+    LoA(String name) {
         _name = name;
     }
 
-    public static LoA forName(String name)
-    {
+    public static LoA forName(String name) {
         return NAME_MAP.get(name);
     }
 
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 }

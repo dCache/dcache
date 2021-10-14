@@ -68,20 +68,18 @@ package org.dcache.alarms.logback;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 
 /**
- * While logback provides MDC and Marker TurboFilters, these do not work
- * exactly as what is required here – that is, specifically on the remote
- * appender and not on the context as a whole.
- *
- * Hardcoding the behavior here also has the advantage of not exposing
- * the special property keys (ALARM, ALARMS_INTERNAL) in the
- * logback.xml, though users still might inadvertently remove the
+ * While logback provides MDC and Marker TurboFilters, these do not work exactly as what is required
+ * here – that is, specifically on the remote appender and not on the context as a whole.
+ * <p>
+ * Hardcoding the behavior here also has the advantage of not exposing the special property keys
+ * (ALARM, ALARMS_INTERNAL) in the logback.xml, though users still might inadvertently remove the
  * filter itself.
  */
 public final class AlarmFilter extends Filter<ILoggingEvent> {
+
     public static final String ALARMS_INTERNAL = "alarms-internal";
 
     @Override

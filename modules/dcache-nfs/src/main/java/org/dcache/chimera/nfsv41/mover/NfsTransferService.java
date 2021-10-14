@@ -2,11 +2,18 @@ package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -32,20 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellPath;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
@@ -92,6 +85,10 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -99,8 +96,9 @@ import org.dcache.vehicles.DoorValidateMoverMessage;
  * @since 1.9.11
  */
 public class NfsTransferService
-        implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider, CellIdentityAware
-{
+      implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider,
+      CellIdentityAware {
+
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
 
     private boolean _withGss;
@@ -127,7 +125,7 @@ public class NfsTransferService
      * NFSv4 operation executor with requests statistics.
      */
     private final StatsDecoratedOperationExecutor _operationFactory =
-            new StatsDecoratedOperationExecutor(new EDSNFSv4OperationFactory());
+          new StatsDecoratedOperationExecutor(new EDSNFSv4OperationFactory());
 
     /**
      * The NFSv4.1 server
@@ -157,16 +155,15 @@ public class NfsTransferService
     private CellAddressCore _cellAddress;
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         _cellAddress = address;
     }
 
     public NfsTransferService() {
         _cleanerExecutor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder()
-                        .setNameFormat("NFS mover validationthread")
-                        .build()
+              new ThreadFactoryBuilder()
+                    .setNameFormat("NFS mover validationthread")
+                    .build()
         );
     }
 
@@ -178,13 +175,16 @@ public class NfsTransferService
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), localPort);
 
         _embededDS = new NFSServerV41.Builder()
-                .withOperationExecutor(_operationFactory)
-                .build();
-        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
+              .withOperationExecutor(_operationFactory)
+              .build();
+        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4),
+              _embededDS);
 
         // Make mover validation schedule to match nfs state handler lease timeout.
-        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime()).multipliedBy(LEASE_MISSES);
-        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(), deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
+        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime())
+              .multipliedBy(LEASE_MISSES);
+        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(),
+              deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
         _cleanerExecutor.scheduleAtFixedRate(new MoverResendRedirect(), 30, 30, TimeUnit.SECONDS);
     }
 
@@ -195,7 +195,8 @@ public class NfsTransferService
         int maxTcpPort = _maxTcpPort;
 
         try {
-            List<String> lines = Files.readAllLines(_tcpPortFile.toPath(), StandardCharsets.US_ASCII);
+            List<String> lines = Files.readAllLines(_tcpPortFile.toPath(),
+                  StandardCharsets.US_ASCII);
             if (!lines.isEmpty()) {
                 String line = lines.get(0);
 
@@ -224,10 +225,10 @@ public class NfsTransferService
             try {
 
                 OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
-                        .withMinPort(portRange.getLower())
-                        .withMaxPort(portRange.getUpper())
-                        .withTCP()
-                        .withoutAutoPublish();
+                      .withMinPort(portRange.getLower())
+                      .withMaxPort(portRange.getUpper())
+                      .withTCP()
+                      .withoutAutoPublish();
 
                 _log.debug("Using {} IO strategy", _ioStrategy);
                 if (_ioStrategy == IoStrategy.SAME_THREAD) {
@@ -254,7 +255,8 @@ public class NfsTransferService
         } while (!bound && retry > 0);
 
         if (!bound) {
-            throw new BindException("Can't bind to a port within the rage: " + portRange + " : " + bindException);
+            throw new BindException(
+                  "Can't bind to a port within the rage: " + portRange + " : " + bindException);
         }
 
         int localPort = _rpcService.getInetSocketAddress(IpProtocolType.TCP).getPort();
@@ -311,19 +313,21 @@ public class NfsTransferService
     }
 
     @Override
-    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
-    {
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+          CellPath pathToDoor) throws CacheException {
         return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<? extends OpenOption> getChannelCreateOptions() {
-        return Sets.newHashSet(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
+        return Sets.newHashSet(StandardOpenOption.CREATE,
+              Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
     }
 
     @Override
-    public Cancellable executeMover(final NfsMover mover, final CompletionHandler<Void, Void> completionHandler) {
+    public Cancellable executeMover(final NfsMover mover,
+          final CompletionHandler<Void, Void> completionHandler) {
         try {
 
             final Cancellable cancellableMover = mover.enable(completionHandler);
@@ -341,15 +345,16 @@ public class NfsTransferService
 
     public void notifyDoorWithRedirect(NfsMover mover) {
         CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
+        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
+              .stateId();
         _door.notify(directDoorPath,
-                new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses, legacyStateId,
-                        _bootVerifier));
+              new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses,
+                    legacyStateId,
+                    _bootVerifier));
     }
 
     @Override
-    public void closeMover(NfsMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
+    public void closeMover(NfsMover mover, CompletionHandler<Void, Void> completionHandler) {
         _postTransferService.execute(mover, completionHandler);
     }
 
@@ -358,7 +363,8 @@ public class NfsTransferService
     }
 
     private InetSocketAddress[] localSocketAddresses(Collection<InetAddress> addresses, int port) {
-        return addresses.stream().map(address -> new InetSocketAddress(address, port)).toArray(InetSocketAddress[]::new);
+        return addresses.stream().map(address -> new InetSocketAddress(address, port))
+              .toArray(InetSocketAddress[]::new);
     }
 
     /**
@@ -368,7 +374,7 @@ public class NfsTransferService
      */
     public void add(NfsMover mover) {
         _log.debug("registering new mover {}", mover);
-        _activeIO.put(mover.getStateId(), mover );
+        _activeIO.put(mover.getStateId(), mover);
     }
 
     /**
@@ -381,7 +387,8 @@ public class NfsTransferService
         _activeIO.remove(mover.getStateId());
     }
 
-    NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid) throws ChimeraNFSException {
+    NfsMover getMoverByStateId(CompoundContext context, stateid4 stateid)
+          throws ChimeraNFSException {
         NfsMover mover = _activeIO.get(stateid);
         if (mover == null) {
             throw new BadStateidException("No mover associated with given stateid: " + stateid);
@@ -392,36 +399,39 @@ public class NfsTransferService
 
     /**
      * Find a mover for a corresponding nfs handle.
+     *
      * @param fh file handle
      * @return a mover for a given nfs file handle
      * @throws ChimeraNFSException
      */
     NfsMover getPnfsIdByHandle(byte[] fh) throws BadHandleException {
         return _activeIO.values().stream()
-                .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
-                .findAny()
-                .orElseThrow(() -> new BadHandleException("No mover for found for given file handle"));
+              .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
+              .findAny()
+              .orElseThrow(
+                    () -> new BadHandleException("No mover for found for given file handle"));
     }
 
     @Command(name = "nfs stats",
-             hint = "show nfs requests statistics",
-             description = "Displays statistics kept about NFS Client and Server activity. " +
-                     "Prints average/min/max execution time in ns, for example, for the following operations:\n" +
-                     "\tACCESS - Check Access Rights determines the access rights a user has " +
-                     "for an object,\n " +
-                     "EXCHANGE_ID - operation used by the client to register a particular " +
-                     "client owner with the server,\n"+
-                     "\tCREATE_SESSION - used by the client to create new session objects on " +
-                     "the server.\n"+
-                     "If the optional argument \"c\" is specified statistics is reset.")
-    public class NfsStatsCommand implements Callable<String>
-    {
+          hint = "show nfs requests statistics",
+          description = "Displays statistics kept about NFS Client and Server activity. " +
+                "Prints average/min/max execution time in ns, for example, for the following operations:\n"
+                +
+                "\tACCESS - Check Access Rights determines the access rights a user has " +
+                "for an object,\n " +
+                "EXCHANGE_ID - operation used by the client to register a particular " +
+                "client owner with the server,\n" +
+                "\tCREATE_SESSION - used by the client to create new session objects on " +
+                "the server.\n" +
+                "If the optional argument \"c\" is specified statistics is reset.")
+    public class NfsStatsCommand implements Callable<String> {
+
         @Option(name = "c",
-                usage = "Clears current statistics values.")
+              usage = "Clears current statistics values.")
         boolean clearStats;
+
         @Override
-        public String call()
-        {
+        public String call() {
             RequestExecutionTimeGauges<String> gauges = _operationFactory.getStatistics();
             StringBuilder sb = new StringBuilder();
             sb.append("Stats:").append("\n").append(gauges.toString("ns"));
@@ -434,25 +444,24 @@ public class NfsTransferService
     }
 
     @Command(name = "nfs sessions",
-             hint = "show nfs sessions",
-             description = "Displays unique session identifier, maximum slot id" +
-                           " and the highest used slot id for the list of sessions created by client.")
-    public class NfsSessionsCommand implements Callable<String>
-    {
+          hint = "show nfs sessions",
+          description = "Displays unique session identifier, maximum slot id" +
+                " and the highest used slot id for the list of sessions created by client.")
+    public class NfsSessionsCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             StringBuilder sb = new StringBuilder();
             for (NFS4Client client : _embededDS.getStateHandler().getClients()) {
                 sb.append(client).append('\n');
                 for (NFSv41Session session : client.sessions()) {
                     sb.append("  ")
-                            .append(session)
-                            .append(" slots (max/used): ")
-                            .append(session.getHighestSlot())
-                            .append('/')
-                            .append(session.getHighestUsedSlot())
-                            .append('\n');
+                          .append(session)
+                          .append(" slots (max/used): ")
+                          .append(session.getHighestSlot())
+                          .append('/')
+                          .append(session.getHighestUsedSlot())
+                          .append('\n');
                 }
             }
             return sb.toString();
@@ -508,37 +517,44 @@ public class NfsTransferService
             Instant now = Instant.now();
 
             _activeIO.values()
-                    .stream()
-                    .filter(NfsMover::hasSession)
-                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plus(deadMoverIdleTime).isBefore(now))
-                    .forEach(mover -> {
-                        _log.debug("Verifying inactive mover {}", mover);
-                        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-                        CellStub.addCallback(_door.send(mover.getPathToDoor(),
-                                new DoorValidateMoverMessage<>(-1, mover.getFileAttributes().getPnfsId(), _bootVerifier, legacyStateId)),
-                                new NfsMoverValidationCallback(mover),
-                                _cleanerExecutor);
-                    });
+                  .stream()
+                  .filter(NfsMover::hasSession)
+                  .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred())
+                        .plus(deadMoverIdleTime).isBefore(now))
+                  .forEach(mover -> {
+                      _log.debug("Verifying inactive mover {}", mover);
+                      final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
+                            .stateId();
+                      CellStub.addCallback(_door.send(mover.getPathToDoor(),
+                                  new DoorValidateMoverMessage<>(-1,
+                                        mover.getFileAttributes().getPnfsId(), _bootVerifier,
+                                        legacyStateId)),
+                            new NfsMoverValidationCallback(mover),
+                            _cleanerExecutor);
+                  });
         }
     }
 
     /**
-     * Scans active transfers to find movers that wasn't connected by a client and re-sent the redirect information.
+     * Scans active transfers to find movers that wasn't connected by a client and re-sent the
+     * redirect information.
      */
     class MoverResendRedirect implements Runnable {
+
         @Override
         public void run() {
             Instant now = Instant.now();
 
             // mover is not attached to a session (no connection from client)
             _activeIO.values()
-                    .stream()
-                    .filter(Predicate.not(NfsMover::hasSession))
-                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plusSeconds(5).isBefore(now))
-                    .forEach( mover -> {
-                        _log.warn("Re-sending mover redirect {}", mover);
-                        notifyDoorWithRedirect(mover);
-                    });
+                  .stream()
+                  .filter(Predicate.not(NfsMover::hasSession))
+                  .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plusSeconds(5)
+                        .isBefore(now))
+                  .forEach(mover -> {
+                      _log.warn("Re-sending mover redirect {}", mover);
+                      notifyDoorWithRedirect(mover);
+                  });
         }
     }
 }

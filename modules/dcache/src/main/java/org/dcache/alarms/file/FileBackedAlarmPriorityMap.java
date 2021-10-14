@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.file;
 
-import com.google.common.collect.ImmutableMap;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableMap;
+import dmg.cells.nucleus.CellMessageReceiver;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -73,26 +75,22 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.vehicles.alarms.AlarmPriorityMapRequestMessage;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Uses a simple properties file to maintain current settings.
- * Priority mappings can be changed either directly in that file
- * (and then by reloading), or through the setPriority command.
- * Also responds to message requests for a copy of the priority map.
+ * Uses a simple properties file to maintain current settings. Priority mappings can be changed
+ * either directly in that file (and then by reloading), or through the setPriority command. Also
+ * responds to message requests for a copy of the priority map.
  *
  * @author arossi
  */
 public final class FileBackedAlarmPriorityMap
-        implements AlarmPriorityMap, CellMessageReceiver {
+      implements AlarmPriorityMap, CellMessageReceiver {
+
     private final Map<String, AlarmPriority> internalMap = new ConcurrentHashMap<>();
 
     private AlarmPriority defaultPriority = AlarmPriority.CRITICAL;
@@ -107,7 +105,7 @@ public final class FileBackedAlarmPriorityMap
         AlarmPriority priority = internalMap.get(type);
         if (priority == null) {
             throw new NoSuchElementException("No alarm of type "
-                            + type + " yet exists.");
+                  + type + " yet exists.");
         }
         return priority;
     }
@@ -120,14 +118,14 @@ public final class FileBackedAlarmPriorityMap
     @Override
     public String getSortedList() {
         String[] keys
-            = internalMap.keySet().toArray(String[]::new);
+              = internalMap.keySet().toArray(String[]::new);
         Arrays.sort(keys);
         StringBuilder list = new StringBuilder();
-        for (String key: keys) {
+        for (String key : keys) {
             list.append(key)
-                .append(" : ")
-                .append(internalMap.get(key))
-                .append("\n");
+                  .append(" : ")
+                  .append(internalMap.get(key))
+                  .append("\n");
         }
         return list.toString();
     }
@@ -140,7 +138,7 @@ public final class FileBackedAlarmPriorityMap
     public void load(Properties env) throws Exception {
         internalMap.clear();
 
-        for (Alarm alarm: PredefinedAlarm.values()) {
+        for (Alarm alarm : PredefinedAlarm.values()) {
             internalMap.put(alarm.getType(), defaultPriority);
         }
 
@@ -155,7 +153,7 @@ public final class FileBackedAlarmPriorityMap
     }
 
     public void restoreAllToDefaultPriority() {
-        for (String type: internalMap.keySet()) {
+        for (String type : internalMap.keySet()) {
             internalMap.put(type, defaultPriority);
         }
     }
@@ -163,7 +161,7 @@ public final class FileBackedAlarmPriorityMap
     @Override
     public void save(Properties env) throws Exception {
         File saved = new File(env.getProperty(AlarmPriorityMap.PATH,
-                                              propertiesPath));
+              propertiesPath));
         if (saved.exists()) {
             saved.delete();
         }
@@ -175,7 +173,7 @@ public final class FileBackedAlarmPriorityMap
 
         try (BufferedWriter br = new BufferedWriter(new FileWriter(saved))) {
             properties.store(br, "Last Updated "
-                            + new Date(System.currentTimeMillis()));
+                  + new Date(System.currentTimeMillis()));
         }
     }
 
@@ -187,7 +185,7 @@ public final class FileBackedAlarmPriorityMap
     public void setPriority(String alarm, AlarmPriority priority) {
         if (!internalMap.containsKey(alarm)) {
             throw new NoSuchElementException("Alarm type " + alarm
-                            + " is currently undefined.");
+                  + " is currently undefined.");
         }
         internalMap.put(alarm, priority);
     }
@@ -198,7 +196,7 @@ public final class FileBackedAlarmPriorityMap
 
     private void overrideFromSavedMappings(Properties env) throws IOException {
         File saved = new File(env.getProperty(AlarmPriorityMap.PATH,
-                                              propertiesPath));
+              propertiesPath));
         if (!saved.exists()) {
             return;
         }
@@ -207,7 +205,7 @@ public final class FileBackedAlarmPriorityMap
         try (BufferedReader br = new BufferedReader(new FileReader(saved))) {
             properties.load(br);
         }
-        for (Object property: properties.keySet()) {
+        for (Object property : properties.keySet()) {
             String key = property.toString();
             String value = properties.getProperty(key);
             internalMap.put(key, AlarmPriority.valueOf(value));

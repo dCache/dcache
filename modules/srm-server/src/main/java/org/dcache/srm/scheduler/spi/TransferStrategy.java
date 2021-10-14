@@ -21,11 +21,11 @@ import org.dcache.srm.request.Job;
 
 /**
  * SRM TURL request servicing policy.
- *
+ * <p>
  * A transfer strategy provides provides a policy for servicing requests for TURLs.
  */
-public interface TransferStrategy
-{
+public interface TransferStrategy {
+
     /**
      * Determines whether a given Job may enter the READY state.
      */

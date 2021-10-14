@@ -61,61 +61,62 @@ package org.dcache.alarms.admin;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import java.io.IOException;
-import java.util.NoSuchElementException;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import java.io.IOException;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.shell.ListPredefinedTypes;
 import org.dcache.alarms.shell.SendAlarmCLI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
- * Provides commands for sending (test) alarms, for setting, listing, loading and
- * saving priority mappings, for setting the priority default or for restoring the
- * default value to all alarm types, and for pausing and restarting the server.
+ * Provides commands for sending (test) alarms, for setting, listing, loading and saving priority
+ * mappings, for setting the priority default or for restoring the default value to all alarm types,
+ * and for pausing and restarting the server.
  */
 public final class AlarmCommandHandler implements CellCommandListener {
+
     @Command(name = "predefined ls",
-                    hint = "Print a list of all internally defined alarms.")
+          hint = "Print a list of all internally defined alarms.")
     class PredifinedListCommand implements Callable<String> {
+
         @Override
         public String call() {
             return "PREDEFINED DCACHE ALARM TYPES:\n\n"
-                            + ListPredefinedTypes.getSortedList();
+                  + ListPredefinedTypes.getSortedList();
         }
     }
 
     @Command(name = "priority get default",
-             hint = "Get the current default alarm priority value.")
+          hint = "Get the current default alarm priority value.")
     class PriorityGetDefaultCommand implements Callable<String> {
+
         @Override
         public String call() {
             return "Current default priority value is "
-                            + alarmPriorityMap.getDefaultPriority() + ".";
+                  + alarmPriorityMap.getDefaultPriority() + ".";
         }
     }
 
     @Command(name = "priority ls",
-                    hint = "Print a single priority level or sorted list of "
-                                    + "priority levels for all known alarms.",
-                    description = "There is only one set of such mappings used by any "
-                                    + "given instance of the alarm service.")
+          hint = "Print a single priority level or sorted list of "
+                + "priority levels for all known alarms.",
+          description = "There is only one set of such mappings used by any "
+                + "given instance of the alarm service.")
     class PriorityListCommand implements Callable<String> {
+
         @Argument(required = false,
-                  usage="Name of alarm type; if not specified, all are listed.")
+              usage = "Name of alarm type; if not specified, all are listed.")
         String type;
 
         @Override
@@ -126,7 +127,7 @@ public final class AlarmCommandHandler implements CellCommandListener {
 
             try {
                 return "Alarm type " + type + " currently set to "
-                                     + alarmPriorityMap.getPriority(type) + ".";
+                      + alarmPriorityMap.getPriority(type) + ".";
             } catch (NoSuchElementException noSuchDef) {
                 return noSuchDef.getMessage();
             }
@@ -134,19 +135,20 @@ public final class AlarmCommandHandler implements CellCommandListener {
     }
 
     @Command(name = "priority reload",
-                    hint = "Reinitialize priority mappings from saved changes.",
-                    description = "Searches for internal and external alarm "
-                                    + "types, initializing them all to the default "
-                                    + "value, and then overriding these with the "
-                                    + "values that have been saved to the "
-                                    + "backup storage (the default implementation "
-                                    + "of which is a properties file).")
+          hint = "Reinitialize priority mappings from saved changes.",
+          description = "Searches for internal and external alarm "
+                + "types, initializing them all to the default "
+                + "value, and then overriding these with the "
+                + "values that have been saved to the "
+                + "backup storage (the default implementation "
+                + "of which is a properties file).")
     class PriorityReloadCommand implements Callable<String> {
+
         @Argument(required = false,
-                  usage="Optional path of an alternative properties file to use. "
-                                  + "NOTE: the path defined in the local dcache.conf "
-                                  + "or layout file will remain as the working "
-                                  + "store after this command completes.")
+              usage = "Optional path of an alternative properties file to use. "
+                    + "NOTE: the path defined in the local dcache.conf "
+                    + "or layout file will remain as the working "
+                    + "store after this command completes.")
         String path;
 
         @Override
@@ -160,17 +162,18 @@ public final class AlarmCommandHandler implements CellCommandListener {
             } catch (Exception e) {
                 Throwables.propagateIfPossible(e);
                 throw new CommandException("Failed to reload alarm priorities: "
-                        + e.getMessage(), e);
+                      + e.getMessage(), e);
             }
             return listPriorityMappings();
         }
     }
 
     @Command(name = "priority restore all",
-             hint = "Set all defined alarms to the current default priority value.",
-             description = "Modifies the internal mapping; to save values for future "
-                             + "reloading, use the 'priority save' command.")
+          hint = "Set all defined alarms to the current default priority value.",
+          description = "Modifies the internal mapping; to save values for future "
+                + "reloading, use the 'priority save' command.")
     class PriorityRestoreAllCommand implements Callable<String> {
+
         @Override
         public String call() {
             alarmPriorityMap.restoreAllToDefaultPriority();
@@ -179,15 +182,16 @@ public final class AlarmCommandHandler implements CellCommandListener {
     }
 
     @Command(name = "priority save",
-                    hint = "Save the current priority mappings to persistent backup.",
-                    description = "The default implementation of the backup store"
-                                    + " is a properties file.")
+          hint = "Save the current priority mappings to persistent backup.",
+          description = "The default implementation of the backup store"
+                + " is a properties file.")
     class PrioritySaveCommand implements Callable<String> {
+
         @Argument(required = false,
-                  usage="Optional path of an alternative properties file to use. "
-                                    + "NOTE: the path defined in the local dcache.conf "
-                                    + "or layout file will remain as the working "
-                                    + "store after this command completes.")
+              usage = "Optional path of an alternative properties file to use. "
+                    + "NOTE: the path defined in the local dcache.conf "
+                    + "or layout file will remain as the working "
+                    + "store after this command completes.")
         String path;
 
         @Override
@@ -201,51 +205,53 @@ public final class AlarmCommandHandler implements CellCommandListener {
             } catch (Exception e) {
                 Throwables.propagateIfPossible(e);
                 throw new CommandException("Failed to save alarm priorities: " +
-                        e.getMessage(), e);
+                      e.getMessage(), e);
             }
             return listPriorityMappings();
         }
     }
 
     @Command(name = "priority set",
-                    hint = "Set the priority of the alarm type.",
-                    description = "The alarm must be either internal (predefined) or "
-                                    + "custom (external); to see all current alarms, "
-                                    + "use the 'priority list' command. To save "
-                                    + "this mapping for future reloading, use the "
-                                    + "'priority save' command.")
+          hint = "Set the priority of the alarm type.",
+          description = "The alarm must be either internal (predefined) or "
+                + "custom (external); to see all current alarms, "
+                + "use the 'priority list' command. To save "
+                + "this mapping for future reloading, use the "
+                + "'priority save' command.")
     class PrioritySetCommand implements Callable<String> {
-        @Argument(index=0,
-                  required = true,
-                  usage="Name of alarm type (case sensitive); by convention, "
-                                  + "internal alarm types are in upper case.")
+
+        @Argument(index = 0,
+              required = true,
+              usage = "Name of alarm type (case sensitive); by convention, "
+                    + "internal alarm types are in upper case.")
         String type;
 
-        @Argument(index=1,
-                  required = true,
-                  usage="New priority level to which to set this alarm.",
-                  valueSpec="LOW|MODERATE|HIGH|CRITICAL ")
+        @Argument(index = 1,
+              required = true,
+              usage = "New priority level to which to set this alarm.",
+              valueSpec = "LOW|MODERATE|HIGH|CRITICAL ")
         String priority;
 
         @Override
         public String call() {
             try {
                 alarmPriorityMap.setPriority(type,
-                                AlarmPriority.valueOf(priority.toUpperCase()));
+                      AlarmPriority.valueOf(priority.toUpperCase()));
             } catch (NoSuchElementException noSuchDef) {
                 return noSuchDef.getMessage();
             }
             return "Alarm type " + type + " has now been set to priority "
-                + priority + "; to save this mapping for future reloading, "
-                                + "use the 'priority save' command.";
+                  + priority + "; to save this mapping for future reloading, "
+                  + "use the 'priority save' command.";
         }
     }
 
     @Command(name = "priority set default",
-             hint = "Set the default alarm priority value.")
+          hint = "Set the default alarm priority value.")
     class PrioritySetDefaultCommand implements Callable<String> {
-        @Argument(required=true,
-                  valueSpec="LOW|MODERATE|HIGH|CRITICAL ")
+
+        @Argument(required = true,
+              valueSpec = "LOW|MODERATE|HIGH|CRITICAL ")
         String priority;
 
         @Override
@@ -256,37 +262,39 @@ public final class AlarmCommandHandler implements CellCommandListener {
     }
 
     @Command(name = "send",
-             hint = "Send an alarm to the alarm service.",
-             description = "The alarm service host and port are those "
-                           + "currently defined by the properties "
-                           + "dcache.log.server.host and "
-                           + "alarms.net.port.")
+          hint = "Send an alarm to the alarm service.",
+          description = "The alarm service host and port are those "
+                + "currently defined by the properties "
+                + "dcache.log.server.host and "
+                + "alarms.net.port.")
     class SendCommand implements Callable<String> {
+
         @Option(name = "t",
-                usage = "Send an alarm of this predefined type; if"
-                                + " undefined, an attempt will be made by the "
-                                + " server to infer the type by matching against "
-                                + " any custom definitions provided; failing "
-                                + " that, the alarm will be marked 'GENERIC'.")
+              usage = "Send an alarm of this predefined type; if"
+                    + " undefined, an attempt will be made by the "
+                    + " server to infer the type by matching against "
+                    + " any custom definitions provided; failing "
+                    + " that, the alarm will be marked 'GENERIC'.")
         String type;
 
         @Option(name = "d",
-                usage = "Optional name of domain of origin of the alarm "
-                                + "(defaults to '<na>').")
+              usage = "Optional name of domain of origin of the alarm "
+                    + "(defaults to '<na>').")
         String domain = MDC.get(CDC.MDC_DOMAIN);
 
         @Option(name = "s",
-                usage = "Optional name of service of origin of the alarm "
-                                + "(defaults to 'user-command').")
+              usage = "Optional name of service of origin of the alarm "
+                    + "(defaults to 'user-command').")
         String service = MDC.get(CDC.MDC_CELL);
 
         @Argument(required = true,
-                  usage = "The actual alarm message (in single or double quotes).")
+              usage = "The actual alarm message (in single or double quotes).")
         String message;
 
         @Override
         public String call() throws IOException {
-            SendAlarmCLI.sendEvent(serverHost, serverPort, SendAlarmCLI.createEvent(domain, service, type, message));
+            SendAlarmCLI.sendEvent(serverHost, serverPort,
+                  SendAlarmCLI.createEvent(domain, service, type, message));
             return "sending alarm to " + serverHost + ":" + serverPort;
         }
     }

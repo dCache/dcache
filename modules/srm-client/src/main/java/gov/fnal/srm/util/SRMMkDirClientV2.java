@@ -82,41 +82,38 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.SrmMkdirRequest;
 import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 
-public class SRMMkDirClientV2 extends SRMClient
-{
+public class SRMMkDirClientV2 extends SRMClient {
+
     private final java.net.URI surl;
     private final String surl_string;
 
     public SRMMkDirClientV2(Configuration configuration, java.net.URI surl, String surl_string) {
         super(configuration);
-        this.surl      = surl;
-        this.surl_string=surl_string;
+        this.surl = surl;
+        this.surl_string = surl_string;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surl;
     }
 
     @Override
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         checkCredentialValid();
         SrmMkdirRequest req = new SrmMkdirRequest();
         req.setSURL(new URI(surl_string));
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmMkdirResponse resp = srm.srmMkdir(req);
-        TReturnStatus rs   = resp.getReturnStatus();
+        TReturnStatus rs = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-            TStatusCode rc  = rs.getStatusCode();
+            TStatusCode rc = rs.getStatusCode();
             StringBuilder sb = new StringBuilder();
             sb.append("Return code: ").append(rc.toString()).append("\n");
             sb.append("Explanation: ").append(rs.getExplanation()).append("\n");

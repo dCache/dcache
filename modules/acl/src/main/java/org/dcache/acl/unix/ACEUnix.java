@@ -4,7 +4,6 @@ package org.dcache.acl.unix;
  * Unix Access Control Entry (ACE).
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
 public class ACEUnix {
 
@@ -21,18 +20,15 @@ public class ACEUnix {
     private int _accessMsk;
 
     /**
-     * @param tags
-     *            ACE tags
+     * @param tags ACE tags
      */
     public ACEUnix(int tags) {
         _tags = tags;
     }
 
     /**
-     * @param tags
-     *            ACE tags
-     * @param accessMsk
-     *            Access mask
+     * @param tags      ACE tags
+     * @param accessMsk Access mask
      */
     public ACEUnix(int tags, int accessMsk) {
         _tags = tags;

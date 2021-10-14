@@ -1,8 +1,9 @@
 package org.dcache.services.billing.text;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Throwables;
 import com.google.common.io.LineProcessor;
-
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
@@ -16,23 +17,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * Decorates a LineProcessor to parallelize invocation of the decorator processor.
- *
- * Invoking {@link #processLine(String)} may or may not block and the
- * decorator processor's {@link LineProcessor#processLine(String)} method
- * will be called from one of a number of worker threads.
- *
- * Lines starting with a hash ('#') however act as barriers and are always passed
- * through sequentially.
- *
- * The decorator must be closed through {@link #close()} before retrieving the result
- * with {@link #getResult()}.
+ * <p>
+ * Invoking {@link #processLine(String)} may or may not block and the decorator processor's {@link
+ * LineProcessor#processLine(String)} method will be called from one of a number of worker threads.
+ * <p>
+ * Lines starting with a hash ('#') however act as barriers and are always passed through
+ * sequentially.
+ * <p>
+ * The decorator must be closed through {@link #close()} before retrieving the result with {@link
+ * #getResult()}.
  */
-public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoCloseable
-{
+public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoCloseable {
+
     private final ExecutorService service = Executors.newCachedThreadPool();
     private final List<Future<T>> readers = new ArrayList<>();
     private final BlockingQueue<String> queue;
@@ -41,8 +39,7 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
     private final Phaser phaser;
     private boolean areWorkersRunning;
 
-    public ParallelizingLineProcessor(int threads, LineProcessor<T> callback)
-    {
+    public ParallelizingLineProcessor(int threads, LineProcessor<T> callback) {
         this.threads = threads;
         this.callback = callback;
         phaser = new Phaser(threads + 1);
@@ -53,8 +50,7 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         try {
             if (areWorkersRunning) {
                 stopWorkers();
@@ -74,15 +70,13 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
         }
     }
 
-    private void startWorkers()
-    {
+    private void startWorkers() {
         checkState(!areWorkersRunning);
         phaser.arriveAndAwaitAdvance();
         areWorkersRunning = true;
     }
 
-    private void stopWorkers() throws InterruptedException
-    {
+    private void stopWorkers() throws InterruptedException {
         checkState(areWorkersRunning);
         for (int i = 0; i < threads; i++) {
             queue.put("");
@@ -92,8 +86,7 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
     }
 
     @Override
-    public boolean processLine(String line) throws IOException
-    {
+    public boolean processLine(String line) throws IOException {
         if (!line.isEmpty()) {
             try {
                 if (line.charAt(0) != '#') {
@@ -115,27 +108,24 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
     }
 
     @Override
-    public T getResult()
-    {
+    public T getResult() {
         return callback.getResult();
     }
 
-    private static class LineReader<T> implements Callable<T>
-    {
+    private static class LineReader<T> implements Callable<T> {
+
         private final BlockingQueue<String> queue;
         private final LineProcessor<T> processor;
         private final Phaser phaser;
 
-        private LineReader(BlockingQueue<String> queue, LineProcessor<T> processor, Phaser phaser)
-        {
+        private LineReader(BlockingQueue<String> queue, LineProcessor<T> processor, Phaser phaser) {
             this.queue = queue;
             this.processor = processor;
             this.phaser = phaser;
         }
 
         @Override
-        public T call() throws InterruptedException
-        {
+        public T call() throws InterruptedException {
             while (phaser.arriveAndAwaitAdvance() >= 0) {
                 String line;
                 while (!(line = queue.take()).isEmpty()) {

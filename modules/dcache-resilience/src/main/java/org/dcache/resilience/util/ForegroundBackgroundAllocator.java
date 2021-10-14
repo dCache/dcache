@@ -61,7 +61,7 @@ package org.dcache.resilience.util;
 
 /**
  * <p>Determines the proportions of free slots to allocate to foreground
- *    and background, respectively.</p>
+ * and background, respectively.</p>
  */
 public abstract class ForegroundBackgroundAllocator {
 
@@ -69,6 +69,7 @@ public abstract class ForegroundBackgroundAllocator {
      * Simple struct for returning results.
      */
     public class ForegroundBackgroundAllocation {
+
         private final long foreground;
         private final long background;
 
@@ -87,17 +88,16 @@ public abstract class ForegroundBackgroundAllocator {
     }
 
     /**
-     * @param slots  total number of possible queue slots.
-     * @param occupied number of slots currently taken.
-     * @param foreground number of waiting requests on foreground queue.
-     * @param background number of waiting requests on background queue.
+     * @param slots         total number of possible queue slots.
+     * @param occupied      number of slots currently taken.
+     * @param foreground    number of waiting requests on foreground queue.
+     * @param background    number of waiting requests on background queue.
      * @param maxAllocation maximum percentage given to a queue (heuristic).
-     *
      * @return the actual number of slots given to the two queues.
      */
     public abstract ForegroundBackgroundAllocation allocate(long slots,
-                                                            long occupied,
-                                                            long foreground,
-                                                            long background,
-                                                            double maxAllocation);
+          long occupied,
+          long foreground,
+          long background,
+          double maxAllocation);
 }

@@ -93,41 +93,42 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMNoFreeSpaceException extends SRMException {
+
     private static final long serialVersionUID = 533768106436777878L;
 
     //private static final long serialVersionUID;
-    
+
     /**
      * Creates a new instance of <code>SRMAuthorizationException</code> without detail message.
      */
     public SRMNoFreeSpaceException() {
     }
-    
-    
+
+
     /**
-     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail message.
+     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail
+     * message.
+     *
      * @param msg the detail message.
      */
     public SRMNoFreeSpaceException(String msg) {
         super(msg);
     }
-        
-    
-    public SRMNoFreeSpaceException(String message,Throwable cause) {
-        super(message,cause);
+
+
+    public SRMNoFreeSpaceException(String message, Throwable cause) {
+        super(message, cause);
     }
-    
+
     public SRMNoFreeSpaceException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_NO_FREE_SPACE;
     }
 }

@@ -3,12 +3,11 @@
  */
 package diskCacheV111.util;
 
+import diskCacheV111.vehicles.StorageInfo;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-
-import diskCacheV111.vehicles.StorageInfo;
 
 public class DumpSI {
 
@@ -16,7 +15,7 @@ public class DumpSI {
 
         int rc = 1;
 
-        if( args.length != 1) {
+        if (args.length != 1) {
             System.err.println("Usage: DumpSI <SI file>");
             System.exit(rc);
         }
@@ -35,11 +34,11 @@ public class DumpSI {
 
             rc = 0;
         } catch (FileNotFoundException fe) {
-            System.err.println("File not found : " + fe.getMessage() );
-        }catch(IOException ie) {
+            System.err.println("File not found : " + fe.getMessage());
+        } catch (IOException ie) {
             System.err.println("IO exception : " + ie.getMessage());
         } catch (ClassNotFoundException ce) {
-            System.err.println("Not a SI file : " + ce.getMessage() );
+            System.err.println("Not a SI file : " + ce.getMessage());
         }
 
         System.exit(rc);

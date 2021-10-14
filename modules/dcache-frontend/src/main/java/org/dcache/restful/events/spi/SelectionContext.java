@@ -21,20 +21,19 @@ package org.dcache.restful.events.spi;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Optional, ancillary information supplied when a client is selecting events
- * from an EventStream.  Unlike other (core) information, the information here
- * is available but not all plugins will need it.
+ * Optional, ancillary information supplied when a client is selecting events from an EventStream.
+ * Unlike other (core) information, the information here is available but not all plugins will need
+ * it.
  */
-public interface SelectionContext
-{
+public interface SelectionContext {
+
     /**
      * The ID of the channel within which the selection is being made.
      */
     String channelId();
 
     /**
-     * Provide the HttpServletRequest for the request within which this
-     * selection is being made.
+     * Provide the HttpServletRequest for the request within which this selection is being made.
      */
     HttpServletRequest httpServletRequest();
 }

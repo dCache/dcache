@@ -10,14 +10,14 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Argument
-{
+public @interface Argument {
+
     /**
      * Position of the argument.
-     *
-     * Negative entries count from the end of the argument list, ie -1 is the last
-     * argument, -2 is the second to last, and so on.
-     *
+     * <p>
+     * Negative entries count from the end of the argument list, ie -1 is the last argument, -2 is
+     * the second to last, and so on.
+     * <p>
      * Multi valued properties bound to arguments must always be the last entry.
      */
     int index() default 0;

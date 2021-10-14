@@ -65,7 +65,10 @@ import org.dcache.quota.data.QuotaType;
  * Remove quota means "delete quota from the back end by ID.".
  */
 public class PnfsManagerRemoveQuotaMessage extends PnfsManagerQuotaMessage {
-  private static final long serialVersionUID = -2375888098121756830L;
 
-  public PnfsManagerRemoveQuotaMessage(int qid, QuotaType type) { super(qid, type); }
+    private static final long serialVersionUID = -2375888098121756830L;
+
+    public PnfsManagerRemoveQuotaMessage(int qid, QuotaType type) {
+        super(qid, type);
+    }
 }

@@ -65,11 +65,12 @@ import com.google.common.collect.ComparisonChain;
  * <p>Consolidated view information from storage info.</p>
  */
 public final class StorageRecord extends RecordEntry implements Comparable<StorageRecord> {
+
     public int compareTo(StorageRecord entry) {
         return ComparisonChain.start()
-                              .compare(datestamp, entry.datestamp)
-                              .compare(type, entry.type)
-                              .compare(cellname, entry.cellname)
-                              .result();
+              .compare(datestamp, entry.datestamp)
+              .compare(type, entry.type)
+              .compare(cellname, entry.cellname)
+              .result();
     }
 }

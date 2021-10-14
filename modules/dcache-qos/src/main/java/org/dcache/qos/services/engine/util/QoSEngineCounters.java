@@ -59,6 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.util;
 
+import static org.dcache.qos.data.QoSMessageType.ADD_CACHE_LOCATION;
+import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.qos.data.QoSMessageType.CORRUPT_FILE;
+import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
+import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED_CANCELED;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,107 +73,104 @@ import org.dcache.qos.util.QoSCounter;
 import org.dcache.qos.util.QoSCounterGroup;
 import org.dcache.qos.util.QoSCounters;
 
-import static org.dcache.qos.data.QoSMessageType.ADD_CACHE_LOCATION;
-import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
-import static org.dcache.qos.data.QoSMessageType.CORRUPT_FILE;
-import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
-import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED_CANCELED;
-
 public final class QoSEngineCounters extends QoSCounters implements Runnable {
-  public static final String QOS_ACTION_COMPLETED = "QOS_ACTION_COMPLETED";
 
-  private static final String MESSAGES       = "MESSAGES";
-  private static final String FORMAT_CNTS    = "%-26s %12s\n";
-  private static final String FORMAT_STATS   = "%-15s | %25s | %12s\n";
-  private static final String[] CNTS_HEADER  = {"MSG TYPE", "RECEIVED"};
-  private static final String[] STATS_HEADER = {"EPOCH", "DATETIME", "MESSAGE"};
+    public static final String QOS_ACTION_COMPLETED = "QOS_ACTION_COMPLETED";
 
-  class QoSEngineCounterGroup extends QoSCounterGroup<QoSCounter> {
+    private static final String MESSAGES = "MESSAGES";
+    private static final String FORMAT_CNTS = "%-26s %12s\n";
+    private static final String FORMAT_STATS = "%-15s | %25s | %12s\n";
+    private static final String[] CNTS_HEADER = {"MSG TYPE", "RECEIVED"};
+    private static final String[] STATS_HEADER = {"EPOCH", "DATETIME", "MESSAGE"};
 
-    protected QoSEngineCounterGroup(String name) {
-      super(name);
+    class QoSEngineCounterGroup extends QoSCounterGroup<QoSCounter> {
+
+        protected QoSEngineCounterGroup(String name) {
+            super(name);
+        }
+
+        @Override
+        public void format(StringBuilder builder) {
+            getKeys().stream()
+                  .forEach(k -> builder.append(
+                        String.format(FORMAT_CNTS, k, getCounter(k).getTotal())));
+        }
+
+        @Override
+        protected QoSCounter createCounter(String key) {
+            return new QoSCounter(key);
+        }
+    }
+
+    private ScheduledExecutorService service;
+
+    @Override
+    public void appendCounts(StringBuilder builder) {
+        builder.append("\n").append(String.format(FORMAT_CNTS, (Object[]) CNTS_HEADER));
+        groupMap.values().stream().forEach(g -> g.format(builder));
     }
 
     @Override
-    public void format(StringBuilder builder) {
-      getKeys().stream()
-               .forEach(k->builder.append(String.format(FORMAT_CNTS, k, getCounter(k).getTotal())));
+    public void appendDetails(StringBuilder builder) {
+        // NOP for engine
     }
 
     @Override
-    protected QoSCounter createCounter(String key) {
-      return new QoSCounter(key);
+    public void initialize() {
+        groupMap = new HashMap<>();
+        QoSEngineCounterGroup group = new QoSEngineCounterGroup(MESSAGES);
+        group.addCounter(ADD_CACHE_LOCATION.name());
+        group.addCounter(CORRUPT_FILE.name());
+        group.addCounter(CLEAR_CACHE_LOCATION.name());
+        group.addCounter(QOS_MODIFIED.name());
+        group.addCounter(QOS_MODIFIED_CANCELED.name());
+        group.addCounter(QOS_ACTION_COMPLETED);
+        groupMap.put(MESSAGES, group);
     }
-  }
 
-  private ScheduledExecutorService service;
-
-  @Override
-  public void appendCounts(StringBuilder builder) {
-    builder.append("\n").append(String.format(FORMAT_CNTS, (Object[])CNTS_HEADER));
-    groupMap.values().stream().forEach(g -> g.format(builder));
-  }
-
-  @Override
-  public void appendDetails(StringBuilder builder) {
-    // NOP for engine
-  }
-
-  @Override
-  public void initialize() {
-    groupMap = new HashMap<>();
-    QoSEngineCounterGroup group = new QoSEngineCounterGroup(MESSAGES);
-    group.addCounter(ADD_CACHE_LOCATION.name());
-    group.addCounter(CORRUPT_FILE.name());
-    group.addCounter(CLEAR_CACHE_LOCATION.name());
-    group.addCounter(QOS_MODIFIED.name());
-    group.addCounter(QOS_MODIFIED_CANCELED.name());
-    group.addCounter(QOS_ACTION_COMPLETED);
-    groupMap.put(MESSAGES, group);
-  }
-
-  public synchronized void increment(String counter) {
-    QoSCounterGroup counterGroup = groupMap.get(MESSAGES);
-    if (counterGroup == null) {
-      LOGGER.debug("trying to increment non-existent counter group {}", MESSAGES);
-      return;
+    public synchronized void increment(String counter) {
+        QoSCounterGroup counterGroup = groupMap.get(MESSAGES);
+        if (counterGroup == null) {
+            LOGGER.debug("trying to increment non-existent counter group {}", MESSAGES);
+            return;
+        }
+        counterGroup.getCounter(counter).incrementTotal();
+        if (toFile) {
+            Instant i = Instant.now();
+            synchronized (statisticsBuffer) {
+                statisticsBuffer
+                      .add(String.format(FORMAT_STATS, i.toEpochMilli(), DATE_FORMATTER.format(i),
+                            counter));
+            }
+        }
     }
-    counterGroup.getCounter(counter).incrementTotal();
-    if (toFile) {
-      Instant i = Instant.now();
-      synchronized (statisticsBuffer) {
-        statisticsBuffer
-            .add(String.format(FORMAT_STATS, i.toEpochMilli(), DATE_FORMATTER.format(i), counter));
-      }
+
+    public long getCount(String counter) {
+        return groupMap.get(MESSAGES).getCounter(counter).getTotal();
     }
-  }
 
-  public long getCount(String counter) {
-    return groupMap.get(MESSAGES).getCounter(counter).getTotal();
-  }
-
-  public void run() {
-    writeStatistics();
-    scheduleStatistics();
-  }
-
-  public void setService(ScheduledExecutorService service) {
-    this.service = service;
-  }
-
-  public void scheduleStatistics() {
-    if (toFile) {
-      service.schedule(this, 1, TimeUnit.MINUTES);
+    public void run() {
+        writeStatistics();
+        scheduleStatistics();
     }
-  }
 
-  @Override
-  protected String getStatisticsFormat() {
-    return FORMAT_STATS;
-  }
+    public void setService(ScheduledExecutorService service) {
+        this.service = service;
+    }
 
-  @Override
-  protected String[] getStatisticsHeader() {
-    return STATS_HEADER;
-  }
+    public void scheduleStatistics() {
+        if (toFile) {
+            service.schedule(this, 1, TimeUnit.MINUTES);
+        }
+    }
+
+    @Override
+    protected String getStatisticsFormat() {
+        return FORMAT_STATS;
+    }
+
+    @Override
+    protected String[] getStatisticsHeader() {
+        return STATS_HEADER;
+    }
 }

@@ -15,21 +15,15 @@
 
 package org.dcache.srm.client;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
+import static java.util.Objects.requireNonNull;
+import static javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY;
+import static org.apache.axis.Constants.NS_URI_AXIS;
+import static org.dcache.srm.util.Credentials.checkValid;
+
 import com.google.common.base.Throwables;
 import com.google.common.primitives.Ints;
 import eu.emi.security.authn.x509.X509Credential;
-import org.apache.axis.AxisFault;
-import org.apache.axis.SimpleTargetedChain;
-import org.apache.axis.client.Call;
-import org.apache.axis.configuration.SimpleProvider;
-import org.apache.axis.transport.http.HTTPConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import javax.xml.namespace.QName;
-import javax.xml.rpc.ServiceException;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,7 +41,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-
+import javax.annotation.Nullable;
+import javax.xml.namespace.QName;
+import javax.xml.rpc.ServiceException;
+import org.apache.axis.AxisFault;
+import org.apache.axis.SimpleTargetedChain;
+import org.apache.axis.client.Call;
+import org.apache.axis.configuration.SimpleProvider;
+import org.apache.axis.transport.http.HTTPConstants;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SRMServiceLocator;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
@@ -130,32 +131,28 @@ import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
 import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 import org.dcache.ssl.CanlContextFactory;
-
-import static com.google.common.net.InetAddresses.isInetAddress;
-import static java.util.Objects.requireNonNull;
-import static javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY;
-import static org.apache.axis.Constants.NS_URI_AXIS;
-import static org.dcache.srm.util.Credentials.checkValid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMClientV2 implements ISRM {
+
     private static final Logger logger =
-        LoggerFactory.getLogger(SRMClientV2.class);
-    private static final String SFN_STRING="?SFN=";
-    private static final String WEB_SERVICE_PATH="srm/managerv2";
-    private static final String GSS_EXPECTED_NAME="host";
+          LoggerFactory.getLogger(SRMClientV2.class);
+    private static final String SFN_STRING = "?SFN=";
+    private static final String WEB_SERVICE_PATH = "srm/managerv2";
+    private static final String GSS_EXPECTED_NAME = "host";
     private static final QName AXIS_HTTP = new QName(NS_URI_AXIS, "HTTP");
 
     private static final URI[] PROBE_URLS = {
-            URI.create("httpg://dCache-and-CASTOR.invalid:8443/srm/managerv2"),
-            URI.create("httpg://dpm.invalid:8446/srm/managerv2"),
-            URI.create("httpg://StoRM.invalid:8444/srm/managerv2"),
-            URI.create("httpg://bestman.invalid:8443/srm/v2/server")
-        };
-    private static final int[] PROBE_PORTS =  uniquePorts(PROBE_URLS);
+          URI.create("httpg://dCache-and-CASTOR.invalid:8443/srm/managerv2"),
+          URI.create("httpg://dpm.invalid:8446/srm/managerv2"),
+          URI.create("httpg://StoRM.invalid:8444/srm/managerv2"),
+          URI.create("httpg://bestman.invalid:8443/srm/v2/server")
+    };
+    private static final int[] PROBE_PORTS = uniquePorts(PROBE_URLS);
     private static final String[] PROBE_PATHS = uniquePaths(PROBE_URLS);
 
     private final long retrytimeout;
@@ -171,8 +168,7 @@ public class SRMClientV2 implements ISRM {
     private int nextProbe;
     private final List<AxisFault> probeFailures = new ArrayList<>();
 
-    private static int[] uniquePorts(URI[] uris)
-    {
+    private static int[] uniquePorts(URI[] uris) {
         ArrayList<Integer> ports = new ArrayList<>(uris.length);
         for (URI uri : uris) {
             if (!ports.contains(uri.getPort())) {
@@ -182,8 +178,7 @@ public class SRMClientV2 implements ISRM {
         return Ints.toArray(ports);
     }
 
-    private static String[] uniquePaths(URI[] uris)
-    {
+    private static String[] uniquePaths(URI[] uris) {
         ArrayList<String> paths = new ArrayList<>(uris.length);
         for (URI uri : uris) {
             if (!paths.contains(uri.getPath())) {
@@ -200,48 +195,47 @@ public class SRMClientV2 implements ISRM {
 
     @Deprecated
     public SRMClientV2(URI srmurl,
-                       X509Credential user_cred,
-                       long retrytimeout,
-                       int numberofretries,
-                       boolean do_delegation,
-                       boolean full_delegation,
-                       String caPath,
-                       Transport transport)
-        throws IOException,InterruptedException,ServiceException {
+          X509Credential user_cred,
+          long retrytimeout,
+          int numberofretries,
+          boolean do_delegation,
+          boolean full_delegation,
+          String caPath,
+          Transport transport)
+          throws IOException, InterruptedException, ServiceException {
         this(srmurl, Optional.of(user_cred), Optional.empty(), retrytimeout,
-                numberofretries, do_delegation, full_delegation, caPath,
-                transport);
+              numberofretries, do_delegation, full_delegation, caPath,
+              transport);
     }
 
-    /** Creates a new instance of SRMClientV2 */
+    /**
+     * Creates a new instance of SRMClientV2
+     */
     public SRMClientV2(URI srmurl, Optional<X509Credential> x509Credential,
-            Optional<String> bearerToken, long retrytimeout, int numberofretries,
-            boolean do_delegation, boolean full_delegation, String caPath,
-            Transport transport)
-            throws IOException, InterruptedException, ServiceException
-    {
+          Optional<String> bearerToken, long retrytimeout, int numberofretries,
+          boolean do_delegation, boolean full_delegation, String caPath,
+          Transport transport)
+          throws IOException, InterruptedException, ServiceException {
         this(srmurl, x509Credential, bearerToken, retrytimeout, numberofretries,
-             do_delegation, full_delegation, GSS_EXPECTED_NAME, WEB_SERVICE_PATH,
-             caPath, transport);
+              do_delegation, full_delegation, GSS_EXPECTED_NAME, WEB_SERVICE_PATH,
+              caPath, transport);
     }
 
     @Deprecated
     public SRMClientV2(URI srmurl, X509Credential user_cred, long retrytimeout,
-            int numberofretries, boolean do_delegation, boolean full_delegation,
-            String gss_expected_name, String webservice_path, String caPath,
-            Transport transport) throws IOException,InterruptedException
-    {
+          int numberofretries, boolean do_delegation, boolean full_delegation,
+          String gss_expected_name, String webservice_path, String caPath,
+          Transport transport) throws IOException, InterruptedException {
         this(srmurl, Optional.of(user_cred), Optional.empty(), retrytimeout,
-                numberofretries, do_delegation, full_delegation,
-                gss_expected_name, webservice_path, caPath, transport);
+              numberofretries, do_delegation, full_delegation,
+              gss_expected_name, webservice_path, caPath, transport);
     }
 
     public SRMClientV2(URI srmurl, Optional<X509Credential> x509Credential,
-            Optional<String> bearerToken, long retryTimeout,
-            int numberOfRetries, boolean doDelegation, boolean fullDelegation,
-            String gssExpectedName, String webservicePath, String caPath,
-            Transport transport) throws IOException,InterruptedException
-    {
+          Optional<String> bearerToken, long retryTimeout,
+          int numberOfRetries, boolean doDelegation, boolean fullDelegation,
+          String gssExpectedName, String webservicePath, String caPath,
+          Transport transport) throws IOException, InterruptedException {
         this.retrytimeout = retryTimeout;
         this.retries = numberOfRetries;
         this.x509Credential = checkValid(x509Credential);
@@ -253,24 +247,23 @@ public class SRMClientV2 implements ISRM {
         axis_isrm = buildStub(nextServiceURL());
     }
 
-    private static SRMServiceLocator buildServiceLocator(String caPath)
-    {
+    private static SRMServiceLocator buildServiceLocator(String caPath) {
         SimpleProvider provider = new SimpleProvider();
         GsiHttpClientSender sender = new GsiHttpClientSender();
-        sender.setSslContextFactory(CanlContextFactory.custom().withCertificateAuthorityPath(caPath).build());
+        sender.setSslContextFactory(
+              CanlContextFactory.custom().withCertificateAuthorityPath(caPath).build());
         sender.init();
-        provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
+        provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME,
+              new SimpleTargetedChain(sender));
         return new SRMServiceLocator(provider);
     }
 
     /**
-     * Build a URL describing the user-supplied information about the
-     * endpoint.  Both the port and path may be -1 or null (respectively) if
-     * that information was not supplied by the user.
+     * Build a URL describing the user-supplied information about the endpoint.  Both the port and
+     * path may be -1 or null (respectively) if that information was not supplied by the user.
      */
     private static URL buildServiceURL(URI srmurl, Transport transport,
-            String webservice_path) throws UnknownHostException, MalformedURLException
-    {
+          String webservice_path) throws UnknownHostException, MalformedURLException {
         String host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
         if (isInetAddress(host) && host.indexOf(':') != -1) {
@@ -303,36 +296,37 @@ public class SRMClientV2 implements ISRM {
         }
 
         return new URL(TransportUtil.uriSchemaFor(transport), host, port,
-                path == null ? "/" : path);
+              path == null ? "/" : path);
     }
 
     /**
-     * Obtain a service URL.  If the service URL is fully specified then the
-     * returned URL is always the same value.  If some information was omitted
-     * then the returned value is the next possible service URL, or null if
-     * there are no further URLs to try.
+     * Obtain a service URL.  If the service URL is fully specified then the returned URL is always
+     * the same value.  If some information was omitted then the returned value is the next possible
+     * service URL, or null if there are no further URLs to try.
      */
     @Nullable
-    private URL nextServiceURL()
-    {
+    private URL nextServiceURL() {
         boolean wildPort = serviceUrl.getPort() == -1;
         boolean wildPath = serviceUrl.getPath().equals("/");
 
         try {
             if (wildPort && wildPath) {
                 if (nextProbe < PROBE_URLS.length) {
-                    URI probe = PROBE_URLS [nextProbe++];
-                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(), probe.getPort(), probe.getPath());
+                    URI probe = PROBE_URLS[nextProbe++];
+                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(), probe.getPort(),
+                          probe.getPath());
                 }
             } else if (wildPort) {
                 if (nextProbe < PROBE_PORTS.length) {
-                    int probe = PROBE_PORTS [nextProbe++];
-                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(), probe, serviceUrl.getPath());
+                    int probe = PROBE_PORTS[nextProbe++];
+                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(), probe,
+                          serviceUrl.getPath());
                 }
             } else if (wildPath) {
                 if (nextProbe < PROBE_PATHS.length) {
-                    String probe = PROBE_PATHS [nextProbe++];
-                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(), serviceUrl.getPort(), probe);
+                    String probe = PROBE_PATHS[nextProbe++];
+                    return new URL(serviceUrl.getProtocol(), serviceUrl.getHost(),
+                          serviceUrl.getPort(), probe);
                 }
             } else {
                 return serviceUrl;
@@ -344,15 +338,17 @@ public class SRMClientV2 implements ISRM {
         return null;
     }
 
-    private SrmSoapBindingStub buildStub(URL url)
-    {
+    private SrmSoapBindingStub buildStub(URL url) {
         try {
             logger.debug("connecting to srm at {}", url);
             SrmSoapBindingStub stub = (SrmSoapBindingStub) sl.getsrm(url);
 
             if (stub != null) {
-                x509Credential.ifPresent(c -> stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, c));
-                bearerToken.ifPresent(t -> addRequestHeader(stub, HTTPConstants.HEADER_AUTHORIZATION, "Bearer " + t));
+                x509Credential.ifPresent(
+                      c -> stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, c));
+                bearerToken.ifPresent(
+                      t -> addRequestHeader(stub, HTTPConstants.HEADER_AUTHORIZATION,
+                            "Bearer " + t));
                 stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION, delegation);
                 stub._setProperty(Call.SESSION_MAINTAIN_PROPERTY, true);
                 stub._setProperty(Call.STREAMING_PROPERTY, true);
@@ -364,37 +360,33 @@ public class SRMClientV2 implements ISRM {
         }
     }
 
-    private void addRequestHeader(SrmSoapBindingStub stub, String key, String value)
-    {
-        Map<String,String> headers;
+    private void addRequestHeader(SrmSoapBindingStub stub, String key, String value) {
+        Map<String, String> headers;
 
         Object rawMap = stub._getProperty(HTTPConstants.REQUEST_HEADERS);
         if (rawMap == null) {
             headers = new HashMap<>();
             stub._setProperty(HTTPConstants.REQUEST_HEADERS, headers);
         } else {
-            headers = (Map<String,String>)rawMap;
+            headers = (Map<String, String>) rawMap;
         }
 
         headers.put(key, value);
     }
 
-    private boolean isWildServiceURL()
-    {
+    private boolean isWildServiceURL() {
         return serviceUrl.getPort() == -1 || serviceUrl.getPath().equals("/");
     }
 
-    private OptionalInt statusCodeOf(AxisFault af)
-    {
+    private OptionalInt statusCodeOf(AxisFault af) {
         return Arrays.stream(af.getFaultDetails())
-                .filter(e -> e.getTagName().equals("HttpErrorCode"))
-                .mapToInt(e -> Integer.parseInt(e.getTextContent()))
-                .findFirst();
+              .filter(e -> e.getTagName().equals("HttpErrorCode"))
+              .mapToInt(e -> Integer.parseInt(e.getTextContent()))
+              .findFirst();
     }
 
     public Object handleClientCall(String name, Object argument, boolean retry)
-            throws RemoteException
-    {
+          throws RemoteException {
         while (true) {
             try {
                 Object result = handleClientCallWithRetry(name, argument, retry);
@@ -406,18 +398,18 @@ public class SRMClientV2 implements ISRM {
                 }
 
                 if (e instanceof AxisFault) {
-                    AxisFault af = (AxisFault)e;
+                    AxisFault af = (AxisFault) e;
                     OptionalInt statusCode = statusCodeOf(af);
 
                     if (statusCode.isPresent() && !probeFailures.stream()
-                            .map(this::statusCodeOf)
-                            .anyMatch(statusCode::equals)) {
+                          .map(this::statusCodeOf)
+                          .anyMatch(statusCode::equals)) {
                         probeFailures.add(af);
                     }
                 }
 
                 logger.debug("SRM operation failed for {}: {}",
-                        axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY), e.toString());
+                      axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY), e.toString());
 
                 URL newServiceUrl = nextServiceURL();
                 if (newServiceUrl == null) {
@@ -439,24 +431,23 @@ public class SRMClientV2 implements ISRM {
                 axis_isrm = buildStub(newServiceUrl);
             } catch (IOException e) {
                 throw new RemoteException("Operation failed: " + e.getMessage(),
-                        e);
+                      e);
             }
         }
     }
 
     public Object handleClientCallWithRetry(String name, Object argument, boolean retry)
-            throws RemoteException, IOException
-    {
+          throws RemoteException, IOException {
         if (logger.isDebugEnabled()) {
             logger.debug(" {} , contacting service {}", name,
-                    axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY));
+                  axis_isrm._getProperty(ENDPOINT_ADDRESS_PROPERTY));
         }
         int i = 0;
-        while(true) {
+        while (true) {
             checkValid(x509Credential);
             try {
                 Class<?> clazz = argument.getClass();
-                Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
+                Method call = axis_isrm.getClass().getMethod(name, new Class[]{clazz});
                 return call.invoke(axis_isrm, argument);
             } catch (NoSuchMethodException | IllegalAccessException nsme) {
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);
@@ -474,315 +465,322 @@ public class SRMClientV2 implements ISRM {
                     }
                 }
 
-                logger.error("{} : try # {} failed with error {}", name, i, e != null ? e.getMessage() : "");
-                if(retry) {
-                    if(i <retries) {
+                logger.error("{} : try # {} failed with error {}", name, i,
+                      e != null ? e.getMessage() : "");
+                if (retry) {
+                    if (i < retries) {
                         i++;
-                        logger.error(" {} : try again",name);
-                    }
-                    else {
-                        if(e != null && e instanceof RemoteException) {
-                            throw (RemoteException)e;
-                        }
-                        else {
-                            throw new RemoteException("Exception in client",e);
+                        logger.error(" {} : try again", name);
+                    } else {
+                        if (e != null && e instanceof RemoteException) {
+                            throw (RemoteException) e;
+                        } else {
+                            throw new RemoteException("Exception in client", e);
                         }
                     }
-                }
-                else {
+                } else {
                     // do not retry on the request establishing functions
-                    if(e != null && e instanceof RemoteException) {
-                        throw (RemoteException)e;
-                    }
-                    else {
-                        throw new RemoteException("Exception in client",e);
+                    if (e != null && e instanceof RemoteException) {
+                        throw (RemoteException) e;
+                    } else {
+                        throw new RemoteException("Exception in client", e);
                     }
                 }
-            }
-            catch(RuntimeException e) {
-                logger.error("{} : try # {} failed with error {}", name, i,e.getMessage());
-                if(retry){
-                    if(i <retries) {
+            } catch (RuntimeException e) {
+                logger.error("{} : try # {} failed with error {}", name, i, e.getMessage());
+                if (retry) {
+                    if (i < retries) {
                         i++;
-                        logger.error(" {} : try again",name);
+                        logger.error(" {} : try again", name);
+                    } else {
+                        throw new RemoteException("RuntimeException in client", e);
                     }
-                    else {
-                        throw new RemoteException("RuntimeException in client",e);
-                    }
-                }
-                else {
+                } else {
                     // do not retry on the request establishing functions
-                    throw new RemoteException("RuntimeException in client",e);
+                    throw new RemoteException("RuntimeException in client", e);
                 }
             }
 
             assert retry;
 
             try {
-                logger.debug("sleeping {} milliseconds before retrying", retrytimeout*i);
-                Thread.sleep(retrytimeout*i);
-            } catch(InterruptedException ie) {
+                logger.debug("sleeping {} milliseconds before retrying", retrytimeout * i);
+                Thread.sleep(retrytimeout * i);
+            } catch (InterruptedException ie) {
             }
         }
     }
 
     @Override
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(
-                                                                               SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest)
-    throws RemoteException {
+          SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
-        handleClientCall("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest,true);
+              handleClientCall("srmStatusOfBringOnlineRequest",
+                    srmStatusOfBringOnlineRequestRequest, true);
     }
 
     @Override
-    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
+    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest)
+          throws RemoteException {
         return (SrmBringOnlineResponse)
-        handleClientCall("srmBringOnline",srmBringOnlineRequest,true);
+              handleClientCall("srmBringOnline", srmBringOnlineRequest, true);
     }
 
     @Override
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(
-                                                                             SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
+          SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest)
+          throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
-        handleClientCall("srmExtendFileLifeTimeInSpace",
-                srmExtendFileLifeTimeInSpaceRequest,true);
+              handleClientCall("srmExtendFileLifeTimeInSpace",
+                    srmExtendFileLifeTimeInSpaceRequest, true);
     }
 
     @Override
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(
-                                                                               SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
+          SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
-        handleClientCall("srmStatusOfUpdateSpaceRequest",
-                srmStatusOfUpdateSpaceRequestRequest,true);
+              handleClientCall("srmStatusOfUpdateSpaceRequest",
+                    srmStatusOfUpdateSpaceRequestRequest, true);
     }
 
     @Override
-    public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
+    public SrmPurgeFromSpaceResponse srmPurgeFromSpace(
+          SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
-        handleClientCall("srmPurgeFromSpace",
-                srmPurgeFromSpaceRequest,true);
+              handleClientCall("srmPurgeFromSpace",
+                    srmPurgeFromSpaceRequest, true);
     }
 
     @Override
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
-        handleClientCall("srmPing",
-                srmPingRequest,true);
+              handleClientCall("srmPing",
+                    srmPingRequest, true);
     }
 
     @Override
     public SrmGetPermissionResponse srmGetPermission(
-                                                     SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
+          SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
-        handleClientCall("srmGetPermission",
-                srmGetPermissionRequest,true);
+              handleClientCall("srmGetPermission",
+                    srmGetPermissionRequest, true);
     }
 
     @Override
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(
-                                                                                 SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
+          SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
-        handleClientCall("srmStatusOfReserveSpaceRequest",
-                srmStatusOfReserveSpaceRequestRequest,true);
+              handleClientCall("srmStatusOfReserveSpaceRequest",
+                    srmStatusOfReserveSpaceRequestRequest, true);
     }
 
     @Override
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(
-                                                                 SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
+          SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
-        handleClientCall("srmChangeSpaceForFiles",
-                srmChangeSpaceForFilesRequest,true);
+              handleClientCall("srmChangeSpaceForFiles",
+                    srmChangeSpaceForFilesRequest, true);
     }
 
     @Override
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(
-                                                                   SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
+          SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
-        handleClientCall("srmGetTransferProtocols",
-                srmGetTransferProtocolsRequest,true);
+              handleClientCall("srmGetTransferProtocols",
+                    srmGetTransferProtocolsRequest, true);
     }
 
     @Override
     public SrmGetRequestTokensResponse srmGetRequestTokens(
-                                                           SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
+          SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
-        handleClientCall("srmGetRequestTokens",
-                srmGetRequestTokensRequest,true);
+              handleClientCall("srmGetRequestTokens",
+                    srmGetRequestTokensRequest, true);
     }
 
     @Override
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(
-                                                       SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
+          SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
-        handleClientCall("srmGetSpaceTokens",
-                srmGetSpaceTokensRequest,true);
+              handleClientCall("srmGetSpaceTokens",
+                    srmGetSpaceTokensRequest, true);
     }
 
     @Override
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(
-                                                                                               SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
+          SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest)
+          throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
-        handleClientCall("srmStatusOfChangeSpaceForFilesRequest",
-                srmStatusOfChangeSpaceForFilesRequestRequest,true);
+              handleClientCall("srmStatusOfChangeSpaceForFilesRequest",
+                    srmStatusOfChangeSpaceForFilesRequestRequest, true);
     }
 
     @Override
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(
-                                                             SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
+          SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
-        handleClientCall("srmStatusOfLsRequest",
-                srmStatusOfLsRequestRequest,true);
+              handleClientCall("srmStatusOfLsRequest",
+                    srmStatusOfLsRequestRequest, true);
     }
 
     @Override
     public SrmRmResponse srmRm(SrmRmRequest request)
-    throws RemoteException {
-        return (SrmRmResponse)handleClientCall("srmRm",request,true);
+          throws RemoteException {
+        return (SrmRmResponse) handleClientCall("srmRm", request, true);
     }
 
     @Override
     public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest request)
-    throws RemoteException {
-        return (SrmAbortFilesResponse)handleClientCall("srmAbortFiles",request,true);
+          throws RemoteException {
+        return (SrmAbortFilesResponse) handleClientCall("srmAbortFiles", request, true);
     }
 
     @Override
     public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest request)
-    throws RemoteException {
-        return (SrmAbortRequestResponse)handleClientCall("srmAbortRequest",request,true);
+          throws RemoteException {
+        return (SrmAbortRequestResponse) handleClientCall("srmAbortRequest", request, true);
     }
 
     @Override
     public SrmCheckPermissionResponse srmCheckPermission(SrmCheckPermissionRequest request)
-    throws RemoteException {
-        return (SrmCheckPermissionResponse)handleClientCall("srmCheckPermission",request,true);
+          throws RemoteException {
+        return (SrmCheckPermissionResponse) handleClientCall("srmCheckPermission", request, true);
     }
 
     @Override
     public SrmCopyResponse srmCopy(SrmCopyRequest request)
-    throws RemoteException {
-        return (SrmCopyResponse)handleClientCall("srmCopy",request,true);
+          throws RemoteException {
+        return (SrmCopyResponse) handleClientCall("srmCopy", request, true);
     }
 
     @Override
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(SrmExtendFileLifeTimeRequest request)
-    throws RemoteException {
-        return (SrmExtendFileLifeTimeResponse)handleClientCall("srmExtendFileLifeTime",request,true);
+          throws RemoteException {
+        return (SrmExtendFileLifeTimeResponse) handleClientCall("srmExtendFileLifeTime", request,
+              true);
     }
 
     @Override
     public SrmGetRequestSummaryResponse srmGetRequestSummary(SrmGetRequestSummaryRequest request)
-    throws RemoteException {
-        return (SrmGetRequestSummaryResponse)handleClientCall("srmGetRequestSummary",request,true);
+          throws RemoteException {
+        return (SrmGetRequestSummaryResponse) handleClientCall("srmGetRequestSummary", request,
+              true);
     }
 
     @Override
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(SrmGetSpaceMetaDataRequest request)
-    throws RemoteException {
-        return (SrmGetSpaceMetaDataResponse)handleClientCall("srmGetSpaceMetaData",request,true);
+          throws RemoteException {
+        return (SrmGetSpaceMetaDataResponse) handleClientCall("srmGetSpaceMetaData", request, true);
     }
 
     @Override
     public SrmLsResponse srmLs(SrmLsRequest request)
-    throws RemoteException {
-        return (SrmLsResponse)handleClientCall("srmLs",request,true);
+          throws RemoteException {
+        return (SrmLsResponse) handleClientCall("srmLs", request, true);
     }
 
     @Override
     public SrmMkdirResponse srmMkdir(SrmMkdirRequest request)
-    throws RemoteException {
-        return (SrmMkdirResponse)handleClientCall("srmMkdir",request,true);
+          throws RemoteException {
+        return (SrmMkdirResponse) handleClientCall("srmMkdir", request, true);
     }
 
 
     @Override
     public SrmMvResponse srmMv(SrmMvRequest request)
-    throws RemoteException {
-        return (SrmMvResponse)handleClientCall("srmMv",request,true);
+          throws RemoteException {
+        return (SrmMvResponse) handleClientCall("srmMv", request, true);
     }
 
     @Override
     public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest request)
-    throws RemoteException {
-        return (SrmPrepareToGetResponse)handleClientCall("srmPrepareToGet",request,true);
+          throws RemoteException {
+        return (SrmPrepareToGetResponse) handleClientCall("srmPrepareToGet", request, true);
     }
 
     @Override
     public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest request)
-    throws RemoteException {
-        return (SrmPrepareToPutResponse)handleClientCall("srmPrepareToPut",request,false);
+          throws RemoteException {
+        return (SrmPrepareToPutResponse) handleClientCall("srmPrepareToPut", request, false);
     }
 
     @Override
     public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest request)
-    throws RemoteException {
-        return (SrmPutDoneResponse)handleClientCall("srmPutDone",request,true);
+          throws RemoteException {
+        return (SrmPutDoneResponse) handleClientCall("srmPutDone", request, true);
     }
 
     @Override
     public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest request)
-    throws RemoteException {
-        return (SrmReleaseFilesResponse)handleClientCall("srmReleaseFiles",request,true);
+          throws RemoteException {
+        return (SrmReleaseFilesResponse) handleClientCall("srmReleaseFiles", request, true);
     }
 
     @Override
     public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest request)
-    throws RemoteException {
-        return (SrmReleaseSpaceResponse)handleClientCall("srmReleaseSpace",request,true);
+          throws RemoteException {
+        return (SrmReleaseSpaceResponse) handleClientCall("srmReleaseSpace", request, true);
     }
 
     @Override
     public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest request)
-    throws RemoteException {
-        return (SrmReserveSpaceResponse)handleClientCall("srmReserveSpace",request,true);
+          throws RemoteException {
+        return (SrmReserveSpaceResponse) handleClientCall("srmReserveSpace", request, true);
     }
 
     @Override
     public SrmResumeRequestResponse srmResumeRequest(SrmResumeRequestRequest request)
-    throws RemoteException {
-        return (SrmResumeRequestResponse)handleClientCall("srmResumeRequest",request,true);
+          throws RemoteException {
+        return (SrmResumeRequestResponse) handleClientCall("srmResumeRequest", request, true);
     }
 
     @Override
     public SrmRmdirResponse srmRmdir(SrmRmdirRequest request)
-    throws RemoteException {
-        return (SrmRmdirResponse)handleClientCall("srmRmdir",request,true);
+          throws RemoteException {
+        return (SrmRmdirResponse) handleClientCall("srmRmdir", request, true);
     }
 
     @Override
     public SrmSetPermissionResponse srmSetPermission(SrmSetPermissionRequest request)
-    throws RemoteException {
-        return (SrmSetPermissionResponse)handleClientCall("srmSetPermission",request,true);
+          throws RemoteException {
+        return (SrmSetPermissionResponse) handleClientCall("srmSetPermission", request, true);
     }
 
     @Override
-    public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(SrmStatusOfCopyRequestRequest request)
-    throws RemoteException {
-        return (SrmStatusOfCopyRequestResponse)handleClientCall("srmStatusOfCopyRequest",request,true);
+    public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
+          SrmStatusOfCopyRequestRequest request)
+          throws RemoteException {
+        return (SrmStatusOfCopyRequestResponse) handleClientCall("srmStatusOfCopyRequest", request,
+              true);
     }
 
 
     @Override
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(SrmStatusOfGetRequestRequest request)
-    throws RemoteException {
-        return (SrmStatusOfGetRequestResponse)handleClientCall("srmStatusOfGetRequest",request,true);
+          throws RemoteException {
+        return (SrmStatusOfGetRequestResponse) handleClientCall("srmStatusOfGetRequest", request,
+              true);
     }
 
     @Override
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(SrmStatusOfPutRequestRequest request)
-    throws RemoteException {
-        return (SrmStatusOfPutRequestResponse)handleClientCall("srmStatusOfPutRequest",request,true);
+          throws RemoteException {
+        return (SrmStatusOfPutRequestResponse) handleClientCall("srmStatusOfPutRequest", request,
+              true);
     }
 
     @Override
     public SrmSuspendRequestResponse srmSuspendRequest(SrmSuspendRequestRequest request)
-    throws RemoteException {
-        return (SrmSuspendRequestResponse)handleClientCall("srmSuspendRequest",request,true);
+          throws RemoteException {
+        return (SrmSuspendRequestResponse) handleClientCall("srmSuspendRequest", request, true);
     }
 
     @Override
     public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest request)
-    throws RemoteException {
-        return (SrmUpdateSpaceResponse)handleClientCall("srmUpdateSpace",request,true);
+          throws RemoteException {
+        return (SrmUpdateSpaceResponse) handleClientCall("srmUpdateSpace", request, true);
     }
 }

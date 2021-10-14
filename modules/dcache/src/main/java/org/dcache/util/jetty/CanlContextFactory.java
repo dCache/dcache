@@ -18,19 +18,11 @@
 package org.dcache.util.jetty;
 
 import com.google.common.base.Throwables;
+import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-
 import java.io.File;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -39,22 +31,26 @@ import java.security.cert.CertificateFactory;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import dmg.cells.nucleus.CDC;
-
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
 import org.dcache.gsi.GsiFrameEngine;
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.util.Callables;
+import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Specialized SSLContext factory that uses CANL for certificate handling.
- *
+ * <p>
  * Can optionally create GSIEngine wrappers for SSLEngine to support GSI delegation. Should be
  * combined with GsiRequestCustomizer to add the delegated credentials to the HttpServletRequest.
  */
-public class CanlContextFactory extends SslContextFactory.Server
-{
+public class CanlContextFactory extends SslContextFactory.Server {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CanlContextFactory.class);
 
     private Path certificatePath;
@@ -74,155 +70,127 @@ public class CanlContextFactory extends SslContextFactory.Server
 
     private Callable<SslContextFactory> delegate;
 
-    public File getCertificatePath()
-    {
+    public File getCertificatePath() {
         return certificatePath.toFile();
     }
 
-    public void setCertificatePath(File certificatePath)
-    {
+    public void setCertificatePath(File certificatePath) {
         this.certificatePath = certificatePath.toPath();
     }
 
-    public File getKeyPath()
-    {
+    public File getKeyPath() {
         return keyPath.toFile();
     }
 
-    public void setKeyPath(File keyPath)
-    {
+    public void setKeyPath(File keyPath) {
         this.keyPath = keyPath.toPath();
     }
 
-    public File getCertificateAuthorityPath()
-    {
+    public File getCertificateAuthorityPath() {
         return certificateAuthorityPath.toFile();
     }
 
-    public void setCertificateAuthorityPath(File certificateAuthorityPath)
-    {
+    public void setCertificateAuthorityPath(File certificateAuthorityPath) {
         this.certificateAuthorityPath = certificateAuthorityPath.toPath();
     }
 
-    public boolean isGsiEnabled()
-    {
+    public boolean isGsiEnabled() {
         return isGsiEnabled;
     }
 
-    public void setGsiEnabled(boolean value)
-    {
+    public void setGsiEnabled(boolean value) {
         isGsiEnabled = value;
     }
 
-    public boolean isUsingLegacyClose()
-    {
+    public boolean isUsingLegacyClose() {
         return isUsingLegacyClose;
     }
 
-    public void setUsingLegacyClose(boolean usingLegacyClose)
-    {
+    public void setUsingLegacyClose(boolean usingLegacyClose) {
         this.isUsingLegacyClose = usingLegacyClose;
     }
 
-    public long getCertificateAuthorityUpdateInterval()
-    {
+    public long getCertificateAuthorityUpdateInterval() {
         return certificateAuthorityUpdateInterval;
     }
 
-    public void setCertificateAuthorityUpdateInterval(long interval)
-    {
+    public void setCertificateAuthorityUpdateInterval(long interval) {
         this.certificateAuthorityUpdateInterval = interval;
     }
 
-    public long getCredentialUpdateInterval()
-    {
+    public long getCredentialUpdateInterval() {
         return credentialUpdateInterval;
     }
 
-    public void setCredentialUpdateInterval(long interval)
-    {
+    public void setCredentialUpdateInterval(long interval) {
         this.credentialUpdateInterval = interval;
     }
 
-    public CrlCheckingMode getCrlCheckingMode()
-    {
+    public CrlCheckingMode getCrlCheckingMode() {
         return crlCheckingMode;
     }
 
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
         this.crlCheckingMode = crlCheckingMode;
     }
 
-    public OCSPCheckingMode getOcspCheckingMode()
-    {
+    public OCSPCheckingMode getOcspCheckingMode() {
         return ocspCheckingMode;
     }
 
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
         this.ocspCheckingMode = ocspCheckingMode;
     }
 
-    public NamespaceCheckingMode getNamespaceMode()
-    {
+    public NamespaceCheckingMode getNamespaceMode() {
         return namespaceMode;
     }
 
-    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
-    {
+    public void setNamespaceMode(NamespaceCheckingMode namespaceMode) {
         this.namespaceMode = namespaceMode;
     }
 
-    public KeyPairCache getKeyPairCache()
-    {
+    public KeyPairCache getKeyPairCache() {
         return keyPairCache;
     }
 
-    public void setKeyPairCache(KeyPairCache keyPairCache)
-    {
+    public void setKeyPairCache(KeyPairCache keyPairCache) {
         this.keyPairCache = keyPairCache;
     }
 
-    public long getValidationCacheLifetime()
-    {
+    public long getValidationCacheLifetime() {
         return validationCacheLifetime;
     }
 
-    public void setValidationCacheLifetime(long validationCacheLifetime)
-    {
+    public void setValidationCacheLifetime(long validationCacheLifetime) {
         this.validationCacheLifetime = validationCacheLifetime;
     }
 
     @Override
-    protected void doStart() throws Exception
-    {
+    protected void doStart() throws Exception {
         cf = CertificateFactory.getInstance("X.509");
         delegate = Callables.memoizeWithExpiration(
-                Callables.memoizeFromFiles(this::createDelegate, keyPath, certificatePath),
-                credentialUpdateInterval, TimeUnit.MILLISECONDS);
+              Callables.memoizeFromFiles(this::createDelegate, keyPath, certificatePath),
+              credentialUpdateInterval, TimeUnit.MILLISECONDS);
         delegate.call(); // Fail fast
     }
 
     /**
      * Creates an SslContextFactory to which SSLEngine creation can be delegated.
-     *
-     * The reason to create a delegate is that SslContextFactory doesn't allow the SSLContext
-     * to be recreated once initialized. Thus the only means of reloading the host key is
-     * to recreate the entire factory.
+     * <p>
+     * The reason to create a delegate is that SslContextFactory doesn't allow the SSLContext to be
+     * recreated once initialized. Thus the only means of reloading the host key is to recreate the
+     * entire factory.
      */
-    private SslContextFactory createDelegate() throws Exception
-    {
+    private SslContextFactory createDelegate() throws Exception {
         // use instance of SslContextFactory.Server as it allows non 'https' protocol schemas.
         // See: https://github.com/eclipse/jetty.project/issues/3454
-        SslContextFactory factory = new SslContextFactory.Server()
-        {
+        SslContextFactory factory = new SslContextFactory.Server() {
             private final PEMCredential serverCredential =
-                    new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
+                  new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
 
             @Override
-            protected void doStart() throws Exception
-            {
+            protected void doStart() throws Exception {
                 super.setCertAlias(CanlContextFactory.this.getCertAlias());
                 super.setCipherComparator(CanlContextFactory.this.getCipherComparator());
                 super.setExcludeCipherSuites(CanlContextFactory.this.getExcludeCipherSuites());
@@ -246,52 +214,46 @@ public class CanlContextFactory extends SslContextFactory.Server
             }
 
             @Override
-            protected KeyStore loadKeyStore(Resource resource) throws Exception
-            {
+            protected KeyStore loadKeyStore(Resource resource) throws Exception {
                 return null;
             }
 
             @Override
-            protected KeyStore loadTrustStore(Resource resource) throws Exception
-            {
+            protected KeyStore loadTrustStore(Resource resource) throws Exception {
                 return null;
             }
 
             @Override
-            protected Collection<? extends CRL> loadCRL(String crlPath) throws Exception
-            {
+            protected Collection<? extends CRL> loadCRL(String crlPath) throws Exception {
                 return null;
             }
 
             @Override
-            protected KeyManager[] getKeyManagers(KeyStore keyStore) throws Exception
-            {
-                return new KeyManager[] { serverCredential.getKeyManager() };
+            protected KeyManager[] getKeyManagers(KeyStore keyStore) throws Exception {
+                return new KeyManager[]{serverCredential.getKeyManager()};
             }
 
             @Override
             protected TrustManager[] getTrustManagers(KeyStore trustStore,
-                                                      Collection<? extends CRL> crls) throws Exception
-            {
+                  Collection<? extends CRL> crls) throws Exception {
                 return org.dcache.ssl.CanlContextFactory.custom()
-                        .withOcspCheckingMode(ocspCheckingMode)
-                        .withCrlCheckingMode(crlCheckingMode)
-                        .withNamespaceMode(namespaceMode)
-                        .withCertificateAuthorityPath(certificateAuthorityPath)
-                        .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval)
-                        .withLazy(false)
-                        .withLoggingContext(new CDC()::restore)
-                        .withValidationCacheLifetime(validationCacheLifetime)
-                        .build()
-                        .getTrustManagers();
+                      .withOcspCheckingMode(ocspCheckingMode)
+                      .withCrlCheckingMode(crlCheckingMode)
+                      .withNamespaceMode(namespaceMode)
+                      .withCertificateAuthorityPath(certificateAuthorityPath)
+                      .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval)
+                      .withLazy(false)
+                      .withLoggingContext(new CDC()::restore)
+                      .withValidationCacheLifetime(validationCacheLifetime)
+                      .build()
+                      .getTrustManagers();
             }
         };
         factory.start();
         return factory;
     }
 
-    protected SSLEngine wrapEngine(SSLEngine engine)
-    {
+    protected SSLEngine wrapEngine(SSLEngine engine) {
         if (isGsiEnabled) {
             ServerGsiEngine gsiEngine = new ServerGsiEngine(engine, cf);
             gsiEngine.setUsingLegacyClose(isUsingLegacyClose);
@@ -303,8 +265,7 @@ public class CanlContextFactory extends SslContextFactory.Server
     }
 
     @Override
-    public SSLEngine newSSLEngine()
-    {
+    public SSLEngine newSSLEngine() {
         try {
             return wrapEngine(delegate.call().newSSLEngine());
         } catch (Exception e) {
@@ -314,8 +275,7 @@ public class CanlContextFactory extends SslContextFactory.Server
     }
 
     @Override
-    public SSLEngine newSSLEngine(String host, int port)
-    {
+    public SSLEngine newSSLEngine(String host, int port) {
         try {
             return wrapEngine(delegate.call().newSSLEngine(host, port));
         } catch (Exception e) {

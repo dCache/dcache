@@ -7,13 +7,12 @@ package org.dcache.gplazma.configuration.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
-
 import org.dcache.gplazma.configuration.Configuration;
 
 /**
- * This is the parser that will support parsing classical
- * gPlazma policy file and provide a Configuration sutable for the
- * new gPlazma 2.0 strategy consumption
+ * This is the parser that will support parsing classical gPlazma policy file and provide a
+ * Configuration sutable for the new gPlazma 2.0 strategy consumption
+ *
  * @author timur
  */
 public class ClassicConfigurationParser implements ConfigurationParser {

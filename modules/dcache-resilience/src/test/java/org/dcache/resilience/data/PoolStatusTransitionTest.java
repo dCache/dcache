@@ -59,16 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import diskCacheV111.pools.PoolV2Mode;
-import org.dcache.resilience.data.PoolOperation.NextAction;
-import org.dcache.resilience.data.PoolOperation.State;
-
 import static org.dcache.resilience.data.PoolOperation.NextAction.DOWN_TO_UP;
 import static org.dcache.resilience.data.PoolOperation.NextAction.NOP;
 import static org.dcache.resilience.data.PoolOperation.NextAction.UP_TO_DOWN;
@@ -77,6 +67,14 @@ import static org.dcache.resilience.data.PoolStatusForResilience.ENABLED;
 import static org.dcache.resilience.data.PoolStatusForResilience.READ_ONLY;
 import static org.dcache.resilience.data.PoolStatusForResilience.UNINITIALIZED;
 import static org.junit.Assert.assertEquals;
+
+import diskCacheV111.pools.PoolV2Mode;
+import java.util.ArrayList;
+import java.util.List;
+import org.dcache.resilience.data.PoolOperation.NextAction;
+import org.dcache.resilience.data.PoolOperation.State;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * <p>Tests the Cartesian product of mode changes for correct action transition.</p>
@@ -90,15 +88,16 @@ public final class PoolStatusTransitionTest {
     }
 
     static class TestOracle {
+
         final PoolStatusForResilience last;
         final PoolStatusForResilience incoming;
         final PoolStatusForResilience curr;
-        final NextAction              action;
+        final NextAction action;
 
         TestOracle(PoolStatusForResilience last,
-                   PoolStatusForResilience incoming,
-                   PoolStatusForResilience curr,
-                   NextAction action) {
+              PoolStatusForResilience incoming,
+              PoolStatusForResilience curr,
+              NextAction action) {
             this.last = last;
             this.incoming = incoming;
             this.curr = curr;
@@ -129,8 +128,8 @@ public final class PoolStatusTransitionTest {
         oracles.add(new TestOracle(UNINITIALIZED, ENABLED, ENABLED, NOP));
     }
 
-    PoolV2Mode    mode;
-    NextAction    action;
+    PoolV2Mode mode;
+    NextAction action;
     PoolOperation operation;
 
     @Test
@@ -312,6 +311,6 @@ public final class PoolStatusTransitionTest {
 
     private void whenTransitionIsComputed() {
         action = operation.getNextAction(
-                        PoolStatusForResilience.getStatusFor(mode));
+              PoolStatusForResilience.getStatusFor(mode));
     }
 }

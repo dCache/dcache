@@ -59,12 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells.receivers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
@@ -73,37 +67,42 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.db.impl.HourlyAggregateDataHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class is responsible for the processing of messages from other domains
- * regarding transfers and pool usage. It calls out to a IBillingInfoAccess
- * implementation to handle persistence of the data.<br>
+ * This class is responsible for the processing of messages from other domains regarding transfers
+ * and pool usage. It calls out to a IBillingInfoAccess implementation to handle persistence of the
+ * data.<br>
  * <br>
  */
 public class BillingInfoMessageReceiver implements CellMessageReceiver,
-                CellCommandListener {
+      CellCommandListener {
+
     private static final Logger LOGGER =
-                    LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
+          LoggerFactory.getLogger(BillingInfoMessageReceiver.class);
 
     /**
      * Injected
      */
-    private IBillingInfoAccess         access;
+    private IBillingInfoAccess access;
     private HourlyAggregateDataHandler hourlyAggregateDataHandler;
 
     private Thread commitStatistics;
 
     @Command(name = "display insert statistics",
-             hint = "toggles logging of statistics",
-             description = "Prints once a minute to stdout/pinboard the queue " +
-                     "and database commit totals and rate for " +
-                     "billing message inserts.")
+          hint = "toggles logging of statistics",
+          description = "Prints once a minute to stdout/pinboard the queue " +
+                "and database commit totals and rate for " +
+                "billing message inserts.")
     class StatisticsCommand implements Callable<String> {
 
         @Argument(valueSpec = "start|stop")
@@ -127,6 +126,7 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
     private class StatisticsMonitor implements Runnable {
 
         private class Values {
+
             long insertQueueCurrent;
             long commitCurrent;
             long droppedCurrent;
@@ -154,20 +154,19 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
             }
 
             /**
-             * report at error level so that no adjustment of logger is
-             * necessary
+             * report at error level so that no adjustment of logger is necessary
              */
             private void log() {
                 LOGGER.error("insert queue (last {}, current {}, change {}/minute)",
-                                insertQueueLast, insertQueueCurrent,
-                                insertQueueDelta);
+                      insertQueueLast, insertQueueCurrent,
+                      insertQueueDelta);
                 LOGGER.error("commits (last {}, current {}, change {}/minute)",
-                                commitLast, commitCurrent, commitDelta);
+                      commitLast, commitCurrent, commitDelta);
                 LOGGER.error("dropped (last {}, current {}, change {}/minute)",
-                                droppedLast, droppedCurrent, droppedDelta);
+                      droppedLast, droppedCurrent, droppedDelta);
                 LOGGER.error("total memory {}; free memory {}",
-                                Runtime.getRuntime().totalMemory(),
-                                Runtime.getRuntime().freeMemory());
+                      Runtime.getRuntime().totalMemory(),
+                      Runtime.getRuntime().freeMemory());
             }
         }
 
@@ -181,7 +180,7 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
                 }
             } catch (InterruptedException e) {
                 LOGGER.debug("statistics thread interrupted, "
-                                + "probably due to cell shutdown");
+                      + "probably due to cell shutdown");
             }
         }
     }

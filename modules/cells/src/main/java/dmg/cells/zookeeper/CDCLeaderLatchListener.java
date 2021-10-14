@@ -17,36 +17,32 @@
  */
 package dmg.cells.zookeeper;
 
+import dmg.cells.nucleus.CDC;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 
-import dmg.cells.nucleus.CDC;
-
 /**
- * A work-around for injecting the correct CDC into some wrapped
- * LeaderLatchListener.  We need this as Curator creates an internal
- * ExecutorService that looses the CDC (see AfterConnectionEstablished#execute).
+ * A work-around for injecting the correct CDC into some wrapped LeaderLatchListener.  We need this
+ * as Curator creates an internal ExecutorService that looses the CDC (see
+ * AfterConnectionEstablished#execute).
  */
-public class CDCLeaderLatchListener implements LeaderLatchListener
-{
+public class CDCLeaderLatchListener implements LeaderLatchListener {
+
     private final LeaderLatchListener inner;
     private final CDC cdc = new CDC();
 
-    public CDCLeaderLatchListener(LeaderLatchListener inner)
-    {
+    public CDCLeaderLatchListener(LeaderLatchListener inner) {
         this.inner = inner;
     }
 
     @Override
-    public void isLeader()
-    {
+    public void isLeader() {
         try (CDC ignored = cdc.restore()) {
             inner.isLeader();
         }
     }
 
     @Override
-    public void notLeader()
-    {
+    public void notLeader() {
         try (CDC ignored = cdc.restore()) {
             inner.notLeader();
         }

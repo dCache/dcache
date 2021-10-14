@@ -1,8 +1,8 @@
-package diskCacheV111.util ;
+package diskCacheV111.util;
 
 public interface CacheFileAvailable {
 
-    void cacheFileAvailable(PnfsId pnfsId, Throwable ce) ;
+    void cacheFileAvailable(PnfsId pnfsId, Throwable ce);
 
 
 }

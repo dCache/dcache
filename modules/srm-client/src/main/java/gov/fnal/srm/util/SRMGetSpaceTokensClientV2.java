@@ -83,16 +83,14 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import java.io.IOException;
-
 import org.dcache.srm.util.RequestStatusTool;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
-public class SRMGetSpaceTokensClientV2 extends SRMClient
-{
-    public SRMGetSpaceTokensClientV2(Configuration configuration)
-    {
+public class SRMGetSpaceTokensClientV2 extends SRMClient {
+
+    public SRMGetSpaceTokensClientV2(Configuration configuration) {
         super(configuration);
     }
 
@@ -105,31 +103,31 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient
             request.setUserSpaceTokenDescription(tokenDescription);
             SrmGetSpaceTokensResponse response = srm.srmGetSpaceTokens(request);
 
-
-            if ( response == null ) {
+            if (response == null) {
                 throw new IOException(" null SrmGetSpaceTokensResponse");
             }
 
-            TReturnStatus rs     = response.getReturnStatus();
-            if ( rs == null) {
+            TReturnStatus rs = response.getReturnStatus();
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("SrmGetSpaceTokens failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+                throw new IOException(
+                      "SrmGetSpaceTokens failed, unexpected or failed return status : " +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
             }
-            if( response.getArrayOfSpaceTokens() == null || response.getArrayOfSpaceTokens().getStringArray() ==null) {
+            if (response.getArrayOfSpaceTokens() == null
+                  || response.getArrayOfSpaceTokens().getStringArray() == null) {
                 throw new IOException("SrmGetSpaceTokens returned null array of space tokens");
             }
-            String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
+            String[] spaceTokens = response.getArrayOfSpaceTokens().getStringArray();
             System.out.println("Space Reservation Tokens:");
             for (String spaceToken : spaceTokens) {
 
                 System.out.println(spaceToken);
             }
 
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

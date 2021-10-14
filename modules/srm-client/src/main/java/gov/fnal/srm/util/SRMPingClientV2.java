@@ -73,27 +73,25 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import java.io.IOException;
-
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmPingRequest;
 import org.dcache.srm.v2_2.SrmPingResponse;
 import org.dcache.srm.v2_2.TExtraInfo;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class SRMPingClientV2 extends SRMClient
-{
-    /** Creates a new instance of SRMGetClient */
-    public SRMPingClientV2(Configuration configuration)
-    {
+public class SRMPingClientV2 extends SRMClient {
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMPingClientV2(Configuration configuration) {
         super(configuration);
     }
 
     @Override
-    public void start() throws IOException
-    {
+    public void start() throws IOException {
         SrmPingRequest request = new SrmPingRequest();
         SrmPingResponse response = srm.srmPing(request);
         say("received response");
@@ -102,14 +100,14 @@ public class SRMPingClientV2 extends SRMClient
         }
         StringBuilder sb = new StringBuilder();
         sb.append("VersionInfo : ").append(response.getVersionInfo())
-                .append("\n");
-            if (response.getOtherInfo()!=null) {
+              .append("\n");
+        if (response.getOtherInfo() != null) {
             ArrayOfTExtraInfo info = response.getOtherInfo();
-            if (info.getExtraInfoArray()!=null) {
-                for (int i=0;i<info.getExtraInfoArray().length;i++) {
+            if (info.getExtraInfoArray() != null) {
+                for (int i = 0; i < info.getExtraInfoArray().length; i++) {
                     TExtraInfo extraInfo = info.getExtraInfoArray()[i];
                     sb.append(extraInfo.getKey()).append(":")
-                            .append(extraInfo.getValue()).append("\n");
+                          .append(extraInfo.getValue()).append("\n");
                 }
             }
         }

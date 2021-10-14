@@ -66,49 +66,50 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- *  Base class for maintaining a set of counters.
+ * Base class for maintaining a set of counters.
  *
- *  @param <C> counter type.
+ * @param <C> counter type.
  */
 public abstract class QoSCounterGroup<C extends QoSCounter> {
-  protected final String name;
-  protected final Map<String, C> counters;
 
-  protected QoSCounterGroup(String name) {
-    this.name = name;
-    counters = Collections.synchronizedMap(new TreeMap<>());
-  }
+    protected final String name;
+    protected final Map<String, C> counters;
 
-  public void addCounter(String key) {
-    C counter = createCounter(key);
-    counters.put(key, counter);
-  }
+    protected QoSCounterGroup(String name) {
+        this.name = name;
+        counters = Collections.synchronizedMap(new TreeMap<>());
+    }
 
-  public C getCounter(String key) {
-    return counters.get(key);
-  }
+    public void addCounter(String key) {
+        C counter = createCounter(key);
+        counters.put(key, counter);
+    }
 
-  public boolean hasCounter(String key) {
-    return counters.containsKey(key);
-  }
+    public C getCounter(String key) {
+        return counters.get(key);
+    }
 
-  public List<String> getKeys() {
-    return ImmutableList.copyOf(counters.keySet());
-  }
+    public boolean hasCounter(String key) {
+        return counters.containsKey(key);
+    }
 
-  public String getName() {
-    return name;
-  }
+    public List<String> getKeys() {
+        return ImmutableList.copyOf(counters.keySet());
+    }
 
-  public List<C> getValues() {
-    return ImmutableList.copyOf(counters.values());
-  }
+    public String getName() {
+        return name;
+    }
 
-  public void removeCounter(String key) {
-    counters.remove(key);
-  }
+    public List<C> getValues() {
+        return ImmutableList.copyOf(counters.values());
+    }
 
-  public abstract void format(StringBuilder builder);
+    public void removeCounter(String key) {
+        counters.remove(key);
+    }
 
-  protected abstract C createCounter(String key);
+    public abstract void format(StringBuilder builder);
+
+    protected abstract C createCounter(String key);
 }

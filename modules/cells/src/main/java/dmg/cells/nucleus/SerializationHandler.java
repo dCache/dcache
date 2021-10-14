@@ -17,22 +17,16 @@
  */
 package dmg.cells.nucleus;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.Arrays;
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 /**
- * The class contains methods for serializing and deserializing
- * objects to/from a byte array representation. It selects the
- * deserialization method based on a header that is appended
- * to serialized byte arrays based on the used serializer.
- * Currently the class can differentiate between JOS and FST.
+ * The class contains methods for serializing and deserializing objects to/from a byte array
+ * representation. It selects the deserialization method based on a header that is appended to
+ * serialized byte arrays based on the used serializer. Currently the class can differentiate
+ * between JOS and FST.
  */
 public final class SerializationHandler {
 
@@ -42,6 +36,7 @@ public final class SerializationHandler {
         UNDEFINED("undefined"), JOS("standard"), FST("experimental");
 
         private final String displayName;
+
         Serializer(String name) {
             this.displayName = name;
         }
@@ -51,20 +46,22 @@ public final class SerializationHandler {
         }
     }
 
-    private SerializationHandler() {}
+    private SerializationHandler() {
+    }
 
     public static Serializer enumFromConfigString(String configString) {
-        if(isNullOrEmpty(configString)){
+        if (isNullOrEmpty(configString)) {
             return Serializer.JOS;
         }
         String serializerString = configString.toLowerCase();
-        switch(serializerString) {
+        switch (serializerString) {
             case "experimental":
                 return Serializer.FST;
-            case "standard" :
+            case "standard":
                 return Serializer.JOS;
             default:
-                LOGGER.warn("Unknown serializer specified in configuration. Defaulting to {}.", Serializer.JOS);
+                LOGGER.warn("Unknown serializer specified in configuration. Defaulting to {}.",
+                      Serializer.JOS);
                 return Serializer.JOS;
 
         }
@@ -75,14 +72,15 @@ public final class SerializationHandler {
     }
 
     public static byte[] encode(Object message, Serializer serializer) {
-        switch(serializer) {
-            case JOS :
+        switch (serializer) {
+            case JOS:
                 return MsgSerializerJos.encode(message);
             case FST:
                 return MsgSerializerFst.encode(message);
             case UNDEFINED:
             default:
-                throw new UnsupportedOperationException("No such serializer. This should never happen.");
+                throw new UnsupportedOperationException(
+                      "No such serializer. This should never happen.");
         }
     }
 

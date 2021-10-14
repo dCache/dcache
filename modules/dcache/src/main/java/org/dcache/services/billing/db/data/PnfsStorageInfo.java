@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
-import java.util.Map;
-
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
+import java.util.Map;
 
 /**
  * Superclass of all billing storage (HSM) actions.

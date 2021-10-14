@@ -1,7 +1,6 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -14,13 +13,13 @@ import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmGetSpaceTokens {
 
-public class SrmGetSpaceTokens
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmGetSpaceTokens.class);
+          LoggerFactory.getLogger(SrmGetSpaceTokens.class);
 
     private final AbstractStorageElement storage;
     private final SrmGetSpaceTokensRequest request;
@@ -28,18 +27,16 @@ public class SrmGetSpaceTokens
     private SrmGetSpaceTokensResponse response;
 
     public SrmGetSpaceTokens(SRMUser user,
-                             SrmGetSpaceTokensRequest request,
-                             AbstractStorageElement storage,
-                             SRM srm,
-                             String clientHost)
-    {
+          SrmGetSpaceTokensRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
     }
 
-    public SrmGetSpaceTokensResponse getResponse()
-    {
+    public SrmGetSpaceTokensResponse getResponse() {
         if (response == null) {
             try {
                 response = srmGetSpaceTokens();
@@ -56,25 +53,23 @@ public class SrmGetSpaceTokens
     }
 
     private SrmGetSpaceTokensResponse srmGetSpaceTokens()
-            throws SRMException
-    {
+          throws SRMException {
         String description = request.getUserSpaceTokenDescription();
         String[] spaceTokens = storage.srmGetSpaceTokens(user, description);
         if (spaceTokens.length == 0) {
             throw new SRMInvalidRequestException("No such space tokens");
         }
         return new SrmGetSpaceTokensResponse(
-                new TReturnStatus(TStatusCode.SRM_SUCCESS, null),
-                new ArrayOfString(spaceTokens));
+              new TReturnStatus(TStatusCode.SRM_SUCCESS, null),
+              new ArrayOfString(spaceTokens));
     }
 
-    public static final SrmGetSpaceTokensResponse getFailedResponse(String text)
-    {
+    public static final SrmGetSpaceTokensResponse getFailedResponse(String text) {
         return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmGetSpaceTokensResponse getFailedResponse(String text, TStatusCode statusCode)
-    {
+    public static final SrmGetSpaceTokensResponse getFailedResponse(String text,
+          TStatusCode statusCode) {
         SrmGetSpaceTokensResponse response = new SrmGetSpaceTokensResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;

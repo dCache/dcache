@@ -21,9 +21,10 @@ package org.dcache.restful.events.spi;
 /**
  * The status of a request: either a selection or subscription request.
  */
-public enum SelectionStatus
-{
-    /** A new item has been created. */
+public enum SelectionStatus {
+    /**
+     * A new item has been created.
+     */
     CREATED,
 
     /**
@@ -37,20 +38,18 @@ public enum SelectionStatus
     RESOURCE_NOT_FOUND,
 
     /**
-     * The request targeted a dCache resource that the user is not
-     * allowed to access.
+     * The request targeted a dCache resource that the user is not allowed to access.
      */
     PERMISSION_DENIED,
 
     /**
-     * The selector could not be accepted as it is badly formed or missing
-     * required information.
+     * The selector could not be accepted as it is badly formed or missing required information.
      */
     BAD_SELECTOR,
 
     /**
-     * The selector could not be accepted because, although well-formed, it
-     * has a field that fails some condition.
+     * The selector could not be accepted because, although well-formed, it has a field that fails
+     * some condition.
      */
     CONDITION_FAILED,
 

@@ -60,28 +60,29 @@ documents or software obtained from this server.
 package org.dcache.qos.services.scanner.data;
 
 /**
- *  Used by admin commands to select operations for cancellation or listing.
+ * Used by admin commands to select operations for cancellation or listing.
  */
 public interface PoolMatcher {
+
     /**
-     *  @param pool associated with the operation
-     *  @param operation containing status and state information
-     *  @return whether the pool, status and state match
+     * @param pool      associated with the operation
+     * @param operation containing status and state information
+     * @return whether the pool, status and state match
      */
     boolean matches(String pool, PoolScanOperation operation);
 
     /**
-     *  @return true if the matcher should match running operations.
+     * @return true if the matcher should match running operations.
      */
     boolean matchesRunning();
 
     /**
-     *  @return true if the matcher should match waiting operations.
+     * @return true if the matcher should match waiting operations.
      */
     boolean matchesWaiting();
 
     /**
-     *  @return true if the matcher should match idle operations.
+     * @return true if the matcher should match idle operations.
      */
     boolean matchesIdle();
 }

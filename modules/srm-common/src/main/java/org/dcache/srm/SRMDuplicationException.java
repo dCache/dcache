@@ -93,41 +93,42 @@ package org.dcache.srm;
 import org.dcache.srm.v2_2.TStatusCode;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMDuplicationException extends SRMException {
+
     private static final long serialVersionUID = -7375663687294131239L;
 
     //private static final long serialVersionUID;
-    
+
     /**
      * Creates a new instance of <code>SRMAuthorizationException</code> without detail message.
      */
     public SRMDuplicationException() {
     }
-    
-    
+
+
     /**
-     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail message.
+     * Constructs an instance of <code>SRMAuthorizationException</code> with the specified detail
+     * message.
+     *
      * @param msg the detail message.
      */
     public SRMDuplicationException(String msg) {
         super(msg);
     }
-        
-    
-    public SRMDuplicationException(String message,Throwable cause) {
-        super(message,cause);
+
+
+    public SRMDuplicationException(String message, Throwable cause) {
+        super(message, cause);
     }
-    
+
     public SRMDuplicationException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_DUPLICATION_ERROR;
     }
 }

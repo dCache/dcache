@@ -17,34 +17,23 @@
  */
 package org.dcache.pool.classic;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.MoverInfoMessage;
-
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellInfoProvider;
-
 import org.dcache.cells.CellStub;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -55,23 +44,29 @@ import org.dcache.pool.statistics.SnapshotStatistics;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
-import static org.dcache.util.Exceptions.messageOrClassName;
+public class DefaultPostTransferService extends AbstractCellComponent implements
+      PostTransferService, CellInfoProvider {
 
-public class DefaultPostTransferService extends AbstractCellComponent implements PostTransferService, CellInfoProvider
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
 
     private final ExecutorService _executor =
-            new CDCExecutorServiceDecorator<>(
-                    Executors.newCachedThreadPool(
-                            new ThreadFactoryBuilder().setNameFormat("post-transfer-%d").build()));
+          new CDCExecutorServiceDecorator<>(
+                Executors.newCachedThreadPool(
+                      new ThreadFactoryBuilder().setNameFormat("post-transfer-%d").build()));
     private CellStub _billing;
     private String _poolName;
     private ChecksumModule _checksumModule;
     private CellStub _door;
 
-    private Consumer<MoverInfoMessage> _kafkaSender = (s) -> {};
+    private Consumer<MoverInfoMessage> _kafkaSender = (s) -> {
+    };
 
     @Required
     public void setBillingStub(CellStub billing) {
@@ -90,8 +85,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
     @Autowired(required = false)
     @Qualifier("transfer")
-    public void setKafkaTemplate(KafkaTemplate kafkaTemplate)
-    {
+    public void setKafkaTemplate(KafkaTemplate kafkaTemplate) {
         _kafkaSender = kafkaTemplate::sendDefault;
     }
 
@@ -100,15 +94,16 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     }
 
     @Override
-    public void execute(final Mover<?> mover, final CompletionHandler<Void, Void> completionHandler)
-    {
+    public void execute(final Mover<?> mover,
+          final CompletionHandler<Void, Void> completionHandler) {
         _executor.execute(new FireAndForgetTask(() -> {
             ReplicaDescriptor handle = mover.getIoHandle();
             try {
                 try {
                     if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                         handle.addChecksums(mover.getExpectedChecksums());
-                        _checksumModule.enforcePostTransferPolicy(handle,mover.getActualChecksums());
+                        _checksumModule.enforcePostTransferPolicy(handle,
+                              mover.getActualChecksums());
                     }
                     handle.commit();
                 } finally {
@@ -118,7 +113,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             } catch (InterruptedIOException | InterruptedException e) {
                 LOGGER.warn("Transfer was forcefully killed during post-processing");
                 mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
-                        "Transfer was forcefully killed");
+                      "Transfer was forcefully killed");
                 completionHandler.failed(e, null);
             } catch (CacheException e) {
                 LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());
@@ -127,22 +122,24 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             } catch (IOException e) {
                 LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
                 mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                        "Transfer failed in post-processing: " + messageOrClassName(e));
+                      "Transfer failed in post-processing: " + messageOrClassName(e));
                 completionHandler.failed(e, null);
             } catch (RuntimeException e) {
                 LOGGER.error(
-                        "Transfer failed in post-processing. Please report this bug to support@dcache.org.", e);
+                      "Transfer failed in post-processing. Please report this bug to support@dcache.org.",
+                      e);
                 mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                        "Transfer failed due to unexpected exception: " + e.getMessage());
+                      "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             } catch (Throwable e) {
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
                 mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                        "Transfer failed due to unexpected exception: " + e.getMessage());
+                      "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             }
-            MoverInfoMessage moverInfoMessage = generateBillingMessage(mover, handle.getReplicaSize());
+            MoverInfoMessage moverInfoMessage = generateBillingMessage(mover,
+                  handle.getReplicaSize());
 
             // as current thread is used to serialize the message, send finish to the door before notifying the billing.
             sendFinished(mover, moverInfoMessage);
@@ -169,23 +166,23 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setFileSize(fileSize);
         info.setResult(mover.getErrorCode(), mover.getErrorMessage());
         info.setTransferAttributes(mover.getBytesTransferred(),
-                                   mover.getTransferTime(),
-                                   mover.getProtocolInfo());
+              mover.getTransferTime(),
+              mover.getProtocolInfo());
         info.setBillingPath(mover.getBillingPath());
         info.setTransferPath(mover.getTransferPath());
 
         MoverInfoMessage infoWithStats = mover.getChannel()
-                .flatMap(c -> c.optionallyAs(IoStatisticsChannel.class))
-                .map(c -> c.getStatistics())
-                .map(s -> updateIoStatistics(info, s))
-                .orElse(info);
+              .flatMap(c -> c.optionallyAs(IoStatisticsChannel.class))
+              .map(c -> c.getStatistics())
+              .map(s -> updateIoStatistics(info, s))
+              .orElse(info);
 
         return infoWithStats;
     }
 
 
-    private static MoverInfoMessage updateIoStatistics(MoverInfoMessage info, IoStatistics statistics)
-    {
+    private static MoverInfoMessage updateIoStatistics(MoverInfoMessage info,
+          IoStatistics statistics) {
         DirectedIoStatistics reads = statistics.reads();
         DirectedIoStatistics writes = statistics.writes();
         SnapshotStatistics readStats = reads.statistics();
@@ -204,16 +201,16 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         }
 
         return info;
-     }
+    }
 
     public void sendFinished(Mover<?> mover, MoverInfoMessage moverInfoMessage) {
         DoorTransferFinishedMessage finished =
-                new DoorTransferFinishedMessage(mover.getClientId(),
-                        mover.getFileAttributes().getPnfsId(),
-                        mover.getProtocolInfo(),
-                        mover.getFileAttributes(),
-                        _poolName,
-                        mover.getQueueName());
+              new DoorTransferFinishedMessage(mover.getClientId(),
+                    mover.getFileAttributes().getPnfsId(),
+                    mover.getProtocolInfo(),
+                    mover.getFileAttributes(),
+                    _poolName,
+                    mover.getQueueName());
         finished.setMoverInfo(moverInfoMessage);
         if (mover.getErrorCode() == 0) {
             finished.setSucceeded();
@@ -224,8 +221,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         _door.notify(mover.getPathToDoor(), finished);
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         MoreExecutors.shutdownAndAwaitTermination(_executor, 10, TimeUnit.SECONDS);
     }
 }

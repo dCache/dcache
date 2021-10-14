@@ -65,19 +65,20 @@ import org.dcache.xrootd.plugins.authz.scitokens.AbstractSciTokenAuthzFactory;
 import org.dcache.xrootd.security.TokenValidator;
 
 /**
- *  Factory which provides a Gplazma LoginStrategy token validator.
+ * Factory which provides a Gplazma LoginStrategy token validator.
  */
 public class GplazmaLoginSciTokenAuthzFactory extends AbstractSciTokenAuthzFactory
-                                              implements LoginStrategyAware {
-  private LoginStrategy loginStrategy;
+      implements LoginStrategyAware {
 
-  @Override
-  protected TokenValidator getValidatorInstance() {
-    return new GplazmaLoginSciTokenValidator(loginStrategy);
-  }
+    private LoginStrategy loginStrategy;
 
-  @Override
-  public void setLoginStrategy(LoginStrategy loginStrategy) {
-      this.loginStrategy = loginStrategy;
-  }
+    @Override
+    protected TokenValidator getValidatorInstance() {
+        return new GplazmaLoginSciTokenValidator(loginStrategy);
+    }
+
+    @Override
+    public void setLoginStrategy(LoginStrategy loginStrategy) {
+        this.loginStrategy = loginStrategy;
+    }
 }

@@ -72,15 +72,15 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.TimeUtils.TimeUnitFormat;
+import static org.dcache.util.TimeUtils.duration;
+import static org.dcache.util.TimeUtils.relativeTimestamp;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.Nonnull;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReserveSpaceCallback;
@@ -93,73 +93,72 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.util.TimeUtils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * File request is an abstract "SRM file request"
- * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
- * File request is one in a set of file requests within a request
- * each Request is identified by its requestId
- * and each file request is identified by its fileRequestId within Request
- * File Request contains  a reference to its Request
+ * File request is an abstract "SRM file request" its concrete subclasses are
+ * GetFileRequest,PutFileRequest and CopyFileRequest File request is one in a set of file requests
+ * within a request each Request is identified by its requestId and each file request is identified
+ * by its fileRequestId within Request File Request contains  a reference to its Request
  *
- *
- * @author  timur
- * @version
+ * @author timur
  */
 public final class ReserveSpaceRequest extends Request {
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger (ReserveSpaceRequest.class);
 
-    private long sizeInBytes ;
+    private static final Logger LOGGER =
+          LoggerFactory.getLogger(ReserveSpaceRequest.class);
+
+    private long sizeInBytes;
     private final TRetentionPolicy retentionPolicy;
     private final TAccessLatency accessLatency;
-    private final Map<String,String> extraInfo;
+    private final Map<String, String> extraInfo;
     private String spaceToken;
     private final long spaceReservationLifetime;
 
 
-    /** Creates new ReserveSpaceRequest */
+    /**
+     * Creates new ReserveSpaceRequest
+     */
     public ReserveSpaceRequest(@Nonnull String srmId, SRMUser user,
-            long lifetime, long max_update_period, long sizeInBytes,
-            long spaceReservationLifetime, TRetentionPolicy retentionPolicy,
-            TAccessLatency accessLatency, String description, String clienthost,
-            Map<String,String> extraInfo)
-    {
+          long lifetime, long max_update_period, long sizeInBytes,
+          long spaceReservationLifetime, TRetentionPolicy retentionPolicy,
+          TAccessLatency accessLatency, String description, String clienthost,
+          Map<String, String> extraInfo) {
         super(srmId, user, max_update_period, lifetime, description, clienthost);
 
-        this.sizeInBytes = sizeInBytes ;
+        this.sizeInBytes = sizeInBytes;
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
         this.extraInfo = extraInfo;
     }
 
-    /** this constructor is used for restoring the previously
-     * saved FileRequest from persitance storage
+    /**
+     * this constructor is used for restoring the previously saved FileRequest from persitance
+     * storage
      */
 
 
     public ReserveSpaceRequest(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            int retryDeltaTime, long sizeInBytes, long spaceReservationLifetime,
-            String spaceToken, String retentionPolicy, String accessLatency,
-            String description, String clienthost, Map<String,String> extraInfo,
-            String statusCodeString)
-    {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          int retryDeltaTime, long sizeInBytes, long spaceReservationLifetime,
+          String spaceToken, String retentionPolicy, String accessLatency,
+          String description, String clienthost, Map<String, String> extraInfo,
+          String statusCodeString) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
-                scheduelerId, schedulerTimeStamp, numberOfRetries,
-                lastStateTransitionTime, jobHistoryArray, retryDeltaTime, false,
-                description, clienthost, statusCodeString);
+              scheduelerId, schedulerTimeStamp, numberOfRetries,
+              lastStateTransitionTime, jobHistoryArray, retryDeltaTime, false,
+              description, clienthost, statusCodeString);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
 
-        this.retentionPolicy = retentionPolicy == null?null: TRetentionPolicy.fromString(retentionPolicy);
-        this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
+        this.retentionPolicy =
+              retentionPolicy == null ? null : TRetentionPolicy.fromString(retentionPolicy);
+        this.accessLatency =
+              accessLatency == null ? null : TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
         this.extraInfo = extraInfo;
 
@@ -179,15 +178,16 @@ public final class ReserveSpaceRequest extends Request {
             sb.append("   description:").append(getSpaceToken());
         }
         sb.append(" by:").append(getUser().getDisplayName());
-        if(longformat) {
+        if (longformat) {
             sb.append('\n');
             sb.append("   Description: ").append(getSpaceToken()).append('\n');
             long now = System.currentTimeMillis();
             sb.append("   Submitted: ").
-                append(relativeTimestamp(getCreationTime(), now)).append('\n');
+                  append(relativeTimestamp(getCreationTime(), now)).append('\n');
             sb.append("   Expires: ").
-                append(relativeTimestamp(getCreationTime()+getLifetime(), now)).append('\n');
-            sb.append("   Reservation lifetime: ").append(describeReservationLifetime()).append('\n');
+                  append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
+            sb.append("   Reservation lifetime: ").append(describeReservationLifetime())
+                  .append('\n');
             TAccessLatency al = getAccessLatency();
             if (al != null) {
                 sb.append("   AccessLatency: ").append(al).append('\n');
@@ -198,8 +198,7 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
-    private CharSequence describeReservationLifetime()
-    {
+    private CharSequence describeReservationLifetime() {
         long lifetime = getSpaceReservationLifetime();
         if (lifetime == -1) {
             return "(unlimited)";
@@ -209,21 +208,20 @@ public final class ReserveSpaceRequest extends Request {
     }
 
     @Override
-    public void run() throws IllegalStateTransition
-    {
+    public void run() throws IllegalStateTransition {
         LOGGER.trace("run");
         if (!getState().isFinal()) {
             addHistoryEvent("Reserving space.");
             SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
             getStorage().srmReserveSpace(
-                    getUser(),
-                    sizeInBytes,
-                    spaceReservationLifetime,
-                    retentionPolicy == null ? null : retentionPolicy.getValue(),
-                    accessLatency == null ? null : accessLatency.getValue(),
-                    getDescription(),
-                    extraInfo,
-                    callbacks);
+                  getUser(),
+                  sizeInBytes,
+                  spaceReservationLifetime,
+                  retentionPolicy == null ? null : retentionPolicy.getValue(),
+                  accessLatency == null ? null : accessLatency.getValue(),
+                  getDescription(),
+                  extraInfo,
+                  callbacks);
         }
     }
 
@@ -231,13 +229,15 @@ public final class ReserveSpaceRequest extends Request {
         rlock();
         try {
             SrmStatusOfReserveSpaceRequestResponse response =
-                    new SrmStatusOfReserveSpaceRequestResponse();
+                  new SrmStatusOfReserveSpaceRequestResponse();
             response.setReturnStatus(getTReturnStatus());
-            response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
+            response.setRetentionPolicyInfo(
+                  new TRetentionPolicyInfo(retentionPolicy, accessLatency));
             response.setSpaceToken(getSpaceToken());
-            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes));
             response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-            response.setLifetimeOfReservedSpace((int)((spaceReservationLifetime) == -1 ? -1 : TimeUnit.MILLISECONDS.toSeconds(spaceReservationLifetime)));
+            response.setLifetimeOfReservedSpace((int) ((spaceReservationLifetime) == -1 ? -1
+                  : TimeUnit.MILLISECONDS.toSeconds(spaceReservationLifetime)));
             return response;
         } finally {
             runlock();
@@ -250,19 +250,21 @@ public final class ReserveSpaceRequest extends Request {
         try {
             SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
             response.setReturnStatus(getTReturnStatus());
-            response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
+            response.setRetentionPolicyInfo(
+                  new TRetentionPolicyInfo(retentionPolicy, accessLatency));
             response.setRequestToken(String.valueOf(getId()));
             response.setSpaceToken(getSpaceToken());
-            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+            response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes));
             response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
-            response.setLifetimeOfReservedSpace((int)((spaceReservationLifetime) == -1 ? -1 : TimeUnit.MILLISECONDS.toSeconds(spaceReservationLifetime)));
+            response.setLifetimeOfReservedSpace((int) ((spaceReservationLifetime) == -1 ? -1
+                  : TimeUnit.MILLISECONDS.toSeconds(spaceReservationLifetime)));
             return response;
         } finally {
             runlock();
         }
     }
 
-    public final TReturnStatus getTReturnStatus()   {
+    public final TReturnStatus getTReturnStatus() {
         State state;
         TStatusCode statusCode;
         String errorMessage;
@@ -270,7 +272,7 @@ public final class ReserveSpaceRequest extends Request {
         try {
             errorMessage = latestHistoryEvent();
             state = getState();
-            statusCode = getStatusCode() ;
+            statusCode = getStatusCode();
         } finally {
             runlock();
         }
@@ -278,21 +280,20 @@ public final class ReserveSpaceRequest extends Request {
             return new TReturnStatus(statusCode, errorMessage);
         } else {
             switch (state) {
-            case FAILED:
-                return new TReturnStatus(TStatusCode.SRM_FAILURE, errorMessage);
-            case CANCELED:
-                return new TReturnStatus(TStatusCode.SRM_ABORTED, errorMessage);
-            case DONE:
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, errorMessage);
-            default:
-                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, errorMessage);
+                case FAILED:
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, errorMessage);
+                case CANCELED:
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED, errorMessage);
+                case DONE:
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, errorMessage);
+                default:
+                    return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, errorMessage);
             }
         }
     }
 
     public static ReserveSpaceRequest getRequest(String requestToken)
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         try {
             return Job.getJob(Long.parseLong(requestToken), ReserveSpaceRequest.class);
         } catch (NumberFormatException e) {
@@ -300,15 +301,16 @@ public final class ReserveSpaceRequest extends Request {
         }
     }
 
-    private class SrmReserveSpaceCallbacks implements SrmReserveSpaceCallback
-    {
+    private class SrmReserveSpaceCallbacks implements SrmReserveSpaceCallback {
+
         private final long requestJobId;
-        public SrmReserveSpaceCallbacks(long requestJobId){
+
+        public SrmReserveSpaceCallbacks(long requestJobId) {
             this.requestJobId = requestJobId;
         }
 
         public ReserveSpaceRequest getReserveSpaceRequest()
-                throws SRMInvalidRequestException {
+              throws SRMInvalidRequestException {
             return Job.getJob(requestJobId, ReserveSpaceRequest.class);
         }
 
@@ -317,14 +319,14 @@ public final class ReserveSpaceRequest extends Request {
 
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpaceRequest();
+                request = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 LOGGER.error(ire.toString());
                 return;
             }
             try {
-                request.setState(State.FAILED,reason);
-            } catch(IllegalStateTransition ist) {
+                request.setState(State.FAILED, reason);
+            } catch (IllegalStateTransition ist) {
                 LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
@@ -335,15 +337,15 @@ public final class ReserveSpaceRequest extends Request {
         public void noFreeSpace(String reason) {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpaceRequest();
+                request = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 LOGGER.error(ire.toString());
                 return;
             }
 
             try {
-                request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
-            } catch(IllegalStateTransition ist) {
+                request.setStateAndStatusCode(State.FAILED, reason, TStatusCode.SRM_NO_FREE_SPACE);
+            } catch (IllegalStateTransition ist) {
                 LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
@@ -354,24 +356,23 @@ public final class ReserveSpaceRequest extends Request {
         public void failed(Exception e) {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpaceRequest();
+                request = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 LOGGER.error(ire.toString());
                 return;
             }
 
             try {
-                request.setState(State.FAILED,e.getMessage());
-            } catch(IllegalStateTransition ist) {
-              LOGGER.error("Illegal State Transition : {}", ist.getMessage());
+                request.setState(State.FAILED, e.getMessage());
+            } catch (IllegalStateTransition ist) {
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            LOGGER.error("ReserveSpace exception: ",e);
+            LOGGER.error("ReserveSpace exception: ", e);
         }
 
         @Override
-        public void internalError(String reason)
-        {
+        public void internalError(String reason) {
             ReserveSpaceRequest request;
             try {
                 request = getReserveSpaceRequest();
@@ -392,7 +393,7 @@ public final class ReserveSpaceRequest extends Request {
         public void success(String spaceReservationToken, long reservedSpaceSize) {
             ReserveSpaceRequest request;
             try {
-                  request  = getReserveSpaceRequest();
+                request = getReserveSpaceRequest();
             } catch (SRMInvalidRequestException ire) {
                 LOGGER.error(ire.toString());
                 return;
@@ -400,13 +401,13 @@ public final class ReserveSpaceRequest extends Request {
             request.wlock();
             try {
                 State state = request.getState();
-                if(!state.isFinal()) {
+                if (!state.isFinal()) {
 
                     request.setSpaceToken(spaceReservationToken);
                     request.setSizeInBytes(reservedSpaceSize);
-                    request.setState(State.DONE,"space reservation succeeded" );
+                    request.setState(State.DONE, "space reservation succeeded");
                 }
-            } catch(IllegalStateTransition ist) {
+            } catch (IllegalStateTransition ist) {
                 LOGGER.error("Illegal State Transition : {}", ist.getMessage());
             } finally {
                 wunlock();
@@ -440,7 +441,7 @@ public final class ReserveSpaceRequest extends Request {
         return accessLatency;
     }
 
-    public Map<String,String> getExtraInfo() {
+    public Map<String, String> getExtraInfo() {
         return extraInfo;
     }
 

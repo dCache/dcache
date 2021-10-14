@@ -1,5 +1,8 @@
 package dmg.util.logback;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -10,103 +13,91 @@ import ch.qos.logback.core.spi.FilterReply;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellNucleus;
+import java.util.List;
+import java.util.Set;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
 
-import java.util.List;
-import java.util.Set;
+public class CellThresholdFilter extends TurboFilter {
 
-import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellNucleus;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-
-public class CellThresholdFilter extends TurboFilter
-{
     private FilterReply _onHigherOrEqual = FilterReply.NEUTRAL;
     private FilterReply _onLower = FilterReply.DENY;
 
     private final List<Threshold> _thresholds = Lists.newArrayList();
 
     /**
-     * Adds a default threshold that will be used by all filters
-     * unless overridden.
+     * Adds a default threshold that will be used by all filters unless overridden.
      */
-    public void addThreshold(Threshold threshold)
-    {
+    public void addThreshold(Threshold threshold) {
         checkState(!isStarted(), "Cannot add threshold after start");
         _thresholds.add(threshold);
     }
 
     /**
-     * Get the FilterReply when the level of the logging request is
-     * higher or equal to the effective threshold.
+     * Get the FilterReply when the level of the logging request is higher or equal to the effective
+     * threshold.
      *
      * @return FilterReply
      */
-    public FilterReply getOnHigherOrEqual()
-    {
+    public FilterReply getOnHigherOrEqual() {
         return _onHigherOrEqual;
     }
 
-    public void setOnHigherOrEqual(FilterReply onHigherOrEqual)
-    {
+    public void setOnHigherOrEqual(FilterReply onHigherOrEqual) {
         requireNonNull(onHigherOrEqual);
         _onHigherOrEqual = onHigherOrEqual;
     }
 
     /**
-     * Get the FilterReply when the level of the logging request is
-     * lower than the effective threshold.
+     * Get the FilterReply when the level of the logging request is lower than the effective
+     * threshold.
      *
      * @return FilterReply
      */
-    public FilterReply getOnLower()
-    {
+    public FilterReply getOnLower() {
         return _onLower;
     }
 
-    public void setOnLower(FilterReply onLower)
-    {
+    public void setOnLower(FilterReply onLower) {
         requireNonNull(onLower);
         _onLower = onLower;
     }
 
     private Set<Appender<ILoggingEvent>>
-        getAppenders(LoggerContext context)
-    {
+    getAppenders(LoggerContext context) {
         Set<Appender<ILoggingEvent>> appenders = Sets.newHashSet();
-        for (Logger logger: context.getLoggerList()) {
+        for (Logger logger : context.getLoggerList()) {
             Iterators.addAll(appenders, logger.iteratorForAppenders());
         }
         return appenders;
     }
 
     @Override
-    public void start()
-    {
+    public void start() {
         LoggerContext context = (LoggerContext) getContext();
 
-        for (Logger logger: context.getLoggerList()) {
-            RootFilterThresholds.setRoot(LoggerName.getInstance(logger.getName()), !logger.isAdditive());
+        for (Logger logger : context.getLoggerList()) {
+            RootFilterThresholds.setRoot(LoggerName.getInstance(logger.getName()),
+                  !logger.isAdditive());
         }
 
-        for (Appender<ILoggingEvent> appender: getAppenders(context)) {
+        for (Appender<ILoggingEvent> appender : getAppenders(context)) {
             String appenderName = appender.getName();
 
             RootFilterThresholds.addAppender(appenderName);
-            for (Threshold threshold: _thresholds) {
+            for (Threshold threshold : _thresholds) {
                 if (threshold.isApplicableToAppender(appender)) {
                     RootFilterThresholds.setThreshold(
-                            threshold.getLogger(),
-                            appenderName,
-                            threshold.getLevel());
+                          threshold.getLogger(),
+                          appenderName,
+                          threshold.getLevel());
                 }
             }
 
             CellThresholdFilterCompanion filter =
-                new CellThresholdFilterCompanion(appenderName);
+                  new CellThresholdFilterCompanion(appenderName);
             filter.start();
             appender.addFilter(filter);
         }
@@ -116,8 +107,7 @@ public class CellThresholdFilter extends TurboFilter
 
     @Override
     public FilterReply decide(Marker marker, Logger logger, Level level,
-                              String format, Object[] params, Throwable t)
-    {
+          String format, Object[] params, Throwable t) {
         if (!isStarted()) {
             return FilterReply.NEUTRAL;
         }
@@ -134,7 +124,7 @@ public class CellThresholdFilter extends TurboFilter
         }
 
         Level threshold =
-            thresholds.getThreshold(logger);
+              thresholds.getThreshold(logger);
         if (threshold == null) {
             return FilterReply.NEUTRAL;
         }
@@ -146,8 +136,7 @@ public class CellThresholdFilter extends TurboFilter
         }
     }
 
-    private String getOrDiscoverCell()
-    {
+    private String getOrDiscoverCell() {
         String cellName = getCell();
 
         if (cellName == null) {
@@ -158,8 +147,7 @@ public class CellThresholdFilter extends TurboFilter
         return cellName;
     }
 
-    private String getCell()
-    {
+    private String getCell() {
         return MDC.get(CDC.MDC_CELL);
     }
 }

@@ -61,11 +61,12 @@ package org.dcache.resilience.data;
 
 /**
  * <p>Used by admin commands to select operations for cancellation or
- *      listing.</p>
+ * listing.</p>
  */
 public interface PoolMatcher {
+
     /**
-     * @param pool associated with the operation
+     * @param pool      associated with the operation
      * @param operation containing status and state information
      * @return whether the pool, status and state match
      */

@@ -1,44 +1,40 @@
 package org.dcache.pool.repository.v5;
 
-import com.google.common.collect.ImmutableSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.collect.Iterables.unmodifiableIterable;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableSet;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.OpenOption;
 import java.util.EnumSet;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsHandler;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.inotify.InotifyReplicaRecord;
 import org.dcache.pool.statistics.IoStatisticsReplicaRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+class ReadHandleImpl implements ReplicaDescriptor {
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.collect.Iterables.unmodifiableIterable;
-
-class ReadHandleImpl implements ReplicaDescriptor
-{
     private static final Set<OpenOption> OPEN_OPTIONS = ImmutableSet.<OpenOption>builder()
-            .addAll(FileStore.O_READ)
-            .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
-            .build();
+          .addAll(FileStore.O_READ)
+          .add(IoStatisticsReplicaRecord.OpenFlags.ENABLE_IO_STATISTICS)
+          .build();
 
     private static final Set<OpenOption> OPEN_OPTIONS_WITH_INOTIFY = ImmutableSet.<OpenOption>builder()
-            .addAll(OPEN_OPTIONS)
-            .add(InotifyReplicaRecord.OpenFlags.ENABLE_INOTIFY_MONITORING)
-            .build();
+          .addAll(OPEN_OPTIONS)
+          .add(InotifyReplicaRecord.OpenFlags.ENABLE_INOTIFY_MONITORING)
+          .build();
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(ReadHandleImpl.class);
 
@@ -50,8 +46,7 @@ class ReadHandleImpl implements ReplicaDescriptor
     private boolean _open;
 
     ReadHandleImpl(PnfsHandler pnfs, ReplicaRecord entry, FileAttributes fileAttributes,
-            boolean isInternalActivity)
-    {
+          boolean isInternalActivity) {
         _pnfs = requireNonNull(pnfs);
         _entry = requireNonNull(entry);
         _fileAttributes = requireNonNull(fileAttributes);
@@ -60,13 +55,13 @@ class ReadHandleImpl implements ReplicaDescriptor
     }
 
     /**
-     * Shutdown EntryIODescriptor. All further attempts to use
-     * descriptor will throw IllegalStateException.
+     * Shutdown EntryIODescriptor. All further attempts to use descriptor will throw
+     * IllegalStateException.
+     *
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
     @Override
-    public synchronized void close() throws IllegalStateException
-    {
+    public synchronized void close() throws IllegalStateException {
         if (!_open) {
             throw new IllegalStateException("Handle is closed");
         }
@@ -82,9 +77,10 @@ class ReadHandleImpl implements ReplicaDescriptor
             IOException ex = new IOException("Failed to read the file, because file is Broken.");
             try {
                 _entry.update("Filesystem and pool database file sizes are inconsistent",
-                        r -> r.setState(ReplicaState.BROKEN));
+                      r -> r.setState(ReplicaState.BROKEN));
             } catch (CacheException e) {
-                LOGGER.warn("Filesystem and pool database file sizes inconsistency: {}", e.toString());
+                LOGGER.warn("Filesystem and pool database file sizes inconsistency: {}",
+                      e.toString());
                 ex.addSuppressed(e);
             } finally {
                 channel.close();
@@ -99,8 +95,7 @@ class ReadHandleImpl implements ReplicaDescriptor
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
     @Override
-    public synchronized URI getReplicaFile() throws IllegalStateException
-    {
+    public synchronized URI getReplicaFile() throws IllegalStateException {
         if (!_open) {
             throw new IllegalStateException("Handle is closed");
         }
@@ -109,7 +104,7 @@ class ReadHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes()  throws IllegalStateException {
+    public synchronized FileAttributes getFileAttributes() throws IllegalStateException {
         return _fileAttributes;
     }
 
@@ -117,13 +112,13 @@ class ReadHandleImpl implements ReplicaDescriptor
     public synchronized Iterable<Checksum> getChecksums() throws CacheException {
         if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
             Set<Checksum> checksums = _pnfs.getFileAttributes(
-                    _entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
+                  _entry.getPnfsId(), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
             synchronized (_entry) {
                 _fileAttributes = _entry.getFileAttributes();
                 if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
                     _fileAttributes.setChecksums(checksums);
                     _entry.update("Adding checksums from namespace",
-                            r -> r.setFileAttributes(_fileAttributes));
+                          r -> r.setFileAttributes(_fileAttributes));
                 }
             }
         }
@@ -136,14 +131,12 @@ class ReadHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public void setLastAccessTime(long time)
-    {
+    public void setLastAccessTime(long time) {
         throw new IllegalStateException("Read-only handle");
     }
 
     @Override
-    public long getReplicaSize()
-    {
+    public long getReplicaSize() {
         return _entry.getReplicaSize();
     }
 

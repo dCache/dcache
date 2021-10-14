@@ -66,43 +66,38 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
-public enum FileState
-{
+public enum FileState {
     /**
-     * TRANSFERRING file reservations are bound to a PNFS ID, thus the
-     * name space entry has been created, but the file has not finished
-     * uploading yet. The space is tracked as allocated in the space
-     * reservation.
+     * TRANSFERRING file reservations are bound to a PNFS ID, thus the name space entry has been
+     * created, but the file has not finished uploading yet. The space is tracked as allocated in
+     * the space reservation.
      */
     TRANSFERRING(1),
 
     /**
-     * The file has been completely uploaded to dCache and resides
-     * on disk. The space is tracked as used in the space reservation.
+     * The file has been completely uploaded to dCache and resides on disk. The space is tracked as
+     * used in the space reservation.
      */
     STORED(2),
 
     /**
-     * The file has been flushed to tape and purged from the space. The
-     * space is not tracked by the space reservation.
+     * The file has been flushed to tape and purged from the space. The space is not tracked by the
+     * space reservation.
      */
     FLUSHED(3);
 
     private final int stateId;
 
 
-    FileState(int stateId)
-    {
+    FileState(int stateId) {
         this.stateId = stateId;
     }
 
-    public int getStateId()
-    {
+    public int getStateId() {
         return stateId;
     }
 
-    public static FileState valueOf(int stateId) throws IllegalArgumentException
-    {
+    public static FileState valueOf(int stateId) throws IllegalArgumentException {
         for (FileState state : values()) {
             if (state.stateId == stateId) {
                 return state;

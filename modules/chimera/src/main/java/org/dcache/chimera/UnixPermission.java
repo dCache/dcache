@@ -41,7 +41,7 @@ public class UnixPermission {
     /**
      * Set UID bit
      */
-    public static final int S_ISUID  = 04000;
+    public static final int S_ISUID = 04000;
 
     /**
      * Set GID bit
@@ -152,7 +152,6 @@ public class UnixPermission {
         } else if ((_mode & S_ISGID) == S_ISGID) {
             modeString[6] = 'S';
         }
-
 
         // OTHERS
         if ((_mode & S_IROTH) == S_IROTH) {

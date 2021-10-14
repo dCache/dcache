@@ -73,7 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLPermissionReturn;
 import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
@@ -83,34 +82,32 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMCheckPermissionClientV2 extends SRMClient
-{
+public class SRMCheckPermissionClientV2 extends SRMClient {
+
     private final java.net.URI[] surls;
     private final String[] surl_string;
 
     public SRMCheckPermissionClientV2(Configuration configuration,
-                                      java.net.URI[] surls, String[] surl_string)
-    {
+          java.net.URI[] surls, String[] surl_string) {
         super(configuration);
         this.surls = surls;
         this.surl_string = surl_string;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surls[0];
     }
 
     @Override
     public void start() throws Exception {
         checkCredentialValid();
-        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
-        URI[] uriarray=new URI[surl_string.length];
+        ArrayOfAnyURI surlarray = new ArrayOfAnyURI();
+        URI[] uriarray = new URI[surl_string.length];
         URI uri;
-        for(int i=0;i<uriarray.length;i++){
-            uri=new URI(surl_string[i]);
-            uriarray[i]=uri;
+        for (int i = 0; i < uriarray.length; i++) {
+            uri = new URI(surl_string[i]);
+            uriarray[i] = uri;
         }
         surlarray.setUrlArray(uriarray);
         SrmCheckPermissionRequest req = new SrmCheckPermissionRequest();
@@ -118,46 +115,44 @@ public class SRMCheckPermissionClientV2 extends SRMClient
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmCheckPermissionResponse resp = srm.srmCheckPermission(req);
         try {
-            TReturnStatus rs   = resp.getReturnStatus();
+            TReturnStatus rs = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                TStatusCode rc  = rs.getStatusCode();
+                TStatusCode rc = rs.getStatusCode();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Return code: ").append(rc.toString()).append("\n");
                 sb.append("Explanation: ").append(rs.getExplanation())
-                        .append("\n");
+                      .append("\n");
                 System.out.println(sb.toString());
             }
-            ArrayOfTSURLPermissionReturn  permissions=resp.getArrayOfPermissions();
-            TSURLPermissionReturn[] permissionarray=permissions.getSurlPermissionArray();
+            ArrayOfTSURLPermissionReturn permissions = resp.getArrayOfPermissions();
+            TSURLPermissionReturn[] permissionarray = permissions.getSurlPermissionArray();
             StringBuilder txt = new StringBuilder();
             for (TSURLPermissionReturn permission : permissionarray) {
                 txt.append("# file  : ").append(permission.getSurl())
-                        .append("\n");
+                      .append("\n");
                 if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     txt.append("Return code: ")
-                            .append(permission.getStatus()
-                                    .getStatusCode().toString()).append("\n");
+                          .append(permission.getStatus()
+                                .getStatusCode().toString()).append("\n");
                     txt.append("Explanation: ")
-                            .append(permission.getStatus()
-                                    .getExplanation()).append("\n");
+                          .append(permission.getStatus()
+                                .getExplanation()).append("\n");
                     if (permission.getStatus()
-                            .getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                          .getStatusCode() != TStatusCode.SRM_SUCCESS) {
                         continue;
                     }
                 }
                 TPermissionMode mode = permission.getPermission();
                 txt.append("permission mode:").append(mode.toString())
-                        .append("\n");
+                      .append("\n");
             }
             System.out.println(txt.toString());
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 System.exit(1);
-            }
-            else {
+            } else {
                 System.exit(0);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

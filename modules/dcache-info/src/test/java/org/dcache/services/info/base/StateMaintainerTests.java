@@ -1,68 +1,66 @@
 package org.dcache.services.info.base;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.BDDMockito.anyObject;
+import static org.mockito.BDDMockito.atLeast;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.never;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.willAnswer;
 
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.BDDMockito.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * A set of tests to check that the StateMaintainer works as expected.
  */
-public class StateMaintainerTests
-{
+public class StateMaintainerTests {
+
     private ExpungeAwareStateMaintainer _maintainer;
     private StateCaretaker _caretaker;
 
     /**
-     * A StateUpdate that allows waiting for an update to be
-     * processed.
+     * A StateUpdate that allows waiting for an update to be processed.
      */
-    private class AwaitableStateUpdate extends StateUpdate
-    {
+    private class AwaitableStateUpdate extends StateUpdate {
+
         private final CountDownLatch _latch = new CountDownLatch(1);
 
         @Override
-        public void updateComplete()
-        {
+        public void updateComplete() {
             _latch.countDown();
         }
 
-        public void await() throws InterruptedException
-        {
+        public void await() throws InterruptedException {
             _latch.await();
         }
     }
 
     /**
-     * A StateMaintainer that allows awaiting for at least one expunge
-     * cycle.
+     * A StateMaintainer that allows awaiting for at least one expunge cycle.
      */
-    private class ExpungeAwareStateMaintainer extends StateMaintainer
-    {
+    private class ExpungeAwareStateMaintainer extends StateMaintainer {
+
         private final CountDownLatch _latch = new CountDownLatch(1);
 
         @Override
-        public void expungeCompleted()
-        {
+        public void expungeCompleted() {
             _latch.countDown();
         }
 
-        public void awaitExpunge() throws InterruptedException
-        {
+        public void awaitExpunge() throws InterruptedException {
             _latch.await();
         }
     }
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         _caretaker = mock(StateCaretaker.class);
 
         _maintainer = new ExpungeAwareStateMaintainer();
@@ -71,28 +69,25 @@ public class StateMaintainerTests
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         _maintainer.shutdown();
     }
 
     @Test
-    public void shouldBeInitiallyEmptyQueueSize() throws InterruptedException
-    {
+    public void shouldBeInitiallyEmptyQueueSize() throws InterruptedException {
         assertThat(_maintainer.countPendingUpdates(), is(0));
     }
 
     @Test(timeout = 10_000)
-    public void shouldIncrementAfterSubmittingUpdate() throws InterruptedException
-    {
+    public void shouldIncrementAfterSubmittingUpdate() throws InterruptedException {
         Object monitor = new Object();
 
         willAnswer(a -> {
-                synchronized (monitor) {
-                    monitor.wait();
-                }
-                return null;
-            }).given(_caretaker).processUpdate(anyObject());
+            synchronized (monitor) {
+                monitor.wait();
+            }
+            return null;
+        }).given(_caretaker).processUpdate(anyObject());
 
         _maintainer.enqueueUpdate(new StateUpdate());
 
@@ -100,9 +95,11 @@ public class StateMaintainerTests
     }
 
     @Test(timeout = 10_000)
-    public void shouldIncreaseAfterSubmittingUpdateWhenQueuedUpdate() throws InterruptedException
-    {
-        willAnswer(i -> {wait(); return null;}).given(_caretaker).processUpdate(anyObject());
+    public void shouldIncreaseAfterSubmittingUpdateWhenQueuedUpdate() throws InterruptedException {
+        willAnswer(i -> {
+            wait();
+            return null;
+        }).given(_caretaker).processUpdate(anyObject());
 
         _maintainer.enqueueUpdate(new StateUpdate());
         _maintainer.enqueueUpdate(new StateUpdate());
@@ -111,8 +108,7 @@ public class StateMaintainerTests
     }
 
     @Test(timeout = 10_000)
-    public void shouldDecreaseAfterProcessed() throws InterruptedException
-    {
+    public void shouldDecreaseAfterProcessed() throws InterruptedException {
         AwaitableStateUpdate update = new AwaitableStateUpdate();
         _maintainer.enqueueUpdate(update);
         update.await();
@@ -121,8 +117,7 @@ public class StateMaintainerTests
     }
 
     @Test(timeout = 10_000)
-    public void shouldDecreaseAfterProcessingTwoUpdates() throws InterruptedException
-    {
+    public void shouldDecreaseAfterProcessingTwoUpdates() throws InterruptedException {
         AwaitableStateUpdate update = new AwaitableStateUpdate();
 
         _maintainer.enqueueUpdate(new StateUpdate());
@@ -134,8 +129,7 @@ public class StateMaintainerTests
     }
 
     @Test(timeout = 10_000)
-    public void shouldCheckExpiring() throws InterruptedException
-    {
+    public void shouldCheckExpiring() throws InterruptedException {
         // We need an update to trigger the update of expire date.
         AwaitableStateUpdate update = new AwaitableStateUpdate();
         _maintainer.enqueueUpdate(update);
@@ -146,8 +140,7 @@ public class StateMaintainerTests
     }
 
     @Test(timeout = 10_000)
-    public void shouldExpireAfterDelay() throws InterruptedException
-    {
+    public void shouldExpireAfterDelay() throws InterruptedException {
         given(_caretaker.getEarliestMetricExpiryDate()).willReturn(new Date());
 
         // We need to enqueue something to trigger the update of expire date.

@@ -1,19 +1,17 @@
 package org.dcache.auth;
 
 import com.google.common.collect.Collections2;
-
-import javax.security.auth.Subject;
-
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import javax.security.auth.Subject;
 
 /**
- * The class is a Wrapper for the Subject, used for StringTemplate
- * to fetch particular subject's attributes that could be specified
- * in billing.properties or dcache.conf and will be printed in billing files.
+ * The class is a Wrapper for the Subject, used for StringTemplate to fetch particular subject's
+ * attributes that could be specified in billing.properties or dcache.conf and will be printed in
+ * billing files.
  */
 public class SubjectWrapper {
 

@@ -20,23 +20,20 @@ package org.dcache.pool.nearline.filesystem;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 
-public class CopyNearlineStorageProvider implements NearlineStorageProvider
-{
+public class CopyNearlineStorageProvider implements NearlineStorageProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "copy";
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Copies files to and from another directory.";
     }
 
     @Override
-    public NearlineStorage createNearlineStorage(String type, String name)
-    {
+    public NearlineStorage createNearlineStorage(String type, String name) {
         return new CopyNearlineStorage(type, name);
     }
 }

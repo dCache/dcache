@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,11 @@
  */
 package org.dcache.ftp.client.vanilla;
 
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-
-import java.io.Serializable;
+import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.BufferedReader;
-
+import java.io.Serializable;
+import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +32,8 @@ import org.slf4j.LoggerFactory;
  * </p>
  */
 public class Reply
-        implements Serializable
-{
+      implements Serializable {
+
     private static final long serialVersionUID = 3736894002484160637L;
 
     private static final Logger logger = LoggerFactory.getLogger(Reply.class);
@@ -58,8 +56,7 @@ public class Reply
     protected boolean isMultiline;
 
     // for subclassing
-    protected Reply()
-    {
+    protected Reply() {
     }
 
     /**
@@ -68,10 +65,9 @@ public class Reply
      * @throws FTPReplyParseException if cannot parse
      **/
     public Reply(BufferedReader input)
-            throws FTPReplyParseException,
-            EOFException,
-            IOException
-    {
+          throws FTPReplyParseException,
+          EOFException,
+          IOException {
         logger.debug("read 1st line");
         String line = input.readLine();
         if (logger.isDebugEnabled()) {
@@ -88,10 +84,10 @@ public class Reply
 
         if (line.length() < MIN_FIRST_LEN) {
             throw new FTPReplyParseException(
-                    FTPReplyParseException.STRING_TOO_SHORT,
-                    "Minimum 1st line length = " + MIN_FIRST_LEN
-                    + ". Here's the incorrect 1st line ->"
-                    + line + "<-");
+                  FTPReplyParseException.STRING_TOO_SHORT,
+                  "Minimum 1st line length = " + MIN_FIRST_LEN
+                        + ". Here's the incorrect 1st line ->"
+                        + line + "<-");
         }
 
         // code
@@ -101,10 +97,10 @@ public class Reply
             code = Integer.parseInt(codeString);
         } catch (NumberFormatException e) {
             throw new FTPReplyParseException(
-                    FTPReplyParseException.FIRST_3_CHARS,
-                    "Here's the incorrect line ->"
-                    + line + "<-" +
-                    "and the first 3 chars ->" + codeString + "<-"
+                  FTPReplyParseException.FIRST_3_CHARS,
+                  "Here's the incorrect line ->"
+                        + line + "<-" +
+                        "and the first 3 chars ->" + codeString + "<-"
             );
         }
 
@@ -133,10 +129,10 @@ public class Reply
             String lineSeparator = System.getProperty("line.separator");
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                        "multiline reply; last line should start with ->{}<-",
-                        lastLineStarts);
+                      "multiline reply; last line should start with ->{}<-",
+                      lastLineStarts);
                 logger.debug("lenght of line.separator on this OS: {}",
-                             lineSeparator.length());
+                      lineSeparator.length());
             }
             StringBuilder buf = new StringBuilder(message);
             for (; ; ) {
@@ -165,82 +161,72 @@ public class Reply
 
         } else {
             throw new FTPReplyParseException(
-                    FTPReplyParseException.UNEXPECTED_4TH_CHAR,
-                    "Here's the incorrect line ->"
-                    + line + "<-");
+                  FTPReplyParseException.UNEXPECTED_4TH_CHAR,
+                  "Here's the incorrect line ->"
+                        + line + "<-");
         }
     }
 
     /**
      * @return the first digit of the reply code.
      */
-    public int getCategory()
-    {
+    public int getCategory() {
         return category;
     }
 
     /**
      * @return the reply code
      */
-    public int getCode()
-    {
+    public int getCode() {
         return code;
     }
 
-    public boolean isMultiline()
-    {
+    public boolean isMultiline() {
         return isMultiline;
     }
 
     /**
      * <p>
-     * Returns the text that came with the reply, between the leading space and
-     * terminating CRLF, excluding the mentioned space and CRLF.
+     * Returns the text that came with the reply, between the leading space and terminating CRLF,
+     * excluding the mentioned space and CRLF.
      * </p>
      * <p>
-     * If the reply is multi-line, this returns the text between the leading
-     * dash &quot;-&quot; and the CRLF following the last line, excluding the mentioned
-     * dash and CRLF. Note that lines are separated by the local line separator
-     * [as returned by System.getProperty("line.separator")] rather than CRLF.
+     * If the reply is multi-line, this returns the text between the leading dash &quot;-&quot; and
+     * the CRLF following the last line, excluding the mentioned dash and CRLF. Note that lines are
+     * separated by the local line separator [as returned by System.getProperty("line.separator")]
+     * rather than CRLF.
      * <p>
      * </p>
      * <p>
      * <p>
      * </p>
      */
-    public String getMessage()
-    {
+    public String getMessage() {
         return message;
     }
 
-    public static boolean isPositivePreliminary(Reply reply)
-    {
+    public static boolean isPositivePreliminary(Reply reply) {
         return (reply.getCategory() == POSITIVE_PRELIMINARY);
     }
 
-    public static boolean isPositiveCompletion(Reply reply)
-    {
+    public static boolean isPositiveCompletion(Reply reply) {
         return (reply.getCategory() == POSITIVE_COMPLETION);
     }
 
-    public static boolean isPositiveIntermediate(Reply reply)
-    {
+    public static boolean isPositiveIntermediate(Reply reply) {
         return (reply.getCategory() == POSITIVE_INTERMEDIATE);
     }
 
-    public static boolean isTransientNegativeCompletion(Reply reply)
-    {
+    public static boolean isTransientNegativeCompletion(Reply reply) {
         return (reply.getCategory() == TRANSIENT_NEGATIVE_COMPLETION);
     }
 
-    public static boolean isPermanentNegativeCompletion(Reply reply)
-    {
+    public static boolean isPermanentNegativeCompletion(Reply reply) {
         return (reply.getCategory() == PERMANENT_NEGATIVE_COMPLETION);
     }
 
 
-    public String toString()
-    {
+    public String toString() {
         String mult = isMultiline ? "-" : " ";
         return code + mult + message;
     }
@@ -248,8 +234,7 @@ public class Reply
     /**
      * GT2.0 wuftp server incorrectly inserts \0 between lines. We have to deal with that.
      **/
-    protected static String ignoreLeading0(String line)
-    {
+    protected static String ignoreLeading0(String line) {
         if (line.length() > 0 && line.charAt(0) == 0) {
             logger.debug("WARNING: The first character of the reply is 0. Ignoring the character.");
         /*

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import static java.util.Objects.requireNonNull;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
@@ -66,13 +68,6 @@ import ch.qos.logback.classic.net.SMTPAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.spi.CyclicBufferTracker;
 import com.google.common.base.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,7 +77,6 @@ import java.util.ServiceLoader;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
@@ -91,24 +85,28 @@ import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.spi.LogEntryListener;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
 import org.dcache.util.BoundedCachedExecutor;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * <p>For server-side interception of log messages.</p>
  *
  * <p>Uses {@link LoggingEventConverter} to transform the event into
- *    a LogEntry object.  Only alarms should be received.  These
- *    will be handled for email forwarding and will be processed
- *    by whatever listeners have been loaded.</p>
+ * a LogEntry object.  Only alarms should be received.  These will be handled for email forwarding
+ * and will be processed by whatever listeners have been loaded.</p>
  *
  * <p>The logic is encapsulated by a task run by an executor service.
- *    It is recommended that the queue be bounded (upon
- *    a rejected execution the event is discarded).</p>
+ * It is recommended that the queue be bounded (upon a rejected execution the event is
+ * discarded).</p>
  */
 public class LogEntryHandler implements ApplicationContextAware {
+
     private static final Logger LOGGER
-        = LoggerFactory.getLogger(LogEntryHandler.class);
+          = LoggerFactory.getLogger(LogEntryHandler.class);
 
     private static final String MDC_TYPE = "type";
 
@@ -116,6 +114,7 @@ public class LogEntryHandler implements ApplicationContextAware {
      * Future runnable worker task.
      */
     class LogEntryTask implements Runnable {
+
         private final ILoggingEvent event;
 
         LogEntryTask(ILoggingEvent event) {
@@ -135,18 +134,18 @@ public class LogEntryHandler implements ApplicationContextAware {
             LogEntry entry = converter.createEntryFromEvent(event);
             int priority = priorityMap.getPriority(entry.getType()).ordinal();
 
-           /*
-            * Store the alarm.
-            *
-            * If this is a duplicate, the store will increment the received field.
-            */
+            /*
+             * Store the alarm.
+             *
+             * If this is a duplicate, the store will increment the received field.
+             */
             store.put(entry);
 
             /*
              * Post-process if this is a new alarm.
              */
             Integer received = entry.getReceived();
-            if (received != null  && received == 1) {
+            if (received != null && received == 1) {
                 if (emailEnabled && priority >= emailThreshold.ordinal()) {
                     Map<String, String> properties = new HashMap<>();
                     properties.put(MDC_TYPE, entry.getType());
@@ -155,39 +154,37 @@ public class LogEntryHandler implements ApplicationContextAware {
 
                 for (LogEntryListenerFactory factory : listenerFactories) {
                     Collection<LogEntryListener> listeners
-                                    = factory.getConfiguredListeners();
+                          = factory.getConfiguredListeners();
                     listeners.stream().forEach(
-                                    (l) -> l.handleLogEntry(entry));
+                          (l) -> l.handleLogEntry(entry));
                 }
             }
         }
     }
 
     /**
-     *  Plugins for handling the converted alarm.
+     * Plugins for handling the converted alarm.
      */
     protected final Collection<LogEntryListenerFactory> listenerFactories
-                    = Collections.synchronizedList(new ArrayList<>());
+          = Collections.synchronizedList(new ArrayList<>());
 
     /**
-     *  LogEntry converter -- binds logback to the DAO.
+     * LogEntry converter -- binds logback to the DAO.
      */
     private LoggingEventConverter converter;
 
     /**
-     *  Priority mappings.  These are customizable separately from the
-     *  actual alarm definitions.
+     * Priority mappings.  These are customizable separately from the actual alarm definitions.
      */
     private AlarmPriorityMap priorityMap;
 
     /**
-     *  Root level.  Handler accepts all events with level equal to
-     *  or above this value.
+     * Root level.  Handler accepts all events with level equal to or above this value.
      */
     private Level rootLevel;
 
     /**
-     *  Underlying alarms storage.
+     * Underlying alarms storage.
      */
     private LogEntryDAO store;
 
@@ -230,7 +227,7 @@ public class LogEntryHandler implements ApplicationContextAware {
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext)
-                    throws BeansException {
+          throws BeansException {
         beanFactory = applicationContext.getAutowireCapableBeanFactory();
     }
 
@@ -336,15 +333,15 @@ public class LogEntryHandler implements ApplicationContextAware {
             executor.execute(new LogEntryTask(eventObject));
         } catch (RejectedExecutionException e) {
             LOGGER.info("{}, discarded: {}.",
-                            e.getMessage(),
-                            eventObject.getFormattedMessage());
+                  e.getMessage(),
+                  eventObject.getFormattedMessage());
         }
     }
 
     protected void loadListeners() {
         ServiceLoader<LogEntryListenerFactory> serviceLoader
-                        = ServiceLoader.load(LogEntryListenerFactory.class);
-        for (LogEntryListenerFactory factory: serviceLoader) {
+              = ServiceLoader.load(LogEntryListenerFactory.class);
+        for (LogEntryListenerFactory factory : serviceLoader) {
             LOGGER.info("Loading listener factories of class {}.", factory.getClass());
             listenerFactories.add(beanFactory.getBean(factory.getClass()));
         }
@@ -352,7 +349,7 @@ public class LogEntryHandler implements ApplicationContextAware {
 
     private void startEmailAppender() {
         LoggerContext context
-            = (LoggerContext) LoggerFactory.getILoggerFactory();
+              = (LoggerContext) LoggerFactory.getILoggerFactory();
         PatternLayout layout = new PatternLayout();
         layout.setPattern(emailEncoding);
         layout.setContext(context);
@@ -371,7 +368,7 @@ public class LogEntryHandler implements ApplicationContextAware {
         emailAppender.setSTARTTLS(startTls);
         emailAppender.setFrom(emailSender);
         emailAppender.setSubject(emailSubject);
-        for (String to: emailRecipients) {
+        for (String to : emailRecipients) {
             emailAppender.addTo(to);
         }
         emailAppender.setLayout(layout);

@@ -59,20 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
+import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.json.JSONException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -80,21 +80,14 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import diskCacheV111.poolManager.PoolPreferenceLevel;
-import diskCacheV111.util.CacheException;
-
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Exceptions;
-
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.PreferenceResult;
+import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link diskCacheV111.poolManager.PoolManagerV5}, in
@@ -106,6 +99,7 @@ import org.dcache.restful.providers.selection.PreferenceResult;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/pool-preferences")
 public final class PoolPreferenceResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolPreferenceResources.class);
 
     @Inject
@@ -118,42 +112,42 @@ public final class PoolPreferenceResources {
     @GET
     @ApiOperation("Describe the pools selected by a particular request.")
     @ApiResponses({
-        @ApiResponse(code = 400, message = "Bad Request"),
-        @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 400, message = "Bad Request"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public List<PreferenceResult> match(@ApiParam(value = "The operation type.",
-                                                allowableValues = "READ,CACHE,WRITE,P2P,ANY")
-                                        @DefaultValue("READ")
-                                        @QueryParam("type") String type,
-                                        @ApiParam("The name of the matching store unit.")
-                                        @DefaultValue("*")
-                                        @QueryParam("store") String store,
-                                        @ApiParam("The name of the matching dcache unit.")
-                                        @DefaultValue("*")
-                                        @QueryParam("dcache") String dcache,
-                                        @DefaultValue("*")
-                                        @ApiParam("The name of the matching net unit.")
-                                        @QueryParam("net") String net,
-                                        @DefaultValue("*")
-                                        @ApiParam("The matching protocol unit.")
-                                        @QueryParam("protocol") String protocol,
-                                        @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
-                                        @DefaultValue("none")
-                                        @QueryParam("linkGroup") String linkGroup) {
+          allowableValues = "READ,CACHE,WRITE,P2P,ANY")
+    @DefaultValue("READ")
+    @QueryParam("type") String type,
+          @ApiParam("The name of the matching store unit.")
+          @DefaultValue("*")
+          @QueryParam("store") String store,
+          @ApiParam("The name of the matching dcache unit.")
+          @DefaultValue("*")
+          @QueryParam("dcache") String dcache,
+          @DefaultValue("*")
+          @ApiParam("The name of the matching net unit.")
+          @QueryParam("net") String net,
+          @DefaultValue("*")
+          @ApiParam("The matching protocol unit.")
+          @QueryParam("protocol") String protocol,
+          @ApiParam("The linkgroup unit, or 'none' for a request outside of a linkgroup.")
+          @DefaultValue("none")
+          @QueryParam("linkGroup") String linkGroup) {
         try {
             String command = "psux match " + type + " " + store + " "
-                            + dcache + " " + net  + " " + protocol
-                            + (linkGroup.equals("none") ?
-                            "" : " -linkGroup=" + linkGroup);
+                  + dcache + " " + net + " " + protocol
+                  + (linkGroup.equals("none") ?
+                  "" : " -linkGroup=" + linkGroup);
 
             PoolPreferenceLevel[] poolPreferenceLevels =
-                            poolManager.sendAndWait(command,
-                                                    PoolPreferenceLevel[].class);
+                  poolManager.sendAndWait(command,
+                        PoolPreferenceLevel[].class);
 
             List<PreferenceResult> results = new ArrayList<>();
 
-            for (PoolPreferenceLevel level: poolPreferenceLevels) {
+            for (PoolPreferenceLevel level : poolPreferenceLevels) {
                 results.add(new PreferenceResult(level));
             }
 

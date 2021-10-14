@@ -1,12 +1,11 @@
 package org.dcache.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.util.TimeUtils.DurationParser;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 
 public class TimeUtilsTest {
@@ -14,7 +13,8 @@ public class TimeUtilsTest {
     @Test
     public void testDurationOfNanos() {
 
-        CharSequence cs = TimeUtils.duration(13, TimeUnit.NANOSECONDS, TimeUtils.TimeUnitFormat.SHORT);
+        CharSequence cs = TimeUtils.duration(13, TimeUnit.NANOSECONDS,
+              TimeUtils.TimeUnitFormat.SHORT);
         assertEquals(cs.toString(), "13 ns");
     }
 
@@ -22,7 +22,7 @@ public class TimeUtilsTest {
     public void testDurationOfSeconds() {
 
         CharSequence cs = TimeUtils.duration(13, TimeUnit.SECONDS, TimeUtils.TimeUnitFormat.SHORT);
-        assertEquals(cs.toString(), "13 s" );
+        assertEquals(cs.toString(), "13 s");
     }
 
     @Test
@@ -49,14 +49,16 @@ public class TimeUtilsTest {
     @Test
     public void testDurationFromNanos() {
         long duration = TimeUnit.SECONDS.toNanos(13);
-        CharSequence cs = TimeUtils.duration(duration, TimeUnit.NANOSECONDS, TimeUtils.TimeUnitFormat.SHORT);
+        CharSequence cs = TimeUtils.duration(duration, TimeUnit.NANOSECONDS,
+              TimeUtils.TimeUnitFormat.SHORT);
         assertEquals(cs.toString(), "13 s");
     }
 
     @Test
     public void testDurationFromNanosToDays() {
         long duration = TimeUnit.DAYS.toNanos(13);
-        CharSequence cs = TimeUtils.duration(duration, TimeUnit.NANOSECONDS, TimeUtils.TimeUnitFormat.SHORT);
+        CharSequence cs = TimeUtils.duration(duration, TimeUnit.NANOSECONDS,
+              TimeUtils.TimeUnitFormat.SHORT);
         assertEquals(cs.toString(), "13 days");
     }
 

@@ -6,7 +6,6 @@
 package org.dcache.gplazma.configuration.parser;
 
 /**
- *
  * @author timur
  */
 public class PAMStyleConfigurationParserFactory extends ConfigurationParserFactory {

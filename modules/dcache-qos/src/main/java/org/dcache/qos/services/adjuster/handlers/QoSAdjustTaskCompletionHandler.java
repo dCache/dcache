@@ -71,18 +71,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Implements the handling of adjuster task termination.
- *  Also implements the migration task termination logic.
+ * Implements the handling of adjuster task termination. Also implements the migration task
+ * termination logic.
  */
 public final class QoSAdjustTaskCompletionHandler implements TaskCompletionHandler {
+
     public static final String FAILED_COPY_MESSAGE
-                    = "Migration task for %s failed. %s%s.";
+          = "Migration task for %s failed. %s%s.";
 
     public static final String FAILED_STATE_CHANGE_MESSAGE
-                    = "Failed to change %s to %s; %s. ";
+          = "Failed to change %s to %s; %s. ";
 
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(QoSAdjustTaskCompletionHandler.class);
+          = LoggerFactory.getLogger(QoSAdjustTaskCompletionHandler.class);
 
     private QoSAdjusterTaskMap map;
 
@@ -121,20 +122,19 @@ public final class QoSAdjustTaskCompletionHandler implements TaskCompletionHandl
         LOGGER.debug("Migration task {} failed.", task.getPnfsId());
         PnfsId pnfsId = task.getPnfsId();
         CacheException exception = CacheExceptionUtils.getCacheException(rc,
-                                                                         FAILED_COPY_MESSAGE,
-                                                                         pnfsId,
-                                                                         QoSAction.COPY_REPLICA,
-                                                                         msg,
-                                                                         null);
+              FAILED_COPY_MESSAGE,
+              pnfsId,
+              QoSAction.COPY_REPLICA,
+              msg,
+              null);
         taskFailed(pnfsId, Optional.empty(), exception);
     }
 
     /**
-     *  Permanent failures do not receive special treatment, since, for example,
-     *  the file not found on the source can at times be an ephemeral error.
-     *  <p/>
-     *  Delegates to #taskFailed(Task task, int rc, String msg)
-     *  to decide what should be done.
+     * Permanent failures do not receive special treatment, since, for example, the file not found
+     * on the source can at times be an ephemeral error.
+     * <p/>
+     * Delegates to #taskFailed(Task task, int rc, String msg) to decide what should be done.
      */
     @Override
     public void taskFailedPermanently(Task task, int rc, String msg) {

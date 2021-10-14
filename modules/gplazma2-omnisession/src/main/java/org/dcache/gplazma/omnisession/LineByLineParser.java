@@ -17,41 +17,37 @@
  */
 package org.dcache.gplazma.omnisession;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.dcache.gplazma.omnisession.LineBasedParser.UnrecoverableParsingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class parses the contents of a file.  It does this by assuming the
- * file is written in UTF-8 and may be split into separate lines that
- * can be parsed where each line is presented one after the other.
+ * This class parses the contents of a file.  It does this by assuming the file is written in UTF-8
+ * and may be split into separate lines that can be parsed where each line is presented one after
+ * the other.
  * <p>
- * The actual parsing of the lines is handled by another object: some
- * instance of LineBasedParser.
+ * The actual parsing of the lines is handled by another object: some instance of LineBasedParser.
+ *
  * @param <T> The type of state represented the parsed file.
  */
-public class LineByLineParser<T> implements Function<Path,Optional<T>>
-{
+public class LineByLineParser<T> implements Function<Path, Optional<T>> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LineByLineParser.class);
 
     private final Supplier<LineBasedParser<T>> parserFactory;
 
-    public LineByLineParser(Supplier<LineBasedParser<T>> parserFactory)
-    {
+    public LineByLineParser(Supplier<LineBasedParser<T>> parserFactory) {
         this.parserFactory = parserFactory;
     }
 
     @Override
-    public Optional<T> apply(Path file)
-    {
+    public Optional<T> apply(Path file) {
         LineBasedParser<T> parser = parserFactory.get();
 
         int lineNumber = 1;

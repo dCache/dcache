@@ -62,22 +62,30 @@ package org.dcache.qos.data;
 import diskCacheV111.pools.PoolV2Mode;
 
 /**
- *  Interprets a {@link PoolV2Mode} for potential qos handling.
- *  <p/>
- *  Shared between verifier and scanner.
+ * Interprets a {@link PoolV2Mode} for potential qos handling.
+ * <p/>
+ * Shared between verifier and scanner.
  */
 public enum PoolQoSStatus {
-    UNINITIALIZED,      /** no info yet */
-    DOWN,               /** equivalent to the client's being unable to read from pool */
-    ENABLED,            /** normal read-write operations are possible */
+    UNINITIALIZED,
+    /**
+     * no info yet
+     */
+    DOWN,
+    /**
+     * equivalent to the client's being unable to read from pool
+     */
+    ENABLED,
+    /**
+     * normal read-write operations are possible
+     */
     READ_ONLY;          /**  equivalent to disabled for writing by clients */
 
     /**
-     *  This status tells qos whether action (scanning) needs to
-     *  be taken with respect to the pool.  It is
-     *  slightly different from the pool's mode.
+     * This status tells qos whether action (scanning) needs to be taken with respect to the pool.
+     * It is slightly different from the pool's mode.
      *
-     *  @return the status equivalent to the mode.
+     * @return the status equivalent to the mode.
      */
     public static PoolQoSStatus valueOf(PoolV2Mode poolMode) {
         if (poolMode == null) {
@@ -90,8 +98,8 @@ public enum PoolQoSStatus {
          *  by the client, it should be treated as down.
          */
         if (poolMode.getMode() == PoolV2Mode.DISABLED ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
+              poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
+              poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
             return DOWN;
         }
 
@@ -105,7 +113,7 @@ public enum PoolQoSStatus {
          *  does not constitute a reason to migrate existing replicas.
          */
         if (poolMode.isDisabled(PoolV2Mode.DISABLED_STORE) ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
+              poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             return READ_ONLY;
         }
 

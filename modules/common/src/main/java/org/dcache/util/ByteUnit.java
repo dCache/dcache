@@ -17,1118 +17,937 @@
  */
 package org.dcache.util;
 
-import com.google.common.math.LongMath;
-import com.google.common.primitives.Ints;
-
 import static org.dcache.util.ByteUnit.Type.BINARY;
 import static org.dcache.util.ByteUnit.Type.DECIMAL;
 
+import com.google.common.math.LongMath;
+import com.google.common.primitives.Ints;
+
 /**
- * A ByteUnit represents a scaling factor applied to some number of bytes.
- * Such scaling factors are intended to make it easier for humans to understand
- * large (and small) numbers and understand how two numbers compare; as such,
- * ByteUnit is often used with interfacing with humans.
+ * A ByteUnit represents a scaling factor applied to some number of bytes. Such scaling factors are
+ * intended to make it easier for humans to understand large (and small) numbers and understand how
+ * two numbers compare; as such, ByteUnit is often used with interfacing with humans.
  * <p>
- * There are two types of ByteUnit: ones that use decimal (base-10) prefixes and
- * ones that use binary (base-2) prefixes.  Decimal prefixes represent scaling
- * factors of the form 10^3n, where n is some non-negative integer.  Binary
- * prefixes represent scaling factors of the form 2^10n, where n is some
- * non-negative integer.  ByteUnit.BYTES is considered both a decimal and
- * binary scaling factor (i.e., with n=0 in both cases).
+ * There are two types of ByteUnit: ones that use decimal (base-10) prefixes and ones that use
+ * binary (base-2) prefixes.  Decimal prefixes represent scaling factors of the form 10^3n, where n
+ * is some non-negative integer.  Binary prefixes represent scaling factors of the form 2^10n, where
+ * n is some non-negative integer.  ByteUnit.BYTES is considered both a decimal and binary scaling
+ * factor (i.e., with n=0 in both cases).
  * <p>
- * To avoid potential ambiguity, the ByteUnit enum values use ISO symbols.  It
- * contains both binary and decimal prefixes in strict ascending order.
+ * To avoid potential ambiguity, the ByteUnit enum values use ISO symbols.  It contains both binary
+ * and decimal prefixes in strict ascending order.
  * <p>
- * Conversions are supported for int, long, float and double.  For the two
- * integer types (int and long) the maximum value is taken as a special case:
- * any conversion is always the same MAX_VALUE.  For integer numbers less than
- * the maximum value, the conversion could overflow (be less than MIN_VALUE or
- * more than MAX_VALUE).  If a conversion would overflow then an
- * ArithmeticException is thrown.
+ * Conversions are supported for int, long, float and double.  For the two integer types (int and
+ * long) the maximum value is taken as a special case: any conversion is always the same MAX_VALUE.
+ * For integer numbers less than the maximum value, the conversion could overflow (be less than
+ * MIN_VALUE or more than MAX_VALUE).  If a conversion would overflow then an ArithmeticException is
+ * thrown.
  * <p>
- * The maximum int and long values (Integer.MAX_VALUE and Long.MAX_VALUE
- * respectively) are accepted as a special case: any conversion will return the
- * same value.
+ * The maximum int and long values (Integer.MAX_VALUE and Long.MAX_VALUE respectively) are accepted
+ * as a special case: any conversion will return the same value.
  */
-public enum ByteUnit
-{
+public enum ByteUnit {
     /**
      * Represents no scaling has been applied.
      */
     BYTES {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return true;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return d;
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public double toKB(double d)
-        {
+        public double toKB(double d) {
             return d / 1_000d;
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public double toKiB(double d)
-        {
+        public double toKiB(double d) {
             return d / (1L << 10);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public double toMB(double d)
-        {
+        public double toMB(double d) {
             return d / 1_000_000;
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return divideKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public double toMiB(double d)
-        {
+        public double toMiB(double d) {
             return d / (1L << 20);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public double toGB(double d)
-        {
+        public double toGB(double d) {
             return d / 1_000_000_000L;
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return divideKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public double toGiB(double d)
-        {
+        public double toGiB(double d) {
             return d / (1L << 30);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public double toTB(double d)
-        {
+        public double toTB(double d) {
             return d / 1_000_000_000_000L;
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return divideKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public double toTiB(double d)
-        {
+        public double toTiB(double d) {
             return d / (1L << 40);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000_000L);
         }
 
         @Override
-        public double toPB(double d)
-        {
+        public double toPB(double d) {
             return d / 1_000_000_000_000_000L;
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return divideKeepingSaturation(d, 1L << 50);
         }
 
         @Override
-        public double toPiB(double d)
-        {
+        public double toPiB(double d) {
             return d / (1L << 50);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000_000_000L);
         }
 
         @Override
-        public double toEB(double d)
-        {
+        public double toEB(double d) {
             return d / 1_000_000_000_000_000_000L;
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 60);
         }
 
         @Override
-        public double toEiB(double d)
-        {
+        public double toEiB(double d) {
             return d / (1L << 60);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toBytes(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toBytes(value);
         }
     },
 
     KB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return d;
         }
 
         @Override
-        public double toKB(double d)
-        {
+        public double toKB(double d) {
             return d;
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000_000L);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toKB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toKB(value);
         }
     },
 
     KiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 10);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return d;
         }
 
         @Override
-        public double toKiB(double d)
-        {
+        public double toKiB(double d) {
             return d;
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return divideKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return divideKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return divideKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 50);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toKiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toKiB(value);
         }
     },
 
     MB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000_000d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return d;
         }
 
         @Override
-        public double toMB(double d)
-        {
+        public double toMB(double d) {
             return d;
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toMB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toMB(value);
         }
     },
 
     MiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 20);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return d;
         }
 
         @Override
-        public double toMiB(double d)
-        {
+        public double toMiB(double d) {
             return d;
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return divideKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return divideKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toMiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toMiB(value);
         }
     },
 
     GB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000_000_000L;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return d;
         }
 
         @Override
-        public double toGB(double d)
-        {
+        public double toGB(double d) {
             return d;
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toGB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toGB(value);
         }
     },
 
     GiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 30);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return d;
         }
 
         @Override
-        public double toGiB(double d)
-        {
+        public double toGiB(double d) {
             return d;
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return divideKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toGiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toGiB(value);
         }
     },
 
     TB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000_000_000_000d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return d;
         }
 
         @Override
-        public double toTB(double d)
-        {
+        public double toTB(double d) {
             return d;
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toTB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toTB(value);
         }
     },
 
     TiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 40);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return d;
         }
 
         @Override
-        public double toTiB(double d)
-        {
+        public double toTiB(double d) {
             return d;
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toTiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toTiB(value);
         }
     },
 
     PB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000_000_000_000_000d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return d;
         }
 
         @Override
-        public double toPB(double d)
-        {
+        public double toPB(double d) {
             return d;
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toPB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toPB(value);
         }
     },
 
     PiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 50);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 50);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return d;
         }
 
         @Override
-        public double toPiB(double d)
-        {
+        public double toPiB(double d) {
             return d;
         }
 
         @Override
-        public long toEiB(long d)
-        {
+        public long toEiB(long d) {
             return divideKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toPiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toPiB(value);
         }
     },
 
     EB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == DECIMAL;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000_000_000L);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * 1_000_000_000_000_000_000d;
         }
 
         @Override
-        public long toKB(long d)
-        {
+        public long toKB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000_000L);
         }
 
         @Override
-        public long toMB(long d)
-        {
+        public long toMB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
-        public long toGB(long d)
-        {
+        public long toGB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
-        public long toTB(long d)
-        {
+        public long toTB(long d) {
             return multiplyKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
-        public long toPB(long d)
-        {
+        public long toPB(long d) {
             return multiplyKeepingSaturation(d, 1_000L);
         }
 
         @Override
-        public long toEB(long d)
-        {
+        public long toEB(long d) {
             return d;
         }
 
         @Override
-        public double toEB(double d)
-        {
+        public double toEB(double d) {
             return d;
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toEB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toEB(value);
         }
     },
 
     EiB {
         @Override
-        public boolean hasType(Type type)
-        {
+        public boolean hasType(Type type) {
             return type == BINARY;
         }
 
         @Override
-        public long toBytes(long d)
-        {
+        public long toBytes(long d) {
             return multiplyKeepingSaturation(d, 1L << 60);
         }
 
         @Override
-        public double toBytes(double d)
-        {
+        public double toBytes(double d) {
             return d * (1L << 60);
         }
 
         @Override
-        public long toKiB(long d)
-        {
+        public long toKiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 50);
         }
 
         @Override
-        public long toMiB(long d)
-        {
+        public long toMiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 40);
         }
 
         @Override
-        public long toGiB(long d)
-        {
+        public long toGiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 30);
         }
 
         @Override
-        public long toTiB(long d)
-        {
+        public long toTiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 20);
         }
 
         @Override
-        public long toPiB(long d)
-        {
+        public long toPiB(long d) {
             return multiplyKeepingSaturation(d, 1L << 10);
         }
 
         @Override
-        public double toEiB(double d)
-        {
+        public double toEiB(double d) {
             return d;
         }
 
         @Override
-        public long convert(long value, ByteUnit units)
-        {
+        public long convert(long value, ByteUnit units) {
             return units.toEiB(value);
         }
 
         @Override
-        public double convert(double value, ByteUnit units)
-        {
+        public double convert(double value, ByteUnit units) {
             return units.toEiB(value);
         }
     };
 
     /**
-     * In which numerical base a BaseUnit is founded: base-10 or base-2.
-     * Most BaseUnit values are either base-10 or base-2 with the exception of
-     * BYTES which is considered both.
+     * In which numerical base a BaseUnit is founded: base-10 or base-2. Most BaseUnit values are
+     * either base-10 or base-2 with the exception of BYTES which is considered both.
      */
-    public enum Type
-    {
+    public enum Type {
         /**
-         * A ByteUnit that is base-10.  Stated values must be multiplied by
-         * 10^3n for some non-negative integer n: BYTES for n=0, KILOBYTES for
-         * n=1 and so on.
+         * A ByteUnit that is base-10.  Stated values must be multiplied by 10^3n for some
+         * non-negative integer n: BYTES for n=0, KILOBYTES for n=1 and so on.
          */
         DECIMAL {
             @Override
-            public ByteUnit unitsOf(long value, long minValue)
-            {
+            public ByteUnit unitsOf(long value, long minValue) {
                 long absValue = value == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(value);
                 if (absValue < KB.toBytes(minValue)) {
                     return BYTES;
@@ -1152,8 +971,7 @@ public enum ByteUnit
             }
 
             @Override
-            public ByteUnit unitsOf(double value, double minValue)
-            {
+            public ByteUnit unitsOf(double value, double minValue) {
                 double absValue = Math.abs(value);
                 if (absValue < KB.toBytes(minValue)) {
                     return BYTES;
@@ -1177,8 +995,7 @@ public enum ByteUnit
             }
 
             @Override
-            public ByteUnit exactUnitsOf(long value)
-            {
+            public ByteUnit exactUnitsOf(long value) {
                 long absValue = Math.abs(value);
                 if (absValue >= EB.toBytes(1L) && absValue % EB.toBytes(1L) == 0) {
                     return EB;
@@ -1203,14 +1020,12 @@ public enum ByteUnit
         },
 
         /**
-         * A ByteUnit that is base-2.  Stated values must be multiplied by
-         * 2^10n for some non-negative integer n: BYTES for n=0, KIBIBYTES for
-         * n=1 and so on.
+         * A ByteUnit that is base-2.  Stated values must be multiplied by 2^10n for some
+         * non-negative integer n: BYTES for n=0, KIBIBYTES for n=1 and so on.
          */
         BINARY {
             @Override
-            public ByteUnit unitsOf(long value, long minValue)
-            {
+            public ByteUnit unitsOf(long value, long minValue) {
                 long absValue = value == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(value);
                 if (absValue < KiB.toBytes(minValue)) {
                     return BYTES;
@@ -1234,8 +1049,7 @@ public enum ByteUnit
             }
 
             @Override
-            public ByteUnit unitsOf(double value, double minValue)
-            {
+            public ByteUnit unitsOf(double value, double minValue) {
                 double absValue = Math.abs(value);
                 if (absValue < KiB.toBytes(minValue)) {
                     return BYTES;
@@ -1259,8 +1073,7 @@ public enum ByteUnit
             }
 
             @Override
-            public ByteUnit exactUnitsOf(long value)
-            {
+            public ByteUnit exactUnitsOf(long value) {
                 long absValue = Math.abs(value);
                 if (absValue >= EiB.toBytes(1L) && absValue % EiB.toBytes(1L) == 0) {
                     return EiB;
@@ -1285,67 +1098,58 @@ public enum ByteUnit
         };
 
         /**
-         * Returns which units to use when describing this value.  More
-         * specifically, it returns the ByteUnit prefix that, when
-         * {@code convert(value, ByteUnit.BYTES);} is called, returns the
-         * smallest absolute non-zero value.
-         * If {@literal value} is zero then ByteUnit.BYTES is returned.
+         * Returns which units to use when describing this value.  More specifically, it returns the
+         * ByteUnit prefix that, when {@code convert(value, ByteUnit.BYTES);} is called, returns the
+         * smallest absolute non-zero value. If {@literal value} is zero then ByteUnit.BYTES is
+         * returned.
          */
-        public ByteUnit unitsOf(long value)
-        {
+        public ByteUnit unitsOf(long value) {
             return unitsOf(value, 1L);
         }
 
         /**
-         * Return which units to use when describing this value.  More
-         * specifically, it returns the largest ByteUnit that, when calling
-         * {@code convert(value, ByteUnit.BYTES);}, returns a value of at least
-         * {@literal minValue}.
-         * If {@literal value} is zero then ByteUnit.BYTES is returned.
+         * Return which units to use when describing this value.  More specifically, it returns the
+         * largest ByteUnit that, when calling {@code convert(value, ByteUnit.BYTES);}, returns a
+         * value of at least {@literal minValue}. If {@literal value} is zero then ByteUnit.BYTES is
+         * returned.
          */
         public abstract ByteUnit unitsOf(long value, long minValue);
 
         /**
-         * Returns which units to use when describing this value.  More
-         * specifically, it returns the ByteUnit prefix that, when
-         * {@code convert(value, ByteUnit.BYTES);} is called, returns at least
-         * 1. If {@literal value} is zero then ByteUnit.BYTES is returned.
+         * Returns which units to use when describing this value.  More specifically, it returns the
+         * ByteUnit prefix that, when {@code convert(value, ByteUnit.BYTES);} is called, returns at
+         * least 1. If {@literal value} is zero then ByteUnit.BYTES is returned.
          */
-        public ByteUnit unitsOf(double value)
-        {
+        public ByteUnit unitsOf(double value) {
             return unitsOf(value, 1d);
         }
 
         /**
-         * Return which units to use when describing this value.  More
-         * specifically, it returns the largest ByteUnit that, when calling
-         * {@code convert(value, ByteUnit.BYTES);}, returns a value of at least
-         * {@literal minValue}. If {@literal value} is zero then
-         * ByteUnit.BYTES is returned.
+         * Return which units to use when describing this value.  More specifically, it returns the
+         * largest ByteUnit that, when calling {@code convert(value, ByteUnit.BYTES);}, returns a
+         * value of at least {@literal minValue}. If {@literal value} is zero then ByteUnit.BYTES is
+         * returned.
          */
         public abstract ByteUnit unitsOf(double value, double minValue);
 
         /**
-         * Provide the largest ByteUnit where the supplied value can be
-         * represented exactly.  If zero is supplied then ByteUnit.BYTES is
-         * returned.
+         * Provide the largest ByteUnit where the supplied value can be represented exactly.  If
+         * zero is supplied then ByteUnit.BYTES is returned.
          */
         public abstract ByteUnit exactUnitsOf(long value);
     }
 
     /**
-     * Return whether this Prefix has the supplied type.  Note that
-     * this method always returns true for ByteUnit.BYTES
+     * Return whether this Prefix has the supplied type.  Note that this method always returns true
+     * for ByteUnit.BYTES
      */
     public abstract boolean hasType(Type type);
 
     /**
-     * Return Long.MAX_VALUE if either argument is Long.MAX_VALUE, otherwise
-     * return the result of multiplying the two arguments or throw an exception
-     * if the result overflows.
+     * Return Long.MAX_VALUE if either argument is Long.MAX_VALUE, otherwise return the result of
+     * multiplying the two arguments or throw an exception if the result overflows.
      */
-    private static long multiplyKeepingSaturation(long a, long b) throws ArithmeticException
-    {
+    private static long multiplyKeepingSaturation(long a, long b) throws ArithmeticException {
         if (a == Long.MAX_VALUE || b == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }
@@ -1353,9 +1157,10 @@ public enum ByteUnit
         return LongMath.checkedMultiply(a, b);
     }
 
-    /** Return Long.MAX_VALUE if first value is same, otherwise do integer division. */
-    private static long divideKeepingSaturation(long dividend, long divisor)
-    {
+    /**
+     * Return Long.MAX_VALUE if first value is same, otherwise do integer division.
+     */
+    private static long divideKeepingSaturation(long dividend, long divisor) {
         if (dividend == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }
@@ -1363,9 +1168,10 @@ public enum ByteUnit
         return dividend / divisor;
     }
 
-    /** A version of Guava's Ints.checkedCast that throws ArithmeticException. */
-    private static int checkedCast(long value) throws ArithmeticException
-    {
+    /**
+     * A version of Guava's Ints.checkedCast that throws ArithmeticException.
+     */
+    private static int checkedCast(long value) throws ArithmeticException {
         try {
             return Ints.checkedCast(value);
         } catch (IllegalArgumentException inner) {
@@ -1376,14 +1182,13 @@ public enum ByteUnit
     }
 
     /**
-     * Converts the given value in the given prefix to this prefix.
-     * Conversions from smaller to larger prefix truncate, so lose
-     * precision. For example, converting 999 KILO to MEGA results in 0.
-     * Conversions from larger to smaller granularities with arguments that
-     * would numerically overflow saturate to Long.MIN_VALUE if negative or
-     * Long.MAX_VALUE if positive.
-     * For example, to convert 10 PEBI to MEBI, use: Prefix.MEBI.convert(10L, Prefix.PEBI)
-     * @param sourceValue the value in some other prefix
+     * Converts the given value in the given prefix to this prefix. Conversions from smaller to
+     * larger prefix truncate, so lose precision. For example, converting 999 KILO to MEGA results
+     * in 0. Conversions from larger to smaller granularities with arguments that would numerically
+     * overflow saturate to Long.MIN_VALUE if negative or Long.MAX_VALUE if positive. For example,
+     * to convert 10 PEBI to MEBI, use: Prefix.MEBI.convert(10L, Prefix.PEBI)
+     *
+     * @param sourceValue  the value in some other prefix
      * @param sourcePrefix the prefix of sourceValue
      * @return the value in this prefix.
      */
@@ -1391,304 +1196,253 @@ public enum ByteUnit
 
     public abstract double convert(double sourceValue, ByteUnit sourcePrefix);
 
-    public int convert(int sourceValue, ByteUnit sourcePrefix)
-    {
+    public int convert(int sourceValue, ByteUnit sourcePrefix) {
         if (sourceValue == Integer.MAX_VALUE) {
             return sourceValue;
         }
         return checkedCast(convert((long) sourceValue, sourcePrefix));
     }
 
-    public int toBytes(int d)
-    {
+    public int toBytes(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
-        return checkedCast(toBytes((long)d));
+        return checkedCast(toBytes((long) d));
     }
 
     public abstract long toBytes(long d);
 
-    public float toBytes(float d)
-    {
-        return (float) toBytes((double)d);
+    public float toBytes(float d) {
+        return (float) toBytes((double) d);
     }
 
     public abstract double toBytes(double d);
 
-    public int toKB(int d)
-    {
+    public int toKB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
-        return checkedCast(toKB((long)d));
+        return checkedCast(toKB((long) d));
     }
 
-    public long toKB(long d)
-    {
+    public long toKB(long d) {
         return BYTES.toKB(toBytes(d));
     }
 
-    public float toKB(float d)
-    {
+    public float toKB(float d) {
         return (float) toKB((double) d);
     }
 
-    public double toKB(double d)
-    {
+    public double toKB(double d) {
         return BYTES.toKB(toBytes(d));
     }
 
-    public int toKiB(int d)
-    {
+    public int toKiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toKiB((long) d));
     }
 
-    public long toKiB(long d)
-    {
+    public long toKiB(long d) {
         return BYTES.toKiB(toBytes(d));
     }
 
-    public float toKiB(float d)
-    {
+    public float toKiB(float d) {
         return (float) toKiB((double) d);
     }
 
-    public double toKiB(double d)
-    {
+    public double toKiB(double d) {
         return BYTES.toKiB(toBytes(d));
     }
 
-    public int toMB(int d)
-    {
+    public int toMB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toMB((long) d));
     }
 
-    public long toMB(long d)
-    {
+    public long toMB(long d) {
         return BYTES.toMB(toBytes(d));
     }
 
-    public float toMB(float d)
-    {
+    public float toMB(float d) {
         return (float) toMB((double) d);
     }
 
-    public double toMB(double d)
-    {
+    public double toMB(double d) {
         return BYTES.toMB(toBytes(d));
     }
 
-    public int toMiB(int d)
-    {
+    public int toMiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toMiB((long) d));
     }
 
-    public long toMiB(long d)
-    {
+    public long toMiB(long d) {
         return BYTES.toMiB(toBytes(d));
     }
 
-    public float toMiB(float d)
-    {
+    public float toMiB(float d) {
         return (float) toMiB((double) d);
     }
 
-    public double toMiB(double d)
-    {
+    public double toMiB(double d) {
         return BYTES.toMiB(toBytes(d));
     }
 
-    public long toGB(long d)
-    {
+    public long toGB(long d) {
         return BYTES.toGB(toBytes(d));
     }
 
-    public int toGB(int d)
-    {
+    public int toGB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toGB((long) d));
     }
 
-    public float toGB(float d)
-    {
+    public float toGB(float d) {
         return (float) toGB((double) d);
     }
 
-    public double toGB(double d)
-    {
+    public double toGB(double d) {
         return BYTES.toGB(toBytes(d));
     }
 
-    public long toGiB(long d)
-    {
+    public long toGiB(long d) {
         return BYTES.toGiB(toBytes(d));
     }
 
-    public int toGiB(int d)
-    {
+    public int toGiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toGiB((long) d));
     }
 
-    public float toGiB(float d)
-    {
+    public float toGiB(float d) {
         return (float) toGiB((double) d);
     }
 
-    public double toGiB(double d)
-    {
+    public double toGiB(double d) {
         return BYTES.toGiB(toBytes(d));
     }
 
-    public long toTB(long d)
-    {
+    public long toTB(long d) {
         return BYTES.toTB(toBytes(d));
     }
 
-    public int toTB(int d)
-    {
+    public int toTB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
-        return checkedCast(toTB((long)d));
+        return checkedCast(toTB((long) d));
     }
 
-    public float toTB(float d)
-    {
+    public float toTB(float d) {
         return (float) toTB((double) d);
     }
 
-    public double toTB(double d)
-    {
+    public double toTB(double d) {
         return BYTES.toTB(toBytes(d));
     }
 
-    public long toTiB(long d)
-    {
+    public long toTiB(long d) {
         return BYTES.toTiB(toBytes(d));
     }
 
-    public int toTiB(int d)
-    {
+    public int toTiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toTiB((long) d));
     }
 
-    public float toTiB(float d)
-    {
+    public float toTiB(float d) {
         return (float) toTiB((double) d);
     }
 
-    public double toTiB(double d)
-    {
+    public double toTiB(double d) {
         return BYTES.toTiB(toBytes(d));
     }
 
-    public long toPB(long d)
-    {
+    public long toPB(long d) {
         return BYTES.toPB(toBytes(d));
     }
 
-    public int toPB(int d)
-    {
+    public int toPB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toPB((long) d));
     }
 
-    public float toPB(float d)
-    {
+    public float toPB(float d) {
         return (float) toPB((double) d);
     }
 
-    public double toPB(double d)
-    {
+    public double toPB(double d) {
         return BYTES.toPB(toBytes(d));
     }
 
-    public long toPiB(long d)
-    {
+    public long toPiB(long d) {
         return BYTES.toPiB(toBytes(d));
     }
 
-    public int toPiB(int d)
-    {
+    public int toPiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toPiB((long) d));
     }
 
-    public float toPiB(float d)
-    {
+    public float toPiB(float d) {
         return (float) toPiB((double) d);
     }
 
-    public double toPiB(double d)
-    {
+    public double toPiB(double d) {
         return BYTES.toPiB(toBytes(d));
     }
 
-    public long toEB(long d)
-    {
+    public long toEB(long d) {
         return BYTES.toEB(toBytes(d));
     }
 
-    public int toEB(int d)
-    {
+    public int toEB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toEB((long) d));
     }
 
-    public float toEB(float d)
-    {
+    public float toEB(float d) {
         return (float) toEB((double) d);
     }
 
-    public double toEB(double d)
-    {
+    public double toEB(double d) {
         return BYTES.toEB(toBytes(d));
     }
 
-    public long toEiB(long d)
-    {
+    public long toEiB(long d) {
         return BYTES.toEiB(toBytes(d));
     }
 
-    public int toEiB(int d)
-    {
+    public int toEiB(int d) {
         if (d == Integer.MAX_VALUE) {
             return d;
         }
         return checkedCast(toEiB((long) d));
     }
 
-    public float toEiB(float d)
-    {
+    public float toEiB(float d) {
         return (float) toEiB((double) d);
     }
 
-    public double toEiB(double d)
-    {
+    public double toEiB(double d) {
         return BYTES.toEiB(toBytes(d));
     }
 }

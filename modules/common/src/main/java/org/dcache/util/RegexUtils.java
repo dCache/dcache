@@ -60,19 +60,19 @@ documents or software obtained from this server.
 package org.dcache.util;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * String conversion untilities for using with Java Regex Patterns. This code
- * has been moved to commons because it is now shared by more than one module.
+ * String conversion untilities for using with Java Regex Patterns. This code has been moved to
+ * commons because it is now shared by more than one module.
  *
  * @author arossi
  */
 public class RegexUtils {
+
     public static final String CASE_INSENSITIVE = "CASE_INSENSITIVE";
     public static final String MULTILINE = "MULTILINE";
     public static final String DOTALL = "DOTALL";
@@ -83,24 +83,22 @@ public class RegexUtils {
     public static final String UNIX_LINES = "UNIX_LINES";
 
     public static final ImmutableSet<String> FLAG_VALUES
-        = new ImmutableSet.Builder<String>()
-            .add(CASE_INSENSITIVE)
-            .add(MULTILINE)
-            .add(DOTALL)
-            .add(UNICODE_CASE)
-            .add(CANON_EQ)
-            .add(LITERAL)
-            .add(COMMENTS)
-            .add(UNIX_LINES)
-            .build();
+          = new ImmutableSet.Builder<String>()
+          .add(CASE_INSENSITIVE)
+          .add(MULTILINE)
+          .add(DOTALL)
+          .add(UNICODE_CASE)
+          .add(CANON_EQ)
+          .add(LITERAL)
+          .add(COMMENTS)
+          .add(UNIX_LINES)
+          .build();
 
     /**
-     * Translates the string representation of the {@link Pattern} flags into
-     * the corresponding Java int value. String can be an or'd set, e.g.,
-     * "CASE_INSENTIVE | DOTALL".
+     * Translates the string representation of the {@link Pattern} flags into the corresponding Java
+     * int value. String can be an or'd set, e.g., "CASE_INSENTIVE | DOTALL".
      *
-     * @param flags
-     *            string representing the or'd flags
+     * @param flags string representing the or'd flags
      * @return corresponding internal value
      */
     public static int parseFlags(String flags) {
@@ -143,43 +141,42 @@ public class RegexUtils {
     /**
      * Gives a string representation of the flags value.
      *
-     * @param flags
-     *            internal value
+     * @param flags internal value
      * @return corresponding string representing the or'd flags
      */
     public static String flagsToString(int flags) {
         StringBuilder result = new StringBuilder();
         List<String> options = new ArrayList<>();
 
-        if ((flags & Pattern.CASE_INSENSITIVE ) == Pattern.CASE_INSENSITIVE ) {
+        if ((flags & Pattern.CASE_INSENSITIVE) == Pattern.CASE_INSENSITIVE) {
             options.add(CASE_INSENSITIVE);
         }
 
-        if ((flags & Pattern.MULTILINE ) == Pattern.MULTILINE ) {
+        if ((flags & Pattern.MULTILINE) == Pattern.MULTILINE) {
             options.add(MULTILINE);
         }
 
-        if ((flags & Pattern.DOTALL ) == Pattern.DOTALL ) {
+        if ((flags & Pattern.DOTALL) == Pattern.DOTALL) {
             options.add(UNIX_LINES);
         }
 
-        if ((flags & Pattern.UNICODE_CASE ) == Pattern.UNICODE_CASE ) {
+        if ((flags & Pattern.UNICODE_CASE) == Pattern.UNICODE_CASE) {
             options.add(UNICODE_CASE);
         }
 
-        if ((flags & Pattern.CANON_EQ ) == Pattern.CANON_EQ ) {
+        if ((flags & Pattern.CANON_EQ) == Pattern.CANON_EQ) {
             options.add(CANON_EQ);
         }
 
-        if ((flags & Pattern.LITERAL ) == Pattern.LITERAL ) {
+        if ((flags & Pattern.LITERAL) == Pattern.LITERAL) {
             options.add(LITERAL);
         }
 
-        if ((flags & Pattern.COMMENTS ) == Pattern.COMMENTS ) {
+        if ((flags & Pattern.COMMENTS) == Pattern.COMMENTS) {
             options.add(COMMENTS);
         }
 
-        if ((flags & Pattern.UNIX_LINES ) == Pattern.UNIX_LINES ) {
+        if ((flags & Pattern.UNIX_LINES) == Pattern.UNIX_LINES) {
             options.add(UNIX_LINES);
         }
 
@@ -191,8 +188,8 @@ public class RegexUtils {
             return null;
         }
 
-        while(it.hasNext()) {
-            result.append( " | " ).append(it.next());
+        while (it.hasNext()) {
+            result.append(" | ").append(it.next());
         }
 
         return result.toString();

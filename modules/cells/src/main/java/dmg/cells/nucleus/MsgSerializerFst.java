@@ -17,32 +17,32 @@
  */
 package dmg.cells.nucleus;
 
-import org.nustaq.serialization.FSTConfiguration;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-
-import static com.google.common.base.Preconditions.checkState;
+import org.nustaq.serialization.FSTConfiguration;
 
 /**
- * The class contains methods for serializing and deserializing
- * objects to/from a byte array representation. It uses
- * the fast-serialization (FST) serializer.
+ * The class contains methods for serializing and deserializing objects to/from a byte array
+ * representation. It uses the fast-serialization (FST) serializer.
  */
 public final class MsgSerializerFst {
 
     private static final int INITIAL_BUFFER_SIZE = 256;
     private static final FSTConfiguration fstConf = FSTConfiguration.createDefaultConfiguration();
+
     static {
         fstConf.setPreferSpeed(true);
     }
 
-    private static final byte[] FST_MESSAGE_HEADER = new byte[] {
-            0x05, 0x4d,   // 054D -> [o]bject [s]tream [for] [d]Cache
-            0x00, 0x01    // version 1
+    private static final byte[] FST_MESSAGE_HEADER = new byte[]{
+          0x05, 0x4d,   // 054D -> [o]bject [s]tream [for] [d]Cache
+          0x00, 0x01    // version 1
     };
 
-    private MsgSerializerFst() {}
+    private MsgSerializerFst() {
+    }
 
     public static byte[] encode(Object message) {
         checkState(message != null, "Unencoded message payload is null.");
@@ -57,14 +57,14 @@ public final class MsgSerializerFst {
 
     public static Object decode(byte[] messageStream) {
         checkState(messageStream != null, "Encoded message payload is null.");
-        checkState (isFstEncoded(messageStream));
+        checkState(isFstEncoded(messageStream));
         return fstConf.asObject(Arrays.copyOfRange(messageStream, 4, messageStream.length));
     }
 
     public static boolean isFstEncoded(byte[] messageStream) {
         return (messageStream[0] == FST_MESSAGE_HEADER[0] &&
-                messageStream[1] == FST_MESSAGE_HEADER[1] &&
-                messageStream[2] == FST_MESSAGE_HEADER[2] &&
-                messageStream[3] == FST_MESSAGE_HEADER[3] );
+              messageStream[1] == FST_MESSAGE_HEADER[1] &&
+              messageStream[2] == FST_MESSAGE_HEADER[2] &&
+              messageStream[3] == FST_MESSAGE_HEADER[3]);
     }
 }

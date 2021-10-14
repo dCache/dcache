@@ -1,5 +1,7 @@
 package org.dcache.xrootd.door;
 
+import static java.util.Objects.requireNonNull;
+
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -19,10 +21,8 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.tpc.XrootdTpcInfo;
 import org.dcache.xrootd.util.ParseException;
 
-import static java.util.Objects.requireNonNull;
+public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress> {
 
-public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
-{
     private UUID _uuid;
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
@@ -31,7 +31,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private final Restriction restriction;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject,
-            Restriction restriction, FsPath path, Map<String,String> opaque) throws ParseException {
+          Restriction restriction, FsPath path, Map<String, String> opaque) throws ParseException {
         super(pnfs, subject, restriction, path);
         this.restriction = requireNonNull(restriction);
         tpcInfo = new XrootdTpcInfo(opaque);
@@ -91,23 +91,21 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         return info;
     }
 
-    private XrootdProtocolInfo createXrootdProtocolInfo()
-    {
+    private XrootdProtocolInfo createXrootdProtocolInfo() {
         InetSocketAddress client = getClientAddress();
         return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
-                                      XrootdProtocol.PROTOCOL_VERSION_MAJOR,
-                                      XrootdProtocol.PROTOCOL_VERSION_MINOR,
-                                      client,
-                                      new CellPath(getCellName(), getDomainName()),
-                                      getPnfsId(),
-                                      _fileHandle,
-                                      _uuid,
-                                      _doorAddress);
+              XrootdProtocol.PROTOCOL_VERSION_MAJOR,
+              XrootdProtocol.PROTOCOL_VERSION_MINOR,
+              client,
+              new CellPath(getCellName(), getDomainName()),
+              getPnfsId(),
+              _fileHandle,
+              _uuid,
+              _doorAddress);
     }
 
     @Override
-    protected FileAttributes fileAttributesForNameSpace()
-    {
+    protected FileAttributes fileAttributesForNameSpace() {
         FileAttributes attributes = super.fileAttributesForNameSpace();
 
         if (isTpcDestination()) {
@@ -117,13 +115,11 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         return attributes;
     }
 
-    private boolean isTpcDestination()
-    {
+    private boolean isTpcDestination() {
         return tpcInfo.getSrc() != null;
     }
 
-    private String buildSourceUrl()
-    {
+    private String buildSourceUrl() {
         StringBuilder sb = new StringBuilder("xroot://").append(tpcInfo.getSrcHost());
         Integer port = tpcInfo.getSrcPort();
         if (port != null && port != XrootdProtocol.DEFAULT_PORT) {

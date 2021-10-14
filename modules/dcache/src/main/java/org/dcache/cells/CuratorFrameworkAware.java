@@ -21,7 +21,7 @@ package org.dcache.cells;
 
 import org.apache.curator.framework.CuratorFramework;
 
-public interface CuratorFrameworkAware
-{
+public interface CuratorFrameworkAware {
+
     void setCuratorFramework(CuratorFramework client);
 }

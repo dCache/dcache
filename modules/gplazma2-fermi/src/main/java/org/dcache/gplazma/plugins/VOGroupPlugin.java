@@ -59,36 +59,35 @@ documents or software obtained from this server.
  */
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-
 import java.security.Principal;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
-
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  * <p>Mapping plugin which requires FQANPrincipal, and adds a GIDPrincioal
- *    and possibly a UserNamePrincipal.</p>
+ * and possibly a UserNamePrincipal.</p>
  *
  * <p>If there is no FQAN, the plugin fails.  Otherwise it will always
- *    add the mapped GIDPrincipal as primary.</p>
+ * add the mapped GIDPrincipal as primary.</p>
  *
  * <p>Adding of a UserNamePrincipal is optional; hence, the plugin
- *    should be run as optional if the setup depends on a UserName principal
- *    being added here or downstream.</p>
+ * should be run as optional if the setup depends on a UserName principal being added here or
+ * downstream.</p>
  *
  * <p>If a UserNamePrincipal already exists, the UserNamePrincipal
- *    matched by this plugin to an FQAN will be substituted for it.</p>
+ * matched by this plugin to an FQAN will be substituted for it.</p>
  */
 public class VOGroupPlugin implements GPlazmaMappingPlugin {
+
     private static final String VO_GROUP_PATH_PROPERY = "vo-group-path";
 
     private final FileBackedVOGroupMap map;
@@ -96,7 +95,7 @@ public class VOGroupPlugin implements GPlazmaMappingPlugin {
     public VOGroupPlugin(Properties properties) {
         String path = properties.getProperty(VO_GROUP_PATH_PROPERY, null);
         checkArgument(path != null, VO_GROUP_PATH_PROPERY
-                        + " argument must be specified");
+              + " argument must be specified");
         map = new FileBackedVOGroupMap(path);
     }
 
@@ -108,12 +107,12 @@ public class VOGroupPlugin implements GPlazmaMappingPlugin {
     @Override
     public void map(Set<Principal> principals) throws AuthenticationException {
         FQANPrincipal fqan
-                        =  principals.stream()
-                                     .filter(FQANPrincipal.class::isInstance)
-                                     .map(FQANPrincipal.class::cast)
-                                     .filter(FQANPrincipal::isPrimaryGroup)
-                                     .findFirst()
-                                     .orElseThrow(() -> new AuthenticationException("No subjects found with an FQAN."));
+              = principals.stream()
+              .filter(FQANPrincipal.class::isInstance)
+              .map(FQANPrincipal.class::cast)
+              .filter(FQANPrincipal::isPrimaryGroup)
+              .findFirst()
+              .orElseThrow(() -> new AuthenticationException("No subjects found with an FQAN."));
 
         VOGroupEntry voGroupEntry = map.get(fqan.getName());
 
@@ -125,9 +124,9 @@ public class VOGroupPlugin implements GPlazmaMappingPlugin {
             return;
         }
 
-        for (Iterator<Principal> i = principals.iterator(); i.hasNext();) {
+        for (Iterator<Principal> i = principals.iterator(); i.hasNext(); ) {
             Principal principal = i.next();
-            if (principal instanceof  UserNamePrincipal) {
+            if (principal instanceof UserNamePrincipal) {
                 i.remove();
             }
         }

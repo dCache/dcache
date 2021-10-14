@@ -24,41 +24,40 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
 abstract class AbstractSslContextFactoryBean<C> implements FactoryBean<C> {
-  protected Path serverCertificatePath;
-  protected Path serverKeyPath;
-  protected Path serverCaPath;
-  protected CrlCheckingMode crlCheckingMode;
-  protected OCSPCheckingMode ocspCheckingMode;
 
-  @Required
-  public void setServerCertificatePath(Path serverCertificatePath) {
-    this.serverCertificatePath = serverCertificatePath;
-  }
+    protected Path serverCertificatePath;
+    protected Path serverKeyPath;
+    protected Path serverCaPath;
+    protected CrlCheckingMode crlCheckingMode;
+    protected OCSPCheckingMode ocspCheckingMode;
 
-  @Required
-  public void setServerKeyPath(Path serverKeyPath) {
-    this.serverKeyPath = serverKeyPath;
-  }
+    @Required
+    public void setServerCertificatePath(Path serverCertificatePath) {
+        this.serverCertificatePath = serverCertificatePath;
+    }
 
-  @Required
-  public void setServerCaPath(Path serverCaPath) {
-    this.serverCaPath = serverCaPath;
-  }
+    @Required
+    public void setServerKeyPath(Path serverKeyPath) {
+        this.serverKeyPath = serverKeyPath;
+    }
 
-  @Required
-  public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-  {
-    this.crlCheckingMode = crlCheckingMode;
-  }
+    @Required
+    public void setServerCaPath(Path serverCaPath) {
+        this.serverCaPath = serverCaPath;
+    }
 
-  @Required
-  public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-  {
-    this.ocspCheckingMode = ocspCheckingMode;
-  }
+    @Required
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
+        this.crlCheckingMode = crlCheckingMode;
+    }
 
-  @Override
-  public boolean isSingleton() {
-    return false;
-  }
+    @Required
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
+        this.ocspCheckingMode = ocspCheckingMode;
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return false;
+    }
 }

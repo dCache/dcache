@@ -17,6 +17,7 @@
  */
 package org.dcache.srm.client;
 
+import java.net.URI;
 import org.apache.axis.MessageContext;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
@@ -25,36 +26,33 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 
-import java.net.URI;
-
 /**
  * Subclass of HttpClientSender that adds support for GSI transports.
  */
-public class GsiHttpClientSender extends HttpClientSender
-{
+public class GsiHttpClientSender extends HttpClientSender {
+
     private static final long serialVersionUID = -4471821366308683387L;
 
     @Override
-    protected Registry<ConnectionSocketFactory> createSocketFactoryRegistry()
-    {
+    protected Registry<ConnectionSocketFactory> createSocketFactoryRegistry() {
         ConnectionSocketFactory plainsf = PlainConnectionSocketFactory.getSocketFactory();
         LayeredConnectionSocketFactory sslsf =
-                new FlexibleCredentialSSLConnectionSocketFactory(sslContextFactory,
-                                                                 supportedProtocols,
-                                                                 supportedCipherSuites,
-                                                                 hostnameVerifier);
+              new FlexibleCredentialSSLConnectionSocketFactory(sslContextFactory,
+                    supportedProtocols,
+                    supportedCipherSuites,
+                    hostnameVerifier);
         GsiConnectionSocketFactory gsisf = new GsiConnectionSocketFactory(sslsf);
         return RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("http", plainsf)
-                .register("https", gsisf)
-                .build();
+              .register("http", plainsf)
+              .register("https", gsisf)
+              .build();
     }
 
     @Override
-    protected HttpClientContext createHttpContext(MessageContext msgContext, URI uri)
-    {
+    protected HttpClientContext createHttpContext(MessageContext msgContext, URI uri) {
         HttpClientContext context = super.createHttpContext(msgContext, uri);
-        context.setAttribute(HttpClientTransport.TRANSPORT_HTTP_DELEGATION, msgContext.getProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION));
+        context.setAttribute(HttpClientTransport.TRANSPORT_HTTP_DELEGATION,
+              msgContext.getProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION));
         return context;
     }
 }

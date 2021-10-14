@@ -1,5 +1,7 @@
 package org.dcache.xrootd.door;
 
+import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
+
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -47,26 +49,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import static org.dcache.xrootd.plugins.tls.SSLHandlerFactory.SERVER_TLS;
-
 /**
- * Netty based xrootd redirector. Could possibly be replaced by pure
- * spring configuration once we move to Netty 3.1.
+ * Netty based xrootd redirector. Could possibly be replaced by pure spring configuration once we
+ * move to Netty 3.1.
  */
-public class NettyXrootdServer implements CellIdentityAware
-{
+public class NettyXrootdServer implements CellIdentityAware {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(NettyXrootdServer.class);
+          LoggerFactory.getLogger(NettyXrootdServer.class);
 
     private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
     private static final TimebasedCounter sessionCounter = new TimebasedCounter();
 
-    private int                         _port;
-    private int                         _backlog;
-    private ExecutorService             _requestExecutor;
-    private XrootdDoor                  _door;
-    private ConnectionTracker           _connectionTracker;
+    private int _port;
+    private int _backlog;
+    private ExecutorService _requestExecutor;
+    private XrootdDoor _door;
+    private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private List<ChannelHandlerFactory> _accessLogHandlerFactories;
     private List<ChannelHandlerFactory> _sslHandlerFactories;
@@ -78,96 +78,81 @@ public class NettyXrootdServer implements CellIdentityAware
     private Map<String, String> _queryConfig;
     private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
-    private SigningPolicy               _signingPolicy;
-    private ServerProtocolFlags         _serverProtocolFlags;
+    private SigningPolicy _signingPolicy;
+    private ServerProtocolFlags _serverProtocolFlags;
 
     private boolean _expectProxyProtocol;
 
-    public int getPort()
-    {
+    public int getPort() {
         return _port;
     }
 
     @Required
-    public void setPort(int port)
-    {
+    public void setPort(int port) {
         _port = port;
     }
 
     @Required
-    public void setSigningPolicy(SigningPolicy config)
-    {
+    public void setSigningPolicy(SigningPolicy config) {
         _signingPolicy = config;
     }
 
     @Required
-    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags)
-    {
+    public void setServerProtocolFlags(ServerProtocolFlags serverProtocolFlags) {
         _serverProtocolFlags = serverProtocolFlags;
     }
 
-    public String getAddress()
-    {
+    public String getAddress() {
         return (_address == null) ? null : _address.toString();
     }
 
-    public void setAddress(String address) throws UnknownHostException
-    {
+    public void setAddress(String address) throws UnknownHostException {
         _address = (address == null) ? null : InetAddress.getByName(address);
     }
 
-    public int getBacklog()
-    {
+    public int getBacklog() {
         return _backlog;
     }
 
     @Required
-    public void setBacklog(int backlog)
-    {
+    public void setBacklog(int backlog) {
         _backlog = backlog;
     }
 
     @Required
-    public void setRequestExecutor(ExecutorService executor)
-    {
+    public void setRequestExecutor(ExecutorService executor) {
         _requestExecutor = executor;
     }
 
     @Required
-    public void setConnectionTracker(ConnectionTracker connectionTracker)
-    {
+    public void setConnectionTracker(ConnectionTracker connectionTracker) {
         _connectionTracker = connectionTracker;
     }
 
     @Required
-    public void setDoor(XrootdDoor door)
-    {
+    public void setDoor(XrootdDoor door) {
         _door = door;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         _myAddress = address;
     }
 
     @Required
     public void setChannelHandlerFactories(
-            List<ChannelHandlerFactory> channelHandlerFactories)
-    {
+          List<ChannelHandlerFactory> channelHandlerFactories) {
         _channelHandlerFactories = channelHandlerFactories;
     }
 
     @Required
     public void setAccessLogHandlerFactories(
-                    List<ChannelHandlerFactory> channelHandlerFactories)
-    {
+          List<ChannelHandlerFactory> channelHandlerFactories) {
         _accessLogHandlerFactories = channelHandlerFactories;
     }
 
     @Required
-    public void setSSLHandlerFactories(List<ChannelHandlerFactory> channelHandlerFactories)
-    {
+    public void setSSLHandlerFactories(List<ChannelHandlerFactory> channelHandlerFactories) {
         _sslHandlerFactories = channelHandlerFactories;
     }
 
@@ -175,124 +160,119 @@ public class NettyXrootdServer implements CellIdentityAware
      * Sets the root path of the name space exported by this xrootd door.
      */
     @Required
-    public void setRootPath(String s)
-    {
+    public void setRootPath(String s) {
         _rootPath = FsPath.create(s);
     }
 
-    public String getRootPath()
-    {
+    public String getRootPath() {
         return Objects.toString(_rootPath, null);
     }
 
-    public Map<String, String> getQueryConfig()
-    {
+    public Map<String, String> getQueryConfig() {
         return _queryConfig;
     }
 
     @Required
-    public void setQueryConfig(Map<String, String> queryConfig)
-    {
+    public void setQueryConfig(Map<String, String> queryConfig) {
         _queryConfig = queryConfig;
     }
 
     @Required
-    public void setAppIoQueues(Map<String,String> appIoQueues)
-    {
+    public void setAppIoQueues(Map<String, String> appIoQueues) {
         _appIoQueues = appIoQueues;
     }
 
-    public void setExpectedProxyProtocol(boolean allowProxyProtocol)
-    {
+    public void setExpectedProxyProtocol(boolean allowProxyProtocol) {
         this._expectProxyProtocol = allowProxyProtocol;
     }
 
-    public boolean getExpectProxyProtocol()
-    {
+    public boolean getExpectProxyProtocol() {
         return _expectProxyProtocol;
     }
 
-    public void start()
-    {
-        sessionPrefix = "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
+    public void start() {
+        sessionPrefix =
+              "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
 
-        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
-        _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));
+        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(
+              new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
+        _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(
+              new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));
 
         ServerBootstrap bootstrap = new ServerBootstrap()
-                .group(_acceptGroup, _socketGroup)
-                .channel(NioServerSocketChannel.class)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new ChannelInitializer<Channel>()
-                {
-                    @Override
-                    protected void initChannel(Channel ch) throws Exception
-                    {
-                        String session = sessionPrefix + SESSION_ENCODING.encode(Longs.toByteArray(sessionCounter.next()));
+              .group(_acceptGroup, _socketGroup)
+              .channel(NioServerSocketChannel.class)
+              .childOption(ChannelOption.TCP_NODELAY, true)
+              .childOption(ChannelOption.SO_KEEPALIVE, true)
+              .childHandler(new ChannelInitializer<Channel>() {
+                  @Override
+                  protected void initChannel(Channel ch) throws Exception {
+                      String session = sessionPrefix + SESSION_ENCODING.encode(
+                            Longs.toByteArray(sessionCounter.next()));
 
-                        ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast("session", new SessionHandler(session));
-                        if (_expectProxyProtocol) {
-                            pipeline.addLast("haproxy", new HAProxyMessageDecoder());
-                        }
-                        pipeline.addLast("tracker", _connectionTracker);
-                        pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
-                        pipeline.addLast("encoder", new XrootdEncoder());
-                        pipeline.addLast("decoder", new XrootdDecoder());
-                        if (_log.isDebugEnabled()) {
-                            pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
-                        }
+                      ChannelPipeline pipeline = ch.pipeline();
+                      pipeline.addLast("session", new SessionHandler(session));
+                      if (_expectProxyProtocol) {
+                          pipeline.addLast("haproxy", new HAProxyMessageDecoder());
+                      }
+                      pipeline.addLast("tracker", _connectionTracker);
+                      pipeline.addLast("handshake",
+                            new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
+                      pipeline.addLast("encoder", new XrootdEncoder());
+                      pipeline.addLast("decoder", new XrootdDecoder());
+                      if (_log.isDebugEnabled()) {
+                          pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
+                      }
 
-                        /*
-                         *  This needs to precede the other plugins in order for
-                         *  the logging to be captured on the arriving requests.
-                         */
-                        Optional<ChannelHandlerFactory> accessLogHandlerFactory =
-                                        _accessLogHandlerFactories.stream().findFirst();
-                        if (accessLogHandlerFactory.isPresent()) {
-                            ChannelHandlerFactory factory = accessLogHandlerFactory.get();
-                            pipeline.addLast("plugin:" + factory.getName(),
-                                             factory.createHandler());
-                        }
+                      /*
+                       *  This needs to precede the other plugins in order for
+                       *  the logging to be captured on the arriving requests.
+                       */
+                      Optional<ChannelHandlerFactory> accessLogHandlerFactory =
+                            _accessLogHandlerFactories.stream().findFirst();
+                      if (accessLogHandlerFactory.isPresent()) {
+                          ChannelHandlerFactory factory = accessLogHandlerFactory.get();
+                          pipeline.addLast("plugin:" + factory.getName(),
+                                factory.createHandler());
+                      }
 
-                        /*
-                         *  The TLSSessionInfo needs to be shared between
-                         *  the authentication handler and the redirect handler.
-                         *
-                         *  The door only needs one for incoming requests (server).
-                         */
-                        SSLHandlerFactory sslHandlerFactory
-                                        = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
-                                                                              _sslHandlerFactories);
-                        TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(_serverProtocolFlags);
-                        tlsSessionInfo.setServerSslHandlerFactory(sslHandlerFactory);
+                      /*
+                       *  The TLSSessionInfo needs to be shared between
+                       *  the authentication handler and the redirect handler.
+                       *
+                       *  The door only needs one for incoming requests (server).
+                       */
+                      SSLHandlerFactory sslHandlerFactory
+                            = SSLHandlerFactory.getHandlerFactory(SERVER_TLS,
+                            _sslHandlerFactories);
+                      TLSSessionInfo tlsSessionInfo = new TLSSessionInfo(_serverProtocolFlags);
+                      tlsSessionInfo.setServerSslHandlerFactory(sslHandlerFactory);
 
-                        for (ChannelHandlerFactory factory: _channelHandlerFactories) {
-                            ChannelHandler handler = factory.createHandler();
-                            if (handler instanceof XrootdAuthenticationHandler) {
-                                /*
-                                 *  This is to support security level/signed hash verification
-                                 *  or for TLS.
-                                 */
-                                XrootdAuthenticationHandler authn = (XrootdAuthenticationHandler)handler;
-                                authn.setSigningPolicy(_signingPolicy);
-                                authn.setTlsSessionInfo(tlsSessionInfo);
-                            }
-                            pipeline.addLast("plugin:" + factory.getName(), handler);
-                        }
-                        XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig, _appIoQueues);
-                        handler.setSigningPolicy(_signingPolicy);
-                        handler.setTlsSessionInfo(tlsSessionInfo);
-                        pipeline.addLast("redirector", handler);
-                    }
-                });
+                      for (ChannelHandlerFactory factory : _channelHandlerFactories) {
+                          ChannelHandler handler = factory.createHandler();
+                          if (handler instanceof XrootdAuthenticationHandler) {
+                              /*
+                               *  This is to support security level/signed hash verification
+                               *  or for TLS.
+                               */
+                              XrootdAuthenticationHandler authn = (XrootdAuthenticationHandler) handler;
+                              authn.setSigningPolicy(_signingPolicy);
+                              authn.setTlsSessionInfo(tlsSessionInfo);
+                          }
+                          pipeline.addLast("plugin:" + factory.getName(), handler);
+                      }
+                      XrootdRedirectHandler handler = new XrootdRedirectHandler(_door, _rootPath,
+                            _requestExecutor, _queryConfig, _appIoQueues);
+                      handler.setSigningPolicy(_signingPolicy);
+                      handler.setTlsSessionInfo(tlsSessionInfo);
+                      pipeline.addLast("redirector", handler);
+                  }
+              });
 
         bootstrap.bind(new InetSocketAddress(_address, _port));
     }
 
-    public void stop()
-    {
+    public void stop() {
         _acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
         _socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
 
@@ -304,18 +284,17 @@ public class NettyXrootdServer implements CellIdentityAware
         }
     }
 
-    private static class SessionHandler extends ChannelHandlerAdapter implements ChannelInboundHandler
-    {
+    private static class SessionHandler extends ChannelHandlerAdapter implements
+          ChannelInboundHandler {
+
         private final String session;
 
-        private SessionHandler(String session)
-        {
+        private SessionHandler(String session) {
             this.session = session;
         }
 
         @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -327,8 +306,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -340,8 +318,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -353,8 +330,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -366,8 +342,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
-        {
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -379,8 +354,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -392,8 +366,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
-        {
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -405,8 +378,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception
-        {
+        public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {
@@ -418,8 +390,7 @@ public class NettyXrootdServer implements CellIdentityAware
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
-        {
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             CDC.setSession(session);
             NDC.push(session);
             try {

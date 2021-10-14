@@ -1,5 +1,7 @@
 package org.dcache.ftp.data;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -13,44 +15,54 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Pattern;
-
 import org.dcache.pool.repository.RepositoryChannel;
-
-import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Implementation of MODE X.
- *
  */
-public class ModeX extends Mode
-{
-    enum SenderState
-    {
-        /** Wait for receiver to send READY. */
+public class ModeX extends Mode {
+
+    enum SenderState {
+        /**
+         * Wait for receiver to send READY.
+         */
         WAIT_READY,
 
-        /** Wait for receiver to send BYE. */
+        /**
+         * Wait for receiver to send BYE.
+         */
         WAIT_BYE,
 
-        /** Prepare next block for transmission. */
+        /**
+         * Prepare next block for transmission.
+         */
         NEXT_BLOCK,
 
-        /** Send the block header. */
+        /**
+         * Send the block header.
+         */
         SEND_HEADER,
 
-        /** Send the block data. */
+        /**
+         * Send the block data.
+         */
         SEND_DATA
     }
 
-    enum ReceiverState
-    {
-        /** Send BYE message. */
+    enum ReceiverState {
+        /**
+         * Send BYE message.
+         */
         SEND_BYE,
 
-        /** Read block header. */
+        /**
+         * Read block header.
+         */
         READ_HEADER,
 
-        /** Read block data. */
+        /**
+         * Read block data.
+         */
         READ_DATA
     }
 
@@ -59,19 +71,18 @@ public class ModeX extends Mode
      */
     public static final int HEADER_LENGTH = 25;
 
-    public static final int EOF_DESCRIPTOR                       = 64;
-    public static final int EOD_DESCRIPTOR                       = 8;
+    public static final int EOF_DESCRIPTOR = 64;
+    public static final int EOD_DESCRIPTOR = 8;
     public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
 
     public static final int KNOWN_DESCRIPTORS =
-            EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
+          EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
 
     /**
      * The chunk size used when sending files.
-     *
-     * Large blocks will reduce the overhead of sending. However, in
-     * case of multible concurrent streams, large blocks will make
-     * disk access less sequential on both the sending and receiving
+     * <p>
+     * Large blocks will reduce the overhead of sending. However, in case of multible concurrent
+     * streams, large blocks will make disk access less sequential on both the sending and receiving
      * side.
      */
     private final int _blockSize;
@@ -92,9 +103,8 @@ public class ModeX extends Mode
     private boolean _eof;
 
     /**
-     * Count how many EODs have been sent. Used by the sender to
-     * ensure that we maintain at least one data channel until the
-     * transfer has completed.
+     * Count how many EODs have been sent. Used by the sender to ensure that we maintain at least
+     * one data channel until the transfer has completed.
      */
     private int _closing;
 
@@ -126,57 +136,69 @@ public class ModeX extends Mode
     private String _lastError;
 
     /**
-     * Implementation of send in mode X. There will be an instance per
-     * data channel. The sender repeatedly bites _blockSize bytes of
-     * the file and transfers it as a single block. I.e.
+     * Implementation of send in mode X. There will be an instance per data channel. The sender
+     * repeatedly bites _blockSize bytes of the file and transfers it as a single block. I.e.
      * _currentPosition is incremented by _blockSize bytes at a time.
      */
-    private class Sender extends AbstractMultiplexerListener
-    {
-        /** The data channel. */
+    private class Sender extends AbstractMultiplexerListener {
+
+        /**
+         * The data channel.
+         */
         protected final SocketChannel _socket;
 
-        /** Current state of the sender. */
-        protected SenderState   _state;
+        /**
+         * Current state of the sender.
+         */
+        protected SenderState _state;
 
-        /** Current file position from which we send. */
-        protected long          _position;
+        /**
+         * Current file position from which we send.
+         */
+        protected long _position;
 
-        /** Number of bytes left to send from the current block. */
-        protected long          _count;
+        /**
+         * Number of bytes left to send from the current block.
+         */
+        protected long _count;
 
-        /** True if receiver has requested the channel to be closed. */
-        protected boolean       _closeAtNextBlock;
+        /**
+         * True if receiver has requested the channel to be closed.
+         */
+        protected boolean _closeAtNextBlock;
 
-        /** Buffer for representing a block header. */
+        /**
+         * Buffer for representing a block header.
+         */
         protected final ByteBuffer _header =
-                ByteBuffer.allocate(HEADER_LENGTH);
+              ByteBuffer.allocate(HEADER_LENGTH);
 
-        /** Buffer for reading commands from the receiver. */
+        /**
+         * Buffer for reading commands from the receiver.
+         */
         protected final ByteBuffer _command =
-                ByteBuffer.allocate(128);
+              ByteBuffer.allocate(128);
 
-        /** Buffer for reading commands from the receiver. */
+        /**
+         * Buffer for reading commands from the receiver.
+         */
         protected final CharBuffer _decodedCommand =
-                CharBuffer.allocate(128);
+              CharBuffer.allocate(128);
 
-        public Sender(SocketChannel socket)
-        {
-            _socket           = socket;
-            _state            = SenderState.WAIT_READY;
+        public Sender(SocketChannel socket) {
+            _socket = socket;
+            _state = SenderState.WAIT_READY;
             _closeAtNextBlock = false;
         }
 
         @Override
-        public void register(Multiplexer multiplexer) throws IOException
-        {
+        public void register(Multiplexer multiplexer) throws IOException {
             multiplexer.register(this, SelectionKey.OP_READ, _socket);
         }
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-                throws IOException, FTPException
-        {
+              throws IOException, FTPException {
             try {
                 doRead(multiplexer, key);
             } catch (IOException | FTPException e) {
@@ -188,8 +210,7 @@ public class ModeX extends Mode
         }
 
         private void doRead(Multiplexer multiplexer, SelectionKey key)
-                throws IOException, FTPException
-        {
+              throws IOException, FTPException {
             /* Protect against clients sending large commands. We
              * could enlarge the command buffer, but this would open
              * the server to DOS attacks from clients sending very
@@ -267,14 +288,13 @@ public class ModeX extends Mode
                 throw new FTPException("RESEND is not implemented");
             } else {
                 throw new FTPException("Unexpected command '" + cmd
-                                               + "' in state " + _state);
+                      + "' in state " + _state);
             }
         }
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-                throws IOException, FTPException
-        {
+              throws IOException, FTPException {
             try {
                 doWrite(key);
             } catch (IOException | FTPException e) {
@@ -285,114 +305,125 @@ public class ModeX extends Mode
             }
         }
 
-        private void doWrite(SelectionKey key) throws IOException, FTPException
-        {
+        private void doWrite(SelectionKey key) throws IOException, FTPException {
             switch (_state) {
-            case NEXT_BLOCK:
-                _position         = _currentPosition;
-                _count            = Math.min(_currentCount, _blockSize);
+                case NEXT_BLOCK:
+                    _position = _currentPosition;
+                    _count = Math.min(_currentCount, _blockSize);
 
-                /* Prepare header.
-                 */
-                byte descriptor;
-                if (_count == 0) {
-                    // No more data. Send EOD and EOF.
-                    descriptor =
-                            (byte)(EOF_DESCRIPTOR
+                    /* Prepare header.
+                     */
+                    byte descriptor;
+                    if (_count == 0) {
+                        // No more data. Send EOD and EOF.
+                        descriptor =
+                              (byte) (EOF_DESCRIPTOR
                                     | EOD_DESCRIPTOR
                                     | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
-                    _closing++;
-                    _eof = true;
-                } else if (_closeAtNextBlock && _opened > _closing + 1) {
-                    // Receiver requested close. Notice that we only
-                    // honor the close request as long as at least one
-                    // data channel remains open.
-                    descriptor =
-                            (byte)(EOD_DESCRIPTOR
+                        _closing++;
+                        _eof = true;
+                    } else if (_closeAtNextBlock && _opened > _closing + 1) {
+                        // Receiver requested close. Notice that we only
+                        // honor the close request as long as at least one
+                        // data channel remains open.
+                        descriptor =
+                              (byte) (EOD_DESCRIPTOR
                                     | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
-                    _closing++;
-                    _count = 0;
-                } else {
-                    // Regular block.
-                    descriptor        = 0;
-                    _currentPosition += _count;
-                    _currentCount    -= _count;
-                }
+                        _closing++;
+                        _count = 0;
+                    } else {
+                        // Regular block.
+                        descriptor = 0;
+                        _currentPosition += _count;
+                        _currentCount -= _count;
+                    }
 
-                _header.clear();
-                _header.put(descriptor);
-                _header.putLong(_count);
-                _header.putLong(_position);
-                _header.putLong(0);              // Transaction ID
-                _header.flip();
-                _state = SenderState.SEND_HEADER;
+                    _header.clear();
+                    _header.put(descriptor);
+                    _header.putLong(_count);
+                    _header.putLong(_position);
+                    _header.putLong(0);              // Transaction ID
+                    _header.flip();
+                    _state = SenderState.SEND_HEADER;
 
-            case SEND_HEADER:
-                _socket.write(_header);
-                if (_header.position() < _header.limit()) {
+                case SEND_HEADER:
+                    _socket.write(_header);
+                    if (_header.position() < _header.limit()) {
+                        break;
+                    }
+
+                    /* If at end of stream, stop subscription for write
+                     * events and wait for BYE from receiver.
+                     */
+                    if (_count == 0) {
+                        key.interestOps(SelectionKey.OP_READ);
+                        _state = SenderState.WAIT_BYE;
+                        break;
+                    }
+                    _state = SenderState.SEND_DATA;
+
+                case SEND_DATA:
+                    long nbytes = transferTo(_position, _count, _socket);
+                    _monitor.sentBlock(_position, nbytes);
+                    _position += nbytes;
+                    _count -= nbytes;
+                    if (_count == 0) {
+                        _state = SenderState.NEXT_BLOCK;
+                    }
                     break;
-                }
-
-                /* If at end of stream, stop subscription for write
-                 * events and wait for BYE from receiver.
-                 */
-                if (_count == 0) {
-                    key.interestOps(SelectionKey.OP_READ);
-                    _state = SenderState.WAIT_BYE;
-                    break;
-                }
-                _state = SenderState.SEND_DATA;
-
-            case SEND_DATA:
-                long nbytes = transferTo(_position, _count, _socket);
-                _monitor.sentBlock(_position, nbytes);
-                _position  += nbytes;
-                _count     -= nbytes;
-                if (_count == 0) {
-                    _state = SenderState.NEXT_BLOCK;
-                }
-                break;
             }
         }
     }
 
-    class Receiver extends AbstractMultiplexerListener
-    {
-        /** The data channel. */
+    class Receiver extends AbstractMultiplexerListener {
+
+        /**
+         * The data channel.
+         */
         protected final SocketChannel _socket;
 
-        /** Current state of the receiver. */
+        /**
+         * Current state of the receiver.
+         */
         protected ReceiverState _state;
 
-        /** Current position in file. */
-        protected long          _position;
+        /**
+         * Current position in file.
+         */
+        protected long _position;
 
-        /** Number of bytes left to receive from the current block. */
-        protected long          _count;
+        /**
+         * Number of bytes left to receive from the current block.
+         */
+        protected long _count;
 
-        /** The flags of the last block header. */
-        protected int           _flags;
+        /**
+         * The flags of the last block header.
+         */
+        protected int _flags;
 
-        /** Buffer for representing a block header. */
+        /**
+         * Buffer for representing a block header.
+         */
         protected final ByteBuffer _header =
-                ByteBuffer.allocate(HEADER_LENGTH);
+              ByteBuffer.allocate(HEADER_LENGTH);
 
-        /** Buffer for reading commands from the receiver. */
+        /**
+         * Buffer for reading commands from the receiver.
+         */
         protected final ByteBuffer _command =
-                ByteBuffer.allocate(128);
+              ByteBuffer.allocate(128);
 
-        public Receiver(SocketChannel socket)
-        {
-            _socket   = socket;
-            _count    = 0;
+        public Receiver(SocketChannel socket) {
+            _socket = socket;
+            _count = 0;
             _position = 0;
-            _flags    = 0;
-            _state    = ReceiverState.READ_HEADER;
+            _flags = 0;
+            _state = ReceiverState.READ_HEADER;
             _command.limit(0);
         }
 
-        private void addCommand(String s)
-        {
+        private void addCommand(String s) {
             CharBuffer buffer = CharBuffer.allocate(s.length() + 1);
             buffer.put(s);
             buffer.put('\n');
@@ -404,16 +435,14 @@ public class ModeX extends Mode
         }
 
         @Override
-        public void register(Multiplexer multiplexer) throws IOException
-        {
+        public void register(Multiplexer multiplexer) throws IOException {
             multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
             addCommand("READY");
         }
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-                throws IOException
-        {
+              throws IOException {
             try {
                 doWrite(multiplexer, key);
             } catch (IOException e) {
@@ -425,8 +454,7 @@ public class ModeX extends Mode
         }
 
         private void doWrite(Multiplexer multiplexer, SelectionKey key)
-                throws IOException
-        {
+              throws IOException {
             try {
                 _socket.write(_command);
                 if (_command.position() == _command.limit()) {
@@ -456,8 +484,7 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-                throws IOException, FTPException, InterruptedException
-        {
+              throws IOException, FTPException, InterruptedException {
             try {
                 doRead(key);
             } catch (IOException | FTPException e) {
@@ -468,147 +495,143 @@ public class ModeX extends Mode
             }
         }
 
-        private void doRead(SelectionKey key) throws IOException, FTPException
-        {
+        private void doRead(SelectionKey key) throws IOException, FTPException {
             long nbytes;
 
             switch (_state) {
-            case READ_HEADER:
-                /* Read header.
-                 */
-                nbytes = _socket.read(_header);
-                if (nbytes == -1) {
-                    /* Stream was closed. A sender must always send
-                     * EOD on a channel before closing it. We
-                     * therefore consider the end of stream to be an
-                     * error.
+                case READ_HEADER:
+                    /* Read header.
                      */
-                    throw new FTPException("Stream ended before EOD");
-                }
+                    nbytes = _socket.read(_header);
+                    if (nbytes == -1) {
+                        /* Stream was closed. A sender must always send
+                         * EOD on a channel before closing it. We
+                         * therefore consider the end of stream to be an
+                         * error.
+                         */
+                        throw new FTPException("Stream ended before EOD");
+                    }
 
-                if (_header.position() < _header.limit()) {
-                    /* Incomplete header.
+                    if (_header.position() < _header.limit()) {
+                        /* Incomplete header.
+                         */
+                        return;
+                    }
+
+                    _header.rewind();
+                    _flags = _header.get();
+                    _count = _header.getLong();
+                    _position = _header.getLong();
+                    _header.clear();
+
+                    /* The GridFTP spec states that we should generate an
+                     * error whenever we receive a descriptor we don't
+                     * know how to handle.
                      */
-                    return;
-                }
+                    if ((_flags & ~KNOWN_DESCRIPTORS) != 0) {
+                        throw new FTPException(
+                              "Received block with unknown descriptor (" + _flags + ")");
+                    }
 
-                _header.rewind();
-                _flags    = _header.get();
-                _count    = _header.getLong();
-                _position = _header.getLong();
-                _header.clear();
-
-                /* The GridFTP spec states that we should generate an
-                 * error whenever we receive a descriptor we don't
-                 * know how to handle.
-                 */
-                if ((_flags & ~KNOWN_DESCRIPTORS) != 0) {
-                    throw new FTPException("Received block with unknown descriptor (" + _flags + ")");
-                }
-
-                /* At least one EOF must be received. The transfer has
-                 * been complete when EOF was received and all open
-                 * channels have been closed.
-                 */
-                if ((_flags & EOF_DESCRIPTOR) != 0) {
-                    _eof = true;
-                }
-
-                /* Empty blocks are allowed.
-                 */
-                if (_count == 0) {
-                    /* If EOD was received then send BYE message.
+                    /* At least one EOF must be received. The transfer has
+                     * been complete when EOF was received and all open
+                     * channels have been closed.
                      */
-                    if ((_flags & EOD_DESCRIPTOR) != 0) {
-                        key.interestOps(SelectionKey.OP_WRITE);
-                        addCommand("BYE");
-                        _state = ReceiverState.SEND_BYE;
+                    if ((_flags & EOF_DESCRIPTOR) != 0) {
+                        _eof = true;
+                    }
+
+                    /* Empty blocks are allowed.
+                     */
+                    if (_count == 0) {
+                        /* If EOD was received then send BYE message.
+                         */
+                        if ((_flags & EOD_DESCRIPTOR) != 0) {
+                            key.interestOps(SelectionKey.OP_WRITE);
+                            addCommand("BYE");
+                            _state = ReceiverState.SEND_BYE;
+                        }
+                        break;
+                    }
+
+                    _state = ReceiverState.READ_DATA;
+
+                case READ_DATA:
+                    /* Receive data.
+                     */
+                    nbytes = transferFrom(_socket, _position, _count);
+                    if (nbytes == -1) {
+                        throw new FTPException("Stream was closed in the middle of a block");
+                    }
+                    _monitor.receivedBlock(_position, nbytes);
+                    _position += nbytes;
+                    _count -= nbytes;
+
+                    if (_count == 0) {
+                        /* If EOD was received then send BYE message.
+                         */
+                        if ((_flags & EOD_DESCRIPTOR) != 0) {
+                            key.interestOps(SelectionKey.OP_WRITE);
+                            addCommand("BYE");
+                            _state = ReceiverState.SEND_BYE;
+                        } else {
+                            _state = ReceiverState.READ_HEADER;
+                        }
                     }
                     break;
-                }
-
-                _state = ReceiverState.READ_DATA;
-
-            case READ_DATA:
-                /* Receive data.
-                 */
-                nbytes = transferFrom(_socket, _position, _count);
-                if (nbytes == -1) {
-                    throw new FTPException("Stream was closed in the middle of a block");
-                }
-                _monitor.receivedBlock(_position, nbytes);
-                _position += nbytes;
-                _count    -= nbytes;
-
-                if (_count == 0) {
-                    /* If EOD was received then send BYE message.
-                     */
-                    if ((_flags & EOD_DESCRIPTOR) != 0) {
-                        key.interestOps(SelectionKey.OP_WRITE);
-                        addCommand("BYE");
-                        _state = ReceiverState.SEND_BYE;
-                    } else {
-                        _state = ReceiverState.READ_HEADER;
-                    }
-                }
-                break;
             }
         }
     }
 
     public ModeX(Role role, RepositoryChannel file, ConnectionMonitor monitor,
-                 int blockSize)
-            throws IOException
-    {
+          int blockSize)
+          throws IOException {
         super(role, file, monitor);
         _currentPosition = getStartPosition();
-        _currentCount    = getSize();
-        _eof             = false;
-        _closing         = 0;
+        _currentCount = getSize();
+        _eof = false;
+        _closing = 0;
         _blockSize = blockSize;
     }
 
     @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
-            throws IOException
-    {
+          throws IOException {
         _transferStarted = true;
         switch (_role) {
-        case Sender:
-            _activeDataChannels.incrementAndGet();
-            multiplexer.add(new Sender(socket));
-            break;
-        case Receiver:
-            /* From the GridFTP 2 spec: "After receiving EOF block
-             * from a sender host, active data receiver host must not
-             * try to open any new data channels to that sender host."
-             *
-             * This rule is difficult to honor, as we may have a
-             * connection establishment "in progress" at the time we
-             * received the EOF. At the same time it is not clear if
-             * an active receiver is allowed to close a connection
-             * before READY has been sent; passive receivers are
-             * explicitly allowed to do so.
-             */
-            if (_eof) {
-                socket.close();
-            } else {
+            case Sender:
                 _activeDataChannels.incrementAndGet();
-                multiplexer.add(new Receiver(socket));
-            }
-            break;
+                multiplexer.add(new Sender(socket));
+                break;
+            case Receiver:
+                /* From the GridFTP 2 spec: "After receiving EOF block
+                 * from a sender host, active data receiver host must not
+                 * try to open any new data channels to that sender host."
+                 *
+                 * This rule is difficult to honor, as we may have a
+                 * connection establishment "in progress" at the time we
+                 * received the EOF. At the same time it is not clear if
+                 * an active receiver is allowed to close a connection
+                 * before READY has been sent; passive receivers are
+                 * explicitly allowed to do so.
+                 */
+                if (_eof) {
+                    socket.close();
+                } else {
+                    _activeDataChannels.incrementAndGet();
+                    multiplexer.add(new Receiver(socket));
+                }
+                break;
         }
     }
 
     @Override
-    public String name()
-    {
+    public String name() {
         return "X (eXtended)";
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         super.getInfo(pw);
 
         if (_lastError != null) {
@@ -617,8 +640,8 @@ public class ModeX extends Mode
     }
 
     @Override
-    public boolean hasCompletedSuccessfully()
-    {
-        return _transferStarted && _activeDataChannels.get() == 0 && _errorDataChannels.longValue() == 0;
+    public boolean hasCompletedSuccessfully() {
+        return _transferStarted && _activeDataChannels.get() == 0
+              && _errorDataChannels.longValue() == 0;
     }
 }

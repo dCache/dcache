@@ -71,7 +71,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.util.InvalidatableItem;
 
@@ -80,15 +79,16 @@ import org.dcache.util.InvalidatableItem;
  * querying on dynamic data.</p>
  *
  * <p>The time-window of the "snapshot" coincides with the {@link #refresh(Map)}
- *    of the underlying data.  In essence, refreshes generate a new id for
- *    the data set which is returned to the caller.</p>
+ * of the underlying data.  In essence, refreshes generate a new id for the data set which is
+ * returned to the caller.</p>
  *
  * <p>Access is protected by read-write synchronization.</p>
  */
 public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializable> {
-    private final ReentrantReadWriteLock lock     = new ReentrantReadWriteLock(true);
-    private final ReadLock               readLock = lock.readLock();
-    private final WriteLock              writeLock = lock.writeLock();
+
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+    private final ReadLock readLock = lock.readLock();
+    private final WriteLock writeLock = lock.writeLock();
 
     /**
      * <p>This is the current "frozen" view.</p>
@@ -122,7 +122,7 @@ public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializa
     public void invalidate(V entry) {
         writeLock.lock();
         try {
-            for (V current: snapshot) {
+            for (V current : snapshot) {
                 if (current.equals(entry)) {
                     current.invalidate();
                     break;
@@ -135,16 +135,15 @@ public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializa
 
     /**
      * <p>Checks to see if the client is holding the same snapshot.
-     *    If not, it sets the token to null and returns an empty list.
-     *    Thus the caller should check to see that the snapshot
-     *    is accompanied by a non-null token, and if not, should recall
-     *    the method without a token.</p>
+     * If not, it sets the token to null and returns an empty list. Thus the caller should check to
+     * see that the snapshot is accompanied by a non-null token, and if not, should recall the
+     * method without a token.</p>
      */
     public SnapshotList<V> getSnapshot(UUID token,
-                                       Integer offset,
-                                       Integer limit,
-                                       Predicate<V> filter,
-                                       Comparator<V> sorter) {
+          Integer offset,
+          Integer limit,
+          Predicate<V> filter,
+          Comparator<V> sorter) {
         if (offset == null) {
             offset = 0;
         }
@@ -167,11 +166,12 @@ public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializa
                 offset = 0;
             } else {
                 items = snapshot.stream()
-                                .filter(filter)
-                                .sorted(sorter)
-                                .skip(offset)
-                                .limit(limit)
-                                .collect(Collectors.toList());;
+                      .filter(filter)
+                      .sorted(sorter)
+                      .skip(offset)
+                      .limit(limit)
+                      .collect(Collectors.toList());
+                ;
             }
         } finally {
             readLock.unlock();
@@ -207,9 +207,9 @@ public final class SnapshotDataAccess<K, V extends InvalidatableItem & Serializa
             writeLock.lock();
             snapshot.clear();
             updated.keySet().stream()
-                            .sorted(Comparator.comparing((k) -> k.toString()))
-                            .map(updated::get)
-                            .forEach((v) -> snapshot.add(v));
+                  .sorted(Comparator.comparing((k) -> k.toString()))
+                  .map(updated::get)
+                  .forEach((v) -> snapshot.add(v));
             current = UUID.randomUUID();
             lastUpdate = System.currentTimeMillis();
         } finally {

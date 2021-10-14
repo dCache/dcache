@@ -19,29 +19,26 @@
 package dmg.cells.nucleus;
 
 import com.google.common.util.concurrent.AbstractFuture;
-
 import java.util.concurrent.TimeoutException;
 
 /**
  * A class adapter that allows a future to be used in place of a CellMessageAnswerable.
  */
-public class FutureCellMessageAnswerable extends AbstractFuture<CellMessage> implements CellMessageAnswerable
-{
+public class FutureCellMessageAnswerable extends AbstractFuture<CellMessage> implements
+      CellMessageAnswerable {
+
     @Override
-    public void answerArrived(CellMessage request, CellMessage answer)
-    {
+    public void answerArrived(CellMessage request, CellMessage answer) {
         set(answer);
     }
 
     @Override
-    public void exceptionArrived(CellMessage request, Exception exception)
-    {
+    public void exceptionArrived(CellMessage request, Exception exception) {
         setException(exception);
     }
 
     @Override
-    public void answerTimedOut(CellMessage request)
-    {
+    public void answerTimedOut(CellMessage request) {
         setException(new TimeoutException());
     }
 }

@@ -22,8 +22,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * An object to iterate over the entries in a directory. A directory stream
- * allows for convenient use of the for-each construct:
+ * An object to iterate over the entries in a directory. A directory stream allows for convenient
+ * use of the for-each construct:
  * <pre>
  *   Path dir = ...
  *   DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream();
@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
  *       stream.close();
  *   }
  * </pre>
- *
+ * <p>
  * This is a backport of the JDK 7 interface.
  */
 public interface DirectoryStreamB<T> extends Closeable, Iterable<T> {

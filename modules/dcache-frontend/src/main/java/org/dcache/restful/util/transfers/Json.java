@@ -21,7 +21,6 @@ package org.dcache.restful.util.transfers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -29,15 +28,13 @@ import java.io.UncheckedIOException;
 /**
  * Utility class
  */
-public class Json
-{
-    private Json()
-    {
+public class Json {
+
+    private Json() {
         // Prevent instantiation of utility class.
     }
 
-    public static ObjectNode readFromJar(String path) throws UncheckedIOException
-    {
+    public static ObjectNode readFromJar(String path) throws UncheckedIOException {
         try (InputStream stream = Json.class.getResourceAsStream(path)) {
             JsonNode node = new ObjectMapper().readTree(stream);
             if (!node.isObject()) {

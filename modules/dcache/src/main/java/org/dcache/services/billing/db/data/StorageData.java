@@ -59,25 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
-import java.util.Map;
-
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
+import java.util.Map;
 
 /**
  * @author arossi
  */
 public final class StorageData extends PnfsStorageInfo {
+
     private static final long serialVersionUID = 7946492945046074006L;
 
     public static final String QUEUED_TIME = "queuedTime";
 
     public String toString() {
         return "(" + dateString() + "," + cellName + "," + action + ","
-                        + transaction + "," + pnfsID + "," + fullSize + ","
-                        + storageClass + "," + connectionTime + ","
-                        + queuedTime + "," + errorCode + "," + errorMessage
-                        + ")";
+              + transaction + "," + pnfsID + "," + fullSize + ","
+              + storageClass + "," + connectionTime + ","
+              + queuedTime + "," + errorCode + "," + errorMessage
+              + ")";
     }
 
     private Long queuedTime;
@@ -91,8 +91,8 @@ public final class StorageData extends PnfsStorageInfo {
         StorageInfo sinfo = info.getStorageInfo();
         if (sinfo != null) {
             storageClass = sinfo.getStorageClass()
-                            + "@"
-                            + sinfo.getHsm();
+                  + "@"
+                  + sinfo.getHsm();
         }
         queuedTime = info.getTimeQueued();
     }

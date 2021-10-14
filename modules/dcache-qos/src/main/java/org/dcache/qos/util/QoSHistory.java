@@ -59,23 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.collect.EvictingQueue;
 import diskCacheV111.util.PnfsId;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 /**
- *  A small circular buffer for preserving the most recent operation or task records
- *  after they have completed.
- *  <p>
- *  Capacity is fixed for the duration of the JVM (only configurable through properties).
- *  <p>
- *  Also maintains a separate buffer for failed operations.
+ * A small circular buffer for preserving the most recent operation or task records after they have
+ * completed.
+ * <p>
+ * Capacity is fixed for the duration of the JVM (only configurable through properties).
+ * <p>
+ * Also maintains a separate buffer for failed operations.
  */
 public final class QoSHistory {
+
     class QoSHistoryEntry {
+
         PnfsId pnfsId;
         String output;
 
@@ -113,7 +115,7 @@ public final class QoSHistory {
         int index = 0;
         synchronized (queue) {
             for (Iterator<QoSHistoryEntry> it = queue.iterator();
-                 it.hasNext() && index++ < limit; ) {
+                  it.hasNext() && index++ < limit; ) {
                 builder.append(it.next().output).append("\n");
             }
         }
@@ -142,10 +144,10 @@ public final class QoSHistory {
 
     public List<String> getAndClearErrorPnfsids() {
         List<String> pnfsids;
-        synchronized(errors) {
+        synchronized (errors) {
             pnfsids = errors.stream()
-                            .map(e -> e.pnfsId.toString())
-                            .collect(toList());
+                  .map(e -> e.pnfsId.toString())
+                  .collect(toList());
             errors.clear();
         }
 

@@ -17,30 +17,30 @@
  */
 package org.dcache.macaroons;
 
-import org.junit.Test;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
+import static org.dcache.macaroons.MacaroonContextBuilder.macaroonContext;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
+import diskCacheV111.util.FsPath;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.OptionalLong;
-
-import diskCacheV111.util.FsPath;
-
-import static org.dcache.auth.attributes.Activity.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.dcache.macaroons.MacaroonContextBuilder.macaroonContext;
+import org.junit.Test;
 
 
-public class MacaroonContextTests
-{
+public class MacaroonContextTests {
+
     MacaroonContext _context;
 
     @Test
-    public void shouldAcceptAbsoluteRootPath() throws Exception
-    {
+    public void shouldAcceptAbsoluteRootPath() throws Exception {
         given(macaroonContext().withRoot("/path"));
 
         _context.updateRoot("/other");
@@ -49,8 +49,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldAcceptRelativeRootPath() throws Exception
-    {
+    public void shouldAcceptRelativeRootPath() throws Exception {
         given(macaroonContext().withRoot("/path"));
 
         _context.updateRoot("other");
@@ -59,8 +58,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldNotWalkOutsideOfRoot() throws Exception
-    {
+    public void shouldNotWalkOutsideOfRoot() throws Exception {
         given(macaroonContext().withRoot("/path"));
 
         _context.updateRoot("..");
@@ -68,17 +66,15 @@ public class MacaroonContextTests
         assertThat(_context.getRoot(), is(equalTo(Optional.of(FsPath.create("/path")))));
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectRootOutsideOfPath() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectRootOutsideOfPath() throws Exception {
         given(macaroonContext().withPath("/path"));
 
         _context.updateRoot("/other");
     }
 
     @Test
-    public void shouldAcceptRootInsideOfPath() throws Exception
-    {
+    public void shouldAcceptRootInsideOfPath() throws Exception {
         given(macaroonContext().withHome("/path/subdir/home").withPath("/path/subdir"));
 
         _context.updateRoot("/path");
@@ -89,8 +85,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldAcceptNewHome() throws Exception
-    {
+    public void shouldAcceptNewHome() throws Exception {
         given(macaroonContext().withHome("/users/paul"));
 
         _context.updateHome("/data/paul");
@@ -99,8 +94,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldAcceptAbsolutePath() throws Exception
-    {
+    public void shouldAcceptAbsolutePath() throws Exception {
         given(macaroonContext().withPath("/users/paul"));
 
         _context.updatePath("/dir");
@@ -109,8 +103,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldAcceptRelativePath() throws Exception
-    {
+    public void shouldAcceptRelativePath() throws Exception {
         given(macaroonContext().withPath("/users/paul"));
 
         _context.updatePath("dir");
@@ -119,8 +112,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldResetHomeWhenNewRootMakesOldUnreachable() throws Exception
-    {
+    public void shouldResetHomeWhenNewRootMakesOldUnreachable() throws Exception {
         given(macaroonContext().withHome("/users/paul"));
 
         _context.updateRoot("/data");
@@ -129,54 +121,51 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldRestrictToDownloadAndReaddMetadataUnrestrictedActivities() throws Exception
-    {
+    public void shouldRestrictToDownloadAndReaddMetadataUnrestrictedActivities() throws Exception {
         given(macaroonContext().withHome("/users/paul"));
 
         _context.updateAllowedActivities(EnumSet.of(DOWNLOAD));
 
-        assertThat(_context.getAllowedActivities(), is(equalTo(Optional.of(EnumSet.of(DOWNLOAD,READ_METADATA)))));
+        assertThat(_context.getAllowedActivities(),
+              is(equalTo(Optional.of(EnumSet.of(DOWNLOAD, READ_METADATA)))));
     }
 
     @Test
-    public void shouldRestrictToDownloadListReaddmetadataUnrestrictedActivities() throws Exception
-    {
+    public void shouldRestrictToDownloadListReaddmetadataUnrestrictedActivities() throws Exception {
         given(macaroonContext().withHome("/users/paul"));
 
         _context.updateAllowedActivities(EnumSet.of(DOWNLOAD, LIST));
 
-        assertThat(_context.getAllowedActivities(), is(equalTo(Optional.of(EnumSet.of(DOWNLOAD,LIST,READ_METADATA)))));
+        assertThat(_context.getAllowedActivities(),
+              is(equalTo(Optional.of(EnumSet.of(DOWNLOAD, LIST, READ_METADATA)))));
     }
 
     @Test
-    public void shouldRestrictToListReadmetadataRestrictedActivities() throws Exception
-    {
+    public void shouldRestrictToListReadmetadataRestrictedActivities() throws Exception {
         given(macaroonContext().withHome("/users/paul").withAllowedActivities(DOWNLOAD, LIST));
 
         _context.updateAllowedActivities(EnumSet.of(LIST));
 
-        assertThat(_context.getAllowedActivities(), is(equalTo(Optional.of(EnumSet.of(LIST,READ_METADATA)))));
+        assertThat(_context.getAllowedActivities(),
+              is(equalTo(Optional.of(EnumSet.of(LIST, READ_METADATA)))));
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectAdditionalActivities() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectAdditionalActivities() throws Exception {
         given(macaroonContext().withHome("/users/paul").withAllowedActivities(DOWNLOAD, LIST));
 
-        _context.updateAllowedActivities(EnumSet.of(DOWNLOAD,UPLOAD,LIST));
+        _context.updateAllowedActivities(EnumSet.of(DOWNLOAD, UPLOAD, LIST));
     }
 
     @Test
-    public void shouldHaveInitiallyNoExpiry() throws Exception
-    {
+    public void shouldHaveInitiallyNoExpiry() throws Exception {
         given(macaroonContext());
 
         assertThat(_context.getExpiry(), is(equalTo(Optional.empty())));
     }
 
     @Test
-    public void shouldAcceptExpiry() throws Exception
-    {
+    public void shouldAcceptExpiry() throws Exception {
         Instant expiry = Instant.now().plus(5, ChronoUnit.MINUTES);
         given(macaroonContext());
 
@@ -186,8 +175,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldAcceptMoreRecentExpiry() throws Exception
-    {
+    public void shouldAcceptMoreRecentExpiry() throws Exception {
         Instant earlierExpiry = Instant.now().plus(5, ChronoUnit.MINUTES);
         Instant laterExpiry = earlierExpiry.plus(2, ChronoUnit.MINUTES);
         given(macaroonContext().withExpiry(laterExpiry));
@@ -199,8 +187,7 @@ public class MacaroonContextTests
 
 
     @Test
-    public void shouldIgnoreLessRecentExpiry() throws Exception
-    {
+    public void shouldIgnoreLessRecentExpiry() throws Exception {
         Instant earlierExpiry = Instant.now().plus(5, ChronoUnit.MINUTES);
         Instant laterExpiry = earlierExpiry.plus(2, ChronoUnit.MINUTES);
         given(macaroonContext().withExpiry(earlierExpiry));
@@ -211,39 +198,34 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldHaveInitiallyNoUploadLimit() throws Exception
-    {
+    public void shouldHaveInitiallyNoUploadLimit() throws Exception {
         given(macaroonContext());
 
         assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.empty())));
     }
 
     @Test
-    public void shouldAcceptUploadLimit() throws Exception
-    {
+    public void shouldAcceptUploadLimit() throws Exception {
         given(macaroonContext().withMaxUpload(1024));
 
         assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
     }
 
     @Test
-    public void shouldNotUpdateMaxUploadLimitWithLargerValue() throws Exception
-    {
+    public void shouldNotUpdateMaxUploadLimitWithLargerValue() throws Exception {
         given(macaroonContext().withMaxUpload(1024).withMaxUpload(2048));
 
         assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
     }
 
     @Test
-    public void shouldUpdateMaxUploadLimitWithSmallerValue() throws Exception
-    {
+    public void shouldUpdateMaxUploadLimitWithSmallerValue() throws Exception {
         given(macaroonContext().withMaxUpload(2048).withMaxUpload(1024));
 
         assertThat(_context.getMaxUpload(), is(equalTo(OptionalLong.of(1024))));
     }
 
-    void given(MacaroonContextBuilder builder)
-    {
+    void given(MacaroonContextBuilder builder) {
         _context = builder.build();
     }
 }

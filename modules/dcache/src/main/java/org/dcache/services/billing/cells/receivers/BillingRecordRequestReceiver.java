@@ -118,17 +118,14 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.cells.receivers;
 
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import dmg.cells.nucleus.CellMessageReceiver;
-
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.RecordEntry;
 import org.dcache.services.billing.db.data.StorageRecord;
@@ -140,11 +137,12 @@ import org.dcache.vehicles.billing.TransferRecordRequestMessage;
 
 /**
  * <p>Serves up record data for a given file.  An optional date range
- *    can be used to limit the search.</p>
+ * can be used to limit the search.</p>
  */
 public final class BillingRecordRequestReceiver implements CellMessageReceiver {
+
     private static <R extends RecordEntry>
-            Function<FieldSort, Comparator<R>> nextComparator(Class<R> clzz) {
+    Function<FieldSort, Comparator<R>> nextComparator(Class<R> clzz) {
         if (clzz.isAssignableFrom(TransferRecord.class)) {
             return (sort) -> {
                 Comparator<TransferRecord> comparator;
@@ -181,15 +179,15 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
                         break;
                     default:
                         throw new IllegalArgumentException(
-                                        "sort field " + sort.getName()
-                                                        + " not supported.");
+                              "sort field " + sort.getName()
+                                    + " not supported.");
                 }
 
                 if (sort.isReverse()) {
-                    return (Comparator<R>)comparator.reversed();
+                    return (Comparator<R>) comparator.reversed();
                 }
 
-                return (Comparator<R>)comparator;
+                return (Comparator<R>) comparator;
             };
         } else if (clzz.isAssignableFrom(StorageRecord.class)) {
             return (sort) -> {
@@ -212,12 +210,12 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
                         break;
                     default:
                         throw new IllegalArgumentException(
-                                        "sort field " + sort.getName()
-                                                        + " not supported.");
+                              "sort field " + sort.getName()
+                                    + " not supported.");
                 }
 
                 if (sort.isReverse()) {
-                    return (Comparator<R>)comparator.reversed();
+                    return (Comparator<R>) comparator.reversed();
                 }
 
                 return (Comparator<R>) comparator;
@@ -225,18 +223,18 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
         }
 
         throw new IllegalArgumentException(
-                        "record entry class " + clzz + " not supported.");
+              "record entry class " + clzz + " not supported.");
     }
 
     private IBillingInfoAccess access;
 
     public TransferRecordRequestMessage messageArrived(
-                    TransferRecordRequestMessage request) {
+          TransferRecordRequestMessage request) {
         return process(request, TransferRecord.class);
     }
 
     public StorageRecordRequestMessage messageArrived(
-                    StorageRecordRequestMessage request) {
+          StorageRecordRequestMessage request) {
         return process(request, StorageRecord.class);
     }
 
@@ -245,12 +243,12 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
     }
 
     private <R extends RecordEntry & Comparable<R>, M extends RecordRequestMessage<R>>
-            M process(M request, Class<R> clzz) {
+    M process(M request, Class<R> clzz) {
 
         if (access == null) {
             request.setFailed(-1,
-                              "No database connection; "
-                                              + "cannot provide record data.");
+                  "No database connection; "
+                        + "cannot provide record data.");
             return request;
         }
 
@@ -258,7 +256,7 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
 
         if (pnfsid == null) {
             request.setFailed(-1,
-                              "PnfsId must be provided.");
+                  "PnfsId must be provided.");
             return request;
         }
 
@@ -271,25 +269,25 @@ public final class BillingRecordRequestReceiver implements CellMessageReceiver {
         request.buildDAOQuery(query, params, values);
 
         Collection<R> result = access.get(clzz,
-                                          query.toString(),
-                                          params.toString(),
-                                          values.toArray());
+              query.toString(),
+              params.toString(),
+              values.toArray());
 
         Comparator<R> sorter = FieldSort.getSorter(request.sortList(),
-                                                   nextComparator(clzz));
+              nextComparator(clzz));
         List<R> records = result.stream()
-                                .filter(request.filter())
-                                .sorted(sorter)
-                                .collect(Collectors.toList());
+              .filter(request.filter())
+              .sorted(sorter)
+              .collect(Collectors.toList());
 
         request.setTotal(records.size());
 
         int offset = request.getOffset();
         int limit = request.getLimit();
         request.setRecords(records.stream()
-                                  .skip(offset)
-                                  .limit(limit)
-                                  .collect(Collectors.toList()));
+              .skip(offset)
+              .limit(limit)
+              .collect(Collectors.toList()));
 
         request.setSucceeded();
 

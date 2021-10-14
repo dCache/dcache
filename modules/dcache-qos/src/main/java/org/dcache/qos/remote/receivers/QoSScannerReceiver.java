@@ -68,35 +68,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Implements message reception for remote scanner service.
- *  <p/>
- *  If disabled manually, messages will be dropped.
+ * Implements message reception for remote scanner service.
+ * <p/>
+ * If disabled manually, messages will be dropped.
  */
 public final class QoSScannerReceiver implements CellMessageReceiver {
-  private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  private MessageGuard           messageGuard;
-  private NamespaceOpHandler handler;
+    private static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
 
-  public void messageArrived(QoSScannerVerificationResponseMessage message) {
-    ACTIVITY_LOGGER.info("Received QoSBatchedVerificationResponseMessage for {}",
-        message.getLocation());
-    if (messageGuard.getStatus("QoSBatchedVerificationResponseMessage", message)
-        == Status.DISABLED) {
-      return;
+    private MessageGuard messageGuard;
+    private NamespaceOpHandler handler;
+
+    public void messageArrived(QoSScannerVerificationResponseMessage message) {
+        ACTIVITY_LOGGER.info("Received QoSBatchedVerificationResponseMessage for {}",
+              message.getLocation());
+        if (messageGuard.getStatus("QoSBatchedVerificationResponseMessage", message)
+              == Status.DISABLED) {
+            return;
+        }
+
+        handler.handleBatchedVerificationResponse(message.getLocation(),
+              message.getSucceeded(),
+              message.getFailed());
     }
 
-    handler.handleBatchedVerificationResponse(message.getLocation(),
-                                              message.getSucceeded(),
-                                              message.getFailed());
-  }
+    public void setHandler(NamespaceOpHandler handler) {
+        this.handler = handler;
+    }
 
-  public void setHandler(NamespaceOpHandler handler) {
-    this.handler = handler;
-  }
-
-  public void setMessageGuard(MessageGuard messageGuard) {
-    this.messageGuard = messageGuard;
-  }
+    public void setMessageGuard(MessageGuard messageGuard) {
+        this.messageGuard = messageGuard;
+    }
 
 }

@@ -1,5 +1,7 @@
 package org.dcache.srm.handler;
 
+import static java.util.Objects.requireNonNull;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -13,27 +15,23 @@ import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
+public class SrmAbortRequest {
 
-public class SrmAbortRequest
-{
     private final SrmAbortRequestRequest request;
     private final SRMUser user;
     private SrmAbortRequestResponse response;
 
     public SrmAbortRequest(
-            SRMUser user,
-            SrmAbortRequestRequest request,
-            AbstractStorageElement storage,
-            SRM srm,
-            String clientHost)
-    {
+          SRMUser user,
+          SrmAbortRequestRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.user = user;
         this.request = requireNonNull(request);
     }
 
-    public SrmAbortRequestResponse getResponse()
-    {
+    public SrmAbortRequestResponse getResponse() {
         if (response == null) {
             try {
                 response = abortRequest();
@@ -45,25 +43,23 @@ public class SrmAbortRequest
     }
 
     private SrmAbortRequestResponse abortRequest()
-            throws SRMInvalidRequestException, SRMAuthorizationException
-    {
+          throws SRMInvalidRequestException, SRMAuthorizationException {
         Request requestToAbort = Request.getRequest(request.getRequestToken(), Request.class);
         try (JDC ignored = requestToAbort.applyJdc()) {
             if (!user.hasAccessTo(requestToAbort)) {
-                throw new SRMAuthorizationException("User is not the owner of request " + request.getRequestToken() + ".");
+                throw new SRMAuthorizationException(
+                      "User is not the owner of request " + request.getRequestToken() + ".");
             }
             return new SrmAbortRequestResponse(requestToAbort.abort("Request aborted by client."));
         }
     }
 
-    public static final SrmAbortRequestResponse getFailedResponse(String error)
-    {
+    public static final SrmAbortRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
     public static final SrmAbortRequestResponse getFailedResponse(String error,
-                                                                  TStatusCode statusCode)
-    {
+          TStatusCode statusCode) {
         return new SrmAbortRequestResponse(new TReturnStatus(statusCode, error));
     }
 }

@@ -18,42 +18,38 @@
  */
 package org.dcache.auth;
 
-import java.io.Serializable;
-import java.security.Principal;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.security.Principal;
+
 /**
- * An IGTFPolicyPrincipal represents that the user has authenticated with
- * an X.509 credential issued by a Certificate Authority that satisfies
- * some IGTF policy.  These policies are define in policy-*.info files.
+ * An IGTFPolicyPrincipal represents that the user has authenticated with an X.509 credential issued
+ * by a Certificate Authority that satisfies some IGTF policy.  These policies are define in
+ * policy-*.info files.
+ *
  * @since 3.1
  */
-public class IGTFPolicyPrincipal implements Principal
-{
+public class IGTFPolicyPrincipal implements Principal {
+
     private final String _name;
 
-    public IGTFPolicyPrincipal(String name)
-    {
+    public IGTFPolicyPrincipal(String name) {
         checkArgument(!name.isEmpty());
         _name = name;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _name.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -62,12 +58,11 @@ public class IGTFPolicyPrincipal implements Principal
             return false;
         }
 
-        return ((IGTFPolicyPrincipal)other)._name.equals(_name);
+        return ((IGTFPolicyPrincipal) other)._name.equals(_name);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "IGTFPolicy[" + _name + "]";
     }
 }

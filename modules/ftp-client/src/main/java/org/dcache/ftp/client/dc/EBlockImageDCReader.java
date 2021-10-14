@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,46 +15,39 @@
  */
 package org.dcache.ftp.client.dc;
 
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.DataInputStream;
-
+import java.io.IOException;
+import java.io.InputStream;
 import org.dcache.ftp.client.Buffer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EBlockImageDCReader
-        extends EBlockAware
-        implements DataChannelReader
-{
+      extends EBlockAware
+      implements DataChannelReader {
 
     boolean eodReceived = false;
     boolean willCloseReceived = false;
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(EBlockImageDCReader.class);
+          LoggerFactory.getLogger(EBlockImageDCReader.class);
 
     protected DataInputStream input;
 
     @Override
-    public void setDataStream(InputStream in)
-    {
+    public void setDataStream(InputStream in) {
         input = new DataInputStream(in);
     }
 
     /**
-     * @return true if at least once received
-     * the "server will close the connection" signal
+     * @return true if at least once received the "server will close the connection" signal
      */
-    public boolean willCloseReceived()
-    {
+    public boolean willCloseReceived() {
         return willCloseReceived;
     }
 
     @Override
-    public Buffer read() throws IOException
-    {
+    public Buffer read() throws IOException {
 
         //EOD received in previous read
         if (eodReceived) {
@@ -89,11 +82,11 @@ public class EBlockImageDCReader
             context.eodTransferred();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
-                        "Received EOD. Still expecting: {}",
-                        ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
-                           ? "?"
-                           : Integer.toString(
-                                context.eodsTotal - context.eodsTransferred)));
+                      "Received EOD. Still expecting: {}",
+                      ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
+                            ? "?"
+                            : Integer.toString(
+                                  context.eodsTotal - context.eodsTransferred)));
             }
         }
 
@@ -101,7 +94,7 @@ public class EBlockImageDCReader
             context.setEodsTotal((int) offset);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Received EODC. Expecting total EODs: {}",
-                        context.getEodsTotal());
+                      context.getEodsTotal());
             }
             return null;
 
@@ -113,8 +106,7 @@ public class EBlockImageDCReader
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         // we want to reuse the socket
         input.close();
     }

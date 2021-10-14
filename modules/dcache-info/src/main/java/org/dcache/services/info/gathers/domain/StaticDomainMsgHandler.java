@@ -1,10 +1,8 @@
 package org.dcache.services.info.gathers.domain;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import dmg.cells.nucleus.UOID;
-
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -12,30 +10,27 @@ import org.dcache.services.info.base.StateValue;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class handles reply messages from the ASCII command
- * "show context info.static".  The value is parsed and dCache's state is
- * updated accordingly.
+ * This class handles reply messages from the ASCII command "show context info.static".  The value
+ * is parsed and dCache's state is updated accordingly.
  */
-public class StaticDomainMsgHandler extends CellMessageHandlerSkel
-{
+public class StaticDomainMsgHandler extends CellMessageHandlerSkel {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(StaticDomainMsgHandler.class);
+          LoggerFactory.getLogger(StaticDomainMsgHandler.class);
 
     private static final StatePath DOMAINS = StatePath.parsePath("domains");
 
     public StaticDomainMsgHandler(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgMetaRepo)
-    {
+          MessageMetadataRepository<UOID> msgMetaRepo) {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object payload, long lifetime)
-    {
+    public void process(Object payload, long lifetime) {
         if (payload == null) {
             LOGGER.error("received null payload");
             return;
@@ -43,7 +38,7 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
 
         if (!(payload instanceof String)) {
             LOGGER.error("received message of type {}",
-                    payload.getClass().getCanonicalName());
+                  payload.getClass().getCanonicalName());
             return;
         }
 
@@ -56,15 +51,13 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
     }
 
 
-    private StatePath metricsParent()
-    {
+    private StatePath metricsParent() {
         return DOMAINS.newChild(getDomain()).newChild("static");
     }
 
 
     private StateUpdate processDeclaration(StatePath parent, long lifetime,
-            String declaration)
-    {
+          String declaration) {
         StateUpdate update = new StateUpdate();
 
         update.purgeUnder(parent);
@@ -88,12 +81,11 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
 
 
     /**
-     * Process a line of the format {@literal <type><sep><name><sep><data>}
-     * where {@literal <type>} and {@literal <sep>} are single characters.
+     * Process a line of the format {@literal <type><sep><name><sep><data>} where {@literal <type>}
+     * and {@literal <sep>} are single characters.
      */
     private void processLine(StateUpdate update, long lifetime,
-            StatePath parent, String line)
-    {
+          StatePath parent, String line) {
         checkArgument(line.length() >= 5, "Line too short: " + line);
 
         char type = line.charAt(0);
@@ -101,10 +93,10 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
 
         int idx = line.indexOf(seperator, 3);
         checkArgument(idx != -1, "Seperator character '" + seperator +
-                "' missing");
+              "' missing");
 
-        if (idx < line.length()-1) {
-            String value = line.substring(idx+1);
+        if (idx < line.length() - 1) {
+            String value = line.substring(idx + 1);
             StateValue metric = metricFor(type, value, lifetime);
 
             String name = line.substring(2, idx);
@@ -116,9 +108,8 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
     }
 
 
-    private static StateValue metricFor(char type, String value, long lifetime)
-    {
-        switch(type) {
+    private static StateValue metricFor(char type, String value, long lifetime) {
+        switch (type) {
             case 'S':
                 return new StringStateValue(value, lifetime);
             default:

@@ -19,29 +19,25 @@ package org.dcache.srm.scheduler.strategy;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public class LifoSchedulingStrategy implements SchedulingStrategy
-{
+public class LifoSchedulingStrategy implements SchedulingStrategy {
+
     private final Deque<Long> stack = new ArrayDeque<>();
 
     @Override
-    public synchronized void add(Job job)
-    {
+    public synchronized void add(Job job) {
         stack.addLast(job.getId());
     }
 
     @Override
-    public synchronized Long remove()
-    {
+    public synchronized Long remove() {
         return stack.pollLast();
     }
 
     @Override
-    public synchronized int size()
-    {
+    public synchronized int size() {
         return stack.size();
     }
 }

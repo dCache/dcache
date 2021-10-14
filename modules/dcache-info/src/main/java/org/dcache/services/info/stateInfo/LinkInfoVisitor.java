@@ -1,23 +1,20 @@
 package org.dcache.services.info.stateInfo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Scan through the known list of links and build up an associated collection
- * of LinkInfo objects.
+ * Scan through the known list of links and build up an associated collection of LinkInfo objects.
  */
-public class LinkInfoVisitor extends SkeletonListVisitor
-{
+public class LinkInfoVisitor extends SkeletonListVisitor {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkInfoVisitor.class);
 
     private static final StatePath LINK_PATH = StatePath.parsePath("links");
@@ -48,46 +45,47 @@ public class LinkInfoVisitor extends SkeletonListVisitor
     private static final String LINK_P2P_METRIC_PATH_ELEMENT = "p2p";
 
     /**
-     * A simple Map that allows us to convert a string into the corresponding
-     * LinkInfo.UNIT_TYPE enum.
+     * A simple Map that allows us to convert a string into the corresponding LinkInfo.UNIT_TYPE
+     * enum.
      */
     public static final Map<String, LinkInfo.UNIT_TYPE> UNIT_TYPE_NAMES =
-            Collections.unmodifiableMap(new HashMap<String, LinkInfo.UNIT_TYPE>() {
-                private static final long serialVersionUID =
-                        4631442886053020941L;
-                {
-                    put(LINK_STORE_PATH_ELEMENT, UNIT_TYPE.STORE);
-                    put(LINK_NET_PATH_ELEMENT, UNIT_TYPE.NETWORK);
-                    put(LINK_DCACHE_PATH_ELEMENT, UNIT_TYPE.DCACHE);
-                    put(LINK_PROTO_PATH_ELEMENT, UNIT_TYPE.PROTOCOL);
-                }
-            });
+          Collections.unmodifiableMap(new HashMap<String, LinkInfo.UNIT_TYPE>() {
+              private static final long serialVersionUID =
+                    4631442886053020941L;
+
+              {
+                  put(LINK_STORE_PATH_ELEMENT, UNIT_TYPE.STORE);
+                  put(LINK_NET_PATH_ELEMENT, UNIT_TYPE.NETWORK);
+                  put(LINK_DCACHE_PATH_ELEMENT, UNIT_TYPE.DCACHE);
+                  put(LINK_PROTO_PATH_ELEMENT, UNIT_TYPE.PROTOCOL);
+              }
+          });
 
     /**
-     * A simple Map that allows us to convert a String into the corresponding
-     * LinkInfo.OPERATION enum.
+     * A simple Map that allows us to convert a String into the corresponding LinkInfo.OPERATION
+     * enum.
      */
     public static final Map<String, LinkInfo.OPERATION> OPERATION_NAMES =
-            Collections.unmodifiableMap(new HashMap<String, LinkInfo.OPERATION>() {
-                private static final long serialVersionUID =
-                        8199146124808181726L;
-                {
-                    put(LINK_READ_METRIC_PATH_ELEMENT, LinkInfo.OPERATION.READ);
-                    put(LINK_WRITE_METRIC_PATH_ELEMENT,
-                            LinkInfo.OPERATION.WRITE);
-                    put(LINK_CACHE_METRIC_PATH_ELEMENT,
-                            LinkInfo.OPERATION.CACHE);
-                    put(LINK_P2P_METRIC_PATH_ELEMENT, LinkInfo.OPERATION.P2P);
-                }
-            });
+          Collections.unmodifiableMap(new HashMap<String, LinkInfo.OPERATION>() {
+              private static final long serialVersionUID =
+                    8199146124808181726L;
+
+              {
+                  put(LINK_READ_METRIC_PATH_ELEMENT, LinkInfo.OPERATION.READ);
+                  put(LINK_WRITE_METRIC_PATH_ELEMENT,
+                        LinkInfo.OPERATION.WRITE);
+                  put(LINK_CACHE_METRIC_PATH_ELEMENT,
+                        LinkInfo.OPERATION.CACHE);
+                  put(LINK_P2P_METRIC_PATH_ELEMENT, LinkInfo.OPERATION.P2P);
+              }
+          });
 
     /**
      * Obtain information about the current links in dCache
      *
      * @return a Mapping between a link's ID and the corresponding LinkInfo.
      */
-    public static Map<String, LinkInfo> getDetails(StateExhibitor exhibitor)
-    {
+    public static Map<String, LinkInfo> getDetails(StateExhibitor exhibitor) {
         LOGGER.trace("Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
@@ -96,7 +94,9 @@ public class LinkInfoVisitor extends SkeletonListVisitor
         return visitor.getInfo();
     }
 
-    /** The mapping between link names and corresponding LinkInfo object */
+    /**
+     * The mapping between link names and corresponding LinkInfo object
+     */
     private final Map<String, LinkInfo> _links = new HashMap<>();
 
     private LinkInfo _thisLink;
@@ -108,14 +108,12 @@ public class LinkInfoVisitor extends SkeletonListVisitor
     private StatePath _thisLinkOperationPrefPath;
     private StatePath _thisLinkPath;
 
-    public LinkInfoVisitor()
-    {
+    public LinkInfoVisitor() {
         super(LINK_PATH);
     }
 
     @Override
-    protected void newListItem(String listItemName)
-    {
+    protected void newListItem(String listItemName) {
         super.newListItem(listItemName);
 
         _thisLink = new LinkInfo(listItemName);
@@ -129,19 +127,18 @@ public class LinkInfoVisitor extends SkeletonListVisitor
 
         _thisLinkPoolsPath = _thisLinkPath.newChild(LINK_POOLS_PATH_ELEMENT);
         _thisLinkPoolgroupPath =
-                _thisLinkPath.newChild(LINK_POOLGROUPS_PATH_ELEMENT);
+              _thisLinkPath.newChild(LINK_POOLGROUPS_PATH_ELEMENT);
         _thisLinkUnitgroupsPath =
-                _thisLinkPath.newChild(LINK_UNITGROUPS_PATH_ELEMENT);
+              _thisLinkPath.newChild(LINK_UNITGROUPS_PATH_ELEMENT);
         _thisLinkUnitsPath = _thisLinkPath.newChild(LINK_UNITS_PATH_ELEMENT);
         _thisLinkSpacePath = _thisLinkPath.newChild(LINK_SPACE_PATH_ELEMENT);
         _thisLinkOperationPrefPath =
-                _thisLinkPath.newChild(LINK_PREFS_PATH_ELEMENT);
+              _thisLinkPath.newChild(LINK_PREFS_PATH_ELEMENT);
     }
 
     @Override
     public void visitCompositePreDescend(StatePath path,
-            Map<String, String> metadata)
-    {
+          Map<String, String> metadata) {
         super.visitCompositePreDescend(path, metadata);
 
         /** Only process items within subtree starting link.<link id> */
@@ -156,7 +153,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor
          * id>.units.<UNIT_TYPE>
          */
         if (_thisLinkUnitsPath.equals(path) ||
-                (_thisLinkUnitsPath.isParentOf(path) && UNIT_TYPE_NAMES.containsKey(listItem))) {
+              (_thisLinkUnitsPath.isParentOf(path) && UNIT_TYPE_NAMES.containsKey(listItem))) {
             return;
         }
 
@@ -175,17 +172,17 @@ public class LinkInfoVisitor extends SkeletonListVisitor
          * item
          */
         if (_thisLinkPath.equals(path) ||
-                _thisLinkOperationPrefPath.equals(path) ||
-                _thisLinkUnitsPath.equals(path) ||
-                _thisLinkPoolsPath.equals(path) ||
-                _thisLinkPoolgroupPath.equals(path) ||
-                _thisLinkUnitgroupsPath.equals(path)) {
+              _thisLinkOperationPrefPath.equals(path) ||
+              _thisLinkUnitsPath.equals(path) ||
+              _thisLinkPoolsPath.equals(path) ||
+              _thisLinkPoolgroupPath.equals(path) ||
+              _thisLinkUnitgroupsPath.equals(path)) {
             return;
         }
 
         /** If we're looking at link.<link id>.units.<UNIT_TYPE>.<listItem> */
         if (_thisLinkUnitsPath.isParentOf(parentPath) &&
-            UNIT_TYPE_NAMES.containsKey(parentLastElement)) {
+              UNIT_TYPE_NAMES.containsKey(parentLastElement)) {
             LOGGER.trace("Adding pool {}", listItem);
             _thisLink.addUnit(UNIT_TYPE_NAMES.get(parentLastElement), listItem);
             return;
@@ -219,8 +216,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor
      * Called when an integer metric is encountered.
      */
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value)
-    {
+    public void visitInteger(StatePath path, IntegerStateValue value) {
         if (!isInListItem()) {
             return;
         }
@@ -233,23 +229,20 @@ public class LinkInfoVisitor extends SkeletonListVisitor
 
         if (OPERATION_NAMES.containsKey(metricName)) {
             _thisLink.setOperationPref(OPERATION_NAMES.get(metricName),
-                    value.getValue());
+                  value.getValue());
         }
     }
 
     /**
-     * Provide the mapping between a link's name and corresponding LinkInfo
-     * object.
+     * Provide the mapping between a link's name and corresponding LinkInfo object.
      *
      * @return
      */
-    public Map<String, LinkInfo> getInfo()
-    {
+    public Map<String, LinkInfo> getInfo() {
         return _links;
     }
 
-    public String debugInfo()
-    {
+    public String debugInfo() {
         StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, LinkInfo> entry : _links.entrySet()) {

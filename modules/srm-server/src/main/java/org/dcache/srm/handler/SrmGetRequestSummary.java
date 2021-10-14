@@ -1,5 +1,7 @@
 package org.dcache.srm.handler;
 
+import static java.util.Objects.requireNonNull;
+
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -14,25 +16,21 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
+public class SrmGetRequestSummary {
 
-public class SrmGetRequestSummary
-{
     private final SrmGetRequestSummaryRequest request;
     private SrmGetRequestSummaryResponse response;
 
     public SrmGetRequestSummary(
-            SRMUser user,
-            SrmGetRequestSummaryRequest request,
-            AbstractStorageElement storage,
-            SRM srm,
-            String clientHost)
-    {
+          SRMUser user,
+          SrmGetRequestSummaryRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
     }
 
-    public SrmGetRequestSummaryResponse getResponse()
-    {
+    public SrmGetRequestSummaryResponse getResponse() {
         if (response == null) {
             try {
                 response = srmGetRequestSummary();
@@ -43,8 +41,7 @@ public class SrmGetRequestSummary
         return response;
     }
 
-    private SrmGetRequestSummaryResponse srmGetRequestSummary() throws SRMInvalidRequestException
-    {
+    private SrmGetRequestSummaryResponse srmGetRequestSummary() throws SRMInvalidRequestException {
         String[] requestTokens = request.getArrayOfRequestTokens().getStringArray();
         if (requestTokens == null || requestTokens.length == 0) {
             throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
@@ -56,7 +53,8 @@ public class SrmGetRequestSummary
             String requestToken = requestTokens[i];
             TRequestSummary summary;
             try {
-                ContainerRequest<?> request = Request.getRequest(requestToken, ContainerRequest.class);
+                ContainerRequest<?> request = Request.getRequest(requestToken,
+                      ContainerRequest.class);
                 try (JDC ignored = request.applyJdc()) {
                     summary = request.getRequestSummary();
                 }
@@ -64,34 +62,35 @@ public class SrmGetRequestSummary
             } catch (SRMInvalidRequestException e) {
                 summary = new TRequestSummary();
                 summary.setRequestToken(requestToken);
-                summary.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, e.getMessage()));
+                summary.setStatus(
+                      new TReturnStatus(TStatusCode.SRM_INVALID_REQUEST, e.getMessage()));
                 hasFailure = true;
             }
             requestSummaries[i] = summary;
         }
         return new SrmGetRequestSummaryResponse(
-                getSummaryReturnStatus(hasFailure, hasSuccess),
-                new ArrayOfTRequestSummary(requestSummaries));
+              getSummaryReturnStatus(hasFailure, hasSuccess),
+              new ArrayOfTRequestSummary(requestSummaries));
     }
 
-    public static TReturnStatus getSummaryReturnStatus(boolean hasFailure, boolean hasSuccess)
-    {
+    public static TReturnStatus getSummaryReturnStatus(boolean hasFailure, boolean hasSuccess) {
         if (!hasFailure) {
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } else if (!hasSuccess) {
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, "The operation failed for all request tokens");
+            return new TReturnStatus(TStatusCode.SRM_FAILURE,
+                  "The operation failed for all request tokens");
         } else {
-            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS, "The operation failed for some request tokens");
+            return new TReturnStatus(TStatusCode.SRM_PARTIAL_SUCCESS,
+                  "The operation failed for some request tokens");
         }
     }
 
-    public static final SrmGetRequestSummaryResponse getFailedResponse(String error)
-    {
+    public static final SrmGetRequestSummaryResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmGetRequestSummaryResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmGetRequestSummaryResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         TReturnStatus status = new TReturnStatus(statusCode, error);
         SrmGetRequestSummaryResponse srmGetRequestSummaryResponse = new SrmGetRequestSummaryResponse();
         srmGetRequestSummaryResponse.setReturnStatus(status);

@@ -64,32 +64,33 @@ import java.io.Serializable;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.repository.v5.ReplicaRepository} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.repository.v5.ReplicaRepository} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class RepositoryData implements Serializable {
+
     private static final long serialVersionUID = -5462572587893174680L;
     private String label;
-    private String  state;
+    private String state;
     private Integer initializationProgress;
     private Integer files;
-    private String  filesException;
-    private String  totalDiskSpace;
-    private Long    freeDiskSpace;
-    private Long    usedDiskSpace;
-    private Long    preciousDiskSpace;
-    private Long    removableDiskSpace;
-    private Double  usedDiskSpaceRatio;
-    private Double  preciousDiskSpaceRatio;
-    private Double  removableDiskSpaceRatio;
-    private Long    fileSystemSize;
-    private Long    fileSystemFree;
-    private Double  fileSystemRatioFreeToTotal;
-    private Long    fileSystemMaxSpace;
-    private Long    staticallyConfiguredMax;
-    private Long    runtimeConfiguredMax;
-    private Long    gap;
-    private Long    lru;
+    private String filesException;
+    private String totalDiskSpace;
+    private Long freeDiskSpace;
+    private Long usedDiskSpace;
+    private Long preciousDiskSpace;
+    private Long removableDiskSpace;
+    private Double usedDiskSpaceRatio;
+    private Double preciousDiskSpaceRatio;
+    private Double removableDiskSpaceRatio;
+    private Long fileSystemSize;
+    private Long fileSystemFree;
+    private Double fileSystemRatioFreeToTotal;
+    private Long fileSystemMaxSpace;
+    private Long staticallyConfiguredMax;
+    private Long runtimeConfiguredMax;
+    private Long gap;
+    private Long lru;
 
     public Long getFileSystemFree() {
         return fileSystemFree;
@@ -179,8 +180,8 @@ public class RepositoryData implements Serializable {
         pw.append("State : ").append(String.valueOf(state));
         if (initializationProgress != null) {
             pw.append(" (").append(
-                            String.valueOf(initializationProgress)).append(
-                            "% done)");
+                  String.valueOf(initializationProgress)).append(
+                  "% done)");
         }
         pw.println();
 
@@ -193,20 +194,22 @@ public class RepositoryData implements Serializable {
         pw.println("Disk space");
         pw.println("    Total    : " + totalDiskSpace);
         pw.println("    Used     : " + usedDiskSpace + "    ["
-                                   + usedDiskSpaceRatio + "]");
+              + usedDiskSpaceRatio + "]");
         pw.println("    Free     : " + freeDiskSpace + "    Gap : " + gap);
         pw.println("    Precious : " + preciousDiskSpace + "    ["
-                                   + preciousDiskSpaceRatio + "]");
+              + preciousDiskSpaceRatio + "]");
         pw.println("    Removable: " + removableDiskSpace + "    ["
-                                   + removableDiskSpaceRatio + "]");
+              + removableDiskSpaceRatio + "]");
         pw.println("File system");
         pw.println("    Size : " + fileSystemSize);
         pw.println("    Free : " + fileSystemFree +
-                                   "    [" + fileSystemRatioFreeToTotal + "]");
+              "    [" + fileSystemRatioFreeToTotal + "]");
         pw.println("Limits for maximum disk space");
         pw.println("    File system          : " + fileSystemMaxSpace);
-        pw.println("    Statically configured: " + (staticallyConfiguredMax == null? "-" : staticallyConfiguredMax.toString()));
-        pw.println("    Runtime configured   : " + (runtimeConfiguredMax == null? "-" : runtimeConfiguredMax.toString()));
+        pw.println("    Statically configured: " + (staticallyConfiguredMax == null ? "-"
+              : staticallyConfiguredMax.toString()));
+        pw.println("    Runtime configured   : " + (runtimeConfiguredMax == null ? "-"
+              : runtimeConfiguredMax.toString()));
     }
 
     public void setFileSystemFree(Long fileSystemFree) {
@@ -218,7 +221,7 @@ public class RepositoryData implements Serializable {
     }
 
     public void setFileSystemRatioFreeToTotal(
-                    Double fileSystemRatioFreeToTotal) {
+          Double fileSystemRatioFreeToTotal) {
         this.fileSystemRatioFreeToTotal = fileSystemRatioFreeToTotal;
     }
 

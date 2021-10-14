@@ -1,13 +1,9 @@
 package org.dcache.services.info.stateInfo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
@@ -17,43 +13,44 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.guides.SubtreeStateGuide;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Scan through a dCache state tree, building a list of poolgroup-to-pools associations.
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolgroupToPoolsVisitor implements StateVisitor
-{
+public class PoolgroupToPoolsVisitor implements StateVisitor {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolgroupToPoolsVisitor.class);
 
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
 
     /**
      * Obtain a Map between a poolgroup and the pools that are currently members of this poolgroup.
+     *
      * @return
      */
-    public static Map <String,Set<String>> getDetails(StateExhibitor exhibitor)
-    {
+    public static Map<String, Set<String>> getDetails(StateExhibitor exhibitor) {
         LOGGER.trace("Gathering current status");
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
         exhibitor.visitState(visitor);
         return visitor._poolgroups;
     }
 
-    Map <String,Set<String>> _poolgroups = new HashMap<>();
+    Map<String, Set<String>> _poolgroups = new HashMap<>();
     Set<String> _currentPoolgroupPools;
     StatePath _poolMembershipPath;
     StateGuide _guide = new SubtreeStateGuide(POOLGROUPS_PATH);
 
     @Override
-    public boolean isVisitable(StatePath path)
-    {
+    public boolean isVisitable(StatePath path) {
         return _guide.isVisitable(path);
     }
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String,String> metadata)
-    {
+    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         LOGGER.trace("Examining {}", path);
 
         // If something like poolgroups.<some poolgroup>
@@ -74,27 +71,22 @@ public class PoolgroupToPoolsVisitor implements StateVisitor
     }
 
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String,String> metadata)
-    {
+    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value)
-    {
+    public void visitString(StatePath path, StringStateValue value) {
     }
 
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue value)
-    {
+    public void visitBoolean(StatePath path, BooleanStateValue value) {
     }
 
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value)
-    {
+    public void visitInteger(StatePath path, IntegerStateValue value) {
     }
 
     @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
-    {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
     }
 }

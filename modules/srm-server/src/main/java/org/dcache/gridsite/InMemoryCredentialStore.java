@@ -17,11 +17,9 @@
  */
 package org.dcache.gridsite;
 
-import eu.emi.security.authn.x509.X509Credential;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.ac.VOMSACValidator;
-import org.springframework.beans.factory.annotation.Required;
+import static org.dcache.gridsite.Utilities.assertThat;
 
+import eu.emi.security.authn.x509.X509Credential;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
@@ -30,33 +28,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-
 import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
-
-import static org.dcache.gridsite.Utilities.assertThat;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * An implementation of CredentialStore that holds credentials in-memory.
- * This is meant as a quick implementation to allow testing of the
- * infrastructure.  Real deployments will interface with SRM's existing
- * credential store.
+ * An implementation of CredentialStore that holds credentials in-memory. This is meant as a quick
+ * implementation to allow testing of the infrastructure.  Real deployments will interface with
+ * SRM's existing credential store.
  */
-public class InMemoryCredentialStore implements CredentialStore
-{
+public class InMemoryCredentialStore implements CredentialStore {
+
     private final Map<DelegationIdentity, X509Credential> _storage = new HashMap<>();
 
     private VOMSACValidator validator;
 
     @Required
-    public void setVomsValidator(VOMSACValidator validator)
-    {
+    public void setVomsValidator(VOMSACValidator validator) {
         this.validator = validator;
     }
 
     @Override
-    public X509Credential get(DelegationIdentity id) throws DelegationException
-    {
+    public X509Credential get(DelegationIdentity id) throws DelegationException {
         X509Credential credential = getAndCheckForExpired(id);
         assertThat(credential != null, "no credential", id);
 
@@ -64,11 +59,10 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     // Simple wrapper that checks if the credential has expired
-    private X509Credential getAndCheckForExpired(DelegationIdentity id) throws DelegationException
-    {
+    private X509Credential getAndCheckForExpired(DelegationIdentity id) throws DelegationException {
         X509Credential credential = _storage.get(id);
 
-        if(credential != null && hasExpired(credential)) {
+        if (credential != null && hasExpired(credential)) {
             _storage.remove(id);
             credential = null;
         }
@@ -77,27 +71,24 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public void put(DelegationIdentity id, X509Credential credential, FQAN primary)
-    {
+    public void put(DelegationIdentity id, X509Credential credential, FQAN primary) {
         _storage.put(id, credential);
     }
 
     @Override
-    public void remove(DelegationIdentity id) throws DelegationException
-    {
+    public void remove(DelegationIdentity id) throws DelegationException {
         X509Credential credential = _storage.remove(id);
 
         if (credential != null && hasExpired(credential)) {
-           _storage.remove(id);
-           credential = null;
+            _storage.remove(id);
+            credential = null;
         }
 
         assertThat(credential != null, "no credential", id);
     }
 
     @Override
-    public boolean has(DelegationIdentity id)
-    {
+    public boolean has(DelegationIdentity id) {
         try {
             return getAndCheckForExpired(id) != null;
         } catch (DelegationException e) {
@@ -106,8 +97,7 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public Calendar getExpiry(DelegationIdentity id) throws DelegationException
-    {
+    public Calendar getExpiry(DelegationIdentity id) throws DelegationException {
         X509Credential credential = getAndCheckForExpired(id);
         assertThat(credential != null, "no credential", id);
 
@@ -117,38 +107,34 @@ public class InMemoryCredentialStore implements CredentialStore
         return calendar;
     }
 
-    private static Date getExpiryOf(X509Credential credential) throws DelegationException
-    {
+    private static Date getExpiryOf(X509Credential credential) throws DelegationException {
         return Stream.of(credential.getCertificateChain())
-                .map(X509Certificate::getNotAfter)
-                .min(Date::compareTo)
-                .orElseThrow(() -> new DelegationException("Certificate chain is empty."));
+              .map(X509Certificate::getNotAfter)
+              .min(Date::compareTo)
+              .orElseThrow(() -> new DelegationException("Certificate chain is empty."));
     }
 
-    private static boolean hasExpired(X509Credential credential) throws DelegationException
-    {
+    private static boolean hasExpired(X509Credential credential) throws DelegationException {
         return getExpiryOf(credential).getTime() <= System.currentTimeMillis();
     }
 
     @Override
-    public X509Credential search(String targetDn)
-    {
+    public X509Credential search(String targetDn) {
         return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn));
     }
 
     @Override
-    public X509Credential search(String targetDn, String targetFqan)
-    {
-        return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn) && Objects.equals(targetFqan, fqan));
+    public X509Credential search(String targetDn, String targetFqan) {
+        return bestCredentialMatching(
+              (dn, fqan) -> targetDn.equals(dn) && Objects.equals(targetFqan, fqan));
     }
 
-    private interface DnFqanMatcher
-    {
+    private interface DnFqanMatcher {
+
         boolean matches(String dn, String fqan);
     }
 
-    private X509Credential bestCredentialMatching(DnFqanMatcher predicate)
-    {
+    private X509Credential bestCredentialMatching(DnFqanMatcher predicate) {
         X509Credential bestCredential = null;
         Date bestExpirationTime = new Date(0);
 
@@ -159,7 +145,8 @@ public class InMemoryCredentialStore implements CredentialStore
                 X509Certificate[] chain = credential.getCertificateChain();
                 FQAN primaryFqan = getPrimary(validator.validate(chain));
 
-                if (!predicate.matches(entry.getKey().getDn(), Objects.toString(primaryFqan, null))) {
+                if (!predicate.matches(entry.getKey().getDn(),
+                      Objects.toString(primaryFqan, null))) {
                     continue;
                 }
 
@@ -176,8 +163,8 @@ public class InMemoryCredentialStore implements CredentialStore
         return bestCredential;
     }
 
-    private static FQAN getPrimary(List<VOMSAttribute> attributes)
-    {
-        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
+    private static FQAN getPrimary(List<VOMSAttribute> attributes) {
+        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new)
+              .orElse(null);
     }
 }

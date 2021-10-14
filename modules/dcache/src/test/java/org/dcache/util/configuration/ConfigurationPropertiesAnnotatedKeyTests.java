@@ -1,11 +1,12 @@
 package org.dcache.util.configuration;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.EnumSet;
 import java.util.Set;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class ConfigurationPropertiesAnnotatedKeyTests {
 
@@ -29,37 +30,45 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String ANNOTATION_FOR_NOT_ANNOTATED = "";
     public static final String ANNOTATION_FOR_DEP_AND_NOT = "(deprecated,not-for-services)";
 
-    public static final String DECLARATION_KEY_DEPRECATED = ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_DEPRECATED;
-    public static final String DECLARATION_KEY_FORBIDDEN = ANNOTATION_FOR_FORBIDDEN + PROPERTY_KEY_FORBIDDEN;
-    public static final String DECLARATION_KEY_OBSOLETE = ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_OBSOLETE;
-    public static final String DECLARATION_KEY_NOT_FOR_SERVICES = ANNOTATION_FOR_NOT_FOR_SERVICES + PROPERTY_KEY_NOT_FOR_SERVICES;
+    public static final String DECLARATION_KEY_DEPRECATED =
+          ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_DEPRECATED;
+    public static final String DECLARATION_KEY_FORBIDDEN =
+          ANNOTATION_FOR_FORBIDDEN + PROPERTY_KEY_FORBIDDEN;
+    public static final String DECLARATION_KEY_OBSOLETE =
+          ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_OBSOLETE;
+    public static final String DECLARATION_KEY_NOT_FOR_SERVICES =
+          ANNOTATION_FOR_NOT_FOR_SERVICES + PROPERTY_KEY_NOT_FOR_SERVICES;
     public static final String DECLARATION_KEY_ONE_OF = ANNOTATION_FOR_ONE_OF + PROPERTY_KEY_ONE_OF;
     public static final String DECLARATION_KEY_ANY_OF = ANNOTATION_FOR_ANY_OF + PROPERTY_KEY_ANY_OF;
-    public static final String DECLARATION_KEY_NOT_ANNOTATED = ANNOTATION_FOR_NOT_ANNOTATED + PROPERTY_KEY_NOT_ANNOTATED;
-    public static final String DECLARATION_KEY_DEP_AND_NOT = ANNOTATION_FOR_DEP_AND_NOT + PROPERTY_KEY_DEP_AND_NOT;
-    public static final String DECLARATION_KEY_SCOPED_OBSOLETE = ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_SCOPED_OBSOLETE;
-    public static final String DECLARATION_KEY_AWKWARD_NAME_DEPRECATED = ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_WITH_AWKWARD_NAME;
+    public static final String DECLARATION_KEY_NOT_ANNOTATED =
+          ANNOTATION_FOR_NOT_ANNOTATED + PROPERTY_KEY_NOT_ANNOTATED;
+    public static final String DECLARATION_KEY_DEP_AND_NOT =
+          ANNOTATION_FOR_DEP_AND_NOT + PROPERTY_KEY_DEP_AND_NOT;
+    public static final String DECLARATION_KEY_SCOPED_OBSOLETE =
+          ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_SCOPED_OBSOLETE;
+    public static final String DECLARATION_KEY_AWKWARD_NAME_DEPRECATED =
+          ANNOTATION_FOR_DEPRECATED + PROPERTY_KEY_WITH_AWKWARD_NAME;
 
     public static final AnnotatedKey ANNOTATION_NOT_ANNOTATED =
-        new AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
+          new AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
     public static final AnnotatedKey ANNOTATION_DEPRECATED =
-        new AnnotatedKey(DECLARATION_KEY_DEPRECATED, "");
+          new AnnotatedKey(DECLARATION_KEY_DEPRECATED, "");
     public static final AnnotatedKey ANNOTATION_FORBIDDEN =
-        new AnnotatedKey(DECLARATION_KEY_FORBIDDEN, "");
+          new AnnotatedKey(DECLARATION_KEY_FORBIDDEN, "");
     public static final AnnotatedKey ANNOTATION_OBSOLETE =
-        new AnnotatedKey(DECLARATION_KEY_OBSOLETE, "");
+          new AnnotatedKey(DECLARATION_KEY_OBSOLETE, "");
     public static final AnnotatedKey ANNOTATION_ONE_OF =
-        new AnnotatedKey(DECLARATION_KEY_ONE_OF, "true");
+          new AnnotatedKey(DECLARATION_KEY_ONE_OF, "true");
     public static final AnnotatedKey ANNOTATION_ANY_OF =
-            new AnnotatedKey(DECLARATION_KEY_ANY_OF, "none");
+          new AnnotatedKey(DECLARATION_KEY_ANY_OF, "none");
     public static final AnnotatedKey ANNOTATION_NOT_FOR_SERVICES =
-        new AnnotatedKey(DECLARATION_KEY_NOT_FOR_SERVICES, "");
+          new AnnotatedKey(DECLARATION_KEY_NOT_FOR_SERVICES, "");
     public static final AnnotatedKey ANNOTATION_DEP_AND_NOT =
-        new AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
+          new AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
     public static final AnnotatedKey ANNOTATION_SCOPED_OBSOLETE =
-        new AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
+          new AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
     public static final AnnotatedKey ANNOTATION_AWKWARD_NAME_DEPRECATED =
-        new AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
+          new AnnotatedKey(DECLARATION_KEY_AWKWARD_NAME_DEPRECATED, "");
 
     public static final Set<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
     public static final Set<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
@@ -67,48 +76,98 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final Set<Annotation> NOT_FOR_SERVICES = EnumSet.of(Annotation.NOT_FOR_SERVICES);
     public static final Set<Annotation> ONE_OF = EnumSet.of(Annotation.ONE_OF);
     public static final Set<Annotation> ANY_OF = EnumSet.of(Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN);
-    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> DEPRECATED_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.ANY_OF);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
-    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> OBSOLETE_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.ONE_OF);
-    public static final Set<Annotation> OBSOLETE_ANY_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.ANY_OF);
-    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> FORBIDDEN_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final Set<Annotation> FORBIDDEN_ANY_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.ANY_OF);
-    public static final Set<Annotation> NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN_ANY_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ANY_OF);
-    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE = EnumSet.of(Annotation.DEPRECATED,
+          Annotation.OBSOLETE);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN = EnumSet.of(Annotation.DEPRECATED,
+          Annotation.FORBIDDEN);
+    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_ONE_OF = EnumSet.of(Annotation.DEPRECATED,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_ANY_OF = EnumSet.of(Annotation.DEPRECATED,
+          Annotation.ANY_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.FORBIDDEN);
+    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> OBSOLETE_ONE_OF = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_ANY_OF = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.ANY_OF);
+    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> FORBIDDEN_ONE_OF = EnumSet.of(Annotation.FORBIDDEN,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> FORBIDDEN_ANY_OF = EnumSet.of(Annotation.FORBIDDEN,
+          Annotation.ANY_OF);
+    public static final Set<Annotation> NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_ANY_OF = EnumSet.of(Annotation.OBSOLETE,
+          Annotation.FORBIDDEN, Annotation.ANY_OF);
+    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN,
+          Annotation.NOT_FOR_SERVICES);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.NOT_FOR_SERVICES,
+          Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES,
+          Annotation.ANY_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES,
+          Annotation.ONE_OF);
+    public static final Set<Annotation> OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES,
+          Annotation.ANY_OF);
 
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
-    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN, Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN,
+          Annotation.NOT_FOR_SERVICES, Annotation.ONE_OF);
+    public static final Set<Annotation> DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF = EnumSet.of(
+          Annotation.DEPRECATED, Annotation.OBSOLETE, Annotation.FORBIDDEN,
+          Annotation.NOT_FOR_SERVICES, Annotation.ANY_OF);
 
     @Test
     public void testNotAnnotatedGetPropertyName() {
@@ -152,13 +211,16 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
         assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
+        assertFalse(
+              ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
         assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF));
         assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
-        assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertFalse(
+              ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertFalse(ANNOTATION_NOT_ANNOTATED.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
     }
 
     @Test
@@ -188,50 +250,48 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
 
     @Test
     public void testNotAnnotatedGetAnnotationDeclaration() {
-        assertEquals(ANNOTATION_FOR_NOT_ANNOTATED, ANNOTATION_NOT_ANNOTATED.getAnnotationDeclaration());
+        assertEquals(ANNOTATION_FOR_NOT_ANNOTATED,
+              ANNOTATION_NOT_ANNOTATED.getAnnotationDeclaration());
     }
 
 
-
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testDeprecatedAndObsoleteAnnotatedDeclarationCreation() {
         new AnnotatedKey("(deprecated,obsolete)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testDeprecatedAndForbiddenAnnotatedDeclarationCreation() {
         new AnnotatedKey("(deprecated,forbidden)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testObsoleteAndForbiddenAnnotatedDeclarationCreation() {
         new AnnotatedKey("(obsolete,forbidden)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testDeprecatedObsoleteAndForbiddenAnnotatedDeclarationCreation() {
         new AnnotatedKey("(deprecated,obsolete,forbidden)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testUnknownAnnotatedDeclarationCreation() {
         new AnnotatedKey("(gobbledygook)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testTwoUnknownAnnotatedDeclarationCreation() {
         new AnnotatedKey("(gobbledygook,fandango)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testAnnotationTakesParameterButNoneGiven()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testAnnotationTakesParameterButNoneGiven() {
         new AnnotatedKey("(one-of)foo", "");
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testAnnotationDoesntTakeParameterButParameterGiven()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testAnnotationDoesntTakeParameterButParameterGiven() {
         new AnnotatedKey("(obsolete:foo)foo", "");
     }
 
@@ -244,7 +304,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     @Test
     public void testAwkwardNameGetPropertyName() {
         assertEquals(PROPERTY_KEY_WITH_AWKWARD_NAME,
-                ANNOTATION_AWKWARD_NAME_DEPRECATED.getPropertyName());
+              ANNOTATION_AWKWARD_NAME_DEPRECATED.getPropertyName());
     }
 
     @Test
@@ -299,8 +359,10 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertFalse(ANNOTATION_DEPRECATED.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertFalse(ANNOTATION_DEPRECATED.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_DEPRECATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_DEPRECATED.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(ANNOTATION_DEPRECATED.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(ANNOTATION_DEPRECATED.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
     }
 
     @Test
@@ -339,8 +401,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     }
 
 
-
-
     @Test
     public void testAwkwardNameIsDeprecated() {
         assertTrue(ANNOTATION_AWKWARD_NAME_DEPRECATED.hasAnnotation(Annotation.DEPRECATED));
@@ -369,10 +429,8 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     @Test
     public void testAwkwardNameGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_DEPRECATED,
-                ANNOTATION_DEPRECATED.getAnnotationDeclaration());
+              ANNOTATION_DEPRECATED.getAnnotationDeclaration());
     }
-
-
 
 
     @Test
@@ -431,8 +489,10 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_FORBIDDEN.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertTrue(ANNOTATION_FORBIDDEN.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_FORBIDDEN.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_FORBIDDEN.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_FORBIDDEN.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_FORBIDDEN.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
     }
 
     @Test
@@ -469,7 +529,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public void testForbiddenGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_FORBIDDEN, ANNOTATION_FORBIDDEN.getAnnotationDeclaration());
     }
-
 
 
     @Test
@@ -530,8 +589,10 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_OBSOLETE.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertTrue(ANNOTATION_OBSOLETE.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
     }
 
     @Test
@@ -568,7 +629,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public void testObsoleteGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_OBSOLETE, ANNOTATION_OBSOLETE.getAnnotationDeclaration());
     }
-
 
 
     @Test
@@ -618,18 +678,27 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
         assertFalse(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF));
         assertFalse(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_ANY_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ANY_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(ANNOTATION_NOT_FOR_SERVICES.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
     }
 
     @Test
@@ -664,12 +733,9 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
 
     @Test
     public void testNotForServicesGetAnnotationDeclaration() {
-        assertEquals(ANNOTATION_FOR_NOT_FOR_SERVICES, ANNOTATION_NOT_FOR_SERVICES.getAnnotationDeclaration());
+        assertEquals(ANNOTATION_FOR_NOT_FOR_SERVICES,
+              ANNOTATION_NOT_FOR_SERVICES.getAnnotationDeclaration());
     }
-
-
-
-
 
 
     @Test
@@ -731,8 +797,10 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_ONE_OF.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertFalse(ANNOTATION_ONE_OF.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
 
-        assertTrue(ANNOTATION_ONE_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
-        assertFalse(ANNOTATION_ONE_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertTrue(
+              ANNOTATION_ONE_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertFalse(
+              ANNOTATION_ONE_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
     }
 
     @Test
@@ -764,8 +832,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public void testOneOfGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_ONE_OF, ANNOTATION_ONE_OF.getAnnotationDeclaration());
     }
-
-
 
 
     @Test
@@ -831,8 +897,10 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_ANY_OF.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
         assertFalse(ANNOTATION_ANY_OF.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertTrue(ANNOTATION_ANY_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
-        assertFalse(ANNOTATION_ANY_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_ANY_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ANY_OF));
+        assertFalse(
+              ANNOTATION_ANY_OF.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
     }
 
     @Test
@@ -864,8 +932,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public void testAnyOfGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_ANY_OF, ANNOTATION_ANY_OF.getAnnotationDeclaration());
     }
-
-
 
 
     @Test
@@ -911,7 +977,8 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_DEP_AND_NOT.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertTrue(ANNOTATION_DEP_AND_NOT.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertTrue(ANNOTATION_DEP_AND_NOT.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(ANNOTATION_DEP_AND_NOT.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
     }
 
     @Test
@@ -948,8 +1015,6 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public void testDepAndNotGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_DEP_AND_NOT, ANNOTATION_DEP_AND_NOT.getAnnotationDeclaration());
     }
-
-
 
 
     @Test
@@ -989,13 +1054,17 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
         assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
+        assertTrue(
+              ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
         assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_ONE_OF));
-        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
-        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(
+              ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES_ONE_OF));
+        assertFalse(
+              ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
         assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
 
-        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(
+              DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES_ONE_OF));
     }
 
     @Test
@@ -1030,6 +1099,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
 
     @Test
     public void testScopedObsoleteGetAnnotationDeclaration() {
-        assertEquals(ANNOTATION_FOR_OBSOLETE, ANNOTATION_SCOPED_OBSOLETE.getAnnotationDeclaration());
+        assertEquals(ANNOTATION_FOR_OBSOLETE,
+              ANNOTATION_SCOPED_OBSOLETE.getAnnotationDeclaration());
     }
 }

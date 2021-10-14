@@ -17,37 +17,35 @@
  */
 package org.dcache.cells;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import diskCacheV111.vehicles.Message;
+public class CellStubTest {
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
-
-public class CellStubTest
-{
     private CellEndpoint endpoint;
     private CellStub stub;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         endpoint = mock(CellEndpoint.class);
         stub = new CellStub(endpoint, new CellPath("destination"));
     }
 
     @Test
-    public void shouldSendNotifications()
-    {
+    public void shouldSendNotifications() {
         stub.notify("test");
 
         ArgumentCaptor<CellMessage> envelope = ArgumentCaptor.forClass(CellMessage.class);
@@ -57,24 +55,24 @@ public class CellStubTest
 
 
     @Test
-    public void shouldTranslateSuccessForMessageCallback()
-    {
+    public void shouldTranslateSuccessForMessageCallback() {
         Message message = new Message();
         message.setSucceeded();
         MessageCallback<Message> callback = mock(MessageCallback.class);
-        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.directExecutor());
+        CellStub.addCallback(Futures.immediateFuture(message), callback,
+              MoreExecutors.directExecutor());
         verify(callback).setReply(message);
         verify(callback).success();
         verifyNoMoreInteractions(callback);
     }
 
     @Test
-    public void shouldTranslateErrorsForMessageCallback()
-    {
+    public void shouldTranslateErrorsForMessageCallback() {
         Message message = new Message();
         message.setReply(1, "failed");
         MessageCallback<Message> callback = mock(MessageCallback.class);
-        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.directExecutor());
+        CellStub.addCallback(Futures.immediateFuture(message), callback,
+              MoreExecutors.directExecutor());
         verify(callback).setReply(message);
         verify(callback).failure(1, "failed");
         verifyNoMoreInteractions(callback);

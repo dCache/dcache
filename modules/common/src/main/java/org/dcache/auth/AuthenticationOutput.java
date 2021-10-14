@@ -23,27 +23,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A tagging annotation that indicates the class provides information about the
- * logged in user that is available to dCache.  Such annotated objects are
- * subject to Java serialisation.  Changes must be forward- and backward
- * compatible.
+ * A tagging annotation that indicates the class provides information about the logged in user that
+ * is available to dCache.  Such annotated objects are subject to Java serialisation.  Changes must
+ * be forward- and backward compatible.
  * <p>
- * Forwards compatible means that older versions of dCache must be able to
- * deserialise principals that were serialised by a newer version of dCache.
- * This is needed as the site may downgrade (e.g., to recover quickly from some
- * issue), or sites are running pool nodes with older versions of dCache.
+ * Forwards compatible means that older versions of dCache must be able to deserialise principals
+ * that were serialised by a newer version of dCache. This is needed as the site may downgrade
+ * (e.g., to recover quickly from some issue), or sites are running pool nodes with older versions
+ * of dCache.
  * <p>
- * Backwards compatible means that newer versions of dCache must be able to
- * deserialise principals that were serialised by an older version of dCache.
- * This is needed because login results are stored by some dCache components
- * (e.g., diskCacheV111.srm.dcache.PersistentLoginUserManager).
+ * Backwards compatible means that newer versions of dCache must be able to deserialise principals
+ * that were serialised by an older version of dCache. This is needed because login results are
+ * stored by some dCache components (e.g., diskCacheV111.srm.dcache.PersistentLoginUserManager).
  * <p>
- * These requirements are easiest to achieve if a class annotated
- * AuthenticationOutput is never modified.  Therefore, care must be taken
- * before annotating any principal with {@literal @AuthenticationOutput}
+ * These requirements are easiest to achieve if a class annotated AuthenticationOutput is never
+ * modified.  Therefore, care must be taken before annotating any principal with {@literal
+ * @AuthenticationOutput}
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface AuthenticationOutput
-{
+public @interface AuthenticationOutput {
+
 }

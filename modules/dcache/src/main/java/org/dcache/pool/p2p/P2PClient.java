@@ -2,18 +2,7 @@
 
 package org.dcache.pool.p2p;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import javax.net.ssl.SSLContext;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Supplier;
+import static java.util.stream.Collectors.joining;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -28,18 +17,28 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
+import javax.net.ssl.SSLContext;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
+import org.dcache.pool.p2p.json.P2PData;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.pool.p2p.json.P2PData;
 
-import static java.util.stream.Collectors.joining;
-
- enum TlsMode {
+enum TlsMode {
     NEVER,
     ALWAYS,
     CROSSZONES
@@ -47,10 +46,10 @@ import static java.util.stream.Collectors.joining;
 }
 
 public class P2PClient
-    extends AbstractCellComponent
-    implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider,
-                PoolDataBeanProvider<P2PData>
-{
+      extends AbstractCellComponent
+      implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider,
+      PoolDataBeanProvider<P2PData> {
+
     private final Map<Integer, Companion> _companions = new HashMap<>();
     private ScheduledExecutorService _executor;
     private Repository _repository;
@@ -66,54 +65,45 @@ public class P2PClient
     // TODO: cross zone behaves as ALYWAYS as long as we can't distinct zones
     private Supplier<SSLContext> getContextIfNeeded = () -> {
 
-        return _p2pTlsMode == TlsMode.NEVER ? null :  _sslContext;
+        return _p2pTlsMode == TlsMode.NEVER ? null : _sslContext;
     };
 
 
-    public synchronized void setExecutor(ScheduledExecutorService executor)
-    {
+    public synchronized void setExecutor(ScheduledExecutorService executor) {
         _executor = executor;
     }
 
-    public synchronized void setRepository(Repository repository)
-    {
+    public synchronized void setRepository(Repository repository) {
         _repository = repository;
     }
 
-    public synchronized void setChecksumModule(ChecksumModule csm)
-    {
+    public synchronized void setChecksumModule(ChecksumModule csm) {
         _checksumModule = csm;
     }
 
-    public synchronized void setPnfs(CellStub pnfs)
-    {
+    public synchronized void setPnfs(CellStub pnfs) {
         _pnfs = pnfs;
     }
 
-    public synchronized void setPool(CellStub pool)
-    {
+    public synchronized void setPool(CellStub pool) {
         _pool = pool;
     }
 
-    public synchronized int getActiveJobs()
-    {
+    public synchronized int getActiveJobs() {
         return _companions.size();
     }
 
-    public synchronized void setSslContext(SSLContext sslContext)
-    {
+    public synchronized void setSslContext(SSLContext sslContext) {
         _sslContext = sslContext;
     }
 
-    public synchronized void setTlsMode(TlsMode p2pTlslMode)
-    {
+    public synchronized void setTlsMode(TlsMode p2pTlslMode) {
         _p2pTlsMode = p2pTlslMode;
 
     }
 
-    public synchronized void messageArrived(DoorTransferFinishedMessage message)
-    {
-        HttpProtocolInfo pinfo = (HttpProtocolInfo)message.getProtocolInfo();
+    public synchronized void messageArrived(DoorTransferFinishedMessage message) {
+        HttpProtocolInfo pinfo = (HttpProtocolInfo) message.getProtocolInfo();
         int sessionId = pinfo.getSessionId();
         Companion companion = _companions.get(sessionId);
         if (companion != null) {
@@ -121,8 +111,7 @@ public class P2PClient
         }
     }
 
-    public synchronized void messageArrived(HttpDoorUrlInfoMessage message)
-    {
+    public synchronized void messageArrived(HttpDoorUrlInfoMessage message) {
         int sessionId = (int) message.getId();
         Companion companion = _companions.get(sessionId);
         if (companion != null) {
@@ -148,8 +137,7 @@ public class P2PClient
     /**
      * Adds a companion to the _companions map.
      */
-    private synchronized int addCompanion(Companion companion)
-    {
+    private synchronized int addCompanion(Companion companion) {
         int sessionId = companion.getId();
         _companions.put(sessionId, companion);
         return sessionId;
@@ -158,8 +146,7 @@ public class P2PClient
     /**
      * Removes a companion from the _companions map.
      */
-    private synchronized void removeCompanion(int sessionId)
-    {
+    private synchronized void removeCompanion(int sessionId) {
         _companions.remove(sessionId);
         notifyAll();
     }
@@ -167,9 +154,8 @@ public class P2PClient
     /**
      * Cancels all companions for a given file.
      */
-    private synchronized void cancelCompanions(PnfsId pnfsId, String cause)
-    {
-        for (Companion companion: _companions.values()) {
+    private synchronized void cancelCompanions(PnfsId pnfsId, String cause) {
+        for (Companion companion : _companions.values()) {
             if (pnfsId.equals(companion.getPnfsId())) {
                 companion.cancel(cause);
             }
@@ -177,29 +163,26 @@ public class P2PClient
     }
 
     /**
-     * Small wrapper for the real callback. Will remove the companion
-     * from the <code>_companions</code> map.
+     * Small wrapper for the real callback. Will remove the companion from the
+     * <code>_companions</code> map.
      */
-    private class Callback implements CacheFileAvailable
-    {
+    private class Callback implements CacheFileAvailable {
+
         private final CacheFileAvailable _callback;
         private int _id;
 
-        Callback(CacheFileAvailable callback)
-        {
+        Callback(CacheFileAvailable callback) {
             _callback = callback;
             _id = -1;
         }
 
-        synchronized void setId(int id)
-        {
+        synchronized void setId(int id) {
             _id = id;
             notifyAll();
         }
 
         synchronized int getId()
-            throws InterruptedException
-        {
+              throws InterruptedException {
             while (_id == -1) {
                 wait();
             }
@@ -207,8 +190,7 @@ public class P2PClient
         }
 
         @Override
-        public void cacheFileAvailable(PnfsId pnfsId, Throwable t)
-        {
+        public void cacheFileAvailable(PnfsId pnfsId, Throwable t) {
             try {
                 if (_callback != null) {
                     _callback.cacheFileAvailable(pnfsId, t);
@@ -229,14 +211,13 @@ public class P2PClient
     }
 
     public synchronized int newCompanion(String sourcePoolName,
-                                         FileAttributes fileAttributes,
-                                         ReplicaState targetState,
-                                         List<StickyRecord> stickyRecords,
-                                         CacheFileAvailable callback,
-                                         boolean forceSourceMode,
-                                         Long atime)
-        throws IOException, CacheException, InterruptedException, IllegalStateException
-    {
+          FileAttributes fileAttributes,
+          ReplicaState targetState,
+          List<StickyRecord> stickyRecords,
+          CacheFileAvailable callback,
+          boolean forceSourceMode,
+          Long atime)
+          throws IOException, CacheException, InterruptedException, IllegalStateException {
         if (getCellEndpoint() == null) {
             throw new IllegalStateException("Endpoint not initialized");
         }
@@ -260,23 +241,21 @@ public class P2PClient
             throw new IllegalStateException("Replica exists with state: " + state);
         }
 
-
-
         Callback cb = new Callback(callback);
 
         Companion companion =
-                new Companion(_executor, _interface, _repository,
-                        _checksumModule,
-                        _pnfs, _pool,
-                        fileAttributes,
-                        sourcePoolName,
-                        getCellName(),
-                        getCellDomainName(),
-                        targetState, stickyRecords,
-                        cb, forceSourceMode,
-                        atime,
-                        getContextIfNeeded
-                        );
+              new Companion(_executor, _interface, _repository,
+                    _checksumModule,
+                    _pnfs, _pool,
+                    fileAttributes,
+                    sourcePoolName,
+                    getCellName(),
+                    getCellDomainName(),
+                    targetState, stickyRecords,
+                    cb, forceSourceMode,
+                    atime,
+                    getContextIfNeeded
+              );
 
         int id = addCompanion(companion);
         cb.setId(id);
@@ -284,12 +263,10 @@ public class P2PClient
     }
 
     /**
-     * Cancels a transfer. Returns true if the transfer was
-     * cancelled. Returns false if the transfer was already completed
-     * or did not exist.
+     * Cancels a transfer. Returns true if the transfer was cancelled. Returns false if the transfer
+     * was already completed or did not exist.
      */
-    public synchronized boolean cancel(int id)
-    {
+    public synchronized boolean cancel(int id) {
         Companion companion = _companions.get(id);
         return (companion != null) && companion.cancel("Transfer was cancelled");
     }
@@ -298,9 +275,8 @@ public class P2PClient
      * Cancels all transfers.
      */
     public synchronized void shutdown()
-        throws InterruptedException
-    {
-        for (Companion companion: _companions.values()) {
+          throws InterruptedException {
+        for (Companion companion : _companions.values()) {
             companion.cancel("Pool is going down");
         }
         while (!_companions.isEmpty()) {
@@ -309,8 +285,7 @@ public class P2PClient
     }
 
     @Override
-    public synchronized void getInfo(PrintWriter pw)
-    {
+    public synchronized void getInfo(PrintWriter pw) {
         getDataObject().print(pw);
     }
 
@@ -323,126 +298,120 @@ public class P2PClient
     }
 
     @Override
-    public synchronized void printSetup(PrintWriter pw)
-    {
+    public synchronized void printSetup(PrintWriter pw) {
         pw.println("#\n#  Pool to Pool (P2P)\n#");
         if (_interface != null) {
             pw.println("pp interface " + _interface.getHostAddress());
         }
     }
 
-    @Command(name="pp set pnfs timeout",
-            hint = "Obsolete Command",
-            description = "This command is obsolete.")
-    public class PpSetPnfsTimeoutCommand implements Callable<String>
-    {
+    @Command(name = "pp set pnfs timeout",
+          hint = "Obsolete Command",
+          description = "This command is obsolete.")
+    public class PpSetPnfsTimeoutCommand implements Callable<String> {
+
         @Argument
         int timeout;
 
         @Override
-        public String call()
-        {
+        public String call() {
             return "This command is obsolete.";
         }
     }
 
-    @Command(name="pp set max active")
+    @Command(name = "pp set max active")
     @Deprecated
-    public class PpSetMaxActiveCommand implements Callable<String>
-    {
+    public class PpSetMaxActiveCommand implements Callable<String> {
+
         @Argument
         int maxActiveAllowed;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             return "";
         }
     }
 
     @Command(name = "pp set listen",
-            hint = "Obsolete Command",
-            description = "The command is Obsolete. Use 'pp interface' instead.")
-    public class PpSetListenCommand implements Callable<String>
-    {
+          hint = "Obsolete Command",
+          description = "The command is Obsolete. Use 'pp interface' instead.")
+    public class PpSetListenCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return "This command is obsolete. Use 'pp interface' instead.";
         }
     }
 
     @AffectsSetup
     @Command(name = "pp interface",
-            hint = "Specifies the interface used when connecting to other pools.",
-            description = "For pool to pool transfers, the destination creates a TCP " +
-                    "connection to the source pool. For this to work the source pool " +
-                    "must select one of its network interfaces to which the destination " +
-                    "pool can connect. For compatibility reasons this interface is " +
-                    "not specified explicitly on the source pool. Instead an interface " +
-                    "on the target pool is specified and the source pool selects an " +
-                    "interface facing the target interface.\n\n" +
-                    "If * is provided then an interface is selected automatically.")
-    public class PpInterfaceCommand implements Callable<String>
-    {
+          hint = "Specifies the interface used when connecting to other pools.",
+          description = "For pool to pool transfers, the destination creates a TCP " +
+                "connection to the source pool. For this to work the source pool " +
+                "must select one of its network interfaces to which the destination " +
+                "pool can connect. For compatibility reasons this interface is " +
+                "not specified explicitly on the source pool. Instead an interface " +
+                "on the target pool is specified and the source pool selects an " +
+                "interface facing the target interface.\n\n" +
+                "If * is provided then an interface is selected automatically.")
+    public class PpInterfaceCommand implements Callable<String> {
+
         @Argument(required = false,
-                usage = "Specify the address to which the destination pool can connect.")
+              usage = "Specify the address to which the destination pool can connect.")
         String address;
 
         @Override
-        public String call() throws UnknownHostException
-        {
+        public String call() throws UnknownHostException {
             synchronized (P2PClient.this) {
                 if (address != null) {
                     _interface = address.equals("*") ? null : InetAddress.getByName(address);
                 }
-                return "PP interface is " + ((_interface == null) ? "selected automatically" : _interface) + ".";
+                return "PP interface is " + ((_interface == null) ? "selected automatically"
+                      : _interface) + ".";
             }
         }
     }
 
     @Command(name = "pp get file",
-            hint = "initiate pool-to-pool client transfer request of a file",
-            description = "Transfer a file from a specified pool to this pool through " +
-                    "pool-to-pool client transfer request. The transferred file will " +
-                    "be marked cached.")
-    public class PpGetFileCommand implements Callable<String>
-    {
+          hint = "initiate pool-to-pool client transfer request of a file",
+          description = "Transfer a file from a specified pool to this pool through " +
+                "pool-to-pool client transfer request. The transferred file will " +
+                "be marked cached.")
+    public class PpGetFileCommand implements Callable<String> {
+
         @Argument(index = 0,
-                usage = "Specify the pnfsID of the file to transfer.")
+              usage = "Specify the pnfsID of the file to transfer.")
         PnfsId pnfsId;
 
         @Argument(index = 1, metaVar = "sourcePoolName",
-                usage = "Specify the source pool name where the file reside.")
+              usage = "Specify the source pool name where the file reside.")
         String pool;
 
         @Override
         public String call() throws
-                IOException, CacheException, InterruptedException, IllegalStateException
-        {
+              IOException, CacheException, InterruptedException, IllegalStateException {
             List<StickyRecord> stickyRecords = Collections.emptyList();
             newCompanion(pool, FileAttributes.ofPnfsId(pnfsId), ReplicaState.CACHED,
-                    stickyRecords, null, false, null);
+                  stickyRecords, null, false, null);
             return "Transfer Initiated";
         }
     }
 
     @Command(name = "pp remove",
-            hint = "cancel a pool-to-pool client transfer request",
-            description = "Terminate a specific pool-to-pool client transfer request by " +
-                    "specifying the session ID. This stop the transfer from completion. " +
-                    "An error is thrown if the file session ID is not found and " +
-                    "this might be due to either the file transfer is completed or " +
-                    "the session ID doesn't exist at all.")
-    public class PpRemoveCommand implements Callable<String>
-    {
+          hint = "cancel a pool-to-pool client transfer request",
+          description = "Terminate a specific pool-to-pool client transfer request by " +
+                "specifying the session ID. This stop the transfer from completion. " +
+                "An error is thrown if the file session ID is not found and " +
+                "this might be due to either the file transfer is completed or " +
+                "the session ID doesn't exist at all.")
+    public class PpRemoveCommand implements Callable<String> {
+
         @Argument(metaVar = "sessionID",
-                usage = "Specify the session ID identifying the transfer.")
+              usage = "Specify the session ID identifying the transfer.")
         int id;
 
         @Override
-        public String call() throws IllegalArgumentException
-        {
+        public String call() throws IllegalArgumentException {
             if (!cancel(id)) {
                 throw new IllegalArgumentException("Session ID not found: " + id);
             }
@@ -451,16 +420,15 @@ public class P2PClient
     }
 
     @Command(name = "pp ls",
-            hint = "list pool-to-pool client transfer request",
-            description = "Get the list of all active and waiting pool-to-pool client " +
-                    "transfer request. The return list comprise of: the session ID " +
-                    "identifying the transfer; the pnfsID of the file; " +
-                    "and the state of the state machine (which is driving the transfer).")
-    public class PpLsCommand implements Callable<String>
-    {
+          hint = "list pool-to-pool client transfer request",
+          description = "Get the list of all active and waiting pool-to-pool client " +
+                "transfer request. The return list comprise of: the session ID " +
+                "identifying the transfer; the pnfsID of the file; " +
+                "and the state of the state machine (which is driving the transfer).")
+    public class PpLsCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             synchronized (P2PClient.this) {
                 return _companions.values().stream().map(Object::toString).collect(joining("\n"));
             }

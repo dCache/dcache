@@ -1,10 +1,19 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import static java.util.Comparator.naturalOrder;
 
+import com.google.common.base.Preconditions;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfos;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.Formats;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
+import dmg.util.command.Option;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -17,20 +26,6 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfos;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.util.Formats;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.DelayedCommand;
-import dmg.util.command.Option;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.SweeperData;
@@ -46,17 +41,18 @@ import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Comparator.naturalOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 public class SpaceSweeper2
-    implements Runnable, CellCommandListener, StateChangeListener, CellSetupProvider,
-                SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
-{
+      implements Runnable, CellCommandListener, StateChangeListener, CellSetupProvider,
+      SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceSweeper2.class);
 
     private static final DateTimeFormatter ISO8601_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneId.systemDefault());
+          DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneId.systemDefault());
 
     private final LruQueue<PnfsId> _queue = new LruQueue<>();
 
@@ -66,72 +62,61 @@ public class SpaceSweeper2
     private Thread _thread;
     private double _margin = 0.0;
 
-    public SpaceSweeper2()
-    {
+    public SpaceSweeper2() {
     }
 
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         pw.println("sweeper reclaim margin " + _margin);
     }
 
     @Required
-    public void setRepository(Repository repository)
-    {
+    public void setRepository(Repository repository) {
         _repository = repository;
         _repository.addListener(this);
     }
 
     @Required
-    public void setAccount(Account account)
-    {
+    public void setAccount(Account account) {
         _account = account;
     }
 
     @Required
-    public synchronized void setMargin(double margin)
-    {
+    public synchronized void setMargin(double margin) {
         Preconditions.checkArgument(margin >= 0 && margin <= 1,
-                                    String.format("margin percentage must be a "
-                                                   + "value between 0.0 and 1.0, "
-                                                   + "was given %s.", margin));
+              String.format("margin percentage must be a "
+                    + "value between 0.0 and 1.0, "
+                    + "was given %s.", margin));
         _margin = margin;
     }
 
-    public void start()
-    {
+    public void start() {
         _thread = new Thread(this, "sweeper");
         _thread.start();
     }
 
-    public void stop() throws InterruptedException
-    {
+    public void stop() throws InterruptedException {
         _thread.interrupt();
         _thread.join(1000);
     }
 
     /**
-     * Returns true if this file is removable. This is the case if the
-     * file is not sticky and is cached (which under normal
-     * circumstances implies that it is ready and not precious).
+     * Returns true if this file is removable. This is the case if the file is not sticky and is
+     * cached (which under normal circumstances implies that it is ready and not precious).
      */
     @Override
-    public boolean isRemovable(CacheEntry entry)
-    {
+    public boolean isRemovable(CacheEntry entry) {
         return entry.getState() == ReplicaState.CACHED && !entry.isSticky();
     }
 
     @Override
-    public double getMargin()
-    {
+    public double getMargin() {
         return _margin;
     }
 
     /**
      * Returns the pnfsid of the eldest removable entry.
      */
-    private synchronized PnfsId getEldest()
-    {
+    private synchronized PnfsId getEldest() {
         return _queue.getLeastRecentlyUsedElement();
     }
 
@@ -139,8 +124,7 @@ public class SpaceSweeper2
      * Returns the last access time of the eldest removable entry.
      */
     @Override
-    public long getLru()
-    {
+    public long getLru() {
         return _queue.getTimeOfLeastRecentlyUsedElement();
     }
 
@@ -149,10 +133,10 @@ public class SpaceSweeper2
      *
      * @throws IllegalArgumentException if entry is precious or not cached
      */
-    private synchronized void add(CacheEntry entry)
-    {
+    private synchronized void add(CacheEntry entry) {
         if (!isRemovable(entry)) {
-            throw new IllegalArgumentException("Cannot add a precious or un-cached file to the sweeper queue.");
+            throw new IllegalArgumentException(
+                  "Cannot add a precious or un-cached file to the sweeper queue.");
         }
 
         PnfsId id = entry.getPnfsId();
@@ -165,10 +149,10 @@ public class SpaceSweeper2
         }
     }
 
-    /** Remove entry from the queue.
+    /**
+     * Remove entry from the queue.
      */
-    private synchronized boolean remove(CacheEntry entry)
-    {
+    private synchronized boolean remove(CacheEntry entry) {
         PnfsId id = entry.getPnfsId();
         if (_queue.remove(id)) {
             LOGGER.debug("Removed {} from sweeper", id);
@@ -178,28 +162,26 @@ public class SpaceSweeper2
     }
 
     @Override
-    public synchronized void stateChanged(StateChangeEvent event)
-    {
+    public synchronized void stateChanged(StateChangeEvent event) {
         CacheEntry entry = event.getNewEntry();
         switch (event.getNewState()) {
-        case REMOVED:
-        case DESTROYED:
-            remove(entry);
-            break;
-
-        default:
-            if (isRemovable(entry)) {
-                add(entry);
-            } else {
+            case REMOVED:
+            case DESTROYED:
                 remove(entry);
-            }
-            break;
+                break;
+
+            default:
+                if (isRemovable(entry)) {
+                    add(entry);
+                } else {
+                    remove(entry);
+                }
+                break;
         }
     }
 
     @Override
-    public synchronized void stickyChanged(StickyChangeEvent event)
-    {
+    public synchronized void stickyChanged(StickyChangeEvent event) {
         CacheEntry entry = event.getNewEntry();
         if (isRemovable(entry)) {
             add(entry);
@@ -209,8 +191,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public synchronized void accessTimeChanged(EntryChangeEvent event)
-    {
+    public synchronized void accessTimeChanged(EntryChangeEvent event) {
         CacheEntry entry = event.getNewEntry();
         if (remove(entry)) {
             add(entry);
@@ -219,38 +200,35 @@ public class SpaceSweeper2
 
     @AffectsSetup
     @Command(name = "sweeper reclaim margin",
-                    hint = "greedily reclaim removable space",
-                    description = "When the sweeper is triggered to reclaim "
-                                    + "space, require free space after the "
-                                    + "call to be at least this percentage "
-                                    + "of total space.")
-    public class SweeperReclaimMargin implements Callable<String>
-    {
+          hint = "greedily reclaim removable space",
+          description = "When the sweeper is triggered to reclaim "
+                + "space, require free space after the "
+                + "call to be at least this percentage "
+                + "of total space.")
+    public class SweeperReclaimMargin implements Callable<String> {
+
         @Argument
         double margin = 0.0;
 
         @Override
-        public String call()
-        {
+        public String call() {
             setMargin(margin);
-            return "Reclaim margin is now set to " + margin*100 + "% of total space.";
+            return "Reclaim margin is now set to " + margin * 100 + "% of total space.";
         }
     }
 
     @Command(name = "sweeper purge", hint = "Purges all removable files from pool",
-            description = "Initiate a sweeper thread (in this pool) to delete " +
-                    "all marked removable files from the pool. Note that, if a " +
-                    "file is currently in used, this file will not be deleted " +
-                    "even if it has been marked for removal.")
-    public class SweeperPurgeCommand implements Callable<String>
-    {
+          description = "Initiate a sweeper thread (in this pool) to delete " +
+                "all marked removable files from the pool. Note that, if a " +
+                "file is currently in used, this file will not be deleted " +
+                "even if it has been marked for removal.")
+    public class SweeperPurgeCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             new Thread("sweeper-purge") {
                 @Override
-                public void run()
-                {
+                public void run() {
                     try {
                         long bytes = reclaim(Long.MAX_VALUE, "'sweeper purge' command");
                         LOGGER.info("'sweeper purge' reclaimed {} bytes.", bytes);
@@ -263,20 +241,18 @@ public class SpaceSweeper2
     }
 
     @Command(name = "sweeper free", hint = "reclaim space",
-            description = "A sweeper thread is created to reclaim the specified " +
-                    "number of bytes by deleting removable files.")
-    public class sweeperFreeCommand implements Callable<String>
-    {
+          description = "A sweeper thread is created to reclaim the specified " +
+                "number of bytes by deleting removable files.")
+    public class sweeperFreeCommand implements Callable<String> {
+
         @Argument(usage = "Specify amount of space in bytes.")
         long bytesToFree;
 
         @Override
-        public String call()
-        {
+        public String call() {
             new Thread("sweeper-free") {
                 @Override
-                public void run()
-                {
+                public void run() {
                     try {
                         long bytes = reclaim(bytesToFree, "'sweeper free' command");
                         LOGGER.info("'sweeper free {}' reclaimed {} bytes.", bytesToFree, bytes);
@@ -290,8 +266,8 @@ public class SpaceSweeper2
     }
 
     @Command(name = "sweeper ls", hint = "list sweeper queue")
-    public class SweeperLsCommand extends DelayedCommand<String>
-    {
+    public class SweeperLsCommand extends DelayedCommand<String> {
+
         @Option(name = "l", usage = "Show creation and last access times.")
         boolean showVerbose;
 
@@ -300,8 +276,7 @@ public class SpaceSweeper2
 
         @Override
         protected String execute()
-                throws CacheException, InterruptedException
-        {
+              throws CacheException, InterruptedException {
             StringBuilder sb = new StringBuilder();
             List<PnfsId> list;
             synchronized (SpaceSweeper2.this) {
@@ -315,10 +290,14 @@ public class SpaceSweeper2
                         sb.append(Formats.field(String.valueOf(i), 3, Formats.RIGHT)).append(" ");
                         sb.append(id.toString()).append("  ");
                         sb.append(entry.getState()).append("  ");
-                        sb.append(Formats.field(String.valueOf(entry.getReplicaSize()), 11, Formats.RIGHT));
+                        sb.append(Formats.field(String.valueOf(entry.getReplicaSize()), 11,
+                              Formats.RIGHT));
                         sb.append(" ");
-                        sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getCreationTime()))).append(" ");
-                        sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getLastAccessTime()))).append(" ");
+                        sb.append(
+                                    ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getCreationTime())))
+                              .append(" ");
+                        sb.append(ISO8601_FORMAT.format(
+                              Instant.ofEpochMilli(entry.getLastAccessTime()))).append(" ");
                         if (showStorageInfo) {
                             FileAttributes attributes = entry.getFileAttributes();
                             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
@@ -339,10 +318,9 @@ public class SpaceSweeper2
     }
 
     @Override
-    public SweeperData getDataObject()
-    {
+    public SweeperData getDataObject() {
         CountingHistogram histogram =
-                        SweeperData.createUnconfiguredLastAccessHistogram();
+              SweeperData.createUnconfiguredLastAccessHistogram();
 
         SweeperData info = new SweeperData(histogram);
         info.setLabel("Space Sweeper v2");
@@ -370,13 +348,13 @@ public class SpaceSweeper2
                 lvalue = now - lastAccess;
                 if (lvalue < 0L) {
                     LOGGER.warn("repository last access time for {}"
-                                              + " is later than current "
-                                              + "system time - now {}, "
-                                              + "last access {}",
-                              id, now, lastAccess);
+                                + " is later than current "
+                                + "system time - now {}, "
+                                + "last access {}",
+                          id, now, lastAccess);
                 }
             }
-            fileLifetime.add((double)lvalue);
+            fileLifetime.add((double) lvalue);
         }
 
         histogram.setData(fileLifetime);
@@ -385,12 +363,14 @@ public class SpaceSweeper2
         return info;
     }
 
-    private String getTimeString(long secin)
-    {
-        int sec  = Math.max(0, (int)secin);
-        int min  =  sec / 60; sec  = sec  % 60;
-        int hour =  min / 60; min  = min  % 60;
-        int day  = hour / 24; hour = hour % 24;
+    private String getTimeString(long secin) {
+        int sec = Math.max(0, (int) secin);
+        int min = sec / 60;
+        sec = sec % 60;
+        int hour = min / 60;
+        min = min % 60;
+        int day = hour / 24;
+        hour = hour % 24;
 
         String sS = Integer.toString(sec);
         String mS = Integer.toString(min);
@@ -400,32 +380,30 @@ public class SpaceSweeper2
         if (day > 0) {
             sb.append(day).append(" d ");
         }
-        sb.append(hS.length() < 2 ? ( "0"+hS ) : hS).append(":");
-        sb.append(mS.length() < 2 ? ( "0"+mS ) : mS).append(":");
-        sb.append(sS.length() < 2 ? ( "0"+sS ) : sS);
+        sb.append(hS.length() < 2 ? ("0" + hS) : hS).append(":");
+        sb.append(mS.length() < 2 ? ("0" + mS) : mS).append(":");
+        sb.append(sS.length() < 2 ? ("0" + sS) : sS);
 
-        return sb.toString() ;
+        return sb.toString();
     }
 
     @Command(name = "sweeper get lru", hint = "get lru file time",
-            description = "Return last access time (in seconds) of the least recently " +
-                    "used (lsu) file on the pool.")
-    public class SweeperGetLruCommand implements Callable<String>
-    {
+          description = "Return last access time (in seconds) of the least recently " +
+                "used (lsu) file on the pool.")
+    public class SweeperGetLruCommand implements Callable<String> {
+
         @Option(name = "f", usage = "Show a returned time in this format: day hour:minutes:seconds")
         boolean f;
 
         @Override
-        public String call()
-        {
+        public String call() {
             long lru = (System.currentTimeMillis() - getLru()) / 1000L;
             return f ? getTimeString(lru) : (String.valueOf(lru));
         }
     }
 
     private long reclaim(long amount, String why)
-        throws InterruptedException
-    {
+          throws InterruptedException {
         LOGGER.debug("Sweeper tries to reclaim {} bytes.", amount);
 
         /* We copy the entries into a tmp list to avoid
@@ -436,7 +414,7 @@ public class SpaceSweeper2
         /* Delete the files.
          */
         long deleted = 0;
-        for (PnfsId id: tmpList) {
+        for (PnfsId id : tmpList) {
             try {
                 CacheEntry entry = _repository.getEntry(id);
 
@@ -470,26 +448,23 @@ public class SpaceSweeper2
         return deleted;
     }
 
-    private synchronized long getMarginalBytes()
-    {
+    private synchronized long getMarginalBytes() {
         double reclaim = _repository.getSpaceRecord().getTotalSpace() * _margin;
         LOGGER.debug("sweeper margin is {}, marginal space to reclaim is {} bytes.",
-                   _margin, reclaim);
-        return (long)(reclaim);
+              _margin, reclaim);
+        return (long) (reclaim);
     }
 
     /**
-     * Blocks until the requested space is larger than the free space
-     * and removable space exists. Returns the number of requested
-     * space exceeding the amount of free space.
+     * Blocks until the requested space is larger than the free space and removable space exists.
+     * Returns the number of requested space exceeding the amount of free space.
      */
     public long waitForRequests()
-        throws InterruptedException
-    {
+          throws InterruptedException {
         Account account = _account;
         synchronized (account) {
             while (account.getRequested() <= account.getFree() ||
-                   account.getRemovable() == 0) {
+                  account.getRemovable() == 0) {
                 account.wait();
             }
             return getMarginalBytes() + account.getRequested() - account.getFree();
@@ -497,8 +472,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             while (true) {
                 if (reclaim(waitForRequests(), "sweeper making space for new data") == 0) {
@@ -510,7 +484,7 @@ public class SpaceSweeper2
                      * excessive CPU consumption we sleep for 10
                      * seconds after each iteration.
                      */
-                    synchronized(this) {
+                    synchronized (this) {
                         /*
                          * will be waked up if new entry added into list
                          */
@@ -529,8 +503,8 @@ public class SpaceSweeper2
     /**
      * Queue of keys ordered by a timestamp.
      */
-    private static class LruQueue<T extends Comparable<T>>
-    {
+    private static class LruQueue<T extends Comparable<T>> {
+
         /**
          * Tracks the time stamp of each element in the queue.
          */
@@ -539,18 +513,19 @@ public class SpaceSweeper2
         /**
          * Elements sorted by access time and value.
          * <p>
-         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator is used
-         * to ensure consistency with equals (otherwise two keys with the same time would be collapsed to
-         * a single element in the set).
+         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator
+         * is used to ensure consistency with equals (otherwise two keys with the same time would be
+         * collapsed to a single element in the set).
          * <p>
-         * Any element inserted into this set must have its access time recorded in {@code timeStamps}
-         * before being inserted into the set. The time must not change while the key is in the set.
+         * Any element inserted into this set must have its access time recorded in {@code
+         * timeStamps} before being inserted into the set. The time must not change while the key is
+         * in the set.
          */
         private final SortedSet<T> queue =
-                new TreeSet<>(Comparator.<T, Long>comparing(k -> timeStamps.getOrDefault(k, 0L)).thenComparing(naturalOrder()));
+              new TreeSet<>(Comparator.<T, Long>comparing(k -> timeStamps.getOrDefault(k, 0L))
+                    .thenComparing(naturalOrder()));
 
-        public synchronized boolean add(T key, long time)
-        {
+        public synchronized boolean add(T key, long time) {
             if (timeStamps.putIfAbsent(key, time) == null) {
                 queue.add(key);
                 return true;
@@ -558,8 +533,7 @@ public class SpaceSweeper2
             return false;
         }
 
-        public synchronized boolean remove(T key)
-        {
+        public synchronized boolean remove(T key) {
             if (queue.remove(key)) {
                 timeStamps.remove(key);
                 return true;
@@ -567,24 +541,21 @@ public class SpaceSweeper2
             return false;
         }
 
-        public synchronized T getLeastRecentlyUsedElement()
-        {
+        public synchronized T getLeastRecentlyUsedElement() {
             if (queue.isEmpty()) {
                 return null;
             }
             return queue.first();
         }
 
-        public synchronized long getTimeOfLeastRecentlyUsedElement()
-        {
+        public synchronized long getTimeOfLeastRecentlyUsedElement() {
             if (queue.isEmpty()) {
                 return 0;
             }
             return timeStamps.get(queue.first());
         }
 
-        public synchronized List<T> values()
-        {
+        public synchronized List<T> values() {
             return new ArrayList<>(queue);
         }
     }

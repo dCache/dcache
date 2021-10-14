@@ -22,50 +22,42 @@ import java.io.IOException;
 import java.io.Reader;
 
 /**
- * This reader wraps a BufferedReader and extends the basic Reader class
- * so that it compensates for Configuration.read behaviour.  The parser's
- * behaviour results in unreliable line numbers being reported if
- * LineNumberReader is used directly.  This is due to two reasons:
+ * This reader wraps a BufferedReader and extends the basic Reader class so that it compensates for
+ * Configuration.read behaviour.  The parser's behaviour results in unreliable line numbers being
+ * reported if LineNumberReader is used directly.  This is due to two reasons:
  * <p>
- * First, the load method uses an internal buffer to read as much as
- * possible from the reader.  It is very likely that this will include
- * many lines, advancing the LineNumberReader so the line number count
- * will be unreliable.  The put method, when reporting a problem, will
- * very likely use a line number greater than that of the line where the
- * problem is located.
+ * First, the load method uses an internal buffer to read as much as possible from the reader.  It
+ * is very likely that this will include many lines, advancing the LineNumberReader so the line
+ * number count will be unreliable.  The put method, when reporting a problem, will very likely use
+ * a line number greater than that of the line where the problem is located.
  * <p>
- * Second, when finished parsing a line, if the parsing has exhausted
- * the available data then the parser will always fetch more data.  This
- * is needed if the line ends with a backslash ('\'), but the parser does
- * this unconditionally if the buffer is exhausted.  This behaviour
- * results in an out-by-one error in the line numbers, except when reading
- * the last line.
+ * Second, when finished parsing a line, if the parsing has exhausted the available data then the
+ * parser will always fetch more data.  This is needed if the line ends with a backslash ('\'), but
+ * the parser does this unconditionally if the buffer is exhausted.  This behaviour results in an
+ * out-by-one error in the line numbers, except when reading the last line.
  * <p>
- * To counter the first problem, this class replies with exactly one line
- * for each read request.  For the second problem, this class injects
- * a empty line in between each real line-read, provided the previous
- * line didn't end with a backslash.  These empty lines do not cause the
- * line number to increase but prevent the out-by-one error.
+ * To counter the first problem, this class replies with exactly one line for each read request.
+ * For the second problem, this class injects a empty line in between each real line-read, provided
+ * the previous line didn't end with a backslash.  These empty lines do not cause the line number to
+ * increase but prevent the out-by-one error.
  * <p>
- * NB. In case it isn't obvious: this class is nothing more than an ugly
- * hack.  The correct solution is to write a replacement parser.
+ * NB. In case it isn't obvious: this class is nothing more than an ugly hack.  The correct solution
+ * is to write a replacement parser.
  */
-public class ConfigurationParserAwareReader extends Reader
-{
+public class ConfigurationParserAwareReader extends Reader {
+
     private final BufferedReader _inner;
     private boolean _shouldInjectBlankLine;
     private String _remaining = "";
 
-    public ConfigurationParserAwareReader(BufferedReader reader)
-    {
+    public ConfigurationParserAwareReader(BufferedReader reader) {
         _inner = reader;
     }
 
     @Override
-    public int read(char[] cbuf, int off, int len) throws IOException
-    {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         String data = getDataForParser();
-        if(data == null) {
+        if (data == null) {
             return -1;
         }
 
@@ -74,8 +66,8 @@ public class ConfigurationParserAwareReader extends Reader
 
         _remaining = data.substring(count);
 
-        if(_remaining.isEmpty()) {
-            if (_shouldInjectBlankLine){
+        if (_remaining.isEmpty()) {
+            if (_shouldInjectBlankLine) {
                 _shouldInjectBlankLine = false;
             } else {
                 _shouldInjectBlankLine = !data.endsWith("\\\n");
@@ -85,13 +77,12 @@ public class ConfigurationParserAwareReader extends Reader
         return count;
     }
 
-    private String getDataForParser() throws IOException
-    {
-        if( !_remaining.isEmpty()) {
+    private String getDataForParser() throws IOException {
+        if (!_remaining.isEmpty()) {
             return _remaining;
         }
 
-        if(_shouldInjectBlankLine) {
+        if (_shouldInjectBlankLine) {
             return "\n";
         }
 

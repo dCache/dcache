@@ -85,22 +85,23 @@ import org.dcache.pool.statistics.StorageUnitSpaceStatistics;
  * {@link PoolInfoRequestHandler}.</p>
  */
 public class PoolData implements Serializable {
+
     private static final long serialVersionUID = 7883809367201783768L;
 
-    private List<String>          poolGroups = new ArrayList<>();
-    private Set<String>           links = new HashSet<>();
-    private CellData              cellData = new CellData();
-    private ChecksumModuleData    csmData = new ChecksumModuleData();
-    private PoolDataDetails       detailsData = new PoolDataDetails();
-    private FlushControllerData   flushData = new FlushControllerData();
-    private HSMFlushQManagerData  hsmFlushQMData = new HSMFlushQManagerData();
+    private List<String> poolGroups = new ArrayList<>();
+    private Set<String> links = new HashSet<>();
+    private CellData cellData = new CellData();
+    private ChecksumModuleData csmData = new ChecksumModuleData();
+    private PoolDataDetails detailsData = new PoolDataDetails();
+    private FlushControllerData flushData = new FlushControllerData();
+    private HSMFlushQManagerData hsmFlushQMData = new HSMFlushQManagerData();
     private JobTimeoutManagerData jtmData = new JobTimeoutManagerData();
-    private MigrationData         migrationData = new MigrationData();
-    private P2PData               ppData = new P2PData();
-    private RepositoryData        repositoryData = new RepositoryData();
-    private StorageHandlerData    storageHandlerData = new StorageHandlerData();
-    private TransferServicesData  transferServicesData = new TransferServicesData();
-    private SweeperData           sweeperData = new SweeperData();
+    private MigrationData migrationData = new MigrationData();
+    private P2PData ppData = new P2PData();
+    private RepositoryData repositoryData = new RepositoryData();
+    private StorageHandlerData storageHandlerData = new StorageHandlerData();
+    private TransferServicesData transferServicesData = new TransferServicesData();
+    private SweeperData sweeperData = new SweeperData();
 
     private Map<String, StorageUnitSpaceStatistics> spaceByStorageUnit = new HashMap<>();
 
@@ -181,7 +182,7 @@ public class PoolData implements Serializable {
     }
 
     public void setHsmFlushQMData(
-                    HSMFlushQManagerData hsmFlushQMData) {
+          HSMFlushQManagerData hsmFlushQMData) {
         this.hsmFlushQMData = hsmFlushQMData;
     }
 
@@ -194,7 +195,7 @@ public class PoolData implements Serializable {
     }
 
     public void setMigrationData(
-                    MigrationData migrationData) {
+          MigrationData migrationData) {
         this.migrationData = migrationData;
     }
 

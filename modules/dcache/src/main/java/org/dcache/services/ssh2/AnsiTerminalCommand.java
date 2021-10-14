@@ -1,28 +1,9 @@
 package org.dcache.services.ssh2;
 
-import jline.TerminalSupport;
-import jline.console.ConsoleReader;
-import jline.console.history.FileHistory;
-import jline.console.history.MemoryHistory;
-import jline.console.history.PersistentHistory;
-import org.apache.sshd.server.channel.ChannelSession;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.fusesource.jansi.Ansi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import static org.fusesource.jansi.Ansi.Color.CYAN;
+import static org.fusesource.jansi.Ansi.Color.RED;
 
 import diskCacheV111.admin.UserAdminShell;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -30,27 +11,41 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import jline.TerminalSupport;
+import jline.console.ConsoleReader;
+import jline.console.history.FileHistory;
+import jline.console.history.MemoryHistory;
+import jline.console.history.PersistentHistory;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.dcache.util.Strings;
-
-import static org.fusesource.jansi.Ansi.Color.CYAN;
-import static org.fusesource.jansi.Ansi.Color.RED;
+import org.fusesource.jansi.Ansi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class implements the Command Interface, which is part of the sshd-core
- * library allowing to access input and output stream of the ssh2Server. This
- * class is also the point of connecting the ssh2 streams to the
- * userAdminShell's input and output streams. The run() method of the thread
- * takes care of handling the user input. It lets the userAdminShell execute the
- * commands entered by the user, waits for the answer and outputs the answer to
- * the terminal of the user.
+ * This class implements the Command Interface, which is part of the sshd-core library allowing to
+ * access input and output stream of the ssh2Server. This class is also the point of connecting the
+ * ssh2 streams to the userAdminShell's input and output streams. The run() method of the thread
+ * takes care of handling the user input. It lets the userAdminShell execute the commands entered by
+ * the user, waits for the answer and outputs the answer to the terminal of the user.
+ *
  * @author bernardt
  */
 
 public class AnsiTerminalCommand implements Command, Runnable {
 
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(AnsiTerminalCommand.class);
+          LoggerFactory.getLogger(AnsiTerminalCommand.class);
     private final UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private InputStream _in;
@@ -64,13 +59,13 @@ public class AnsiTerminalCommand implements Command, Runnable {
     private PipedInputStream _pipedIn;
     private Thread _pipeThread;
 
-    public AnsiTerminalCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
-    {
+    public AnsiTerminalCommand(File historyFile, int historySize, boolean useColor,
+          UserAdminShell shell) {
         _useColors = useColor;
         _userAdminShell = shell;
         if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
-                _history  = new FileHistory(historyFile);
+                _history = new FileHistory(historyFile);
                 _history.setMaxSize(historySize);
             } catch (IOException e) {
                 LOGGER.warn("History creation failed: {}", e.getMessage());
@@ -116,9 +111,8 @@ public class AnsiTerminalCommand implements Command, Runnable {
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
         _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env)) {
             @Override
-            public void print(CharSequence s) throws IOException
-            {
-            /* See https://github.com/jline/jline2/issues/205 */
+            public void print(CharSequence s) throws IOException {
+                /* See https://github.com/jline/jline2/issues/205 */
                 getOutput().append(s);
             }
         };
@@ -171,7 +165,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
                     result = e.toString();
                 } catch (SerializationException e) {
                     result =
-                            "There is a bug here, please report to support@dcache.org";
+                          "There is a bug here, please report to support@dcache.org";
                     LOGGER.error("This must be a bug, please report to support@dcache.org.", e);
                 } catch (CommandSyntaxException e) {
                     result = e;
@@ -179,21 +173,21 @@ public class AnsiTerminalCommand implements Command, Runnable {
                     break;
                 } catch (CommandPanicException e) {
                     result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
-                             "); the service log file contains additional information. Please " +
-                             "contact support@dcache.org.";
+                          "); the service log file contains additional information. Please " +
+                          "contact support@dcache.org.";
                 } catch (CommandException e) {
                     result = e.getMessage();
                 } catch (NoRouteToCellException e) {
                     result =
-                            "Cell name does not exist or cell is not started: "
-                            + e.getMessage();
+                          "Cell name does not exist or cell is not started: "
+                                + e.getMessage();
                     LOGGER.warn("The cell the command was sent to is no "
-                                 + "longer there: {}", e.getMessage());
+                          + "longer there: {}", e.getMessage());
                 } catch (RuntimeException e) {
                     result = String.format("Command '%s' triggered a bug (%s); please" +
-                                           " locate this message in the log file of the admin service and" +
-                                           " send an email to support@dcache.org with this line and the" +
-                                           " following stack-trace", str, e);
+                          " locate this message in the log file of the admin service and" +
+                          " send an email to support@dcache.org with this line and the" +
+                          " following stack-trace", str, e);
                     LOGGER.error((String) result, e);
                 }
             } catch (InterruptedIOException e) {
@@ -209,7 +203,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
                 throw e;
             } catch (Exception e) {
                 result = e.getMessage();
-                if(result == null) {
+                if (result == null) {
                     result = e.getClass().getSimpleName() + ": (null)";
                 }
             }
@@ -247,12 +241,11 @@ public class AnsiTerminalCommand implements Command, Runnable {
         _console.flush();
     }
 
-    private static class ConsoleReaderTerminal extends TerminalSupport
-    {
+    private static class ConsoleReaderTerminal extends TerminalSupport {
+
         private final Environment _env;
 
-        private ConsoleReaderTerminal(Environment env)
-        {
+        private ConsoleReaderTerminal(Environment env) {
             super(true);
             _env = env;
             setAnsiSupported(true);
@@ -269,7 +262,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
                      */
                     int i = Integer.parseInt(h);
                     return i == 0 ? Integer.MAX_VALUE : i;
-                } catch(NumberFormatException ignored) {
+                } catch (NumberFormatException ignored) {
                 }
             }
             return super.getHeight();
@@ -285,15 +278,15 @@ public class AnsiTerminalCommand implements Command, Runnable {
                      */
                     int i = Integer.parseInt(w);
                     return i == 0 ? Integer.MAX_VALUE : i;
-                } catch(NumberFormatException ignored) {
+                } catch (NumberFormatException ignored) {
                 }
             }
             return super.getWidth();
         }
     }
 
-    private class Pipe implements Runnable
-    {
+    private class Pipe implements Runnable {
+
         public static final int CTRL_C = 3;
 
         public void run() {

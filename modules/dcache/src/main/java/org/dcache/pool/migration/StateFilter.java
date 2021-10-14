@@ -7,19 +7,17 @@ import org.dcache.pool.repository.ReplicaState;
 /**
  * Repository entry filter accepting entries in particular states.
  */
-public class StateFilter implements Predicate<CacheEntry>
-{
+public class StateFilter implements Predicate<CacheEntry> {
+
     private final ReplicaState[] _states;
 
-    public StateFilter(ReplicaState... states)
-    {
+    public StateFilter(ReplicaState... states) {
         _states = states;
     }
 
     @Override
-    public boolean test(CacheEntry entry)
-    {
-        for (ReplicaState state: _states) {
+    public boolean test(CacheEntry entry) {
+        for (ReplicaState state : _states) {
             if (entry.getState() == state) {
                 return true;
             }

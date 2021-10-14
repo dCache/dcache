@@ -2,24 +2,22 @@ package org.dcache.services.info.serialisation;
 
 import com.google.common.base.Objects;
 import com.google.gson.stream.JsonWriter;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
-
 import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StringStateValue;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Serialise state into a json object.
  */
-public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
-{
+public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser {
+
     public static final String NAME = "json";
     private StateExhibitor _exhibitor;
 
@@ -28,14 +26,12 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     private StatePath _top;
 
     @Required
-    public void setStateExhibitor(StateExhibitor exhibitor)
-    {
+    public void setStateExhibitor(StateExhibitor exhibitor) {
         _exhibitor = exhibitor;
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue metric)
-    {
+    public void visitString(StatePath path, StringStateValue metric) {
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
@@ -44,8 +40,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue metric)
-    {
+    public void visitInteger(StatePath path, IntegerStateValue metric) {
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
@@ -54,8 +49,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue metric)
-    {
+    public void visitBoolean(StatePath path, BooleanStateValue metric) {
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
@@ -64,8 +58,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue metric)
-    {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue metric) {
         try {
             _writer.name(path.getLastElement()).value(metric.getValue());
         } catch (IOException e) {
@@ -74,8 +67,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata)
-    {
+    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
         if (!isInsideScope(path) || Objects.equal(_top, path)) {
             return;
         }
@@ -89,8 +81,7 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata)
-    {
+    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
         if (!isInsideScope(path) || Objects.equal(_top, path)) {
             return;
         }
@@ -103,20 +94,17 @@ public class JsonSerialiser extends SubtreeVisitor implements StateSerialiser
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return NAME;
     }
 
     @Override
-    public String serialise()
-    {
+    public String serialise() {
         return serialise(null);
     }
 
     @Override
-    public String serialise(StatePath start)
-    {
+    public String serialise(StatePath start) {
         _top = start;
 
         _string = new StringWriter();

@@ -69,11 +69,12 @@ import org.dcache.vehicles.CorruptFileMessage;
 
 /**
  * <p>Notifies on the CorruptFile topic and sends
- *      an alarm when a broken file is discovered on a pool.</p>
+ * an alarm when a broken file is discovered on a pool.</p>
  */
 public final class BrokenFileListener implements StateChangeListener {
+
     private final CellStub corruptFileTopic;
-    private final String   poolName;
+    private final String poolName;
 
     public BrokenFileListener(CellStub corruptFileTopic, String poolName) {
         this.corruptFileTopic = corruptFileTopic;
@@ -89,7 +90,7 @@ public final class BrokenFileListener implements StateChangeListener {
     public void stateChanged(StateChangeEvent event) {
         if (event.getNewState() == ReplicaState.BROKEN) {
             corruptFileTopic.notify(new CorruptFileMessage(poolName,
-                                                           event.getPnfsId()));
+                  event.getPnfsId()));
         }
     }
 

@@ -61,9 +61,10 @@ package org.dcache.resilience.util;
 
 /**
  * <p>Indicates a failure to select source or targets for copy and remove
- *    operations.</p>
+ * operations.</p>
  */
 public class LocationSelectionException extends Exception {
+
     private static final long serialVersionUID = 8432044084610575263L;
 
     public LocationSelectionException(String format) {

@@ -18,13 +18,11 @@
 package diskCacheV111.util;
 
 /**
- * An attempt was made to create an extended attribute only that attribute
- * already exists.
+ * An attempt was made to create an extended attribute only that attribute already exists.
  */
-public class AttributeExistsCacheException extends CacheException
-{
-    public AttributeExistsCacheException(String message, Throwable cause)
-    {
+public class AttributeExistsCacheException extends CacheException {
+
+    public AttributeExistsCacheException(String message, Throwable cause) {
         super(ATTRIBUTE_EXISTS, message, cause);
     }
 }

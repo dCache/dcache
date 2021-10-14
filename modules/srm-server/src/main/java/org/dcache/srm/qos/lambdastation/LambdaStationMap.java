@@ -76,17 +76,15 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.qos.lambdastation;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.Text;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 //import org.w3c.dom.Element;
 //import org.w3c.dom.NodeList;
@@ -103,13 +101,16 @@ import java.util.StringTokenizer;
 
 
 public class LambdaStationMap {
+
     private final List<Site> Sites = new LinkedList<>();
 
 
     private class Site {
+
         public final String domain;
         public final String name;
         public final boolean enabled;
+
         public Site(String domain, String name, boolean enabled) {
             this.domain = domain;
             this.name = name;
@@ -117,19 +118,17 @@ public class LambdaStationMap {
         }
     }
 
-    /** Creates a new instance of Configuration */
+    /**
+     * Creates a new instance of Configuration
+     */
     public LambdaStationMap() {
 
     }
 
-    public LambdaStationMap(String map_file)
-    {
-        try
-        {
+    public LambdaStationMap(String map_file) {
+        try {
             read(map_file);
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -139,74 +138,70 @@ public class LambdaStationMap {
         String domain = "";
         String name = "";
         DocumentBuilderFactory factory =
-        DocumentBuilderFactory.newInstance();
+              DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document document = builder.parse(file);
-        Node root =document.getFirstChild();
-        for(;root != null && !"l-station-map".equals(root.getNodeName());
-        root = document.getNextSibling()) {
+        Node root = document.getFirstChild();
+        for (; root != null && !"l-station-map".equals(root.getNodeName());
+              root = document.getNextSibling()) {
         }
-        if(root == null) {
+        if (root == null) {
             System.err.println(" error, root element \"l-station-map\" is not found");
             throw new IOException();
         }
 
+        if (root != null && root.getNodeName().equals("l-station-map")) {
 
-        if(root != null && root.getNodeName().equals("l-station-map")) {
+            Node node = root.getFirstChild();
+            for (; node != null; node = node.getNextSibling()) {
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    //System.out.println("ELEMENT "+node.getNodeName());
 
-
-           Node node = root.getFirstChild();
-           for(;node != null; node = node.getNextSibling()) {
-                if(node.getNodeType()== Node.ELEMENT_NODE) {
-		    //System.out.println("ELEMENT "+node.getNodeName());
-
-                    if (node.getNodeName().equals("site")){
+                    if (node.getNodeName().equals("site")) {
                         boolean enabled = true;
                         Node child = node.getFirstChild();
-			//System.out.println("CHILD1 ELEMENT "+child.getNodeName());
-                        for(;child != null; child = child.getNextSibling()) {
-                            if(child.getNodeType() == Node.ELEMENT_NODE) {
-				//System.out.println("CHILD ELEMENT "+child.getNodeName());
-                               Node g_c = child.getFirstChild();
-                               if (g_c.getNodeType() == Node.TEXT_NODE) {
-                                    Text t  = (Text)g_c;
+                        //System.out.println("CHILD1 ELEMENT "+child.getNodeName());
+                        for (; child != null; child = child.getNextSibling()) {
+                            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                                //System.out.println("CHILD ELEMENT "+child.getNodeName());
+                                Node g_c = child.getFirstChild();
+                                if (g_c.getNodeType() == Node.TEXT_NODE) {
+                                    Text t = (Text) g_c;
                                     String text_value = t.getData().trim();
                                     String node_name = child.getNodeName().trim();
-				    //System.out.println("NODE="+node_name+" VAL="+text_value);
-                                   switch (node_name) {
-                                   case "domain":
-                                       domain = text_value;
-                                       break;
-                                   case "enable-LS":
-                                       if (text_value.startsWith("n")) {
-                                           enabled = false;
-                                       }
-                                       break;
-                                   case "name":
-                                       name = text_value;
-                                       break;
-                                   }
-                               }
+                                    //System.out.println("NODE="+node_name+" VAL="+text_value);
+                                    switch (node_name) {
+                                        case "domain":
+                                            domain = text_value;
+                                            break;
+                                        case "enable-LS":
+                                            if (text_value.startsWith("n")) {
+                                                enabled = false;
+                                            }
+                                            break;
+                                        case "name":
+                                            name = text_value;
+                                            break;
+                                    }
+                                }
+                            } else if (child.getNodeType() == Node.TEXT_NODE) {
+                                //skip garbage
+                                Text t1 = (Text) child;
+                                String tv = t1.getData().trim();
+                                //System.out.println("TEXT "+tv);
+                                continue;
+
+
                             }
-
-			    else if (child.getNodeType() == Node.TEXT_NODE){
-				//skip garbage
-				Text t1  = (Text)child;
-				String tv = t1.getData().trim();
-				//System.out.println("TEXT "+tv);
-				continue;
-
-
-			    }
-                            if(child.getNodeType() == Node.TEXT_NODE){
-                                Text t  = (Text)child;
+                            if (child.getNodeType() == Node.TEXT_NODE) {
+                                Text t = (Text) child;
                                 String text_value = t.getData().trim();
                                 break;
                             }
                         }
                         set(domain, name, enabled);
 
-                     }
+                    }
                 }
             }
         }
@@ -215,14 +210,14 @@ public class LambdaStationMap {
 
 
     private void set(String name, String value, boolean enabled) {
-        name=name.trim();
-        value=value==null?null:value.trim();
+        name = name.trim();
+        value = value == null ? null : value.trim();
         Site site = new Site(name, value, enabled);
         this.Sites.add(site);
     }
 
     public void say(String words) {
-        System.out.println("LS_MAP: "+words);
+        System.out.println("LS_MAP: " + words);
     }
 
 
@@ -243,10 +238,10 @@ public class LambdaStationMap {
     }
 
     public String getName(String url) {
-	StringTokenizer urlTokenizer
-	    = new StringTokenizer(url, ":");
+        StringTokenizer urlTokenizer
+              = new StringTokenizer(url, ":");
         String tok = (String) urlTokenizer.nextElement();
-	tok = (String) urlTokenizer.nextElement(); // first is srm, file, etc
+        tok = (String) urlTokenizer.nextElement(); // first is srm, file, etc
         //say("MAP="+toString()+"token="+tok);
         for (Object Site : Sites) {
             //say("GETNAME");
@@ -282,8 +277,6 @@ public class LambdaStationMap {
         System.out.println("MAP:"+str);
     }// main
     */
-
-
 
 
 }

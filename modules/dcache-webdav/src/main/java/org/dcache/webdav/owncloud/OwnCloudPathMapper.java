@@ -17,31 +17,28 @@
  */
 package org.dcache.webdav.owncloud;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.util.function.Function;
-
-import diskCacheV111.util.FsPath;
-
-import org.dcache.http.PathMapper;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import diskCacheV111.util.FsPath;
+import java.util.function.Function;
+import javax.servlet.http.HttpServletRequest;
+import org.dcache.http.PathMapper;
+
 /**
- * Extends the original PathMapper to support mapping of resources at certain OwnCloud-specific paths.
+ * Extends the original PathMapper to support mapping of resources at certain OwnCloud-specific
+ * paths.
+ *
  * @author ugrin
  */
-public class OwnCloudPathMapper extends PathMapper
-{
+public class OwnCloudPathMapper extends PathMapper {
+
     private String _prefix;
 
-    public void setOwnCloudPrefix(String owncloudWebDAVPath)
-    {
+    public void setOwnCloudPrefix(String owncloudWebDAVPath) {
         _prefix = owncloudWebDAVPath;
     }
 
-    private String removePrefix(HttpServletRequest request, String path)
-    {
+    private String removePrefix(HttpServletRequest request, String path) {
         if (OwncloudClients.isSyncClient(request)) {
             checkArgument(!path.isEmpty(), "empty path");
 
@@ -58,14 +55,13 @@ public class OwnCloudPathMapper extends PathMapper
     }
 
     @Override
-    public FsPath asDcachePath(HttpServletRequest request, String path)
-    {
+    public FsPath asDcachePath(HttpServletRequest request, String path) {
         return super.asDcachePath(request, removePrefix(request, path));
     }
 
     @Override
-    public <E extends Exception> FsPath asDcachePath(HttpServletRequest request, String path, Function<String,E> asException) throws E
-    {
+    public <E extends Exception> FsPath asDcachePath(HttpServletRequest request, String path,
+          Function<String, E> asException) throws E {
         return super.asDcachePath(request, removePrefix(request, path), asException);
     }
 }

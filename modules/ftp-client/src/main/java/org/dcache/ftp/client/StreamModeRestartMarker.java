@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,23 +16,19 @@
 package org.dcache.ftp.client;
 
 /**
- * Represents FTP stream mode restart marker, as defined in RFC 959.
- * Not used.
+ * Represents FTP stream mode restart marker, as defined in RFC 959. Not used.
  */
 public class StreamModeRestartMarker
-        implements Marker, RestartData
-{
+      implements Marker, RestartData {
 
     protected final long offset;
 
-    public StreamModeRestartMarker(long offset)
-    {
+    public StreamModeRestartMarker(long offset) {
         this.offset = offset;
     }
 
     @Override
-    public String toFtpCmdArgument()
-    {
+    public String toFtpCmdArgument() {
         return String.valueOf(offset);
     }
 }

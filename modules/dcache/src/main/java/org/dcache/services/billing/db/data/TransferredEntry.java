@@ -65,6 +65,7 @@ import java.util.Map;
  * @author arossi
  */
 public abstract class TransferredEntry extends SizeEntry implements IHistogramData {
+
     private static final long serialVersionUID = -3981596987619899105L;
 
     public static final String TRANSFERRED = "transferred";

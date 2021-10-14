@@ -18,32 +18,29 @@
 package org.dcache.xrootd.plugins;
 
 import io.netty.channel.ChannelHandler;
+import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.util.ChannelCdcSessionHandlerWrapper;
+public class AccessLogHandlerFactory implements ChannelHandlerFactory {
 
-public class AccessLogHandlerFactory implements ChannelHandlerFactory
-{
     protected final Logger accessLogger = LoggerFactory.getLogger("org.dcache.access.xrootd");
 
-    protected final ChannelHandler handler = new ChannelCdcSessionHandlerWrapper(new AccessLogHandler(accessLogger));
+    protected final ChannelHandler handler = new ChannelCdcSessionHandlerWrapper(
+          new AccessLogHandler(accessLogger));
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return AccessLogHandlerProvider.NAME;
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Generates an access log";
     }
 
     @Override
-    public ChannelHandler createHandler()
-    {
+    public ChannelHandler createHandler() {
         return handler;
     }
 }

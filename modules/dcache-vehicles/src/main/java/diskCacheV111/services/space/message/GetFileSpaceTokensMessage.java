@@ -1,12 +1,12 @@
 package diskCacheV111.services.space.message;
 
+import static java.util.Objects.requireNonNull;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
-import static java.util.Objects.requireNonNull;
+public class GetFileSpaceTokensMessage extends Message {
 
-public class GetFileSpaceTokensMessage extends Message
-{
     private static final long serialVersionUID = 8671820912506234154L;
     private final PnfsId pnfsId;
     private long[] spaceTokens;

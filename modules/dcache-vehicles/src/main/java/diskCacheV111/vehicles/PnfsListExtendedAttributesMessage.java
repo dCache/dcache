@@ -17,34 +17,29 @@
  */
 package diskCacheV111.vehicles;
 
-import java.util.Set;
-
 import diskCacheV111.util.PnfsId;
+import java.util.Set;
 
 /**
  * Request a list of all extended attributes of a particular target.
  */
-public class PnfsListExtendedAttributesMessage extends PnfsMessage
-{
+public class PnfsListExtendedAttributesMessage extends PnfsMessage {
+
     private Set<String> _names;
 
-    public PnfsListExtendedAttributesMessage(PnfsId id)
-    {
+    public PnfsListExtendedAttributesMessage(PnfsId id) {
         super(id);
     }
 
-    public PnfsListExtendedAttributesMessage(String path)
-    {
+    public PnfsListExtendedAttributesMessage(String path) {
         setPnfsPath(path);
     }
 
-    public Set<String> getNames()
-    {
+    public Set<String> getNames() {
         return _names;
     }
 
-    public void setNames(Set<String> names)
-    {
+    public void setNames(Set<String> names) {
         _names = names;
     }
 }

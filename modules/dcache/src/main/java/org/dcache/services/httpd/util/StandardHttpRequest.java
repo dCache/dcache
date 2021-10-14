@@ -2,37 +2,34 @@ package org.dcache.services.httpd.util;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import dmg.util.HttpRequest;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import dmg.util.HttpRequest;
-import java.util.Base64;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Basic implementation of internal interface used to hold objects for processing
- * an Http request.
+ * Basic implementation of internal interface used to hold objects for processing an Http request.
  *
  * @author arossi
  */
 public class StandardHttpRequest implements HttpRequest {
+
     private static final Splitter PATH_SPLITTER
-        = Splitter.on('/').omitEmptyStrings();
+          = Splitter.on('/').omitEmptyStrings();
     private static final Logger LOGGER
-        = LoggerFactory.getLogger(StandardHttpRequest.class);
+          = LoggerFactory.getLogger(StandardHttpRequest.class);
 
     private final OutputStream out;
     private final PrintWriter pw;
@@ -48,7 +45,7 @@ public class StandardHttpRequest implements HttpRequest {
     private boolean authDone;
 
     public StandardHttpRequest(HttpServletRequest request,
-                    HttpServletResponse response) throws IOException, URISyntaxException {
+          HttpServletResponse response) throws IOException, URISyntaxException {
         this.request = request;
         this.response = response;
         out = response.getOutputStream();

@@ -64,32 +64,33 @@ import java.io.Serializable;
 import org.dcache.qos.data.QoSAction;
 
 public class CompletedQoSAction implements Serializable {
-  private static final long serialVersionUID = -8527569804388994644L;
-  private final PnfsId pnfsId;
-  private final QoSAction action;
-  private final Serializable error;
 
-  public CompletedQoSAction(PnfsId pnfsId, QoSAction action, Serializable error) {
-    this.pnfsId = pnfsId;
-    this.action = action;
-    this.error = error;
-  }
+    private static final long serialVersionUID = -8527569804388994644L;
+    private final PnfsId pnfsId;
+    private final QoSAction action;
+    private final Serializable error;
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public CompletedQoSAction(PnfsId pnfsId, QoSAction action, Serializable error) {
+        this.pnfsId = pnfsId;
+        this.action = action;
+        this.error = error;
+    }
 
-  public QoSAction getAction() {
-    return action;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public Serializable getError() {
-    return error;
-  }
+    public QoSAction getAction() {
+        return action;
+    }
 
-  public String toString() {
-    return "ACTION[" + action + "][" + pnfsId + "]"
-        + (error  == null ? " success" : " failed with " + error )
-        + " (" + super.toString() + ")";
-  }
+    public Serializable getError() {
+        return error;
+    }
+
+    public String toString() {
+        return "ACTION[" + action + "][" + pnfsId + "]"
+              + (error == null ? " success" : " failed with " + error)
+              + " (" + super.toString() + ")";
+    }
 }

@@ -59,11 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.List;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 
 public abstract class SelectionTypeWithLinks extends SelectionType {
 

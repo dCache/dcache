@@ -1,19 +1,13 @@
 package org.dcache.services.info.gathers.poolmanager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Map;
-
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
-
 import dmg.cells.nucleus.UOID;
-
+import java.util.Collection;
+import java.util.Map;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
@@ -23,26 +17,27 @@ import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class processing incoming CellMessages that contain CostModulePoolInfoTable
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolCostMsgHandler extends CellMessageHandlerSkel
-{
+public class PoolCostMsgHandler extends CellMessageHandlerSkel {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolCostMsgHandler.class);
 
     public PoolCostMsgHandler(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgMetaRepo)
-    {
+          MessageMetadataRepository<UOID> msgMetaRepo) {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long msgDeliveryPeriod)
-    {
-        long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
+    public void process(Object msgPayload, long msgDeliveryPeriod) {
+        long metricLifetime = (long) (msgDeliveryPeriod
+              * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 
         if (!(msgPayload instanceof CostModulePoolInfoTable)) {
             LOGGER.error("received non-CostModulePoolInfoTable object in message");
@@ -62,13 +57,13 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
 
     /**
      * Build a StateUpdate for the supplied collection of pool information
-     * @param poolInfos a collection of informaiton about the pools
+     *
+     * @param poolInfos      a collection of informaiton about the pools
      * @param metricLifetime the duration metrics should remain
      * @return a StateUpdate that updates the state
      */
     private StateUpdate buildUpdate(Collection<PoolCostInfo> poolInfos,
-            long metricLifetime)
-    {
+          long metricLifetime) {
         StatePath poolsPath = new StatePath("pools");
 
         StateUpdate update = new StateUpdate();
@@ -84,10 +79,14 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
             /*
              *  Add all the standard queues
              */
-            addTapeQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(), metricLifetime);
-            addTapeQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(), metricLifetime);
-            addQueueInfo(update, pathToQueues, "p2p-queue", thisPoolInfo.getP2pQueue(), metricLifetime);
-            addQueueInfo(update, pathToQueues, "p2p-clientqueue", thisPoolInfo.getP2pClientQueue(), metricLifetime);
+            addTapeQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(),
+                  metricLifetime);
+            addTapeQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(),
+                  metricLifetime);
+            addQueueInfo(update, pathToQueues, "p2p-queue", thisPoolInfo.getP2pQueue(),
+                  metricLifetime);
+            addQueueInfo(update, pathToQueues, "p2p-clientqueue", thisPoolInfo.getP2pClientQueue(),
+                  metricLifetime);
 
 
             /*
@@ -101,24 +100,23 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
              */
             String defaultQueue = thisPoolInfo.getDefaultQueueName();
             update.appendUpdate(pathToQueues.newChild("default-queue"),
-                                new StringStateValue(defaultQueue, metricLifetime));
-
+                  new StringStateValue(defaultQueue, metricLifetime));
 
             /**
              *  Add information about this pool's space utilisation.
              */
 
-            addSpaceInfo(update, pathToThisPool.newChild("space"), thisPoolInfo.getSpaceInfo(), metricLifetime);
+            addSpaceInfo(update, pathToThisPool.newChild("space"), thisPoolInfo.getSpaceInfo(),
+                  metricLifetime);
         }
 
         return update;
     }
 
 
-
     /**
-     * Add information about a specific queue to a pool's portion of dCache state.
-     * The state tree looks like:
+     * Add information about a specific queue to a pool's portion of dCache state. The state tree
+     * looks like:
      *
      * <pre>
      * [dCache]
@@ -138,26 +136,24 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
      *  |   |   |   +--[&lt;queueName2>]
      * </pre>
      *
-     * @param pathToQueues the StatePath pointing to queues (e.g.,
-     * "pools.mypool_1.queues")
-     * @param queueName the name of the queue.
+     * @param pathToQueues the StatePath pointing to queues (e.g., "pools.mypool_1.queues")
+     * @param queueName    the name of the queue.
      */
     private void addQueueInfo(StateUpdate stateUpdate, StatePath pathToQueues,
-            String queueName, PoolQueueInfo info, long lifetime)
-    {
+          String queueName, PoolQueueInfo info, long lifetime) {
         StatePath queuePath = pathToQueues.newChild(queueName);
 
         stateUpdate.appendUpdate(queuePath.newChild("active"),
-                new IntegerStateValue(info.getActive(), lifetime));
+              new IntegerStateValue(info.getActive(), lifetime));
         stateUpdate.appendUpdate(queuePath.newChild("max-active"),
-                new IntegerStateValue(info.getMaxActive(), lifetime));
+              new IntegerStateValue(info.getMaxActive(), lifetime));
         stateUpdate.appendUpdate(queuePath.newChild("queued"),
-                new IntegerStateValue(info.getQueued(), lifetime));
+              new IntegerStateValue(info.getQueued(), lifetime));
     }
 
     /**
-     * Add information about a specific tape queue to a pool's portion of dCache state.
-     * The state tree looks like:
+     * Add information about a specific tape queue to a pool's portion of dCache state. The state
+     * tree looks like:
      *
      * <pre>
      * [dCache]
@@ -175,30 +171,27 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
      *  |   |   |   |
      *  |   |   |   +--[&lt;queueName2>]
      * </pre>
+     * <p>
+     * The difference to regular queues is that tape queues to not have a public maximum value for
+     * active tasks (specific providers may have one, but this is internal to a provider).
      *
-     * The difference to regular queues is that tape queues to not have a public maximum
-     * value for active tasks (specific providers may have one, but this is internal to
-     * a provider).
-     *
-     * @param pathToQueues the StatePath pointing to queues (e.g.,
-     * "pools.mypool_1.queues")
-     * @param queueName the name of the queue.
+     * @param pathToQueues the StatePath pointing to queues (e.g., "pools.mypool_1.queues")
+     * @param queueName    the name of the queue.
      */
     private void addTapeQueueInfo(StateUpdate stateUpdate, StatePath pathToQueues,
-            String queueName, PoolQueueInfo info, long lifetime)
-    {
+          String queueName, PoolQueueInfo info, long lifetime) {
         StatePath queuePath = pathToQueues.newChild(queueName);
 
         stateUpdate.appendUpdate(queuePath.newChild("active"),
-                new IntegerStateValue(info.getActive(), lifetime));
+              new IntegerStateValue(info.getActive(), lifetime));
         stateUpdate.appendUpdate(queuePath.newChild("queued"),
-                new IntegerStateValue(info.getQueued(), lifetime));
+              new IntegerStateValue(info.getQueued(), lifetime));
     }
 
 
     /**
-     * Adds information from a pool's PoolSpaceInfo object.
-     * We add this into the state in the following way:
+     * Adds information from a pool's PoolSpaceInfo object. We add this into the state in the
+     * following way:
      *
      * <pre>
      * [dCache]
@@ -221,30 +214,28 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
      * </pre>
      *
      * @param stateUpdate the StateUpdate we will append
-     * @param path the StatePath pointing to the space branch
-     * @param info the space information to include.
+     * @param path        the StatePath pointing to the space branch
+     * @param info        the space information to include.
      */
     private void addSpaceInfo(StateUpdate stateUpdate, StatePath pathToSpace,
-            PoolSpaceInfo info, long lifetime)
-    {
+          PoolSpaceInfo info, long lifetime) {
         SpaceInfo si = new SpaceInfo(info);
 
         si.addMetrics(stateUpdate, pathToSpace, lifetime);
 
         stateUpdate.appendUpdate(pathToSpace.newChild("gap"),
-                new IntegerStateValue(info.getGap(), lifetime));
+              new IntegerStateValue(info.getGap(), lifetime));
         stateUpdate.appendUpdate(pathToSpace.newChild("break-even"),
-                new FloatingPointStateValue(info.getBreakEven(), lifetime));
+              new FloatingPointStateValue(info.getBreakEven(), lifetime));
         stateUpdate.appendUpdate(pathToSpace.newChild("LRU-seconds"),
-                new IntegerStateValue(info.getLRUSeconds(), lifetime));
+              new IntegerStateValue(info.getLRUSeconds(), lifetime));
     }
 
 
     /**
-     * Add information about all "named" queues.  The available information is the
-     * same as with regular queues, but there are arbirary number of these. The
-     * information is presented underneath the named-queues branch of the queues
-     * branch:
+     * Add information about all "named" queues.  The available information is the same as with
+     * regular queues, but there are arbirary number of these. The information is presented
+     * underneath the named-queues branch of the queues branch:
      *
      * <pre>
      * [dCache]
@@ -263,13 +254,12 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
      *  |   |   |   |   |    +--max-active: nnn
      *  </pre>
      *
-     * @param update the StateUpdate we are appending to
+     * @param update       the StateUpdate we are appending to
      * @param pathToQueues the StatePath pointing to [queues] above
      * @param thisPoolInfo the information about this pool.
      */
     private void addNamedQueues(StateUpdate update, StatePath pathToQueues,
-            PoolCostInfo thisPoolInfo, long lifetime)
-    {
+          PoolCostInfo thisPoolInfo, long lifetime) {
         Map<String, NamedPoolQueueInfo> namedQueuesInfo = thisPoolInfo.getExtendedMoverHash();
 
         if (namedQueuesInfo == null) {
@@ -280,7 +270,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
 
         for (NamedPoolQueueInfo thisNamedQueueInfo : namedQueuesInfo.values()) {
             addQueueInfo(update, pathToNamedQueues, thisNamedQueueInfo.getName(),
-                    thisNamedQueueInfo, lifetime);
+                  thisNamedQueueInfo, lifetime);
         }
     }
 }

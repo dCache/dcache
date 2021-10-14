@@ -17,48 +17,43 @@
  */
 package org.dcache.pool.statistics;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.dcache.pool.repository.ForwardingReplicaRecord;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * A ReplicaRecord that delegates all activity to some inner ReplicaRecord while
- * offering the possibility to monitor IO performance.
+ * A ReplicaRecord that delegates all activity to some inner ReplicaRecord while offering the
+ * possibility to monitor IO performance.
  */
-public class IoStatisticsReplicaRecord extends ForwardingReplicaRecord
-{
+public class IoStatisticsReplicaRecord extends ForwardingReplicaRecord {
+
     private final ReplicaRecord inner;
 
-    public enum OpenFlags implements OpenOption
-    {
+    public enum OpenFlags implements OpenOption {
         /**
          * Specifying this flag results in the channel collecting IO statistics.
          */
         ENABLE_IO_STATISTICS,
     }
 
-    public IoStatisticsReplicaRecord(ReplicaRecord inner)
-    {
+    public IoStatisticsReplicaRecord(ReplicaRecord inner) {
         this.inner = requireNonNull(inner);
     }
 
     @Override
-    public ReplicaRecord delegate()
-    {
+    public ReplicaRecord delegate() {
         return inner;
     }
 
     @Override
     public synchronized RepositoryChannel openChannel(Set<? extends OpenOption> mode)
-            throws IOException
-    {
+          throws IOException {
         if (mode.contains(OpenFlags.ENABLE_IO_STATISTICS)) {
             mode = new HashSet<>(mode);
             mode.remove(OpenFlags.ENABLE_IO_STATISTICS);

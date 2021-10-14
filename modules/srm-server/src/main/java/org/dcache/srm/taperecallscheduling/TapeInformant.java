@@ -23,27 +23,24 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.command.Command;
-import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
-import org.dcache.srm.taperecallscheduling.spi.TapeInfoProviderProvider;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import org.dcache.srm.taperecallscheduling.spi.TapeInfoProvider;
+import org.dcache.srm.taperecallscheduling.spi.TapeInfoProviderProvider;
+import org.springframework.beans.factory.annotation.Required;
 
 public class TapeInformant implements CellMessageReceiver, CellInfoProvider, CellCommandListener {
 
     private TapeInfoProvider tapeInfoProvider;
 
     @Required
-    public void setTapeInfoProviderProvider(TapeInfoProviderProvider provider)
-    {
+    public void setTapeInfoProviderProvider(TapeInfoProviderProvider provider) {
         setTapeInfoProvider(provider.createProvider());
     }
 
-    public void setTapeInfoProvider(TapeInfoProvider provider)
-    {
+    public void setTapeInfoProvider(TapeInfoProvider provider) {
         tapeInfoProvider = provider;
     }
 
@@ -56,11 +53,12 @@ public class TapeInformant implements CellMessageReceiver, CellInfoProvider, Cel
     }
 
     @Command(name = "trs reload tape info",
-            hint = "The tape recall scheduler reloads the tape location information files on the next run")
+          hint = "The tape recall scheduler reloads the tape location information files on the next run")
     public class ReloadTapeInfoCommand implements Callable<String> {
 
         @Override
-        public synchronized String call() throws InterruptedException, NoRouteToCellException, CommandException {
+        public synchronized String call()
+              throws InterruptedException, NoRouteToCellException, CommandException {
             tapeInfoProvider.reload();
             return "Tape information will be reloaded during the next run";
         }

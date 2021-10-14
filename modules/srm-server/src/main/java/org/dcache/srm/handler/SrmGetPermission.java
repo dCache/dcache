@@ -1,10 +1,9 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -23,32 +22,29 @@ import org.dcache.srm.v2_2.TPermissionMode;
 import org.dcache.srm.v2_2.TPermissionReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+public class SrmGetPermission {
 
-public class SrmGetPermission
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmGetPermission.class);
+          LoggerFactory.getLogger(SrmGetPermission.class);
     private final AbstractStorageElement storage;
     private final SrmGetPermissionRequest request;
     private final SRMUser user;
     private SrmGetPermissionResponse response;
 
     public SrmGetPermission(SRMUser user,
-                            SrmGetPermissionRequest request,
-                            AbstractStorageElement storage,
-                            SRM srm,
-                            String client_host)
-    {
+          SrmGetPermissionRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String client_host) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
     }
 
-    public SrmGetPermissionResponse getResponse()
-    {
+    public SrmGetPermissionResponse getResponse() {
         if (response == null) {
             try {
                 response = srmGetPermission();
@@ -63,8 +59,7 @@ public class SrmGetPermission
     }
 
     private SrmGetPermissionResponse srmGetPermission()
-            throws SRMInvalidRequestException, SRMInternalErrorException
-    {
+          throws SRMInvalidRequestException, SRMInternalErrorException {
         org.apache.axis.types.URI[] surls = request.getArrayOfSURLs().getUrlArray();
         if (surls == null || surls.length == 0) {
             throw new SRMInvalidRequestException("arrayOfSURLs is empty");
@@ -77,14 +72,16 @@ public class SrmGetPermission
             TPermissionReturn p = new TPermissionReturn();
             TReturnStatus returnStatus;
             try {
-                FileMetaData fmd = storage.getFileMetaData(user, URI.create(surls[i].toString()), false);
+                FileMetaData fmd = storage.getFileMetaData(user, URI.create(surls[i].toString()),
+                      false);
                 copyPermissions(fmd, p);
                 returnStatus = new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
                 hasSuccess = true;
             } catch (SRMInternalErrorException e) {
                 throw e;
             } catch (SRMAuthorizationException e) {
-                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
+                returnStatus = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                      e.getMessage());
                 hasFailure = true;
             } catch (SRMInvalidPathException e) {
                 returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
@@ -99,19 +96,23 @@ public class SrmGetPermission
             permissionsArray[i] = p;
         }
         return new SrmGetPermissionResponse(
-                getSummaryReturnStatus(hasFailure, hasSuccess), new ArrayOfTPermissionReturn(permissionsArray));
+              getSummaryReturnStatus(hasFailure, hasSuccess),
+              new ArrayOfTPermissionReturn(permissionsArray));
     }
 
-    private static void copyPermissions(FileMetaData fmd, TPermissionReturn p)
-    {
+    private static void copyPermissions(FileMetaData fmd, TPermissionReturn p) {
         String owner = fmd.owner;
         String group = fmd.group;
         int permissions = fmd.permMode;
-        TPermissionMode upm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions >> 6) & 0x7));
-        TPermissionMode gpm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions >> 3) & 0x7));
-        TPermissionMode opm = PermissionMaskToTPermissionMode.maskToTPermissionMode((permissions & 0x7));
+        TPermissionMode upm = PermissionMaskToTPermissionMode.maskToTPermissionMode(
+              ((permissions >> 6) & 0x7));
+        TPermissionMode gpm = PermissionMaskToTPermissionMode.maskToTPermissionMode(
+              ((permissions >> 3) & 0x7));
+        TPermissionMode opm = PermissionMaskToTPermissionMode.maskToTPermissionMode(
+              (permissions & 0x7));
 
-        TGroupPermission[] groupPermissionArray = new TGroupPermission[] { new TGroupPermission(group, gpm) };
+        TGroupPermission[] groupPermissionArray = new TGroupPermission[]{
+              new TGroupPermission(group, gpm)};
 
         p.setArrayOfGroupPermissions(new ArrayOfTGroupPermission(groupPermissionArray));
         p.setOwnerPermission(upm);
@@ -119,13 +120,12 @@ public class SrmGetPermission
         p.setOwner(owner);
     }
 
-    public static final SrmGetPermissionResponse getFailedResponse(String error)
-    {
+    public static final SrmGetPermissionResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmGetPermissionResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmGetPermissionResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         SrmGetPermissionResponse response = new SrmGetPermissionResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

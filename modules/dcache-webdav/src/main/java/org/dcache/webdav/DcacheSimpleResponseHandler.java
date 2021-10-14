@@ -18,53 +18,56 @@
  */
 package org.dcache.webdav;
 
+import static io.milton.http.Response.Status.SC_BAD_REQUEST;
+import static io.milton.http.Response.Status.SC_FORBIDDEN;
+import static io.milton.http.Response.Status.SC_INSUFFICIENT_STORAGE;
+import static io.milton.http.Response.Status.SC_INTERNAL_SERVER_ERROR;
+import static io.milton.http.Response.Status.SC_METHOD_NOT_ALLOWED;
+import static io.milton.http.Response.Status.SC_NOT_FOUND;
+import static io.milton.http.Response.Status.SC_NOT_IMPLEMENTED;
+import static io.milton.http.Response.Status.SC_UNAUTHORIZED;
+
 import com.google.common.net.MediaType;
 import io.milton.http.AbstractWrappingResponseHandler;
 import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.http.quota.StorageChecker;
 import io.milton.resource.Resource;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import static io.milton.http.Response.Status.*;
-
 /**
- * This provides error responses that are simple one-line explanations.  These
- * are intended for clients that cannot parse HTML.
+ * This provides error responses that are simple one-line explanations.  These are intended for
+ * clients that cannot parse HTML.
  */
-public class DcacheSimpleResponseHandler extends AbstractWrappingResponseHandler
-{
+public class DcacheSimpleResponseHandler extends AbstractWrappingResponseHandler {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DcacheSimpleResponseHandler.class);
 
     @Override
-    public void respondInsufficientStorage(Request request, Response response, StorageChecker.StorageErrorReason storageErrorReason)
-    {
+    public void respondInsufficientStorage(Request request, Response response,
+          StorageChecker.StorageErrorReason storageErrorReason) {
         sendError(response, SC_INSUFFICIENT_STORAGE, "Insufficient storage: " + storageErrorReason);
     }
 
     @Override
-    public void respondUnauthorised(Resource resource, Response response, Request request)
-    {
+    public void respondUnauthorised(Resource resource, Response response, Request request) {
         sendError(response, SC_UNAUTHORIZED, "You are not unauthorised for "
-                + request.getMethod() + " on path " + request.getAbsolutePath());
+              + request.getMethod() + " on path " + request.getAbsolutePath());
     }
 
     @Override
-    public void respondMethodNotImplemented(Resource resource, Response response, Request request)
-    {
+    public void respondMethodNotImplemented(Resource resource, Response response, Request request) {
         sendError(response, SC_NOT_IMPLEMENTED, "Method " + request.getMethod()
-                + " is not implemented.");
+              + " is not implemented.");
     }
 
     @Override
-    public void respondMethodNotAllowed(Resource res, Response response, Request request)
-    {
+    public void respondMethodNotAllowed(Resource res, Response response, Request request) {
         sendError(response, SC_METHOD_NOT_ALLOWED, "Method " + request.getMethod()
-                + " is not allowed.");
+              + " is not allowed.");
     }
 
     @Override
@@ -75,28 +78,25 @@ public class DcacheSimpleResponseHandler extends AbstractWrappingResponseHandler
     @Override
     public void respondBadRequest(Resource resource, Response response, Request request) {
         sendError(response, SC_BAD_REQUEST, "Received a bad " + request.getMethod()
-                + " request.");
+              + " request.");
     }
 
     @Override
-    public void respondForbidden(Resource resource, Response response, Request request)
-    {
+    public void respondForbidden(Resource resource, Response response, Request request) {
         sendError(response, SC_FORBIDDEN, "Permission denied for " + request.getMethod()
-                + " on path " + request.getAbsolutePath());
+              + " on path " + request.getAbsolutePath());
     }
 
     @Override
-    public void respondServerError(Request request, Response response, String reason)
-    {
+    public void respondServerError(Request request, Response response, String reason) {
         sendError(response, SC_INTERNAL_SERVER_ERROR, "Internal problem: " + reason);
     }
 
-    private void sendError(Response response, Response.Status status, String message)
-    {
+    private void sendError(Response response, Response.Status status, String message) {
         response.setStatus(status);
         response.setContentTypeHeader(MediaType.PLAIN_TEXT_UTF_8.toString());
         byte[] messageBytes = (message + "\n").getBytes(StandardCharsets.UTF_8);
-        response.setContentLengthHeader((long)messageBytes.length);
+        response.setContentLengthHeader((long) messageBytes.length);
 
         try {
             response.getOutputStream().write(messageBytes);

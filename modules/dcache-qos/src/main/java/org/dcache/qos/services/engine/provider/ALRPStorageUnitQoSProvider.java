@@ -59,6 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.engine.provider;
 
+import static diskCacheV111.util.AccessLatency.NEARLINE;
+import static diskCacheV111.util.AccessLatency.ONLINE;
+import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
+import static diskCacheV111.util.RetentionPolicy.REPLICA;
+import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
+import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
+import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
+
 import com.google.common.annotations.VisibleForTesting;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
@@ -90,253 +99,250 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static diskCacheV111.util.AccessLatency.NEARLINE;
-import static diskCacheV111.util.AccessLatency.ONLINE;
-import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
-import static diskCacheV111.util.RetentionPolicy.REPLICA;
-import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
-import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
-import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
-import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
-
 /**
- *  Standard provisioning of (fixed) file requirements.  Uses access latency,
- *  retention policy, and storage unit attributes (required, onlyOneCopyPer)
- *  to determine the number and distribution of persistent disk locations and
- *  whether the file should be on tape or not (currently limited to a single tape location).
- *  <p/>
- *  This will eventually be replaced by a more sophisticated "rule-engine" implementation
- *  which will permit time-bound transitions and overriding of the default requirements
- *  established by a file's storage class.
- *  <p/>
- *  Not marked final for testing purposes.
+ * Standard provisioning of (fixed) file requirements.  Uses access latency, retention policy, and
+ * storage unit attributes (required, onlyOneCopyPer) to determine the number and distribution of
+ * persistent disk locations and whether the file should be on tape or not (currently limited to a
+ * single tape location).
+ * <p/>
+ * This will eventually be replaced by a more sophisticated "rule-engine" implementation which will
+ * permit time-bound transitions and overriding of the default requirements established by a file's
+ * storage class.
+ * <p/>
+ * Not marked final for testing purposes.
  */
 public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, CellMessageReceiver {
-  public static final Set<FileAttribute> REQUIRED_QOS_ATTRIBUTES
-      = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
-                                               FileAttribute.ACCESS_LATENCY,
-                                               FileAttribute.RETENTION_POLICY,
-                                               FileAttribute.STORAGEINFO,
-                                               FileAttribute.CHECKSUM,
-                                               FileAttribute.SIZE,
-                                               FileAttribute.TYPE,
-                                               FileAttribute.CACHECLASS,
-                                               FileAttribute.HSM,
-                                               FileAttribute.FLAGS,
-                                               FileAttribute.LOCATIONS,
-                                               FileAttribute.ACCESS_TIME));
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ALRPStorageUnitQoSProvider.class);
+    public static final Set<FileAttribute> REQUIRED_QOS_ATTRIBUTES
+          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.ACCESS_LATENCY,
+          FileAttribute.RETENTION_POLICY,
+          FileAttribute.STORAGEINFO,
+          FileAttribute.CHECKSUM,
+          FileAttribute.SIZE,
+          FileAttribute.TYPE,
+          FileAttribute.CACHECLASS,
+          FileAttribute.HSM,
+          FileAttribute.FLAGS,
+          FileAttribute.LOCATIONS,
+          FileAttribute.ACCESS_TIME));
 
-  private CellStub pnfsManager;
-  private PoolMonitor poolMonitor;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ALRPStorageUnitQoSProvider.class);
 
-  public synchronized void messageArrived(SerializablePoolMonitor poolMonitor) {
-    setPoolMonitor(poolMonitor);
-  }
+    private CellStub pnfsManager;
+    private PoolMonitor poolMonitor;
 
-  /**
-   *  Exposed for testing purposes.
-   */
-  @VisibleForTesting
-  public synchronized void setPoolMonitor(PoolMonitor poolMonitor) {
-    this.poolMonitor = poolMonitor;
-  }
-
-  @Override
-  public FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException {
-    FileQoSRequirements descriptor = initialize(update);
-    if (descriptor == null) {
-      /*
-       *  Should only happen when a CLEAR CACHE LOCATION finds no locations.
-       */
-      return null;
+    public synchronized void messageArrived(SerializablePoolMonitor poolMonitor) {
+        setPoolMonitor(poolMonitor);
     }
 
-    FileAttributes attributes = descriptor.getAttributes();
-    AccessLatency accessLatency = attributes.getAccessLatency();
-    RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
-
-    String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
-    SelectionUnit unit = poolSelectionUnit().getStorageUnit(unitKey);
-    if (!(unit instanceof StorageUnit)) {
-      throw new QoSException(unitKey + " does not correspond to a storage unit; "
-          + "cannot retrieve requirements for " + descriptor.getPnfsId());
+    /**
+     * Exposed for testing purposes.
+     */
+    @VisibleForTesting
+    public synchronized void setPoolMonitor(PoolMonitor poolMonitor) {
+        this.poolMonitor = poolMonitor;
     }
 
-    StorageUnit storageUnit = (StorageUnit)unit;
-    Integer required = storageUnit.getRequiredCopies();
-    List<String> onlyOneCopyPer = storageUnit.getOnlyOneCopyPer();
+    @Override
+    public FileQoSRequirements fetchRequirements(FileQoSUpdate update) throws QoSException {
+        FileQoSRequirements descriptor = initialize(update);
+        if (descriptor == null) {
+            /*
+             *  Should only happen when a CLEAR CACHE LOCATION finds no locations.
+             */
+            return null;
+        }
 
-    if (retentionPolicy == CUSTODIAL) {
-      /*
-       *  REVISIT -- currently we support only one tape location.
-       */
-      descriptor.setRequiredTape(1);
-    } else {
-      descriptor.setRequiredTape(0);
+        FileAttributes attributes = descriptor.getAttributes();
+        AccessLatency accessLatency = attributes.getAccessLatency();
+        RetentionPolicy retentionPolicy = attributes.getRetentionPolicy();
+
+        String unitKey = attributes.getStorageClass() + "@" + attributes.getHsm();
+        SelectionUnit unit = poolSelectionUnit().getStorageUnit(unitKey);
+        if (!(unit instanceof StorageUnit)) {
+            throw new QoSException(unitKey + " does not correspond to a storage unit; "
+                  + "cannot retrieve requirements for " + descriptor.getPnfsId());
+        }
+
+        StorageUnit storageUnit = (StorageUnit) unit;
+        Integer required = storageUnit.getRequiredCopies();
+        List<String> onlyOneCopyPer = storageUnit.getOnlyOneCopyPer();
+
+        if (retentionPolicy == CUSTODIAL) {
+            /*
+             *  REVISIT -- currently we support only one tape location.
+             */
+            descriptor.setRequiredTape(1);
+        } else {
+            descriptor.setRequiredTape(0);
+        }
+
+        if (accessLatency == ONLINE) {
+            /*
+             *  REVISIT -- current override of file AL based on storage unit
+             *  REVISIT -- eventually we will want to override the storage unit default for a given file
+             */
+            descriptor.setRequiredDisk(required == null ? 1 : required);
+            if (onlyOneCopyPer != null) {
+                descriptor.setPartitionKeys(new HashSet<>(onlyOneCopyPer));
+            }
+        } else {
+            descriptor.setRequiredDisk(0);
+        }
+
+        LOGGER.debug("fetchRequirements for {}, returning {}.", update, descriptor);
+
+        return descriptor;
     }
-
-    if (accessLatency == ONLINE) {
-      /*
-       *  REVISIT -- current override of file AL based on storage unit
-       *  REVISIT -- eventually we will want to override the storage unit default for a given file
-       */
-      descriptor.setRequiredDisk(required == null ? 1 : required);
-      if (onlyOneCopyPer != null) {
-        descriptor.setPartitionKeys(new HashSet<>(onlyOneCopyPer));
-      }
-    } else {
-      descriptor.setRequiredDisk(0);
-    }
-
-    LOGGER.debug("fetchRequirements for {}, returning {}.", update, descriptor);
-
-    return descriptor;
-  }
-
-  /*
-   *  REVISIT For now, we do not handle changes to number or partitioning of copies.
-   */
-  @Override
-  public void handleModifiedRequirements(FileQoSRequirements newRequirements) throws QoSException {
-    PnfsId pnfsId = newRequirements.getPnfsId();
-
-    LOGGER.debug("handleModifiedRequirements for {}.", pnfsId);
 
     /*
-     *  Check immediately for unsupported changes.   Currently, this only involves the move
-     *  from CUSTODIAL TO REPLICA.
+     *  REVISIT For now, we do not handle changes to number or partitioning of copies.
      */
-    FileAttributes currentAttributes = newRequirements.getAttributes();
-    if (currentAttributes == null || !currentAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
-      currentAttributes = fetchAttributes(pnfsId);
-    }
+    @Override
+    public void handleModifiedRequirements(FileQoSRequirements newRequirements)
+          throws QoSException {
+        PnfsId pnfsId = newRequirements.getPnfsId();
 
-    if (currentAttributes.getRetentionPolicy() == CUSTODIAL && newRequirements.getRequiredTape() == 0) {
-      throw new QoSException("Unsupported transition from tape to disk: "
-          + "QoS currently does not support removal of tape locations.");
-    }
+        LOGGER.debug("handleModifiedRequirements for {}.", pnfsId);
 
-    FileAttributes modifiedAttributes = new FileAttributes();
-    if (newRequirements.getRequiredDisk() > 0) {
-      modifiedAttributes.setAccessLatency(ONLINE);
-    } else {
-      modifiedAttributes.setAccessLatency(NEARLINE);
-    }
-
-    if (newRequirements.getRequiredTape() > 0) {
-      modifiedAttributes.setRetentionPolicy(CUSTODIAL);
-    } else {
-      modifiedAttributes.setRetentionPolicy(REPLICA);
-    }
-
-    try {
-      pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
-    } catch (CacheException e) {
-      throw new QoSException("Failed to set attributes for " + newRequirements.getPnfsId(), e);
-    }
-  }
-
-  public void setPnfsManager(CellStub pnfsManager) {
-    this.pnfsManager = pnfsManager;
-  }
-
-  /*
-   *  This is exposed for overriding when testing
-   */
-  @VisibleForTesting
-  protected FileAttributes fetchAttributes(PnfsId pnfsId) throws QoSException {
-    try {
-      LOGGER.debug("fetchAttributes for {}.", pnfsId);
-      return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_QOS_ATTRIBUTES);
-    } catch (CacheException e) {
-      throw new QoSException(String.format("No attributes returned for %s", pnfsId), e);
-    }
-  }
-
-  private FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
-    PnfsId pnfsId = update.getPnfsId();
-    QoSMessageType messageType = update.getMessageType();
-
-    LOGGER.debug("initialize {}.", update);
-
-    if (VALIDATE_ONLY == messageType) {
-      /*
-       *  Do not revalidate the attributes.
-       */
-      return new FileQoSRequirements(pnfsId, fetchAttributes(pnfsId));
-    }
-
-    FileAttributes attributes = validateAttributes(update);
-    if (attributes == null) {
-      return null;
-    }
-
-    return new FileQoSRequirements(pnfsId, attributes);
-  }
-
-  private PnfsHandler pnfsHandler() {
-    PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
-    pnfsHandler.setSubject(Subjects.ROOT);
-    pnfsHandler.setRestriction(Restrictions.none());
-    return pnfsHandler;
-  }
-
-  private synchronized PoolSelectionUnit poolSelectionUnit() {
-    return poolMonitor.getPoolSelectionUnit();
-  }
-
-  /*
-   *  Return <code>null</code> if the file is not found or there are no locations
-   *  for it and the message being processed is for a clear cache location; otherwise
-   *  the file attribute set required to process resilience.
-   */
-  private FileAttributes validateAttributes(FileQoSUpdate update) throws QoSException {
-      PnfsId pnfsId = update.getPnfsId();
-      QoSMessageType messageType = update.getMessageType();
-      FileAttributes attributes = fetchAttributes(pnfsId);
-
-      LOGGER.debug("validateAttributes, got required attributes for {}.", pnfsId);
-
-      if (messageType == CHECK_CUSTODIAL_ONLINE || messageType == QOS_MODIFIED) {
         /*
-         *  The pool location will be undefined here.
-         *  The namespace locations may be empty for QOS_MODIFIED if
-         *  it is a tape to disk+tape transition where there are currently
-         *  no replicas on disk.
+         *  Check immediately for unsupported changes.   Currently, this only involves the move
+         *  from CUSTODIAL TO REPLICA.
          */
+        FileAttributes currentAttributes = newRequirements.getAttributes();
+        if (currentAttributes == null || !currentAttributes.isDefined(
+              FileAttribute.RETENTION_POLICY)) {
+            currentAttributes = fetchAttributes(pnfsId);
+        }
+
+        if (currentAttributes.getRetentionPolicy() == CUSTODIAL
+              && newRequirements.getRequiredTape() == 0) {
+            throw new QoSException("Unsupported transition from tape to disk: "
+                  + "QoS currently does not support removal of tape locations.");
+        }
+
+        FileAttributes modifiedAttributes = new FileAttributes();
+        if (newRequirements.getRequiredDisk() > 0) {
+            modifiedAttributes.setAccessLatency(ONLINE);
+        } else {
+            modifiedAttributes.setAccessLatency(NEARLINE);
+        }
+
+        if (newRequirements.getRequiredTape() > 0) {
+            modifiedAttributes.setRetentionPolicy(CUSTODIAL);
+        } else {
+            modifiedAttributes.setRetentionPolicy(REPLICA);
+        }
+
+        try {
+            pnfsHandler().setFileAttributes(pnfsId, modifiedAttributes);
+        } catch (CacheException e) {
+            throw new QoSException("Failed to set attributes for " + newRequirements.getPnfsId(),
+                  e);
+        }
+    }
+
+    public void setPnfsManager(CellStub pnfsManager) {
+        this.pnfsManager = pnfsManager;
+    }
+
+    /*
+     *  This is exposed for overriding when testing
+     */
+    @VisibleForTesting
+    protected FileAttributes fetchAttributes(PnfsId pnfsId) throws QoSException {
+        try {
+            LOGGER.debug("fetchAttributes for {}.", pnfsId);
+            return pnfsHandler().getFileAttributes(pnfsId, REQUIRED_QOS_ATTRIBUTES);
+        } catch (CacheException e) {
+            throw new QoSException(String.format("No attributes returned for %s", pnfsId), e);
+        }
+    }
+
+    private FileQoSRequirements initialize(FileQoSUpdate update) throws QoSException {
+        PnfsId pnfsId = update.getPnfsId();
+        QoSMessageType messageType = update.getMessageType();
+
+        LOGGER.debug("initialize {}.", update);
+
+        if (VALIDATE_ONLY == messageType) {
+            /*
+             *  Do not revalidate the attributes.
+             */
+            return new FileQoSRequirements(pnfsId, fetchAttributes(pnfsId));
+        }
+
+        FileAttributes attributes = validateAttributes(update);
+        if (attributes == null) {
+            return null;
+        }
+
+        return new FileQoSRequirements(pnfsId, attributes);
+    }
+
+    private PnfsHandler pnfsHandler() {
+        PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
+        pnfsHandler.setSubject(Subjects.ROOT);
+        pnfsHandler.setRestriction(Restrictions.none());
+        return pnfsHandler;
+    }
+
+    private synchronized PoolSelectionUnit poolSelectionUnit() {
+        return poolMonitor.getPoolSelectionUnit();
+    }
+
+    /*
+     *  Return <code>null</code> if the file is not found or there are no locations
+     *  for it and the message being processed is for a clear cache location; otherwise
+     *  the file attribute set required to process resilience.
+     */
+    private FileAttributes validateAttributes(FileQoSUpdate update) throws QoSException {
+        PnfsId pnfsId = update.getPnfsId();
+        QoSMessageType messageType = update.getMessageType();
+        FileAttributes attributes = fetchAttributes(pnfsId);
+
+        LOGGER.debug("validateAttributes, got required attributes for {}.", pnfsId);
+
+        if (messageType == CHECK_CUSTODIAL_ONLINE || messageType == QOS_MODIFIED) {
+            /*
+             *  The pool location will be undefined here.
+             *  The namespace locations may be empty for QOS_MODIFIED if
+             *  it is a tape to disk+tape transition where there are currently
+             *  no replicas on disk.
+             */
+            return attributes;
+        }
+
+        if (attributes.getLocations().isEmpty()) {
+            if (messageType == CLEAR_CACHE_LOCATION) {
+                LOGGER.debug("ClearCacheLocationMessage for {}; no current locations.", pnfsId);
+                return null;
+            }
+
+            String pool = update.getPool();
+
+            /*
+             *  Scan activities and add cache location should not have a null pool.
+             */
+            if (pool == null) {
+                throw new QoSException(String.format("QoS file update for %s, messageType %s, "
+                      + "has no pool location!", pnfsId, messageType));
+            }
+
+            /*
+             *  May be due to a race with PnfsManager to process the message into/from the namespace.
+             *  We just add the originating location to the attribute location list.
+             */
+            LOGGER.debug("{} has no attribute locations yet, adding origination location {}.",
+                  pnfsId, pool);
+            Collection<String> singleLoc = new ArrayList<>();
+            singleLoc.add(pool);
+            attributes.setLocations(singleLoc);
+        }
+
+        LOGGER.debug("After call to namespace, {} has locations {}.", pnfsId,
+              attributes.getLocations());
         return attributes;
-      }
-
-      if (attributes.getLocations().isEmpty()) {
-        if (messageType == CLEAR_CACHE_LOCATION) {
-          LOGGER.debug("ClearCacheLocationMessage for {}; no current locations.", pnfsId);
-          return null;
-        }
-
-        String pool = update.getPool();
-
-        /*
-         *  Scan activities and add cache location should not have a null pool.
-         */
-        if (pool == null) {
-          throw new QoSException(String.format("QoS file update for %s, messageType %s, "
-              + "has no pool location!", pnfsId, messageType));
-        }
-
-        /*
-         *  May be due to a race with PnfsManager to process the message into/from the namespace.
-         *  We just add the originating location to the attribute location list.
-         */
-        LOGGER.debug("{} has no attribute locations yet, adding origination location {}.",
-                      pnfsId, pool);
-        Collection<String> singleLoc = new ArrayList<>();
-        singleLoc.add(pool);
-        attributes.setLocations(singleLoc);
-      }
-
-      LOGGER.debug("After call to namespace, {} has locations {}.", pnfsId, attributes.getLocations());
-      return attributes;
-  }
+    }
 }

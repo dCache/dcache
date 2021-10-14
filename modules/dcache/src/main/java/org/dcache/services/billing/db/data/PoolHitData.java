@@ -70,8 +70,8 @@ public final class PoolHitData extends PnfsBaseInfo {
 
     public String toString() {
         return "(" + dateString() + "," + cellName + "," + action + ","
-                        + transaction + "," + pnfsID + "," + fileCached
-                        + "," + errorCode + "," + errorMessage + ")";
+              + transaction + "," + pnfsID + "," + fileCached
+              + "," + errorCode + "," + errorMessage + ")";
     }
 
     private Boolean fileCached;

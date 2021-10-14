@@ -65,70 +65,72 @@ import java.util.Set;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  Data relevant to a file's QoS requirements.
+ * Data relevant to a file's QoS requirements.
  */
 public final class FileQoSRequirements implements Serializable {
-  private static final long serialVersionUID = -1763168143786216685L;
 
-  private final PnfsId pnfsId;
-  private final FileAttributes attributes;
+    private static final long serialVersionUID = -1763168143786216685L;
 
-  /*
-   *  The actual QoS requirements for the file.
-   */
-  private String requiredPoolGroup;
-  private int requiredDisk;
-  private int requiredTape;
-  private Set<String> partitionKeys;
+    private final PnfsId pnfsId;
+    private final FileAttributes attributes;
 
-  public FileQoSRequirements(PnfsId pnsfId, FileAttributes attributes) {
-    this.pnfsId = pnsfId;
-    this.attributes = attributes;
-  }
+    /*
+     *  The actual QoS requirements for the file.
+     */
+    private String requiredPoolGroup;
+    private int requiredDisk;
+    private int requiredTape;
+    private Set<String> partitionKeys;
 
-  public FileAttributes getAttributes() {
-    return attributes;
-  }
+    public FileQoSRequirements(PnfsId pnsfId, FileAttributes attributes) {
+        this.pnfsId = pnsfId;
+        this.attributes = attributes;
+    }
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public FileAttributes getAttributes() {
+        return attributes;
+    }
 
-  public Set<String> getPartitionKeys() {
-    return partitionKeys;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public void setPartitionKeys(Set<String> partitionKeys) {
-    this.partitionKeys = partitionKeys;
-  }
+    public Set<String> getPartitionKeys() {
+        return partitionKeys;
+    }
 
-  public int getRequiredDisk() {
-    return requiredDisk;
-  }
+    public void setPartitionKeys(Set<String> partitionKeys) {
+        this.partitionKeys = partitionKeys;
+    }
 
-  public void setRequiredDisk(int requiredDisk) {
-    this.requiredDisk = requiredDisk;
-  }
+    public int getRequiredDisk() {
+        return requiredDisk;
+    }
 
-  public int getRequiredTape() {
-    return requiredTape;
-  }
+    public void setRequiredDisk(int requiredDisk) {
+        this.requiredDisk = requiredDisk;
+    }
 
-  public void setRequiredTape(int requiredTape) {
-    this.requiredTape = requiredTape;
-  }
+    public int getRequiredTape() {
+        return requiredTape;
+    }
 
-  public String getRequiredPoolGroup() {
-    return requiredPoolGroup;
-  }
+    public void setRequiredTape(int requiredTape) {
+        this.requiredTape = requiredTape;
+    }
 
-  public void setRequiredPoolGroup(String requiredPoolGroup) {
-    this.requiredPoolGroup = requiredPoolGroup;
-  }
+    public String getRequiredPoolGroup() {
+        return requiredPoolGroup;
+    }
 
-  @Override
-  public String toString() {
-    return String.format("(%s)(requiredDisk %s)(requiredTape %s)(requiredGroup %s)(partitionKeys %s)",
-        pnfsId, requiredDisk, requiredTape, requiredPoolGroup, partitionKeys);
-  }
+    public void setRequiredPoolGroup(String requiredPoolGroup) {
+        this.requiredPoolGroup = requiredPoolGroup;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+              "(%s)(requiredDisk %s)(requiredTape %s)(requiredGroup %s)(partitionKeys %s)",
+              pnfsId, requiredDisk, requiredTape, requiredPoolGroup, partitionKeys);
+    }
 }

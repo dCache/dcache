@@ -72,34 +72,35 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- *
- * @author  timur
+ * @author timur
  */
 public abstract class TurlGetterPutter implements Runnable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TurlGetterPutter.class);
     private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 
-    public void notifyOfTURL(String SURL,String TURL,String requestId, String fileId,Long size) {
+    public void notifyOfTURL(String SURL, String TURL, String requestId, String fileId, Long size) {
         LOGGER.debug("notifyOfTURL( surl={} , turl={})", SURL, TURL);
-        changeSupport.firePropertyChange(new TURLsArrivedEvent(this,SURL,TURL,requestId,fileId,size));
+        changeSupport.firePropertyChange(
+              new TURLsArrivedEvent(this, SURL, TURL, requestId, fileId, size));
     }
 
-    public void notifyOfFailure(String SURL,Object reason,String requestId, String fileId) {
-        changeSupport.firePropertyChange(new TURLsGetFailedEvent(this,SURL,reason,requestId,fileId));
+    public void notifyOfFailure(String SURL, Object reason, String requestId, String fileId) {
+        changeSupport.firePropertyChange(
+              new TURLsGetFailedEvent(this, SURL, reason, requestId, fileId));
     }
 
     public void notifyOfFailure(Object reason) {
-        changeSupport.firePropertyChange(new RequestFailedEvent(this,reason));
+        changeSupport.firePropertyChange(new RequestFailedEvent(this, reason));
     }
 
     public void addListener(PropertyChangeListener listener) {
@@ -113,10 +114,12 @@ public abstract class TurlGetterPutter implements Runnable {
     private boolean stopped;
 
 
-    /** Creates a new instance of RemoteTurlGetter */
+    /**
+     * Creates a new instance of RemoteTurlGetter
+     */
     public TurlGetterPutter(AbstractStorageElement storage,
-                            RequestCredential credential,
-                            String[] protocols) {
+          RequestCredential credential,
+          String[] protocols) {
         this.storage = storage;
         this.credential = credential;
         this.protocols = protocols;
@@ -126,10 +129,9 @@ public abstract class TurlGetterPutter implements Runnable {
     public abstract void getInitialRequest() throws SRMException;
 
 
-
-
     /**
      * Getter for property stopped.
+     *
      * @return Value of property stopped.
      */
     public boolean isStopped() {
@@ -138,6 +140,7 @@ public abstract class TurlGetterPutter implements Runnable {
 
     /**
      * Setter for property stopped.
+     *
      * @param stopped New value of property stopped.
      */
     public void stop() {

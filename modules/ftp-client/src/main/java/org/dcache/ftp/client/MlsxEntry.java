@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,24 +22,17 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-
+import org.dcache.ftp.client.exception.FTPException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.ftp.client.exception.FTPException;
-
 /**
  *
- *
- *
- *
- *
  */
-public class MlsxEntry
-{
+public class MlsxEntry {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(MlsxEntry.class);
+          LoggerFactory.getLogger(MlsxEntry.class);
 
     private static final SimpleDateFormat dateFormatter;
 
@@ -78,8 +71,7 @@ public class MlsxEntry
      * @param mlsxEntry
      * @throws FTPException
      */
-    public MlsxEntry(String mlsxEntry) throws FTPException
-    {
+    public MlsxEntry(String mlsxEntry) throws FTPException {
         this.parse(mlsxEntry);
     }
 
@@ -88,8 +80,7 @@ public class MlsxEntry
      *
      * @param mlsxEntry
      */
-    private void parse(String mlsxEntry)
-    {
+    private void parse(String mlsxEntry) {
 
         StringTokenizer tokenizer = new StringTokenizer(mlsxEntry, ";");
 
@@ -105,7 +96,7 @@ public class MlsxEntry
                 int equalSign = fact.indexOf('=');
                 String factName = fact.substring(0, equalSign).trim().toLowerCase();
                 String factValue =
-                        fact.substring(equalSign + 1, fact.length());
+                      fact.substring(equalSign + 1, fact.length());
 
                 facts.put(factName, factValue);
 
@@ -113,30 +104,26 @@ public class MlsxEntry
 
                 // name: trim leading space
                 this.fileName = token.substring(1,
-                                                token.length());
+                      token.length());
                 LOGGER.debug("name: {}", fileName);
 
             }
         }
     }
 
-    public void set(String factName, String factValue)
-    {
+    public void set(String factName, String factValue) {
         facts.put(factName, factValue);
     }
 
-    public String getFileName()
-    {
+    public String getFileName() {
         return this.fileName;
     }
 
-    public String get(String factName)
-    {
+    public String get(String factName) {
         return (String) facts.get(factName);
     }
 
-    public Date getDate(String factName)
-    {
+    public Date getDate(String factName) {
         Date d = null;
         synchronized (dateFormatter) {
             try {
@@ -148,8 +135,7 @@ public class MlsxEntry
         return d;
     }
 
-    public String toString()
-    {
+    public String toString() {
         StringBuilder buf = new StringBuilder();
         Enumeration e = facts.keys();
 

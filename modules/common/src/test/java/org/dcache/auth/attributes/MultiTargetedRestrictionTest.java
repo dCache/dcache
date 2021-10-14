@@ -17,39 +17,38 @@
  */
 package org.dcache.auth.attributes;
 
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-
-import diskCacheV111.util.FsPath;
-
-import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
-
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class MultiTargetedRestrictionTest
-{
+import diskCacheV111.util.FsPath;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
+import org.junit.Test;
+
+public class MultiTargetedRestrictionTest {
+
     private static final FsPath TARGET = FsPath.create("/path/to/dir");
 
     @Test
-    public void shouldBeEqualIffHasSameEffect()
-    {
+    public void shouldBeEqualIffHasSameEffect() {
         List<Authorisation> authorisations1 = new ArrayList<>();
         authorisations1.add(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET));
-        authorisations1.add(new Authorisation(EnumSet.of(Activity.UPLOAD), FsPath.create("/completely/different/path")));
+        authorisations1.add(new Authorisation(EnumSet.of(Activity.UPLOAD),
+              FsPath.create("/completely/different/path")));
         Restriction restriction1 = new MultiTargetedRestriction(authorisations1);
 
         List<Authorisation> authorisations2 = new ArrayList<>();
-        authorisations2.add(new Authorisation(EnumSet.of(Activity.UPLOAD), FsPath.create("/completely/different/path")));
+        authorisations2.add(new Authorisation(EnumSet.of(Activity.UPLOAD),
+              FsPath.create("/completely/different/path")));
         authorisations2.add(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET));
         Restriction restriction2 = new MultiTargetedRestriction(authorisations2);
 
-        Restriction restriction3 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+        Restriction restriction3 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction1.equals(restriction2), is(true));
         assertThat(restriction2.equals(restriction1), is(true));
@@ -60,8 +59,7 @@ public class MultiTargetedRestrictionTest
     }
 
     @Test
-    public void shouldForbidEverythingWithNoAllowPath()
-    {
+    public void shouldForbidEverythingWithNoAllowPath() {
         Restriction restriction = new MultiTargetedRestriction(Collections.emptyList());
 
         assertThat(restriction.isRestricted(Activity.LIST, FsPath.ROOT), is(true));
@@ -69,107 +67,115 @@ public class MultiTargetedRestrictionTest
     }
 
     @Test
-    public void shouldAllowActivityInPath()
-    {
-        Restriction restriction = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+    public void shouldAllowActivityInPath() {
+        Restriction restriction = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction.isRestricted(Activity.DOWNLOAD, TARGET), is(false));
         assertThat(restriction.isRestricted(Activity.DOWNLOAD, TARGET.child("file")), is(false));
     }
 
     @Test
-    public void shouldForbidActivityOnParent()
-    {
-        Restriction restriction = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+    public void shouldForbidActivityOnParent() {
+        Restriction restriction = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction.isRestricted(Activity.DOWNLOAD, TARGET.parent()), is(true));
         assertThat(restriction.isRestricted(Activity.DOWNLOAD, FsPath.ROOT), is(true));
     }
 
     @Test
-    public void shouldAllowListOnParent()
-    {
-        Restriction restriction = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+    public void shouldAllowListOnParent() {
+        Restriction restriction = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction.isRestricted(Activity.LIST, TARGET.parent()), is(false));
         assertThat(restriction.isRestricted(Activity.LIST, FsPath.ROOT), is(false));
     }
 
     @Test
-    public void shouldSubsumeIfEqual()
-    {
-        Restriction restriction1 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+    public void shouldSubsumeIfEqual() {
+        Restriction restriction1 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(true));
     }
 
     @Test
-    public void shouldSubsumeIfPathDecendent()
-    {
+    public void shouldSubsumeIfPathDecendent() {
         FsPath decendent = TARGET.child("subdir");
-        Restriction restriction1 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), decendent)));
+        Restriction restriction1 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), decendent)));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(true));
         assertThat(restriction2.isSubsumedBy(restriction1), is(false));
     }
 
     @Test
-    public void shouldSubsumeIfMoreRestrictive()
-    {
-        Restriction restriction1 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.LIST), TARGET)));
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+    public void shouldSubsumeIfMoreRestrictive() {
+        Restriction restriction1 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.LIST), TARGET)));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(true));
         assertThat(restriction2.isSubsumedBy(restriction1), is(false));
     }
 
     @Test
-    public void shouldNotSubsumeIfPathsNotParentChild()
-    {
-        Restriction restriction1 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET.child("foo"))));
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET.child("bar"))));
+    public void shouldNotSubsumeIfPathsNotParentChild() {
+        Restriction restriction1 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET.child("foo"))));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET.child("bar"))));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(false));
         assertThat(restriction2.isSubsumedBy(restriction1), is(false));
     }
 
     @Test
-    public void shouldNotSubsumeOnActivity()
-    {
-        Restriction restriction1 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.LIST), TARGET)));
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.UPLOAD), TARGET)));
+    public void shouldNotSubsumeOnActivity() {
+        Restriction restriction1 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.LIST), TARGET)));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD, Activity.UPLOAD), TARGET)));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(false));
         assertThat(restriction2.isSubsumedBy(restriction1), is(false));
     }
 
     @Test
-    public void shouldSubsumeOnMultiplePaths()
-    {
+    public void shouldSubsumeOnMultiplePaths() {
         List<Authorisation> authorisations = new ArrayList<>();
         authorisations.add(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET));
-        authorisations.add(new Authorisation(EnumSet.of(Activity.UPLOAD), FsPath.create("/completely/different/path")));
+        authorisations.add(new Authorisation(EnumSet.of(Activity.UPLOAD),
+              FsPath.create("/completely/different/path")));
         Restriction restriction1 = new MultiTargetedRestriction(authorisations);
-        Restriction restriction2 = new MultiTargetedRestriction(singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
+        Restriction restriction2 = new MultiTargetedRestriction(
+              singleton(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET)));
 
         assertThat(restriction1.isSubsumedBy(restriction2), is(true));
         assertThat(restriction2.isSubsumedBy(restriction1), is(false));
     }
 
     @Test
-    public void shouldIdentifyUnrestrictedChild()
-    {
+    public void shouldIdentifyUnrestrictedChild() {
         List<Authorisation> authorisations = new ArrayList<>();
         authorisations.add(new Authorisation(EnumSet.of(Activity.DOWNLOAD), TARGET));
-        authorisations.add(new Authorisation(EnumSet.of(Activity.UPLOAD), FsPath.create("/completely/different/path")));
+        authorisations.add(new Authorisation(EnumSet.of(Activity.UPLOAD),
+              FsPath.create("/completely/different/path")));
         Restriction restriction = new MultiTargetedRestriction(authorisations);
 
         assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD, TARGET), is(true));
         assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD, TARGET.parent()), is(true));
-        assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD, TARGET.child("some-child")), is(true));
-        assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD, TARGET.parent().child("some-sibling")), is(false));
+        assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD, TARGET.child("some-child")),
+              is(true));
+        assertThat(restriction.hasUnrestrictedChild(Activity.DOWNLOAD,
+              TARGET.parent().child("some-sibling")), is(false));
 
         assertThat(restriction.hasUnrestrictedChild(Activity.UPLOAD, TARGET), is(false));
     }

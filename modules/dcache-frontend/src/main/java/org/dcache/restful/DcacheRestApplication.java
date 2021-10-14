@@ -2,9 +2,6 @@ package org.dcache.restful;
 
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
-import org.glassfish.jersey.server.ResourceConfig;
-
 import org.dcache.restful.interceptors.LoggingInterceptor;
 import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
@@ -25,13 +22,14 @@ import org.dcache.restful.resources.selection.UnitResources;
 import org.dcache.restful.resources.space.SpaceManagerResources;
 import org.dcache.restful.resources.transfers.TransferResources;
 import org.dcache.restful.util.RequestUser;
+import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 
-public class DcacheRestApplication extends ResourceConfig
-{
-    public DcacheRestApplication()
-    {
+public class DcacheRestApplication extends ResourceConfig {
+
+    public DcacheRestApplication() {
         packages("org.dcache.restful",
-                "org.glassfish.jersey.jackson");
+              "org.glassfish.jersey.jackson");
 
         //register application resources controller
         register(FileResources.class);

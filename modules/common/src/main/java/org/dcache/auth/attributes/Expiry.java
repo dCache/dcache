@@ -17,40 +17,36 @@
  */
 package org.dcache.auth.attributes;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 import java.time.Instant;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * This LoginAttribute identifies a time after which any session associated
- * with this login should terminate.  It is left unspecified whether or not
- * on-going user-triggered activity should terminate when the session is
- * terminated.  It is also left unspecified how quickly a session should
- * terminate once the expiry time has elapsed.  A time unlimited login with no
- * automatic time-based expiry is represented with the absence of this
- * LoginAttribute.  It is legitimate for a LoginReply to have multiple Expire
- * LoginAttributes; the Expiry with the earliest getExpiry response wins.
+ * This LoginAttribute identifies a time after which any session associated with this login should
+ * terminate.  It is left unspecified whether or not on-going user-triggered activity should
+ * terminate when the session is terminated.  It is also left unspecified how quickly a session
+ * should terminate once the expiry time has elapsed.  A time unlimited login with no automatic
+ * time-based expiry is represented with the absence of this LoginAttribute.  It is legitimate for a
+ * LoginReply to have multiple Expire LoginAttributes; the Expiry with the earliest getExpiry
+ * response wins.
  */
-public class Expiry implements LoginAttribute, Serializable
-{
+public class Expiry implements LoginAttribute, Serializable {
+
     private static final long serialVersionUID = -4933206451561151996L;
 
     private final Instant _expiry;
 
-    public Expiry(Instant expiry)
-    {
+    public Expiry(Instant expiry) {
         _expiry = requireNonNull(expiry);
     }
 
-    public Instant getExpiry()
-    {
+    public Instant getExpiry() {
         return _expiry;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + "[" + getExpiry() + "]";
     }
 }

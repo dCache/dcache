@@ -19,32 +19,27 @@ package org.dcache.srm;
 
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMAuthenticationException extends SRMException
-{
+public class SRMAuthenticationException extends SRMException {
+
     private static final long serialVersionUID = 2699262184015154084L;
 
-    public SRMAuthenticationException(Throwable cause)
-    {
+    public SRMAuthenticationException(Throwable cause) {
         super(cause);
     }
 
-    public SRMAuthenticationException(String message, Throwable cause)
-    {
+    public SRMAuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SRMAuthenticationException(String message)
-    {
+    public SRMAuthenticationException(String message) {
         super(message);
     }
 
-    public SRMAuthenticationException()
-    {
+    public SRMAuthenticationException() {
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_AUTHENTICATION_FAILURE;
     }
 }

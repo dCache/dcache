@@ -20,22 +20,21 @@ package org.dcache.gplazma.omnisession;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.gplazma.AuthenticationException;
 
 /**
  * The configuration for the omnisession plugin.
  */
-public interface Configuration
-{
+public interface Configuration {
+
     /**
-     * Provide a list of LoginAttributes for the user identified by the
-     * supplied set of principals.
+     * Provide a list of LoginAttributes for the user identified by the supplied set of principals.
+     *
      * @param principals The identity of the user
      * @return the LoginAttributes for this user
      * @throws AuthenticationException if there is a problem processing this request.
      */
     List<LoginAttribute> attributesFor(Set<Principal> principals)
-            throws AuthenticationException;
+          throws AuthenticationException;
 }

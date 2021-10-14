@@ -2,17 +2,16 @@ package org.dcache.restful.qos;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.List;
 
-@ApiModel(description ="Information describing the storage system.")
+@ApiModel(description = "Information describing the storage system.")
 public class BackendCapability {
 
     @ApiModelProperty("The name of this quality of service.")
     private String name;
 
     @ApiModelProperty("The list of quality of services to which a transition "
-                    + "from this quality of service is supported.")
+          + "from this quality of service is supported.")
     private List<String> transition;
 
     @ApiModelProperty("The attributes describing this quality of service.")

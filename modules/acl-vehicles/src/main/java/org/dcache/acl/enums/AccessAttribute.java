@@ -72,17 +72,17 @@ public enum AccessAttribute {
             }
         }
 
-        throw new IllegalArgumentException("Illegal argument (value of access attribute): " + attribute);
+        throw new IllegalArgumentException(
+              "Illegal argument (value of access attribute): " + attribute);
     }
 
     /**
-     * @param attributes
-     *            Access attributes bit mask
+     * @param attributes Access attributes bit mask
      * @return Return string representation of access attributes mask
      */
     public static String asString(int attributes) {
         // no flags
-        if ( attributes == 0 ) {
+        if (attributes == 0) {
             return "0";
         }
 

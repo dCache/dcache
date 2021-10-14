@@ -60,15 +60,14 @@ documents or software obtained from this server.
 package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 
 /**
- * Unit specifically defining storage properties.  This has been
- * reified into a class in order to regularize the replication
- * constraints associated with storage class.
+ * Unit specifically defining storage properties.  This has been reified into a class in order to
+ * regularize the replication constraints associated with storage class.
  */
 public class StorageUnit extends Unit {
+
     private static final long serialVersionUID = -5085234464176571891L;
     private Integer required;
     private List<String> onlyOneCopyPer;
@@ -101,6 +100,6 @@ public class StorageUnit extends Unit {
     @Override
     public String toString() {
         return String.format("%s (required=%s; onlyOneCopyPer=%s)",
-                        super.toString(), required, onlyOneCopyPer);
+              super.toString(), required, onlyOneCopyPer);
     }
 }

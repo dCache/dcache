@@ -1,16 +1,15 @@
 package org.dcache.acl.parser;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Splitter;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class ACEParser {
 
@@ -26,25 +25,23 @@ public class ACEParser {
 
     private static final int ACE_MIN_ADM = 2, ACE_MAX_ADM = 5;
 
-    private ACEParser() {}
+    private ACEParser() {
+    }
 
     /**
-     * ace_spec format:
-     * 	who[:who_id]:access_msk[:flags]:type
+     * ace_spec format: who[:who_id]:access_msk[:flags]:type
+     * <p>
+     * ace_spec examples: USER:7:rlwfx:o:ALLOW EVERYONE@:w:DENY
      *
-     * ace_spec examples:
-     * 	USER:7:rlwfx:o:ALLOW
-     * 	EVERYONE@:w:DENY
-     *
-     * @param ace_spec
-     *            String representation of ACE
+     * @param ace_spec String representation of ACE
      */
     public static ACE parse(String ace_spec) throws IllegalArgumentException {
-        if ( ace_spec == null || ace_spec.length() == 0 ) {
-            throw new IllegalArgumentException("ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
+        if (ace_spec == null || ace_spec.length() == 0) {
+            throw new IllegalArgumentException(
+                  "ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
         }
 
-        if ( ace_spec.endsWith(SEPARATOR) ) {
+        if (ace_spec.endsWith(SEPARATOR)) {
             throw new IllegalArgumentException("ace_spec ends with \"" + SEPARATOR + "\"");
         }
 
@@ -53,12 +50,12 @@ public class ACEParser {
         }
 
         String[] split = ace_spec.split(SEPARATOR);
-        if ( split == null ) {
+        if (split == null) {
             throw new IllegalArgumentException("ace_spec can't be splitted.");
         }
 
         int len = split.length;
-        if ( len < ACE_MIN || len > ACE_MAX ) {
+        if (len < ACE_MIN || len > ACE_MAX) {
             throw new IllegalArgumentException("Count tags invalid.");
         }
 
@@ -66,27 +63,28 @@ public class ACEParser {
 
         String sWho = split[index++];
         Who who = Who.fromAbbreviation(sWho);
-        if ( who == null ) {
+        if (who == null) {
             throw new IllegalArgumentException("Invalid who abbreviation: " + sWho);
         }
 
         int whoID = -1;
-        if ( who == Who.USER || who == Who.GROUP ) {
+        if (who == Who.USER || who == Who.GROUP) {
             String sWhoID = split[index++];
             try {
                 whoID = Integer.parseInt(sWhoID);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid whoID. NumberFormatException: " + e.getMessage());
+                throw new IllegalArgumentException(
+                      "Invalid whoID. NumberFormatException: " + e.getMessage());
             }
         }
 
         String sAccessMsk = split[index++];
         int accessMsk = AccessMask.parseInt(sAccessMsk);
-        if ( accessMsk == 0 ) {
+        if (accessMsk == 0) {
             throw new IllegalArgumentException("Invalid accessMask: " + sAccessMsk);
         }
 
-        if ( index >= len ) {
+        if (index >= len) {
             throw new IllegalArgumentException("Unspecified ACE type.");
         }
 
@@ -98,96 +96,94 @@ public class ACEParser {
         } catch (IllegalArgumentException Ignore) {
         }
 
-        if ( s == null ) {
-            if ( index >= len ) {
+        if (s == null) {
+            if (index >= len) {
                 throw new IllegalArgumentException("Unspecified ACE type.");
             }
             s = split[index++];
         }
 
         AceType type = AceType.fromAbbreviation(s);
-        if ( index != len ) {
-            throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
+        if (index != len) {
+            throw new IllegalArgumentException(
+                  "Check index failure. Invalid ace_spec: " + ace_spec);
         }
 
         return new ACE(type, flags, accessMsk, who, whoID);
     }
 
     /**
-     * ace_spec format:
-     * 	who[:who_id]:+/-access_msk[:flags]
+     * ace_spec format: who[:who_id]:+/-access_msk[:flags]
+     * <p>
+     * ace_spec examples: USER:3750:+rlx:o EVERYONE@:-w
      *
-     * ace_spec examples:
-     * 	USER:3750:+rlx:o
-     * 	EVERYONE@:-w
-     *
-     * @param order
-     *            ACE's order in list
-     * @param ace_spec
-     *            String representation of ACE (without 'order')
+     * @param order    ACE's order in list
+     * @param ace_spec String representation of ACE (without 'order')
      */
 
     public static ACE parseAdmACE(String ace_spec) throws IllegalArgumentException {
 
-        if ( ace_spec == null || ace_spec.length() == 0 ) {
-            throw new IllegalArgumentException("ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
+        if (ace_spec == null || ace_spec.length() == 0) {
+            throw new IllegalArgumentException(
+                  "ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
         }
 
-        if ( ace_spec.endsWith(SEPARATOR) ) {
+        if (ace_spec.endsWith(SEPARATOR)) {
             throw new IllegalArgumentException("ace_spec ends with \"" + SEPARATOR + "\"");
         }
 
         String[] split = ace_spec.split(SEPARATOR);
-        if ( split == null ) {
+        if (split == null) {
             throw new IllegalArgumentException("ace_spec can't be splitted.");
         }
 
         int len = split.length;
-        if ( len < ACE_MIN_ADM || len > ACE_MAX_ADM ) {
+        if (len < ACE_MIN_ADM || len > ACE_MAX_ADM) {
             throw new IllegalArgumentException("Count tags invalid.");
         }
 
         int index = 0;
         String sWho = split[index++];
         Who who = Who.fromAbbreviation(sWho);
-        if ( who == null ) {
+        if (who == null) {
             throw new IllegalArgumentException("Invalid who abbreviation: " + sWho);
         }
 
         int whoID = -1;
-        if ( Who.USER.equals(who) || Who.GROUP.equals(who) ) {
+        if (Who.USER.equals(who) || Who.GROUP.equals(who)) {
             String sWhoID = split[index++];
-            if ( index >= len ) {
+            if (index >= len) {
                 throw new IllegalArgumentException("Unspecified accessMask.");
             }
 
             try {
                 whoID = Integer.parseInt(sWhoID);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid whoID. NumberFormatException: " + e.getMessage());
+                throw new IllegalArgumentException(
+                      "Invalid whoID. NumberFormatException: " + e.getMessage());
             }
         }
 
         String sAccessMsk = split[index++];
         AceType type;
         char operator = sAccessMsk.charAt(0);
-        if ( operator == '+' ) {
+        if (operator == '+') {
             type = AceType.ACCESS_ALLOWED_ACE_TYPE;
-        } else if ( operator == '-' ) {
+        } else if (operator == '-') {
             type = AceType.ACCESS_DENIED_ACE_TYPE;
         } else {
             throw new IllegalArgumentException("Invalid operator: \"" + operator + "\"");
         }
 
         int accessMsk = AccessMask.parseInt(sAccessMsk.substring(1));
-        if ( accessMsk == 0 ) {
+        if (accessMsk == 0) {
             throw new IllegalArgumentException("Invalid accessMask: " + sAccessMsk);
         }
 
         int flags = 0;
-        if ( index < len ) {
+        if (index < len) {
             String s = split[index++];
-            if ( s.trim().length() == 0 ) {
+            if (s.trim().length() == 0) {
                 throw new IllegalArgumentException("ACE flags is Empty.");
             }
 
@@ -197,45 +193,45 @@ public class ACEParser {
             } catch (IllegalArgumentException Ignore) {
             }
 
-            if ( s == null && index < len ) {
+            if (s == null && index < len) {
                 s = split[index++];
             }
         }
 
-        if ( index != len ) {
-            throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
+        if (index != len) {
+            throw new IllegalArgumentException(
+                  "Check index failure. Invalid ace_spec: " + ace_spec);
         }
 
         return new ACE(type, flags, accessMsk, who, whoID);
     }
 
     /**
-     * aces_spec format:
-     * 	who[:who_id]:+/-access_msk[:flags][:address_msk] who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * aces_spec format: who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * <p>
+     * aces_spec example: USER:3750:+rlx:o:FFFF EVERYONE@:-w
      *
-     * aces_spec example:
-     * 	USER:3750:+rlx:o:FFFF EVERYONE@:-w
-     *
-     * @param aces_spec
-     *            String representation of ACEs
+     * @param aces_spec String representation of ACEs
      */
     public static List<ACE> parseAdm(String aces_spec) throws IllegalArgumentException {
-        if ( aces_spec == null || aces_spec.length() == 0 ) {
-            throw new IllegalArgumentException("aces_spec is " + (aces_spec == null ? "NULL" : "Empty"));
+        if (aces_spec == null || aces_spec.length() == 0) {
+            throw new IllegalArgumentException(
+                  "aces_spec is " + (aces_spec == null ? "NULL" : "Empty"));
         }
 
         String[] split = aces_spec.split(SPACE_SEPARATOR);
-        if ( split == null ) {
+        if (split == null) {
             throw new IllegalArgumentException("aces_spec can't be splitted.");
         }
 
         int len = split.length;
-        if ( len < ACES_MIN ) {
+        if (len < ACES_MIN) {
             throw new IllegalArgumentException("Count ACEs invalid.");
         }
 
         List<ACE> aces = new ArrayList<>(len);
-        for (String ace: split) {
+        for (String ace : split) {
             aces.add(ACEParser.parseAdmACE(ace));
         }
 
@@ -243,8 +239,8 @@ public class ACEParser {
     }
 
     /**
-     * Create an {@link ACE} from string representation. The string
-     * must be in linux nfs4_acl format. The format refined as:
+     * Create an {@link ACE} from string representation. The string must be in linux nfs4_acl
+     * format. The format refined as:
      *
      * <pre>
      *        4-field string in the following format:
@@ -328,6 +324,7 @@ public class ACEParser {
      *
      *         (from original man page by David Richter and J. Bruce Fields)
      * </pre>
+     *
      * @param s ace in linux nfs4_acl format
      * @return ACE represented by the provided string
      * @throws IllegalArgumentException if ACE can't be parsed
@@ -336,9 +333,12 @@ public class ACEParser {
         Splitter splitter = Splitter.on(':');
         List<String> splitted = splitter.splitToList(s);
 
-        checkArgument(splitted.size() == 4, "Invalid ACE format: expected <type:flags:principal:permissions> got: <" + s +">");
+        checkArgument(splitted.size() == 4,
+              "Invalid ACE format: expected <type:flags:principal:permissions> got: <" + s + ">");
 
-        checkArgument(splitted.get(0).length() == 1, "Invalid ACE format: type must be a single character. Got : <" + splitted.get(0).length() + ">");
+        checkArgument(splitted.get(0).length() == 1,
+              "Invalid ACE format: type must be a single character. Got : <" + splitted.get(0)
+                    .length() + ">");
         AceType type = AceType.fromAbbreviation(splitted.get(0).charAt(0));
         int flags = 0;
         int accessMask = 0;
@@ -346,12 +346,12 @@ public class ACEParser {
         int id = -1;
         String principal;
 
-        for(char c: splitted.get(1).toCharArray()) {
+        for (char c : splitted.get(1).toCharArray()) {
             flags |= AceFlags.fromAbbreviation(c).getValue();
         }
 
         principal = splitted.get(2);
-        if (principal.charAt(principal.length() -1) == '@') {
+        if (principal.charAt(principal.length() - 1) == '@') {
             who = Who.fromAbbreviation(principal);
         } else {
             who = (flags & AceFlags.IDENTIFIER_GROUP.getValue()) == 0 ? Who.USER : Who.GROUP;
@@ -362,6 +362,6 @@ public class ACEParser {
             accessMask |= AccessMask.fromAbbreviation(c).getValue();
         }
 
-        return new ACE(type, flags,  accessMask, who, id);
+        return new ACE(type, flags, accessMask, who, id);
     }
 }

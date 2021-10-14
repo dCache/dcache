@@ -5,8 +5,8 @@ import org.dcache.util.configuration.ConfigurationProperties;
 /**
  * Constants for property names used by the boot loader.
  */
-public class Properties
-{
+public class Properties {
+
     public static final String PROPERTY_DCACHE_LAYOUT_URI = "dcache.layout.uri";
     public static final String PROPERTY_DCACHE_CONFIG_CACHE = "dcache.config.cache";
     public static final String PROPERTY_DCACHE_CONFIG_FILES = "dcache.config.files";
@@ -44,12 +44,10 @@ public class Properties
 
     public static final String PATH_DELIMITER = ":";
 
-    protected Properties()
-    {
+    protected Properties() {
     }
 
-    public static String getCellName(ConfigurationProperties properties)
-    {
+    public static String getCellName(ConfigurationProperties properties) {
         String serviceType = properties.getValue(PROPERTY_DOMAIN_SERVICE);
         return properties.getValue(serviceType + "." + PROPERTY_CELL_NAME_SUFFIX);
     }

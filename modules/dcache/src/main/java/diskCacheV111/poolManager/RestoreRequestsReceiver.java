@@ -61,16 +61,14 @@ package diskCacheV111.poolManager;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.vehicles.RestoreHandlerInfo;
+import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import diskCacheV111.vehicles.RestoreHandlerInfo;
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Front-end plug-in for receiving notifications of request listings
@@ -79,24 +77,23 @@ import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 public class RestoreRequestsReceiver implements CellMessageReceiver {
 
     private Cache<String, List<RestoreHandlerInfo>> restores;
-    private long     lifetime     = 1;
+    private long lifetime = 1;
     private TimeUnit lifetimeUnit = TimeUnit.HOURS;
 
     public void initialize() {
         restores = CacheBuilder.newBuilder()
-                               .expireAfterWrite(lifetime, lifetimeUnit)
-                               .build();
+              .expireAfterWrite(lifetime, lifetimeUnit)
+              .build();
     }
 
     /**
-     * @return merged list of all requests.  It is assumed these are
-     * partitioned (non-intersecting).
+     * @return merged list of all requests.  It is assumed these are partitioned (non-intersecting).
      */
     public List<RestoreHandlerInfo> getAllRequests() {
         return restores.asMap().values()
-                       .stream()
-                       .flatMap(list -> list.stream())
-                       .collect(Collectors.toList());
+              .stream()
+              .flatMap(list -> list.stream())
+              .collect(Collectors.toList());
     }
 
     /**

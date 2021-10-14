@@ -59,38 +59,37 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import com.google.common.base.Preconditions;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Base (generic) container for histogram data.  Bean which can be used for
  * persistence, e.g., as JSON object.</p>
  *
  * <p>This bean is meant as an aid for the maintenance and updating of
- * data to be returned eventually to client in the form of the
- * simplified {@link Histogram}.</p>
+ * data to be returned eventually to client in the form of the simplified {@link Histogram}.</p>
  */
 public abstract class HistogramModel implements Serializable {
+
     private static final String DATA_SIZE_ERROR =
-                    "Template was not properly configured: "
-                                    + "bin count %s does not match data size %s.";
+          "Template was not properly configured: "
+                + "bin count %s does not match data size %s.";
 
     protected Integer binCount;     // number of bins
     protected Integer binWidth;     // number of units per bin
-    protected Double  binUnit;      // measure for values
-    protected Double  highestBin;   // value for highest bin
-    protected Double  lowestBin;    // value for lowest bin
-    protected String  identifier;
-    protected String  binUnitLabel;
-    protected String  dataUnitLabel;
+    protected Double binUnit;      // measure for values
+    protected Double highestBin;   // value for highest bin
+    protected Double lowestBin;    // value for lowest bin
+    protected String identifier;
+    protected String binUnitLabel;
+    protected String dataUnitLabel;
 
     protected HistogramMetadata metadata;
-    protected List<Double>      data;
+    protected List<Double> data;
 
     /*
      * For convenience
@@ -215,31 +214,31 @@ public abstract class HistogramModel implements Serializable {
     public Histogram toHistogram() {
         Histogram histogram = new Histogram();
         histogram.setIdentifier(requireNonNull(identifier,
-                                                           "No histogram identifier provided."));
+              "No histogram identifier provided."));
         requireNonNull(binUnit,
-                                   "No histogram binUnit provided.");
+              "No histogram binUnit provided.");
         requireNonNull(binWidth,
-                                   "No histogram binWidth provided.");
+              "No histogram binWidth provided.");
         histogram.setBinSize(binUnit * binWidth);
         histogram.setBinUnit(requireNonNull(binUnitLabel,
-                                                        "No histogram bin label provided."));
+              "No histogram bin label provided."));
         histogram.setDataUnit(requireNonNull(dataUnitLabel,
-                                                         "No histogram data label provided."));
+              "No histogram data label provided."));
         histogram.setLowestBin(requireNonNull(lowestBin,
-                                                          "Lowest histogram bin not provided."));
+              "Lowest histogram bin not provided."));
 
         int len = requireNonNull(binCount,
-                                             "No histogram bin count provided.");
+              "No histogram bin count provided.");
 
         requireNonNull(data, "Histogram data list missing.");
         Preconditions.checkArgument(data.size() == len,
-                                    String.format(DATA_SIZE_ERROR,
-                                                  binCount,
-                                                  data.size()));
+              String.format(DATA_SIZE_ERROR,
+                    binCount,
+                    data.size()));
 
         Double[][] values = new Double[binCount][];
         for (int i = 0; i < binCount; ++i) {
-            values[i] = new Double[] { lowestBin + (i * binSize), data.get(i) };
+            values[i] = new Double[]{lowestBin + (i * binSize), data.get(i)};
         }
 
         histogram.setValues(values);
@@ -260,8 +259,8 @@ public abstract class HistogramModel implements Serializable {
         }
 
         binSize = binWidth == 0 ?
-                        binUnit :
-                        binUnit * binWidth;
+              binUnit :
+              binUnit * binWidth;
     }
 
     protected double getHighestFromLowest() {

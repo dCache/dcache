@@ -19,23 +19,20 @@ package org.dcache.poolmanager;
 
 import java.util.Map;
 
-public class BufferPartitionFactory implements PartitionFactory
-{
+public class BufferPartitionFactory implements PartitionFactory {
+
     @Override
-    public Partition createPartition(Map<String,String> properties)
-    {
+    public Partition createPartition(Map<String, String> properties) {
         return new BufferPartition(properties);
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Partition for transfer buffers";
     }
 
     @Override
-    public String getType()
-    {
+    public String getType() {
         return BufferPartition.TYPE;
     }
 }

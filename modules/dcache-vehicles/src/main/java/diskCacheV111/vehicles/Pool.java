@@ -2,7 +2,6 @@ package diskCacheV111.vehicles;
 
 import dmg.cells.nucleus.CellAddressCore;
 import java.io.Serializable;
-
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.assumption.Assumptions;
 
@@ -25,6 +24,7 @@ public class Pool implements Serializable {
 
     /**
      * Get pool's name.
+     *
      * @return pool's name.
      */
     public String getName() {
@@ -33,6 +33,7 @@ public class Pool implements Serializable {
 
     /**
      * Get cell address of this pool.
+     *
      * @return cell address of this pool.
      */
     public CellAddressCore getAddress() {

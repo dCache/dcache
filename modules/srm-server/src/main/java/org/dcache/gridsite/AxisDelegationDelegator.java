@@ -19,76 +19,66 @@
 
 package org.dcache.gridsite;
 
-import javax.xml.rpc.holders.StringHolder;
-
 import java.rmi.RemoteException;
 import java.util.Calendar;
-
+import javax.xml.rpc.holders.StringHolder;
 import org.dcache.delegation.gridsite2.Delegation;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.util.Axis;
 
-public class AxisDelegationDelegator implements Delegation
-{
+public class AxisDelegationDelegator implements Delegation {
+
     private final Delegation delegation;
 
-    public AxisDelegationDelegator()
-    {
+    public AxisDelegationDelegator() {
         this.delegation = Axis.getDelegationService();
     }
 
     @Override
-    public String getVersion() throws RemoteException, DelegationException
-    {
+    public String getVersion() throws RemoteException, DelegationException {
         return delegation.getVersion();
     }
 
     @Override
-    public String getInterfaceVersion() throws RemoteException, DelegationException
-    {
+    public String getInterfaceVersion() throws RemoteException, DelegationException {
         return delegation.getInterfaceVersion();
     }
 
     @Override
-    public String getServiceMetadata(String key) throws RemoteException, DelegationException
-    {
+    public String getServiceMetadata(String key) throws RemoteException, DelegationException {
         return delegation.getServiceMetadata(key);
     }
 
     @Override
-    public String getProxyReq(String delegationID) throws RemoteException, DelegationException
-    {
+    public String getProxyReq(String delegationID) throws RemoteException, DelegationException {
         return delegation.getProxyReq(delegationID);
     }
 
     @Override
     public void getNewProxyReq(StringHolder proxyRequest,
-                               StringHolder delegationID) throws RemoteException, DelegationException
-    {
+          StringHolder delegationID) throws RemoteException, DelegationException {
         delegation.getNewProxyReq(proxyRequest, delegationID);
     }
 
     @Override
-    public void putProxy(String delegationID, String proxy) throws RemoteException, DelegationException
-    {
+    public void putProxy(String delegationID, String proxy)
+          throws RemoteException, DelegationException {
         delegation.putProxy(delegationID, proxy);
     }
 
     @Override
-    public String renewProxyReq(String delegationID) throws RemoteException, DelegationException
-    {
+    public String renewProxyReq(String delegationID) throws RemoteException, DelegationException {
         return delegation.renewProxyReq(delegationID);
     }
 
     @Override
-    public Calendar getTerminationTime(String delegationID) throws RemoteException, DelegationException
-    {
+    public Calendar getTerminationTime(String delegationID)
+          throws RemoteException, DelegationException {
         return delegation.getTerminationTime(delegationID);
     }
 
     @Override
-    public void destroy(String delegationID) throws RemoteException, DelegationException
-    {
+    public void destroy(String delegationID) throws RemoteException, DelegationException {
         delegation.destroy(delegationID);
     }
 }

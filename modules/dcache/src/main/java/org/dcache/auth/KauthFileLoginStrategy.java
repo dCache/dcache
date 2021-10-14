@@ -1,40 +1,34 @@
 package org.dcache.auth;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
  * A LoginStrategy that wraps KAuthFile.
- *
+ * <p>
  * Supports login for Subjects with
- *
- *   - KeberosPrincipal and optional LoginNamePrincipal
- *   - GlobusPrincipal and optional LoginNamePrincipal
- *   - PasswordCredential
+ * <p>
+ * - KeberosPrincipal and optional LoginNamePrincipal - GlobusPrincipal and optional
+ * LoginNamePrincipal - PasswordCredential
  */
-public class KauthFileLoginStrategy implements LoginStrategy
-{
+public class KauthFileLoginStrategy implements LoginStrategy {
+
     private final File _file;
 
-    public KauthFileLoginStrategy(File file)
-    {
+    public KauthFileLoginStrategy(File file) {
         if (!file.canRead()) {
             throw new IllegalArgumentException("File not found: " + file);
         }
@@ -43,15 +37,14 @@ public class KauthFileLoginStrategy implements LoginStrategy
     }
 
     @Override
-    public LoginReply login(Subject subject) throws CacheException
-    {
+    public LoginReply login(Subject subject) throws CacheException {
         String user = Subjects.getLoginName(subject);
 
-        for (KerberosPrincipal principal: subject.getPrincipals(KerberosPrincipal.class)) {
+        for (KerberosPrincipal principal : subject.getPrincipals(KerberosPrincipal.class)) {
             return loginByUserNameAndId(user, principal.getName());
         }
 
-        for (GlobusPrincipal principal: subject.getPrincipals(GlobusPrincipal.class)) {
+        for (GlobusPrincipal principal : subject.getPrincipals(GlobusPrincipal.class)) {
             return loginByUserNameAndId(user, principal.getName());
         }
 
@@ -59,8 +52,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
     }
 
     private KAuthFile loadKauthFile()
-        throws CacheException
-    {
+          throws CacheException {
         try {
             return new KAuthFile(_file.getPath());
         } catch (IOException e) {
@@ -69,8 +61,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
     }
 
     private LoginReply loginByUserNameAndId(String user, String id)
-        throws CacheException
-    {
+          throws CacheException {
         KAuthFile kauth = loadKauthFile();
 
         if (user == null) {
@@ -95,19 +86,19 @@ public class KauthFileLoginStrategy implements LoginStrategy
     }
 
     private LoginReply loginWithPassword(Subject subject)
-        throws CacheException
-    {
+          throws CacheException {
         KAuthFile kauth = loadKauthFile();
 
-        for (PasswordCredential password: subject.getPrivateCredentials(PasswordCredential.class)) {
+        for (PasswordCredential password : subject.getPrivateCredentials(
+              PasswordCredential.class)) {
             UserPwdRecord record =
-                kauth.getUserPwdRecord(password.getUsername());
+                  kauth.getUserPwdRecord(password.getUsername());
             if (record == null || record.isDisabled()) {
                 throw new PermissionDeniedCacheException("Access denied");
             }
 
             if (!record.isAnonymous() &&
-                !record.passwordIsValid(password.getPassword())) {
+                  !record.passwordIsValid(password.getPassword())) {
                 throw new PermissionDeniedCacheException("Access denied");
             }
 
@@ -121,8 +112,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
         throw new IllegalArgumentException("Subject is not supported by KAuthFileLoginStrategy");
     }
 
-    private Set<LoginAttribute> toLoginAttributes(UserAuthBase record)
-    {
+    private Set<LoginAttribute> toLoginAttributes(UserAuthBase record) {
         Set<LoginAttribute> attributes = new HashSet<>();
         attributes.add(new HomeDirectory(record.Home));
         attributes.add(new RootDirectory(record.Root));
@@ -133,14 +123,12 @@ public class KauthFileLoginStrategy implements LoginStrategy
     }
 
     @Override
-    public Principal map(Principal principal) throws CacheException
-    {
+    public Principal map(Principal principal) throws CacheException {
         return null;
     }
 
     @Override
-    public Set<Principal> reverseMap(Principal principal) throws CacheException
-    {
+    public Set<Principal> reverseMap(Principal principal) throws CacheException {
         return Collections.emptySet();
     }
 }

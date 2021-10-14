@@ -72,13 +72,13 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.apache.axis.types.URI;
-import org.apache.axis.types.UnsignedLong;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-
+import org.apache.axis.types.URI;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.RetentionPolicy;
@@ -104,24 +104,23 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class SRMPutClientV2 extends SRMClient implements Runnable
-{
+public class SRMPutClientV2 extends SRMClient implements Runnable {
+
     private final java.net.URI from[];
     private final java.net.URI to[];
-    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+    private final HashMap<String, Integer> pendingSurlsToIndex = new HashMap<>();
 
     private Copier copier;
     private Thread hook;
     private String requestToken;
     private SrmPrepareToPutResponse response;
 
-    /** Creates a new instance of SRMGetClient */
+    /**
+     * Creates a new instance of SRMGetClient
+     */
     public SRMPutClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from, to, configuration.getReport());
@@ -130,8 +129,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return to[0];
     }
 
@@ -143,17 +141,17 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
             int len = from.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
             String SURLS[] = new String[len];
-            for(int i = 0; i < len; ++i) {
+            for (int i = 0; i < len; ++i) {
                 java.net.URI filesource = from[i];
                 int filetype = SRMDispatcher.getUrlType(filesource);
-                if((filetype & SRMDispatcher.FILE_URL) == 0) {
-                    throw new IOException(" source is not file "+ filesource);
+                if ((filetype & SRMDispatcher.FILE_URL) == 0) {
+                    throw new IOException(" source is not file " + filesource);
                 }
-                if((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
-                    throw new IOException(" source is directory "+ filesource);
+                if ((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
+                    throw new IOException(" source is directory " + filesource);
                 }
-                if((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
-                    throw new IOException(" source is not readable "+ filesource);
+                if ((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
+                    throw new IOException(" source is not readable " + filesource);
                 }
                 File f = new File(filesource.getPath());
                 long filesize = f.length();
@@ -161,7 +159,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
                 URI uri = new URI(SURLS[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setExpectedFileSize(
-                        new UnsignedLong(filesize));
+                      new UnsignedLong(filesize));
                 fileRequests[i].setTargetSURL(uri);
                 pendingSurlsToIndex.put(SURLS[i], i);
             }
@@ -170,24 +168,26 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
             Runtime.getRuntime().addShutdownHook(hook);
 
             SrmPrepareToPutRequest srmPrepareToPutRequest =
-                new SrmPrepareToPutRequest();
-            srmPrepareToPutRequest.setUserRequestDescription(configuration.getUserRequestDescription());
-            String storagetype=configuration.getStorageType();
-            if (storagetype!=null) {
-                srmPrepareToPutRequest.setDesiredFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
+                  new SrmPrepareToPutRequest();
+            srmPrepareToPutRequest.setUserRequestDescription(
+                  configuration.getUserRequestDescription());
+            String storagetype = configuration.getStorageType();
+            if (storagetype != null) {
+                srmPrepareToPutRequest.setDesiredFileStorageType(
+                      FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime((int) configuration
-                    .getRequestLifetime());
+                  .getRequestLifetime());
 
             srmPrepareToPutRequest.setArrayOfFileRequests(
-                    new ArrayOfTPutFileRequest(fileRequests));
+                  new ArrayOfTPutFileRequest(fileRequests));
 
-            TAccessPattern  ap = null;
-            if(configuration.getAccessPattern() != null ) {
+            TAccessPattern ap = null;
+            if (configuration.getAccessPattern() != null) {
                 ap = TAccessPattern.fromString(configuration.getAccessPattern());
             }
             TConnectionType ct = null;
-            if(configuration.getConnectionType() != null ) {
+            if (configuration.getConnectionType() != null) {
                 ct = TConnectionType.fromString(configuration.getConnectionType());
             }
             ArrayOfString protocolArray = null;
@@ -195,125 +195,138 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
                 protocolArray = new ArrayOfString(configuration.getProtocols());
             }
             ArrayOfString arrayOfClientNetworks = null;
-            if (configuration.getArrayOfClientNetworks()!=null) {
+            if (configuration.getArrayOfClientNetworks() != null) {
                 arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
             }
-            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) {
+            if (ap != null || ct != null || arrayOfClientNetworks != null
+                  || protocolArray != null) {
                 srmPrepareToPutRequest.setTransferParameters(new TTransferParameters(ap,
-                        ct,
-                        arrayOfClientNetworks,
-                        protocolArray));
+                      ct,
+                      arrayOfClientNetworks,
+                      protocolArray));
             }
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
-                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+                  RetentionPolicy.fromString(configuration.getRetentionPolicy())
+                        .toTRetentionPolicy() : null;
             TAccessLatency al = configuration.getAccessLatency() != null ?
-                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
-            if ( (al!=null) && (rp==null)) {
-                throw new IllegalArgumentException("if access latency is specified, "+
-                        "then retention policy have to be specified as well");
+                  AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency()
+                  : null;
+            if ((al != null) && (rp == null)) {
+                throw new IllegalArgumentException("if access latency is specified, " +
+                      "then retention policy have to be specified as well");
+            } else if (rp != null) {
+                srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(
+                      new TRetentionPolicyInfo(rp, al));
             }
-            else if ( rp!=null ) {
-                srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            if (configuration.getOverwriteMode() != null) {
+                srmPrepareToPutRequest.setOverwriteOption(
+                      TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }
-            if(configuration.getOverwriteMode() != null) {
-                srmPrepareToPutRequest.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
-            }
-            if(configuration.getSpaceToken() != null) {
+            if (configuration.getSpaceToken() != null) {
                 srmPrepareToPutRequest.setTargetSpaceToken(configuration.getSpaceToken());
             }
-            configuration.getStorageSystemInfo().ifPresent(srmPrepareToPutRequest::setStorageSystemInfo);
+            configuration.getStorageSystemInfo()
+                  .ifPresent(srmPrepareToPutRequest::setStorageSystemInfo);
             response = srm.srmPrepareToPut(srmPrepareToPutRequest);
-            if(response == null) {
+            if (response == null) {
                 throw new IOException(" null response");
             }
             TReturnStatus status = response.getReturnStatus();
-            if(status == null) {
+            if (status == null) {
                 throw new IOException(" null return status");
             }
             TStatusCode statusCode = status.getStatusCode();
-            if(statusCode == null) {
+            if (statusCode == null) {
                 throw new IOException(" null status code");
             }
-            if(RequestStatusTool.isFailedRequestStatus(status) &&
-                    (statusCode != TStatusCode.SRM_FAILURE || response.getArrayOfFileStatuses() == null)) {
+            if (RequestStatusTool.isFailedRequestStatus(status) &&
+                  (statusCode != TStatusCode.SRM_FAILURE
+                        || response.getArrayOfFileStatuses() == null)) {
                 String explanation = status.getExplanation();
-                if(explanation != null){
-                    throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+ statusCode+" explanation= "+explanation);
-                }else{
-                    throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+ statusCode);
+                if (explanation != null) {
+                    throw new IOException(
+                          "srmPrepareToPut submission failed, unexpected or failed status : "
+                                + statusCode + " explanation= " + explanation);
+                } else {
+                    throw new IOException(
+                          "srmPrepareToPut submission failed, unexpected or failed status : "
+                                + statusCode);
                 }
             }
             requestToken = response.getRequestToken();
-            dsay(" srm returned requestToken = "+requestToken);
-            if(response.getArrayOfFileStatuses() == null  ) {
+            dsay(" srm returned requestToken = " + requestToken);
+            if (response.getArrayOfFileStatuses() == null) {
                 throw new IOException("returned PutRequestFileStatuses is an empty array");
             }
             TPutRequestFileStatus[] putRequestFileStatuses =
-                response.getArrayOfFileStatuses().getStatusArray();
-            if(putRequestFileStatuses.length != len) {
-                throw new IOException("incorrect number of GetRequestFileStatuses"+
-                        "in RequestStatus expected "+len+" received "+
-                        putRequestFileStatuses.length);
+                  response.getArrayOfFileStatuses().getStatusArray();
+            if (putRequestFileStatuses.length != len) {
+                throw new IOException("incorrect number of GetRequestFileStatuses" +
+                      "in RequestStatus expected " + len + " received " +
+                      putRequestFileStatuses.length);
             }
-            while(!pendingSurlsToIndex.isEmpty()) {
+            while (!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
                 for (TPutRequestFileStatus putRequestFileStatus : putRequestFileStatuses) {
                     URI surl = putRequestFileStatus.getSURL();
-                    if(surl == null) {
+                    if (surl == null) {
                         esay("invalid putRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
-                    if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        esay("invalid putRequestFileStatus, surl = "+surl_string+" not found");
+                    if (!pendingSurlsToIndex.containsKey(surl_string)) {
+                        esay("invalid putRequestFileStatus, surl = " + surl_string + " not found");
                         continue;
                     }
                     TReturnStatus fileStatus = putRequestFileStatus.getStatus();
-                    if(fileStatus == null) {
+                    if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    if(fileStatusCode == null) {
+                    if (fileStatusCode == null) {
                         throw new IOException(" null file status code");
                     }
-                    if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
+                    if (RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
                         String explanation = fileStatus.getExplanation();
-                        String error = isNullOrEmpty(explanation) ? fileStatusCode.toString() : fileStatusCode + ": " + explanation;
+                        String error = isNullOrEmpty(explanation) ? fileStatusCode.toString()
+                              : fileStatusCode + ": " + explanation;
                         say(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx],to[indx],error);
+                        setReportFailed(from[indx], to[indx], error);
                         continue;
                     }
-                    if(putRequestFileStatus.getTransferURL() != null) {
-                        java.net.URI globusTURL = new java.net.URI(putRequestFileStatus.getTransferURL().toString());
+                    if (putRequestFileStatus.getTransferURL() != null) {
+                        java.net.URI globusTURL = new java.net.URI(
+                              putRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
+                        setReportFailed(from[indx], to[indx],
+                              "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(from[indx], globusTURL,
-                                srm, requestToken, logger, to[indx], false,
-                                this);
+                              srm, requestToken, logger, to[indx], false,
+                              this);
                         copier.addCopyJob(job);
                         continue;
                     }
-                    if(putRequestFileStatus.getEstimatedWaitTime() != null &&
-                            putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            putRequestFileStatus.getEstimatedWaitTime() >=1) {
+                    if (putRequestFileStatus.getEstimatedWaitTime() != null &&
+                          putRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                          putRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = putRequestFileStatus
-                                .getEstimatedWaitTime();
+                              .getEstimatedWaitTime();
                     }
                 }
-                if(pendingSurlsToIndex.isEmpty()) {
+                if (pendingSurlsToIndex.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
                 }
                 // do not wait longer then 60 seconds
-                if(estimatedWaitInSeconds > 60) {
+                if (estimatedWaitInSeconds > 60) {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
-                    say("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    say("sleeping " + estimatedWaitInSeconds + " seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
-                }catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     logger.elog(ie.toString());
                 }
                 SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest = new SrmStatusOfPutRequestRequest();
@@ -325,81 +338,81 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
                 // we do not know what to expect from the server when
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
-                String [] pendingSurlStrings = pendingSurlsToIndex.keySet()
-                        .toArray(new String[pendingSurlsToIndex.size()]);
-                expectedResponseLength= pendingSurlStrings.length;
+                String[] pendingSurlStrings = pendingSurlsToIndex.keySet()
+                      .toArray(new String[pendingSurlsToIndex.size()]);
+                expectedResponseLength = pendingSurlStrings.length;
                 URI surlArray[] = new URI[expectedResponseLength];
-                for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new URI(pendingSurlStrings[i]);
+                for (int i = 0; i < expectedResponseLength; ++i) {
+                    surlArray[i] = new URI(pendingSurlStrings[i]);
                 }
                 srmStatusOfPutRequestRequest.setArrayOfTargetSURLs(
-                        new ArrayOfAnyURI(surlArray));
+                      new ArrayOfAnyURI(surlArray));
                 SrmStatusOfPutRequestResponse srmStatusOfPutRequestResponse =
-                        srm.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
-                if(srmStatusOfPutRequestResponse == null) {
+                      srm.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
+                if (srmStatusOfPutRequestResponse == null) {
                     throw new IOException(" null srmStatusOfPutRequestResponse");
                 }
-                if(srmStatusOfPutRequestResponse.getArrayOfFileStatuses() == null ) {
-                    esay( "putRequestFileStatuses == null");
-                    throw new IOException( "putRequestFileStatuses == null");
+                if (srmStatusOfPutRequestResponse.getArrayOfFileStatuses() == null) {
+                    esay("putRequestFileStatuses == null");
+                    throw new IOException("putRequestFileStatuses == null");
                 }
                 putRequestFileStatuses =
-                    srmStatusOfPutRequestResponse.getArrayOfFileStatuses().getStatusArray();
-                if(  putRequestFileStatuses.length !=  expectedResponseLength) {
-                    esay( "incorrect number of RequestFileStatuses");
+                      srmStatusOfPutRequestResponse.getArrayOfFileStatuses().getStatusArray();
+                if (putRequestFileStatuses.length != expectedResponseLength) {
+                    esay("incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
                 status = srmStatusOfPutRequestResponse.getReturnStatus();
-                if(status == null) {
+                if (status == null) {
                     throw new IOException(" null return status");
                 }
                 statusCode = status.getStatusCode();
-                if(statusCode == null) {
+                if (statusCode == null) {
                     throw new IOException(" null status code");
                 }
-                if(RequestStatusTool.isFailedRequestStatus(status)){
-                    String error = "srmPrepareToPut update failed, status : "+ statusCode+
-                    " explanation="+status.getExplanation();
+                if (RequestStatusTool.isFailedRequestStatus(status)) {
+                    String error = "srmPrepareToPut update failed, status : " + statusCode +
+                          " explanation=" + status.getExplanation();
                     esay(error);
-                    for(int i = 0; i<expectedResponseLength;++i) {
+                    for (int i = 0; i < expectedResponseLength; ++i) {
                         TReturnStatus frstatus = putRequestFileStatuses[i].getStatus();
-                        if ( frstatus != null) {
-                            esay("PutFileRequest["+
-                                    putRequestFileStatuses[i].getSURL()+
-                                    "] status="+frstatus.getStatusCode()+
-                                    " explanation="+frstatus.getExplanation()
+                        if (frstatus != null) {
+                            esay("PutFileRequest[" +
+                                  putRequestFileStatuses[i].getSURL() +
+                                  "] status=" + frstatus.getStatusCode() +
+                                  " explanation=" + frstatus.getExplanation()
                             );
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                pendingSurlsToIndex.remove(putRequestFileStatuses[i].getSURL().toString());
+                                pendingSurlsToIndex.remove(
+                                      putRequestFileStatuses[i].getSURL().toString());
                             }
                         }
                     }
                     throw new IOException(error);
                 }
             }
-        }catch(Exception e) {
+        } catch (Exception e) {
             try {
-                if(copier != null) {
+                if (copier != null) {
                     dsay("stopping copier" + e);
                     copier.stop();
                     abortAllPendingFiles();
                 }
-            }catch(Exception e1) {
+            } catch (Exception e1) {
                 edsay(e1.toString());
             }
             throw e;
-        }finally{
-            if(copier != null) {
+        } finally {
+            if (copier != null) {
                 copier.doneAddingJobs();
                 try {
                     copier.waitCompletion();
-                }
-                catch(Exception e1) {
+                } catch (Exception e1) {
                     edsay(e1.toString());
                 }
             }
             report.dumpReport();
-            if(!report.everythingAllRight()){
+            if (!report.everythingAllRight()) {
                 report.reportErrors(System.err);
             }
         }
@@ -408,54 +421,56 @@ public class SRMPutClientV2 extends SRMClient implements Runnable
     // this is called when Ctrl-C is hit, or TERM signal received
     @Override
     public void run() {
-        try{
+        try {
             dsay("stopping copier");
             copier.stop();
             abortAllPendingFiles();
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.elog(e.toString());
         }
     }
 
-    private void abortAllPendingFiles() throws Exception{
-        if(pendingSurlsToIndex.isEmpty()) {
+    private void abortAllPendingFiles() throws Exception {
+        if (pendingSurlsToIndex.isEmpty()) {
             return;
         }
-        if(response != null) {
+        if (response != null) {
             requestToken = response.getRequestToken();
-            if (requestToken!=null) {
+            if (requestToken != null) {
                 String[] surl_strings = pendingSurlsToIndex.keySet()
-                        .toArray(new String[pendingSurlsToIndex.size()]);
+                      .toArray(new String[pendingSurlsToIndex.size()]);
                 int len = surl_strings.length;
                 say("Releasing all remaining file requests");
                 URI surlArray[] = new URI[len];
-                for(int i=0;i<len;++i){
-                    surlArray[i]=new URI(surl_strings[i]);
+                for (int i = 0; i < len; ++i) {
+                    surlArray[i] = new URI(surl_strings[i]);
                 }
                 SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
                 srmAbortFilesRequest.setRequestToken(requestToken);
                 srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
-                SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
-                if(srmAbortFilesResponse == null) {
+                SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(
+                      srmAbortFilesRequest);
+                if (srmAbortFilesResponse == null) {
                     logger.elog(" srmAbortFilesResponse is null");
-                }
-                else
-                {
+                } else {
                     TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
-                    if(returnStatus == null) {
+                    if (returnStatus == null) {
                         esay("srmAbortFiles return status is null");
                         return;
                     }
-                    say("srmAbortFiles status code="+returnStatus.getStatusCode());
+                    say("srmAbortFiles status code=" + returnStatus.getStatusCode());
                 }
-            }
-            else {
-                if (response.getArrayOfFileStatuses()!=null){
-                    if (response.getArrayOfFileStatuses().getStatusArray()!=null) {
-                        for(int i=0;i<response.getArrayOfFileStatuses().getStatusArray().length;i++) {
-                            URI surl=response.getArrayOfFileStatuses().getStatusArray(i).getSURL();
-                            TReturnStatus fst=response.getArrayOfFileStatuses().getStatusArray(i).getStatus();
-                            esay("SURL["+i+"]="+surl.toString()+" status="+fst.getStatusCode()+" explanation="+fst.getExplanation());
+            } else {
+                if (response.getArrayOfFileStatuses() != null) {
+                    if (response.getArrayOfFileStatuses().getStatusArray() != null) {
+                        for (int i = 0;
+                              i < response.getArrayOfFileStatuses().getStatusArray().length; i++) {
+                            URI surl = response.getArrayOfFileStatuses().getStatusArray(i)
+                                  .getSURL();
+                            TReturnStatus fst = response.getArrayOfFileStatuses().getStatusArray(i)
+                                  .getStatus();
+                            esay("SURL[" + i + "]=" + surl.toString() + " status="
+                                  + fst.getStatusCode() + " explanation=" + fst.getExplanation());
                         }
                     }
                 }

@@ -62,11 +62,11 @@ package org.dcache.services.bulk;
 import diskCacheV111.vehicles.Message;
 
 public class PingMessage extends Message {
+
     private final String key;
     private final String path;
 
-    public PingMessage(String key, String path)
-    {
+    public PingMessage(String key, String path) {
         this.key = key;
         this.path = path;
     }

@@ -65,6 +65,7 @@ import java.util.Map;
  * <p>For collecting aggregate hourly data.  Not part of the DAO mapping.</p>
  */
 public class PoolHitsHourly extends BaseEntry {
+
     private static final long serialVersionUID = -4776963573729329237L;
     private long cached = 0L;
     private long notcached = 0L;

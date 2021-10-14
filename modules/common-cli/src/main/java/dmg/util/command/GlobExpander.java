@@ -18,21 +18,20 @@
 package dmg.util.command;
 
 import java.util.List;
-
 import org.dcache.util.Glob;
 
 /**
- * A class that implements this interface can expand a supplied glob
- * into a list of zero or more items.  Typically, a class implementing this
- * interface represents some namespace.
+ * A class that implements this interface can expand a supplied glob into a list of zero or more
+ * items.  Typically, a class implementing this interface represents some namespace.
  */
-public interface GlobExpander<T>
-{
+public interface GlobExpander<T> {
+
     /**
      * Provide a list of items that match the supplied pattern.
+     *
      * @param glob the pattern to select matching items.
-     * @return the result of expanding {@literal argument}, or an empty list
-     * if no matches were found.
+     * @return the result of expanding {@literal argument}, or an empty list if no matches were
+     * found.
      */
     List<T> expand(Glob glob);
 }

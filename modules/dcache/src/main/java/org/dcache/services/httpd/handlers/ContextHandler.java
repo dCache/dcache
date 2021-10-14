@@ -1,31 +1,27 @@
 package org.dcache.services.httpd.handlers;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import dmg.cells.nucleus.DomainContextAware;
+import dmg.util.HttpRequest;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import dmg.cells.nucleus.DomainContextAware;
-import dmg.util.HttpRequest;
-
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.dcache.services.httpd.exceptions.OnErrorException;
 import org.dcache.services.httpd.util.StandardHttpRequest;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 /**
  * Provides lookup in the context map of preconfigured HTML pages.
  *
  * @author arossi
  */
-public class ContextHandler extends AbstractHandler implements DomainContextAware
-{
+public class ContextHandler extends AbstractHandler implements DomainContextAware {
+
     private final String specificName;
     private Map<String, Object> context;
     private final int status;
@@ -40,15 +36,14 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
     }
 
     @Override
-    public void setDomainContext(Map<String, Object> context)
-    {
+    public void setDomainContext(Map<String, Object> context) {
         this.context = context;
     }
 
     @Override
     public void handle(String target, Request baseRequest,
-                    HttpServletRequest request, HttpServletResponse response)
-                    throws IOException, ServletException {
+          HttpServletRequest request, HttpServletResponse response)
+          throws IOException, ServletException {
 
         try {
             final HttpRequest proxy = new StandardHttpRequest(request, response);
@@ -63,7 +58,7 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
                 }
 
             } else {
-                 value = context.get(specificName);
+                value = context.get(specificName);
             }
 
             if (value == null) {
@@ -98,19 +93,19 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
             str = str.substring(0, Math.min(str.length(), 60)).trim();
             str = toHtmlEscapedString(str);
             sb.append("<tr><td>")
-              .append(key)
-              .append("</td><td>")
-              .append(o.getClass().getName())
-              .append("</td><td>")
-              .append(str.isEmpty() ? "&nbsp;" : str)
-              .append("</td></tr>\n");
+                  .append(key)
+                  .append("</td><td>")
+                  .append(o.getClass().getName())
+                  .append("</td><td>")
+                  .append(str.isEmpty() ? "&nbsp;" : str)
+                  .append("</td></tr>\n");
         }
         sb.append("</table></center>\n");
         sb.append("</blockquote>\n");
         sb.append("<hr>");
         sb.append("<address>Created : ")
-          .append(new Date())
-          .append("</address>\n");
+              .append(new Date())
+              .append("</address>\n");
         sb.append("</body></html>");
         return sb.toString();
     }

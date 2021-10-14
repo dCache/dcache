@@ -10,14 +10,15 @@
 package diskCacheV111.services.space;
 
 /**
- *
  * @author timur
  */
-public class SpaceException extends Exception{
+public class SpaceException extends Exception {
 
     private static final long serialVersionUID = 6138446612324256533L;
 
-    /** Creates a new instance of SpaceException */
+    /**
+     * Creates a new instance of SpaceException
+     */
     public SpaceException() {
         super();
     }
@@ -26,8 +27,8 @@ public class SpaceException extends Exception{
         super(message);
     }
 
-    public SpaceException(String message,Throwable cause) {
-        super(message,cause);
+    public SpaceException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public SpaceException(Throwable cause) {

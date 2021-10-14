@@ -17,16 +17,16 @@
  */
 package org.dcache.srm.taperecallscheduling.spi;
 
-import org.dcache.srm.taperecallscheduling.TapeInfo;
-import org.dcache.srm.taperecallscheduling.TapefileInfo;
-
 import java.util.List;
 import java.util.Map;
+import org.dcache.srm.taperecallscheduling.TapeInfo;
+import org.dcache.srm.taperecallscheduling.TapefileInfo;
 
 public interface TapeInfoProvider {
 
     /**
      * Returns information on tapes requested by name
+     *
      * @param tapes list of tape names
      * @return associated tape infos
      */
@@ -34,20 +34,23 @@ public interface TapeInfoProvider {
 
     /**
      * Returns information on tape located files requested by name
+     *
      * @param fileids list of files requested by identifyer (full srm path)
      * @return tapefile infos
      */
     Map<String, TapefileInfo> getTapefileInfos(List<String> fileids);
 
     /**
-     * Returns a Strinmg describing the tape info provider, including
-     * potentially stored state and configuration.
+     * Returns a Strinmg describing the tape info provider, including potentially stored state and
+     * configuration.
+     *
      * @return Descriptive String
      */
     String describe();
 
     /**
      * Triggers a reload of the tape info provider's cached state if supported.
+     *
      * @return
      */
     boolean reload();

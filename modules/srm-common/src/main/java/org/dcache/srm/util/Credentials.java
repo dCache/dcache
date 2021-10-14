@@ -1,7 +1,6 @@
 package org.dcache.srm.util;
 
 import eu.emi.security.authn.x509.X509Credential;
-
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -10,15 +9,13 @@ import java.util.Optional;
 /**
  * Utility class with static methods to handle X.509 Credentials.
  */
-public class Credentials
-{
-    private Credentials()
-    {
+public class Credentials {
+
+    private Credentials() {
         // prevent instantiation.
     }
 
-    public static X509Credential checkValid(X509Credential credential) throws IOException
-    {
+    public static X509Credential checkValid(X509Credential credential) throws IOException {
         Date now = new Date();
         X509Certificate certificate = credential.getCertificate();
 
@@ -34,8 +31,7 @@ public class Credentials
     }
 
     public static Optional<X509Credential> checkValid(Optional<X509Credential> credential)
-            throws IOException
-    {
+          throws IOException {
         if (credential.isPresent()) {
             checkValid(credential.get());
         }

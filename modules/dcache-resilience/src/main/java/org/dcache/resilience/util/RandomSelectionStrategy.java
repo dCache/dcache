@@ -60,18 +60,16 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import com.google.common.collect.Iterables;
-
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.function.Function;
 
 /**
- *  <p>A simple utility for selection of a string. Chooses randomly from the
- *          elements in the collection.  Note that this does not side-effect
- *          the collection itself.</p>
+ * <p>A simple utility for selection of a string. Chooses randomly from the
+ * elements in the collection.  Note that this does not side-effect the collection itself.</p>
  */
 public final class RandomSelectionStrategy
-                implements Function<Collection<String>, String> {
+      implements Function<Collection<String>, String> {
 
     public static final RandomSelectionStrategy SELECTOR = new RandomSelectionStrategy();
 

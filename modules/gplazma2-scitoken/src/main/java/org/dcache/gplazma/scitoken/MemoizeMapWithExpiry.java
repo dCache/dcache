@@ -23,12 +23,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Provide access to a Map, obtained from some supplier where the value is
- * cached for a configurable duration.  The cached duration may be different
- * depending on whether the Map is empty.
+ * Provide access to a Map, obtained from some supplier where the value is cached for a configurable
+ * duration.  The cached duration may be different depending on whether the Map is empty.
  */
-public class MemoizeMapWithExpiry<C extends Map<?,?>> implements Supplier<C>
-{
+public class MemoizeMapWithExpiry<C extends Map<?, ?>> implements Supplier<C> {
+
     private final Supplier<C> supplier;
     private final Duration whenNonEmpty;
     private final Duration whenEmpty;
@@ -37,56 +36,49 @@ public class MemoizeMapWithExpiry<C extends Map<?,?>> implements Supplier<C>
     private Instant nextCheck;
 
     public MemoizeMapWithExpiry(Supplier<C> supplier, Duration whenNonEmpty,
-            Duration whenEmpty)
-    {
+          Duration whenEmpty) {
         this.supplier = supplier;
         this.whenEmpty = whenEmpty;
         this.whenNonEmpty = whenNonEmpty;
     }
 
     @Override
-    public synchronized C get()
-    {
+    public synchronized C get() {
         Instant now = Instant.now();
         if (nextCheck == null || now.isAfter(nextCheck)) {
             value = supplier.get();
             Duration cacheDuration = (value == null || value.isEmpty())
-                    ? whenEmpty : whenNonEmpty;
+                  ? whenEmpty : whenNonEmpty;
             nextCheck = now.plus(cacheDuration);
         }
         return value;
     }
 
-    public static <C extends Map<?,?>> Builder memorize(Supplier<C> supplier)
-    {
+    public static <C extends Map<?, ?>> Builder memorize(Supplier<C> supplier) {
         return new Builder(supplier);
     }
 
-    public static class Builder<C extends Map<?,?>>
-    {
+    public static class Builder<C extends Map<?, ?>> {
+
         private final Supplier<C> supplier;
         private Duration whenNonEmpty;
         private Duration whenEmpty;
 
-        public Builder(Supplier<C> supplier)
-        {
+        public Builder(Supplier<C> supplier) {
             this.supplier = supplier;
         }
 
-        public Builder whenEmptyFor(Duration duration)
-        {
+        public Builder whenEmptyFor(Duration duration) {
             whenEmpty = duration;
             return this;
         }
 
-        public Builder whenNonEmptyFor(Duration duration)
-        {
+        public Builder whenNonEmptyFor(Duration duration) {
             whenNonEmpty = duration;
             return this;
         }
 
-        public MemoizeMapWithExpiry build()
-        {
+        public MemoizeMapWithExpiry build() {
             return new MemoizeMapWithExpiry(supplier, whenNonEmpty, whenEmpty);
         }
     }

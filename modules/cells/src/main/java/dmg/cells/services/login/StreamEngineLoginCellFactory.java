@@ -19,27 +19,25 @@
 package dmg.cells.services.login;
 
 import com.google.common.util.concurrent.AbstractService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.util.StreamEngine;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
-
-import dmg.cells.nucleus.Cell;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.util.StreamEngine;
-
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class StreamEngineLoginCellFactory extends AbstractService implements LoginCellFactory
-{
+public abstract class StreamEngineLoginCellFactory extends AbstractService implements
+      LoginCellFactory {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
 
     private static final Class<?>[] AUTH_CON_SIGNATURE =
-            { CellEndpoint.class, Args.class };
+          {CellEndpoint.class, Args.class};
 
     private final Args args;
 
@@ -49,8 +47,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
 
     private final CellEndpoint endpoint;
 
-    public StreamEngineLoginCellFactory(Args args, CellEndpoint endpoint)
-    {
+    public StreamEngineLoginCellFactory(Args args, CellEndpoint endpoint) {
         this.args = args;
         this.endpoint = endpoint;
 
@@ -68,7 +65,8 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
             try {
                 authConstructor = authClass.getConstructor(AUTH_CON_SIGNATURE);
             } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("Class lacks authentication constructor: " + authClass);
+                throw new IllegalArgumentException(
+                      "Class lacks authentication constructor: " + authClass);
             }
             LOGGER.trace("Using authentication constructor: {}", authConstructor);
         } else {
@@ -79,8 +77,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
         this.authConstructor = authConstructor;
     }
 
-    private static String checkProtocol(String protocol) throws IllegalArgumentException
-    {
+    private static String checkProtocol(String protocol) throws IllegalArgumentException {
         if (protocol == null) {
             protocol = "telnet";
         }
@@ -90,17 +87,17 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
         return protocol;
     }
 
-    private static Class<?> toAuthClass(String authClassName, String protocol) throws ClassNotFoundException
-    {
+    private static Class<?> toAuthClass(String authClassName, String protocol)
+          throws ClassNotFoundException {
         Class<?> authClass = null;
         if (authClassName == null) {
             switch (protocol) {
-            case "raw":
-                authClass = null;
-                break;
-            case "telnet":
-                authClass = TelnetSAuth_A.class;
-                break;
+                case "raw":
+                    authClass = null;
+                    break;
+                case "telnet":
+                    authClass = TelnetSAuth_A.class;
+                    break;
             }
         } else if (!authClassName.equals("none")) {
             authClass = Class.forName(authClassName);
@@ -112,8 +109,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
     }
 
     @Override
-    public Cell newCell(Socket socket) throws InvocationTargetException
-    {
+    public Cell newCell(Socket socket) throws InvocationTargetException {
         StreamEngine engine;
         try {
             if (authConstructor != null) {
@@ -137,8 +133,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("  Factory        : " + getClass());
         pw.println("  Encoding       : " + protocol);
         if (authClass != null) {
@@ -147,5 +142,5 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
     }
 
     public abstract Cell newCell(StreamEngine engine, String userName)
-            throws InvocationTargetException;
+          throws InvocationTargetException;
 }

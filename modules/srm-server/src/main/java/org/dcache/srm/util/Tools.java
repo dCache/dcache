@@ -10,23 +10,25 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class Tools {
 
-    /** Creates a new instance of Tools */
+    /**
+     * Creates a new instance of Tools
+     */
     public Tools() {
     }
 
     public static final boolean sameHost(String host1, String host2)
-        throws UnknownHostException {
+          throws UnknownHostException {
         InetAddress[] host1Addrs = InetAddress.getAllByName(host1);
         InetAddress[] host2Addrs = InetAddress.getAllByName(host2);
-        for(InetAddress host1Addr: host1Addrs) {
-            for(InetAddress host2Addr: host2Addrs) {
-                if(host1Addr.equals(host2Addr)) {
+        for (InetAddress host1Addr : host1Addrs) {
+            for (InetAddress host2Addr : host2Addrs) {
+                if (host1Addr.equals(host2Addr)) {
                     return true;
                 }
             }
@@ -36,14 +38,14 @@ public class Tools {
 
     public static final String[] trimStringArray(String[] sarray) {
 
-        if(sarray ==null) {
+        if (sarray == null) {
             return null;
         }
         List<String> protList = new ArrayList<>();
-        for(String protocol:sarray) {
-            if(protocol != null ) {
+        for (String protocol : sarray) {
+            if (protocol != null) {
                 protocol = protocol.trim();
-                if(protocol.length() >0) {
+                if (protocol.length() > 0) {
                     protList.add(protocol);
                 }
             }

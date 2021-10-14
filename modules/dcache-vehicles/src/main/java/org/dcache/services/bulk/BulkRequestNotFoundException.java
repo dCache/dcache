@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-public class BulkRequestNotFoundException extends BulkRequestStorageException
-{
+public class BulkRequestNotFoundException extends BulkRequestStorageException {
+
     private static final long serialVersionUID = 1881388905813183790L;
 
-    public BulkRequestNotFoundException(String message)
-    {
+    public BulkRequestNotFoundException(String message) {
         super(message);
     }
 
-    public BulkRequestNotFoundException(String message, Throwable cause)
-    {
+    public BulkRequestNotFoundException(String message, Throwable cause) {
         super(message, cause);
     }
 }

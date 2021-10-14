@@ -60,9 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.plugins;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.Set;
-
 import org.dcache.services.bulk.job.BulkJobArgumentDescriptor;
 import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.job.BulkJobProvider;
@@ -70,43 +68,39 @@ import org.dcache.services.bulk.job.MultipleTargetJob.TargetType;
 import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
 /**
- *  Provides a test activity for admin interface testing.
+ * Provides a test activity for admin interface testing.
  */
-abstract class TreeWalkJobProvider extends BulkJobProvider<TreeWalkJob>
-{
+abstract class TreeWalkJobProvider extends BulkJobProvider<TreeWalkJob> {
+
     static final BulkJobArgumentDescriptor USE_PING =
-                    new BulkJobArgumentDescriptor("simulate-wait",
-                                                  "send to ping service",
-                                                  "true|false",
-                                                  false, "false");
+          new BulkJobArgumentDescriptor("simulate-wait",
+                "send to ping service",
+                "true|false",
+                false, "false");
 
     static final BulkJobArgumentDescriptor SIMULATE_FAILURE =
-                    new BulkJobArgumentDescriptor("simulate-failure",
-                                                  "randomly fail jobs",
-                                                  "true|false",
-                                                  false, "false");
+          new BulkJobArgumentDescriptor("simulate-failure",
+                "randomly fail jobs",
+                "true|false",
+                false, "false");
 
     protected TreeWalkJobProvider(String activity,
-                                  TargetType targetType,
-                                  ExpansionType expansionType)
-    {
+          TargetType targetType,
+          ExpansionType expansionType) {
         super(activity, targetType, expansionType);
     }
 
     @Override
-    public TreeWalkJob createJob(BulkJobKey key, BulkJobKey parentKey)
-    {
+    public TreeWalkJob createJob(BulkJobKey key, BulkJobKey parentKey) {
         return new TreeWalkJob(key, parentKey, activity);
     }
 
     @Override
-    public Class<TreeWalkJob> getJobClass()
-    {
+    public Class<TreeWalkJob> getJobClass() {
         return TreeWalkJob.class;
     }
 
-    public Set<BulkJobArgumentDescriptor> getArguments()
-    {
+    public Set<BulkJobArgumentDescriptor> getArguments() {
         return ImmutableSet.of(USE_PING, SIMULATE_FAILURE);
     }
 }

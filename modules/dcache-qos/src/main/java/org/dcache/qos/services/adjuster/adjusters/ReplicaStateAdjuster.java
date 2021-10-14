@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.adjuster.adjusters;
 
+import static org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler.FAILED_STATE_CHANGE_MESSAGE;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -76,103 +78,103 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.qos.ChangePreciousBitMessage;
 import org.dcache.vehicles.qos.ChangeStickyBitMessage;
 
-import static org.dcache.qos.services.adjuster.handlers.QoSAdjustTaskCompletionHandler.FAILED_STATE_CHANGE_MESSAGE;
-
 /**
- *  Changes the sticky bit on the replica in question in response to the need for
- *  another permanent replica or from the discovery of an excess permanent replica.
- *  Task is synchronous (waits for reply).
+ * Changes the sticky bit on the replica in question in response to the need for another permanent
+ * replica or from the discovery of an excess permanent replica. Task is synchronous (waits for
+ * reply).
  */
 public final class ReplicaStateAdjuster extends QoSAdjuster {
-  CellStub pools;
-  ExecutorService executorService;
-  QoSAdjustTaskCompletionHandler completionHandler;
 
-  private PnfsId pnfsId;
-  private String target;
-  private QoSAction action;
-  private Future<Message> future;
+    CellStub pools;
+    ExecutorService executorService;
+    QoSAdjustTaskCompletionHandler completionHandler;
 
-  @Override
-  protected void runAdjuster(QoSAdjusterTask task) {
-    pnfsId = task.getPnfsId();
-    target = task.getTarget();
-    action = task.getAction();
+    private PnfsId pnfsId;
+    private String target;
+    private QoSAction action;
+    private Future<Message> future;
 
-    executorService.submit(() -> {
-      sendMessageToRepository();
-      waitForReply();
-    });
-  }
+    @Override
+    protected void runAdjuster(QoSAdjusterTask task) {
+        pnfsId = task.getPnfsId();
+        target = task.getTarget();
+        action = task.getAction();
 
-  @Override
-  public synchronized void cancel(String explanation) {
-    if (future != null) {
-      future.cancel(true);
-    }
-  }
-
-  private synchronized void sendMessageToRepository() {
-    Message msg;
-    switch (action) {
-      case UNSET_PRECIOUS_REPLICA:
-        msg = new ChangePreciousBitMessage(target, pnfsId);
-        break;
-      case PERSIST_REPLICA:
-        msg = new ChangeStickyBitMessage(target, pnfsId, true);
-        break;
-      case CACHE_REPLICA:
-        msg = new ChangeStickyBitMessage(target, pnfsId, false);
-        break;
-      default:
-        throw new RuntimeException("ReplicaStateAdjuster does not handle "
-            + action +"; this is a bug.");
+        executorService.submit(() -> {
+            sendMessageToRepository();
+            waitForReply();
+        });
     }
 
-    LOGGER.debug("Sending {} message to {} for {}.", action, target, pnfsId);
-    ACTIVITY_LOGGER.info("Sending {} message to {} for {}.", action, target, pnfsId);
-    future = pools.send(new CellPath(target), msg);
-  }
-
-  private void waitForReply() {
-    synchronized (this) {
-      if (future == null) {
-        completionHandler.taskFailed(pnfsId, Optional.empty(),
-                                     new CacheException(CacheException.SERVICE_UNAVAILABLE,
-                                                        "no future returned by message send."));
-        return;
-      }
+    @Override
+    public synchronized void cancel(String explanation) {
+        if (future != null) {
+            future.cancel(true);
+        }
     }
 
-    CacheException exception = null;
-    Message msg = null;
+    private synchronized void sendMessageToRepository() {
+        Message msg;
+        switch (action) {
+            case UNSET_PRECIOUS_REPLICA:
+                msg = new ChangePreciousBitMessage(target, pnfsId);
+                break;
+            case PERSIST_REPLICA:
+                msg = new ChangeStickyBitMessage(target, pnfsId, true);
+                break;
+            case CACHE_REPLICA:
+                msg = new ChangeStickyBitMessage(target, pnfsId, false);
+                break;
+            default:
+                throw new RuntimeException("ReplicaStateAdjuster does not handle "
+                      + action + "; this is a bug.");
+        }
 
-    try {
-      LOGGER.debug("Waiting for {} reply for {} from {}.", action, pnfsId, target);
-      msg = future.get();
-    } catch (InterruptedException | ExecutionException e) {
-      exception = CacheExceptionUtils.getCacheException(CacheException.SELECTED_POOL_FAILED,
-                                                        FAILED_STATE_CHANGE_MESSAGE,
-                                                        pnfsId,
-                                                        action,
-                                                        target,
-                                                        e);
+        LOGGER.debug("Sending {} message to {} for {}.", action, target, pnfsId);
+        ACTIVITY_LOGGER.info("Sending {} message to {} for {}.", action, target, pnfsId);
+        future = pools.send(new CellPath(target), msg);
     }
 
-    LOGGER.debug("Calling completion handler for {} reply for {} from {}.", action, pnfsId, target);
+    private void waitForReply() {
+        synchronized (this) {
+            if (future == null) {
+                completionHandler.taskFailed(pnfsId, Optional.empty(),
+                      new CacheException(CacheException.SERVICE_UNAVAILABLE,
+                            "no future returned by message send."));
+                return;
+            }
+        }
 
-    if (exception != null) {
-      completionHandler.taskFailed(pnfsId, Optional.empty(), exception);
-      return;
+        CacheException exception = null;
+        Message msg = null;
+
+        try {
+            LOGGER.debug("Waiting for {} reply for {} from {}.", action, pnfsId, target);
+            msg = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            exception = CacheExceptionUtils.getCacheException(CacheException.SELECTED_POOL_FAILED,
+                  FAILED_STATE_CHANGE_MESSAGE,
+                  pnfsId,
+                  action,
+                  target,
+                  e);
+        }
+
+        LOGGER.debug("Calling completion handler for {} reply for {} from {}.", action, pnfsId,
+              target);
+
+        if (exception != null) {
+            completionHandler.taskFailed(pnfsId, Optional.empty(), exception);
+            return;
+        }
+
+        exception = msg.getErrorObject() == null ? null : CacheExceptionFactory.exceptionOf(msg);
+
+        if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
+            completionHandler.taskFailed(pnfsId, Optional.empty(), exception);
+            return;
+        }
+
+        completionHandler.taskCompleted(pnfsId, Optional.empty());
     }
-
-    exception = msg.getErrorObject() == null ? null : CacheExceptionFactory.exceptionOf(msg);
-
-    if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
-      completionHandler.taskFailed(pnfsId, Optional.empty(), exception);
-      return;
-    }
-
-    completionHandler.taskCompleted(pnfsId, Optional.empty());
-  }
 }

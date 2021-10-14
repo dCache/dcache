@@ -19,34 +19,32 @@
 package org.dcache.events;
 
 /**
- * A SystemEvent is an event that describes events pertaining to the event
- * delivery system itself.
+ * A SystemEvent is an event that describes events pertaining to the event delivery system itself.
  */
-public class SystemEvent implements Event
-{
+public class SystemEvent implements Event {
+
     /**
      * The kind of event affecting the event delivery system.
      */
     public enum Type {
-        /** The system was forced to drop events. */
+        /**
+         * The system was forced to drop events.
+         */
         OVERFLOW,
     }
 
     private final Type type;
 
-    public SystemEvent(Type type)
-    {
+    public SystemEvent(Type type) {
         this.type = type;
     }
 
     @Override
-    public String getCategory()
-    {
+    public String getCategory() {
         return "SYSTEM";
     }
 
-    public Type getType()
-    {
+    public Type getType() {
         return type;
     }
 }

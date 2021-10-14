@@ -17,10 +17,13 @@
  */
 package org.dcache.macaroons;
 
-import com.google.common.io.BaseEncoding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
+import com.google.common.io.BaseEncoding;
+import diskCacheV111.util.FsPath;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
@@ -29,22 +32,15 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.LongStream;
-
-import diskCacheV111.util.FsPath;
-
 import org.dcache.auth.attributes.Activity;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class holds information that is (or is to be) encoded in a macaroon as
- * various caveats.
+ * This class holds information that is (or is to be) encoded in a macaroon as various caveats.
  */
-public class MacaroonContext
-{
+public class MacaroonContext {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MacaroonContext.class);
 
     private FsPath root = FsPath.ROOT;
@@ -59,32 +55,27 @@ public class MacaroonContext
     private Optional<Instant> expiry = Optional.empty();
     private String issueId;
 
-    public void updateHome(String directory) throws InvalidCaveatException
-    {
+    public void updateHome(String directory) throws InvalidCaveatException {
         LOGGER.debug("Updating home: {}", directory);
         home = root.resolve(directory);
     }
 
-    public void setHome(FsPath path)
-    {
+    public void setHome(FsPath path) {
         LOGGER.debug("Setting home to {}", path);
         home = path;
     }
 
-    public Optional<FsPath> getHome()
-    {
+    public Optional<FsPath> getHome() {
         return home == FsPath.ROOT ? Optional.empty() : Optional.of(home);
     }
 
-    public void setRoot(FsPath newRoot)
-    {
+    public void setRoot(FsPath newRoot) {
         LOGGER.debug("Setting root to {}", root);
         checkArgument(newRoot.hasPrefix(root), "Attempt to weaken root path");
         root = newRoot;
     }
 
-    public void updateRoot(String directory) throws InvalidCaveatException
-    {
+    public void updateRoot(String directory) throws InvalidCaveatException {
         FsPath newRoot = root.chroot(directory);
 
         FsPath delta = FsPath.ROOT.resolve(directory);
@@ -106,90 +97,76 @@ public class MacaroonContext
         root = newRoot;
     }
 
-    public Optional<FsPath> getRoot()
-    {
+    public Optional<FsPath> getRoot() {
         return root == FsPath.ROOT ? Optional.empty() : Optional.of(root);
     }
 
-    public void setPath(FsPath desiredPath)
-    {
+    public void setPath(FsPath desiredPath) {
         path = desiredPath;
         LOGGER.debug("Setting path to {}", path);
     }
 
-    public void updatePath(String directory)
-    {
+    public void updatePath(String directory) {
         path = path.chroot(directory);
     }
 
-    public Optional<FsPath> getPath()
-    {
+    public Optional<FsPath> getPath() {
         return path == FsPath.ROOT ? Optional.empty() : Optional.of(path);
     }
 
-    public void setUsername(String name)
-    {
+    public void setUsername(String name) {
         checkArgument(!name.isEmpty(), "username is empty");
         checkArgument(username == null, "username is already set");
         username = name;
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         checkState(username != null, "username not specified");
         return username;
     }
 
-    public void setUid(long id)
-    {
+    public void setUid(long id) {
         checkArgument(id >= 0, "invalid uid value");
         checkArgument(uid == -1, "uid is already set");
         uid = id;
     }
 
-    public long getUid()
-    {
+    public long getUid() {
         checkState(uid != -1, "uid not specified");
         return uid;
     }
 
-    public void setGids(long[] id)
-    {
+    public void setGids(long[] id) {
         checkArgument(id.length > 0, "empty list of gids");
         checkArgument(gids == null, "gids are already set");
         gids = id;
     }
 
-    public long[] getGids()
-    {
+    public long[] getGids() {
         checkState(gids != null, "gid not specified");
         return gids;
     }
 
-    public LongStream getGidStream()
-    {
+    public LongStream getGidStream() {
         return Arrays.stream(getGids());
     }
 
-    public void updateAllowedActivities(EnumSet<Activity> newActivities) throws InvalidCaveatException
-    {
+    public void updateAllowedActivities(EnumSet<Activity> newActivities)
+          throws InvalidCaveatException {
         checkCaveat(activities.containsAll(newActivities), "attempt to enlarge activity set");
         activities = newActivities;
     }
 
-    public void keepActivities(EnumSet<Activity> newActivities)
-    {
+    public void keepActivities(EnumSet<Activity> newActivities) {
         activities.retainAll(newActivities);
     }
 
-    public void removeActivities(EnumSet<Activity> deniedActivities)
-    {
+    public void removeActivities(EnumSet<Activity> deniedActivities) {
         LOGGER.debug("Denying activities: {}", deniedActivities);
         activities.removeAll(deniedActivities);
     }
 
-    public Optional<EnumSet<Activity>> getAllowedActivities()
-    {
+    public Optional<EnumSet<Activity>> getAllowedActivities() {
         /*  In general, any non-READ_METADATA activity only makes sense if
          *  the user is allowed to "enter a directory".  This requires the user
          *  isn't banned from the READ_METADATA activity, which would be the
@@ -204,7 +181,8 @@ public class MacaroonContext
          */
 
         if (activities.size() == Activity.values().length ||
-                activities.size() == Activity.values().length-1 && !activities.contains(Activity.READ_METADATA)) {
+              activities.size() == Activity.values().length - 1 && !activities.contains(
+                    Activity.READ_METADATA)) {
             // As an optimisation, treat an authorisation of all activities as
             // if the macaroon has no activity caveat.
             return Optional.empty();
@@ -217,8 +195,7 @@ public class MacaroonContext
         }
     }
 
-    public void updateExpiry(Instant newExpiry)
-    {
+    public void updateExpiry(Instant newExpiry) {
         requireNonNull(newExpiry);
 
         if (!expiry.isPresent() || newExpiry.isBefore(expiry.get())) {
@@ -227,55 +204,49 @@ public class MacaroonContext
         }
     }
 
-    public Optional<Instant> getExpiry()
-    {
+    public Optional<Instant> getExpiry() {
         return expiry;
     }
 
-    public void updateMaxUpload(long value) throws InvalidCaveatException
-    {
+    public void updateMaxUpload(long value) throws InvalidCaveatException {
         checkCaveat(value > 0, CaveatType.MAX_UPLOAD.getLabel() + " must be a positive value");
         long updatedValue = maxUpload.isPresent() ? Math.min(maxUpload.getAsLong(), value) : value;
         maxUpload = OptionalLong.of(updatedValue);
     }
 
-    public OptionalLong getMaxUpload()
-    {
+    public OptionalLong getMaxUpload() {
         return maxUpload;
     }
 
     /**
      * Hexadecimal encoded macaroon signature.
+     *
      * @param signature
      */
-    public void setSignature(String signature)
-    {
+    public void setSignature(String signature) {
         this.signature = requireNonNull(signature);
 
     }
 
-    public String getId()
-    {
+    public String getId() {
         checkState(signature != null, "Missing signature");
         return buildId(signature, issueId);
     }
 
-    public static String buildId(String signature, String issueId)
-    {
+    public static String buildId(String signature, String issueId) {
         // 6 bytes -> 48 bit: collision p=0.01 after 2.4x10^6 values, p=0.5 after 2x10^7.
         byte[] rawId = BaseEncoding.base16().lowerCase().decode(signature.substring(0, 12));
-        String partialSignature = new String(Base64.getEncoder().encode(rawId), StandardCharsets.US_ASCII);
+        String partialSignature = new String(Base64.getEncoder().encode(rawId),
+              StandardCharsets.US_ASCII);
 
         return issueId == null ? partialSignature : issueId + ":" + partialSignature;
     }
 
-    public void updateIssueId(String value)
-    {
+    public void updateIssueId(String value) {
         issueId = requireNonNull(value);
     }
 
-    public String getIssueId()
-    {
+    public String getIssueId() {
         return issueId;
     }
 }

@@ -72,19 +72,17 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -103,37 +101,35 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public final class PutRequest extends ContainerRequest<PutFileRequest> {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(PutRequest.class);
+          LoggerFactory.getLogger(PutRequest.class);
 
     // private PutFileRequest fileRequests[];
     private final String[] protocols;
     private TOverwriteMode overwriteMode;
 
     public PutRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
-            Long[] sizes, boolean[] wantPermanent, String[] protocols,
-            long lifetime, long max_update_period, String client_host,
-            @Nullable String spaceToken,
-            @Nullable TRetentionPolicy retentionPolicy,
-            @Nullable TAccessLatency accessLatency,
-            @Nullable String description)
-    {
+          Long[] sizes, boolean[] wantPermanent, String[] protocols,
+          long lifetime, long max_update_period, String client_host,
+          @Nullable String spaceToken,
+          @Nullable TRetentionPolicy retentionPolicy,
+          @Nullable TAccessLatency accessLatency,
+          @Nullable String description) {
         super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   checkArgument(surls.length == sizes.length);
                   ImmutableList.Builder<PutFileRequest> requests = ImmutableList.builder();
-                  for(int i = 0; i < surls.length; ++i) {
+                  for (int i = 0; i < surls.length; ++i) {
                       requests.add(new PutFileRequest(id, surls[i], sizes[i], lifetime, spaceToken,
-                                                      retentionPolicy, accessLatency));
+                            retentionPolicy, accessLatency));
                   }
                   return requests.build();
               });
@@ -141,42 +137,39 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     public PutRequest(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            ImmutableList<PutFileRequest> fileRequests, int retryDeltaTime,
-            boolean should_updateretryDeltaTime, String description,
-            String client_host, String statusCodeString, List<String> protocols)
-    {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          ImmutableList<PutFileRequest> fileRequests, int retryDeltaTime,
+          boolean should_updateretryDeltaTime, String description,
+          String client_host, String statusCodeString, List<String> protocols) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId, user, scheduelerId,
-                schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
-                jobHistoryArray, fileRequests, retryDeltaTime,
-                should_updateretryDeltaTime, description, client_host,
-                statusCodeString);
+              schedulerTimeStamp, numberOfRetries, lastStateTransitionTime,
+              jobHistoryArray, fileRequests, retryDeltaTime,
+              should_updateretryDeltaTime, description, client_host,
+              statusCodeString);
         this.protocols = protocols.toArray(String[]::new);
     }
 
     @Nonnull
     @Override
-    public PutFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
-    {
+    public PutFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException {
         for (PutFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
-        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException(
+              "file request for surl =" + surl + " is not found");
     }
 
     @Override
-    public Class<? extends Job> getSchedulerType()
-    {
+    public Class<? extends Job> getSchedulerType() {
         return PutFileRequest.class;
     }
 
     @Override
-    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
-    {
+    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition {
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
@@ -188,19 +181,17 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
-    {
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs) {
         // Nothing to do.
     }
 
     /**
-     * this callbacks are given to storage.prepareToPut
-     * storage.prepareToPut calls methods of callbacks to indicate progress
+     * this callbacks are given to storage.prepareToPut storage.prepareToPut calls methods of
+     * callbacks to indicate progress
      */
 
     @Override
-    public TReturnStatus abort(String reason)
-    {
+    public TReturnStatus abort(String reason) {
         wlock();
         try {
             /* [ SRM 2.2, 5.11.2 ]
@@ -217,7 +208,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
              *    the requested SURL.
              * h) When aborting srmPrepareToPut request after srmPutDone, it must be failed
              *    for those files. An explicit srmRm is required to remove those successfully
-              *   completed files for srmPrepareToPut.
+             *   completed files for srmPrepareToPut.
              * i) When duplicate abort request is issued on the same request, SRM_SUCCESS
              *    may be returned to all duplicate abort requests and no operations on
              *    duplicate abort requests are performed.
@@ -243,18 +234,19 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
                     }
                 }
                 try {
-                    setStateAndStatusCode(State.CANCELED, "Request aborted", TStatusCode.SRM_ABORTED);
+                    setStateAndStatusCode(State.CANCELED, "Request aborted",
+                          TStatusCode.SRM_ABORTED);
                 } catch (IllegalStateTransition e) {
                     hasFailure = true;
                 }
             } else if (state == State.DONE) {
                 return new TReturnStatus(TStatusCode.SRM_FAILURE,
-                        "Put request completed successfully and cannot be aborted");
+                      "Put request completed successfully and cannot be aborted");
             }
             TReturnStatus returnStatus = getSummaryReturnStatus(hasFailure, hasSuccess);
             if (hasCompleted) {
                 returnStatus = new TReturnStatus(returnStatus.getStatusCode(),
-                        "Some SURLs have completed successfully and cannot be aborted");
+                      "Some SURLs have completed successfully and cannot be aborted");
             }
             return returnStatus;
         } finally {
@@ -267,8 +259,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         if (newState.isFinal()) {
             LOGGER.debug("put request state changed to {}", newState);
             for (PutFileRequest request : getFileRequests()) {
@@ -292,6 +283,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
     /**
      * Getter for property protocols.
+     *
      * @return Value of property protocols.
      */
     public String[] getProtocols() {
@@ -300,14 +292,12 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
 
     /**
-     * Waits for up to timeout milliseconds for the request to reach a
-     * non-queued state and then returns the current
-     * SrmPrepareToPutResponse for this PutRequest.
+     * Waits for up to timeout milliseconds for the request to reach a non-queued state and then
+     * returns the current SrmPrepareToPutResponse for this PutRequest.
      */
     public final SrmPrepareToPutResponse
-        getSrmPrepareToPutResponse(long timeout)
-            throws InterruptedException, SRMInvalidRequestException
-    {
+    getSrmPrepareToPutResponse(long timeout)
+          throws InterruptedException, SRMInvalidRequestException {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
          * the notification scheme is counter based. This guarantees
@@ -321,8 +311,9 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         int counter = _stateChangeCounter.get();
         tryToReady();
         SrmPrepareToPutResponse response = getSrmPrepareToPutResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
-               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(
+              new Date())
+              && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             tryToReady();
             response = getSrmPrepareToPutResponse();
@@ -333,25 +324,24 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     private final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
-        response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(getArrayOfTPutRequestFileStatus()));
+        response.setArrayOfFileStatuses(
+              new ArrayOfTPutRequestFileStatus(getArrayOfTPutRequestFileStatus()));
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
     public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse()
-            throws SRMFileRequestNotFoundException, SRMInvalidRequestException
-    {
-            return getSrmStatusOfPutRequestResponse(null);
+          throws SRMFileRequestNotFoundException, SRMInvalidRequestException {
+        return getSrmStatusOfPutRequestResponse(null);
     }
 
-    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(org.apache.axis.types.URI[] surls)
-            throws SRMFileRequestNotFoundException, SRMInvalidRequestException
-    {
+    public final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
+          org.apache.axis.types.URI[] surls)
+          throws SRMFileRequestNotFoundException, SRMInvalidRequestException {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
         response.setReturnStatus(getTReturnStatus());
 
@@ -376,8 +366,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         List<PutFileRequest> fileRequests = getFileRequests();
         int len = fileRequests.size();
         TPutRequestFileStatus[] putFileStatuses = new TPutRequestFileStatus[len];
@@ -387,16 +376,16 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         return putFileStatuses;
     }
 
-    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(org.apache.axis.types.URI[] surls)
-            throws SRMInvalidRequestException, SRMFileRequestNotFoundException
-    {
-        if(surls == null) {
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(
+          org.apache.axis.types.URI[] surls)
+          throws SRMInvalidRequestException, SRMFileRequestNotFoundException {
+        if (surls == null) {
             return getArrayOfTPutRequestFileStatus();
         }
         int len = surls.length;
         TPutRequestFileStatus[] putFileStatuses
-                = new TPutRequestFileStatus[len];
-        for (int i = 0; i< len; ++i) {
+              = new TPutRequestFileStatus[len];
+        for (int i = 0; i < len; ++i) {
             URI surl = URI.create(surls[i].toString());
             putFileStatuses[i] = getFileRequestBySurl(surl).getTPutRequestFileStatus();
         }
@@ -427,9 +416,9 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     protected final boolean isOverwrite() {
-        if(getConfiguration().isOverwrite()) {
+        if (getConfiguration().isOverwrite()) {
             TOverwriteMode mode = getOverwriteMode();
-            if(mode == null) {
+            if (mode == null) {
                 return getConfiguration().isOverwrite_by_default();
             }
             return mode.equals(TOverwriteMode.ALWAYS);
@@ -449,7 +438,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
          */
         try {
             return super.extendLifetimeMillis(newLifetimeInMillis);
-        } catch(SRMReleasedException releasedException) {
+        } catch (SRMReleasedException releasedException) {
             throw new SRMInvalidRequestException(releasedException.getMessage());
         }
     }

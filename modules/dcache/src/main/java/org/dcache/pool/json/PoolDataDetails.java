@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.json;
 
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.pools.json.PoolQueueData;
+import dmg.cells.nucleus.CellInfo;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
@@ -66,18 +69,13 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Map;
 
-import diskCacheV111.pools.json.PoolCostData;
-import diskCacheV111.pools.json.PoolQueueData;
-
-import dmg.cells.nucleus.CellInfo;
-
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.classic.PoolV4} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)} and
- * {@link dmg.cells.nucleus.CellInfoProvider#getCellInfo(CellInfo)}.</p>
+ * from the {@link org.dcache.pool.classic.PoolV4} using {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}
+ * and {@link dmg.cells.nucleus.CellInfoProvider#getCellInfo(CellInfo)}.</p>
  */
 public class PoolDataDetails implements Serializable {
+
     private static final long serialVersionUID = -3630909338100368554L;
 
     public enum OnOff {
@@ -92,34 +90,34 @@ public class PoolDataDetails implements Serializable {
         CACHED, PRECIOUS
     }
 
-    private String      label;
+    private String label;
     private InetAddress[] inetAddresses;
-    private String      baseDir;
-    private String      poolVersion;
+    private String baseDir;
+    private String poolVersion;
 
     @Deprecated // Remove reportRemovals after 4.2 is branched.
-    private OnOff       reportRemovals;
-    private boolean     isRemovalReported;
+    private OnOff reportRemovals;
+    private boolean isRemovalReported;
 
-    private String      poolMode;
-    private Integer     poolStatusCode;
-    private String      poolStatusMessage;
+    private String poolMode;
+    private Integer poolStatusCode;
+    private String poolStatusMessage;
 
     @Deprecated // Remove suppressHsmLoad after 4.2 is branched.
-    private OnOff       suppressHsmLoad;
-    private boolean     isHsmLoadSuppressed;
+    private OnOff suppressHsmLoad;
+    private boolean isHsmLoadSuppressed;
 
-    private Integer     pingHeartbeatInSecs;
-    private Double      breakEven;
-    private Lsf         largeFileStore;
+    private Integer pingHeartbeatInSecs;
+    private Double breakEven;
+    private Lsf largeFileStore;
 
-    private P2PMode     p2pFileMode;
-    private Integer     hybridInventory;
+    private P2PMode p2pFileMode;
+    private Integer hybridInventory;
 
-    private int                 errorCode;
-    private String              errorMessage;
+    private int errorCode;
+    private String errorMessage;
     private Map<String, String> tagMap;
-    private PoolCostData        costData;
+    private PoolCostData costData;
 
     public String getBaseDir() {
         return baseDir;
@@ -193,8 +191,7 @@ public class PoolDataDetails implements Serializable {
         return tagMap;
     }
 
-    private String asOnOff(boolean value)
-    {
+    private String asOnOff(boolean value) {
         return value ? "ON" : "OFF";
     }
 
@@ -205,7 +202,7 @@ public class PoolDataDetails implements Serializable {
         pw.println("Pool Mode         : " + poolMode);
         if (poolStatusCode != null) {
             pw.println("Detail            : [" + poolStatusCode + "] "
-                                       + poolStatusMessage);
+                  + poolStatusMessage);
         }
         pw.println("Hsm Load Suppr.   : " + asOnOff(isHsmLoadSuppressed));
         pw.println("Ping Heartbeat    : " + pingHeartbeatInSecs + " seconds");
@@ -222,10 +219,10 @@ public class PoolDataDetails implements Serializable {
             if (movers != null) {
                 movers.values().stream()
                       .forEach((q) -> pw.println(
-                                      "Mover Queue (" + q.getName() + ") "
-                                                      + q.getActive()
-                                                      + "(" + q.getMaxActive()
-                                                      + ")/" + q.getQueued()));
+                            "Mover Queue (" + q.getName() + ") "
+                                  + q.getActive()
+                                  + "(" + q.getMaxActive()
+                                  + ")/" + q.getQueued()));
             }
         }
     }
@@ -263,12 +260,12 @@ public class PoolDataDetails implements Serializable {
     }
 
     public void setLargeFileStore(
-                    Lsf largeFileStore) {
+          Lsf largeFileStore) {
         this.largeFileStore = largeFileStore;
     }
 
     public void setP2pFileMode(
-                    P2PMode p2pFileMode) {
+          P2PMode p2pFileMode) {
         this.p2pFileMode = p2pFileMode;
     }
 
@@ -304,8 +301,8 @@ public class PoolDataDetails implements Serializable {
         this.tagMap = tagMap;
     }
 
-    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException
-    {
+    private void readObject(ObjectInputStream aInputStream)
+          throws ClassNotFoundException, IOException {
         aInputStream.defaultReadObject();
         if (reportRemovals != null) {
             isRemovalReported = reportRemovals == OnOff.ON;

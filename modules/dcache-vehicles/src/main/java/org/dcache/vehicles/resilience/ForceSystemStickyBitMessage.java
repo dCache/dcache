@@ -64,9 +64,10 @@ import diskCacheV111.vehicles.Message;
 
 /**
  * <p> Sent by resilience handler to ensure the sticky record
- *      belonging to system is set on the source copy.</p>
+ * belonging to system is set on the source copy.</p>
  */
 public final class ForceSystemStickyBitMessage extends Message {
+
     private static final long serialVersionUID = 7487713415926816799L;
 
     private final String pool;
@@ -87,6 +88,6 @@ public final class ForceSystemStickyBitMessage extends Message {
 
     public String toString() {
         return String.format("%s: (pool %s) (pnfsid %s) - %s", getMessageName(),
-                        pool, pnfsId, super.toString());
+              pool, pnfsId, super.toString());
     }
 }

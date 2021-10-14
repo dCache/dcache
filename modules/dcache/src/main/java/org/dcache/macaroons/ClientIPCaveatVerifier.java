@@ -17,36 +17,31 @@
  */
 package org.dcache.macaroons;
 
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
+
 import com.github.nitram509.jmacaroons.GeneralCaveatVerifier;
 import com.google.common.base.Splitter;
-
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.dcache.util.Subnet;
 
-import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
-
 /**
- * A CaveatVerifier that checks all supplied 'ip:' caveats are satisfied by the
- * current client.
+ * A CaveatVerifier that checks all supplied 'ip:' caveats are satisfied by the current client.
  */
-public class ClientIPCaveatVerifier implements GeneralCaveatVerifier
-{
+public class ClientIPCaveatVerifier implements GeneralCaveatVerifier {
+
     private final InetAddress address;
 
     private String error;
 
-    public ClientIPCaveatVerifier(InetAddress address)
-    {
+    public ClientIPCaveatVerifier(InetAddress address) {
         this.address = address;
     }
 
     @Override
-    public boolean verifyCaveat(String serialised)
-    {
+    public boolean verifyCaveat(String serialised) {
         try {
             Caveat caveat = new Caveat(serialised);
             if (caveat.getType() == CaveatType.IP) {
@@ -59,21 +54,20 @@ public class ClientIPCaveatVerifier implements GeneralCaveatVerifier
         return false;
     }
 
-    private void checkAddress(Caveat caveat) throws InvalidCaveatException
-    {
+    private void checkAddress(Caveat caveat) throws InvalidCaveatException {
         checkCaveat(address != null, "client has unknown address");
 
-        List<String> subnets = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(caveat.getValue());
+        List<String> subnets = Splitter.on(',').trimResults().omitEmptyStrings()
+              .splitToList(caveat.getValue());
         List<String> badSubnets = subnets.stream()
-                .filter(s -> !Subnet.isValid(s))
-                .collect(Collectors.toList());
+              .filter(s -> !Subnet.isValid(s))
+              .collect(Collectors.toList());
         checkCaveat(badSubnets.isEmpty(), "Invalid subnets: %s", badSubnets);
         checkCaveat(subnets.stream().map(Subnet::create).anyMatch(s -> s.contains(address)),
-                "Client fails to match IP caveat %s", caveat);
+              "Client fails to match IP caveat %s", caveat);
     }
 
-    public Optional<String> getError()
-    {
+    public Optional<String> getError() {
         return Optional.ofNullable(error);
     }
 }

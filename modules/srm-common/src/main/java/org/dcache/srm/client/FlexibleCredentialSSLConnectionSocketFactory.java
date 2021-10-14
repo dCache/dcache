@@ -27,27 +27,9 @@
 
 package org.dcache.srm.client;
 
+import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHostnameVerifier;
+
 import eu.emi.security.authn.x509.X509Credential;
-import org.apache.axis.transport.http.HTTPConstants;
-import org.apache.http.Header;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.util.Args;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.security.auth.x500.X500Principal;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -59,26 +41,42 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-
+import javax.net.SocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.security.auth.x500.X500Principal;
+import org.apache.axis.transport.http.HTTPConstants;
+import org.apache.http.Header;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.util.Args;
 import org.dcache.ssl.SslContextFactory;
-
-import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHostnameVerifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Layered socket factory for TLS/SSL connections.
  * <p>
- * FlexibleCredentialConnectionSocketFactory can be used to validate the identity of the
- * HTTPS server against a list of trusted certificates and to authenticate to the HTTPS
- * server using a private key.
+ * FlexibleCredentialConnectionSocketFactory can be used to validate the identity of the HTTPS
+ * server against a list of trusted certificates and to authenticate to the HTTPS server using a
+ * private key.
  * <p>
- * A clone of org.apache.http.conn.ssl.SSLConnectionSocketFactory to allow the use of a
- * per-socket client certificate. The certificate is extracted from the HttpContext.
+ * A clone of org.apache.http.conn.ssl.SSLConnectionSocketFactory to allow the use of a per-socket
+ * client certificate. The certificate is extracted from the HttpContext.
  */
 @SuppressWarnings("deprecation")
-public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConnectionSocketFactory
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(FlexibleCredentialSSLConnectionSocketFactory.class);
+public class FlexibleCredentialSSLConnectionSocketFactory implements
+      LayeredConnectionSocketFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          FlexibleCredentialSSLConnectionSocketFactory.class);
 
     private final SslContextFactory contextProvider;
     private final HostnameVerifier hostnameVerifier;
@@ -93,7 +91,7 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
      * @since 4.4
      */
     public FlexibleCredentialSSLConnectionSocketFactory(
-            SslContextFactory contextProvider, HostnameVerifier hostnameVerifier) {
+          SslContextFactory contextProvider, HostnameVerifier hostnameVerifier) {
         this(contextProvider, null, null, hostnameVerifier);
     }
 
@@ -101,22 +99,24 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
      * @since 4.4
      */
     public FlexibleCredentialSSLConnectionSocketFactory(
-            SslContextFactory contextProvider,
-            String[] supportedProtocols,
-            String[] supportedCipherSuites,
-            HostnameVerifier hostnameVerifier) {
+          SslContextFactory contextProvider,
+          String[] supportedProtocols,
+          String[] supportedCipherSuites,
+          HostnameVerifier hostnameVerifier) {
         this.contextProvider = Args.notNull(contextProvider, "SSL socket factory");
         this.supportedProtocols = supportedProtocols;
         this.supportedCipherSuites = supportedCipherSuites;
-        this.hostnameVerifier = hostnameVerifier != null ? hostnameVerifier : getDefaultHostnameVerifier();
+        this.hostnameVerifier =
+              hostnameVerifier != null ? hostnameVerifier : getDefaultHostnameVerifier();
     }
 
     /**
-     * Performs any custom initialization for a newly created SSLSocket
-     * (before the SSL handshake happens).
+     * Performs any custom initialization for a newly created SSLSocket (before the SSL handshake
+     * happens).
+     * <p>
+     * The default implementation is a no-op, but could be overridden to, e.g., call {@link
+     * SSLSocket#setEnabledCipherSuites(String[])}.
      *
-     * The default implementation is a no-op, but could be overridden to, e.g.,
-     * call {@link SSLSocket#setEnabledCipherSuites(String[])}.
      * @throws IOException may be thrown if overridden
      */
     protected void prepareSocket(final SSLSocket socket) throws IOException {
@@ -129,12 +129,12 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
 
     @Override
     public Socket connectSocket(
-            final int connectTimeout,
-            final Socket socket,
-            final HttpHost host,
-            final InetSocketAddress remoteAddress,
-            final InetSocketAddress localAddress,
-            final HttpContext context) throws IOException {
+          final int connectTimeout,
+          final Socket socket,
+          final HttpHost host,
+          final InetSocketAddress remoteAddress,
+          final InetSocketAddress localAddress,
+          final HttpContext context) throws IOException {
         Args.notNull(host, "HTTP host");
         Args.notNull(remoteAddress, "Remote address");
         final Socket sock = socket != null ? socket : createSocket(context);
@@ -168,12 +168,13 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
 
     @Override
     public Socket createLayeredSocket(
-            final Socket socket,
-            final String target,
-            final int port,
-            final HttpContext context) throws IOException {
+          final Socket socket,
+          final String target,
+          final int port,
+          final HttpContext context) throws IOException {
 
-        final X509Credential credential = (X509Credential) context.getAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
+        final X509Credential credential = (X509Credential) context.getAttribute(
+              HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
         verifyCredentials(context);
         final SSLContext sslContext;
         try {
@@ -182,17 +183,17 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
             throw new IOException("Failed to create SSLContext: " + e.getMessage(), e);
         }
         final SSLSocket sslsock = (SSLSocket) sslContext.getSocketFactory().createSocket(
-                socket,
-                target,
-                port,
-                true);
+              socket,
+              target,
+              port,
+              true);
         if (supportedProtocols != null) {
             sslsock.setEnabledProtocols(supportedProtocols);
         } else {
             // If supported protocols are not explicitly set, remove all SSL protocol versions
             final String[] allProtocols = sslsock.getEnabledProtocols();
             final List<String> enabledProtocols = new ArrayList<String>(allProtocols.length);
-            for (String protocol: allProtocols) {
+            for (String protocol : allProtocols) {
                 if (!protocol.startsWith("SSL")) {
                     enabledProtocols.add(protocol);
                 }
@@ -207,7 +208,8 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Enabled protocols: {}", Arrays.asList(sslsock.getEnabledProtocols()));
-            LOGGER.debug("Enabled cipher suites: {}", Arrays.asList(sslsock.getEnabledCipherSuites()));
+            LOGGER.debug("Enabled cipher suites: {}",
+                  Arrays.asList(sslsock.getEnabledCipherSuites()));
         }
 
         prepareSocket(sslsock);
@@ -217,15 +219,15 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
         return sslsock;
     }
 
-    private void verifyCredentials(HttpContext context) throws IOException
-    {
-        X509Credential credential = (X509Credential) context.getAttribute(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
+    private void verifyCredentials(HttpContext context) throws IOException {
+        X509Credential credential = (X509Credential) context.getAttribute(
+              HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS);
 
         boolean hasAuthorizationHeader;
         if (context instanceof HttpCoreContext) {
-            HttpRequest request = ((HttpCoreContext)context).getRequest();
+            HttpRequest request = ((HttpCoreContext) context).getRequest();
             Header authorization = request.getFirstHeader(HTTPConstants.HEADER_AUTHORIZATION);
-            hasAuthorizationHeader =  authorization != null;
+            hasAuthorizationHeader = authorization != null;
         } else {
             throw new IOException("Unknown HttpContext: " + context.getClass().getCanonicalName());
         }
@@ -301,13 +303,19 @@ public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConn
                 final Certificate[] certs = session.getPeerCertificates();
                 final X509Certificate x509 = (X509Certificate) certs[0];
                 final X500Principal x500Principal = x509.getSubjectX500Principal();
-                throw new SSLPeerUnverifiedException("Host name '" + hostname + "' does not match " +
-                        "the certificate subject provided by the peer (" + x500Principal.toString() + ")");
+                throw new SSLPeerUnverifiedException(
+                      "Host name '" + hostname + "' does not match " +
+                            "the certificate subject provided by the peer ("
+                            + x500Principal.toString() + ")");
             }
             // verifyHostName() didn't blowup - good!
         } catch (RuntimeException | IOException iox) {
             // close the socket before re-throwing the exception
-            try { sslsock.close(); } catch (final Exception x) { iox.addSuppressed(x); }
+            try {
+                sslsock.close();
+            } catch (final Exception x) {
+                iox.addSuppressed(x);
+            }
             throw iox;
         }
     }

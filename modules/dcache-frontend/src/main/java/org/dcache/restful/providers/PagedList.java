@@ -63,14 +63,14 @@ import java.util.List;
 
 /**
  * <p>For internal use.  Wraps a list which is a subset
- *    of a total list, usually obtained via limit and offset.
- *    Reports the actual total.</p>
+ * of a total list, usually obtained via limit and offset. Reports the actual total.</p>
  */
 public class PagedList<D> {
+
     public static final String TOTAL_COUNT_HEADER = "X-Total-Count";
 
     public final List<D> contents;
-    public final int     total;
+    public final int total;
 
     public PagedList(List<D> contents, int total) {
         this.contents = contents;

@@ -75,78 +75,79 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Registers the request in the map as a new task.  Also serves to relay
- *  completion messages to the task from the migration module.  Relays completion
- *  of the task to the verification endpoint.
+ * Registers the request in the map as a new task.  Also serves to relay completion messages to the
+ * task from the migration module.  Relays completion of the task to the verification endpoint.
  */
 public final class QoSAdjusterTaskHandler implements CellMessageReceiver {
-  private static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjusterTaskHandler.class);
 
-  private QoSAdjusterTaskMap taskMap;
-  private ExecutorService taskService;
-  private QoSVerificationListener verificationListener;
+    private static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjusterTaskHandler.class);
 
-  public void handleAdjustmentRequest(QoSAdjustmentRequest request) {
-    LOGGER.debug("handleAdjustmentRequest for {}, {}", request.getPnfsId(), request.getAction());
-    taskService.submit(() -> {
-        LOGGER.debug("handleAdjustmentRequest, registering request for {}, {}",
-            request.getPnfsId(), request.getAction());
-        taskMap.register(request);
-    });
-  }
+    private QoSAdjusterTaskMap taskMap;
+    private ExecutorService taskService;
+    private QoSVerificationListener verificationListener;
 
-  public void handleAdjustmentCancelled(PnfsId pnfsId) {
-    LOGGER.debug("handleAdjustmentCancelled for {}", pnfsId);
-    taskService.submit(() -> {
-      LOGGER.debug("handleAdjustmentCancelled, calling cancel on taskMap for {}", pnfsId);
-      taskMap.cancel(pnfsId);
-    });
-  }
-
-  public void notifyAdjustmentCompleted(QoSAdjusterTask task) {
-    QoSAdjustmentStatus status;
-
-    if (task.isCancelled()) {
-      status = QoSAdjustmentStatus.CANCELLED;
-    } else if (task.getException() != null) {
-      status = QoSAdjustmentStatus.FAILED;
-    } else {
-      status = QoSAdjustmentStatus.COMPLETED;
+    public void handleAdjustmentRequest(QoSAdjustmentRequest request) {
+        LOGGER.debug("handleAdjustmentRequest for {}, {}", request.getPnfsId(),
+              request.getAction());
+        taskService.submit(() -> {
+            LOGGER.debug("handleAdjustmentRequest, registering request for {}, {}",
+                  request.getPnfsId(), request.getAction());
+            taskMap.register(request);
+        });
     }
 
-    PnfsId pnfsId = task.getPnfsId();
-    QoSAction action = task.getAction();
-    Throwable error = task.getException();
-
-    QoSAdjustmentResponse response = new QoSAdjustmentResponse();
-    response.setAction(action);
-    response.setPnfsId(pnfsId);
-    response.setStatus(status);
-    response.setError(error);
-
-    try {
-      LOGGER.debug("notifying adjustment completed for {}, {}, {}: {}.",
-          pnfsId, action, status, error);
-      verificationListener.fileQoSAdjustmentCompleted(response);
-    } catch (QoSException e) {
-      LOGGER.error("could not notify adjustment completed for {}, {}, {}, {}: {}.",
-          pnfsId, action, status, error, e.toString());
+    public void handleAdjustmentCancelled(PnfsId pnfsId) {
+        LOGGER.debug("handleAdjustmentCancelled for {}", pnfsId);
+        taskService.submit(() -> {
+            LOGGER.debug("handleAdjustmentCancelled, calling cancel on taskMap for {}", pnfsId);
+            taskMap.cancel(pnfsId);
+        });
     }
-  }
 
-  public void messageArrived(PoolMigrationCopyFinishedMessage message) {
-    taskService.submit(() -> taskMap.updateTask(message));
-  }
+    public void notifyAdjustmentCompleted(QoSAdjusterTask task) {
+        QoSAdjustmentStatus status;
 
-  public void setTaskMap(QoSAdjusterTaskMap taskMap) {
-    this.taskMap = taskMap;
-  }
+        if (task.isCancelled()) {
+            status = QoSAdjustmentStatus.CANCELLED;
+        } else if (task.getException() != null) {
+            status = QoSAdjustmentStatus.FAILED;
+        } else {
+            status = QoSAdjustmentStatus.COMPLETED;
+        }
 
-  public void setTaskService(ExecutorService taskService) {
-    this.taskService = taskService;
-  }
+        PnfsId pnfsId = task.getPnfsId();
+        QoSAction action = task.getAction();
+        Throwable error = task.getException();
 
-  public void setVerificationListener(QoSVerificationListener verificationListener) {
-    this.verificationListener = verificationListener;
-  }
+        QoSAdjustmentResponse response = new QoSAdjustmentResponse();
+        response.setAction(action);
+        response.setPnfsId(pnfsId);
+        response.setStatus(status);
+        response.setError(error);
+
+        try {
+            LOGGER.debug("notifying adjustment completed for {}, {}, {}: {}.",
+                  pnfsId, action, status, error);
+            verificationListener.fileQoSAdjustmentCompleted(response);
+        } catch (QoSException e) {
+            LOGGER.error("could not notify adjustment completed for {}, {}, {}, {}: {}.",
+                  pnfsId, action, status, error, e.toString());
+        }
+    }
+
+    public void messageArrived(PoolMigrationCopyFinishedMessage message) {
+        taskService.submit(() -> taskMap.updateTask(message));
+    }
+
+    public void setTaskMap(QoSAdjusterTaskMap taskMap) {
+        this.taskMap = taskMap;
+    }
+
+    public void setTaskService(ExecutorService taskService) {
+        this.taskService = taskService;
+    }
+
+    public void setVerificationListener(QoSVerificationListener verificationListener) {
+        this.verificationListener = verificationListener;
+    }
 }

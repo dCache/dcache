@@ -1,22 +1,18 @@
 package org.dcache.services.ssh2;
 
+import diskCacheV111.admin.UserAdminShell;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
+import java.io.File;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.shell.ShellFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.io.File;
-
-import diskCacheV111.admin.UserAdminShell;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessageSender;
-
 import org.dcache.cells.CellStub;
 import org.dcache.util.list.ListDirectoryHandler;
+import org.springframework.beans.factory.annotation.Required;
 
-public class AdminShellFactory implements ShellFactory, CellMessageSender
-{
+public class AdminShellFactory implements ShellFactory, CellMessageSender {
+
     private CellEndpoint _endpoint;
     private File _historyFile;
     private int _historySize;
@@ -28,8 +24,7 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender
     private ListDirectoryHandler _list;
 
     @Required
-    public void setHistoryFile(File historyFile)
-    {
+    public void setHistoryFile(File historyFile) {
         _historyFile = historyFile;
     }
 
@@ -39,55 +34,46 @@ public class AdminShellFactory implements ShellFactory, CellMessageSender
     }
 
     @Required
-    public void setUseColor(boolean useColor)
-    {
+    public void setUseColor(boolean useColor) {
         _useColor = useColor;
     }
 
     @Required
-    public void setPnfsManager(CellStub stub)
-    {
+    public void setPnfsManager(CellStub stub) {
         _pnfsManager = stub;
     }
 
     @Required
-    public void setPoolManager(CellStub stub)
-    {
+    public void setPoolManager(CellStub stub) {
         _poolManager = stub;
     }
 
     @Required
-    public void setAcm(CellStub stub)
-    {
+    public void setAcm(CellStub stub) {
         _acm = stub;
     }
 
     @Required
-    public void setPrompt(String prompt)
-    {
+    public void setPrompt(String prompt) {
         _prompt = prompt;
     }
 
     @Required
-    public void setListHandler(ListDirectoryHandler list)
-    {
+    public void setListHandler(ListDirectoryHandler list) {
         _list = list;
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         _endpoint = endpoint;
     }
 
     @Override
-    public Command createShell(ChannelSession channelSession)
-    {
+    public Command createShell(ChannelSession channelSession) {
         return new ShellCommand(_historyFile, _historySize, _useColor, createAdminShell());
     }
 
-    private UserAdminShell createAdminShell()
-    {
+    private UserAdminShell createAdminShell() {
         UserAdminShell shell = new UserAdminShell(_prompt);
         shell.setCellEndpoint(_endpoint);
         shell.setPnfsManager(_pnfsManager);

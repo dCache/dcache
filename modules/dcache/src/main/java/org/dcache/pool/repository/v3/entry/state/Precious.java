@@ -19,9 +19,9 @@ public class Precious {
     }
 
     public String stringValue() {
-        if(_isSet) {
+        if (_isSet) {
             return "precious";
-        }else{
+        } else {
             return "";
         }
     }

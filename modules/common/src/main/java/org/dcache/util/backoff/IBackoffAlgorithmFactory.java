@@ -60,16 +60,17 @@ documents or software obtained from this server.
 package org.dcache.util.backoff;
 
 /**
- * Encapsulates the instantiation and initialization of the algorithm object to
- * be used in backoff computation.
+ * Encapsulates the instantiation and initialization of the algorithm object to be used in backoff
+ * computation.
  *
  * @author arossi
  */
 public interface IBackoffAlgorithmFactory {
+
     /**
-     * It cannot be assumed that the {@link IBackoffAlgorithm} returned by this
-     * method is stateless and/or reusable, so it is generally advisable always
-     * to call this method when a new backoff computation sequence is begun.
+     * It cannot be assumed that the {@link IBackoffAlgorithm} returned by this method is stateless
+     * and/or reusable, so it is generally advisable always to call this method when a new backoff
+     * computation sequence is begun.
      *
      * @return a valid, initialized algorithm
      */
