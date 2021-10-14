@@ -1,34 +1,36 @@
 package org.dcache.telemetry;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
-import org.dcache.util.CDCScheduledExecutorServiceDecorator;
-import org.dcache.util.FireAndForgetTask;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.*;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.dcache.util.CDCScheduledExecutorServiceDecorator;
+import org.dcache.util.FireAndForgetTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * This is a cell, that collects information about the dCache-instance and sends it once per hour to a central database.
- * It captures the version and the storage from dCache directly. The location and a siteid are read from
- * collectdata.properties.
- * The location consists of latitude and longitude. It's possible to set the values to 0 to omit the real location.
- * Sending the information regularly is implemented with a ScheduledExecutor, which executes sendData()
- * at an interval of one hour.
+ * This is a cell, that collects information about the dCache-instance and sends it once per hour to
+ * a central database. It captures the version and the storage from dCache directly. The location
+ * and a siteid are read from collectdata.properties. The location consists of latitude and
+ * longitude. It's possible to set the values to 0 to omit the real location. Sending the
+ * information regularly is implemented with a ScheduledExecutor, which executes sendData() at an
+ * interval of one hour.
  */
 
 public class SendData implements CellCommandListener, CellLifeCycleAware {
+
     private static final Logger _log = LoggerFactory.getLogger(SendData.class);
 
     private ScheduledExecutorService sendDataExecutor;
@@ -59,7 +61,8 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
     }
 
     public SendData() {
-        sendDataExecutor = new CDCScheduledExecutorServiceDecorator( Executors.newScheduledThreadPool(1));
+        sendDataExecutor = new CDCScheduledExecutorServiceDecorator(
+              Executors.newScheduledThreadPool(1));
     }
 
     @Override
@@ -70,18 +73,19 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
     @Override
     public void afterStart() {
         if (!enable) {
-            throw new RuntimeException("Telemetry cell is configured but not enabled. Configure the enable setting " +
-                    "to run telemetry cell.");
+            throw new RuntimeException(
+                  "Telemetry cell is configured but not enabled. Configure the enable setting " +
+                        "to run telemetry cell.");
         }
         _log.warn("Sending information about dCache-instance to {} is activated.", uri);
         httpClient = HttpClient.newHttpClient();
         sendDataExecutor.scheduleAtFixedRate(new FireAndForgetTask(this::sendData),
-                0, 1, TimeUnit.HOURS);
+              0, 1, TimeUnit.HOURS);
     }
 
     /**
-     * sendData() sends the data.
-     * The information are updated and converted to a JSON-formatted string first.
+     * sendData() sends the data. The information are updated and converted to a JSON-formatted
+     * string first.
      */
 
     private void sendData() {
@@ -91,14 +95,16 @@ public class SendData implements CellCommandListener, CellLifeCycleAware {
 
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .version(HttpClient.Version.HTTP_2)
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.of(HTTP_TIMEOUT, SECONDS))
-                    .POST(HttpRequest.BodyPublishers.ofString(jackson.writeValueAsString(instanceData)))
-                    .build();
+                  .uri(uri)
+                  .version(HttpClient.Version.HTTP_2)
+                  .header("Content-Type", "application/json")
+                  .timeout(Duration.of(HTTP_TIMEOUT, SECONDS))
+                  .POST(HttpRequest.BodyPublishers.ofString(
+                        jackson.writeValueAsString(instanceData)))
+                  .build();
 
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(httpRequest,
+                  HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 201 && response.statusCode() != 200) {
                 _log.error("Error sending data to {}. Response: {}", uri, response);

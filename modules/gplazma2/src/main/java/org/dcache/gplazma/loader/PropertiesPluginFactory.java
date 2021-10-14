@@ -4,40 +4,35 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map.Entry;
 import java.util.Properties;
-
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
- * This class creates a plugin by reflection when given the plugin Class.
- * The plugin must have a constructor that accepts a single argument: a
- * Properties object.  If the newPlugin method is used that takes only
- * a Class then the plugin is created with an empty Properties object.
+ * This class creates a plugin by reflection when given the plugin Class. The plugin must have a
+ * constructor that accepts a single argument: a Properties object.  If the newPlugin method is used
+ * that takes only a Class then the plugin is created with an empty Properties object.
  */
-public class PropertiesPluginFactory implements PluginFactory
-{
+public class PropertiesPluginFactory implements PluginFactory {
+
     private static final Properties EMPTY_ARGUMENTS = new Properties();
 
 
     @Override
     public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass)
-            throws PluginLoadingException
-    {
+          throws PluginLoadingException {
         return newPlugin(pluginClass, EMPTY_ARGUMENTS);
     }
 
 
     @Override
     public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
-            Properties properties) throws PluginLoadingException
-    {
+          Properties properties) throws PluginLoadingException {
         Constructor<T> constructor = tryToGetConstructor(pluginClass);
         return tryToCreatePlugin(constructor, properties);
     }
 
 
     private <T extends GPlazmaPlugin> Constructor<T> tryToGetConstructor(Class<T> pluginClass)
-            throws PluginLoadingException
-    {
+          throws PluginLoadingException {
         Constructor<T> constructor;
 
         try {
@@ -53,13 +48,12 @@ public class PropertiesPluginFactory implements PluginFactory
 
 
     private <T extends GPlazmaPlugin> T tryToCreatePlugin(Constructor<T>
-            constructor, Properties properties) throws PluginLoadingException
-    {
+          constructor, Properties properties) throws PluginLoadingException {
         T plugin;
 
         Properties constructorProperties = new Properties();
 
-        if (properties!=null) {
+        if (properties != null) {
             for (Entry<Object, Object> kv : properties.entrySet()) {
                 constructorProperties.put(kv.getKey(), kv.getValue());
             }

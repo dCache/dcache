@@ -4,48 +4,48 @@ package diskCacheV111.srm;
 import java.io.Serializable;
 import java.util.Date;
 
-public class RequestStatus implements Serializable
-  {
+public class RequestStatus implements Serializable {
+
     private static final long serialVersionUID = -7407954557920586704L;
-    public static final transient String EMPTY="";
-  public int requestId;
-    public String type =EMPTY;
-    public String state=EMPTY;
-    public Date submitTime=new Date();
+    public static final transient String EMPTY = "";
+    public int requestId;
+    public String type = EMPTY;
+    public String state = EMPTY;
+    public Date submitTime = new Date();
     public Date startTime = new Date();
     public Date finishTime = new Date();
-  public int estTimeToStart;
+    public int estTimeToStart;
     public RequestFileStatus[] fileStatuses = new RequestFileStatus[0];
     public String errorMessage = EMPTY;
-  public int retryDeltaTime;
-  
-   public String toString() {
+    public int retryDeltaTime;
+
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("RequestStatus      requestId :").
-        append(requestId).append('\n');
+              append(requestId).append('\n');
         sb.append("                   type :")
-        .append(type).append('\n');
+              .append(type).append('\n');
         sb.append("                   state :")
-        .append(state).append('\n');
+              .append(state).append('\n');
         sb.append("                   submitTime :")
-        .append(submitTime).append('\n');
+              .append(submitTime).append('\n');
         sb.append("                   startTime :")
-        .append(startTime).append('\n');
+              .append(startTime).append('\n');
         sb.append("                   finishTime :")
-        .append(finishTime).append('\n');
+              .append(finishTime).append('\n');
         sb.append("                   estTimeToStart :")
-        .append(estTimeToStart).append('\n');
-        int len=fileStatuses.length;
-        for(int i= 0; i<len;++i) {
+              .append(estTimeToStart).append('\n');
+        int len = fileStatuses.length;
+        for (int i = 0; i < len; ++i) {
             sb.append("                   fileStatuses#")
-            .append(i).append(" :").append(fileStatuses[i]).append('\n');
+                  .append(i).append(" :").append(fileStatuses[i]).append('\n');
         }
         sb.append("                   estTimeToStart :")
-        .append(estTimeToStart).append('\n');
+              .append(estTimeToStart).append('\n');
         sb.append("                   errorMessage :")
-        .append(errorMessage).append('\n');
+              .append(errorMessage).append('\n');
         sb.append("                   retryDeltaTime :")
-        .append(retryDeltaTime).append('\n');
+              .append(retryDeltaTime).append('\n');
         return sb.toString();
     }
-  }
+}

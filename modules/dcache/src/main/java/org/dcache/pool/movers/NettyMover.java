@@ -17,36 +17,31 @@
  */
 package org.dcache.pool.movers;
 
-import java.util.UUID;
-
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.util.UUID;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
  * A mover that served by AbstractNettyTransferServices.
  */
-public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, NettyMover<P>>
-{
+public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, NettyMover<P>> {
+
     private final UUID uuid;
 
 
     public NettyMover(ReplicaDescriptor handle,
-                      PoolIoFileMessage message,
-                      CellPath pathToDoor,
-                      TransferService<NettyMover<P>> transferService,
-                      UUID uuid)
-    {
+          PoolIoFileMessage message,
+          CellPath pathToDoor,
+          TransferService<NettyMover<P>> transferService,
+          UUID uuid) {
         super(handle, message, pathToDoor, transferService);
         this.uuid = uuid;
     }
 
-    public UUID getUuid()
-    {
+    public UUID getUuid() {
         return uuid;
     }
 }

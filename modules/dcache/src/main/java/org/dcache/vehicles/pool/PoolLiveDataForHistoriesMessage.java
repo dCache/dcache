@@ -65,12 +65,13 @@ import org.dcache.pool.classic.json.SweeperData;
 
 /**
  * <p>Requests live information that can be stored to create historical
- *      timestamped data.</p>
+ * timestamped data.</p>
  *
  * <p>These currently include pool cost (queue) and space info, and
- *      file access information from the sweeper.</p>
+ * file access information from the sweeper.</p>
  */
 public class PoolLiveDataForHistoriesMessage extends Message {
+
     private static final long serialVersionUID = -6525740253660408597L;
 
     private PoolCostData poolCostData;

@@ -17,6 +17,15 @@
  */
 package org.dcache.pool.nearline;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.transform;
+import static com.google.common.util.concurrent.Futures.transformAsync;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Ordering;
@@ -25,14 +34,26 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.kafka.core.KafkaTemplate;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfoMessage;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,6 +69,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -62,36 +84,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.Immutable;
-
-import java.util.OptionalLong;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellSetupProvider;
-import dmg.cells.nucleus.DelayedReply;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.HsmLocationExtractorFactory;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfoMessage;
-
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -120,27 +116,24 @@ import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.transform;
-import static com.google.common.util.concurrent.Futures.transformAsync;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.util.Exceptions.messageOrClassName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.kafka.core.KafkaTemplate;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.
  */
 public class NearlineStorageHandler
-        implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider, CellIdentityAware,
-                PoolDataBeanProvider<StorageHandlerData>
-{
+      implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware,
+      CellInfoProvider, CellIdentityAware,
+      PoolDataBeanProvider<StorageHandlerData> {
 
     /**
      * Queue occupation statistics.
-     *
+     * <p>
      * REVISIT: change to record type when java14 is allowed.
      */
     @Immutable
@@ -182,12 +175,12 @@ public class NearlineStorageHandler
 
     private ScheduledExecutorService scheduledExecutor;
     private ListeningExecutorService executor;
-    private Repository               repository;
-    private FileStore                fileStore;
-    private ChecksumModule           checksumModule;
-    private PnfsHandler              pnfs;
-    private CellStub                 billingStub;
-    private HsmSet                   hsmSet;
+    private Repository repository;
+    private FileStore fileStore;
+    private ChecksumModule checksumModule;
+    private PnfsHandler pnfs;
+    private CellStub billingStub;
+    private HsmSet hsmSet;
     private long stageTimeout = TimeUnit.HOURS.toMillis(4);
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
@@ -201,18 +194,17 @@ public class NearlineStorageHandler
 
     private CellAddressCore cellAddress;
 
-    private Consumer<StorageInfoMessage> _kafkaSender = (s) -> {};
+    private Consumer<StorageInfoMessage> _kafkaSender = (s) -> {
+    };
 
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         cellAddress = address;
     }
 
     @Required
-    public void setScheduledExecutor(ScheduledExecutorService executor)
-    {
+    public void setScheduledExecutor(ScheduledExecutorService executor) {
         this.scheduledExecutor = requireNonNull(executor);
     }
 
@@ -225,38 +217,32 @@ public class NearlineStorageHandler
     }
 
     @Required
-    public void setExecutor(ListeningExecutorService executor)
-    {
+    public void setExecutor(ListeningExecutorService executor) {
         this.executor = requireNonNull(executor);
     }
 
     @Required
-    public void setRepository(Repository repository)
-    {
+    public void setRepository(Repository repository) {
         this.repository = requireNonNull(repository);
     }
 
     @Required
-    public void setChecksumModule(ChecksumModule checksumModule)
-    {
+    public void setChecksumModule(ChecksumModule checksumModule) {
         this.checksumModule = requireNonNull(checksumModule);
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfs)
-    {
+    public void setPnfsHandler(PnfsHandler pnfs) {
         this.pnfs = requireNonNull(pnfs);
     }
 
     @Required
-    public void setBillingStub(CellStub billingStub)
-    {
+    public void setBillingStub(CellStub billingStub) {
         this.billingStub = requireNonNull(billingStub);
     }
 
     @Required
-    public void setHsmSet(HsmSet hsmSet)
-    {
+    public void setHsmSet(HsmSet hsmSet) {
         this.hsmSet = requireNonNull(hsmSet);
     }
 
@@ -271,15 +257,14 @@ public class NearlineStorageHandler
     }
 
     @PostConstruct
-    public void init()
-    {
-        timeoutFuture = scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30, TimeUnit.SECONDS);
+    public void init() {
+        timeoutFuture = scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30,
+              TimeUnit.SECONDS);
         repository.addListener(this);
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         /* Marks the containers as being shut down and cancels all requests, but
          * doesn't wait for termination.
          */
@@ -289,8 +274,7 @@ public class NearlineStorageHandler
     }
 
     @PreDestroy
-    public void shutdown() throws InterruptedException
-    {
+    public void shutdown() throws InterruptedException {
         flushRequests.shutdown();
         stageRequests.shutdown();
         removeRequests.shutdown();
@@ -304,16 +288,18 @@ public class NearlineStorageHandler
          * repository gets closed nearline storage requests have had a chance to finish.
          */
         long deadline = System.currentTimeMillis() + 3000;
-        if (flushRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS)) {
-            if (stageRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS)) {
-                removeRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        if (flushRequests.awaitTermination(deadline - System.currentTimeMillis(),
+              TimeUnit.MILLISECONDS)) {
+            if (stageRequests.awaitTermination(deadline - System.currentTimeMillis(),
+                  TimeUnit.MILLISECONDS)) {
+                removeRequests.awaitTermination(deadline - System.currentTimeMillis(),
+                      TimeUnit.MILLISECONDS);
             }
         }
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         getDataObject().print(pw);
     }
 
@@ -334,63 +320,61 @@ public class NearlineStorageHandler
     }
 
     @Override
-    public void printSetup(PrintWriter pw)
-    {
+    public void printSetup(PrintWriter pw) {
         pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
         pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
     }
 
     /**
-     *  <p> In support of front-end information collection.</p>
+     * <p> In support of front-end information collection.</p>
      */
     public List<NearlineData> getFlushRequests(Predicate<NearlineData> filter,
-                                               Comparator<NearlineData> sorter) {
+          Comparator<NearlineData> sorter) {
         return flushRequests.requests.values()
-                                     .stream()
-                                     .map(AbstractRequest::toNearlineData)
-                                     .filter(filter)
-                                     .sorted(sorter)
-                                     .collect(Collectors.toList());
+              .stream()
+              .map(AbstractRequest::toNearlineData)
+              .filter(filter)
+              .sorted(sorter)
+              .collect(Collectors.toList());
     }
 
     /**
-     *  <p> In support of front-end information collection.</p>
+     * <p> In support of front-end information collection.</p>
      */
     public List<NearlineData> getStageRequests(Predicate<NearlineData> filter,
-                                               Comparator<NearlineData> sorter) {
+          Comparator<NearlineData> sorter) {
         return stageRequests.requests.values()
-                                     .stream()
-                                     .map(AbstractRequest::toNearlineData)
-                                     .filter(filter)
-                                     .sorted(sorter)
-                                     .collect(Collectors.toList());
+              .stream()
+              .map(AbstractRequest::toNearlineData)
+              .filter(filter)
+              .sorted(sorter)
+              .collect(Collectors.toList());
     }
 
     /**
-     *  <p> In support of front-end information collection.</p>
+     * <p> In support of front-end information collection.</p>
      */
     public List<NearlineData> getRemoveRequests(Predicate<NearlineData> filter,
-                                                Comparator<NearlineData> sorter) {
+          Comparator<NearlineData> sorter) {
         return removeRequests.requests.values()
-                                      .stream()
-                                      .map(AbstractRequest::toNearlineData)
-                                      .filter(filter)
-                                      .sorted(sorter)
-                                      .collect(Collectors.toList());
+              .stream()
+              .map(AbstractRequest::toNearlineData)
+              .filter(filter)
+              .sorted(sorter)
+              .collect(Collectors.toList());
     }
 
     /**
      * Flushes a set of files to nearline storage.
      *
-     * @param hsmType type of nearline storage
-     * @param files files to flush
+     * @param hsmType  type of nearline storage
+     * @param files    files to flush
      * @param callback callback notified for every file flushed
      */
     public void flush(String hsmType,
-                      Iterable<PnfsId> files,
-                      CompletionHandler<Void, PnfsId> callback)
-    {
+          Iterable<PnfsId> files,
+          CompletionHandler<Void, PnfsId> callback) {
         try {
             NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByType(hsmType);
             checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmType);
@@ -404,17 +388,16 @@ public class NearlineStorageHandler
 
     /**
      * Stages a file from nearline storage.
-     *
+     * <p>
      * TODO: Should eventually accept multiple files at once, but the rest of the pool
      *       doesn't support that yet.
      *
-     * @param file attributes of file to stage
+     * @param file     attributes of file to stage
      * @param callback callback notified when file is staged
      */
     public void stage(String hsmInstance,
-                      FileAttributes file,
-                      CompletionHandler<Void, PnfsId> callback)
-    {
+          FileAttributes file,
+          CompletionHandler<Void, PnfsId> callback) {
         try {
             NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
             checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmInstance);
@@ -428,13 +411,12 @@ public class NearlineStorageHandler
      * Removes a set of files from nearline storage.
      *
      * @param hsmInstance instance name of nearline storage
-     * @param files files to remove
-     * @param callback callback notified for every file removed
+     * @param files       files to remove
+     * @param callback    callback notified for every file removed
      */
     public void remove(String hsmInstance,
-                       Iterable<URI> files,
-                       CompletionHandler<Void, URI> callback)
-    {
+          Iterable<URI> files,
+          CompletionHandler<Void, URI> callback) {
         try {
             NearlineStorage nearlineStorage = hsmSet.getNearlineStorageByName(hsmInstance);
             checkArgument(nearlineStorage != null, "No such nearline storage: " + hsmInstance);
@@ -446,42 +428,35 @@ public class NearlineStorageHandler
         }
     }
 
-    public int getActiveFetchJobs()
-    {
+    public int getActiveFetchJobs() {
         QueueStat queueStat = stageRequests.getQueueStats();
         return queueStat.active() + queueStat.canceled();
     }
 
-    public int getFetchQueueSize()
-    {
+    public int getFetchQueueSize() {
         return stageRequests.getQueueStats().queued();
     }
 
-    public int getActiveStoreJobs()
-    {
+    public int getActiveStoreJobs() {
         QueueStat queueStat = flushRequests.getQueueStats();
         return queueStat.active() + queueStat.canceled();
     }
 
-    public int getStoreQueueSize()
-    {
+    public int getStoreQueueSize() {
         return flushRequests.getQueueStats().queued();
     }
 
-    public int getActiveRemoveJobs()
-    {
+    public int getActiveRemoveJobs() {
         QueueStat queueStat = removeRequests.getQueueStats();
         return queueStat.active() + queueStat.canceled();
     }
 
-    public int getRemoveQueueSize()
-    {
+    public int getRemoveQueueSize() {
         return removeRequests.getQueueStats().queued();
     }
 
     @Override
-    public void stateChanged(StateChangeEvent event)
-    {
+    public void stateChanged(StateChangeEvent event) {
         if (event.getNewState() == ReplicaState.REMOVED) {
             PnfsId pnfsId = event.getPnfsId();
             stageRequests.cancel(pnfsId);
@@ -490,17 +465,14 @@ public class NearlineStorageHandler
     }
 
     @Override
-    public void accessTimeChanged(EntryChangeEvent event)
-    {
+    public void accessTimeChanged(EntryChangeEvent event) {
     }
 
     @Override
-    public void stickyChanged(StickyChangeEvent event)
-    {
+    public void stickyChanged(StickyChangeEvent event) {
     }
 
-    private void addFromNearlineStorage(StorageInfoMessage message, NearlineStorage storage)
-    {
+    private void addFromNearlineStorage(StorageInfoMessage message, NearlineStorage storage) {
         if (_addFromNearlineStorage) {
             HsmDescription description = hsmSet.describe(storage);
 
@@ -512,20 +484,20 @@ public class NearlineStorageHandler
 
     /**
      * Abstract base class for request implementations.
-     *
-     * Provides support for registering callbacks and deregistering from a RequestContainer
-     * when the request has completed.
-     *
+     * <p>
+     * Provides support for registering callbacks and deregistering from a RequestContainer when the
+     * request has completed.
+     * <p>
      * Implements part of NearlineRequest, although the interface isn't formally implemented.
      * Subclasses implement subinterfaces of NearlineRequest.
      *
      * @param <K> key identifying a request
      */
-    private abstract static class AbstractRequest<K> implements Comparable<AbstractRequest<K>>
-    {
-        protected enum State { QUEUED, ACTIVE, CANCELED }
+    private abstract static class AbstractRequest<K> implements Comparable<AbstractRequest<K>> {
 
-        private final List<CompletionHandler<Void,K>> callbacks = new ArrayList<>();
+        protected enum State {QUEUED, ACTIVE, CANCELED}
+
+        private final List<CompletionHandler<Void, K>> callbacks = new ArrayList<>();
         protected final long createdAt = System.currentTimeMillis();
         protected final UUID uuid = UUID.randomUUID();
         protected final NearlineStorage storage;
@@ -539,26 +511,22 @@ public class NearlineStorageHandler
          */
         private final AtomicReference<QueueStat> queueStat;
 
-        AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat)
-        {
+        AbstractRequest(NearlineStorage storage, @Nonnull AtomicReference<QueueStat> queueStat) {
             this.storage = storage;
             this.queueStat = queueStat;
             incQueued();
         }
 
         // Implements NearlineRequest#setIncluded
-        public UUID getId()
-        {
+        public UUID getId() {
             return uuid;
         }
 
-        public long getCreatedAt()
-        {
+        public long getCreatedAt() {
             return createdAt;
         }
 
-        protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future)
-        {
+        protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future) {
             if (state.get() == State.CANCELED) {
                 /*
                  * do not interrupt thread as we don't know how
@@ -572,10 +540,10 @@ public class NearlineStorageHandler
             return future;
         }
 
-        public ListenableFuture<Void> activate()
-        {
+        public ListenableFuture<Void> activate() {
             if (!state.compareAndSet(State.QUEUED, State.ACTIVE)) {
-                return Futures.immediateFailedFuture(new IllegalStateException("Request is no longer queued."));
+                return Futures.immediateFailedFuture(
+                      new IllegalStateException("Request is no longer queued."));
             }
             activatedAt = System.currentTimeMillis();
             incActiveFromQueued();
@@ -583,28 +551,25 @@ public class NearlineStorageHandler
         }
 
         // Guarded by the container containing this request
-        public void addCallback(CompletionHandler<Void,K> callback)
-        {
+        public void addCallback(CompletionHandler<Void, K> callback) {
             callbacks.add(callback);
         }
 
         // Guarded by the container containing this request
-        public Iterable<CompletionHandler<Void,K>> callbacks()
-        {
+        public Iterable<CompletionHandler<Void, K>> callbacks() {
             return this.callbacks;
         }
 
-        public void cancel()
-        {
+        public void cancel() {
             State oldState = state.getAndSet(State.CANCELED);
-            if ( oldState != State.CANCELED) {
+            if (oldState != State.CANCELED) {
                 if (oldState == State.ACTIVE) {
                     incCancelFromActive();
                 } else {
                     incCancelFromQueued();
                 }
                 storage.cancel(uuid);
-                synchronized(this) {
+                synchronized (this) {
                     for (Future<?> task : asyncTasks) {
                         /*
                          * do not interrupt thread as we don't know how
@@ -617,8 +582,7 @@ public class NearlineStorageHandler
             }
         }
 
-        public void failed(int rc, String msg)
-        {
+        public void failed(int rc, String msg) {
             failed(CacheExceptionFactory.exceptionOf(rc, msg));
         }
 
@@ -630,15 +594,14 @@ public class NearlineStorageHandler
             info.setCreated(createdAt);
             info.setState(state.get().name());
             long now = System.currentTimeMillis();
-            info.setTotalElapsed(now-createdAt);
-            info.setRunning(now-activatedAt);
+            info.setTotalElapsed(now - createdAt);
+            info.setRunning(now - activatedAt);
             info.setUuid(String.valueOf(getId()));
             return info;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(uuid).append(' ').append(state).append(' ').append(new Date(createdAt));
             long activatedAt = this.activatedAt;
@@ -649,8 +612,7 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public int compareTo(AbstractRequest<K> o)
-        {
+        public int compareTo(AbstractRequest<K> o) {
             return Long.compare(createdAt, o.createdAt);
         }
 
@@ -675,7 +637,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() +1, current.active(), current.canceled());
+                QueueStat withThis = new QueueStat(current.queued() + 1, current.active(),
+                      current.canceled());
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -684,7 +647,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() -1, current.active() + 1, current.canceled());
+                QueueStat withThis = new QueueStat(current.queued() - 1, current.active() + 1,
+                      current.canceled());
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -693,7 +657,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1, current.canceled() + 1);
+                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
+                      current.canceled() + 1);
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -702,7 +667,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(), current.canceled() + 1);
+                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
+                      current.canceled() + 1);
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -711,7 +677,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued() -1, current.active(), current.canceled());
+                QueueStat withThis = new QueueStat(current.queued() - 1, current.active(),
+                      current.canceled());
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -720,7 +687,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1, current.canceled());
+                QueueStat withThis = new QueueStat(current.queued(), current.active() - 1,
+                      current.canceled());
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -729,7 +697,8 @@ public class NearlineStorageHandler
             boolean isSet;
             do {
                 QueueStat current = queueStat.get();
-                QueueStat withThis = new QueueStat(current.queued(), current.active(), current.canceled() -1);
+                QueueStat withThis = new QueueStat(current.queued(), current.active(),
+                      current.canceled() - 1);
                 isSet = queueStat.compareAndSet(current, withThis);
             } while (!isSet);
         }
@@ -738,20 +707,20 @@ public class NearlineStorageHandler
 
     /**
      * An abstract container for requests of a particular type.
-     *
-     * Subclasses implement methods for extracting a request specific key, creating request
-     * objects and submitting the request to a NearlineStorage.
-     *
-     * Supports thread safe addition and removal of requests from the container. If the same
-     * request (as identified by the key) is added multiple times, the requests are collapsed
-     * by adding the callback to the existing request.
+     * <p>
+     * Subclasses implement methods for extracting a request specific key, creating request objects
+     * and submitting the request to a NearlineStorage.
+     * <p>
+     * Supports thread safe addition and removal of requests from the container. If the same request
+     * (as identified by the key) is added multiple times, the requests are collapsed by adding the
+     * callback to the existing request.
      *
      * @param <K> key identifying a request
      * @param <F> information defining a replica
      * @param <R> type of request
      */
-    private abstract static class AbstractRequestContainer<K, F, R extends AbstractRequest<K> & NearlineRequest<?>>
-    {
+    private abstract static class AbstractRequestContainer<K, F, R extends AbstractRequest<K> & NearlineRequest<?>> {
+
         protected final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
 
         private final ContainerState state = new ContainerState();
@@ -759,18 +728,19 @@ public class NearlineStorageHandler
         /**
          * Queue usage statistics.
          */
-        protected AtomicReference<QueueStat> queueStats = new AtomicReference<>(new QueueStat(0, 0, 0));
+        protected AtomicReference<QueueStat> queueStats = new AtomicReference<>(
+              new QueueStat(0, 0, 0));
 
         public void addAll(NearlineStorage storage,
-                           Iterable<F> files,
-                           CompletionHandler<Void,K> callback)
-        {
+              Iterable<F> files,
+              CompletionHandler<Void, K> callback) {
             List<R> newRequests = new ArrayList<>();
             for (F file : files) {
                 K key = extractKey(file);
                 R request = requests.computeIfAbsent(key, (k) -> {
                     if (!state.increment()) {
-                        callback.failed(new CacheException("Nearline storage has been shut down."), k);
+                        callback.failed(new CacheException("Nearline storage has been shut down."),
+                              k);
                         return null;
                     }
                     try {
@@ -804,8 +774,7 @@ public class NearlineStorageHandler
         /**
          * Cancels the request identified by {@code key}.
          */
-        public void cancel(K key)
-        {
+        public void cancel(K key) {
             R request = requests.get(key);
             if (request != null) {
                 request.cancel();
@@ -815,8 +784,7 @@ public class NearlineStorageHandler
         /**
          * Cancels requests whose deadline has past.
          */
-        public void cancelExpiredRequests()
-        {
+        public void cancelExpiredRequests() {
             long now = System.currentTimeMillis();
             for (R request : requests.values()) {
                 if (request.getDeadline() <= now) {
@@ -828,32 +796,30 @@ public class NearlineStorageHandler
         /**
          * Cancels all requests.
          */
-        public void cancelRequests()
-        {
+        public void cancelRequests() {
             requests.values().forEach(AbstractRequest::cancel);
         }
 
         /**
-         * Shuts down the container, preventing new requests from being added and cancels
-         * all existing requests.
+         * Shuts down the container, preventing new requests from being added and cancels all
+         * existing requests.
          */
-        public void shutdown()
-        {
+        public void shutdown() {
             state.shutdown();
             cancelRequests();
         }
 
         /**
-         * Waits for the container to terminate. It is terminated when it has been shut down and
-         * all requests have finished.
+         * Waits for the container to terminate. It is terminated when it has been shut down and all
+         * requests have finished.
          */
-        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException
-        {
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
             return state.awaitTermination(timeout, unit);
         }
 
         /**
          * Get current request states statistics.
+         *
          * @return request states statistics.
          */
         public QueueStat getQueueStats() {
@@ -861,15 +827,14 @@ public class NearlineStorageHandler
         }
 
         /**
-         * Called by subclass to remove the request from the container and invoke the
-         * callbacks of the request.
+         * Called by subclass to remove the request from the container and invoke the callbacks of
+         * the request.
          *
-         * @param key the key identifying the request to remove
+         * @param key   the key identifying the request to remove
          * @param cause cause of why the request failed, or null if the request was successful
          */
-        protected void removeAndCallback(K key, Throwable cause)
-        {
-            for (CompletionHandler<Void,K> callback : remove(key)) {
+        protected void removeAndCallback(K key, Throwable cause) {
+            for (CompletionHandler<Void, K> callback : remove(key)) {
                 if (cause != null) {
                     callback.failed(cause, key);
                 } else {
@@ -878,18 +843,15 @@ public class NearlineStorageHandler
             }
         }
 
-        public String printJobQueue()
-        {
+        public String printJobQueue() {
             return Joiner.on('\n').join(requests.values());
         }
 
-        public String printJobQueue(Ordering<R> ordering)
-        {
+        public String printJobQueue(Ordering<R> ordering) {
             return Joiner.on('\n').join(ordering.sortedCopy(requests.values()));
         }
 
-        private Iterable<CompletionHandler<Void,K>> remove(K key)
-        {
+        private Iterable<CompletionHandler<Void, K>> remove(K key) {
             R actualRequest = requests.remove(key);
             if (actualRequest == null) {
                 return Collections.emptyList();
@@ -900,89 +862,89 @@ public class NearlineStorageHandler
             return actualRequest.callbacks();
         }
 
-        /** Returns a key identifying the request for a particular replica. */
+        /**
+         * Returns a key identifying the request for a particular replica.
+         */
         protected abstract K extractKey(F file);
 
-        /** Creates a new nearline storage request. */
+        /**
+         * Creates a new nearline storage request.
+         */
         protected abstract R createRequest(NearlineStorage storage, F file) throws Exception;
 
-        /** Submits requests to the nearline storage. */
+        /**
+         * Submits requests to the nearline storage.
+         */
         protected abstract void submit(NearlineStorage storage, Iterable<R> requests);
     }
 
-    private class FlushRequestContainer extends AbstractRequestContainer<PnfsId, PnfsId, FlushRequestImpl>
-    {
+    private class FlushRequestContainer extends
+          AbstractRequestContainer<PnfsId, PnfsId, FlushRequestImpl> {
+
         @Override
-        protected PnfsId extractKey(PnfsId id)
-        {
+        protected PnfsId extractKey(PnfsId id) {
             return id;
         }
 
         @Override
         protected FlushRequestImpl createRequest(NearlineStorage storage, PnfsId id)
-                throws CacheException, InterruptedException
-        {
+              throws CacheException, InterruptedException {
             return new FlushRequestImpl(storage, queueStats, id);
         }
 
         @Override
-        protected void submit(NearlineStorage storage, Iterable<FlushRequestImpl> requests)
-        {
+        protected void submit(NearlineStorage storage, Iterable<FlushRequestImpl> requests) {
             storage.flush(transform(requests, Functions.<FlushRequest>identity()));
         }
     }
 
-    private class StageRequestContainer extends AbstractRequestContainer<PnfsId, FileAttributes, StageRequestImpl>
-    {
+    private class StageRequestContainer extends
+          AbstractRequestContainer<PnfsId, FileAttributes, StageRequestImpl> {
+
         @Override
-        protected PnfsId extractKey(FileAttributes file)
-        {
+        protected PnfsId extractKey(FileAttributes file) {
             return file.getPnfsId();
         }
 
         @Override
         protected StageRequestImpl createRequest(NearlineStorage storage,
-                                                 FileAttributes file)
-                throws CacheException
-        {
+              FileAttributes file)
+              throws CacheException {
             return new StageRequestImpl(storage, queueStats, file);
         }
 
         @Override
-        protected void submit(NearlineStorage storage, Iterable<StageRequestImpl> requests)
-        {
+        protected void submit(NearlineStorage storage, Iterable<StageRequestImpl> requests) {
             storage.stage(transform(requests, Functions.<StageRequest>identity()));
         }
     }
 
-    private class RemoveRequestContainer extends AbstractRequestContainer<URI, URI, RemoveRequestImpl>
-    {
+    private class RemoveRequestContainer extends
+          AbstractRequestContainer<URI, URI, RemoveRequestImpl> {
+
         @Override
-        protected URI extractKey(URI uri)
-        {
+        protected URI extractKey(URI uri) {
             return uri;
         }
 
         @Override
-        protected RemoveRequestImpl createRequest(NearlineStorage storage, URI uri)
-        {
+        protected RemoveRequestImpl createRequest(NearlineStorage storage, URI uri) {
             return new RemoveRequestImpl(storage, queueStats, uri);
         }
 
         @Override
-        protected void submit(NearlineStorage storage, Iterable<RemoveRequestImpl> requests)
-        {
+        protected void submit(NearlineStorage storage, Iterable<RemoveRequestImpl> requests) {
             storage.remove(transform(requests, Functions.<RemoveRequest>identity()));
         }
     }
 
-    private class FlushRequestImpl extends AbstractRequest<PnfsId> implements FlushRequest
-    {
+    private class FlushRequestImpl extends AbstractRequest<PnfsId> implements FlushRequest {
+
         private final ReplicaDescriptor descriptor;
         private final StorageInfoMessage infoMsg;
 
-        public FlushRequestImpl(NearlineStorage nearlineStorage, AtomicReference<QueueStat> stats, PnfsId pnfsId) throws CacheException, InterruptedException
-        {
+        public FlushRequestImpl(NearlineStorage nearlineStorage, AtomicReference<QueueStat> stats,
+              PnfsId pnfsId) throws CacheException, InterruptedException {
             super(nearlineStorage, stats);
             descriptor = repository.openEntry(pnfsId, EnumSet.of(OpenFlags.NOATIME));
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
@@ -995,20 +957,17 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public File getFile()
-        {
+        public File getFile() {
             return Paths.get(descriptor.getReplicaFile()).toFile();
         }
 
         @Override
-        public URI getReplicaUri()
-        {
+        public URI getReplicaUri() {
             return descriptor.getReplicaFile();
         }
 
         @Override
-        public FileAttributes getFileAttributes()
-        {
+        public FileAttributes getFileAttributes() {
             return descriptor.getFileAttributes();
         }
 
@@ -1018,29 +977,27 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public long getDeadline()
-        {
+        public long getDeadline() {
             return (state.get() == State.ACTIVE) ? activatedAt + flushTimeout : Long.MAX_VALUE;
         }
 
         @Override
-        public ListenableFuture<Void> activate()
-        {
+        public ListenableFuture<Void> activate() {
             LOGGER.debug("Activating flush of {}.", getFileAttributes().getPnfsId());
             return register(transformAsync(super.activate(), new PreFlushFunction(), executor));
         }
 
         @Override
-        public ListenableFuture<String> activateWithPath()
-        {
+        public ListenableFuture<String> activateWithPath() {
             LOGGER.debug("Activating flush of {}.", getFileAttributes().getPnfsId());
-            return register(transformAsync(super.activate(), new PreFlushWithPathFunction(), executor));
+            return register(
+                  transformAsync(super.activate(), new PreFlushWithPathFunction(), executor));
         }
 
         @Override
-        public String toString()
-        {
-            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' ' + getFileAttributes().getStorageClass();
+        public String toString() {
+            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' '
+                  + getFileAttributes().getStorageClass();
         }
 
         public NearlineData toNearlineData() {
@@ -1052,8 +1009,7 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public void failed(Exception cause)
-        {
+        public void failed(Exception cause) {
             descriptor.close();
             /* ListenableFuture#get throws ExecutionException */
             if (cause instanceof ExecutionException) {
@@ -1064,12 +1020,12 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public void completed(Set<URI> uris)
-        {
+        public void completed(Set<URI> uris) {
             try {
                 descriptor.close();
 
-                FileAttributes fileAttributesForNotification = getFileAttributesForNotification(uris);
+                FileAttributes fileAttributesForNotification = getFileAttributesForNotification(
+                      uris);
 
                 infoMsg.setStorageInfo(fileAttributesForNotification.getStorageInfo());
 
@@ -1078,7 +1034,7 @@ public class NearlineStorageHandler
 
                 try {
                     repository.setState(pnfsId, ReplicaState.CACHED,
-                            "file sucessfully flushed");
+                          "file sucessfully flushed");
                 } catch (IllegalTransitionException ignored) {
                     /* Apparently the file is no longer precious. Most
                      * likely it got deleted, which is fine, since the
@@ -1087,14 +1043,15 @@ public class NearlineStorageHandler
                 }
                 done(null);
 
-                LOGGER.info("Flushed {} to nearline storage: {}", pnfsId, Joiner.on(' ').join(uris));
+                LOGGER.info("Flushed {} to nearline storage: {}", pnfsId,
+                      Joiner.on(' ').join(uris));
             } catch (Exception e) {
                 done(e);
             }
         }
 
-        private FileAttributes getFileAttributesForNotification(Set<URI> uris) throws CacheException
-        {
+        private FileAttributes getFileAttributesForNotification(Set<URI> uris)
+              throws CacheException {
             FileAttributes fileAttributes = descriptor.getFileAttributes();
             StorageInfo storageInfo = fileAttributes.getStorageInfo().clone();
             storageInfo.isSetAddLocation(true);
@@ -1108,16 +1065,15 @@ public class NearlineStorageHandler
             }
             // REVISIT: pool shouldn't update the files size on flush, but this is required due to space manager accounting
             return FileAttributes.of()
-                    .accessLatency(fileAttributes.getAccessLatency())
-                    .retentionPolicy(fileAttributes.getRetentionPolicy())
-                    .storageInfo(storageInfo)
-                    .size(fileAttributes.getSize())
-                    .build();
+                  .accessLatency(fileAttributes.getAccessLatency())
+                  .retentionPolicy(fileAttributes.getRetentionPolicy())
+                  .storageInfo(storageInfo)
+                  .size(fileAttributes.getSize())
+                  .build();
         }
 
         private void notifyNamespace(PnfsId pnfsid, FileAttributes fileAttributes)
-                throws InterruptedException, CacheException
-        {
+              throws InterruptedException, CacheException {
             retrying:
             while (true) {
                 try {
@@ -1125,66 +1081,67 @@ public class NearlineStorageHandler
                     break;
                 } catch (CacheException e) {
                     switch (e.getRc()) {
-                    case CacheException.NOT_IN_TRASH:
-                    case CacheException.FILE_NOT_FOUND:
-                        /* In case the file was deleted, we are presented
-                         * with the problem that the file is now on tape,
-                         * however the location has not been registered
-                         * centrally. Hence the copy on tape will not be
-                         * removed by the HSM cleaner. The sensible thing
-                         * seems to be to remove the file from tape here.
-                         * For now we ignore this issue (REVISIT).
-                         */
-                        break retrying;
+                        case CacheException.NOT_IN_TRASH:
+                        case CacheException.FILE_NOT_FOUND:
+                            /* In case the file was deleted, we are presented
+                             * with the problem that the file is now on tape,
+                             * however the location has not been registered
+                             * centrally. Hence the copy on tape will not be
+                             * removed by the HSM cleaner. The sensible thing
+                             * seems to be to remove the file from tape here.
+                             * For now we ignore this issue (REVISIT).
+                             */
+                            break retrying;
 
-                    case CacheException.INVALID_UPDATE:
-                        /* PnfsManager has indicated that there was a problem
-                         * updating the file with the information describing the
-                         * flush.  This is despite the flush operation returning
-                         * successfully.
-                         *
-                         * Given this discrepency, we MUST NOT automatically
-                         * retry the request, as this could lead to multiple
-                         * copies of the file's data being stored on tape.
-                         * Instead some kind of manual intevention is required.
-                         *
-                         * A CacheException with an rc in [30, 40) has the
-                         * effect of failing the request.  A failed flush
-                         * request is NOT automatically retried, but requires
-                         * manual (admin) intervention before retrying.
-                         */
-                        throw new CacheException(30, e.getMessage());
+                        case CacheException.INVALID_UPDATE:
+                            /* PnfsManager has indicated that there was a problem
+                             * updating the file with the information describing the
+                             * flush.  This is despite the flush operation returning
+                             * successfully.
+                             *
+                             * Given this discrepency, we MUST NOT automatically
+                             * retry the request, as this could lead to multiple
+                             * copies of the file's data being stored on tape.
+                             * Instead some kind of manual intevention is required.
+                             *
+                             * A CacheException with an rc in [30, 40) has the
+                             * effect of failing the request.  A failed flush
+                             * request is NOT automatically retried, but requires
+                             * manual (admin) intervention before retrying.
+                             */
+                            throw new CacheException(30, e.getMessage());
 
-                    default:
-                        /* The message to the PnfsManager failed. There are several
-                         * possible reasons for this; we may have lost the
-                         * connection to the PnfsManager; the PnfsManager may have
-                         * lost its connection to the namespace or otherwise be in
-                         * trouble; bugs; etc.
-                         *
-                         * We keep retrying until we succeed. This will effectively
-                         * block this thread from flushing any other files, which
-                         * seems sensible when we have trouble talking to the
-                         * PnfsManager. If the pool crashes or gets restarted while
-                         * waiting here, we will end up flushing the file again. We
-                         * assume that the nearline storage is able to eliminate the
-                         * duplicate; or at least tolerate the duplicate (given that
-                         * this situation should be rare, we can live with a little
-                         * bit of wasted tape).
-                         */
-                        LOGGER.error("Error notifying pnfsmanager about a flushed file: {} ({})",
-                                e.getMessage(), e.getRc());
+                        default:
+                            /* The message to the PnfsManager failed. There are several
+                             * possible reasons for this; we may have lost the
+                             * connection to the PnfsManager; the PnfsManager may have
+                             * lost its connection to the namespace or otherwise be in
+                             * trouble; bugs; etc.
+                             *
+                             * We keep retrying until we succeed. This will effectively
+                             * block this thread from flushing any other files, which
+                             * seems sensible when we have trouble talking to the
+                             * PnfsManager. If the pool crashes or gets restarted while
+                             * waiting here, we will end up flushing the file again. We
+                             * assume that the nearline storage is able to eliminate the
+                             * duplicate; or at least tolerate the duplicate (given that
+                             * this situation should be rare, we can live with a little
+                             * bit of wasted tape).
+                             */
+                            LOGGER.error(
+                                  "Error notifying pnfsmanager about a flushed file: {} ({})",
+                                  e.getMessage(), e.getRc());
                     }
                 }
                 TimeUnit.MINUTES.sleep(2);
             }
         }
 
-        private void done(Throwable cause)
-        {
+        private void done(Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
-                if (cause instanceof InterruptedException || cause instanceof CancellationException) {
+                if (cause instanceof InterruptedException
+                      || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Flush was cancelled.", cause);
                 }
 
@@ -1206,33 +1163,30 @@ public class NearlineStorageHandler
 
             _kafkaSender.accept(infoMsg);
 
-
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
-        private void removeFile(PnfsId pnfsId)
-        {
+        private void removeFile(PnfsId pnfsId) {
             try {
                 repository.setState(pnfsId, ReplicaState.REMOVED,
-                        "file deleted before being flushed");
+                      "file deleted before being flushed");
             } catch (IllegalTransitionException f) {
                 LOGGER.warn("File not found in name space, but failed to remove {}: {}",
-                            pnfsId, f.getMessage());
+                      pnfsId, f.getMessage());
             } catch (CacheException f) {
                 LOGGER.error("File not found in name space, but failed to remove {}: {}",
-                             pnfsId, f.getMessage());
+                      pnfsId, f.getMessage());
             } catch (InterruptedException f) {
                 LOGGER.warn("File not found in name space, but failed to remove {}: {}",
-                            pnfsId, f);
+                      pnfsId, f);
             }
         }
 
-        private class PreFlushFunction implements AsyncFunction<Void, Void>
-        {
+        private class PreFlushFunction implements AsyncFunction<Void, Void> {
+
             @Override
             public ListenableFuture<Void> apply(Void ignored)
-                    throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException
-            {
+                  throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException {
                 final PnfsId pnfsId = descriptor.getFileAttributes().getPnfsId();
                 LOGGER.debug("Checking if {} still exists.", pnfsId);
                 try {
@@ -1241,19 +1195,19 @@ public class NearlineStorageHandler
                     // Remove file asynchronously to prevent request cancellation from
                     // interrupting the state update.
                     executor.execute(() -> removeFile(pnfsId));
-                    throw new FileNotFoundCacheException("File not found in name space during pre-flush check.", e);
+                    throw new FileNotFoundCacheException(
+                          "File not found in name space during pre-flush check.", e);
                 }
                 checksumModule.enforcePreFlushPolicy(descriptor);
                 return Futures.immediateFuture(null);
             }
         }
 
-        private class PreFlushWithPathFunction implements AsyncFunction<Void, String>
-        {
+        private class PreFlushWithPathFunction implements AsyncFunction<Void, String> {
+
             @Override
             public ListenableFuture<String> apply(Void ignored)
-                    throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException
-            {
+                  throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException {
                 final PnfsId pnfsId = descriptor.getFileAttributes().getPnfsId();
                 LOGGER.debug("Checking if {} still exists.", pnfsId);
                 FsPath path;
@@ -1263,7 +1217,8 @@ public class NearlineStorageHandler
                     // Remove file asynchronously to prevent request cancellation from
                     // interrupting the state update.
                     executor.execute(() -> removeFile(pnfsId));
-                    throw new FileNotFoundCacheException("File not found in name space during pre-flush check.", e);
+                    throw new FileNotFoundCacheException(
+                          "File not found in name space during pre-flush check.", e);
                 }
                 checksumModule.enforcePreFlushPolicy(descriptor);
                 return Futures.immediateFuture(path.toString());
@@ -1271,14 +1226,14 @@ public class NearlineStorageHandler
         }
     }
 
-    private class StageRequestImpl extends AbstractRequest<PnfsId> implements StageRequest
-    {
+    private class StageRequestImpl extends AbstractRequest<PnfsId> implements StageRequest {
+
         private final StorageInfoMessage infoMsg;
         private final ReplicaDescriptor descriptor;
         private ListenableFuture<Void> allocationFuture;
 
-        public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, FileAttributes fileAttributes) throws CacheException
-        {
+        public StageRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats,
+              FileAttributes fileAttributes) throws CacheException {
             super(storage, stats);
             PnfsId pnfsId = fileAttributes.getPnfsId();
             infoMsg = new StorageInfoMessage(cellAddress, pnfsId, true);
@@ -1286,66 +1241,59 @@ public class NearlineStorageHandler
             infoMsg.setFileSize(fileAttributes.getSize());
             infoMsg.setSubject(Subjects.ROOT);
             descriptor =
-                    repository.createEntry(
-                            fileAttributes,
-                            ReplicaState.FROM_STORE,
-                            ReplicaState.CACHED,
-                            Collections.emptyList(),
-                            EnumSet.noneOf(Repository.OpenFlags.class),
-                            OptionalLong.empty());
+                  repository.createEntry(
+                        fileAttributes,
+                        ReplicaState.FROM_STORE,
+                        ReplicaState.CACHED,
+                        Collections.emptyList(),
+                        EnumSet.noneOf(Repository.OpenFlags.class),
+                        OptionalLong.empty());
             LOGGER.debug("Stage request created for {}.", pnfsId);
         }
 
         @Override
-        public synchronized ListenableFuture<Void> allocate()
-        {
+        public synchronized ListenableFuture<Void> allocate() {
             LOGGER.debug("Allocating space for stage of {}.", getFileAttributes().getPnfsId());
             if (allocationFuture == null) {
                 allocationFuture = register(executor.submit(
-                        () -> {
-                            allocator.allocate(getFileAttributes().getPnfsId(),
-                                    descriptor.getFileAttributes().getSize());
-                            return null;
-                        }
+                      () -> {
+                          allocator.allocate(getFileAttributes().getPnfsId(),
+                                descriptor.getFileAttributes().getSize());
+                          return null;
+                      }
                 ));
             }
             return allocationFuture;
         }
 
         @Override
-        public synchronized ListenableFuture<Void> activate()
-        {
+        public synchronized ListenableFuture<Void> activate() {
             LOGGER.debug("Activating stage of {}.", getFileAttributes().getPnfsId());
             return super.activate();
         }
 
         @Override
-        public File getFile()
-        {
+        public File getFile() {
             return Paths.get(descriptor.getReplicaFile()).toFile();
         }
 
         @Override
-        public URI getReplicaUri()
-        {
+        public URI getReplicaUri() {
             return descriptor.getReplicaFile();
         }
 
         @Override
-        public FileAttributes getFileAttributes()
-        {
+        public FileAttributes getFileAttributes() {
             return descriptor.getFileAttributes();
         }
 
         @Override
-        public long getDeadline()
-        {
+        public long getDeadline() {
             return (state.get() == State.ACTIVE) ? activatedAt + stageTimeout : Long.MAX_VALUE;
         }
 
         @Override
-        public void failed(Exception cause)
-        {
+        public void failed(Exception cause) {
             /* ListenableFuture#get throws ExecutionException */
             if (cause instanceof ExecutionException) {
                 done(cause.getCause());
@@ -1355,8 +1303,7 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public void completed(Set<Checksum> expectedChecksums)
-        {
+        public void completed(Set<Checksum> expectedChecksums) {
             Throwable error = null;
             try {
                 checksumModule.enforcePostRestorePolicy(descriptor, expectedChecksums);
@@ -1365,9 +1312,11 @@ public class NearlineStorageHandler
             } catch (InterruptedException | CacheException | RuntimeException | Error e) {
                 error = e;
             } catch (NoSuchAlgorithmException e) {
-                error = new CacheException(1010, "Checksum calculation failed: " + e.getMessage(), e);
+                error = new CacheException(1010, "Checksum calculation failed: " + e.getMessage(),
+                      e);
             } catch (IOException e) {
-                error = new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + messageOrClassName(e), e);
+                error = new DiskErrorCacheException(
+                      "Checksum calculation failed due to I/O error: " + messageOrClassName(e), e);
             } finally {
                 done(error);
             }
@@ -1376,16 +1325,14 @@ public class NearlineStorageHandler
         /**
          * Deallocate space. Used only when handling stage failure.
          */
-        private synchronized void deallocateSpace()
-        {
+        private synchronized void deallocateSpace() {
             if (allocationFuture != null && !allocationFuture.cancel(false)) {
                 allocator.free(getFileAttributes().getPnfsId(),
-                        getFileAttributes().getSize());
+                      getFileAttributes().getSize());
             }
         }
 
-        private void done(Throwable cause)
-        {
+        private void done(Throwable cause) {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
             if (cause != null) {
                 deallocateSpace();
@@ -1395,7 +1342,8 @@ public class NearlineStorageHandler
                 } catch (IOException e) {
                     LOGGER.error("Failed to remove partially staged file: {}", e.getMessage());
                 }
-                if (cause instanceof InterruptedException || cause instanceof CancellationException) {
+                if (cause instanceof InterruptedException
+                      || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Stage was cancelled.", cause);
                 }
                 LOGGER.warn("Stage of {} failed with {}.", pnfsId, cause.toString());
@@ -1425,43 +1373,38 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public String toString()
-        {
-            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' ' + getFileAttributes().getStorageClass();
+        public String toString() {
+            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' '
+                  + getFileAttributes().getStorageClass();
         }
     }
 
-    private class RemoveRequestImpl extends AbstractRequest<URI> implements RemoveRequest
-    {
+    private class RemoveRequestImpl extends AbstractRequest<URI> implements RemoveRequest {
+
         private final URI uri;
 
-        RemoveRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, URI uri)
-        {
+        RemoveRequestImpl(NearlineStorage storage, AtomicReference<QueueStat> stats, URI uri) {
             super(storage, stats);
             this.uri = uri;
             LOGGER.debug("Remove request created for {}.", uri);
         }
 
         @Override
-        public synchronized ListenableFuture<Void> activate()
-        {
+        public synchronized ListenableFuture<Void> activate() {
             LOGGER.debug("Activating remove of {}.", uri);
             return super.activate();
         }
 
-        public URI getUri()
-        {
+        public URI getUri() {
             return uri;
         }
 
         @Override
-        public long getDeadline()
-        {
+        public long getDeadline() {
             return (state.get() == State.ACTIVE) ? activatedAt + removeTimeout : Long.MAX_VALUE;
         }
 
-        public void failed(Exception cause)
-        {
+        public void failed(Exception cause) {
             if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                 cause = new TimeoutCacheException("Stage was cancelled.", cause);
             }
@@ -1469,8 +1412,7 @@ public class NearlineStorageHandler
             removeRequests.removeAndCallback(uri, cause);
         }
 
-        public void completed(Void result)
-        {
+        public void completed(Void result) {
             LOGGER.info("Removed {} from nearline storage.", uri);
             removeRequests.removeAndCallback(uri, null);
         }
@@ -1483,25 +1425,23 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return super.toString() + ' ' + uri;
         }
     }
 
     @AffectsSetup
     @Command(name = "rh set timeout",
-            hint = "set restore timeout",
-            description = "Set restore timeout for the HSM script. When the timeout expires " +
-                    "the HSM script is killed.")
-    class RestoreSetTimeoutCommand implements Callable<String>
-    {
+          hint = "set restore timeout",
+          description = "Set restore timeout for the HSM script. When the timeout expires " +
+                "the HSM script is killed.")
+    class RestoreSetTimeoutCommand implements Callable<String> {
+
         @Argument(metaVar = "seconds")
         long timeout;
 
         @Override
-        public String call()
-        {
+        public String call() {
             synchronized (NearlineStorageHandler.this) {
                 stageTimeout = TimeUnit.SECONDS.toMillis(timeout);
             }
@@ -1510,48 +1450,45 @@ public class NearlineStorageHandler
     }
 
     @Command(name = "rh kill",
-            hint = "kill restore request",
-            description = "Remove an HSM restore request.")
-    class RestoreKillCommand implements Callable<String>
-    {
+          hint = "kill restore request",
+          description = "Remove an HSM restore request.")
+    class RestoreKillCommand implements Callable<String> {
+
         @Argument
         PnfsId pnfsId;
 
         @Override
-        public String call() throws NoSuchElementException, IllegalStateException
-        {
+        public String call() throws NoSuchElementException, IllegalStateException {
             stageRequests.cancel(pnfsId);
             return "Kill initialized";
         }
     }
 
     @Command(name = "rh ls",
-            hint = "list restore queue",
-            description = "List the HSM requests on the restore queue.\n\n" +
-                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
-                    "and request submission time.")
-    class RestoreListCommand implements Callable<String>
-    {
+          hint = "list restore queue",
+          description = "List the HSM requests on the restore queue.\n\n" +
+                "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                "and request submission time.")
+    class RestoreListCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return stageRequests.printJobQueue(Ordering.natural());
         }
     }
 
     @AffectsSetup
     @Command(name = "st set timeout",
-            hint = "set store timeout",
-            description = "Set store timeout for the HSM script. When the timeout expires " +
-                    "the HSM script is killed.")
-    class StoreSetTimeoutCommand implements Callable<String>
-    {
+          hint = "set store timeout",
+          description = "Set store timeout for the HSM script. When the timeout expires " +
+                "the HSM script is killed.")
+    class StoreSetTimeoutCommand implements Callable<String> {
+
         @Argument(metaVar = "seconds")
         long timeout;
 
         @Override
-        public String call()
-        {
+        public String call() {
             synchronized (NearlineStorageHandler.this) {
                 flushTimeout = TimeUnit.SECONDS.toMillis(timeout);
             }
@@ -1560,48 +1497,45 @@ public class NearlineStorageHandler
     }
 
     @Command(name = "st kill",
-            hint = "kill store request",
-            description = "Remove an HSM store request.")
-    class StoreKillCommand implements Callable<String>
-    {
+          hint = "kill store request",
+          description = "Remove an HSM store request.")
+    class StoreKillCommand implements Callable<String> {
+
         @Argument
         PnfsId pnfsId;
 
         @Override
-        public String call() throws NoSuchElementException, IllegalStateException
-        {
+        public String call() throws NoSuchElementException, IllegalStateException {
             flushRequests.cancel(pnfsId);
             return "Kill initialized";
         }
     }
 
     @Command(name = "st ls",
-            hint = "list store queue",
-            description = "List the HSM requests on the store queue.\n\n" +
-                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
-                    "and request submission time.")
-    class StoreListCommand implements Callable<String>
-    {
+          hint = "list store queue",
+          description = "List the HSM requests on the store queue.\n\n" +
+                "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                "and request submission time.")
+    class StoreListCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return flushRequests.printJobQueue(Ordering.natural());
         }
     }
 
     @AffectsSetup
     @Command(name = "rm set timeout",
-            hint = "set tape remove timeout",
-            description = "Set remove timeout for the HSM script. When the timeout expires " +
-                    "the HSM script is killed.")
-    class RemoveSetTimeoutCommand implements Callable<String>
-    {
+          hint = "set tape remove timeout",
+          description = "Set remove timeout for the HSM script. When the timeout expires " +
+                "the HSM script is killed.")
+    class RemoveSetTimeoutCommand implements Callable<String> {
+
         @Argument(metaVar = "seconds")
         long timeout;
 
         @Override
-        public String call()
-        {
+        public String call() {
             synchronized (NearlineStorageHandler.this) {
                 removeTimeout = TimeUnit.SECONDS.toMillis(timeout);
             }
@@ -1610,58 +1544,57 @@ public class NearlineStorageHandler
     }
 
     @Command(name = "rm ls",
-            hint = "list tape remove queue",
-            description = "List the HSM requests on the remove queue.\n\n" +
-                    "The columns in the output show: job id, job status, pnfs id, request counter, " +
-                    "and request submission time.")
-    class RemoveListCommand implements Callable<String>
-    {
+          hint = "list tape remove queue",
+          description = "List the HSM requests on the remove queue.\n\n" +
+                "The columns in the output show: job id, job status, pnfs id, request counter, " +
+                "and request submission time.")
+    class RemoveListCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return removeRequests.printJobQueue(Ordering.natural());
         }
     }
 
     @Command(name = "rh restore",
-            hint = "restore file from tape",
-            description = "Restore a file from tape.")
-    class RestoreCommand extends DelayedReply implements Callable<Serializable>, CompletionHandler<Void, PnfsId>
-    {
+          hint = "restore file from tape",
+          description = "Restore a file from tape.")
+    class RestoreCommand extends DelayedReply implements Callable<Serializable>,
+          CompletionHandler<Void, PnfsId> {
+
         @Argument
         PnfsId pnfsId;
 
         @Option(name = "block",
-                usage = "Block the shell until the restore has completed. This " +
-                        "option is only relevant when debugging as the shell " +
-                        "would usually time out before a real HSM is able to " +
-                        "restore a file.")
+              usage = "Block the shell until the restore has completed. This " +
+                    "option is only relevant when debugging as the shell " +
+                    "would usually time out before a real HSM is able to " +
+                    "restore a file.")
         boolean block;
 
         @Override
-        public void completed(Void result, PnfsId pnfsId)
-        {
+        public void completed(Void result, PnfsId pnfsId) {
             reply("Fetched " + pnfsId);
         }
 
         @Override
-        public void failed(Throwable exc, PnfsId pnfsId)
-        {
-            reply("Failed to fetch " + pnfsId + ": " + (exc instanceof CacheException ? exc.getMessage() : exc));
+        public void failed(Throwable exc, PnfsId pnfsId) {
+            reply("Failed to fetch " + pnfsId + ": " + (exc instanceof CacheException
+                  ? exc.getMessage() : exc));
         }
 
         @Override
-        public Serializable call()
-        {
+        public Serializable call() {
             /* We need to fetch the storage info and we don't want to
              * block the message thread while waiting for the reply.
              */
             executor.submit(() -> {
                 try {
                     FileAttributes attributes = pnfs.getFileAttributes(pnfsId,
-                                                                       EnumSet.of(PNFSID, SIZE, STORAGEINFO));
+                          EnumSet.of(PNFSID, SIZE, STORAGEINFO));
                     String hsm = hsmSet.getInstanceName(attributes);
-                    stage(hsm, attributes, block ? RestoreCommand.this : new NopCompletionHandler<>());
+                    stage(hsm, attributes,
+                          block ? RestoreCommand.this : new NopCompletionHandler<>());
                 } catch (CacheException e) {
                     failed(e, pnfsId);
                 }
@@ -1670,11 +1603,10 @@ public class NearlineStorageHandler
         }
     }
 
-    private class TimeoutTask implements Runnable
-    {
+    private class TimeoutTask implements Runnable {
+
         @Override
-        public void run()
-        {
+        public void run() {
             flushRequests.cancelExpiredRequests();
             stageRequests.cancelExpiredRequests();
             removeRequests.cancelExpiredRequests();
@@ -1682,28 +1614,25 @@ public class NearlineStorageHandler
     }
 
     /**
-     * Thread safe class to maintain the container lifecycle state, in particular
-     * the number of requests and whether the container has been shut down.
+     * Thread safe class to maintain the container lifecycle state, in particular the number of
+     * requests and whether the container has been shut down.
      */
-    private static class ContainerState
-    {
+    private static class ContainerState {
+
         private int count;
 
         private boolean isShutdown;
 
         private final Monitor monitor = new Monitor();
 
-        private final Monitor.Guard isTerminated = new Monitor.Guard(monitor)
-        {
+        private final Monitor.Guard isTerminated = new Monitor.Guard(monitor) {
             @Override
-            public boolean isSatisfied()
-            {
+            public boolean isSatisfied() {
                 return isShutdown && count == 0;
             }
         };
 
-        public boolean increment()
-        {
+        public boolean increment() {
             monitor.enter();
             try {
                 if (isShutdown) {
@@ -1717,8 +1646,7 @@ public class NearlineStorageHandler
             }
         }
 
-        public void decrement()
-        {
+        public void decrement() {
             monitor.enter();
             try {
                 count--;
@@ -1727,8 +1655,7 @@ public class NearlineStorageHandler
             }
         }
 
-        public void shutdown()
-        {
+        public void shutdown() {
             monitor.enter();
             try {
                 isShutdown = true;
@@ -1737,8 +1664,7 @@ public class NearlineStorageHandler
             }
         }
 
-        public boolean awaitTermination(long time, TimeUnit unit) throws InterruptedException
-        {
+        public boolean awaitTermination(long time, TimeUnit unit) throws InterruptedException {
             monitor.enter();
             try {
                 return monitor.waitFor(isTerminated, time, unit);
@@ -1747,8 +1673,7 @@ public class NearlineStorageHandler
             }
         }
 
-        public boolean isShutdown()
-        {
+        public boolean isShutdown() {
             monitor.enter();
             try {
                 return isShutdown;

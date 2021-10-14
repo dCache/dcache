@@ -1,19 +1,17 @@
 package org.dcache.pool.repository.v5;
 
-import java.util.Collection;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.util.Collection;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
-public class CacheEntryImpl implements CacheEntry
-{
+public class CacheEntryImpl implements CacheEntry {
+
     private final long _size;
     private final ReplicaState _state;
     private final long _created_at;
@@ -23,12 +21,12 @@ public class CacheEntryImpl implements CacheEntry
     private final Collection<StickyRecord> _sticky;
     private final FileAttributes _fileAttributes;
 
-    public CacheEntryImpl(ReplicaRecord entry) throws CacheException
-    {
+    public CacheEntryImpl(ReplicaRecord entry) throws CacheException {
         synchronized (entry) {
             _state = entry.getState();
             //when status is NEW or FROM_STORE we know that file is not on a disk and the size is 0
-            _size = _state == ReplicaState.NEW || _state == ReplicaState.FROM_STORE ? 0 : entry.getReplicaSize();
+            _size = _state == ReplicaState.NEW || _state == ReplicaState.FROM_STORE ? 0
+                  : entry.getReplicaSize();
             _created_at = entry.getCreationTime();
             _accessed_at = entry.getLastAccessTime();
             _linkCount = entry.getLinkCount();
@@ -42,8 +40,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getPnfsId()
      */
     @Override
-    public PnfsId getPnfsId()
-    {
+    public PnfsId getPnfsId() {
         return _fileAttributes.getPnfsId();
     }
 
@@ -51,14 +48,12 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getReplicaSize()
      */
     @Override
-    public long getReplicaSize()
-    {
+    public long getReplicaSize() {
         return _size;
     }
 
     @Override
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return _fileAttributes;
     }
 
@@ -66,8 +61,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getState()
      */
     @Override
-    public ReplicaState getState()
-    {
+    public ReplicaState getState() {
         return _state;
     }
 
@@ -75,8 +69,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getCreationTime()
      */
     @Override
-    public long getCreationTime()
-    {
+    public long getCreationTime() {
         return _created_at;
     }
 
@@ -84,8 +77,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getLastAccessTime()
      */
     @Override
-    public long getLastAccessTime()
-    {
+    public long getLastAccessTime() {
         return _accessed_at;
     }
 
@@ -93,8 +85,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getLinkCount()
      */
     @Override
-    public int getLinkCount()
-    {
+    public int getLinkCount() {
         return _linkCount;
     }
 
@@ -102,8 +93,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#isSticky()
      */
     @Override
-    public boolean isSticky()
-    {
+    public boolean isSticky() {
         return _isSticky;
     }
 
@@ -111,35 +101,33 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getStickyRecords()
      */
     @Override
-    public Collection<StickyRecord> getStickyRecords()
-    {
+    public Collection<StickyRecord> getStickyRecords() {
         return _sticky;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
 
         return getPnfsId() +
-               " <" +
-               ((_state == ReplicaState.CACHED) ? "C" : "-") +
-               ((_state == ReplicaState.PRECIOUS) ? "P" : "-") +
-               ((_state == ReplicaState.FROM_CLIENT) ? "C" : "-") +
-               ((_state == ReplicaState.FROM_STORE) ? "S" : "-") +
-               "-" +
-               "-" +
-               ((_state == ReplicaState.REMOVED) ? "R" : "-") +
-               ((_state == ReplicaState.DESTROYED) ? "D" : "-") +
-               (isSticky() ? "X" : "-") +
-               ((_state == ReplicaState.BROKEN) ? "E" : "-") +
-               "-" +
-               "L(0)[" + _linkCount + "]" +
-               "> " +
-               _size +
-               " si={" +
-               (_fileAttributes.isDefined(FileAttribute.STORAGECLASS)
-                     ? _fileAttributes.getStorageClass()
-                     : "<unknown>") +
-               "}";
+              " <" +
+              ((_state == ReplicaState.CACHED) ? "C" : "-") +
+              ((_state == ReplicaState.PRECIOUS) ? "P" : "-") +
+              ((_state == ReplicaState.FROM_CLIENT) ? "C" : "-") +
+              ((_state == ReplicaState.FROM_STORE) ? "S" : "-") +
+              "-" +
+              "-" +
+              ((_state == ReplicaState.REMOVED) ? "R" : "-") +
+              ((_state == ReplicaState.DESTROYED) ? "D" : "-") +
+              (isSticky() ? "X" : "-") +
+              ((_state == ReplicaState.BROKEN) ? "E" : "-") +
+              "-" +
+              "L(0)[" + _linkCount + "]" +
+              "> " +
+              _size +
+              " si={" +
+              (_fileAttributes.isDefined(FileAttribute.STORAGECLASS)
+                    ? _fileAttributes.getStorageClass()
+                    : "<unknown>") +
+              "}";
     }
 }

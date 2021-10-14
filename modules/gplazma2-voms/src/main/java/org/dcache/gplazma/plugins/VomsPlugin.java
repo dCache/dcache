@@ -1,7 +1,27 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.asList;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import static org.dcache.util.TimeUtils.getMillis;
+
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.cert.CRLException;
+import java.security.cert.CertPath;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.util.CertPaths;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -13,33 +33,12 @@ import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertPath;
-import java.security.cert.CRLException;
-import java.security.cert.X509Certificate;
-import java.security.Principal;
-import java.util.Base64;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.util.CertPaths;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Arrays.asList;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-import static org.dcache.util.TimeUtils.getMillis;
 /**
- * Validates and extracts FQANs from any X509Certificate certificate chain in
- * the public credentials.
+ * Validates and extracts FQANs from any X509Certificate certificate chain in the public
+ * credentials.
  */
-public class VomsPlugin implements GPlazmaAuthenticationPlugin
-{
+public class VomsPlugin implements GPlazmaAuthenticationPlugin {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(VomsPlugin.class);
 
     private static final String CADIR = "gplazma.vomsdir.ca";
@@ -52,43 +51,39 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     private final Random random = new Random();
 
     public VomsPlugin(Properties properties)
-            throws CertificateException, CRLException, IOException
-    {
+          throws CertificateException, CRLException, IOException {
         caDir = properties.getProperty(CADIR);
         vomsDir = properties.getProperty(VOMSDIR);
-        trustAnchorsUpdateInterval = getMillis(properties,TRUST_ANCHORS_REFRESH_INTERVAL);
+        trustAnchorsUpdateInterval = getMillis(properties, TRUST_ANCHORS_REFRESH_INTERVAL);
 
         checkArgument(caDir != null, "Undefined property: " + CADIR);
         checkArgument(vomsDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(trustAnchorsUpdateInterval > 0,
-                      TRUST_ANCHORS_REFRESH_INTERVAL + " has to be positive non-zero integer, specified: "
-                      + trustAnchorsUpdateInterval);
+              TRUST_ANCHORS_REFRESH_INTERVAL + " has to be positive non-zero integer, specified: "
+                    + trustAnchorsUpdateInterval);
     }
 
     @Override
-    public void start()
-    {
+    public void start() {
         VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder()
-            .lazyAnchorsLoading(false)
-            .trustAnchorsUpdateInterval(trustAnchorsUpdateInterval)
-            .trustAnchorsDir(caDir)
-            .build();
+              .lazyAnchorsLoading(false)
+              .trustAnchorsUpdateInterval(trustAnchorsUpdateInterval)
+              .trustAnchorsDir(caDir)
+              .build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
     }
 
     @Override
-    public void stop()
-    {
+    public void stop() {
         validator.shutdown();
     }
 
     @Override
     public void authenticate(Set<Object> publicCredentials,
-                    Set<Object> privateCredentials,
-                    Set<Principal> identifiedPrincipals)
-                    throws AuthenticationException
-    {
+          Set<Object> privateCredentials,
+          Set<Principal> identifiedPrincipals)
+          throws AuthenticationException {
         boolean primary = true;
         boolean hasX509 = false;
         boolean hasFQANs = false;
@@ -98,7 +93,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
         for (Object credential : publicCredentials) {
             if (CertPaths.isX509CertPath(credential)) {
                 hasX509 = true;
-                List<VOMSValidationResult> results = validator.validateWithResult(CertPaths.getX509Certificates((CertPath) credential));
+                List<VOMSValidationResult> results = validator.validateWithResult(
+                      CertPaths.getX509Certificates((CertPath) credential));
                 for (VOMSValidationResult result : results) {
                     if (result.isValid()) {
                         VOMSAttribute attr = result.getAttributes();
@@ -113,12 +109,14 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                         random.nextBytes(rawId);
                         String id = Base64.getEncoder().withoutPadding().encodeToString(rawId);
                         String message = buildErrorMessage(result.getValidationErrors());
-                        X509Certificate[] chain = CertPaths.getX509Certificates((CertPath) credential);
+                        X509Certificate[] chain = CertPaths.getX509Certificates(
+                              (CertPath) credential);
                         X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
                         if (eec == null) {
                             LOGGER.warn("Validation failure {}: {}", id, message);
                         } else {
-                            LOGGER.warn("Validation failure {} for DN \"{}\": {}", id, eec.getSubjectX500Principal().getName(), message);
+                            LOGGER.warn("Validation failure {} for DN \"{}\": {}", id,
+                                  eec.getSubjectX500Principal().getName(), message);
                         }
                         if (ids == null) {
                             ids = id;
@@ -140,10 +138,9 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     }
 
 
-    private String buildErrorMessage(List<VOMSValidationErrorMessage> errors)
-    {
+    private String buildErrorMessage(List<VOMSValidationErrorMessage> errors) {
         return errors.isEmpty() ? "(unknown)" : errors.stream().
-                map(VOMSValidationErrorMessage::toString).
-                collect(Collectors.joining(", ", "[", "]"));
+              map(VOMSValidationErrorMessage::toString).
+              collect(Collectors.joining(", ", "[", "]"));
     }
 }

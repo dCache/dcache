@@ -1,44 +1,40 @@
 package org.dcache.missingfiles;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.Reply;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import dmg.cells.nucleus.Reply;
-
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.MessageReply;
 import org.dcache.missingfiles.plugins.Plugin;
 import org.dcache.missingfiles.plugins.PluginChain;
 import org.dcache.missingfiles.plugins.PluginVisitor;
 import org.dcache.missingfiles.plugins.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
  * Main entry point for missing file notification
  */
-public class MissingFileHandler implements CellMessageReceiver
-{
+public class MissingFileHandler implements CellMessageReceiver {
+
     private static final Logger _log =
-            LoggerFactory.getLogger(RemoteMissingFileStrategy.class);
+          LoggerFactory.getLogger(RemoteMissingFileStrategy.class);
 
     private ExecutorService _executor;
 
     private PluginChain _chain;
 
-    public Reply messageArrived(MissingFileMessage message)
-    {
+    public Reply messageArrived(MissingFileMessage message) {
         _log.debug("Received notice {} {}", message.getRequestedPath(),
-                message.getInternalPath());
+              message.getInternalPath());
 
         MessageReply<MissingFileMessage> reply =
-                new MessageReply<>();
+              new MessageReply<>();
 
         Request request = new Request(message, reply);
         _executor.submit(request);
@@ -48,34 +44,30 @@ public class MissingFileHandler implements CellMessageReceiver
 
 
     @Required
-    public void setPluginChain(PluginChain chain)
-    {
+    public void setPluginChain(PluginChain chain) {
         _chain = chain;
     }
 
     @Required
-    public void setExecutorService(ExecutorService service)
-    {
+    public void setExecutorService(ExecutorService service) {
         _executor = service;
     }
 
 
-    private static Action actionFor(Result result)
-    {
-        switch(result) {
+    private static Action actionFor(Result result) {
+        switch (result) {
             case FAIL:
                 return Action.FAIL;
             case RETRY:
                 return Action.RETRY;
             default:
                 throw new IllegalArgumentException("No Action for Result." +
-                        result);
+                      result);
         }
     }
 
-    private static boolean isTerminalResult(Result result)
-    {
-        switch(result) {
+    private static boolean isTerminalResult(Result result) {
+        switch (result) {
             case FAIL:
             case RETRY:
                 return true;
@@ -85,29 +77,26 @@ public class MissingFileHandler implements CellMessageReceiver
     }
 
     /**
-     * Class that handles an individual request.  This decouples the action
-     * of processing a request from the message-processing thread.
+     * Class that handles an individual request.  This decouples the action of processing a request
+     * from the message-processing thread.
      */
-    public class Request implements PluginVisitor, Runnable
-    {
+    public class Request implements PluginVisitor, Runnable {
+
         private final MissingFileMessage _msg;
         private final MessageReply<MissingFileMessage> _reply;
         private final String _id = UUID.randomUUID().toString();
 
-        public Request(MissingFileMessage msg, MessageReply<MissingFileMessage> reply)
-        {
+        public Request(MissingFileMessage msg, MessageReply<MissingFileMessage> reply) {
             _msg = msg;
             _reply = reply;
         }
 
-        public String getId()
-        {
+        public String getId() {
             return _id;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             _chain.accept(this);
 
             // dropped off the end of the chain, so fail the request
@@ -116,10 +105,9 @@ public class MissingFileHandler implements CellMessageReceiver
 
 
         @Override
-        public boolean visit(Plugin plugin)
-        {
+        public boolean visit(Plugin plugin) {
             Future<Result> future = plugin.accept(_msg.getSubject(),
-                    _msg.getRequestedPath(), _msg.getInternalPath());
+                  _msg.getRequestedPath(), _msg.getInternalPath());
 
             Result result;
 
@@ -134,11 +122,11 @@ public class MissingFileHandler implements CellMessageReceiver
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
                 _log.error("Plugin bug: {}", t.getMessage(),
-                        t);
+                      t);
                 return true;
             }
 
-            if(isTerminalResult(result)) {
+            if (isTerminalResult(result)) {
                 Action action = actionFor(result);
                 replyWith(action);
                 return false;
@@ -148,8 +136,7 @@ public class MissingFileHandler implements CellMessageReceiver
         }
 
 
-        private void replyWith(Action action)
-        {
+        private void replyWith(Action action) {
             _msg.setAction(action);
             _reply.reply(_msg);
         }

@@ -60,27 +60,24 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.queue;
 
 /**
- *  The purpose of this interface is to make explicit the handling of signals
- *  that are received while doing work outside of a synchronization block,
- *  and thus not subject to the usual Java thread notification queue semantics.
- *
- *  (The most common way of implementing this is to use an internal
- *  atomic counter, and then when work has completed, check the count for
- *  a value > 0, zero it out and take appropriate action.)
+ * The purpose of this interface is to make explicit the handling of signals that are received while
+ * doing work outside of a synchronization block, and thus not subject to the usual Java thread
+ * notification queue semantics.
+ * <p>
+ * (The most common way of implementing this is to use an internal atomic counter, and then when
+ * work has completed, check the count for a value > 0, zero it out and take appropriate action.)
  */
-public interface SignalAware
-{
+public interface SignalAware {
+
     /**
-     *  Signals the queue, alerting it to new or updated data.
+     * Signals the queue, alerting it to new or updated data.
      */
     void signal();
 
     /**
-     * Exposes access to the current count of unprocessed signals.
-     * Largely for testing purposes.
+     * Exposes access to the current count of unprocessed signals. Largely for testing purposes.
      *
-     * @return the number of signals received by the queue but
-     *         currently unprocessed.
+     * @return the number of signals received by the queue but currently unprocessed.
      */
     int countSignals();
 }

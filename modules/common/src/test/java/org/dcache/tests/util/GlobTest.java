@@ -1,19 +1,17 @@
 package org.dcache.tests.util;
 
-import org.junit.Test;
-
-import java.util.regex.PatternSyntaxException;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import org.dcache.util.Glob;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.*;
+public class GlobTest {
 
-public class GlobTest
-{
     @Test
-    public void testNonWildcardMatch()
-    {
+    public void testNonWildcardMatch() {
         Glob pattern = new Glob("foobar");
 
         assertTrue(pattern.matches("foobar"));
@@ -23,8 +21,7 @@ public class GlobTest
     }
 
     @Test
-    public void testSingleCharacterWildcard()
-    {
+    public void testSingleCharacterWildcard() {
         Glob pattern = new Glob("foo?bar");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -36,8 +33,7 @@ public class GlobTest
     }
 
     @Test
-    public void testMultiCharacterWildcard()
-    {
+    public void testMultiCharacterWildcard() {
         Glob pattern = new Glob("foo*bar");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -50,8 +46,7 @@ public class GlobTest
     }
 
     @Test
-    public void testMultiWildcard1()
-    {
+    public void testMultiWildcard1() {
         Glob pattern = new Glob("foo**bar");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -64,8 +59,7 @@ public class GlobTest
     }
 
     @Test
-    public void testMultiWildcard2()
-    {
+    public void testMultiWildcard2() {
         Glob pattern = new Glob("foo*?bar");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -78,8 +72,7 @@ public class GlobTest
     }
 
     @Test
-    public void testMultiWildcard3()
-    {
+    public void testMultiWildcard3() {
         Glob pattern = new Glob("*foo*bar");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -92,8 +85,7 @@ public class GlobTest
     }
 
     @Test
-    public void testMultiWildcard4()
-    {
+    public void testMultiWildcard4() {
         Glob pattern = new Glob("foo*bar*");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -106,8 +98,7 @@ public class GlobTest
     }
 
     @Test
-    public void testOnlyWildcard1()
-    {
+    public void testOnlyWildcard1() {
         Glob pattern = new Glob("*");
 
         assertTrue(pattern.matches("foo-bar"));
@@ -120,8 +111,7 @@ public class GlobTest
     }
 
     @Test
-    public void testOnlyWildcard2()
-    {
+    public void testOnlyWildcard2() {
         Glob pattern = new Glob("?");
 
         assertFalse(pattern.matches("foo-bar"));
@@ -137,8 +127,7 @@ public class GlobTest
     }
 
     @Test
-    public void testPatternEscape()
-    {
+    public void testPatternEscape() {
         Glob pattern = new Glob("\\Q?");
 
         assertFalse(pattern.matches("\\Q"));
@@ -147,8 +136,7 @@ public class GlobTest
     }
 
     @Test
-    public void testCurlyBrackets()
-    {
+    public void testCurlyBrackets() {
         Glob pattern = new Glob("{foo,bar}");
 
         assertFalse(pattern.matches("foo,bar"));
@@ -157,8 +145,7 @@ public class GlobTest
     }
 
     @Test
-    public void testCurlyBracketsInsidePattern()
-    {
+    public void testCurlyBracketsInsidePattern() {
         Glob pattern = new Glob("a{foo,bar}b");
 
         assertFalse(pattern.matches("ab"));
@@ -167,8 +154,7 @@ public class GlobTest
     }
 
     @Test
-    public void testNestedCurlyBrackets()
-    {
+    public void testNestedCurlyBrackets() {
         Glob pattern = new Glob("{foo,{bar,baz*}}");
 
         assertFalse(pattern.matches("bar1"));
@@ -179,22 +165,19 @@ public class GlobTest
     }
 
     @Test
-    public void testIncompleteCurlyBrackets()
-    {
+    public void testIncompleteCurlyBrackets() {
         Glob pattern = new Glob("{foo{bar}");
         assertTrue(pattern.matches("{foobar"));
     }
 
     @Test
-    public void testComma()
-    {
+    public void testComma() {
         Glob pattern = new Glob(",");
         assertTrue(pattern.matches(","));
     }
 
     @Test
-    public void testIsAnchored()
-    {
+    public void testIsAnchored() {
         Glob pattern = new Glob("foo*bar");
 
         assertTrue(pattern.toPattern().matcher("foo-bar").find());
@@ -202,8 +185,7 @@ public class GlobTest
     }
 
     @Test
-    public void testGlobExpansion()
-    {
+    public void testGlobExpansion() {
         assertThat(Glob.expandGlob(""), containsInAnyOrder(""));
         assertThat(Glob.expandGlob("foo"), containsInAnyOrder("foo"));
         assertThat(Glob.expandGlob("foo{}"), containsInAnyOrder("foo"));
@@ -214,45 +196,41 @@ public class GlobTest
         assertThat(Glob.expandGlob("{,}"), containsInAnyOrder("", ""));
         assertThat(Glob.expandGlob("{a,b,c}"), containsInAnyOrder("a", "b", "c"));
         assertThat(Glob.expandGlob("{a,b,c}foo"), containsInAnyOrder("afoo", "bfoo", "cfoo"));
-        assertThat(Glob.expandGlob("foo{a,b,c}foo"), containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
-        assertThat(Glob.expandGlob("foo{a,bar{c,d}}"), containsInAnyOrder("fooa", "foobarc", "foobard"));
+        assertThat(Glob.expandGlob("foo{a,b,c}foo"),
+              containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
+        assertThat(Glob.expandGlob("foo{a,bar{c,d}}"),
+              containsInAnyOrder("fooa", "foobarc", "foobard"));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGlobExpansionUnmatchedOpen()
-    {
+    public void testGlobExpansionUnmatchedOpen() {
         Glob.expandGlob("{");
     }
 
     // REVISIT: This should not throw an exception
     @Test(expected = IllegalArgumentException.class)
-    public void testGlobExpansionComma()
-    {
+    public void testGlobExpansionComma() {
         Glob.expandGlob(",");
     }
 
     // REVISIT: This should not throw an exception
     @Test(expected = IllegalArgumentException.class)
-    public void testGlobExpansionComma2()
-    {
+    public void testGlobExpansionComma2() {
         Glob.expandGlob("a,b");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGlobExpansionUnmatchedClose1()
-    {
+    public void testGlobExpansionUnmatchedClose1() {
         Glob.expandGlob("}");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGlobExpansionUnmatchedClose2()
-    {
+    public void testGlobExpansionUnmatchedClose2() {
         Glob.expandGlob("{}}");
     }
 
     @Test
-    public void testListExpansion()
-    {
+    public void testListExpansion() {
         assertThat(Glob.expandList(""), containsInAnyOrder(""));
         assertThat(Glob.expandList("foo"), containsInAnyOrder("foo"));
         assertThat(Glob.expandList("foo{}"), containsInAnyOrder("foo"));
@@ -265,7 +243,9 @@ public class GlobTest
         assertThat(Glob.expandList("{a,b,c}"), containsInAnyOrder("a", "b", "c"));
         assertThat(Glob.expandList("a,b,c"), containsInAnyOrder("a", "b", "c"));
         assertThat(Glob.expandList("{a,b,c}foo"), containsInAnyOrder("afoo", "bfoo", "cfoo"));
-        assertThat(Glob.expandList("foo{a,b,c}foo"), containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
-        assertThat(Glob.expandList("foo{a,bar{c,d}}"), containsInAnyOrder("fooa", "foobarc", "foobard"));
+        assertThat(Glob.expandList("foo{a,b,c}foo"),
+              containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
+        assertThat(Glob.expandList("foo{a,bar{c,d}}"),
+              containsInAnyOrder("fooa", "foobarc", "foobard"));
     }
 }

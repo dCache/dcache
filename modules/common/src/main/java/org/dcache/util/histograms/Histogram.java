@@ -63,19 +63,19 @@ import java.io.Serializable;
 
 /**
  * <p>Thin histogram abstraction.  This contains the minimal identifying
- *    data and metadata.  It is not necessarily more lightweight than
- *    the {@link HistogramModel}, since all the coordinate values
- *    are computed here (whereas the abscissa values for the model
- *    are implicit).  It merely exposes less (redundant) metadata
- *    and is easier to translate into a plot.</p>
+ * data and metadata.  It is not necessarily more lightweight than the {@link HistogramModel}, since
+ * all the coordinate values are computed here (whereas the abscissa values for the model are
+ * implicit).  It merely exposes less (redundant) metadata and is easier to translate into a
+ * plot.</p>
  */
 public final class Histogram implements Serializable {
+
     private static final String DATA_SIZE_ERROR =
-        "Template was not properly configured: "
-                        + "bin count %s does not match data size %s.";
+          "Template was not properly configured: "
+                + "bin count %s does not match data size %s.";
 
     private static final String MISSING_DATA_ERROR =
-        "Template was not properly configured: missing %s.";
+          "Template was not properly configured: missing %s.";
 
     private String identifier;
     private String binUnit;

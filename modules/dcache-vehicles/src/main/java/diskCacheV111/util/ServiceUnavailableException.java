@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package diskCacheV111.util;
 
 public class ServiceUnavailableException extends CacheException {
+
     private static final long serialVersionUID = -6709046265362004178L;
 
     public ServiceUnavailableException(String message, Throwable cause) {

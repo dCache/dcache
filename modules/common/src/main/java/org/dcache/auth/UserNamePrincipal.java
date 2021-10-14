@@ -1,20 +1,20 @@
 package org.dcache.auth;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.Serializable;
 import java.security.Principal;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- * This Principal represents the trusted username of a signed in
- * person. This is in contrast to a LoginNamePrincipal.
+ * This Principal represents the trusted username of a signed in person. This is in contrast to a
+ * LoginNamePrincipal.
  *
  * @see LoginNamePrincipal
  * @since 2.1
  */
 @AuthenticationOutput
-public class UserNamePrincipal implements Principal, Serializable
-{
+public class UserNamePrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = 1447288627697571301L;
 
     private final String _username;

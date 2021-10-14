@@ -17,25 +17,24 @@ public class SRMTooManyResultsException extends SRMException {
     private static final long serialVersionUID = 1234175441535022031L;
 
     public SRMTooManyResultsException() {
-	super();
+        super();
     }
 
-    public SRMTooManyResultsException(String message) { 
-	super(message);
+    public SRMTooManyResultsException(String message) {
+        super(message);
     }
-    
 
-    public SRMTooManyResultsException(String message,Throwable cause) {
-        super(message,cause);
+
+    public SRMTooManyResultsException(String message, Throwable cause) {
+        super(message, cause);
     }
-    
+
     public SRMTooManyResultsException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_TOO_MANY_RESULTS;
     }
 

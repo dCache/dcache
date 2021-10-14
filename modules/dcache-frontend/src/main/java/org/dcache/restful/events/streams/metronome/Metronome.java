@@ -18,17 +18,13 @@
  */
 package org.dcache.restful.events.streams.metronome;
 
+import static org.dcache.restful.util.transfers.Json.readFromJar;
+
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.InternalServerErrorException;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,47 +32,45 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectionContext;
-
-import static org.dcache.restful.util.transfers.Json.readFromJar;
-
 import org.dcache.restful.events.spi.SelectionResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A plugin that emits a configurable stream of string messages.  The time
- * between successive messages may be specified as a frequency (in Hz) or as
- * a delay (in seconds).  It is also possible to introduce some randomness in
- * the delay.
+ * A plugin that emits a configurable stream of string messages.  The time between successive
+ * messages may be specified as a frequency (in Hz) or as a delay (in seconds).  It is also possible
+ * to introduce some randomness in the delay.
  * <p>
- * The message may be specified.  Any occurances of {@literal ${user}} are
- * replaced by the requesting user's username.  Any occurances of
- * {@literal ${count}} are replaced by the message number.
+ * The message may be specified.  Any occurances of {@literal ${user}} are replaced by the
+ * requesting user's username.  Any occurances of {@literal ${count}} are replaced by the message
+ * number.
  * <p>
- * This plugin provides both example code to illustrate how to write an
- * EventStream and an example source of events so that users writing a client
- * have sample events to test their client against.
+ * This plugin provides both example code to illustrate how to write an EventStream and an example
+ * source of events so that users writing a client have sample events to test their client against.
  */
-public class Metronome implements EventStream
-{
+public class Metronome implements EventStream {
+
     public static final String DEFAULT_MESSAGE = "tick";
     public static final double MAXIMUM_HZ = 1_000_000;
     public static final double MAXIMUM_DELAY = TimeUnit.MINUTES.toSeconds(5);
-    public static final double MINIMUM_HZ = 1/MAXIMUM_DELAY;
-    public static final double MINIMUM_DELAY = 1/MAXIMUM_HZ;
+    public static final double MINIMUM_HZ = 1 / MAXIMUM_DELAY;
+    public static final double MINIMUM_DELAY = 1 / MAXIMUM_HZ;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Metronome.class);
     private static final ObjectNode SELECTORS_SCHEMA =
-            withConstants(readFromJar("/org/dcache/frontend/metronome/selectors-schema.json"));
-    private static final ObjectNode EVENTS_SCHEMA = readFromJar("/org/dcache/frontend/metronome/events-schema.json");
+          withConstants(readFromJar("/org/dcache/frontend/metronome/selectors-schema.json"));
+    private static final ObjectNode EVENTS_SCHEMA = readFromJar(
+          "/org/dcache/frontend/metronome/events-schema.json");
 
-    private final Map<String,Selection> selectionById = new HashMap<>();
+    private final Map<String, Selection> selectionById = new HashMap<>();
     private final ScheduledExecutorService service = new ScheduledThreadPoolExecutor(0,
-            new ThreadFactoryBuilder().setNameFormat("metronome-%d").build());
+          new ThreadFactoryBuilder().setNameFormat("metronome-%d").build());
 
-    private static ObjectNode withConstants(ObjectNode object)
-    {
+    private static ObjectNode withConstants(ObjectNode object) {
         ObjectNode properties = (ObjectNode) object.get("properties");
 
         ObjectNode frequency = (ObjectNode) properties.get("frequency");
@@ -93,21 +87,18 @@ public class Metronome implements EventStream
     }
 
     @Override
-    public ObjectNode selectorSchema()
-    {
+    public ObjectNode selectorSchema() {
         return SELECTORS_SCHEMA;
     }
 
     @Override
-    public ObjectNode eventSchema()
-    {
+    public ObjectNode eventSchema() {
         return EVENTS_SCHEMA;
     }
 
     @Override
     public SelectionResult select(SelectionContext context,
-            BiConsumer<String,JsonNode> receiver, JsonNode serialisedSelector)
-    {
+          BiConsumer<String, JsonNode> receiver, JsonNode serialisedSelector) {
         Selector selector = deserialise(serialisedSelector);
         SelectionResult result = selector.validationError();
         if (result != null) {
@@ -119,25 +110,21 @@ public class Metronome implements EventStream
         return SelectionResult.created(selection);
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         service.shutdown();
     }
 
     @Override
-    public String eventType()
-    {
+    public String eventType() {
         return "metronome";
     }
 
     @Override
-    public String description()
-    {
+    public String description() {
         return "a configurable stream of messages";
     }
 
-    private Selector deserialise(JsonNode serialised)
-    {
+    private Selector deserialise(JsonNode serialised) {
         try {
             return new ObjectMapper().readerFor(Selector.class).readValue(serialised);
         } catch (JsonMappingException e) {

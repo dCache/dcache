@@ -2,7 +2,6 @@ package diskCacheV111.util;
 
 /**
  * thrown in case of message object incorrectly initialized
- *
  */
 public class InvalidMessageCacheException extends CacheException {
 
@@ -15,8 +14,7 @@ public class InvalidMessageCacheException extends CacheException {
         super(CacheException.INVALID_ARGS, msg);
     }
 
-    public InvalidMessageCacheException(String message, Throwable cause)
-    {
+    public InvalidMessageCacheException(String message, Throwable cause) {
         super(INVALID_ARGS, message, cause);
     }
 }

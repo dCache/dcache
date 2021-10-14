@@ -59,24 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import com.google.common.collect.ImmutableSet;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import org.dcache.resilience.TestBase;
-import org.dcache.resilience.data.PoolOperation.State;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableSet;
+import diskCacheV111.util.CacheException;
+import java.util.concurrent.TimeUnit;
+import org.dcache.resilience.TestBase;
+import org.dcache.resilience.data.PoolOperation.State;
+import org.junit.Before;
+import org.junit.Test;
+
 public final class PoolFilterTest extends TestBase {
-    PoolFilter    filter;
+
+    PoolFilter filter;
     PoolOperation poolOperation;
     FileOperation fileOperation;
-    String        pool;
+    String pool;
 
     @Before
     public void setUp() throws CacheException {
@@ -86,54 +85,54 @@ public final class PoolFilterTest extends TestBase {
 
     @Test
     public void shouldMatchFileOperationWhenParentMatchesParentPool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith("resilient_pool-0", null, null);
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchFileOperationWhenSourceMatchesSourcePool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith(null, "resilient_pool-0", null);
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
     public void shouldMatchFileOperationWhenTargetMatchesTargetPool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith(null, null, "resilient_pool-0");
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchFileOperationWhenParentDoesNotMatchParentPool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchFileOperationWhenSourceDoesNotMatchSourcePool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
     public void shouldNotMatchFileOperationWhenTargetDoesNotMatchTargetPool()
-                    throws CacheException {
+          throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
-                        null, null);
+              null, null);
         givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
@@ -141,143 +140,143 @@ public final class PoolFilterTest extends TestBase {
     @Test
     public void shouldMatchPoolOperationWhenAfterScanMatches() {
         givenFilterWith(null, null, null, false, false, false, null, null,
-                        System.currentTimeMillis(), null);
+              System.currentTimeMillis(), null);
         givenPoolOperationWith(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                               System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenAfterUpdateMatches() {
         givenFilterWith(null, null, null, false, false, false,
-                        System.currentTimeMillis(), null, null, null);
+              System.currentTimeMillis(), null, null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                               System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                               "DOWN", "WAITING");
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+              "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenBeforeScanMatches() {
         givenFilterWith(null, null, null, false, false, false, null, null,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                        null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+              null);
         givenPoolOperationWith(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                               System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenBeforeUpdateMatches() {
         givenFilterWith(null, null, null, false, false, false,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1), null,
-                        null, null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1), null,
+              null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                               System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                               "DOWN", "WAITING");
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
+              "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenPoolMatches() {
         givenFilterWith("resilient_pool-0", null, null, false, false, false, null, null,
-                        null, null);
+              null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                               System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenPoolStateMatches() {
         givenFilterWith(null, "WAITING,RUNNING", null, false, false, false,
-                        null, null, null, null);
+              null, null, null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldMatchPoolOperationWhenPoolStatusMatches() {
         givenFilterWith(null, null, "DOWN", false, false, false, null, null,
-                        null, null);
+              null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertTrue(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenAfterScanDoesNotMatch() {
         givenFilterWith(null, null, "RESTART", false, false, false, null, null,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                        null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+              null);
         givenPoolOperationWith(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenAfterUpdateDoesNotMatch() {
         givenFilterWith(null, null, "RESTART", false, false, false,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                        null, null, null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+              null, null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                        "DOWN", "WAITING");
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
+              "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenBeforeScanDoesNotMatch() {
         givenFilterWith(null, null, "RESTART", false, false, false, null, null,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                        null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
+              null);
         givenPoolOperationWith(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenBeforeUpdateDoesNotMatch() {
         givenFilterWith(null, null, "RESTART", false, false, false,
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-                        null, null, null);
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
+              null, null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-                        "DOWN", "WAITING");
+              System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+              "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenPoolDoesNotMatch() {
         givenFilterWith("pool2", null, null, false, false, false, null, null,
-                        null, null);
+              null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenPoolStateDoesNotMatch() {
         givenFilterWith(null, "WAITING,RUNNING", null, false, false, false,
-                        null, null, null, null);
+              null, null, null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis(), null, "IDLE");
+              System.currentTimeMillis(), null, "IDLE");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     @Test
     public void shouldNotMatchPoolOperationWhenPoolStatusDoesNotMatch() {
         givenFilterWith(null, null, "RESTART", false, false, false, null, null,
-                        null, null);
+              null, null);
         givenPoolOperationWith(System.currentTimeMillis(),
-                        System.currentTimeMillis(), "DOWN", "WAITING");
+              System.currentTimeMillis(), "DOWN", "WAITING");
         assertFalse(filter.matches("resilient_pool-0", poolOperation));
     }
 
     private void givenFilterWith(String pool, String states, String status,
-                    boolean parent, boolean source, boolean target,
-                    Long updateBefore, Long updateAfter, Long scanBefore,
-                    Long scanAfter) {
+          boolean parent, boolean source, boolean target,
+          Long updateBefore, Long updateAfter, Long scanBefore,
+          Long scanAfter) {
         filter = new PoolFilter();
         filter.setLastUpdateBefore(updateBefore);
         filter.setLastUpdateAfter(updateAfter);
@@ -294,7 +293,7 @@ public final class PoolFilterTest extends TestBase {
     }
 
     private void givenFileOperationWith(String parent, String source, String target)
-                    throws CacheException {
+          throws CacheException {
         fileOperation = new FileOperation(aReplicaOnlineFileWithNoTags().getPnfsId(), 1, 2L);
 
         Integer p = parent != null ? poolInfoMap.getPoolIndex(parent) : null;
@@ -307,7 +306,7 @@ public final class PoolFilterTest extends TestBase {
     }
 
     private void givenPoolOperationWith(Long lastScan, Long lastUpdate,
-                                        String status, String state) {
+          String status, String state) {
         poolOperation = new PoolOperation();
         poolOperation.lastScan = lastScan;
         poolOperation.lastUpdate = lastUpdate;

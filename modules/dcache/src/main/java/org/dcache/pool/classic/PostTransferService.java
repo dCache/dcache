@@ -18,21 +18,19 @@
 package org.dcache.pool.classic;
 
 import java.nio.channels.CompletionHandler;
-
 import org.dcache.pool.movers.Mover;
 
 /**
- * A PostTransferService is invoked after a file was transferred through a
- * TransferService.
+ * A PostTransferService is invoked after a file was transferred through a TransferService.
  *
  * @since 1.9.11
  */
-public interface PostTransferService
-{
+public interface PostTransferService {
+
     /**
      * Submits a mover for processing by this post transfer service.
      *
-     * @param mover mover to submit for post processing
+     * @param mover             mover to submit for post processing
      * @param completionHandler Callback signalling the completion of post processing
      */
     void execute(Mover<?> mover, CompletionHandler<Void, Void> completionHandler);

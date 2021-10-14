@@ -1,13 +1,11 @@
 package org.dcache.pool.repository;
 
-import java.util.Collection;
-
 import diskCacheV111.util.PnfsId;
-
+import java.util.Collection;
 import org.dcache.vehicles.FileAttributes;
 
-public interface CacheEntry
-{
+public interface CacheEntry {
+
     /**
      * Get the PnfsId of this entry.
      */
@@ -24,19 +22,16 @@ public interface CacheEntry
     FileAttributes getFileAttributes();
 
     /**
-     *
      * @return entry state
      */
     ReplicaState getState();
 
     /**
-     *
      * @return entry creation time in milliseconds
      */
     long getCreationTime();
 
     /**
-     *
      * @return entry last access time in milliseconds.
      */
     long getLastAccessTime();

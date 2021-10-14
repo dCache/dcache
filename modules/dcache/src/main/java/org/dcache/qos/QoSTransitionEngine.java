@@ -18,18 +18,14 @@
  */
 package org.dcache.qos;
 
+import static org.dcache.qos.QoSTransitionEngine.Qos.DISK;
+import static org.dcache.qos.QoSTransitionEngine.Qos.DISK_TAPE;
+import static org.dcache.qos.QoSTransitionEngine.Qos.TAPE;
+import static org.dcache.qos.QoSTransitionEngine.Qos.UNAVAILABLE;
+import static org.dcache.qos.QoSTransitionEngine.Qos.VOLATILE;
+
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -38,9 +34,13 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
@@ -53,18 +53,18 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.dcache.qos.QoSTransitionEngine.Qos.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *   This is a very rudimentary impplementation of support for QoS transitions.
- *   The code has been extracted from dcache-frontend in order to make it
- *   available to other modules (such as the bulk service).
+ * This is a very rudimentary impplementation of support for QoS transitions. The code has been
+ * extracted from dcache-frontend in order to make it available to other modules (such as the bulk
+ * service).
  */
-public class QoSTransitionEngine
-{
+public class QoSTransitionEngine {
+
     public static final Logger LOGGER
-                    = LoggerFactory.getLogger(QoSTransitionEngine.class);
+          = LoggerFactory.getLogger(QoSTransitionEngine.class);
 
     /*
      * FIXME
@@ -79,65 +79,68 @@ public class QoSTransitionEngine
      * pools.
      */
     private static final ReplicaStatePolicy POOL_POLICY
-                    = new ALRPReplicaStatePolicy();
+          = new ALRPReplicaStatePolicy();
 
-    public static final  String             QOS_PIN_REQUEST_ID = "qos";
+    public static final String QOS_PIN_REQUEST_ID = "qos";
 
     public static boolean isPinnedForQoS(FileAttributes fileAttributes,
-                                         CellStub cellStub)
-                    throws CacheException, InterruptedException, NoRouteToCellException
-    {
+          CellStub cellStub)
+          throws CacheException, InterruptedException, NoRouteToCellException {
         PinManagerCountPinsMessage message =
-                        new PinManagerCountPinsMessage(fileAttributes.getPnfsId(),
-                                                       QOS_PIN_REQUEST_ID);
+              new PinManagerCountPinsMessage(fileAttributes.getPnfsId(),
+                    QOS_PIN_REQUEST_ID);
         return cellStub.sendAndWait(message).getCount() != 0;
     }
 
     private static final Set<FileAttribute> TRANSITION_ATTRIBUTES
-                    = Sets.immutableEnumSet(FileAttribute.PNFSID,
-                                            FileAttribute.ACCESS_LATENCY,
-                                            FileAttribute.RETENTION_POLICY,
-                                            FileAttribute.STORAGEINFO,
-                                            FileAttribute.CHECKSUM,
-                                            FileAttribute.SIZE,
-                                            FileAttribute.TYPE,
-                                            FileAttribute.CACHECLASS,
-                                            FileAttribute.HSM,
-                                            FileAttribute.FLAGS,
-                                            FileAttribute.LOCATIONS);
+          = Sets.immutableEnumSet(FileAttribute.PNFSID,
+          FileAttribute.ACCESS_LATENCY,
+          FileAttribute.RETENTION_POLICY,
+          FileAttribute.STORAGEINFO,
+          FileAttribute.CHECKSUM,
+          FileAttribute.SIZE,
+          FileAttribute.TYPE,
+          FileAttribute.CACHECLASS,
+          FileAttribute.HSM,
+          FileAttribute.FLAGS,
+          FileAttribute.LOCATIONS);
 
     private static final Set<FileAttribute> UPDATE_ATTRIBUTES
-                    = Collections.unmodifiableSet
-                    (EnumSet.of(FileAttribute.PNFSID,
-                                FileAttribute.ACCESS_LATENCY,
-                                FileAttribute.RETENTION_POLICY));
+          = Collections.unmodifiableSet
+          (EnumSet.of(FileAttribute.PNFSID,
+                FileAttribute.ACCESS_LATENCY,
+                FileAttribute.RETENTION_POLICY));
 
-    public enum Qos
-    {
-        DISK
-                        {
-                            public String displayName() { return "disk"; }
-                        },
-        TAPE
-                        {
-                            public String displayName() { return "tape"; }
-                        },
-        DISK_TAPE
-                        {
-                            public String displayName() { return "disk+tape"; }
-                        },
-        VOLATILE        {
-                            public String displayName() { return "volatile"; }
-                        },
-        UNAVAILABLE
-                        {
-                            public String displayName() { return "unavailable"; }
-                        };
+    public enum Qos {
+        DISK {
+            public String displayName() {
+                return "disk";
+            }
+        },
+        TAPE {
+            public String displayName() {
+                return "tape";
+            }
+        },
+        DISK_TAPE {
+            public String displayName() {
+                return "disk+tape";
+            }
+        },
+        VOLATILE {
+            public String displayName() {
+                return "volatile";
+            }
+        },
+        UNAVAILABLE {
+            public String displayName() {
+                return "unavailable";
+            }
+        };
 
         public abstract String displayName();
 
-        public static Qos fromDisplayName(String targetString)
-        {
+        public static Qos fromDisplayName(String targetString) {
             if (targetString.equalsIgnoreCase("disk")) {
                 return DISK;
             } else if (targetString.equalsIgnoreCase("tape")) {
@@ -150,35 +153,31 @@ public class QoSTransitionEngine
                 return UNAVAILABLE;
             } else {
                 throw new IllegalArgumentException("no such qos type: "
-                                                                   + targetString);
+                      + targetString);
             }
         }
     }
 
-    public class QosStatus
-    {
+    public class QosStatus {
+
         private final Qos current;
         private final Qos target;
 
-        QosStatus(Qos current, Qos target)
-        {
+        QosStatus(Qos current, Qos target) {
             this.current = current;
             this.target = target;
         }
 
-        QosStatus(Qos current)
-        {
+        QosStatus(Qos current) {
             this.current = current;
             this.target = null;
         }
 
-        public Qos getCurrent()
-        {
+        public Qos getCurrent() {
             return current;
         }
 
-        public Qos getTarget()
-        {
+        public Qos getTarget() {
             return target;
         }
     }
@@ -188,31 +187,27 @@ public class QoSTransitionEngine
     private final PnfsHandler pnfsHandler;
     private final CellStub pinManager;
 
-    private MigrationPolicyEngine                  engine;
-    private FileAttributes                         attributes;
+    private MigrationPolicyEngine engine;
+    private FileAttributes attributes;
 
     /**
-     *   Execution of both pinning and migration are by default
-     *   asynchronous.  Should the caller wish to wait for
-     *   these operations to complete, it must provide an
-     *   implementation of this handler.
+     * Execution of both pinning and migration are by default asynchronous.  Should the caller wish
+     * to wait for these operations to complete, it must provide an implementation of this handler.
      */
     private QoSReplyHandler replyHandler;
 
     public QoSTransitionEngine(PoolMonitor poolMonitor,
-                               CellStub pinManager)
-    {
+          CellStub pinManager) {
         this(null,
-             poolMonitor,
-             null,
-             pinManager);
+              poolMonitor,
+              null,
+              pinManager);
     }
 
     public QoSTransitionEngine(CellStub poolManager,
-                               PoolMonitor poolMonitor,
-                               PnfsHandler pnfsHandler,
-                               CellStub pinManager)
-    {
+          PoolMonitor poolMonitor,
+          PnfsHandler pnfsHandler,
+          CellStub pinManager) {
         this.poolManager = poolManager;
         this.poolMonitor = poolMonitor;
         this.pnfsHandler = pnfsHandler;
@@ -220,14 +215,13 @@ public class QoSTransitionEngine
     }
 
     public void adjustQoS(FsPath path,
-                          String target,
-                          String remoteHost)
-                    throws  UnsupportedOperationException,
-                            URISyntaxException,
-                            CacheException,
-                            InterruptedException,
-                            NoRouteToCellException
-    {
+          String target,
+          String remoteHost)
+          throws UnsupportedOperationException,
+          URISyntaxException,
+          CacheException,
+          InterruptedException,
+          NoRouteToCellException {
         attributes = pnfsHandler.getFileAttributes(path, TRANSITION_ATTRIBUTES);
         FileLocality locality = getLocality(remoteHost);
         PnfsId id = attributes.getPnfsId();
@@ -236,7 +230,7 @@ public class QoSTransitionEngine
 
         if (locality == FileLocality.NONE) {
             throw new UnsupportedOperationException("Transition for directories "
-                                                                    + "not supported");
+                  + "not supported");
         }
 
         Qos qosTarget;
@@ -252,20 +246,19 @@ public class QoSTransitionEngine
         RetentionPolicy currentRetentionPolicy = attributes.getRetentionPolicy();
 
         LOGGER.debug("{}, AccessLatency {}, Retention Policy {}.", id,
-                  currentAccessLatency, currentRetentionPolicy);
+              currentAccessLatency, currentRetentionPolicy);
 
         FileAttributes modifiedAttr = new FileAttributes();
 
         ListenableFuture<PoolMigrationMessage> migrationFuture = null;
         ListenableFuture<PinManagerPinMessage> pinFuture = null;
 
-        switch(qosTarget)
-        {
+        switch (qosTarget) {
             case DISK_TAPE:
                 if (locality == FileLocality.ONLINE) {
                     LOGGER.debug("{}, attempting to migrate.", id);
                     migrationFuture = conditionallyMigrateToTapePool(modifiedAttr,
-                                                                     currentRetentionPolicy);
+                          currentRetentionPolicy);
                 }
 
                 if (!currentAccessLatency.equals(AccessLatency.ONLINE)) {
@@ -315,7 +308,7 @@ public class QoSTransitionEngine
                 if (locality == FileLocality.ONLINE) {
                     LOGGER.debug("{}, attempting to migrate.", id);
                     migrationFuture = conditionallyMigrateToTapePool(modifiedAttr,
-                                                                     currentRetentionPolicy);
+                          currentRetentionPolicy);
                 }
 
                 if (!currentAccessLatency.equals(AccessLatency.NEARLINE)) {
@@ -346,21 +339,20 @@ public class QoSTransitionEngine
      * REVISIT use of VOLATILE (DOES NOT ACTUALLY MEAN THIS ...)
      */
     public QosStatus getQosStatus(FileAttributes attributes, String remoteHost)
-                    throws InterruptedException, CacheException,
-                    NoRouteToCellException
-    {
+          throws InterruptedException, CacheException,
+          NoRouteToCellException {
         this.attributes = attributes;
         boolean isPinnedForQoS
-                        = QoSTransitionEngine.isPinnedForQoS(attributes, pinManager);
+              = QoSTransitionEngine.isPinnedForQoS(attributes, pinManager);
         FileLocality locality = getLocality(remoteHost);
         AccessLatency currentAccessLatency
-                        = attributes.getAccessLatencyIfPresent().orElse(null);
+              = attributes.getAccessLatencyIfPresent().orElse(null);
         RetentionPolicy currentRetentionPolicy
-                        = attributes.getRetentionPolicyIfPresent().orElse(null);
+              = attributes.getRetentionPolicyIfPresent().orElse(null);
 
         boolean policyIsTape = currentRetentionPolicy == RetentionPolicy.CUSTODIAL;
         boolean latencyIsDisk = currentAccessLatency == AccessLatency.ONLINE
-                        || isPinnedForQoS;
+              || isPinnedForQoS;
 
         switch (locality) {
             case NEARLINE:
@@ -439,17 +431,15 @@ public class QoSTransitionEngine
         }
     }
 
-    public void setReplyHandler(QoSReplyHandler replyHandler)
-    {
+    public void setReplyHandler(QoSReplyHandler replyHandler) {
         this.replyHandler = replyHandler;
     }
 
     private ListenableFuture<PoolMigrationMessage>
-        conditionallyMigrateToTapePool(FileAttributes modifiedAttr,
-                                       RetentionPolicy currentRetentionPolicy)
-                    throws InterruptedException, CacheException,
-                    NoRouteToCellException
-    {
+    conditionallyMigrateToTapePool(FileAttributes modifiedAttr,
+          RetentionPolicy currentRetentionPolicy)
+          throws InterruptedException, CacheException,
+          NoRouteToCellException {
         if (!currentRetentionPolicy.equals(RetentionPolicy.CUSTODIAL)) {
             modifiedAttr.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
             attributes.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
@@ -457,85 +447,79 @@ public class QoSTransitionEngine
 
         if (!attributes.getStorageInfo().isStored()) {
             engine = new MigrationPolicyEngine(attributes,
-                                               poolManager,
-                                               poolMonitor);
+                  poolManager,
+                  poolMonitor);
             return engine.adjust();
         }
         return null;
     }
 
-    private QosStatus directoryQoS()
-    {
+    private QosStatus directoryQoS() {
         ReplicaState state = POOL_POLICY.getTargetState(attributes);
         boolean isSticky = POOL_POLICY.getStickyRecords(attributes).stream()
-                                      .anyMatch(StickyRecord::isNonExpiring);
+              .anyMatch(StickyRecord::isNonExpiring);
         Qos qos;
         if (state == ReplicaState.PRECIOUS) {
-            qos =  isSticky ? DISK_TAPE : TAPE;
+            qos = isSticky ? DISK_TAPE : TAPE;
         } else {
-            qos =  isSticky ? DISK : VOLATILE;
+            qos = isSticky ? DISK : VOLATILE;
         }
         return new QosStatus(qos);
     }
 
-    private FileLocality getLocality(String remoteHost)
-    {
+    private FileLocality getLocality(String remoteHost) {
         return poolMonitor.getFileLocality(attributes, remoteHost);
     }
 
     private boolean isPinnedForQoS() throws CacheException,
-                    InterruptedException, NoRouteToCellException
-    {
+          InterruptedException, NoRouteToCellException {
         return isPinnedForQoS(attributes, pinManager);
     }
 
     /**
-     *  The QOS_PIN_REQUEST_ID is stored for the pin to allow filtering on files
-     *  that are pinned by Qos or SRM.
+     * The QOS_PIN_REQUEST_ID is stored for the pin to allow filtering on files that are pinned by
+     * Qos or SRM.
      */
     private ListenableFuture<PinManagerPinMessage> pinForQoS(String remoteHost)
-                    throws URISyntaxException
-    {
+          throws URISyntaxException {
         HttpProtocolInfo protocolInfo =
-                        new HttpProtocolInfo("Http", 1, 1,
-                                             new InetSocketAddress(
-                                                             remoteHost,
-                                                             0),
-                                             null,
-                                             null, null,
-                                             new URI("http",
-                                                     remoteHost,
-                                                     null, null));
+              new HttpProtocolInfo("Http", 1, 1,
+                    new InetSocketAddress(
+                          remoteHost,
+                          0),
+                    null,
+                    null, null,
+                    new URI("http",
+                          remoteHost,
+                          null, null));
 
         PinManagerPinMessage message =
-                        new PinManagerPinMessage(attributes,
-                                                 protocolInfo,
-                                                 QOS_PIN_REQUEST_ID,
-                                                 -1);
+              new PinManagerPinMessage(attributes,
+                    protocolInfo,
+                    QOS_PIN_REQUEST_ID,
+                    -1);
 
         return pinManager.send(message, Long.MAX_VALUE);
     }
 
     private void updateNamespace(FileAttributes modifiedAttr,
-                                 PnfsId id,
-                                 FsPath path)
-                    throws CacheException
-    {
+          PnfsId id,
+          FsPath path)
+          throws CacheException {
         if (modifiedAttr.isDefined(FileAttribute.ACCESS_LATENCY) ||
-                        modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
+              modifiedAttr.isDefined(FileAttribute.RETENTION_POLICY)) {
             LOGGER.debug("{}, calling setFileAttributes", id);
             pnfsHandler.setFileAttributes(path, modifiedAttr, UPDATE_ATTRIBUTES);
         }
     }
 
     /**
-     *  Only unpin files stored with the QOS_PIN_REQUEST_ID.
-     *  We do not need to wait for the pin manager to return a reply.
+     * Only unpin files stored with the QOS_PIN_REQUEST_ID. We do not need to wait for the pin
+     * manager to return a reply.
      */
-    private void unpinForQoS()
-    {
+    private void unpinForQoS() {
         PinManagerUnpinMessage message
-                        = new PinManagerUnpinMessage(attributes.getPnfsId());
+              = new PinManagerUnpinMessage(attributes.getPnfsId());
         message.setRequestId(QOS_PIN_REQUEST_ID);
         pinManager.notify(message);
     }

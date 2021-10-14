@@ -1,16 +1,15 @@
 package org.dcache.srm.scheduler.spi;
 
 import java.util.Map;
-
 import org.dcache.srm.scheduler.Scheduler;
 
 /**
  * Service provider interface to instantiate implementations of TransferStrategy.
- *
+ * <p>
  * Implementations are discovered using Java's ServiceLoader mechanism.
  */
-public interface TransferStrategyProvider
-{
+public interface TransferStrategyProvider {
+
     /**
      * The name an admin uses to identify the strategy.
      */

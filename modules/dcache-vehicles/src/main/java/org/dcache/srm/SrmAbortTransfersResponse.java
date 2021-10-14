@@ -25,27 +25,24 @@ import java.net.URI;
 /**
  * Successful response to SrmAbortTransferRequest.
  */
-public class SrmAbortTransfersResponse implements Serializable
-{
+public class SrmAbortTransfersResponse implements Serializable {
+
     private static final long serialVersionUID = 1214273745164562223L;
 
     private final URI surl;
 
     private final boolean isUploadAborted;
 
-    public SrmAbortTransfersResponse(URI surl, boolean isUploadAborted)
-    {
+    public SrmAbortTransfersResponse(URI surl, boolean isUploadAborted) {
         this.surl = surl;
         this.isUploadAborted = isUploadAborted;
     }
 
-    public URI getSurl()
-    {
+    public URI getSurl() {
         return surl;
     }
 
-    public boolean isUploadAborted()
-    {
+    public boolean isUploadAborted() {
         return isUploadAborted;
     }
 }

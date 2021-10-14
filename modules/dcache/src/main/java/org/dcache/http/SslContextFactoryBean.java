@@ -17,26 +17,21 @@
  */
 
 
-
 package org.dcache.http;
 
+import dmg.cells.nucleus.CDC;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-
 import java.nio.file.Path;
 import javax.net.ssl.SSLContext;
-
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
-
-import dmg.cells.nucleus.CDC;
 
 
 /**
  *
  */
 public class SslContextFactoryBean implements FactoryBean<SSLContext> {
-
 
 
     private Path serverCertificatePath;
@@ -62,14 +57,12 @@ public class SslContextFactoryBean implements FactoryBean<SSLContext> {
     }
 
     @Required
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
         this.crlCheckingMode = crlCheckingMode;
     }
 
     @Required
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
         this.ocspCheckingMode = ocspCheckingMode;
     }
 
@@ -77,15 +70,15 @@ public class SslContextFactoryBean implements FactoryBean<SSLContext> {
     public SSLContext getObject() throws Exception {
 
         return org.dcache.ssl.CanlContextFactory.custom()
-                .withCertificateAuthorityPath(serverCaPath)
-                .withCrlCheckingMode(crlCheckingMode)
-                .withOcspCheckingMode(ocspCheckingMode)
-                .withCertificatePath(serverCertificatePath)
-                .withKeyPath(serverKeyPath)
-                .withLazy(false)
-                .withLoggingContext(new CDC()::restore)
-                .buildWithCaching()
-                .call();
+              .withCertificateAuthorityPath(serverCaPath)
+              .withCrlCheckingMode(crlCheckingMode)
+              .withOcspCheckingMode(ocspCheckingMode)
+              .withCertificatePath(serverCertificatePath)
+              .withKeyPath(serverKeyPath)
+              .withLazy(false)
+              .withLoggingContext(new CDC()::restore)
+              .buildWithCaching()
+              .call();
 
     }
 

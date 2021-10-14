@@ -59,6 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.alarms;
 
+import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
+import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
+
+import diskCacheV111.util.CacheException;
+import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -67,13 +72,10 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -91,22 +93,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import diskCacheV111.util.CacheException;
-
-import dmg.util.Exceptions;
-
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
-
-import static org.dcache.restful.providers.ErrorResponseProvider.NOT_IMPLEMENTED;
-import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link AlarmsInfoService} service.</p>
@@ -117,6 +112,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Api(value = "alarms", authorizations = {@Authorization("basicAuth")})
 @Path("/alarms")
 public final class AlarmsResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AlarmsResources.class);
 
     @Context
@@ -127,60 +123,60 @@ public final class AlarmsResources {
 
 
     @ApiOperation(value = "General information about alarms service.",
-            hidden = true)
+          hidden = true)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String info() {
         throw new InternalServerErrorException("Method not yet implemented.",
-                                               NOT_IMPLEMENTED);
+              NOT_IMPLEMENTED);
     }
 
 
     @GET
     @ApiOperation("Provides a filtered list of log entries.")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("logentries") // collection of all LogEntry.
     @Produces(MediaType.APPLICATION_JSON)
     public List<LogEntry> getAlarms(@ApiParam("Number of entries to skip in directory listing.")
-                                    @QueryParam("offset") Long offset,
-                                    @ApiParam("Limit number of replies in directory listing.")
-                                    @QueryParam("limit") Long limit,
-                                    @ApiParam("Return no alarms before this datestamp, in unix-time.")
-                                    @QueryParam("after") Long after,
-                                    @ApiParam("Return no alarms after this datestamp, in unix-time.")
-                                    @QueryParam("before") Long before,
-                                    @ApiParam("Whether to include closed alarms.")
-                                    @QueryParam("includeClosed") Boolean includeClosed,
-                                    @ApiParam("Select log entries with at least this severity.")
-                                    @QueryParam("severity") String severity,
-                                    @ApiParam("Select only log entries of this alarm type.")
-                                    @QueryParam("type") String type,
-                                    @ApiParam("Select only log entries from this host.")
-                                    @QueryParam("host") String host,
-                                    @ApiParam("Select only log entries from this domain.")
-                                    @QueryParam("domain") String domain,
-                                    @ApiParam("Select only log entries from this service.")
-                                    @QueryParam("service") String service,
-                                    @ApiParam("Select only log entries that match the info.")
-                                    @QueryParam("info") String info,
-                                    @ApiParam("A comma-seperated list of fields to sort log entries.")
-                                    @QueryParam("sort") String sort) {
+    @QueryParam("offset") Long offset,
+          @ApiParam("Limit number of replies in directory listing.")
+          @QueryParam("limit") Long limit,
+          @ApiParam("Return no alarms before this datestamp, in unix-time.")
+          @QueryParam("after") Long after,
+          @ApiParam("Return no alarms after this datestamp, in unix-time.")
+          @QueryParam("before") Long before,
+          @ApiParam("Whether to include closed alarms.")
+          @QueryParam("includeClosed") Boolean includeClosed,
+          @ApiParam("Select log entries with at least this severity.")
+          @QueryParam("severity") String severity,
+          @ApiParam("Select only log entries of this alarm type.")
+          @QueryParam("type") String type,
+          @ApiParam("Select only log entries from this host.")
+          @QueryParam("host") String host,
+          @ApiParam("Select only log entries from this domain.")
+          @QueryParam("domain") String domain,
+          @ApiParam("Select only log entries from this service.")
+          @QueryParam("service") String service,
+          @ApiParam("Select only log entries that match the info.")
+          @QueryParam("info") String info,
+          @ApiParam("A comma-seperated list of fields to sort log entries.")
+          @QueryParam("sort") String sort) {
         try {
             return this.service.get(offset,
-                                    limit,
-                                    after,
-                                    before,
-                                    includeClosed,
-                                    severity,
-                                    type,
-                                    host,
-                                    domain,
-                                    service,
-                                    info,
-                                    sort);
+                  limit,
+                  after,
+                  before,
+                  includeClosed,
+                  severity,
+                  type,
+                  host,
+                  domain,
+                  service,
+                  info,
+                  sort);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (CacheException | InterruptedException e) {
@@ -194,42 +190,42 @@ public final class AlarmsResources {
     @Path("logentries") // collection of all LogEntry.
     @ApiOperation("Batch request to update or delete the indicated alarms. Requires admin role.")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response bulkUpdateOrDelete(@ApiParam(value = "A JSON object "
-                                        + "describing the changes.  The \"action\" "
-                                        + "item is a string with either \"update\" "
-                                        + "or \"delete\" as a value.  The "
-                                        + "\"items\" item is a JSON Array. For the "
-                                        + "\"delete\" action, this array contains "
-                                        + "strings, each the key of a log entry "
-                                        + "to delete.  For the \"update\" action, "
-                                        + "the array contains JSON objects with a "
-                                        + "\"key\" item and a \"closed\" item.  "
-                                        + "The closed value is a boolean and "
-                                        + "the key value is a String.",
-                                               examples = @Example({
-                                                   @ExampleProperty("{\n"
-                                                           + "    \"action\" : \"update\",\n"
-                                                           + "    \"items\" : [ \n"
-                                                           + "            { \"key\" : \"key-1\", \"closed\" : true },\n"
-                                                           + "            { \"key\" : \"key-2\", \"closed\" : false }\n"
-                                                           + "        ]\n"
-                                                           + "}")
-                                             }))
-                                       String requestPayload) {
+          + "describing the changes.  The \"action\" "
+          + "item is a string with either \"update\" "
+          + "or \"delete\" as a value.  The "
+          + "\"items\" item is a JSON Array. For the "
+          + "\"delete\" action, this array contains "
+          + "strings, each the key of a log entry "
+          + "to delete.  For the \"update\" action, "
+          + "the array contains JSON objects with a "
+          + "\"key\" item and a \"closed\" item.  "
+          + "The closed value is a boolean and "
+          + "the key value is a String.",
+          examples = @Example({
+                @ExampleProperty("{\n"
+                      + "    \"action\" : \"update\",\n"
+                      + "    \"items\" : [ \n"
+                      + "            { \"key\" : \"key-1\", \"closed\" : true },\n"
+                      + "            { \"key\" : \"key-2\", \"closed\" : false }\n"
+                      + "        ]\n"
+                      + "}")
+          }))
+          String requestPayload) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
+                  "Alarm service only accessible to admin users.");
         }
 
         JSONObject reqPayload = new JSONObject(requestPayload);
         String action = reqPayload.getString("action");
-        JSONArray items  = reqPayload.getJSONArray("items");
+        JSONArray items = reqPayload.getJSONArray("items");
         int numberOfItems = items.length();
         List<LogEntry> list = new ArrayList<>();
 
@@ -255,7 +251,7 @@ public final class AlarmsResources {
                     break;
                 default:
                     String message = "Bulk action '" + action + "' not understood;"
-                                    + " must be either 'delete' or 'update'.";
+                          + " must be either 'delete' or 'update'.";
                     throw new BadRequestException(message);
             }
         } catch (JSONException | IllegalArgumentException e) {
@@ -274,33 +270,33 @@ public final class AlarmsResources {
     @Path("/logentries/{key}")
     @Produces(MediaType.APPLICATION_JSON)
     public LogEntry getLogEntry(@ApiParam("The log entry to provide.")
-                                @PathParam("key") String key) {
+    @PathParam("key") String key) {
         throw new InternalServerErrorException("Method not yet implemented.",
-                                               NOT_IMPLEMENTED);
+              NOT_IMPLEMENTED);
     }
 
 
     @PATCH
     @ApiOperation("Request to open or close the indicated log entry. Requires admin role.")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("/logentries/{key}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateAlarmEntry(@ApiParam("The identifier for the specific log entry.")
-                                     @PathParam("key") String key,
-                                     @ApiParam(value = "A JSON Object with a 'closed' "
-                                             + "item containing a JSON Boolean value.",
-                                             examples = @Example({
-                                                     @ExampleProperty("{\"closed\" : true}")
-                                             }))
-                                     String requestPayload) {
+    @PathParam("key") String key,
+          @ApiParam(value = "A JSON Object with a 'closed' "
+                + "item containing a JSON Boolean value.",
+                examples = @Example({
+                      @ExampleProperty("{\"closed\" : true}")
+                }))
+                String requestPayload) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
+                  "Alarm service only accessible to admin users.");
         }
 
         JSONObject reqPayload = new JSONObject(requestPayload);
@@ -324,18 +320,18 @@ public final class AlarmsResources {
     @DELETE
     @ApiOperation("Delete a specific log entry. Requires admin role.")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Bad request"),
-                @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 400, message = "Bad request"),
+          @ApiResponse(code = 403, message = "Alarm service only accessible to admin users."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("/logentries/{key}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteAlarmEntry(@ApiParam("The identifier for the specific log entry.")
-                                     @PathParam("key") String key) {
+    @PathParam("key") String key) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
+                  "Alarm service only accessible to admin users.");
         }
 
         try {
@@ -367,31 +363,31 @@ public final class AlarmsResources {
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
     public String getPriority(@ApiParam("The alarm type.")
-                              @PathParam("type") String type) {
+    @PathParam("type") String type) {
         return service.getMap().get(type);
     }
 
 
     @PUT
-    @ApiOperation(value="Change the priority of the given alarm type. Requires admin role.",
-            hidden=true)
+    @ApiOperation(value = "Change the priority of the given alarm type. Requires admin role.",
+          hidden = true)
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updatePriority(@ApiParam("The alarm type.")
-                                   @PathParam("type") String type,
-                                   @ApiParam("The desired priority.")
-                                   @QueryParam("priority") String priority) {
+    @PathParam("type") String type,
+          @ApiParam("The desired priority.")
+          @QueryParam("priority") String priority) {
         return NOT_IMPLEMENTED;
     }
 
 
     @DELETE
-    @ApiOperation(value="Reset the priority of the given alarm to the default. Requires admin role.",
-            hidden=true)
+    @ApiOperation(value = "Reset the priority of the given alarm to the default. Requires admin role.",
+          hidden = true)
     @Path("/priorities/{type}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response resetDefaultPriority(@ApiParam("The alarm type.")
-                                         @PathParam("type") String type) {
+    @PathParam("type") String type) {
         return NOT_IMPLEMENTED;
     }
 }

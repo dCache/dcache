@@ -61,9 +61,9 @@ package org.dcache.services.billing.db.data;
 
 /**
  * @author arossi
- *
  */
 public final class HSMReadsDaily extends SizeEntry {
+
     private static final long serialVersionUID = -2320055749064389775L;
 
     public String toString() {

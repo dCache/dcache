@@ -59,9 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -74,29 +75,27 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
-import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.vehicles.CorruptFileMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Persists backlogged messages to a file.  When reactivated, the
- *      file is read back in and the messages sent back to the
- *      {@link ResilienceMessageHandler}.</p>
+ * file is read back in and the messages sent back to the {@link ResilienceMessageHandler}.</p>
  *
  * <p>Pool-based messages are not saved.</p>
  *
  * <p>File is deleted after reload.</p>
  */
 public final class SimplePersistentBacklogHandler
-                implements BackloggedMessageHandler {
+      implements BackloggedMessageHandler {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    SimplePersistentBacklogHandler.class);
+          SimplePersistentBacklogHandler.class);
 
     abstract class BacklogThread implements Runnable {
+
         private Thread thread;
 
         protected void start() {
@@ -120,6 +119,7 @@ public final class SimplePersistentBacklogHandler
     }
 
     class Consumer extends BacklogThread {
+
         private PrintWriter pw;
 
         @Override
@@ -149,8 +149,8 @@ public final class SimplePersistentBacklogHandler
                 pw = new PrintWriter(new FileWriter(backlogStore, true));
             } catch (IOException e) {
                 LOGGER.info("Failed to open writer to save "
-                                + "backlogged messages: {}.",
-                                new ExceptionMessage(e));
+                            + "backlogged messages: {}.",
+                      new ExceptionMessage(e));
                 return;
             }
             super.start();
@@ -176,13 +176,13 @@ public final class SimplePersistentBacklogHandler
                 type = CorruptFileMessage.class.getSimpleName();
             } else if (message instanceof PnfsClearCacheLocationMessage) {
                 PnfsClearCacheLocationMessage specific
-                                = (PnfsClearCacheLocationMessage) message;
+                      = (PnfsClearCacheLocationMessage) message;
                 pnfsid = specific.getPnfsId().toString();
                 pool = specific.getPoolName();
                 type = PnfsClearCacheLocationMessage.class.getSimpleName();
             } else if (message instanceof PnfsAddCacheLocationMessage) {
                 PnfsAddCacheLocationMessage specific
-                                = (PnfsAddCacheLocationMessage) message;
+                      = (PnfsAddCacheLocationMessage) message;
                 pnfsid = specific.getPnfsId().toString();
                 pool = specific.getPoolName();
                 type = PnfsAddCacheLocationMessage.class.getSimpleName();
@@ -194,13 +194,14 @@ public final class SimplePersistentBacklogHandler
 
             if (pw.checkError()) {
                 LOGGER.error("Problem saving ({} {} {}) to file; skipped.",
-                                type, pnfsid, pool);
+                      type, pnfsid, pool);
             }
         }
 
     }
 
     class Reloader extends BacklogThread {
+
         @Override
         public void run() {
             if (!backlogStore.exists()) {
@@ -208,7 +209,7 @@ public final class SimplePersistentBacklogHandler
             }
 
             try (BufferedReader fr
-                            = new BufferedReader(new FileReader(backlogStore))) {
+                  = new BufferedReader(new FileReader(backlogStore))) {
                 while (!Thread.interrupted()) {
                     String line = fr.readLine();
                     if (line == null) {
@@ -219,17 +220,17 @@ public final class SimplePersistentBacklogHandler
                         messageHandler.processBackloggedMessage(fromString(line));
                     } catch (IllegalStateException e) {
                         LOGGER.debug("Unable to reload message; {}",
-                                        e.getMessage());
+                              e.getMessage());
                     }
                 }
 
                 backlogStore.delete();
             } catch (FileNotFoundException e) {
                 LOGGER.error("Unable to reload checkpoint file: {}",
-                                e.getMessage());
+                      e.getMessage());
             } catch (IOException e) {
                 LOGGER.error("Unrecoverable error during reload checkpoint file: {}",
-                                e.getMessage());
+                      e.getMessage());
             }
 
             LOGGER.info("Done reloading backlogged messages.");
@@ -245,13 +246,13 @@ public final class SimplePersistentBacklogHandler
         if (parts[0].equals(CorruptFileMessage.class.getSimpleName())) {
             return new CorruptFileMessage(parts[2], new PnfsId(parts[1]));
         } else if (parts[0].equals(
-                        PnfsClearCacheLocationMessage.class.getSimpleName())) {
+              PnfsClearCacheLocationMessage.class.getSimpleName())) {
             return new PnfsClearCacheLocationMessage(new PnfsId(parts[1]),
-                            parts[2]);
+                  parts[2]);
         } else if (parts[0].equals(
-                        PnfsAddCacheLocationMessage.class.getSimpleName())) {
+              PnfsAddCacheLocationMessage.class.getSimpleName())) {
             return new PnfsAddCacheLocationMessage(new PnfsId(parts[1]),
-                            parts[2]);
+                  parts[2]);
         } else {
             throw new IllegalStateException(line + ": invalid message type.");
         }
@@ -268,7 +269,7 @@ public final class SimplePersistentBacklogHandler
         backlogStore = new File(path);
         consumer = new Consumer();
         reloader = new Reloader();
-         /*
+        /*
          *  Set the max fairly high.  File write should not take
          *  that long.
          */

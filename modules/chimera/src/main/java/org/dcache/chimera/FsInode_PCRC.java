@@ -18,12 +18,11 @@ package org.dcache.chimera;
 
 import java.util.Iterator;
 import java.util.Set;
-
 import org.dcache.util.Checksum;
 
 /**
- * This class retrieves all the stored checksums for this file, returned as a
- * type:value comma-delimited list.
+ * This class retrieves all the stored checksums for this file, returned as a type:value
+ * comma-delimited list.
  *
  * @author arossi
  */
@@ -41,13 +40,13 @@ public class FsInode_PCRC extends FsInode_PGET {
         if (it.hasNext()) {
             Checksum result = it.next();
             sb.append(result.getType()).append(':').append(
-                            result.getValue());
+                  result.getValue());
         }
 
         while (it.hasNext()) {
             Checksum result = it.next();
             sb.append(", ").append(result.getType()).append(':').append(
-                            result.getValue());
+                  result.getValue());
         }
 
         sb.append(NEWLINE);

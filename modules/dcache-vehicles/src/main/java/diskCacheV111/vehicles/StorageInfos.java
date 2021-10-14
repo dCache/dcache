@@ -17,34 +17,30 @@
  */
 package diskCacheV111.vehicles;
 
+import static com.google.common.collect.Iterables.transform;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
-
 import java.util.Map;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.transform;
+public class StorageInfos {
 
-public class StorageInfos
-{
-    private StorageInfos()
-    {
+    private StorageInfos() {
     }
 
     /**
      * Extracts the StorageInfo stored in the FileAttributes.
-     *
-     * Initializes legacy fields that used to be stored in StorageInfo, but are now
-     * stored in FileAttributes.
-     *
+     * <p>
+     * Initializes legacy fields that used to be stored in StorageInfo, but are now stored in
+     * FileAttributes.
+     * <p>
      * Should only be used when backwards compatibility must be maintained.
      */
-    public static StorageInfo extractFrom(FileAttributes attributes)
-    {
+    public static StorageInfo extractFrom(FileAttributes attributes) {
         StorageInfo info = attributes.getStorageInfo();
         if (attributes.isDefined(FileAttribute.SIZE)) {
             info.setLegacySize(attributes.getSize());
@@ -83,14 +79,13 @@ public class StorageInfos
 
     /**
      * Injects the StorageInfo into the FileAttributes.
-     *
-     * Legacy fields that used to be stored in StorageInfo, but are now stored in
-     * FileAttributes, are injected into the FileAttributes too.
-     *
+     * <p>
+     * Legacy fields that used to be stored in StorageInfo, but are now stored in FileAttributes,
+     * are injected into the FileAttributes too.
+     * <p>
      * Should only be used when backwards compatibility must be maintained.
      */
-    public static FileAttributes injectInto(StorageInfo info, FileAttributes attributes)
-    {
+    public static FileAttributes injectInto(StorageInfo info, FileAttributes attributes) {
         attributes.setStorageInfo(info);
         attributes.setSize(info.getLegacySize());
         attributes.setAccessLatency(info.getLegacyAccessLatency());
@@ -100,8 +95,9 @@ public class StorageInfos
         attributes.setHsm(info.getHsm());
         String cFlag = info.getKey("flag-c");
         if (cFlag != null) {
-            attributes.setChecksums(Sets.newHashSet(transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),
-                                                              Checksum::parseChecksum)));
+            attributes.setChecksums(Sets.newHashSet(
+                  transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),
+                        Checksum::parseChecksum)));
         }
         String uid = info.getKey("uid");
         if (uid != null) {

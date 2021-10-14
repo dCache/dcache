@@ -1,14 +1,12 @@
 package org.dcache.tests.poolmanager;
 
+import static org.junit.Assert.fail;
+
+import diskCacheV111.pools.PoolCostInfo;
+import org.dcache.pool.classic.IoQueueManager;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import diskCacheV111.pools.PoolCostInfo;
-
-import org.dcache.pool.classic.IoQueueManager;
-
-import static org.junit.Assert.fail;
 
 
 public class PoolCostInfoTest {
@@ -28,7 +26,7 @@ public class PoolCostInfoTest {
             poolCost.setSpaceUsage(1, 2, 0, 0);
 
             fail("total < free");
-        }catch(IllegalArgumentException i) {
+        } catch (IllegalArgumentException i) {
             // OK
         }
     }
@@ -41,7 +39,7 @@ public class PoolCostInfoTest {
             poolCost.setSpaceUsage(1, 0, 2, 0);
 
             fail("total < precious");
-        }catch(IllegalArgumentException i) {
+        } catch (IllegalArgumentException i) {
             // OK
         }
     }
@@ -54,7 +52,7 @@ public class PoolCostInfoTest {
             poolCost.setSpaceUsage(1, 0, 0, 2);
 
             fail("total < removable");
-        }catch(IllegalArgumentException i) {
+        } catch (IllegalArgumentException i) {
             // OK
         }
     }
@@ -68,7 +66,7 @@ public class PoolCostInfoTest {
             poolCost.setSpaceUsage(2, 1, 1, 1);
 
             fail("total < precious + removeable + free");
-        }catch(IllegalArgumentException i) {
+        } catch (IllegalArgumentException i) {
             // OK
         }
     }

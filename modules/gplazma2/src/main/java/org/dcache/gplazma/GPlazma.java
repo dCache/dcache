@@ -1,14 +1,16 @@
 package org.dcache.gplazma;
 
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.removeIf;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import org.globus.gsi.gssapi.jaas.SimplePrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
 import java.lang.reflect.Modifier;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -19,13 +21,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.util.NDC;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
@@ -59,21 +60,18 @@ import org.dcache.gplazma.strategies.StrategyFactory;
 import org.dcache.gplazma.validation.ValidationStrategy;
 import org.dcache.gplazma.validation.ValidationStrategyFactory;
 import org.dcache.util.AppendOnlySet;
+import org.dcache.util.NDC;
+import org.globus.gsi.gssapi.jaas.SimplePrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.Collections2.filter;
-import static com.google.common.collect.Iterables.*;
-import static java.nio.charset.StandardCharsets.US_ASCII;
+public class GPlazma {
 
-public class GPlazma
-{
     private static final Logger LOGGER =
-        LoggerFactory.getLogger( GPlazma.class);
+          LoggerFactory.getLogger(GPlazma.class);
 
     private static final LoginMonitor LOGGING_LOGIN_MONITOR =
-            new LoggingLoginMonitor();
+          new LoggingLoginMonitor();
 
     private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
@@ -91,40 +89,37 @@ public class GPlazma
     private Setup setup;
 
     /**
-     * Storage class for failed login attempts.  This allows gPlazma to
-     * refrain from filling up log files should a client attempt multiple
-     * login attempts that all fail.  We must be careful about how we store
-     * the incoming Subjects.
-     *
+     * Storage class for failed login attempts.  This allows gPlazma to refrain from filling up log
+     * files should a client attempt multiple login attempts that all fail.  We must be careful
+     * about how we store the incoming Subjects.
+     * <p>
      * This class is thread-safe.
      */
-    private static class KnownFailedLogins
-    {
+    private static class KnownFailedLogins {
+
         private final Set<Subject> _failedLogins =
-                new CopyOnWriteArraySet<>();
+              new CopyOnWriteArraySet<>();
 
         /**
-         * In general, this class does not store any private credential since
-         * doing this would be against the general security advise of
-         * only storing sensitive material (e.g., passwords) for as long as
-         * is necessary.
-         *
-         * However, the class may wish to distinguish between different login
-         * attempts based information contained in private credentials.  To
-         * support this, principals may be added that contain
-         * non-sensitive information contained in a private credential.
+         * In general, this class does not store any private credential since doing this would be
+         * against the general security advise of only storing sensitive material (e.g., passwords)
+         * for as long as is necessary.
+         * <p>
+         * However, the class may wish to distinguish between different login attempts based
+         * information contained in private credentials.  To support this, principals may be added
+         * that contain non-sensitive information contained in a private credential.
          */
         private static void addPrincipalsForPrivateCredentials(Set<Principal> principals,
-                Set<Object> privateCredentials)
-        {
+              Set<Object> privateCredentials) {
             for (Object credential : privateCredentials) {
                 if (credential instanceof PasswordCredential) {
-                    String username = ((PasswordCredential)credential).getUsername();
+                    String username = ((PasswordCredential) credential).getUsername();
                     Principal loginName = new LoginNamePrincipal(username);
                     principals.add(loginName);
                 } else if (credential instanceof BearerTokenCredential) {
-                    String token = ((BearerTokenCredential)credential).getToken();
-                    byte[] hashBytes = Hashing.goodFastHash(128).hashBytes(token.getBytes(US_ASCII)).asBytes();
+                    String token = ((BearerTokenCredential) credential).getToken();
+                    byte[] hashBytes = Hashing.goodFastHash(128).hashBytes(token.getBytes(US_ASCII))
+                          .asBytes();
                     String hash = Base64.getEncoder().encodeToString(hashBytes);
                     Principal p = new SimplePrincipal(hash);
                     principals.add(p);
@@ -133,13 +128,11 @@ public class GPlazma
         }
 
         /**
-         * Calculate the storage Subject, given an incoming subject.  The
-         * storage subject is similar to the supplied Subject but has sensitive
-         * material (like passwords) removed and is location agnostic
-         * (e.g., any Origin principals are removed).
+         * Calculate the storage Subject, given an incoming subject.  The storage subject is similar
+         * to the supplied Subject but has sensitive material (like passwords) removed and is
+         * location agnostic (e.g., any Origin principals are removed).
          */
-        private static Subject storageSubjectFor(Subject subject)
-        {
+        private static Subject storageSubjectFor(Subject subject) {
             Subject storage = new Subject();
 
             storage.getPublicCredentials().addAll(subject.getPublicCredentials());
@@ -150,60 +143,53 @@ public class GPlazma
              */
 
             Collection<Principal> allExceptOrigin =
-                    filter(subject.getPrincipals(), not(instanceOf(Origin.class)));
+                  filter(subject.getPrincipals(), not(instanceOf(Origin.class)));
 
             storage.getPrincipals().addAll(allExceptOrigin);
 
             addPrincipalsForPrivateCredentials(storage.getPrincipals(),
-                    subject.getPrivateCredentials());
+                  subject.getPrivateCredentials());
 
             return storage;
         }
 
-        private boolean has(Subject subject)
-        {
+        private boolean has(Subject subject) {
             Subject storage = storageSubjectFor(subject);
             return _failedLogins.contains(storage);
         }
 
-        private void add(Subject subject)
-        {
+        private void add(Subject subject) {
             Subject storage = storageSubjectFor(subject);
             _failedLogins.add(storage);
         }
 
-        private void remove(Subject subject)
-        {
+        private void remove(Subject subject) {
             Subject storage = storageSubjectFor(subject);
             _failedLogins.remove(storage);
         }
 
-        private void clear()
-        {
+        private void clear() {
             _failedLogins.clear();
         }
     }
 
 
-
     /**
      * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
-     * @param properties General configuration for plugins
+     * @param properties                   General configuration for plugins
      */
     public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
-                   Properties properties)
-    {
+          Properties properties) {
         this(configurationLoadingStrategy, properties, null);
     }
 
     /**
      * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
-     * @param properties General configuration for plugins
-     * @param factory Custom PluginFactory to allow customisation of plugins
+     * @param properties                   General configuration for plugins
+     * @param factory                      Custom PluginFactory to allow customisation of plugins
      */
     public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
-                   Properties properties, PluginFactory factory)
-    {
+          Properties properties, PluginFactory factory) {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
         _globalProperties = properties;
         _customPluginFactory = factory;
@@ -217,35 +203,33 @@ public class GPlazma
         }
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         Setup setup = this.setup;
         if (setup != null) {
             setup.stop();
         }
     }
 
-    public LoginReply login(Subject subject) throws AuthenticationException
-    {
+    public LoginReply login(Subject subject) throws AuthenticationException {
         RecordingLoginMonitor record = new RecordingLoginMonitor();
         LoginMonitor combined = CombinedLoginMonitor.of(record,
-                LOGGING_LOGIN_MONITOR);
+              LOGGING_LOGIN_MONITOR);
 
         try {
             LoginReply reply = login(subject, combined);
             _failedLogins.remove(subject);
             return reply;
-        } catch(AuthenticationException e) {
-            if(!_failedLogins.has(subject)) {
+        } catch (AuthenticationException e) {
+            if (!_failedLogins.has(subject)) {
                 _failedLogins.add(subject);
 
                 LoginResult result = record.getResult();
 
-                if(result.hasStarted()) {
+                if (result.hasStarted()) {
                     LoginResultPrinter printer = new LoginResultPrinter(result);
                     LOGGER.warn("Login attempt failed; " +
-                            "detailed explanation follows:\n{}",
-                            printer.print());
+                                "detailed explanation follows:\n{}",
+                          printer.print());
                 } else {
                     LOGGER.warn("Login attempt failed: {}", e.getMessage());
                 }
@@ -255,8 +239,7 @@ public class GPlazma
     }
 
     public LoginReply login(Subject subject, LoginMonitor monitor)
-            throws AuthenticationException
-    {
+          throws AuthenticationException {
         requireNonNull(subject, "subject is null");
 
         Setup setup;
@@ -264,7 +247,7 @@ public class GPlazma
         synchronized (configurationLoadingStrategy) {
             try {
                 checkPluginConfig();
-            } catch(GPlazmaInternalException e) {
+            } catch (GPlazmaInternalException e) {
                 throw new AuthenticationException("internal gPlazma error: " + e.getMessage());
             }
 
@@ -283,22 +266,20 @@ public class GPlazma
         return buildReply(monitor, subject, principals, attributes);
     }
 
-    private static boolean isPublic(Principal p)
-    {
+    private static boolean isPublic(Principal p) {
         return Modifier.isPublic(p.getClass().getModifiers());
     }
 
     public LoginReply buildReply(LoginMonitor monitor, Subject originalSubject,
-            Set<Principal> principals, Set<Object> attributes)
-            throws AuthenticationException
-    {
+          Set<Principal> principals, Set<Object> attributes)
+          throws AuthenticationException {
         Set<Object> publicCredentials = originalSubject.getPublicCredentials();
         Set<Object> privateCredentials = originalSubject.getPrivateCredentials();
 
         LoginReply reply = new LoginReply();
 
         Subject subject = new Subject(false, principals, publicCredentials,
-                privateCredentials);
+              privateCredentials);
         reply.setSubject(subject);
         reply.setSessionAttributes(attributes);
 
@@ -308,7 +289,7 @@ public class GPlazma
         try {
             validationStrategy.validate(reply);
             result = Result.SUCCESS;
-        } catch(AuthenticationException e) {
+        } catch (AuthenticationException e) {
             error = e.getMessage();
             throw e;
         } finally {
@@ -320,37 +301,33 @@ public class GPlazma
     }
 
 
-    public Principal map(Principal principal) throws NoSuchPrincipalException
-    {
+    public Principal map(Principal principal) throws NoSuchPrincipalException {
         try {
             return getIdentityStrategy().map(principal);
         } catch (GPlazmaInternalException e) {
             throw new NoSuchPrincipalException("internal gPlazma error: " +
-                    e.getMessage());
+                  e.getMessage());
         }
     }
 
     public Set<Principal> reverseMap(Principal principal)
-            throws NoSuchPrincipalException
-    {
+          throws NoSuchPrincipalException {
         try {
             return getIdentityStrategy().reverseMap(principal);
         } catch (GPlazmaInternalException e) {
             throw new NoSuchPrincipalException("internal gPlazma error: " +
-                    e.getMessage());
+                  e.getMessage());
         }
     }
 
-    private IdentityStrategy getIdentityStrategy() throws GPlazmaInternalException
-    {
+    private IdentityStrategy getIdentityStrategy() throws GPlazmaInternalException {
         synchronized (configurationLoadingStrategy) {
             checkPluginConfig();
             return setup.identityStrategy;
         }
     }
 
-    private void reload() throws GPlazmaInternalException
-    {
+    private void reload() throws GPlazmaInternalException {
         LOGGER.debug("reloading plugins");
 
         try {
@@ -370,21 +347,20 @@ public class GPlazma
             }
             this.setup = newSetup;
 
-            if(isPreviousLoadPluginsProblematic()) {
+            if (isPreviousLoadPluginsProblematic()) {
                 /* FIXME: this should be logged at info level but we want it to
                  *        appear in the log file. */
                 LOGGER.warn("gPlazma configuration successfully loaded");
                 _lastLoadPluginsProblem = null;
             }
-        } catch(GPlazmaInternalException e) {
+        } catch (GPlazmaInternalException e) {
             LOGGER.error(e.getMessage());
             _lastLoadPluginsProblem = e;
             throw e;
         }
     }
 
-    private Setup buildSetup() throws GPlazmaInternalException
-    {
+    private Setup buildSetup() throws GPlazmaInternalException {
         PluginLoader pluginLoader = XmlResourcePluginLoader.newPluginLoader();
         if (_customPluginFactory != null) {
             pluginLoader.setPluginFactory(_customPluginFactory);
@@ -407,7 +383,8 @@ public class GPlazma
             try {
                 plugin = pluginLoader.newPluginByName(pluginName, combinedProperties);
             } catch (PluginLoadingException e) {
-                throw new PluginLoadingException("failed to create " + pluginName + ": " + e.getMessage(), e);
+                throw new PluginLoadingException(
+                      "failed to create " + pluginName + ": " + e.getMessage(), e);
             }
 
             ConfigurationItemControl control = item.getControl();
@@ -418,85 +395,84 @@ public class GPlazma
         return setup.build();
     }
 
-    private void checkPluginConfig() throws GPlazmaInternalException
-    {
+    private void checkPluginConfig() throws GPlazmaInternalException {
         if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
             _globalPropertiesHaveUpdated = false;
             _failedLogins.clear();
             reload();
         }
 
-        if(isPreviousLoadPluginsProblematic()) {
+        if (isPreviousLoadPluginsProblematic()) {
             throw _lastLoadPluginsProblem;
         }
     }
 
-    private boolean isPreviousLoadPluginsProblematic()
-    {
+    private boolean isPreviousLoadPluginsProblematic() {
         return _lastLoadPluginsProblem != null;
     }
 
     /**
      * Container for plugins of a particular type.
      */
-    private static class Plugins<T extends GPlazmaPlugin> extends ArrayList<GPlazmaPluginService<T>>
-    {
+    private static class Plugins<T extends GPlazmaPlugin> extends
+          ArrayList<GPlazmaPluginService<T>> {
+
         private static final long serialVersionUID = 3696582098049455967L;
 
-        void add(T plugin, String pluginName, ConfigurationItemControl control)
-        {
+        void add(T plugin, String pluginName, ConfigurationItemControl control) {
             add(new GPlazmaPluginService<>(plugin, pluginName, control));
         }
     }
 
-    private static class SetupBuilder
-    {
+    private static class SetupBuilder {
+
         private final Plugins<GPlazmaAuthenticationPlugin> authenticationPlugins = new Plugins<>();
         private final Plugins<GPlazmaMappingPlugin> mappingPlugins = new Plugins<>();
         private final Plugins<GPlazmaAccountPlugin> accountPlugins = new Plugins<>();
         private final Plugins<GPlazmaSessionPlugin> sessionPlugins = new Plugins<>();
         private final Plugins<GPlazmaIdentityPlugin> identityPlugins = new Plugins<>();
 
-        void add(ConfigurationItemType type, GPlazmaPlugin plugin, String pluginName, ConfigurationItemControl control)
-                throws PluginLoadingException
-        {
+        void add(ConfigurationItemType type, GPlazmaPlugin plugin, String pluginName,
+              ConfigurationItemControl control)
+              throws PluginLoadingException {
             if (!type.getType().isAssignableFrom(plugin.getClass())) {
                 throw new PluginLoadingException("plugin " + pluginName + " (java class  " +
-                                                 plugin.getClass().getCanonicalName() +
-                                                 ") does not support being loaded as type " + type);
+                      plugin.getClass().getCanonicalName() +
+                      ") does not support being loaded as type " + type);
             }
             switch (type) {
-            case AUTHENTICATION:
-                authenticationPlugins.add((GPlazmaAuthenticationPlugin) plugin, pluginName, control);
-                break;
-            case MAPPING:
-                mappingPlugins.add((GPlazmaMappingPlugin) plugin, pluginName, control);
-                break;
-            case ACCOUNT:
-                accountPlugins.add((GPlazmaAccountPlugin) plugin, pluginName, control);
-                break;
-            case SESSION:
-                sessionPlugins.add((GPlazmaSessionPlugin) plugin, pluginName, control);
-                break;
-            case IDENTITY:
-                identityPlugins.add((GPlazmaIdentityPlugin) plugin, pluginName, control);
-                break;
-            default:
-                throw new PluginLoadingException("unknown plugin type " + type);
+                case AUTHENTICATION:
+                    authenticationPlugins.add((GPlazmaAuthenticationPlugin) plugin, pluginName,
+                          control);
+                    break;
+                case MAPPING:
+                    mappingPlugins.add((GPlazmaMappingPlugin) plugin, pluginName, control);
+                    break;
+                case ACCOUNT:
+                    accountPlugins.add((GPlazmaAccountPlugin) plugin, pluginName, control);
+                    break;
+                case SESSION:
+                    sessionPlugins.add((GPlazmaSessionPlugin) plugin, pluginName, control);
+                    break;
+                case IDENTITY:
+                    identityPlugins.add((GPlazmaIdentityPlugin) plugin, pluginName, control);
+                    break;
+                default:
+                    throw new PluginLoadingException("unknown plugin type " + type);
             }
         }
 
-        Setup build() throws GPlazmaInternalException
-        {
-            return new Setup(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins, identityPlugins);
+        Setup build() throws GPlazmaInternalException {
+            return new Setup(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins,
+                  identityPlugins);
         }
     }
 
     /**
      * A particular gPlazma setup with plugins grouped into several phases.
      */
-    private static class Setup extends ServiceManager.Listener
-    {
+    private static class Setup extends ServiceManager.Listener {
+
         private final AuthenticationStrategy authStrategy;
         private final MappingStrategy mapStrategy;
         private final AccountStrategy accountStrategy;
@@ -507,10 +483,11 @@ public class GPlazma
         private Throwable failure;
 
         Setup(Plugins<GPlazmaAuthenticationPlugin> authenticationPlugins,
-              Plugins<GPlazmaMappingPlugin> mappingPlugins, Plugins<GPlazmaAccountPlugin> accountPlugins,
-              Plugins<GPlazmaSessionPlugin> sessionPlugins, Plugins<GPlazmaIdentityPlugin> identityPlugins)
-                throws FactoryConfigurationException
-        {
+              Plugins<GPlazmaMappingPlugin> mappingPlugins,
+              Plugins<GPlazmaAccountPlugin> accountPlugins,
+              Plugins<GPlazmaSessionPlugin> sessionPlugins,
+              Plugins<GPlazmaIdentityPlugin> identityPlugins)
+              throws FactoryConfigurationException {
             StrategyFactory factory = StrategyFactory.getInstance();
             authStrategy = factory.newAuthenticationStrategy();
             mapStrategy = factory.newMappingStrategy();
@@ -523,18 +500,17 @@ public class GPlazma
             sessionStrategy.setPlugins(sessionPlugins);
             identityStrategy.setPlugins(identityPlugins);
             manager = new ServiceManager(
-                    concat(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins, identityPlugins));
+                  concat(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins,
+                        identityPlugins));
             manager.addListener(this);
         }
 
         @Override
-        public void failure(Service service)
-        {
+        public void failure(Service service) {
             failure = service.failureCause();
         }
 
-        void start() throws GPlazmaInternalException
-        {
+        void start() throws GPlazmaInternalException {
             try {
                 manager.startAsync().awaitHealthy();
             } catch (IllegalStateException e) {
@@ -545,14 +521,12 @@ public class GPlazma
             }
         }
 
-        void stop()
-        {
+        void stop() {
             manager.stopAsync().awaitStopped();
         }
 
         void doAuthPhase(LoginMonitor monitor, Subject subject, Set<Principal> principals,
-                Set<Restriction> restrictionStore) throws AuthenticationException
-        {
+              Set<Restriction> restrictionStore) throws AuthenticationException {
             Set<Object> publicCredentials = subject.getPublicCredentials();
             Set<Object> privateCredentials = subject.getPrivateCredentials();
 
@@ -563,7 +537,7 @@ public class GPlazma
             try {
                 monitor.authBegins(publicCredentials, privateCredentials, principals);
                 authStrategy.authenticate(monitor, publicCredentials, privateCredentials,
-                        principals, restrictionStore);
+                      principals, restrictionStore);
                 result = Result.SUCCESS;
             } finally {
                 NDC.pop();
@@ -573,8 +547,7 @@ public class GPlazma
 
 
         void doMapPhase(LoginMonitor monitor, Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             NDC.push("MAP");
             Result result = Result.FAIL;
             try {
@@ -588,8 +561,7 @@ public class GPlazma
         }
 
         void doAccountPhase(LoginMonitor monitor, Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             NDC.push("ACCOUNT");
             Result result = Result.FAIL;
             try {
@@ -603,8 +575,7 @@ public class GPlazma
         }
 
         Set<Object> doSessionPhase(LoginMonitor monitor, Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             Set<Object> attributes = new HashSet<>();
 
             NDC.push("SESSION");

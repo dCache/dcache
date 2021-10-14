@@ -17,80 +17,71 @@
  */
 package org.dcache.xrootd.security;
 
+import static java.util.Arrays.asList;
+
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import org.dcache.gsi.KeyPairCache;
+import org.dcache.gsi.X509Delegation;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
 import org.italiangrid.voms.store.VOMSTrustStore;
 import org.italiangrid.voms.store.VOMSTrustStores;
 import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+public class ProxyDelegationStore {
 
-import org.dcache.gsi.KeyPairCache;
-import org.dcache.gsi.X509Delegation;
-
-import static java.util.Arrays.asList;
-
-public class ProxyDelegationStore
-{
     /*
      * Visible to the client this is used to initialize.
      */
     final Map<String, X509Delegation> delegations = new ConcurrentHashMap<>();
 
-    VOMSACValidator             vomsValidator;
-    KeyPairCache                keyPairCache;
+    VOMSACValidator vomsValidator;
+    KeyPairCache keyPairCache;
 
-    private String   vomsDir;
-    private String   caCertificatePath;
-    private long     trustAnchorRefreshInterval;
+    private String vomsDir;
+    private String caCertificatePath;
+    private long trustAnchorRefreshInterval;
     private TimeUnit trustAnchorRefreshIntervalUnit;
 
-    public void initialize()
-    {
+    public void initialize() {
         long refresh = trustAnchorRefreshIntervalUnit
-                        .toMillis(trustAnchorRefreshInterval);
+              .toMillis(trustAnchorRefreshInterval);
         VOMSTrustStore vomsTrustStore
-                        = VOMSTrustStores.newTrustStore(asList(vomsDir));
+              = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator
-                        = new CertificateValidatorBuilder()
-                        .lazyAnchorsLoading(false)
-                        .trustAnchorsUpdateInterval(refresh)
-                        .trustAnchorsDir(caCertificatePath)
-                        .build();
+              = new CertificateValidatorBuilder()
+              .lazyAnchorsLoading(false)
+              .trustAnchorsUpdateInterval(refresh)
+              .trustAnchorsDir(caCertificatePath)
+              .build();
         vomsValidator = VOMSValidators.newValidator(vomsTrustStore,
-                                                    certChainValidator);
+              certChainValidator);
     }
 
-    public void setVomsDir(String vomsDir)
-    {
+    public void setVomsDir(String vomsDir) {
         this.vomsDir = vomsDir;
     }
 
-    public void setCaCertificatePath(String caCertificatePath)
-    {
+    public void setCaCertificatePath(String caCertificatePath) {
         this.caCertificatePath = caCertificatePath;
     }
 
-    public void setKeyPairCache(KeyPairCache keyPairCache)
-    {
+    public void setKeyPairCache(KeyPairCache keyPairCache) {
         this.keyPairCache = keyPairCache;
     }
 
-    public void setTrustAnchorRefreshInterval(long trustAnchorRefreshInterval)
-    {
+    public void setTrustAnchorRefreshInterval(long trustAnchorRefreshInterval) {
         this.trustAnchorRefreshInterval = trustAnchorRefreshInterval;
     }
 
-    public void setTrustAnchorRefreshIntervalUnit(TimeUnit trustAnchorRefreshIntervalUnit)
-    {
+    public void setTrustAnchorRefreshIntervalUnit(TimeUnit trustAnchorRefreshIntervalUnit) {
         this.trustAnchorRefreshIntervalUnit = trustAnchorRefreshIntervalUnit;
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         if (vomsValidator != null) {
             vomsValidator.shutdown();
         }

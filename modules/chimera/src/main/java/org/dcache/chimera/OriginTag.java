@@ -19,24 +19,21 @@ package org.dcache.chimera;
 /**
  * Information about an origin tag.
  */
-public class OriginTag
-{
+public class OriginTag {
+
     private final String path;
     private final byte[] value;
 
-    public OriginTag(String path, byte[] value)
-    {
+    public OriginTag(String path, byte[] value) {
         this.path = path;
         this.value = value;
     }
 
-    public String getPath()
-    {
+    public String getPath() {
         return path;
     }
 
-    public byte[] getValue()
-    {
+    public byte[] getValue() {
         return value;
     }
 }

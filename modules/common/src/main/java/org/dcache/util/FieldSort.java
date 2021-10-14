@@ -70,9 +70,10 @@ import java.util.function.Function;
  * and the direction.</p>
  *
  * <p>Constructor supports convention of indicating the sort order by
- *    prefixing '-' to the name in case of reverse.</p>
+ * prefixing '-' to the name in case of reverse.</p>
  */
 public class FieldSort implements Serializable {
+
     private static final long serialVersionUID = -9054869224739638232L;
     private String name;
     private boolean reverse;
@@ -113,15 +114,16 @@ public class FieldSort implements Serializable {
 
     /**
      * <p>Utility which composes a chained comparator
-     *      based on an implementation specific Function for getting
-     *      the next comparator from a list of FieldSort.</p>
+     * based on an implementation specific Function for getting the next comparator from a list of
+     * FieldSort.</p>
+     *
      * @param sort the list of sorting specifications.
      * @param next the function responsible for the comparator based on the field name.
-     * @param <T> object to be compared.
+     * @param <T>  object to be compared.
      * @return comparator chain respecting the order of the field and direction list.
      */
     public static <T extends Comparable<T>> Comparator<T>
-        getSorter(List<FieldSort> sort, Function<FieldSort, Comparator<T>> next) {
+    getSorter(List<FieldSort> sort, Function<FieldSort, Comparator<T>> next) {
         Comparator<T> comparator;
 
         if (sort == null || sort.isEmpty()) {

@@ -1,9 +1,7 @@
 package org.dcache.gplazma.loader.cli;
 
 import com.google.common.collect.Ordering;
-
 import java.io.PrintStream;
-
 import org.dcache.gplazma.loader.PluginMetadata;
 import org.dcache.gplazma.loader.PluginRepository;
 import org.dcache.gplazma.loader.PluginRepository.PluginMetadataProcessor;
@@ -11,66 +9,69 @@ import org.dcache.gplazma.loader.PluginRepositoryFactory;
 import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
 
 /**
- * A command the provides information about plugins discovered by some
- * PluginRepositoryFactory. If no PluginRepositoryFactory is registered, with
- * {@link #setFactory(PluginRepositoryFactory), then {
+ * A command the provides information about plugins discovered by some PluginRepositoryFactory. If
+ * no PluginRepositoryFactory is registered, with {@link #setFactory(PluginRepositoryFactory), then
+ * {
+ *
  * @link XmlResourcePluginRepositoryFactory} is used.
  */
 public class ListCommand implements Command {
+
     private PluginRepositoryFactory _factory =
-            new XmlResourcePluginRepositoryFactory();
+          new XmlResourcePluginRepositoryFactory();
     private PrintStream _out = System.out;
 
     @Override
-    public int run( String[] args) {
-        if( args.length > 1) {
+    public int run(String[] args) {
+        if (args.length > 1) {
             throw new IllegalArgumentException("List takes zero or one arguments");
         }
 
-        if( args.length == 1 && !args[0].equals("-l")) {
+        if (args.length == 1 && !args[0].equals("-l")) {
             throw new IllegalArgumentException("Only -l is a valid argument");
         }
 
         PluginMetadataProcessor listProcessor;
 
-        if( args.length == 1) {
+        if (args.length == 1) {
             listProcessor = new DetailListPlugins();
         } else {
             listProcessor = new SimpleListPlugins();
         }
 
         PluginRepository repository = _factory.newRepository();
-        repository.processPluginsWith( listProcessor);
+        repository.processPluginsWith(listProcessor);
         return 0;
     }
 
     /**
-     * Emit a simple list of discovered plugins: the shortest name first and
-     * all aliases as a comma-separated list inside parentheses
+     * Emit a simple list of discovered plugins: the shortest name first and all aliases as a
+     * comma-separated list inside parentheses
      */
     private class SimpleListPlugins implements PluginMetadataProcessor {
+
         @Override
-        public void process( PluginMetadata plugin) {
+        public void process(PluginMetadata plugin) {
             String shortestName = plugin.getShortestName();
             boolean firstAlias = true;
             StringBuilder sb = new StringBuilder();
-            sb.append( shortestName);
-            for( String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
-                if( name.equals( shortestName)) {
+            sb.append(shortestName);
+            for (String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
+                if (name.equals(shortestName)) {
                     continue;
                 }
-                if( firstAlias) {
-                    sb.append( " (");
+                if (firstAlias) {
+                    sb.append(" (");
                 } else {
-                    sb.append( ",");
+                    sb.append(",");
                 }
-                sb.append( name);
+                sb.append(name);
                 firstAlias = false;
             }
-            if( !firstAlias) {
-                sb.append( ")");
+            if (!firstAlias) {
+                sb.append(")");
             }
-            _out.println( sb.toString());
+            _out.println(sb.toString());
         }
     }
 
@@ -78,36 +79,37 @@ public class ListCommand implements Command {
      * Emit a more detailed list of information about plugins.
      */
     private class DetailListPlugins implements PluginMetadataProcessor {
+
         @Override
-        public void process( PluginMetadata plugin) {
-            _out.println( "Plugin:");
-            _out.println( "    Class: " + plugin.getPluginClass().getName());
+        public void process(PluginMetadata plugin) {
+            _out.println("Plugin:");
+            _out.println("    Class: " + plugin.getPluginClass().getName());
             StringBuilder sb = new StringBuilder();
-            sb.append( "    Name: ");
+            sb.append("    Name: ");
             boolean isFirstName = true;
-            for( String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
-                if( !isFirstName) {
-                    sb.append( ",");
+            for (String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
+                if (!isFirstName) {
+                    sb.append(",");
                 }
-                sb.append( name);
+                sb.append(name);
                 isFirstName = false;
             }
-            _out.println( sb.toString());
-            _out.println( "    Shortest name: " + plugin.getShortestName());
-            if( plugin.getDefaultControl() != null) {
-                _out.println( "    Default-control: " +
-                              plugin.getDefaultControl());
+            _out.println(sb.toString());
+            _out.println("    Shortest name: " + plugin.getShortestName());
+            if (plugin.getDefaultControl() != null) {
+                _out.println("    Default-control: " +
+                      plugin.getDefaultControl());
             }
         }
     }
 
     @Override
-    public void setFactory( PluginRepositoryFactory factory) {
+    public void setFactory(PluginRepositoryFactory factory) {
         _factory = factory;
     }
 
     @Override
-    public void setOutput( PrintStream out) {
+    public void setOutput(PrintStream out) {
         _out = out;
     }
 }

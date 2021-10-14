@@ -59,19 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.space;
 
+import diskCacheV111.services.space.Space;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
-
-import diskCacheV111.services.space.Space;
 
 @ApiModel(description = "Container for metadata pertaining to a space token.")
 public class SpaceToken implements Serializable {
+
     private static final long serialVersionUID = -3470575589163352322L;
 
     @ApiModelProperty("Space token id.")
-    private long   id;
+    private long id;
 
     @ApiModelProperty("VO Group which owns the token.")
     private String voGroup;
@@ -79,37 +78,37 @@ public class SpaceToken implements Serializable {
     @ApiModelProperty("VO Role which owns the token.")
     private String voRole;
 
-    @ApiModelProperty(value="Retention Policy for the token.",
-                      allowableValues="REPLICA|OUTPUT|CUSTODIAL")
+    @ApiModelProperty(value = "Retention Policy for the token.",
+          allowableValues = "REPLICA|OUTPUT|CUSTODIAL")
     private String retentionPolicy;
 
-    @ApiModelProperty(value="Access Latency for the token.",
-                    allowableValues="ONLINE|NEARLINE")
+    @ApiModelProperty(value = "Access Latency for the token.",
+          allowableValues = "ONLINE|NEARLINE")
     private String accessLatency;
 
     @ApiModelProperty("Id of the link group this token belongs to.")
-    private long   linkGroupId;
+    private long linkGroupId;
 
     @ApiModelProperty("Total size of in bytes.")
-    private long   sizeInBytes;
+    private long sizeInBytes;
 
     @ApiModelProperty("Used space in bytes.")
-    private long   usedSizeInBytes;
+    private long usedSizeInBytes;
 
     @ApiModelProperty("Allocated space in bytes.")
-    private long   allocatedSpaceInBytes;
+    private long allocatedSpaceInBytes;
 
     @ApiModelProperty("When the token was created.")
-    private long   creationTime;
+    private long creationTime;
 
     @ApiModelProperty("When the token was expires.")
-    private Long   expirationTime;
+    private Long expirationTime;
 
     @ApiModelProperty("Description.")
     private String description;
 
-    @ApiModelProperty(value="Token state.",
-                    allowableValues="RESERVED|RELEASED|EXPIRED")
+    @ApiModelProperty(value = "Token state.",
+          allowableValues = "RESERVED|RELEASED|EXPIRED")
     private String state;
 
     public SpaceToken() {

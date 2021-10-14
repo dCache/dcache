@@ -17,53 +17,47 @@
  */
 package org.dcache.pool.repository.checksums;
 
-import org.dcache.pool.movers.ChecksumChannel;
-
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.util.HashSet;
 import java.util.Set;
-
+import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.ForwardingReplicaRecord;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.ChecksumType;
 
 /**
- * Wrap some existing ReplicaRecord and add support for optionally wrapping
- * a RepositoryChannel with a ChecksumChannel.
+ * Wrap some existing ReplicaRecord and add support for optionally wrapping a RepositoryChannel with
+ * a ChecksumChannel.
  */
-public class ChecksumReplicaRecord extends ForwardingReplicaRecord
-{
+public class ChecksumReplicaRecord extends ForwardingReplicaRecord {
+
     private final ReplicaRecord inner;
     private final Set<ChecksumType> defaultTypes;
 
-    public enum OpenFlags implements OpenOption
-    {
+    public enum OpenFlags implements OpenOption {
         /**
-         * Specifying this flag results in the ReplicaRecord being wrapped by
-         * a ChecksumChannel.  This ChecksumChannel is available via the
-         * {@literal RepositoryChannel#optionallyAs} method.
+         * Specifying this flag results in the ReplicaRecord being wrapped by a ChecksumChannel.
+         * This ChecksumChannel is available via the {@literal RepositoryChannel#optionallyAs}
+         * method.
          */
         ENABLE_CHECKSUM_CALCULATION;
     }
 
-    public ChecksumReplicaRecord(ReplicaRecord inner, Set<ChecksumType> defaultTypes)
-    {
+    public ChecksumReplicaRecord(ReplicaRecord inner, Set<ChecksumType> defaultTypes) {
         this.inner = inner;
         this.defaultTypes = defaultTypes;
     }
 
     @Override
-    protected ReplicaRecord delegate()
-    {
+    protected ReplicaRecord delegate() {
         return inner;
     }
 
     @Override
     public synchronized RepositoryChannel openChannel(Set<? extends OpenOption> mode)
-            throws IOException
-    {
+          throws IOException {
         if (mode.contains(OpenFlags.ENABLE_CHECKSUM_CALCULATION)) {
             Set<? extends OpenOption> innerMode = new HashSet<>(mode);
             innerMode.remove(OpenFlags.ENABLE_CHECKSUM_CALCULATION);

@@ -17,80 +17,75 @@
  */
 package org.dcache.auth.attributes;
 
+import static java.util.Arrays.asList;
+import static org.dcache.auth.attributes.Activity.DELETE;
+import static org.dcache.auth.attributes.Activity.MANAGE;
+import static org.dcache.auth.attributes.Activity.UPDATE_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
+
+import diskCacheV111.util.FsPath;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.FsPath;
-
-import static org.dcache.auth.attributes.Activity.*;
-import static java.util.Arrays.asList;
-
 /**
  * Class containing utility methods.
  */
-public class Restrictions
-{
+public class Restrictions {
+
     private static final Restriction UNRESTRICTED = DenyActivityRestriction.restrictNoActivity();
     private static final Restriction DENY_ALL = DenyActivityRestriction.restrictAllActivity();
-    private static final Restriction READ_ONLY = new DenyActivityRestriction(DELETE, MANAGE, UPDATE_METADATA, UPLOAD);
+    private static final Restriction READ_ONLY = new DenyActivityRestriction(DELETE, MANAGE,
+          UPDATE_METADATA, UPLOAD);
 
-    private Restrictions()
-    {
+    private Restrictions() {
         // prevent instantiating.
     }
 
-    public static Restriction denyAll()
-    {
+    public static Restriction denyAll() {
         return DENY_ALL;
     }
 
-    public static Restriction none()
-    {
+    public static Restriction none() {
         return UNRESTRICTED;
     }
 
-    public static Restriction readOnly()
-    {
+    public static Restriction readOnly() {
         return READ_ONLY;
     }
 
     /**
-     * Compose multiple restrictions where each Restriction can veto an
-     * operation.
+     * Compose multiple restrictions where each Restriction can veto an operation.
      */
-    public static Restriction concat(Restriction... restrictions)
-    {
+    public static Restriction concat(Restriction... restrictions) {
         switch (restrictions.length) {
-        case 0:
-            return UNRESTRICTED;
+            case 0:
+                return UNRESTRICTED;
 
-        case 1:
-            return restrictions[0];
+            case 1:
+                return restrictions[0];
 
-        case 2:
-            if (restrictions [0].isSubsumedBy(restrictions [1])) {
-                return restrictions [1];
-            }
-            if (restrictions [1].isSubsumedBy(restrictions [0])) {
-                return restrictions [0];
-            }
+            case 2:
+                if (restrictions[0].isSubsumedBy(restrictions[1])) {
+                    return restrictions[1];
+                }
+                if (restrictions[1].isSubsumedBy(restrictions[0])) {
+                    return restrictions[0];
+                }
 
-            // Fall through for default behaviour
+                // Fall through for default behaviour
 
-        default:
-            return concat(asList(restrictions));
+            default:
+                return concat(asList(restrictions));
         }
     }
 
     /**
-     * Compose multiple Restrictions where each Restriction can veto an
-     * operation.
+     * Compose multiple Restrictions where each Restriction can veto an operation.
      */
-    public static Restriction concat(Iterable<Restriction> restrictions)
-    {
+    public static Restriction concat(Iterable<Restriction> restrictions) {
         CompositeRestrictionBuilder composer = new CompositeRestrictionBuilder();
 
         for (Restriction r : restrictions) {
@@ -109,12 +104,11 @@ public class Restrictions
     /**
      * Build an optimised composition of restrictions.
      */
-    private static class CompositeRestrictionBuilder
-    {
+    private static class CompositeRestrictionBuilder {
+
         private final Set<Restriction> restrictions = new HashSet<>();
 
-        private void accept(Restriction newRestriction)
-        {
+        private void accept(Restriction newRestriction) {
             Iterator<Restriction> i = restrictions.iterator();
             while (i.hasNext()) {
                 Restriction existing = i.next();
@@ -131,38 +125,34 @@ public class Restrictions
             restrictions.add(newRestriction);
         }
 
-        private Restriction build()
-        {
+        private Restriction build() {
             switch (restrictions.size()) {
-            case 0:
-                return UNRESTRICTED;
+                case 0:
+                    return UNRESTRICTED;
 
-            case 1:
-                return restrictions.iterator().next();
+                case 1:
+                    return restrictions.iterator().next();
 
-            default:
-                return new CompositeRestriction(restrictions);
+                default:
+                    return new CompositeRestriction(restrictions);
             }
         }
     }
 
     /**
-     * A composite of multiple restrictions where any restriction can veto
-     * an activity.
+     * A composite of multiple restrictions where any restriction can veto an activity.
      */
-    private static class CompositeRestriction implements Restriction
-    {
+    private static class CompositeRestriction implements Restriction {
+
         private static final long serialVersionUID = 1854305439062458336L;
         private final Set<Restriction> restrictions;
 
-        public CompositeRestriction(Set<Restriction> restrictions)
-        {
+        public CompositeRestriction(Set<Restriction> restrictions) {
             this.restrictions = restrictions;
         }
 
         @Override
-        public boolean isRestricted(Activity activity, FsPath path)
-        {
+        public boolean isRestricted(Activity activity, FsPath path) {
             for (Restriction r : restrictions) {
                 if (r.isRestricted(activity, path)) {
                     return true;
@@ -172,8 +162,7 @@ public class Restrictions
         }
 
         @Override
-        public boolean isRestricted(Activity activity, FsPath directory, String name)
-        {
+        public boolean isRestricted(Activity activity, FsPath directory, String name) {
             for (Restriction r : restrictions) {
                 if (r.isRestricted(activity, directory, name)) {
                     return true;
@@ -183,14 +172,12 @@ public class Restrictions
         }
 
         @Override
-        public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
-        {
+        public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
             return !restrictions.stream().anyMatch(r -> !r.hasUnrestrictedChild(activity, parent));
         }
 
         @Override
-        public boolean equals(Object other)
-        {
+        public boolean equals(Object other) {
             if (!(other instanceof CompositeRestriction)) {
                 return false;
             }
@@ -200,14 +187,12 @@ public class Restrictions
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return Objects.hashCode(restrictions);
         }
 
         @Override
-        public boolean isSubsumedBy(Restriction other)
-        {
+        public boolean isSubsumedBy(Restriction other) {
             if (other instanceof CompositeRestriction) {
                 return isSubsumedBy((CompositeRestriction) other);
             }
@@ -220,8 +205,7 @@ public class Restrictions
             return true;
         }
 
-        private boolean isSubsumedBy(CompositeRestriction other)
-        {
+        private boolean isSubsumedBy(CompositeRestriction other) {
             for (Restriction r : restrictions) {
                 if (!other.subsumes(r)) {
                     return false;
@@ -230,8 +214,7 @@ public class Restrictions
             return true;
         }
 
-        private boolean subsumes(Restriction other)
-        {
+        private boolean subsumes(Restriction other) {
             for (Restriction r : restrictions) {
                 if (other.isSubsumedBy(r)) {
                     return true;
@@ -241,9 +224,9 @@ public class Restrictions
         }
 
         @Override
-        public String toString()
-        {
-            return restrictions.stream().map(Restriction::toString).collect(Collectors.joining(", ", "CompositeRestriction[", "]"));
+        public String toString() {
+            return restrictions.stream().map(Restriction::toString)
+                  .collect(Collectors.joining(", ", "CompositeRestriction[", "]"));
         }
     }
 }

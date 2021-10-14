@@ -77,7 +77,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest;
 import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
@@ -86,36 +85,33 @@ import org.dcache.srm.v2_2.TSURLLifetimeReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 
-public class SRMExtendFileLifeTimeClientV2 extends SRMClient
-{
+public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
+
     private final java.net.URI surls[];
     private final String surl_strings[];
 
     public SRMExtendFileLifeTimeClientV2(Configuration configuration,
-                                         java.net.URI surls[],
-                                         String surl_strings[])
-    {
+          java.net.URI surls[],
+          String surl_strings[]) {
         super(configuration);
         this.surls = surls;
         this.surl_strings = surl_strings;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surls[0];
     }
 
     @Override
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         checkCredentialValid();
-        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
+        ArrayOfAnyURI surlarray = new ArrayOfAnyURI();
         URI uriarray[] = new URI[surls.length];
         URI uri;
-        for (int i=0;i<uriarray.length;i++){
-            uri=new URI(surl_strings[i]);
-            uriarray[i]=uri;
+        for (int i = 0; i < uriarray.length; i++) {
+            uri = new URI(surl_strings[i]);
+            uriarray[i] = uri;
         }
         surlarray.setUrlArray(uriarray);
         SrmExtendFileLifeTimeRequest req = new SrmExtendFileLifeTimeRequest();
@@ -124,57 +120,55 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient
         req.setNewFileLifeTime(configuration.getNewFileLifetime());
         req.setNewPinLifeTime(configuration.getNewPinLifetime());
         SrmExtendFileLifeTimeResponse resp = srm.srmExtendFileLifeTime(req);
-        if(resp == null) {
+        if (resp == null) {
             esay("Received null SrmExtendFileLifeTimeResponse");
             System.exit(1);
         }
         try {
-            TReturnStatus rs   = resp.getReturnStatus();
+            TReturnStatus rs = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS ||
-                    configuration.isDebug() ) {
-                TStatusCode rc  = rs.getStatusCode();
+                  configuration.isDebug()) {
+                TStatusCode rc = rs.getStatusCode();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Return code: ").append(rc.toString()).append("\n");
                 sb.append("Explanation: ").append(rs.getExplanation())
-                        .append("\n");
+                      .append("\n");
 
-                if ( resp.getArrayOfFileStatuses()!=null ) {
-                    if ( resp.getArrayOfFileStatuses().getStatusArray()!=null) {
-                        for (int i=0; i<resp.getArrayOfFileStatuses().getStatusArray().length;i++) {
-                            TSURLLifetimeReturnStatus t = resp.getArrayOfFileStatuses().getStatusArray()[i];
+                if (resp.getArrayOfFileStatuses() != null) {
+                    if (resp.getArrayOfFileStatuses().getStatusArray() != null) {
+                        for (int i = 0; i < resp.getArrayOfFileStatuses().getStatusArray().length;
+                              i++) {
+                            TSURLLifetimeReturnStatus t = resp.getArrayOfFileStatuses()
+                                  .getStatusArray()[i];
                             sb.append("surl[").append(i).append("] ")
-                                    .append(t.getSurl()).append("\n");
+                                  .append(t.getSurl()).append("\n");
                             sb.append("\tReturn code: ")
-                                    .append(t.getStatus().getStatusCode()
-                                            .toString()).append("\n");
+                                  .append(t.getStatus().getStatusCode()
+                                        .toString()).append("\n");
                             sb.append("\tExplanation: ")
-                                    .append(t.getStatus().getExplanation())
-                                    .append("\n");
+                                  .append(t.getStatus().getExplanation())
+                                  .append("\n");
                             sb.append("\t\tfilelifetime=")
-                                    .append(t.getFileLifetime()).append("\n");
+                                  .append(t.getFileLifetime()).append("\n");
                             sb.append("\t\tpinlifetime=")
-                                    .append(t.getPinLifetime()).append("\n");
+                                  .append(t.getPinLifetime()).append("\n");
                         }
-                    }
-                    else {
+                    } else {
                         sb.append("array of file statuse is null\n");
                     }
-                }
-                else {
+                } else {
                     sb.append("array of file statuse is null\n");
                 }
-                if(rs.getStatusCode() != TStatusCode.SRM_SUCCESS ) {
+                if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     esay(sb.toString());
                     System.exit(1);
                 } else {
                     say(sb.toString());
                 }
-            }
-            else {
+            } else {
                 System.exit(0);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }

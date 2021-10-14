@@ -104,417 +104,424 @@ import org.springframework.beans.factory.annotation.Required;
  * It receives callbacks from the queue upon job and request termination.
  */
 public class BulkRequestHandler implements BulkSubmissionHandler, BulkRequestCompletionHandler {
-  private static final Logger LOGGER = LoggerFactory.getLogger(BulkRequestHandler.class);
-  private static final String PREMATURE_CLEAR_ERROR
-      = "Request cannot be cleared until all jobs have terminated; "
-      + "try cancelling the request first.";
 
-  private ListDirectoryHandler listHandler;
-  private BulkServiceQueue queue;
-  private BulkJobStore jobStore;
-  private BulkRequestStore requestStore;
-  private BulkJobFactory jobFactory;
-  private BulkServiceStatistics statistics;
-  private ExecutorService callbackExecutorService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkRequestHandler.class);
+    private static final String PREMATURE_CLEAR_ERROR
+          = "Request cannot be cleared until all jobs have terminated; "
+          + "try cancelling the request first.";
 
-  /**
-   * Caused by an internal issue.
-   * <p>
-   * Essentially a premature failure.
-   */
-  @Override
-  public synchronized void abortRequestTarget(String requestId, String target, Throwable exception)
-      throws BulkServiceException {
-    LOGGER.trace("requestTargetAborted {}, {}, {}; calling abort on request store",
-        requestId, target, exception.toString());
+    private ListDirectoryHandler listHandler;
+    private BulkServiceQueue queue;
+    private BulkJobStore jobStore;
+    private BulkRequestStore requestStore;
+    private BulkJobFactory jobFactory;
+    private BulkServiceStatistics statistics;
+    private ExecutorService callbackExecutorService;
 
-    requestStore.targetAborted(requestId, target, exception);
-    queue.signal();
-
-    statistics.incrementJobsAborted();
-  }
-
-  @Override
-  public synchronized void cancelRequest(Subject subject, String requestId)
-      throws BulkServiceException {
-    handleCancelled(subject, requestId);
-  }
-
-  @Override
-  public synchronized void clearRequest(Subject subject, String requestId)
-      throws BulkServiceException {
-    if (requestHasStoredJobs(requestId)) {
-      throw new BulkPermissionDeniedException(requestId + ": " + PREMATURE_CLEAR_ERROR);
-    }
-
-    LOGGER.trace("clearRequest {}, calling clear on request store", requestId);
-    requestStore.clear(subject, requestId);
-  }
-
-  /**
-   * Incoming from the admin user.
-   * <p>
-   * Cancels all jobs bound to this request that are not in a terminal state.
-   * <p>
-   * Upon job termination, the queue should call request completed (below).
-   */
-  @Override
-  public synchronized void requestCancelled(String requestId) throws BulkServiceException {
-    LOGGER.trace("requestCancelled: {}.", requestId);
-    BulkRequestStatus status = requestStore.getStatus(requestId).orElse(null);
-
-    if (status != null) {
-      switch (status.getStatus()) {
-        case CANCELLED:
-        case COMPLETED:
-          LOGGER.info("already terminated: {}.", requestId);
-          return;
-        case CANCELLING:
-          LOGGER.info("already being cancelled: {}.", requestId);
-          return;
-      }
-    }
-
-    if (requestHasStoredJobs(requestId)) {
-      requestStore.update(requestId, Status.CANCELLING);
-      cancelAllJobs(requestId);
-    } else {
-      requestStore.update(requestId, CANCELLED);
-    }
-
-    statistics.incrementRequestsCancelled();
-  }
-
-  /**
-   * Callback from the queue.
-   * <p>
-   * Removes the job from the job store.
-   * <p>
-   * Updates the status of the request.
-   */
-  @Override
-  public synchronized void requestTargetCancelled(BulkJob job) throws BulkServiceException {
-    if (handleTerminatedJob("requestTargetCancelled", job)) {
-      statistics.incrementJobsCancelled();
-    }
-  }
-
-  /**
-   * Callback from the queue.
-   * <p>
-   * Removes the job from the job store.
-   * <p>
-   * Updates the status of the request.
-   */
-  @Override
-  public synchronized void requestTargetFailed(BulkJob job) throws BulkServiceException {
-    if (handleTerminatedJob("requestTargetFailed", job)) {
-      statistics.incrementJobsFailed();
-    }
-  }
-
-  /**
-   * Callback from the queue.
-   * <p>
-   * Removes the job from the job store.
-   * <p>
-   * Updates the status of the request.
-   */
-  @Override
-  public synchronized void requestTargetCompleted(BulkJob job) throws BulkServiceException {
-    if (handleTerminatedJob("requestTargetCompleted", job)) {
-      statistics.incrementJobsCompleted();
-    }
-  }
-
-
-  @Required
-  public void setCallbackExecutorService(ExecutorService service) {
-    callbackExecutorService = service;
-  }
-
-  @Required
-  public void setJobFactory(BulkJobFactory jobFactory) {
-    this.jobFactory = jobFactory;
-  }
-
-  @Required
-  public void setJobStore(BulkJobStore jobStore) {
-    this.jobStore = jobStore;
-  }
-
-  @Required
-  public void setListHandler(ListDirectoryHandler listHandler) {
-    this.listHandler = listHandler;
-  }
-
-  @Required
-  public void setQueue(BulkServiceQueue queue) {
-    this.queue = queue;
-  }
-
-  @Required
-  public void setRequestStore(BulkRequestStore requestStore) {
-    this.requestStore = requestStore;
-  }
-
-  @Required
-  public void setStatistics(BulkServiceStatistics statistics) {
-    this.statistics = statistics;
-  }
-
-  /**
-   * Processes the request as a top-level BulkRequestJob, adds a completion listener, and submits
-   * the job to the queue.
-   */
-  @Override
-  public synchronized void submitRequest(BulkRequest request) throws BulkServiceException {
-    LOGGER.trace("submitRequest {}.", request.getId());
-
-    String requestId = request.getId();
-    Optional<Subject> subject = requestStore.getSubject(requestId);
-    if (!subject.isPresent()) {
-      throw new RuntimeException("subject missing for " + requestId);
-    }
-
-    Optional<Restriction> restriction = requestStore.getRestriction(requestId);
-    if (!restriction.isPresent()) {
-      throw new RuntimeException("restrictions missing for " + requestId);
-    }
-
-    LOGGER.trace("submitRequest {}, creating multiple target job.", request);
-    BulkRequestJob job = jobFactory.createRequestJob(request, subject.get(), restriction.get());
-    job.setSubmissionHandler(this);
-
-    LOGGER.trace("submitRequest {}, setting a new completion handler.", job.getKey().getKey());
-    job.setCompletionHandler(new BulkJobCompletionHandler(queue));
-
-    LOGGER.trace("submitRequest {}, calling submit.", requestId);
-    queue.submit(job);
-  }
-
-  @Override
-  public synchronized void submitSingleTargetJob(String target,
-                                                 BulkJobKey parentKey,
-                                                 FileAttributes attributes,
-                                                 MultipleTargetJob parent)
-      throws BulkServiceException {
-    SingleTargetJob job = jobFactory.createSingleTargetJob(target, parentKey, attributes, parent);
-    job.setExecutorService(callbackExecutorService);
-    submit(job);
-  }
-
-  @Override
-  public synchronized void submitTargetExpansionJob(String target,
-                                                    FileAttributes attributes,
-                                                    MultipleTargetJob parent)
-      throws BulkServiceException {
-    /*
-     *  The parent key is always the key of this job.
+    /**
+     * Caused by an internal issue.
+     * <p>
+     * Essentially a premature failure.
      */
-    TargetExpansionJob job = jobFactory.createTargetExpansionJob(target, attributes, parent);
-    job.setListHandler(listHandler);
-    job.setSubmissionHandler(this);
-    submit(job);
-  }
+    @Override
+    public synchronized void abortRequestTarget(String requestId, String target,
+          Throwable exception)
+          throws BulkServiceException {
+        LOGGER.trace("requestTargetAborted {}, {}, {}; calling abort on request store",
+              requestId, target, exception.toString());
 
-  @GuardedBy("this")
-  private void cancelAllJobs(String requestId) throws BulkServiceException {
-    LOGGER.trace("cancelAllJobs: {}.", requestId);
+        requestStore.targetAborted(requestId, target, exception);
+        queue.signal();
 
-    /*
-     *  The top-level BulkRequestJobs are not stored,
-     *  so we need to find them on the queue if they are still there.
-     */
-    queue.cancelRequestJob(requestId);
-
-    jobStore.cancelAll(requestId);
-  }
-
-  /**
-   * Queries the jobStore to see if there are running jobs belonging to the request, and cancels
-   * them.
-   * <p>
-   * Calls update on the requestStore.
-   */
-  @GuardedBy("this")
-  private void handleCancelled(Subject subject, String requestId)
-      throws BulkServiceException {
-    LOGGER.trace("cancelRequest {}, {}.", subject, requestId);
-
-    if (!requestStore.isRequestSubject(subject, requestId)) {
-      throw new BulkPermissionDeniedException(requestId);
+        statistics.incrementJobsAborted();
     }
 
-    if (isRequestAlreadyCleared(requestId)) {
-      throw new BulkRequestNotFoundException(requestId);
+    @Override
+    public synchronized void cancelRequest(Subject subject, String requestId)
+          throws BulkServiceException {
+        handleCancelled(subject, requestId);
     }
 
-    if (isRequestActive(requestId)) {
-      requestCancelled(requestId);
-    }
-  }
-
-  @GuardedBy("this")
-  private boolean handleTerminatedJob(String message, BulkJob job)
-      throws BulkServiceException {
-    BulkJobKey key = job.getKey();
-    if (!jobStore.getJob(key).isPresent()) {
-      LOGGER.trace("{}: {}, job already deleted.", message, key.getKey());
-      return false;
-    }
-
-    LOGGER.trace("{}: {}, calling delete on job store.", message, key.getKey());
-    jobStore.delete(key);
-
-    String requestId = key.getRequestId();
-
-    try {
-      boolean stillRunning = requestHasStoredJobs(requestId);
-
-      /*
-       *  The condition on the job completion handler method
-       *  denotes that there are no further jobs running.
-       *
-       *  If it is true, we need to check the job store
-       *  to see if all jobs have been removed yet.
-       *
-       *  In the case of both, we mark the request as terminated.
-       */
-      if (job.getCompletionHandler().isRequestCompleted() &&
-          !stillRunning) {
-        setTerminalRequestState(job.getKey().getRequestId());
-      }
-
-      if (job.getState() == State.FAILED) {
-        requestStore.getRequest(requestId).ifPresent(request -> {
-          if (request.isCancelOnFailure() && stillRunning) {
-            /*
-             *  Cancel this request, but allow the request
-             *  to terminate as completed, so that
-             *  clearOnFailure can have effect as well
-             *  if it is set.
-             */
-            try {
-              cancelAllJobs(requestId);
-            } catch (BulkServiceException e) {
-              LOGGER.error("{} failed; request clear on failure, error  cancelling jobs: {}.",
-                  key.getKey(), e.toString());
-            }
-          }
-        });
-      }
-
-      if (job instanceof SingleTargetJob) {
-        LOGGER.debug("{}: {}, {}, calling target completed on request store.", message,
-                                                                               key.getKey(),
-                                                                               job.getTarget());
-        requestStore.targetCompleted(requestId, job.getTarget(), job.getErrorObject());
-        return true;
-      }
-    } catch (BulkRequestNotFoundException e) {
-      LOGGER.debug("request {} was already cleared.", requestId);
-    }
-
-    return false;
-  }
-
-  @GuardedBy("this")
-  private boolean isRequestAlreadyCleared(String requestId)
-      throws BulkStorageException {
-    /*
-     *  There could be a race if an automatic clear option is set.
-     */
-    if (!requestStore.getRequest(requestId).isPresent()) {
-      LOGGER.debug("request already cleared", requestId);
-      return true;
-    }
-
-    return false;
-  }
-
-  @GuardedBy("this")
-  private boolean isRequestActive(String requestId)
-      throws BulkStorageException {
-    if (isRequestAlreadyCleared(requestId)) {
-      return false;
-    }
-
-    BulkRequestStatus requestStatus = requestStore.getStatus(requestId).orElse(null);
-    if (requestStatus != null) {
-      Status status = requestStatus.getStatus();
-      switch (status) {
-        case COMPLETED:
-        case CANCELLED:
-        case CANCELLING:
-          return false;
-      }
-    }
-
-    return true;
-  }
-
-  private boolean requestHasStoredJobs(String requestId)
-      throws BulkJobStorageException {
-    return !jobStore.find(j -> j.getKey().getRequestId().equals(requestId),
-        1L).isEmpty();
-  }
-
-  @GuardedBy("this")
-  private void setTerminalRequestState(String requestId) {
-    try {
-      requestStore.getStatus(requestId).ifPresent(brs -> {
-        switch (brs.getStatus()) {
-          case STARTED:
-          case QUEUED:
-            try {
-              requestStore.update(requestId, COMPLETED);
-              statistics.incrementRequestsCompleted();
-            } catch (BulkServiceException e) {
-              LOGGER.error("Failed to post-process request {}: {}.", requestId, e.toString());
-            }
-            break;
-          case CANCELLING:
-            try {
-              requestStore.update(requestId, CANCELLED);
-              statistics.incrementRequestsCompleted();
-            } catch (BulkServiceException e) {
-              LOGGER.error("Failed to post-process request {}: {}.", requestId, e.toString());
-            }
-            break;
-          default:
+    @Override
+    public synchronized void clearRequest(Subject subject, String requestId)
+          throws BulkServiceException {
+        if (requestHasStoredJobs(requestId)) {
+            throw new BulkPermissionDeniedException(requestId + ": " + PREMATURE_CLEAR_ERROR);
         }
-      });
-    } catch (BulkServiceException e) {
-      LOGGER.error("Failed to post-process request {}: {}.", requestId, e.toString());
-    }
-  }
 
-  /**
-   * Stores the job.
-   * <p>
-   * Submits the job to the queue.
-   */
-  @GuardedBy("this")
-  private void submit(BulkJob job) throws BulkServiceException {
-    BulkJobKey key = job.getKey();
-
-    if (!isRequestActive(key.getRequestId())) {
-      LOGGER.trace("submit: {}, not storing/submitting job; request no longer active", key.getKey());
-      job.cancel();
-      requestTargetCancelled(job);
-      return;
+        LOGGER.trace("clearRequest {}, calling clear on request store", requestId);
+        requestStore.clear(subject, requestId);
     }
 
-    LOGGER.trace("submit: {}, storing job.", key.getKey());
-    jobStore.store(job);
+    /**
+     * Incoming from the admin user.
+     * <p>
+     * Cancels all jobs bound to this request that are not in a terminal state.
+     * <p>
+     * Upon job termination, the queue should call request completed (below).
+     */
+    @Override
+    public synchronized void requestCancelled(String requestId) throws BulkServiceException {
+        LOGGER.trace("requestCancelled: {}.", requestId);
+        BulkRequestStatus status = requestStore.getStatus(requestId).orElse(null);
 
-    if (job instanceof SingleTargetJob) {
-      LOGGER.trace("submit: {}, adding target to request store.", key.getKey());
-      requestStore.addTarget(key.getRequestId());
+        if (status != null) {
+            switch (status.getStatus()) {
+                case CANCELLED:
+                case COMPLETED:
+                    LOGGER.info("already terminated: {}.", requestId);
+                    return;
+                case CANCELLING:
+                    LOGGER.info("already being cancelled: {}.", requestId);
+                    return;
+            }
+        }
+
+        if (requestHasStoredJobs(requestId)) {
+            requestStore.update(requestId, Status.CANCELLING);
+            cancelAllJobs(requestId);
+        } else {
+            requestStore.update(requestId, CANCELLED);
+        }
+
+        statistics.incrementRequestsCancelled();
     }
 
-    LOGGER.trace("submit: {}, passing job to the queue.", key.getKey());
-    queue.submit(job);
-  }
+    /**
+     * Callback from the queue.
+     * <p>
+     * Removes the job from the job store.
+     * <p>
+     * Updates the status of the request.
+     */
+    @Override
+    public synchronized void requestTargetCancelled(BulkJob job) throws BulkServiceException {
+        if (handleTerminatedJob("requestTargetCancelled", job)) {
+            statistics.incrementJobsCancelled();
+        }
+    }
+
+    /**
+     * Callback from the queue.
+     * <p>
+     * Removes the job from the job store.
+     * <p>
+     * Updates the status of the request.
+     */
+    @Override
+    public synchronized void requestTargetFailed(BulkJob job) throws BulkServiceException {
+        if (handleTerminatedJob("requestTargetFailed", job)) {
+            statistics.incrementJobsFailed();
+        }
+    }
+
+    /**
+     * Callback from the queue.
+     * <p>
+     * Removes the job from the job store.
+     * <p>
+     * Updates the status of the request.
+     */
+    @Override
+    public synchronized void requestTargetCompleted(BulkJob job) throws BulkServiceException {
+        if (handleTerminatedJob("requestTargetCompleted", job)) {
+            statistics.incrementJobsCompleted();
+        }
+    }
+
+
+    @Required
+    public void setCallbackExecutorService(ExecutorService service) {
+        callbackExecutorService = service;
+    }
+
+    @Required
+    public void setJobFactory(BulkJobFactory jobFactory) {
+        this.jobFactory = jobFactory;
+    }
+
+    @Required
+    public void setJobStore(BulkJobStore jobStore) {
+        this.jobStore = jobStore;
+    }
+
+    @Required
+    public void setListHandler(ListDirectoryHandler listHandler) {
+        this.listHandler = listHandler;
+    }
+
+    @Required
+    public void setQueue(BulkServiceQueue queue) {
+        this.queue = queue;
+    }
+
+    @Required
+    public void setRequestStore(BulkRequestStore requestStore) {
+        this.requestStore = requestStore;
+    }
+
+    @Required
+    public void setStatistics(BulkServiceStatistics statistics) {
+        this.statistics = statistics;
+    }
+
+    /**
+     * Processes the request as a top-level BulkRequestJob, adds a completion listener, and submits
+     * the job to the queue.
+     */
+    @Override
+    public synchronized void submitRequest(BulkRequest request) throws BulkServiceException {
+        LOGGER.trace("submitRequest {}.", request.getId());
+
+        String requestId = request.getId();
+        Optional<Subject> subject = requestStore.getSubject(requestId);
+        if (!subject.isPresent()) {
+            throw new RuntimeException("subject missing for " + requestId);
+        }
+
+        Optional<Restriction> restriction = requestStore.getRestriction(requestId);
+        if (!restriction.isPresent()) {
+            throw new RuntimeException("restrictions missing for " + requestId);
+        }
+
+        LOGGER.trace("submitRequest {}, creating multiple target job.", request);
+        BulkRequestJob job = jobFactory.createRequestJob(request, subject.get(), restriction.get());
+        job.setSubmissionHandler(this);
+
+        LOGGER.trace("submitRequest {}, setting a new completion handler.", job.getKey().getKey());
+        job.setCompletionHandler(new BulkJobCompletionHandler(queue));
+
+        LOGGER.trace("submitRequest {}, calling submit.", requestId);
+        queue.submit(job);
+    }
+
+    @Override
+    public synchronized void submitSingleTargetJob(String target,
+          BulkJobKey parentKey,
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException {
+        SingleTargetJob job = jobFactory.createSingleTargetJob(target, parentKey, attributes,
+              parent);
+        job.setExecutorService(callbackExecutorService);
+        submit(job);
+    }
+
+    @Override
+    public synchronized void submitTargetExpansionJob(String target,
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException {
+        /*
+         *  The parent key is always the key of this job.
+         */
+        TargetExpansionJob job = jobFactory.createTargetExpansionJob(target, attributes, parent);
+        job.setListHandler(listHandler);
+        job.setSubmissionHandler(this);
+        submit(job);
+    }
+
+    @GuardedBy("this")
+    private void cancelAllJobs(String requestId) throws BulkServiceException {
+        LOGGER.trace("cancelAllJobs: {}.", requestId);
+
+        /*
+         *  The top-level BulkRequestJobs are not stored,
+         *  so we need to find them on the queue if they are still there.
+         */
+        queue.cancelRequestJob(requestId);
+
+        jobStore.cancelAll(requestId);
+    }
+
+    /**
+     * Queries the jobStore to see if there are running jobs belonging to the request, and cancels
+     * them.
+     * <p>
+     * Calls update on the requestStore.
+     */
+    @GuardedBy("this")
+    private void handleCancelled(Subject subject, String requestId)
+          throws BulkServiceException {
+        LOGGER.trace("cancelRequest {}, {}.", subject, requestId);
+
+        if (!requestStore.isRequestSubject(subject, requestId)) {
+            throw new BulkPermissionDeniedException(requestId);
+        }
+
+        if (isRequestAlreadyCleared(requestId)) {
+            throw new BulkRequestNotFoundException(requestId);
+        }
+
+        if (isRequestActive(requestId)) {
+            requestCancelled(requestId);
+        }
+    }
+
+    @GuardedBy("this")
+    private boolean handleTerminatedJob(String message, BulkJob job)
+          throws BulkServiceException {
+        BulkJobKey key = job.getKey();
+        if (!jobStore.getJob(key).isPresent()) {
+            LOGGER.trace("{}: {}, job already deleted.", message, key.getKey());
+            return false;
+        }
+
+        LOGGER.trace("{}: {}, calling delete on job store.", message, key.getKey());
+        jobStore.delete(key);
+
+        String requestId = key.getRequestId();
+
+        try {
+            boolean stillRunning = requestHasStoredJobs(requestId);
+
+            /*
+             *  The condition on the job completion handler method
+             *  denotes that there are no further jobs running.
+             *
+             *  If it is true, we need to check the job store
+             *  to see if all jobs have been removed yet.
+             *
+             *  In the case of both, we mark the request as terminated.
+             */
+            if (job.getCompletionHandler().isRequestCompleted() &&
+                  !stillRunning) {
+                setTerminalRequestState(job.getKey().getRequestId());
+            }
+
+            if (job.getState() == State.FAILED) {
+                requestStore.getRequest(requestId).ifPresent(request -> {
+                    if (request.isCancelOnFailure() && stillRunning) {
+                        /*
+                         *  Cancel this request, but allow the request
+                         *  to terminate as completed, so that
+                         *  clearOnFailure can have effect as well
+                         *  if it is set.
+                         */
+                        try {
+                            cancelAllJobs(requestId);
+                        } catch (BulkServiceException e) {
+                            LOGGER.error(
+                                  "{} failed; request clear on failure, error  cancelling jobs: {}.",
+                                  key.getKey(), e.toString());
+                        }
+                    }
+                });
+            }
+
+            if (job instanceof SingleTargetJob) {
+                LOGGER.debug("{}: {}, {}, calling target completed on request store.", message,
+                      key.getKey(),
+                      job.getTarget());
+                requestStore.targetCompleted(requestId, job.getTarget(), job.getErrorObject());
+                return true;
+            }
+        } catch (BulkRequestNotFoundException e) {
+            LOGGER.debug("request {} was already cleared.", requestId);
+        }
+
+        return false;
+    }
+
+    @GuardedBy("this")
+    private boolean isRequestAlreadyCleared(String requestId)
+          throws BulkStorageException {
+        /*
+         *  There could be a race if an automatic clear option is set.
+         */
+        if (!requestStore.getRequest(requestId).isPresent()) {
+            LOGGER.debug("request already cleared", requestId);
+            return true;
+        }
+
+        return false;
+    }
+
+    @GuardedBy("this")
+    private boolean isRequestActive(String requestId)
+          throws BulkStorageException {
+        if (isRequestAlreadyCleared(requestId)) {
+            return false;
+        }
+
+        BulkRequestStatus requestStatus = requestStore.getStatus(requestId).orElse(null);
+        if (requestStatus != null) {
+            Status status = requestStatus.getStatus();
+            switch (status) {
+                case COMPLETED:
+                case CANCELLED:
+                case CANCELLING:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean requestHasStoredJobs(String requestId)
+          throws BulkJobStorageException {
+        return !jobStore.find(j -> j.getKey().getRequestId().equals(requestId),
+              1L).isEmpty();
+    }
+
+    @GuardedBy("this")
+    private void setTerminalRequestState(String requestId) {
+        try {
+            requestStore.getStatus(requestId).ifPresent(brs -> {
+                switch (brs.getStatus()) {
+                    case STARTED:
+                    case QUEUED:
+                        try {
+                            requestStore.update(requestId, COMPLETED);
+                            statistics.incrementRequestsCompleted();
+                        } catch (BulkServiceException e) {
+                            LOGGER.error("Failed to post-process request {}: {}.", requestId,
+                                  e.toString());
+                        }
+                        break;
+                    case CANCELLING:
+                        try {
+                            requestStore.update(requestId, CANCELLED);
+                            statistics.incrementRequestsCompleted();
+                        } catch (BulkServiceException e) {
+                            LOGGER.error("Failed to post-process request {}: {}.", requestId,
+                                  e.toString());
+                        }
+                        break;
+                    default:
+                }
+            });
+        } catch (BulkServiceException e) {
+            LOGGER.error("Failed to post-process request {}: {}.", requestId, e.toString());
+        }
+    }
+
+    /**
+     * Stores the job.
+     * <p>
+     * Submits the job to the queue.
+     */
+    @GuardedBy("this")
+    private void submit(BulkJob job) throws BulkServiceException {
+        BulkJobKey key = job.getKey();
+
+        if (!isRequestActive(key.getRequestId())) {
+            LOGGER.trace("submit: {}, not storing/submitting job; request no longer active",
+                  key.getKey());
+            job.cancel();
+            requestTargetCancelled(job);
+            return;
+        }
+
+        LOGGER.trace("submit: {}, storing job.", key.getKey());
+        jobStore.store(job);
+
+        if (job instanceof SingleTargetJob) {
+            LOGGER.trace("submit: {}, adding target to request store.", key.getKey());
+            requestStore.addTarget(key.getRequestId());
+        }
+
+        LOGGER.trace("submit: {}, passing job to the queue.", key.getKey());
+        queue.submit(job);
+    }
 }

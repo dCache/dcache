@@ -1,14 +1,14 @@
 package org.dcache.chimera.nfsv41.door;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 
 public class PoolDeviceMapTest {
 

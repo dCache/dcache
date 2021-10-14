@@ -1,11 +1,5 @@
 package dmg.util;
 
-import javatunnel.TunnelSocket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,11 +14,15 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import javatunnel.TunnelSocket;
+import javax.security.auth.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DummyStreamEngine implements StreamEngine
-{
+public class DummyStreamEngine implements StreamEngine {
+
     private static final Logger _logger =
-        LoggerFactory.getLogger(DummyStreamEngine.class);
+          LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;
     private Subject _subject = new Subject();
@@ -35,8 +33,7 @@ public class DummyStreamEngine implements StreamEngine
     private Reader _reader;
     private Writer _writer;
 
-    public DummyStreamEngine(Socket socket) throws IOException
-    {
+    public DummyStreamEngine(Socket socket) throws IOException {
         _socket = socket;
 
         if (socket instanceof TunnelSocket) {
@@ -44,7 +41,8 @@ public class DummyStreamEngine implements StreamEngine
                 ((TunnelSocket) socket).verify();
             } catch (IOException e) {
                 socket.close();
-                throw new IOException("Tunnel verification failed: " + Exceptions.meaningfulMessage(e));
+                throw new IOException(
+                      "Tunnel verification failed: " + Exceptions.meaningfulMessage(e));
             }
             setSubject(((TunnelSocket) socket).getSubject());
         }
@@ -55,26 +53,22 @@ public class DummyStreamEngine implements StreamEngine
         }
     }
 
-    public void setSubject(Subject subject)
-    {
+    public void setSubject(Subject subject) {
         _subject = subject;
     }
 
     @Override
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return _subject;
     }
 
     @Override
-    public InetAddress getInetAddress()
-    {
+    public InetAddress getInetAddress() {
         return _socket.getInetAddress();
     }
 
     @Override
-    public synchronized InputStream getInputStream()
-    {
+    public synchronized InputStream getInputStream() {
         if (_inputStream == null) {
             if (_channel == null) {
                 try {
@@ -90,8 +84,7 @@ public class DummyStreamEngine implements StreamEngine
     }
 
     @Override
-    public synchronized OutputStream getOutputStream()
-    {
+    public synchronized OutputStream getOutputStream() {
         if (_outputStream == null) {
             if (_channel == null) {
                 try {
@@ -107,79 +100,67 @@ public class DummyStreamEngine implements StreamEngine
     }
 
     @Override
-    public synchronized Reader getReader()
-    {
+    public synchronized Reader getReader() {
         if (_reader == null) {
             if (_channel == null) {
                 _reader = new InputStreamReader(getInputStream());
             } else {
                 _reader = Channels.
-                    newReader(_channel, Charset.defaultCharset().newDecoder(), -1);
+                      newReader(_channel, Charset.defaultCharset().newDecoder(), -1);
             }
         }
         return _reader;
     }
 
     @Override
-    public synchronized Writer getWriter()
-    {
+    public synchronized Writer getWriter() {
         if (_writer == null) {
             if (_channel == null) {
                 _writer = new OutputStreamWriter(getOutputStream());
             } else {
                 _writer = Channels.
-                    newWriter(_channel, Charset.defaultCharset().newEncoder(), -1);
+                      newWriter(_channel, Charset.defaultCharset().newEncoder(), -1);
             }
         }
         return _writer;
     }
 
     @Override
-    public Socket getSocket()
-    {
+    public Socket getSocket() {
         return _socket;
     }
 
     @Override
-    public InetAddress getLocalAddress()
-    {
+    public InetAddress getLocalAddress() {
         return _socket.getLocalAddress();
     }
 
     /**
-     * Workaround for Java bug
-     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4509080. The
-     * workaround was taken from
-     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4774871.
+     * Workaround for Java bug http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4509080. The
+     * workaround was taken from http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4774871.
      */
-    private static ByteChannel wrapChannel(final ByteChannel channel)
-    {
-        return new ByteChannel()
-        {
+    private static ByteChannel wrapChannel(final ByteChannel channel) {
+        return new ByteChannel() {
             @Override
             public int write(ByteBuffer src)
-                throws IOException
-            {
+                  throws IOException {
                 return channel.write(src);
             }
 
             @Override
             public int read(ByteBuffer dst)
-                throws IOException
-            {
+                  throws IOException {
                 return channel.read(dst);
             }
 
             @Override
-            public boolean isOpen()
-            {
+            public boolean isOpen() {
                 return channel.isOpen();
             }
 
             @Override
             public void close()
-                throws IOException
-            {
+                  throws IOException {
                 channel.close();
             }
         };

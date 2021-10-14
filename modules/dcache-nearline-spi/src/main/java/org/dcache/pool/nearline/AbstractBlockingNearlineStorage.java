@@ -18,6 +18,10 @@
  */
 package org.dcache.pool.nearline;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.InProgressCacheException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.InProgressCacheException;
-
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
@@ -42,35 +42,31 @@ import org.dcache.util.Checksum;
 import org.dcache.util.NDC;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
- * Abstract base class for NearlineStorage implementations that follow the
- * one-thread-per-task paradigm.
+ * Abstract base class for NearlineStorage implementations that follow the one-thread-per-task
+ * paradigm.
  *
  * <p>Implements request activation, request termination callbacks, request cancellation,
- * and nearline storage shutdown logic. Request cancellation is implemented by interrupting
- * the thread executing the cancelled task.
+ * and nearline storage shutdown logic. Request cancellation is implemented by interrupting the
+ * thread executing the cancelled task.
  *
  * <p>Subclasses must implement the abstract methods for flush, stage and remove, as well as
  * the three methods for providing an executor for each of the there operations.
  */
-public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
-{
+public abstract class AbstractBlockingNearlineStorage implements NearlineStorage {
+
     protected final String type;
     protected final String name;
 
     private final Map<UUID, Task<?, ?>> requests = new ConcurrentHashMap<>();
 
-    public AbstractBlockingNearlineStorage(String type, String name)
-    {
+    public AbstractBlockingNearlineStorage(String type, String name) {
         this.type = type;
         this.name = name;
     }
 
     @Override
-    public void cancel(UUID uuid)
-    {
+    public void cancel(UUID uuid) {
         Task<?, ?> task = requests.get(uuid);
         if (task != null) {
             task.cancel();
@@ -78,96 +74,83 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void flush(Iterable<FlushRequest> requests)
-    {
+    public void flush(Iterable<FlushRequest> requests) {
         for (FlushRequest request : requests) {
             Task<FlushRequest, Set<URI>> task =
-                    new Task<FlushRequest, Set<URI>>(request)
-                    {
-                        @Override
-                        public Set<URI> call() throws Exception
-                        {
-                            FileAttributes fileAttributes = request.getFileAttributes();
-                            NDC.push(fileAttributes.getPnfsId().toString());
-                            try {
-                                return flush(request);
-                            } finally {
-                                NDC.pop();
-                            }
-                        }
+                  new Task<FlushRequest, Set<URI>>(request) {
+                      @Override
+                      public Set<URI> call() throws Exception {
+                          FileAttributes fileAttributes = request.getFileAttributes();
+                          NDC.push(fileAttributes.getPnfsId().toString());
+                          try {
+                              return flush(request);
+                          } finally {
+                              NDC.pop();
+                          }
+                      }
 
-                        @Override
-                        protected void execute()
-                        {
-                            getFlushExecutor().execute(this);
-                        }
-                    };
+                      @Override
+                      protected void execute() {
+                          getFlushExecutor().execute(this);
+                      }
+                  };
             task.execute();
         }
     }
 
     @Override
-    public void stage(Iterable<StageRequest> requests)
-    {
+    public void stage(Iterable<StageRequest> requests) {
         for (StageRequest request : requests) {
             Task<StageRequest, Set<Checksum>> task =
-                    new Task<StageRequest, Set<Checksum>>(request)
-                    {
-                        @Override
-                        public Set<Checksum> call() throws Exception
-                        {
-                            FileAttributes attributes = request.getFileAttributes();
-                            NDC.push(attributes.getPnfsId().toString());
-                            try {
-                                request.allocate().get();
-                                return stage(request);
-                            } finally {
-                                NDC.pop();
-                            }
-                        }
+                  new Task<StageRequest, Set<Checksum>>(request) {
+                      @Override
+                      public Set<Checksum> call() throws Exception {
+                          FileAttributes attributes = request.getFileAttributes();
+                          NDC.push(attributes.getPnfsId().toString());
+                          try {
+                              request.allocate().get();
+                              return stage(request);
+                          } finally {
+                              NDC.pop();
+                          }
+                      }
 
-                        @Override
-                        protected void execute()
-                        {
-                            getStageExecutor().execute(this);
-                        }
-                    };
+                      @Override
+                      protected void execute() {
+                          getStageExecutor().execute(this);
+                      }
+                  };
             task.execute();
         }
     }
 
     @Override
-    public void remove(Iterable<RemoveRequest> requests)
-    {
+    public void remove(Iterable<RemoveRequest> requests) {
         for (RemoveRequest request : requests) {
             Task<RemoveRequest, Void> task =
-                    new Task<RemoveRequest, Void>(request)
-                    {
-                        @Override
-                        public Void call() throws Exception
-                        {
-                            NDC.push(request.getUri().toString());
-                            try {
-                                remove(request);
-                            } finally {
-                                NDC.pop();
-                            }
-                            return null;
-                        }
+                  new Task<RemoveRequest, Void>(request) {
+                      @Override
+                      public Void call() throws Exception {
+                          NDC.push(request.getUri().toString());
+                          try {
+                              remove(request);
+                          } finally {
+                              NDC.pop();
+                          }
+                          return null;
+                      }
 
-                        @Override
-                        protected void execute()
-                        {
-                            getRemoveExecutor().execute(this);
-                        }
-                    };
+                      @Override
+                      protected void execute() {
+                          getRemoveExecutor().execute(this);
+                      }
+                  };
             task.execute();
         }
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         requests.values().forEach(Task::cancel);
     }
 
@@ -177,8 +160,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * @param fileAttributes Attributes of a file
      * @return The storage locations of the file on this nearline storage.
      */
-    protected List<URI> getLocations(FileAttributes fileAttributes)
-    {
+    protected List<URI> getLocations(FileAttributes fileAttributes) {
         return filteredLocations(fileAttributes).collect(Collectors.toList());
     }
 
@@ -188,11 +170,10 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * @param fileAttributes Attributes of a file
      * @return The storage locations of the file on this nearline storage.
      */
-    private Stream<URI> filteredLocations(FileAttributes fileAttributes)
-    {
+    private Stream<URI> filteredLocations(FileAttributes fileAttributes) {
         return fileAttributes.getStorageInfo().locations().stream()
-                .filter(uri -> uri.getScheme().equals(type))
-                .filter(uri -> uri.getAuthority().equals(name));
+              .filter(uri -> uri.getScheme().equals(type))
+              .filter(uri -> uri.getAuthority().equals(name));
     }
 
     /**
@@ -232,17 +213,17 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * flush executor. The calling thread is interrupted if the request is aborted.
      *
      * <p>In case of {@link InProgressCacheException} the request is placed back in the
-     * executor and will be silently retried. Implementations should prefer to use
-     * {@link CacheException} for signalling errors as it provides control over the
-     * error code (similar to the exit code of HSM scripts).
+     * executor and will be silently retried. Implementations should prefer to use {@link
+     * CacheException} for signalling errors as it provides control over the error code (similar to
+     * the exit code of HSM scripts).
      *
      * @throws InProgressCacheException in case of transient errors
-     * @throws InterruptedException when the calling thread is interrupted
-     * @throws Exception any other error
+     * @throws InterruptedException     when the calling thread is interrupted
+     * @throws Exception                any other error
      * @see AbstractBlockingNearlineStorage#retry(Runnable)
      */
     protected abstract Set<URI> flush(FlushRequest request)
-            throws Exception;
+          throws Exception;
 
     /**
      * Process a stage request.
@@ -251,17 +232,17 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * stage executor. The calling thread is interrupted if the request is aborted.
      *
      * <p>In case of {@link InProgressCacheException} the request is placed back in the
-     * executor and will be silently retried. Implementations should prefer to use
-     * {@link CacheException} for signalling errors as it provides control over the
-     * error code (similar to the exit code of HSM scripts).
+     * executor and will be silently retried. Implementations should prefer to use {@link
+     * CacheException} for signalling errors as it provides control over the error code (similar to
+     * the exit code of HSM scripts).
      *
      * @throws InProgressCacheException in case of transient errors
-     * @throws InterruptedException when the calling thread is interrupted
-     * @throws Exception any other error
+     * @throws InterruptedException     when the calling thread is interrupted
+     * @throws Exception                any other error
      * @see AbstractBlockingNearlineStorage#retry(Runnable)
      */
     protected abstract Set<Checksum> stage(StageRequest request)
-            throws Exception;
+          throws Exception;
 
     /**
      * Process a remove request.
@@ -270,17 +251,17 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * remove executor. The calling thread is interrupted if the request is aborted.
      *
      * <p>In case of {@link InProgressCacheException}, the request is placed back in the
-     * executor and will be silently retried. Implementations should prefer to use
-     * {@link CacheException} for signalling errors as it provides control over the
-     * error code (similar to the exit code of HSM scripts).
+     * executor and will be silently retried. Implementations should prefer to use {@link
+     * CacheException} for signalling errors as it provides control over the error code (similar to
+     * the exit code of HSM scripts).
      *
      * @throws InProgressCacheException in case of transient errors
-     * @throws InterruptedException when the calling thread is interrupted
-     * @throws Exception any other error
+     * @throws InterruptedException     when the calling thread is interrupted
+     * @throws Exception                any other error
      * @see AbstractBlockingNearlineStorage#retry(Runnable)
      */
     protected abstract void remove(RemoveRequest request)
-            throws Exception;
+          throws Exception;
 
     /**
      * Hook called when a request is retried because {@link InProgressCacheException} was thrown.
@@ -291,8 +272,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      *
      * @since 3.0
      */
-    protected void retry(Runnable runnable)
-    {
+    protected void retry(Runnable runnable) {
         runnable.run();
     }
 
@@ -302,21 +282,19 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * @param <R> Request type
      * @param <T> Result type provided to the callback upon completion
      */
-    private abstract class Task<R extends NearlineRequest<T>, T> implements Runnable
-    {
+    private abstract class Task<R extends NearlineRequest<T>, T> implements Runnable {
+
         protected final R request;
         private Thread thread;
         private boolean isDone;
         private boolean isActivated;
 
-        protected Task(R request)
-        {
+        protected Task(R request) {
             this.request = request;
             requests.put(request.getId(), this);
         }
 
-        public synchronized void cancel()
-        {
+        public synchronized void cancel() {
             if (!isDone) {
                 isDone = true;
                 if (thread != null) {
@@ -329,11 +307,10 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         }
 
         /**
-         * Binds task to a particular thread. When the request is cancelled, the thread
-         * is interrupted.
+         * Binds task to a particular thread. When the request is cancelled, the thread is
+         * interrupted.
          */
-        private synchronized boolean bind(Thread thread)
-        {
+        private synchronized boolean bind(Thread thread) {
             checkState(this.thread == null);
             if (isDone) {
                 return false;
@@ -343,11 +320,10 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         }
 
         /**
-         * Releases task from its thread. If the task was cancelled, InterruptedException
-         * is thrown.
+         * Releases task from its thread. If the task was cancelled, InterruptedException is
+         * thrown.
          */
-        private synchronized void release(boolean isRetrying) throws CancellationException
-        {
+        private synchronized void release(boolean isRetrying) throws CancellationException {
             thread = null;
             if (isDone) {
                 /* If done it must because the task was cancelled.
@@ -360,9 +336,10 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             }
         }
 
-        /** Returns true the first time it is called, otherwise false. */
-        private synchronized boolean activate()
-        {
+        /**
+         * Returns true the first time it is called, otherwise false.
+         */
+        private synchronized boolean activate() {
             if (!isActivated) {
                 isActivated = true;
                 return true;
@@ -370,8 +347,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             return false;
         }
 
-        public void run()
-        {
+        public void run() {
             try {
                 Thread thread = Thread.currentThread();
                 if (bind(thread)) {
@@ -414,8 +390,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             }
         }
 
-        private T processRequest() throws Throwable
-        {
+        private T processRequest() throws Throwable {
             if (activate()) {
                 try {
                     request.activate().get();

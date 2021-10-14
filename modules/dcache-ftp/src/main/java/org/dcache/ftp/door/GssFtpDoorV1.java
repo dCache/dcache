@@ -1,16 +1,15 @@
 package org.dcache.ftp.door;
 
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Splitter;
-
-import org.dcache.dss.DssContext;
-import org.dcache.dss.DssContextFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import dmg.util.CommandExitException;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -19,25 +18,19 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
-import dmg.util.CommandExitException;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.dss.DssContext;
+import org.dcache.dss.DssContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static java.nio.charset.StandardCharsets.UTF_8;
+public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
 
-public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(GssFtpDoorV1.class);
     private static final GssCommandContext SECURE_COMMAND_CONTEXT = new GssCommandContext();
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
-            ":globus-mapping:";
+          ":globus-mapping:";
 
     protected Subject subject;
     // GSS general
@@ -51,22 +44,20 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     private final Set<String> _plaintextCommands = new HashSet<>();
 
     /**
-     * Commands that are annotated @Plaintext are allowed to be sent directly,
-     * as unencrypted commands.  All other commands must be sent indirectly via
-     * an MIC, ENC or CONF command.
+     * Commands that are annotated @Plaintext are allowed to be sent directly, as unencrypted
+     * commands.  All other commands must be sent indirectly via an MIC, ENC or CONF command.
      */
     @Retention(RUNTIME)
     @Target(METHOD)
-    @interface Plaintext
-    {
+    @interface Plaintext {
+
     }
 
-    public static class GssCommandContext
-    {
+    public static class GssCommandContext {
+
     }
 
-    public GssFtpDoorV1(String ftpDoorName, String gssFlavor, DssContextFactory dssContextFactory)
-    {
+    public GssFtpDoorV1(String ftpDoorName, String gssFlavor, DssContextFactory dssContextFactory) {
         super(ftpDoorName);
 
         this.gssFlavor = gssFlavor;
@@ -80,8 +71,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    protected void secure_reply(CommandRequest request, String answer, String code)
-    {
+    protected void secure_reply(CommandRequest request, String answer, String code) {
         byte[] allData = (answer + "\r\n").getBytes(UTF_8);
 
         try {
@@ -102,13 +92,13 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             } else {
                 List<String> lines = Splitter.on("\r\n").splitToList(answer);
                 LOGGER.debug("Command \"{}\" response is too large, splitting it into {} lines",
-                        request, lines.size());
+                      request, lines.size());
                 for (int i = 0; i < lines.size(); i++) {
-                    boolean isLastLine = i == lines.size()-1;
+                    boolean isLastLine = i == lines.size() - 1;
                     byte[] lineData = (lines.get(i) + "\r\n").getBytes(UTF_8);
                     if (lineData.length > context.maxApplicationSize()) {
-                        LOGGER.error("Line {} of {} is too large ({} > {})", i+1,
-                                lines.size(), lineData.length, context.maxApplicationSize());
+                        LOGGER.error("Line {} of {} is too large ({} > {})", i + 1,
+                              lines.size(), lineData.length, context.maxApplicationSize());
                     }
                     wrapAndSend(code, isLastLine ? ' ' : '-', lineData);
                 }
@@ -120,16 +110,14 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     private void wrapAndSend(String code, char separator, byte[] applicationData)
-            throws IOException
-    {
+          throws IOException {
         byte[] wrapped = context.wrap(applicationData, 0, applicationData.length);
         println(code + separator + Base64.getEncoder().encodeToString(wrapped));
     }
 
     @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
     @Plaintext
-    public void ftp_auth(String arg) throws FTPCommandException
-    {
+    public void ftp_auth(String arg) throws FTPCommandException {
         LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", gssFlavor);
 
         /* From RFC 2228 Section 3. New FTP Commands, AUTH:
@@ -168,8 +156,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Help("ADAT <SP> <arg> - Supply context negotation data.")
     @Plaintext
-    public void ftp_adat(String arg) throws FTPCommandException
-    {
+    public void ftp_adat(String arg) throws FTPCommandException {
         checkFTPCommand(!arg.isEmpty(), 501, "ADAT must have data");
         checkFTPCommand(context != null, 503, "Send AUTH first");
 
@@ -194,7 +181,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             }
         } else {
             if (context.isEstablished()) {
-                LOGGER.info("GssFtpDoorV1::ftp_adat: security context established with {}", subject);
+                LOGGER.info("GssFtpDoorV1::ftp_adat: security context established with {}",
+                      subject);
                 reply("235 OK");
             } else {
                 reply("335 ADAT=");
@@ -203,8 +191,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Help("CCC - Switch control channel to cleartext.")
-    public void ftp_ccc(String arg) throws FTPCommandException
-    {
+    public void ftp_ccc(String arg) throws FTPCommandException {
         // We should never received this, only through MIC, ENC or CONF,
         // in which case it will be intercepted by secure_command()
         throw new FTPCommandException(533, "CCC must be protected");
@@ -213,41 +200,37 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @ConcurrentWithTransfer
     @Help("MIC <SP> <arg> - Integrity protected command.")
     @Plaintext
-    public void ftp_mic(String arg) throws CommandExitException, FTPCommandException
-    {
+    public void ftp_mic(String arg) throws CommandExitException, FTPCommandException {
         secure_command(arg, ReplyType.MIC);
     }
 
     @ConcurrentWithTransfer
     @Help("ENC <SP> <arg> - Privacy protected command.")
     @Plaintext
-    public void ftp_enc(String arg) throws CommandExitException, FTPCommandException
-    {
+    public void ftp_enc(String arg) throws CommandExitException, FTPCommandException {
         secure_command(arg, ReplyType.ENC);
     }
 
     @ConcurrentWithTransfer
     @Help("CONF <SP> <arg> - Confidentiality protection command.")
     @Plaintext
-    public void ftp_conf(String arg) throws CommandExitException, FTPCommandException
-    {
+    public void ftp_conf(String arg) throws CommandExitException, FTPCommandException {
         secure_command(arg, ReplyType.CONF);
     }
 
     public void secure_command(String answer, ReplyType sectype)
-            throws CommandExitException, FTPCommandException
-    {
+          throws CommandExitException, FTPCommandException {
         checkFTPCommand(!isNullOrEmpty(answer),
-                500, "Wrong syntax of %s command", sectype);
+              500, "Wrong syntax of %s command", sectype);
         checkFTPCommand(context != null && context.isEstablished(),
-                503, "Security context is not established");
+              503, "Security context is not established");
 
         byte[] data = Base64.getDecoder().decode(answer);
         try {
             data = context.unwrap(data);
         } catch (IOException e) {
             LOGGER.error("GssFtpDoorV1::secure_command: got IOException: {}",
-                         e.getMessage());
+                  e.getMessage());
             throw new FTPCommandException(500, "Cannot decrypt command: " + e);
         }
 
@@ -270,23 +253,22 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    protected void checkCommandAllowed(CommandRequest command, Object commandContext) throws FTPCommandException
-    {
+    protected void checkCommandAllowed(CommandRequest command, Object commandContext)
+          throws FTPCommandException {
         boolean isSecureCommand = commandContext == SECURE_COMMAND_CONTEXT;
         boolean isPlaintextAllowed = _plaintextCommands.contains(command.getName());
 
         checkFTPCommand(_hasControlPortCleared || isSecureCommand || isPlaintextAllowed,
-                530, "Command must be wrapped in MIC, ENC or CONF");
+              530, "Command must be wrapped in MIC, ENC or CONF");
 
         super.checkCommandAllowed(command, commandContext);
     }
 
     @Override
-    public void ftp_user(String arg) throws FTPCommandException
-    {
+    public void ftp_user(String arg) throws FTPCommandException {
         checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
         checkFTPCommand(context != null && context.isEstablished(),
-                530, "Authentication required");
+              530, "Authentication required");
 
         Subject subject = context.getSubject();
         subject.getPrincipals().add(_origin);
@@ -312,10 +294,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // since nothing is actually done for this command.
     // Example = ubftp client
     @Override
-    public void ftp_pass(String arg) throws FTPCommandException
-    {
+    public void ftp_pass(String arg) throws FTPCommandException {
         LOGGER.debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
-                     "GSSAPI authentication.");
+              "GSSAPI authentication.");
         checkFTPCommand(subject != null, 500, "Send USER first");
 
         reply(ok("PASS"));

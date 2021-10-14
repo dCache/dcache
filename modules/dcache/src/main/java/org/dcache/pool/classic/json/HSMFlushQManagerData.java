@@ -64,10 +64,11 @@ import java.io.Serializable;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.classic.StorageClassContainer} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.classic.StorageClassContainer} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class HSMFlushQManagerData implements Serializable {
+
     private static final long serialVersionUID = 3278346891748398694L;
     private String label;
     private Integer classCount;

@@ -82,26 +82,24 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.SrmMvRequest;
 import org.dcache.srm.v2_2.SrmMvResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMMvClientV2 extends SRMClient
-{
+public class SRMMvClientV2 extends SRMClient {
+
     private final java.net.URI[] surls;
     private final String[] surl_strings;
 
     public SRMMvClientV2(Configuration configuration, java.net.URI[] surls, String[] surl_strings) {
         super(configuration);
-        this.surls      = surls;
-        this.surl_strings=surl_strings;
+        this.surls = surls;
+        this.surl_strings = surl_strings;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surls[0];
     }
 
@@ -113,9 +111,9 @@ public class SRMMvClientV2 extends SRMClient
         req.setToSURL(new URI(surl_strings[1]));
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmMvResponse resp = srm.srmMv(req);
-        TReturnStatus rs   = resp.getReturnStatus();
+        TReturnStatus rs = resp.getReturnStatus();
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-            TStatusCode rc  = rs.getStatusCode();
+            TStatusCode rc = rs.getStatusCode();
             StringBuilder sb = new StringBuilder();
             sb.append("Return code: ").append(rc.toString()).append("\n");
             sb.append("Explanation: ").append(rs.getExplanation()).append("\n");

@@ -17,60 +17,54 @@
  */
 package org.dcache.util;
 
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
-
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
+public class Callables {
 
-public class Callables
-{
-    private Callables()
-    {
+    private Callables() {
     }
 
     /**
-     * Returns a Caller that caches the instance returned by the delegate and
-     * removes the cached value after the specified time has passed. Subsequent
-     * calls to {@code call()} return the cached value if the expiration time has
-     * not passed. After the expiration time, a new value is retrieved, cached,
-     * and returned.
+     * Returns a Caller that caches the instance returned by the delegate and removes the cached
+     * value after the specified time has passed. Subsequent calls to {@code call()} return the
+     * cached value if the expiration time has not passed. After the expiration time, a new value is
+     * retrieved, cached, and returned.
      *
      * <p>The returned Caller is thread-safe.
      */
     public static <T> Callable<T> memoizeWithExpiration(
-            Callable<T> delegate, long duration, TimeUnit unit)
-    {
+          Callable<T> delegate, long duration, TimeUnit unit) {
         return new ExpiringMemoizingCallable<>(delegate, duration, unit);
     }
 
     /**
-     * Returns a Caller that caches the instance returned by the delegate and
-     * removes the cached value when any of the supplied files have been modified.
-     * Subsequent calls to {@code call()} return the cached value if files have
-     * not been modified since the cached value was retrieved. If the files have
-     * been modified, a new value is retrieved.
+     * Returns a Caller that caches the instance returned by the delegate and removes the cached
+     * value when any of the supplied files have been modified. Subsequent calls to {@code call()}
+     * return the cached value if files have not been modified since the cached value was retrieved.
+     * If the files have been modified, a new value is retrieved.
      *
      * <p>The returned Caller is thread-safe.
      */
-    public static <T> Callable<T> memoizeFromFiles(Callable<T> delegate, Path... files)
-    {
+    public static <T> Callable<T> memoizeFromFiles(Callable<T> delegate, Path... files) {
         return new MemoizingCallableFromFiles<>(delegate, files);
     }
 
     /**
      * Adapted from com.google.common.base.Suppliers.
-     *
+     * <p>
      * Copyright (C) 2007 The Guava Authors
      */
-    private static class ExpiringMemoizingCallable<T> implements Callable<T>
-    {
+    private static class ExpiringMemoizingCallable<T> implements Callable<T> {
+
         final Callable<T> delegate;
         final long durationNanos;
         transient volatile T value;
@@ -78,15 +72,14 @@ public class Callables
         transient volatile long expirationNanos;
 
         ExpiringMemoizingCallable(
-                Callable<T> delegate, long duration, TimeUnit unit)
-        {
+              Callable<T> delegate, long duration, TimeUnit unit) {
             Preconditions.checkArgument(duration > 0);
             this.delegate = requireNonNull(delegate);
             this.durationNanos = unit.toNanos(duration);
         }
 
-        @Override public T call() throws Exception
-        {
+        @Override
+        public T call() throws Exception {
             // Another variant of Double Checked Locking.
             //
             // We use two volatile reads.  We could reduce this to one by
@@ -111,35 +104,34 @@ public class Callables
             return value;
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             // This is a little strange if the unit the user provided was not NANOS,
             // but we don't want to store the unit just for toString
             return "Suppliers.memoizeWithExpiration(" + delegate + ", " +
-                   durationNanos + ", NANOS)";
+                  durationNanos + ", NANOS)";
         }
     }
 
-    private static class MemoizingCallableFromFiles<T> implements Callable<T>
-    {
+    private static class MemoizingCallableFromFiles<T> implements Callable<T> {
+
         final Path[] files;
         final Callable<T> delegate;
 
         FileTime lastLastModifiedTime;
         T value;
 
-        public MemoizingCallableFromFiles(Callable<T> delegate, Path[] files)
-        {
+        public MemoizingCallableFromFiles(Callable<T> delegate, Path[] files) {
             this.delegate = delegate;
             this.files = files;
         }
 
         @Override
-        public T call() throws Exception
-        {
+        public T call() throws Exception {
             FileTime lastModified = getLastModifiedTime();
             synchronized (this) {
                 if (lastModified == null || lastLastModifiedTime == null ||
-                    lastModified.compareTo(lastLastModifiedTime) > 0) {
+                      lastModified.compareTo(lastLastModifiedTime) > 0) {
                     value = delegate.call();
                     lastLastModifiedTime = lastModified;
                 }
@@ -147,8 +139,7 @@ public class Callables
             }
         }
 
-        private FileTime getLastModifiedTime()
-        {
+        private FileTime getLastModifiedTime() {
             try {
                 FileTime[] times = new FileTime[files.length];
                 for (int i = 0; i < files.length; i++) {

@@ -16,26 +16,26 @@
  */
 package org.dcache.chimera;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public class FsInode_PSET extends FsInode {
+
     private static final long DEFAULT_DURATION_IN_SECS = 300;
 
-    private static final String SIZE   = "size";
-    private static final String IO     = "io";
-    private static final String ONLN   = "bringonline";
-    private static final String STG    = "stage";
-    private static final String PIN    = "pin";
-    private static final String UNPIN  = "unpin";
-    private static final String CKS    = "checksum";
+    private static final String SIZE = "size";
+    private static final String IO = "io";
+    private static final String ONLN = "bringonline";
+    private static final String STG = "stage";
+    private static final String PIN = "pin";
+    private static final String UNPIN = "unpin";
+    private static final String CKS = "checksum";
 
     private final String[] _args;
 
@@ -49,7 +49,9 @@ public class FsInode_PSET extends FsInode {
         return false;
     }
 
-    public boolean isChecksum() { return CKS.equals(_args[0]); }
+    public boolean isChecksum() {
+        return CKS.equals(_args[0]);
+    }
 
     @Override
     public int read(long pos, byte[] data, int offset, int len) {
@@ -57,8 +59,7 @@ public class FsInode_PSET extends FsInode {
     }
 
     @Override
-    public void setStat(Stat newStat) throws ChimeraFsException
-    {
+    public void setStat(Stat newStat) throws ChimeraFsException {
         if (newStat.isDefined(Stat.StatAttributes.MTIME)) {
             switch (_args[0]) {
                 case SIZE:
@@ -143,7 +144,8 @@ public class FsInode_PSET extends FsInode {
             try {
                 lifetime = Long.parseLong(_args[1]);
             } catch (NumberFormatException e) {
-                throw new InvalidArgumentChimeraException("Invalid pin duration: " + e.getMessage());
+                throw new InvalidArgumentChimeraException(
+                      "Invalid pin duration: " + e.getMessage());
             }
             if (lifetime < 0) {
                 throw new InvalidArgumentChimeraException("Negative pin durations are not allowed");
@@ -196,9 +198,9 @@ public class FsInode_PSET extends FsInode {
             _fs.setInodeChecksum(this, type.getType(), cks.getValue());
         } catch (IllegalArgumentException e) {
             throw new InvalidArgumentChimeraException("Invalid checksum: "
-                                                                      + _args[2]
-                                                                      + "; "
-                                                                      + e.getMessage());
+                  + _args[2]
+                  + "; "
+                  + e.getMessage());
         }
     }
 }

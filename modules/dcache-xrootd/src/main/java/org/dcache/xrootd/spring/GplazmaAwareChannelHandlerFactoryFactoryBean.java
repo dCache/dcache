@@ -1,14 +1,15 @@
 package org.dcache.xrootd.spring;
 
-import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import static com.google.common.base.Predicates.containsPattern;
+import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.indexOf;
+import static com.google.common.collect.Iterables.size;
 
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginStrategyAware;
 import org.dcache.gsi.KeyPairCache;
@@ -23,47 +24,45 @@ import org.dcache.xrootd.plugins.InvalidHandlerConfigurationException;
 import org.dcache.xrootd.plugins.ProxyDelegationClientFactory;
 import org.dcache.xrootd.security.GSIProxyDelegationClientFactory;
 import org.dcache.xrootd.security.ProxyDelegationStore;
-
-import static com.google.common.base.Predicates.containsPattern;
-import static com.google.common.collect.Iterables.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * A Spring FactoryBean that creates ChannelHandlerFactory instances.
- *
- * A ChannelHandlerFactory is created by an ChannelHandlerProvider.
- * The FactoryBean uses the Java 6 ServiceLoader system to obtain
- * ChannelHandlerProvider instances.
- *
+ * <p>
+ * A ChannelHandlerFactory is created by an ChannelHandlerProvider. The FactoryBean uses the Java 6
+ * ServiceLoader system to obtain ChannelHandlerProvider instances.
  */
 public class GplazmaAwareChannelHandlerFactoryFactoryBean
-    extends ChannelHandlerFactoryFactoryBean
-{
+      extends ChannelHandlerFactoryFactoryBean {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(GplazmaAwareChannelHandlerFactoryFactoryBean.class);
+          = LoggerFactory.getLogger(GplazmaAwareChannelHandlerFactoryFactoryBean.class);
 
     private static final ServiceLoader<AuthenticationProvider> _authenticationProviders =
-            ServiceLoader.load(AuthenticationProvider.class);
+          ServiceLoader.load(AuthenticationProvider.class);
 
     private static final ServiceLoader<AuthorizationProvider> _authorizationProviders =
-                    ServiceLoader.load(AuthorizationProvider.class);
+          ServiceLoader.load(AuthorizationProvider.class);
 
     private static final ServiceLoader<ProxyDelegationClientFactory> _clientFactories =
-                    ServiceLoader.load(ProxyDelegationClientFactory.class);
+          ServiceLoader.load(ProxyDelegationClientFactory.class);
 
     private static final String GPLAZMA_PREFIX = "gplazma:";
     private static final String AUTHZ_PREFIX = "authz:";
 
-    private LoginStrategy        _loginStrategy;
-    private LoginStrategy        _anonymousLoginStrategy;
+    private LoginStrategy _loginStrategy;
+    private LoginStrategy _anonymousLoginStrategy;
     private ProxyDelegationStore _gsiDelegationProvider;
 
     @Required
-    public void setPlugins(String plugins)
-    {
+    public void setPlugins(String plugins) {
         super.setPlugins(plugins);
 
         if (any(_plugins, containsPattern("^authn:"))) {
-            throw new IllegalArgumentException("The authn: prefix is not allowed in the xrootd door");
+            throw new IllegalArgumentException(
+                  "The authn: prefix is not allowed in the xrootd door");
         }
 
         if (size(filter(_plugins, containsPattern("^gplazma:"))) != 1) {
@@ -73,36 +72,33 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         int authn = indexOf(_plugins, containsPattern("^gplazma:"));
         int authz = indexOf(_plugins, containsPattern("^authz:"));
         if (authz > -1 && authz < authn) {
-            throw new IllegalArgumentException("Authorization plugins must be placed after authentication plugins");
+            throw new IllegalArgumentException(
+                  "Authorization plugins must be placed after authentication plugins");
         }
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         if (_gsiDelegationProvider != null) {
             _gsiDelegationProvider.shutdown();
         }
     }
 
     @Required
-    public void setLoginStrategy(LoginStrategy loginStrategy)
-    {
+    public void setLoginStrategy(LoginStrategy loginStrategy) {
         _loginStrategy = loginStrategy;
     }
 
     @Required
     public void setAnonymousLoginStrategy(
-            LoginStrategy anonymousLoginStrategy)
-    {
+          LoginStrategy anonymousLoginStrategy) {
         _anonymousLoginStrategy = anonymousLoginStrategy;
     }
 
     @Override
     public List<ChannelHandlerFactory> getObject()
-        throws Exception
-    {
+          throws Exception {
         List<ChannelHandlerFactory> factories = Lists.newArrayList();
-        for (String plugin: _plugins) {
+        for (String plugin : _plugins) {
             /* We need special logic for the authentication handler as we
              * cannot use a generic provider: The provider would not have
              * access to the login strategies. REVISIT: Is there some way
@@ -122,37 +118,35 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
     }
 
     private ChannelHandlerFactory createAuthenticationHandlerFactory(
-            String name) throws Exception
-    {
+          String name) throws Exception {
         if (name.equals("none")) {
             return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + "none",
-                                                                        _anonymousLoginStrategy);
+                  _anonymousLoginStrategy);
         }
 
-        for (AuthenticationProvider provider: _authenticationProviders) {
+        for (AuthenticationProvider provider : _authenticationProviders) {
             AuthenticationFactory authnFactory = provider.createFactory(name, _properties);
             if (authnFactory != null) {
                 ProxyDelegationClientFactory clientFactory
-                                = createProxyDelegationClientFactory(name);
+                      = createProxyDelegationClientFactory(name);
                 return new LoginAuthenticationHandlerFactory(GPLAZMA_PREFIX + name,
-                                                                    name,
-                                                                    clientFactory,
-                                                                    _properties,
-                                                                     authnFactory,
-                                                                    _loginStrategy);
+                      name,
+                      clientFactory,
+                      _properties,
+                      authnFactory,
+                      _loginStrategy);
             }
         }
 
         throw new IllegalArgumentException("Authentication plugin not found: " + name);
     }
 
-    private ChannelHandlerFactory createAuthorizationHandlerFactory(String name) throws Exception
-    {
-        for (AuthorizationProvider provider: _authorizationProviders) {
+    private ChannelHandlerFactory createAuthorizationHandlerFactory(String name) throws Exception {
+        for (AuthorizationProvider provider : _authorizationProviders) {
             AuthorizationFactory authzFactory = provider.createFactory(name, _properties);
             if (authzFactory != null) {
                 if (authzFactory instanceof LoginStrategyAware) {
-                    ((LoginStrategyAware)authzFactory).setLoginStrategy(_loginStrategy);
+                    ((LoginStrategyAware) authzFactory).setLoginStrategy(_loginStrategy);
                 }
                 return new XrootdAuthorizationHandlerFactory(authzFactory);
             }
@@ -161,20 +155,19 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         throw new IllegalArgumentException("Authorization plugin not found: " + name);
     }
 
-    private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name)
-    {
-        for (ProxyDelegationClientFactory factory: _clientFactories) {
+    private ProxyDelegationClientFactory createProxyDelegationClientFactory(String name) {
+        for (ProxyDelegationClientFactory factory : _clientFactories) {
             try {
                 if (factory instanceof GSIProxyDelegationClientFactory) {
-                    ((GSIProxyDelegationClientFactory)factory)
-                                    .setProvider(getGsiProxyDelegationProvider());
+                    ((GSIProxyDelegationClientFactory) factory)
+                          .setProvider(getGsiProxyDelegationProvider());
                 }
                 if (factory.createClient(name, _properties) != null) {
                     return factory;
                 }
             } catch (InvalidHandlerConfigurationException e) {
                 LOGGER.debug("Could not create client for {} using factory {}: {}.",
-                             name, factory, e.toString());
+                      name, factory, e.toString());
             }
         }
 
@@ -182,8 +175,7 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         return null;
     }
 
-    private ProxyDelegationStore getGsiProxyDelegationProvider()
-    {
+    private ProxyDelegationStore getGsiProxyDelegationProvider() {
         LOGGER.debug("get ProxyDelegationProvider called");
 
         /*
@@ -196,8 +188,9 @@ public class GplazmaAwareChannelHandlerFactoryFactoryBean
         LOGGER.debug("constructing and initializing ProxyDelegationStore");
 
         String caPath = _properties.getProperty("xrootd.gsi.ca.path");
-        Long refresh  = Long.valueOf(_properties.getProperty("xrootd.gsi.ca.refresh"));
-        TimeUnit refreshUnit = TimeUnit.valueOf(_properties.getProperty("xrootd.gsi.ca.refresh.unit"));
+        Long refresh = Long.valueOf(_properties.getProperty("xrootd.gsi.ca.refresh"));
+        TimeUnit refreshUnit = TimeUnit.valueOf(
+              _properties.getProperty("xrootd.gsi.ca.refresh.unit"));
         String vomsDir = _properties.getProperty("xrootd.gsi.vomsdir.dir");
         _gsiDelegationProvider = new ProxyDelegationStore();
         _gsiDelegationProvider.setCaCertificatePath(caPath);

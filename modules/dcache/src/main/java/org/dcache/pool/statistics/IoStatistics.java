@@ -17,66 +17,57 @@
  */
 package org.dcache.pool.statistics;
 
-import java.io.PrintWriter;
-
-import org.dcache.util.LineIndentingPrintWriter;
-
 import static org.dcache.util.Strings.toThreeSigFig;
 
+import java.io.PrintWriter;
+import org.dcache.util.LineIndentingPrintWriter;
+
 /**
- * An immutable snapshot of statistics describing the channel usage since it
- * was created.  Statistics of both read and write activity are provided;
- * although, in many cases, a channel is exclusively used in one direction.
+ * An immutable snapshot of statistics describing the channel usage since it was created.
+ * Statistics of both read and write activity are provided; although, in many cases, a channel is
+ * exclusively used in one direction.
  */
-public class IoStatistics
-{
+public class IoStatistics {
+
     private final DirectedIoStatistics reads;
     private final DirectedIoStatistics writes;
 
-    public IoStatistics(DirectedIoStatistics reads, DirectedIoStatistics writes)
-    {
+    public IoStatistics(DirectedIoStatistics reads, DirectedIoStatistics writes) {
         this.reads = reads;
         this.writes = writes;
     }
 
-    public DirectedIoStatistics reads()
-    {
+    public DirectedIoStatistics reads() {
         return reads;
     }
 
-    public DirectedIoStatistics writes()
-    {
+    public DirectedIoStatistics writes() {
         return writes;
     }
 
-    public boolean hasReads()
-    {
+    public boolean hasReads() {
         return reads.statistics().requestedBytes().getN() > 0;
     }
 
-    public boolean hasWrites()
-    {
+    public boolean hasWrites() {
         return writes.statistics().requestedBytes().getN() > 0;
     }
 
-    private static String ratioDescription(long reads, long writes)
-    {
+    private static String ratioDescription(long reads, long writes) {
         if (reads <= writes) {
-            return toThreeSigFig(writes / (double)reads, 1000)
-                    + " writes for every read (on average)";
+            return toThreeSigFig(writes / (double) reads, 1000)
+                  + " writes for every read (on average)";
         } else {
-            return toThreeSigFig(reads / (double)writes, 1000)
-                    + " reads for every write (on average)";
+            return toThreeSigFig(reads / (double) writes, 1000)
+                  + " reads for every write (on average)";
         }
     }
 
-    private static String percent(long n, long total)
-    {
-        return toThreeSigFig(100 * n / (double)total, 1000) + "%";
+    private static String percent(long n, long total) {
+        return toThreeSigFig(100 * n / (double) total, 1000) + "%";
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         long readCount = reads.statistics().requestedBytes().getN();
         long writeCount = writes.statistics().requestedBytes().getN();
 
@@ -87,11 +78,13 @@ public class IoStatistics
             pw.println("Request ratio: " + ratioDescription(readCount, writeCount));
 
             pw.println("Read statistics:");
-            indented.println("Requests: " + readCount + " (" + percent(readCount, totalCount) + " of all requests)");
+            indented.println("Requests: " + readCount + " (" + percent(readCount, totalCount)
+                  + " of all requests)");
             reads.getInfo(indented);
 
             pw.println("Write statistics:");
-            indented.println("Requests: " + writeCount + " (" + percent(writeCount, totalCount) + " of all requests)");
+            indented.println("Requests: " + writeCount + " (" + percent(writeCount, totalCount)
+                  + " of all requests)");
             writes.getInfo(indented);
         } else if (hasReads()) {
             pw.println("Requests: " + readCount);

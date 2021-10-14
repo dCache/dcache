@@ -7,15 +7,14 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates that a field represents the entire command line.
- *
- * Applies to fields of types Args and String. In the former case, the entire
- * argument and option set is injected. In the latter case, the entire command
- * line in textual form is injected.
+ * <p>
+ * Applies to fields of types Args and String. In the former case, the entire argument and option
+ * set is injected. In the latter case, the entire command line in textual form is injected.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface CommandLine
-{
+public @interface CommandLine {
+
     /**
      * Whether to allow any option or only those enumerated by @Option annotations.
      */
@@ -30,8 +29,7 @@ public @interface CommandLine
      * Help string used to display the usage screen.
      *
      * <p>
-     * If this value is empty, the option will not be displayed
-     * in the usage screen.
+     * If this value is empty, the option will not be displayed in the usage screen.
      */
     String usage() default "";
 

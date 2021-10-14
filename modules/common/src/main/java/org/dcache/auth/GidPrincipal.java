@@ -4,30 +4,30 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * This Principal represents the GID of a person.  The GID represents a group
- * that the user is a member of, possibly in common with other users.  A
- * GidPrincipal is either the primary GID or is not.
- *
- * Typical login requirements are that a user has at least one GidPrincipal and
- * precisely one primary GidPrincipal.
- *
- * The GidPrincipal represents a vetted identity information about the user.
- * This is in contrast to LoginGidPrincipal.  Therefore, it is safe to base
- * authorisation decisions on the presence of GidPrincipal.
+ * This Principal represents the GID of a person.  The GID represents a group that the user is a
+ * member of, possibly in common with other users.  A GidPrincipal is either the primary GID or is
+ * not.
+ * <p>
+ * Typical login requirements are that a user has at least one GidPrincipal and precisely one
+ * primary GidPrincipal.
+ * <p>
+ * The GidPrincipal represents a vetted identity information about the user. This is in contrast to
+ * LoginGidPrincipal.  Therefore, it is safe to base authorisation decisions on the presence of
+ * GidPrincipal.
  *
  * @see LoginGidPrincipal
  * @since 2.1
  */
 @AuthenticationOutput
-public class GidPrincipal implements GroupPrincipal, Serializable
-{
+public class GidPrincipal implements GroupPrincipal, Serializable {
+
     private static final long serialVersionUID = 7812225739755920892L;
 
     private final long _gid;
     private final boolean _isPrimaryGroup;
 
     public static boolean isPrimaryGid(Principal principal) {
-        return principal instanceof GidPrincipal && ((GidPrincipal)principal).isPrimaryGroup();
+        return principal instanceof GidPrincipal && ((GidPrincipal) principal).isPrimaryGroup();
     }
 
     public GidPrincipal(long gid, boolean isPrimary) {
@@ -44,8 +44,8 @@ public class GidPrincipal implements GroupPrincipal, Serializable
 
     public GidPrincipal withPrimaryGroup(boolean isPrimaryGroup) {
         return isPrimaryGroup == _isPrimaryGroup
-                ? this
-                : new GidPrincipal(_gid, isPrimaryGroup);
+              ? this
+              : new GidPrincipal(_gid, isPrimaryGroup);
     }
 
     @Override
@@ -82,7 +82,7 @@ public class GidPrincipal implements GroupPrincipal, Serializable
         }
         GidPrincipal otherGid = (GidPrincipal) other;
         return (otherGid.getGid() == getGid() &&
-                (otherGid.isPrimaryGroup() == isPrimaryGroup()));
+              (otherGid.isPrimaryGroup() == isPrimaryGroup()));
     }
 
     @Override

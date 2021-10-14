@@ -1,9 +1,24 @@
 package org.dcache.pool.movers;
 
-import com.google.common.collect.Iterables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.Strings.describe;
+import static org.dcache.util.Strings.describeSize;
+import static org.dcache.util.Strings.toThreeSigFig;
 
+import com.google.common.collect.Iterables;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellArgsAware;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.Exceptions;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -17,27 +32,15 @@ import java.net.ProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.FileSystems;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.FileSystems;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.GFtpTransferStartedMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellArgsAware;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.util.Exceptions;
-
 import org.dcache.ftp.data.BlockLog;
 import org.dcache.ftp.data.ConnectionMonitor;
 import org.dcache.ftp.data.FTPException;
@@ -48,8 +51,8 @@ import org.dcache.ftp.data.ModeX;
 import org.dcache.ftp.data.Multiplexer;
 import org.dcache.ftp.data.Role;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.statistics.IoStatisticsChannel;
@@ -59,34 +62,31 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.util.ByteUnit.*;
-import static org.dcache.util.Strings.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
  */
 public class GFtpProtocol_2_nio implements ConnectionMonitor,
-        MoverProtocol, ChecksumMover, CellArgsAware
-{
-    private static final Logger _log =
-            LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
-    private static final Logger _logSpaceAllocation =
-            LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
-                                            GFtpProtocol_2_nio.class.getName());
+      MoverProtocol, ChecksumMover, CellArgsAware {
 
-    /** The minimum number of bytes to increment the space allocation. */
+    private static final Logger _log =
+          LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
+    private static final Logger _logSpaceAllocation =
+          LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+                GFtpProtocol_2_nio.class.getName());
+
+    /**
+     * The minimum number of bytes to increment the space allocation.
+     */
     public static final long SPACE_INC = MiB.toBytes(50);
 
     /**
-     * Default block size for mode S. Although mode S is not a block
-     * protocol, the block size parameter defines the largest amount
-     * of data we will try to transfer in a single iteration of the
-     * transfer loop.
+     * Default block size for mode S. Although mode S is not a block protocol, the block size
+     * parameter defines the largest amount of data we will try to transfer in a single iteration of
+     * the transfer loop.
      */
     public static final int MODE_S_DEFAULT_BLOCK_SIZE = KiB.toBytes(512);
 
@@ -100,50 +100,52 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     public static final int MODE_X_DEFAULT_BLOCK_SIZE = KiB.toBytes(128);
 
-    /** The cell owning this mover. Log messages are sent to it. */
-    protected final CellEndpoint  _cell;
-
-    /** A channel to the file we read from or write to. */
-    protected RepositoryChannel  _fileChannel;
+    /**
+     * The cell owning this mover. Log messages are sent to it.
+     */
+    protected final CellEndpoint _cell;
 
     /**
-     * A BlockLog keeping tracks of which parts of a file we have
-     * received.
+     * A channel to the file we read from or write to.
      */
-    protected BlockLog     _blockLog;
+    protected RepositoryChannel _fileChannel;
 
     /**
-     * The role of this transfer in the transaction. Either Sender or
-     * Receiver.
+     * A BlockLog keeping tracks of which parts of a file we have received.
      */
-    protected Role         _role;
+    protected BlockLog _blockLog;
+
+    /**
+     * The role of this transfer in the transaction. Either Sender or Receiver.
+     */
+    protected Role _role;
 
     /**
      * The number of bytes that have been transferred.
      */
-    protected long         _bytesTransferred;
+    protected long _bytesTransferred;
 
     /**
-     * The time stamp according to System.currentTimeMillis() for when
-     * the last transfer was started.
+     * The time stamp according to System.currentTimeMillis() for when the last transfer was
+     * started.
      */
-    protected long         _transferStarted;
+    protected long _transferStarted;
 
     /**
-     * The time stamp according to System.currentTimeMillis() for when
-     * the last piece of data was transferred.
+     * The time stamp according to System.currentTimeMillis() for when the last piece of data was
+     * transferred.
      */
-    protected long         _lastTransferred;
+    protected long _lastTransferred;
 
     /**
      * All communication is asynchronous.
      */
-    protected Multiplexer  _multiplexer;
+    protected Multiplexer _multiplexer;
 
     /**
      * Status of space reservation request.
      */
-    protected String       _status;
+    protected String _status;
 
     /**
      * Port range for passive transfers.
@@ -151,38 +153,34 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected final PortRange _portRange;
 
     /**
-     * Whether this mover instance should log statistics if the transfer is
-     * incomplete.
+     * Whether this mover instance should log statistics if the transfer is incomplete.
      */
     private final boolean _logAbortedTransfer;
 
     /**
      * The chunk size used when transferring files.
-     *
-     * Large blocks will reduce the overhead. However, it case of
-     * multible concurrent streams, large blocks will make disk access
-     * less sequential on both the sending and receiving side.
-     *
+     * <p>
+     * Large blocks will reduce the overhead. However, it case of multible concurrent streams, large
+     * blocks will make disk access less sequential on both the sending and receiving side.
+     * <p>
      * Default values will be used when null.
      */
     protected Integer _blockSize;
 
     /**
-     * Whether true passive mode is allowed, i.e. whether clients are
-     * allowed to connect directly to the pool. Do not enable this if
-     * the pool does not have inbound connectivity.
+     * Whether true passive mode is allowed, i.e. whether clients are allowed to connect directly to
+     * the pool. Do not enable this if the pool does not have inbound connectivity.
      */
-    protected boolean      _allowPassivePool;
+    protected boolean _allowPassivePool;
 
     /**
      * True while the transfer is in progress.
      */
-    protected boolean      _inProgress;
+    protected boolean _inProgress;
 
     private Mode _mode;
 
-    public GFtpProtocol_2_nio(CellEndpoint cell)
-    {
+    public GFtpProtocol_2_nio(CellEndpoint cell) {
         _cell = cell;
 
         String range = System.getProperty("org.globus.tcp.port.range");
@@ -200,24 +198,23 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * Factory method for creating the Mode object.
      */
     protected Mode createMode(String mode, Role role, RepositoryChannel fileChannel)
-            throws IOException
-    {
+          throws IOException {
         int blockSize;
         switch (Character.toUpperCase(mode.charAt(0))) {
-        case 'S':
-            blockSize =
-                    (_blockSize == null) ? MODE_S_DEFAULT_BLOCK_SIZE : _blockSize;
-            return new ModeS(role, fileChannel, this, blockSize);
-        case 'E':
-            blockSize =
-                    (_blockSize == null) ? MODE_E_DEFAULT_BLOCK_SIZE : _blockSize;
-            return new ModeE(role, fileChannel, this, blockSize);
-        case 'X':
-            blockSize =
-                    (_blockSize == null) ? MODE_X_DEFAULT_BLOCK_SIZE : _blockSize;
-            return new ModeX(role, fileChannel, this, blockSize);
-        default:
-            throw new IllegalArgumentException("Unknown mode");
+            case 'S':
+                blockSize =
+                      (_blockSize == null) ? MODE_S_DEFAULT_BLOCK_SIZE : _blockSize;
+                return new ModeS(role, fileChannel, this, blockSize);
+            case 'E':
+                blockSize =
+                      (_blockSize == null) ? MODE_E_DEFAULT_BLOCK_SIZE : _blockSize;
+                return new ModeE(role, fileChannel, this, blockSize);
+            case 'X':
+                blockSize =
+                      (_blockSize == null) ? MODE_X_DEFAULT_BLOCK_SIZE : _blockSize;
+                return new ModeX(role, fileChannel, this, blockSize);
+            default:
+                throw new IllegalArgumentException("Unknown mode");
         }
     }
 
@@ -230,14 +227,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * Receive a file.
      */
     public void transfer(RepositoryChannel fileChannel, Role role, Mode mode)
-            throws Exception
-    {
+          throws Exception {
         /* Initialise transfer parameters.
          */
-        _role             = role;
+        _role = role;
         _bytesTransferred = 0;
-        _blockLog         = new BlockLog();
-        _status           = "None";
+        _blockLog = new BlockLog();
+        _status = "None";
 
         /* Startup the transfer. The transfer is performed on a single
          * thread, no matter the number of streams.
@@ -258,14 +254,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             Thread.interrupted();
             throw new InterruptedException();
         } catch (BindException | ConnectException | NoRouteToHostException |
-                PortUnreachableException | UnknownHostException e) {
+              PortUnreachableException | UnknownHostException e) {
             throw Exceptions.wrap("Failed to connect " +
-                    mode.getRemoteAddressDescription(), e, IOException.class);
+                  mode.getRemoteAddressDescription(), e, IOException.class);
         } catch (OutOfDiskException e) {
             throw e;
         } catch (IOException e) {
             throw Exceptions.wrap("Problem while connected to " +
-                    mode.getRemoteAddressDescription(), e, IOException.class);
+                  mode.getRemoteAddressDescription(), e, IOException.class);
         } finally {
             _inProgress = false;
 
@@ -286,7 +282,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long time = getTransferTime();
             if (time > 0) {
                 _log.info("Transfer finished: {} bytes transferred in {} seconds = {} MB/s",
-                                          amount, time / 1000.0, BYTES.toMiB(1000.0 * amount / time));
+                      amount, time / 1000.0, BYTES.toMiB(1000.0 * amount / time));
             } else {
                 _log.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
             }
@@ -294,13 +290,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
         /* Check that we receive the whole file.
          */
-        if (_role == Role.Receiver && !(_blockLog.isComplete() && mode.hasCompletedSuccessfully())) {
+        if (_role == Role.Receiver && !(_blockLog.isComplete()
+              && mode.hasCompletedSuccessfully())) {
             throw new CacheException(44, "Incomplete file detected");
         }
     }
 
-    private void addDesiredChecksums(GFtpProtocolInfo info)
-    {
+    private void addDesiredChecksums(GFtpProtocolInfo info) {
         String type = info.getChecksumType();
 
         if (type == null || type.equals("Unknown")) {
@@ -312,11 +308,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             return;
         }
 
-        Optional<ChecksumChannel> checksumChannel = _fileChannel.optionallyAs(ChecksumChannel.class);
+        Optional<ChecksumChannel> checksumChannel = _fileChannel.optionallyAs(
+              ChecksumChannel.class);
 
         if (!checksumChannel.isPresent()) {
             _log.warn("Unable to calculate {} checksum as checksum"
-                    + " calculation is disabled for this transfer.", type);
+                  + " calculation is disabled for this transfer.", type);
             return;
         }
 
@@ -324,42 +321,42 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             checksumChannel.get().addType(ChecksumType.getChecksumType(type));
         } catch (IOException e) {
             _log.error("Unable to add {} checksum calculation: {}",
-                    type, org.dcache.util.Exceptions.messageOrClassName(e));
+                  type, org.dcache.util.Exceptions.messageOrClassName(e));
         }
     }
 
     @Override
-    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker)
-    {
+    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker) {
     }
 
-    /** Part of the MoverProtocol interface. */
+    /**
+     * Part of the MoverProtocol interface.
+     */
     @Override
     public void runIO(FileAttributes fileAttributes,
-                      RepositoryChannel fileChannel,
-                      ProtocolInfo protocol,
-                      Set<? extends OpenOption> access)
-            throws Exception
-    {
+          RepositoryChannel fileChannel,
+          ProtocolInfo protocol,
+          Set<? extends OpenOption> access)
+          throws Exception {
         if (!(protocol instanceof GFtpProtocolInfo)) {
             throw new CacheException(44, "Protocol info not of type GFtpProtocolInfo");
         }
-        GFtpProtocolInfo gftpProtocolInfo    = (GFtpProtocolInfo)protocol;
+        GFtpProtocolInfo gftpProtocolInfo = (GFtpProtocolInfo) protocol;
 
         Role role = access.contains(StandardOpenOption.WRITE) ? Role.Receiver : Role.Sender;
-        int    version     = gftpProtocolInfo.getMajorVersion();
+        int version = gftpProtocolInfo.getMajorVersion();
         InetSocketAddress address = gftpProtocolInfo.getSocketAddress();
-        int    bufferSize  = gftpProtocolInfo.getBufferSize();
-        int    parallelism = gftpProtocolInfo.getParallelStart();
-        long   offset      = gftpProtocolInfo.getOffset();
-        long   size        = gftpProtocolInfo.getSize();
-        boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
+        int bufferSize = gftpProtocolInfo.getBufferSize();
+        int parallelism = gftpProtocolInfo.getParallelStart();
+        long offset = gftpProtocolInfo.getOffset();
+        long size = gftpProtocolInfo.getSize();
+        boolean passive = gftpProtocolInfo.getPassive() && _allowPassivePool;
         ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
         _fileChannel = fileChannel;
 
         _log.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
-                  version, role, gftpProtocolInfo.getMode(),
-                  address, bufferSize, passive, parallelism);
+              version, role, gftpProtocolInfo.getMode(),
+              address, bufferSize, passive, parallelism);
 
         addDesiredChecksums(gftpProtocolInfo);
 
@@ -370,14 +367,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              * listen on to the client. With GFtp/1, we cannot send
              * this information back to the door.
              */
-            throw new CacheException(44, "Internal error: Cannot do passive transfer with mover protocol version 1.");
+            throw new CacheException(44,
+                  "Internal error: Cannot do passive transfer with mover protocol version 1.");
         }
 
         /* We initialise these things early, as the job timeout
          * manager will not kill the job otherwise.
          */
-        _transferStarted  = System.currentTimeMillis();
-        _lastTransferred  = _transferStarted;
+        _transferStarted = System.currentTimeMillis();
+        _lastTransferred = _transferStarted;
 
         Mode mode = createMode(gftpProtocolInfo.getMode(), role, fileChannel);
         _mode = mode;
@@ -396,7 +394,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             InetAddress localAddress = null;
             if (passive) {
                 InetAddress clientAddress =
-                        InetAddress.getByName(gftpProtocolInfo.getClientAddress());
+                      InetAddress.getByName(gftpProtocolInfo.getClientAddress());
                 localAddress = NetworkUtils.getLocalAddress(clientAddress, protocolFamily);
                 if (localAddress == null) {
                     passive = false;
@@ -418,9 +416,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 _portRange.bind(channel.socket(), localAddress, 128);
 
                 message =
-                        new GFtpTransferStartedMessage(fileAttributes.getPnfsId().toString(),
-                                                       channel.socket().getInetAddress().getHostAddress(),
-                                                       channel.socket().getLocalPort());
+                      new GFtpTransferStartedMessage(fileAttributes.getPnfsId().toString(),
+                            channel.socket().getInetAddress().getHostAddress(),
+                            channel.socket().getLocalPort());
                 mode.setPassive(channel);
             } else {
                 /* If passive mode is disabled, then fall back to
@@ -430,7 +428,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 message = new GFtpTransferStartedMessage(fileAttributes.getPnfsId().toString());
             }
             CellPath path = new CellPath(gftpProtocolInfo.getDoorCellName(),
-                                         gftpProtocolInfo.getDoorCellDomainName());
+                  gftpProtocolInfo.getDoorCellDomainName());
             _cell.sendMessage(new CellMessage(path, message));
         }
 
@@ -452,14 +450,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * In either case, set the parallelism to one.
          */
         switch (Character.toUpperCase(gftpProtocolInfo.getMode().charAt(0))) {
-        case 'E':
-            if (role == Role.Receiver && !passive) {
+            case 'E':
+                if (role == Role.Receiver && !passive) {
+                    parallelism = 1;
+                }
+                break;
+            case 'S':
                 parallelism = 1;
-            }
-            break;
-        case 'S':
-            parallelism = 1;
-            break;
+                break;
         }
         mode.setParallelism(parallelism);
 
@@ -468,7 +466,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * sorry...
          */
         if (role == Role.Sender) {
-            long fileSize   = fileChannel.size();
+            long fileSize = fileChannel.size();
             if (offset < 0) {
                 String err = "prm_offset is " + offset;
                 _log.error(err);
@@ -481,7 +479,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             }
             if (offset + size > fileSize) {
                 String err = "invalid prm_offset=" + offset + " and prm_size "
-                        + size + " for file of size " + fileSize;
+                      + size + " for file of size " + fileSize;
                 _log.error(err);
                 throw new IllegalArgumentException(err);
             }
@@ -499,14 +497,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             error = Optional.of(Exceptions.getMessageWithCauses(e));
             throw e;
         } finally {
-            if (_logAbortedTransfer && (!_blockLog.isComplete() || !mode.hasCompletedSuccessfully() || _bytesTransferred < mode.getSize())) {
+            if (_logAbortedTransfer && (!_blockLog.isComplete() || !mode.hasCompletedSuccessfully()
+                  || _bytesTransferred < mode.getSize())) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new LineIndentingPrintWriter(sw, "    ");
                 error.ifPresent(msg -> pw.println("Cause: " + msg));
                 getInfo(pw);
                 String info = sw.toString();
                 _log.warn("Incomplete transfer; details follow:\n{}",
-                        info.substring(0, info.length()-1)); // Strip final '\n'
+                      info.substring(0, info.length() - 1)); // Strip final '\n'
             }
 
             /* Log some useful information about the transfer. This
@@ -516,13 +515,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             gftpProtocolInfo.setTransferTime(getTransferTime());
             if (passive) {
                 gftpProtocolInfo.setSocketAddress(
-                        Iterables.getFirst(_mode.getRemoteAddresses(), gftpProtocolInfo.getSocketAddress()));
+                      Iterables.getFirst(_mode.getRemoteAddresses(),
+                            gftpProtocolInfo.getSocketAddress()));
             }
         }
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("Direction: " + (_role == Role.Receiver ? "UPLOAD" : "DOWNLOAD"));
         pw.println("Mode: " + _mode.name());
         _mode.getInfo(new LineIndentingPrintWriter(pw, "    "));
@@ -530,8 +529,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             try {
                 long fileSize = _fileChannel.size();
                 pw.println("File size: " + describeSize(fileSize));
-                String percent = toThreeSigFig(100 * _bytesTransferred / (double)fileSize, 1000);
-                pw.println("Transferred: " + describeSize(_bytesTransferred) + " (" + percent + "% of file)");
+                String percent = toThreeSigFig(100 * _bytesTransferred / (double) fileSize, 1000);
+                pw.println("Transferred: " + describeSize(_bytesTransferred) + " (" + percent
+                      + "% of file)");
             } catch (IOException e) {
                 pw.println("Transferred: " + describeSize(_bytesTransferred));
             }
@@ -539,45 +539,49 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             pw.println("Transferred: " + describeSize(_bytesTransferred));
         }
         Optional<Instant> started = _transferStarted == 0
-                ? Optional.empty()
-                : Optional.of(Instant.ofEpochMilli(_transferStarted));
+              ? Optional.empty()
+              : Optional.of(Instant.ofEpochMilli(_transferStarted));
         pw.println("Mover started: " + describe(started));
         Optional<Instant> lastTransferred = _lastTransferred == _transferStarted
-                ? Optional.empty()
-                : Optional.of(Instant.ofEpochMilli(_lastTransferred));
+              ? Optional.empty()
+              : Optional.of(Instant.ofEpochMilli(_lastTransferred));
         pw.println("Last " + (_role == Role.Receiver ? "received" : "sent")
-                + " data: " + describe(lastTransferred));
+              + " data: " + describe(lastTransferred));
         _fileChannel.optionallyAs(IoStatisticsChannel.class)
-                .ifPresent(c -> c.getInfo(pw));
+              .ifPresent(c -> c.getInfo(pw));
         _blockLog.getInfo(pw);
     }
 
-    /** Part of the MoverProtocol interface. */
+    /**
+     * Part of the MoverProtocol interface.
+     */
     @Override
-    public long getBytesTransferred()
-    {
+    public long getBytesTransferred() {
         return _bytesTransferred;
     }
 
-    /** Part of the MoverProtocol interface. */
+    /**
+     * Part of the MoverProtocol interface.
+     */
     @Override
-    public long getTransferTime()
-    {
+    public long getTransferTime() {
         return (_inProgress ? System.currentTimeMillis() : _lastTransferred)
-                - _transferStarted;
+              - _transferStarted;
     }
 
-    /** Part of the MoverProtocol interface. */
+    /**
+     * Part of the MoverProtocol interface.
+     */
     @Override
-    public long getLastTransferred()
-    {
+    public long getLastTransferred() {
         return _lastTransferred;
     }
 
-    /** Part of the ConnectionMonitor interface. */
+    /**
+     * Part of the ConnectionMonitor interface.
+     */
     @Override
-    public void receivedBlock(long position, long size) throws FTPException
-    {
+    public void receivedBlock(long position, long size) throws FTPException {
         checkState(_role == Role.Receiver, "Only receivers can receive");
         checkArgument(position >= 0, "Position must be non-negative");
         checkArgument(size >= 0, "Size must be non-negative");
@@ -589,10 +593,11 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _lastTransferred = System.currentTimeMillis();
     }
 
-    /** Part of the ConnectionMonitor interface. */
+    /**
+     * Part of the ConnectionMonitor interface.
+     */
     @Override
-    public void sentBlock(long position, long size) throws FTPException
-    {
+    public void sentBlock(long position, long size) throws FTPException {
         checkState(_role == Role.Sender, "Only senders can send");
         checkArgument(position >= 0, "Position must be non-negative");
         checkArgument(size >= 0, "Size must be non-negative");
@@ -605,11 +610,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /**
-     * Returns the value of an option, or a default value if the
-     * option has not been set.
+     * Returns the value of an option, or a default value if the option has not been set.
      */
-    public static String getOption(Args args, String name, String defaultValue)
-    {
+    public static String getOption(Args args, String name, String defaultValue) {
         String value = args.getOpt(name);
         return value == null ? defaultValue : value;
     }
@@ -617,8 +620,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Prints help information for the test utility to stdout.
      */
-    public static void help()
-    {
+    public static void help() {
         System.out.println("Usage: mover -l [OPTION]... ROLE FILE");
         System.out.println("       mover [OPTION]... ROLE FILE HOSTNAME");
         System.out.println("where ROLE is either -s or -r");
@@ -638,12 +640,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public static void main(String a[]) {
         try {
             Args args = new Args(a);
-            int port        = Integer.parseInt(getOption(args, "port", "2288"));
-            int bufferSize  = Integer.parseInt(getOption(args, "buffer", "0"));
+            int port = Integer.parseInt(getOption(args, "port", "2288"));
+            int bufferSize = Integer.parseInt(getOption(args, "buffer", "0"));
             int parallelism = Integer.parseInt(getOption(args, "streams", "1"));
-            long offset     = Long.parseLong(getOption(args, "offset", "0"));
-            long size       = Long.parseLong(getOption(args, "size", "0"));
-            String digest   = getOption(args, "digest", "");
+            long offset = Long.parseLong(getOption(args, "offset", "0"));
+            long size = Long.parseLong(getOption(args, "size", "0"));
+            String digest = getOption(args, "digest", "");
 
             Role role = Role.Receiver;
             if (args.isOneCharOption('r')) {
@@ -655,14 +657,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             }
 
             GFtpProtocol_2_nio mover =
-                    new GFtpProtocol_2_nio(null);
+                  new GFtpProtocol_2_nio(null);
 
             RepositoryChannel fileChannel =
-                    new FileRepositoryChannel(FileSystems.getDefault().getPath(args.argv(0)),
-                                              role == Role.Sender ? FileStore.O_READ : FileStore.O_RW);
+                  new FileRepositoryChannel(FileSystems.getDefault().getPath(args.argv(0)),
+                        role == Role.Sender ? FileStore.O_READ : FileStore.O_RW);
 
             Mode mode =
-                    mover.createMode(getOption(args, "mode", "S"), role, fileChannel);
+                  mover.createMode(getOption(args, "mode", "S"), role, fileChannel);
 
             if (args.isOneCharOption('l')) {
                 if (args.argc() != 1) {
@@ -701,8 +703,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mover.transfer(fileChannel, role, mode);
 
             if (fileChannel instanceof ChecksumChannel) {
-                Set<Checksum> checksums = ((ChecksumChannel)fileChannel).getChecksums();
-                System.out.println(checksums.stream().map(Checksum::toString).collect(Collectors.joining(", ")));
+                Set<Checksum> checksums = ((ChecksumChannel) fileChannel).getChecksums();
+                System.out.println(
+                      checksums.stream().map(Checksum::toString).collect(Collectors.joining(", ")));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -711,8 +714,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     @Override
-    public void setCellArgs(Args args)
-    {
+    public void setCellArgs(Args args) {
         _allowPassivePool = args.getBooleanOption("ftpAllowIncomingConnections");
 
         if (args.hasOption("gsiftpBlockSize")) {

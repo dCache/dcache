@@ -1,27 +1,27 @@
 package org.dcache.auth;
 
-import com.google.common.collect.ImmutableSet;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
-
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Set;
-
-import org.dcache.util.PrincipalSetMaker;
-
 import static java.util.Arrays.asList;
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-public class SubjectsTest
-{
+import com.google.common.collect.ImmutableSet;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import javax.security.auth.Subject;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.junit.Before;
+import org.junit.Test;
+
+public class SubjectsTest {
+
     private final static String USERNAME1 = "user1";
     private final static String USERNAME2 = "user2";
 
@@ -31,9 +31,9 @@ public class SubjectsTest
     private final static long GID2 = 1001;
 
     private final static String DN1 =
-        "/O=Grid/O=example/OU=example.org/CN=Tester 1";
+          "/O=Grid/O=example/OU=example.org/CN=Tester 1";
     private final static String DN2 =
-        "/O=Grid/O=example/OU=example.org/CN=Tester 2";
+          "/O=Grid/O=example/OU=example.org/CN=Tester 2";
 
     private final static String ROLE = "tester";
     private final static FQAN FQAN1 = new FQAN("/example");
@@ -46,8 +46,7 @@ public class SubjectsTest
     private Subject _subject4;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         _subject1 = new Subject();
         _subject1.getPrincipals().add(new UidPrincipal(UID1));
         _subject1.getPrincipals().add(new GidPrincipal(GID1, true));
@@ -87,187 +86,167 @@ public class SubjectsTest
     }
 
     @Test
-    public void testIsRoot()
-    {
+    public void testIsRoot() {
         assertTrue("ROOT must be root",
-                   Subjects.isRoot(Subjects.ROOT));
+              Subjects.isRoot(Subjects.ROOT));
         assertFalse("NOBODY must not be root",
-                    Subjects.isRoot(Subjects.NOBODY));
+              Subjects.isRoot(Subjects.NOBODY));
     }
 
     @Test
-    public void testHasUid()
-    {
+    public void testHasUid() {
         assertTrue("Subject must have its UID",
-                   Subjects.hasUid(_subject1, UID1));
+              Subjects.hasUid(_subject1, UID1));
         assertFalse("Subject must not have foreign UID",
-                    Subjects.hasUid(_subject1, UID2));
+              Subjects.hasUid(_subject1, UID2));
         assertTrue("Subject must have its UID",
-                   Subjects.hasUid(_subject3, UID1));
+              Subjects.hasUid(_subject3, UID1));
         assertTrue("Subject must have its UID",
-                   Subjects.hasUid(_subject3, UID2));
+              Subjects.hasUid(_subject3, UID2));
     }
 
     @Test
-    public void testGetUid()
-    {
+    public void testGetUid() {
         assertEquals("Subject must provide its UID",
-                     UID1, Subjects.getUid(_subject1));
+              UID1, Subjects.getUid(_subject1));
         assertEquals("Subject must provide its UID",
-                     UID2, Subjects.getUid(_subject2));
+              UID2, Subjects.getUid(_subject2));
     }
 
     @Test
-    public void testGetUids()
-    {
+    public void testGetUids() {
         assertTrue("NOBODY must not have UIDs",
-                Subjects.getUids(Subjects.NOBODY).length == 0);
+              Subjects.getUids(Subjects.NOBODY).length == 0);
         assertArrayEquals("Subject with one UID must have that UID",
-                new long[] { UID1 }, Subjects.getUids(_subject1));
+              new long[]{UID1}, Subjects.getUids(_subject1));
         assertArrayEquals("Subject with several UIDs must have those UIDs",
-                new long[] {UID1, UID2}, Subjects.getUids(_subject3));
+              new long[]{UID1, UID2}, Subjects.getUids(_subject3));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetUidWithMultipleUids()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetUidWithMultipleUids() {
         Subjects.getUid(_subject3);
     }
 
-    @Test(expected=NoSuchElementException.class)
-    public void testGetUidWithNoUid()
-    {
+    @Test(expected = NoSuchElementException.class)
+    public void testGetUidWithNoUid() {
         Subjects.getUid(Subjects.NOBODY);
     }
 
     @Test
-    public void testHasGid()
-    {
+    public void testHasGid() {
         assertTrue("Subject must have its GID",
-                   Subjects.hasGid(_subject1, GID1));
+              Subjects.hasGid(_subject1, GID1));
         assertFalse("Subject must not have foreign GID",
-                    Subjects.hasGid(_subject1, GID2));
+              Subjects.hasGid(_subject1, GID2));
         assertFalse("Subject must not have foreign GID",
-                    Subjects.hasGid(_subject2, GID1));
+              Subjects.hasGid(_subject2, GID1));
         assertTrue("Subject must have its GID",
-                   Subjects.hasGid(_subject2, GID2));
+              Subjects.hasGid(_subject2, GID2));
         assertTrue("Subject must have its GID",
-                   Subjects.hasGid(_subject3, GID1));
+              Subjects.hasGid(_subject3, GID1));
         assertTrue("Subject must have its GID",
-                   Subjects.hasGid(_subject3, GID2));
+              Subjects.hasGid(_subject3, GID2));
     }
 
     @Test
-    public void testGetPrimaryGid()
-    {
+    public void testGetPrimaryGid() {
         assertEquals("Subject must provide its primary GID",
-                     GID1, Subjects.getPrimaryGid(_subject1));
+              GID1, Subjects.getPrimaryGid(_subject1));
         assertEquals("Subject must provide its primary GID",
-                     GID2, Subjects.getPrimaryGid(_subject3));
+              GID2, Subjects.getPrimaryGid(_subject3));
     }
 
     @Test
-    public void testGetGids()
-    {
+    public void testGetGids() {
         assertArrayEquals("NOBODY must not have GIDs",
-                          new long[] { }, Subjects.getGids(Subjects.NOBODY));
+              new long[]{}, Subjects.getGids(Subjects.NOBODY));
         assertArrayEquals("Subject with primary GID must provide that GID",
-                          new long[] { GID1 }, Subjects.getGids(_subject1));
+              new long[]{GID1}, Subjects.getGids(_subject1));
         assertArrayEquals("Subject with non primary GID must provide that GID",
-                          new long[] { GID2 }, Subjects.getGids(_subject2));
+              new long[]{GID2}, Subjects.getGids(_subject2));
         assertArrayEquals("Subject with several GIDs must provide all of them",
-                          new long[] { GID2, GID1 }, Subjects.getGids(_subject3));
+              new long[]{GID2, GID1}, Subjects.getGids(_subject3));
     }
 
-    @Test(expected=NoSuchElementException.class)
-    public void testGetPrimaryGidWithNoPrimaryGid()
-    {
+    @Test(expected = NoSuchElementException.class)
+    public void testGetPrimaryGidWithNoPrimaryGid() {
         Subjects.getPrimaryGid(_subject2);
     }
 
     @Test
-    public void testGetUserNameWithNull()
-    {
+    public void testGetUserNameWithNull() {
         assertNull(Subjects.getUserName(null));
     }
 
     @Test
-    public void testGetUserName()
-    {
+    public void testGetUserName() {
         assertNull("Root must not have user name",
-                   Subjects.getUserName(Subjects.ROOT));
+              Subjects.getUserName(Subjects.ROOT));
         assertEquals("Subject with one user name must provide that name",
-                     USERNAME1, Subjects.getUserName(_subject1));
+              USERNAME1, Subjects.getUserName(_subject1));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetUserNameWithMultipleUserNames()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetUserNameWithMultipleUserNames() {
         Subjects.getUserName(_subject3);
     }
 
     @Test
-    public void testGetDn()
-    {
+    public void testGetDn() {
         assertNull("Root must not have DN", Subjects.getDn(Subjects.ROOT));
         assertEquals("Subject with one DN must have correct DN",
-                     DN1, Subjects.getDn(_subject1));
+              DN1, Subjects.getDn(_subject1));
         assertEquals("Subject with one DN must have correct DN",
-                     DN2, Subjects.getDn(_subject2));
+              DN2, Subjects.getDn(_subject2));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetDnWithMultipleDns()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetDnWithMultipleDns() {
         Subjects.getDn(_subject3);
     }
 
     @Test
-    public void testGetFqans()
-    {
+    public void testGetFqans() {
         assertTrue("Root must not have FQANs",
-                    Subjects.getFqans(Subjects.ROOT).isEmpty());
+              Subjects.getFqans(Subjects.ROOT).isEmpty());
         assertEquals("Subject with primary FQAN must have correct FQAN",
-                     ImmutableSet.of(FQAN1),
-                     new HashSet<>(Subjects.getFqans(_subject1)));
+              ImmutableSet.of(FQAN1),
+              new HashSet<>(Subjects.getFqans(_subject1)));
         assertEquals("Subject with no primary FQAN must have correct FQAN",
-                     ImmutableSet.of(FQAN2),
-                     new HashSet<>(Subjects.getFqans(_subject2)));
+              ImmutableSet.of(FQAN2),
+              new HashSet<>(Subjects.getFqans(_subject2)));
         assertEquals("Subject with multiple FQANs must have correct FQANs",
-                     ImmutableSet.of(FQAN1, FQAN2, FQAN3),
-                     new HashSet<>(Subjects.getFqans(_subject3)));
+              ImmutableSet.of(FQAN1, FQAN2, FQAN3),
+              new HashSet<>(Subjects.getFqans(_subject3)));
     }
 
     @Test
-    public void testGetPrimaryFqan()
-    {
+    public void testGetPrimaryFqan() {
         assertEquals("Subject with one FQAN must have correct primary FQAN",
-                     FQAN1, Subjects.getPrimaryFqan(_subject1));
+              FQAN1, Subjects.getPrimaryFqan(_subject1));
         assertEquals("Subject with multiple FQANs must have correct primary FQAN",
-                     FQAN2, Subjects.getPrimaryFqan(_subject3));
+              FQAN2, Subjects.getPrimaryFqan(_subject3));
     }
 
     @Test
-    public void testGetPrimaryFqanWithNoFqans()
-    {
+    public void testGetPrimaryFqanWithNoFqans() {
         assertNull("Subject must not have any FQANs",
-                   Subjects.getPrimaryFqan(Subjects.ROOT));
+              Subjects.getPrimaryFqan(Subjects.ROOT));
     }
 
     @Test
-    public void testGetPrimaryFqanWithNoPrimaryFqan()
-    {
+    public void testGetPrimaryFqanWithNoPrimaryFqan() {
         assertNull("Subject must not have a primary FQAN",
-                   Subjects.getPrimaryFqan(_subject2));
+              Subjects.getPrimaryFqan(_subject2));
     }
 
     @Test
-    public void testGetSubjectWithMulitipleGids()
-    {
+    public void testGetSubjectWithMulitipleGids() {
         UserAuthRecord authRecord = new UserAuthRecord();
-        authRecord.UID = (int)UID1;
-        authRecord.GIDs.add((int)GID1);
-        authRecord.GIDs.add((int)GID2);
+        authRecord.UID = (int) UID1;
+        authRecord.GIDs.add((int) GID1);
+        authRecord.GIDs.add((int) GID2);
         Subject subject = Subjects.getSubject(authRecord);
         long[] gids = Subjects.getGids(subject);
 
@@ -275,23 +254,20 @@ public class SubjectsTest
         assertEquals(GID2, gids[1]);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectOidcWithoutOP()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectOidcWithoutOP() {
         Subjects.principalsFromArgs(asList("oidc:sub-claim"));
     }
 
     @Test
-    public void shouldPrincipalsFromArgsForOidc()
-    {
+    public void shouldPrincipalsFromArgsForOidc() {
         Set<Principal> principals = Subjects.principalsFromArgs(asList("oidc:sub-claim@OP"));
 
         assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim", "OP")));
     }
 
     @Test
-    public void normalUserShouldNotBeExceptFromNamespaceChecks()
-    {
+    public void normalUserShouldNotBeExceptFromNamespaceChecks() {
         var subject = Subjects.of(aSetOfPrincipals().withOidc("sub-claim", "OP"));
 
         assertFalse(Subjects.isExemptFromNamespaceChecks(_subject1));
@@ -302,20 +278,18 @@ public class SubjectsTest
     }
 
     @Test
-    public void rootShouldBeExceptFromNamespaceChecks()
-    {
+    public void rootShouldBeExceptFromNamespaceChecks() {
         var root = Subjects.of(aSetOfPrincipals().withUid(0).withPrimaryGid(0));
 
         assertTrue(Subjects.isExemptFromNamespaceChecks(root));
     }
 
     @Test
-    public void exemptUserShouldBeExceptFromNamespaceChecks()
-    {
+    public void exemptUserShouldBeExceptFromNamespaceChecks() {
         var root = Subjects.of(aSetOfPrincipals()
-                .withUid(1000)
-                .withPrimaryGid(1000)
-                .withExemptFromNamespaceChecks());
+              .withUid(1000)
+              .withPrimaryGid(1000)
+              .withExemptFromNamespaceChecks());
 
         assertTrue(Subjects.isExemptFromNamespaceChecks(root));
     }

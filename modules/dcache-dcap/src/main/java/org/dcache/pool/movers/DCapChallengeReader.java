@@ -3,21 +3,18 @@
  */
 package org.dcache.pool.movers;
 
+import static org.dcache.util.ByteUnit.KiB;
+
+import diskCacheV111.util.DCapProrocolChallenge;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Base64;
-
-import diskCacheV111.util.DCapProrocolChallenge;
-
 import org.dcache.net.ChallengeReader;
 
-import static org.dcache.util.ByteUnit.KiB;
+class DCapChallengeReader implements ChallengeReader {
 
-class DCapChallengeReader implements ChallengeReader
-{
     @Override
-    public Object getChallenge(SocketChannel socketChannel)
-    {
+    public Object getChallenge(SocketChannel socketChannel) {
         DCapProrocolChallenge challenge = null;
 
         /*
@@ -48,7 +45,7 @@ class DCapChallengeReader implements ChallengeReader
 
             challenge = new DCapProrocolChallenge(sessionId, recivedChallengeBase);
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             // e.printStackTrace();
         }
 

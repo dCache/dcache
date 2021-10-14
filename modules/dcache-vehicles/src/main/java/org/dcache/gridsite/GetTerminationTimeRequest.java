@@ -18,29 +18,25 @@
  */
 package org.dcache.gridsite;
 
+import java.io.Serializable;
 import javax.security.auth.Subject;
 
-import java.io.Serializable;
+public class GetTerminationTimeRequest implements Serializable {
 
-public class GetTerminationTimeRequest implements Serializable
-{
     private static final long serialVersionUID = -1370446943297122076L;
     private final Subject subject;
     private final String delegationID;
 
-    public GetTerminationTimeRequest(Subject subject, String delegationID)
-    {
+    public GetTerminationTimeRequest(Subject subject, String delegationID) {
         this.subject = subject;
         this.delegationID = delegationID;
     }
 
-    public String getDelegationID()
-    {
+    public String getDelegationID() {
         return delegationID;
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 }

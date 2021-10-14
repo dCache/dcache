@@ -17,25 +17,23 @@
  */
 package org.dcache.ftp.door;
 
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
 import diskCacheV111.util.ConfigurationException;
-
+import java.io.IOException;
 import org.dcache.dss.DssContextFactory;
 import org.dcache.dss.KerberosDssContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.Option;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class KerberosFtpInterpreterFactory extends FtpInterpreterFactory
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(KerberosFtpInterpreterFactory.class);
+public class KerberosFtpInterpreterFactory extends FtpInterpreterFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          KerberosFtpInterpreterFactory.class);
 
     @Option(name = "svc-principal",
-            required = true)
+          required = true)
     private String servicePrincipal;
 
     @Option(name = "kdc-list")
@@ -44,24 +42,22 @@ public class KerberosFtpInterpreterFactory extends FtpInterpreterFactory
     private DssContextFactory dssContextFactory;
 
     @Override
-    public void configure(Args args) throws ConfigurationException
-    {
+    public void configure(Args args) throws ConfigurationException {
         super.configure(args);
         try {
             dssContextFactory = createDssContextFactory();
         } catch (IOException | GSSException e) {
-            throw new ConfigurationException("Failed to create security context:" + e.getMessage(), e);
+            throw new ConfigurationException("Failed to create security context:" + e.getMessage(),
+                  e);
         }
     }
 
     @Override
-    protected AbstractFtpDoorV1 createInterpreter()
-    {
+    protected AbstractFtpDoorV1 createInterpreter() {
         return new KerberosFtpDoorV1(dssContextFactory);
     }
 
-    protected DssContextFactory createDssContextFactory() throws IOException, GSSException
-    {
+    protected DssContextFactory createDssContextFactory() throws IOException, GSSException {
         int nretry = 10;
         String[] kdcList = (this.kdcList != null) ? this.kdcList.split(",") : new String[0];
         GSSException error;
@@ -74,7 +70,7 @@ public class KerberosFtpInterpreterFactory extends FtpInterpreterFactory
                 return new KerberosDssContextFactory(servicePrincipal);
             } catch (GSSException e) {
                 LOGGER.debug("KerberosFTPDoorV1::getServiceContext: got exception " +
-                             " while looking up credential: {}", e.getMessage());
+                      " while looking up credential: {}", e.getMessage());
                 error = e;
             }
             --nretry;

@@ -82,15 +82,14 @@ COPYRIGHT STATUS:
 package org.dcache.srm;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public interface Logger {
-    
+
     void log(String s);
-    
+
     void elog(String s);
-    
+
     void elog(Throwable t);
-    
+
 }

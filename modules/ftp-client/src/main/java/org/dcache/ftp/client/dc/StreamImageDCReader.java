@@ -15,15 +15,13 @@
  */
 package org.dcache.ftp.client.dc;
 
-import java.io.InputStream;
-import java.io.IOException;
-
-import org.dcache.ftp.client.Buffer;
-
 import static org.dcache.util.ByteUnit.KiB;
 
-public class StreamImageDCReader implements DataChannelReader
-{
+import java.io.IOException;
+import java.io.InputStream;
+import org.dcache.ftp.client.Buffer;
+
+public class StreamImageDCReader implements DataChannelReader {
 
     public static final int BUF_SIZE = KiB.toBytes(500);
 
@@ -31,15 +29,13 @@ public class StreamImageDCReader implements DataChannelReader
     protected InputStream input;
 
     @Override
-    public void setDataStream(InputStream in)
-    {
+    public void setDataStream(InputStream in) {
         input = in;
     }
 
     @Override
     public Buffer read()
-            throws IOException
-    {
+          throws IOException {
         byte[] bt = new byte[bufferSize];
         int read = input.read(bt);
         if (read == -1) {
@@ -51,8 +47,7 @@ public class StreamImageDCReader implements DataChannelReader
 
     @Override
     public void close()
-            throws IOException
-    {
+          throws IOException {
         input.close();
     }
 

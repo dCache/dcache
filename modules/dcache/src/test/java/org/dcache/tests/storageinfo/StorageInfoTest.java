@@ -1,9 +1,14 @@
 package org.dcache.tests.storageinfo;
 
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -16,13 +21,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.GenericStorageInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class StorageInfoTest {
 
@@ -30,7 +30,8 @@ public class StorageInfoTest {
 
     @Before
     public void setUp() throws Exception {
-        _storageInfo = readStorageInfo(ClassLoader.getSystemResourceAsStream("org/dcache/tests/storageinfo/storageInfo-1.7"));
+        _storageInfo = readStorageInfo(ClassLoader.getSystemResourceAsStream(
+              "org/dcache/tests/storageinfo/storageInfo-1.7"));
     }
 
     @Test
@@ -50,12 +51,13 @@ public class StorageInfoTest {
     @Test
     public void testStorageInfoRetentionPolicy() throws Exception {
         RetentionPolicy retentionPolicy = _storageInfo.getLegacyRetentionPolicy();
-        assertNotNull("pre 1.8 storageInfo should return non null retention policy", retentionPolicy);
+        assertNotNull("pre 1.8 storageInfo should return non null retention policy",
+              retentionPolicy);
     }
 
     @Test
     public void testStorageInfoLocationSet() throws Exception {
-       _storageInfo.isSetAddLocation();
+        _storageInfo.isSetAddLocation();
         // do nothing , just check for null pointer exception
     }
 
@@ -84,8 +86,9 @@ public class StorageInfoTest {
         String bfid = _storageInfo.getBitfileId();
 
         assertNotNull("String representation of bit file id should be not a null", bfid);
-        if( !bfid.equals("<Unknown>")) {
-            assertTrue("with known bitfileid storage info should declared itself as stored", _storageInfo.isStored());
+        if (!bfid.equals("<Unknown>")) {
+            assertTrue("with known bitfileid storage info should declared itself as stored",
+                  _storageInfo.isStored());
         }
     }
 
@@ -94,7 +97,7 @@ public class StorageInfoTest {
 
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
 
-        assertTrue("equal storageInfo did not pass", storageInfo.equals(storageInfo) );
+        assertTrue("equal storageInfo did not pass", storageInfo.equals(storageInfo));
 
     }
 
@@ -104,8 +107,9 @@ public class StorageInfoTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
 
-        assertTrue("equal storageInfo did not pass", storageInfo.equals(otherInfo) );
-        assertTrue("equals requre hash codes to be the same", storageInfo.hashCode() == otherInfo.hashCode());
+        assertTrue("equal storageInfo did not pass", storageInfo.equals(otherInfo));
+        assertTrue("equals requre hash codes to be the same",
+              storageInfo.hashCode() == otherInfo.hashCode());
     }
 
     @Test
@@ -115,13 +119,16 @@ public class StorageInfoTest {
 
         final String URI_STRING = "osm://osm/&foo=bar";
 
-        storageInfo.addLocation( new URI( URI_STRING));
-        storageInfo.addLocation( new URI( URI_STRING));
+        storageInfo.addLocation(new URI(URI_STRING));
+        storageInfo.addLocation(new URI(URI_STRING));
 
-        otherInfo.addLocation( new URI( URI_STRING));
+        otherInfo.addLocation(new URI(URI_STRING));
 
-        assertTrue( "storageInfo.equals() with uneven number of identical location URIs", storageInfo.equals(  otherInfo));
-        assertTrue( "stoageInfo.hashCode() was different with uneven number of identical location URIs", storageInfo.hashCode() == otherInfo.hashCode());
+        assertTrue("storageInfo.equals() with uneven number of identical location URIs",
+              storageInfo.equals(otherInfo));
+        assertTrue(
+              "stoageInfo.hashCode() was different with uneven number of identical location URIs",
+              storageInfo.hashCode() == otherInfo.hashCode());
     }
 
     @Test
@@ -130,7 +137,7 @@ public class StorageInfoTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:rawd");
 
-        assertFalse("not equal storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal storageInfo pass", storageInfo.equals(otherInfo));
     }
 
 
@@ -143,7 +150,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setLegacyRetentionPolicy(RetentionPolicy.OUTPUT);
 
-        assertFalse("not equal by RetantionPolicy storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by RetantionPolicy storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -155,7 +162,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setLegacyAccessLatency(AccessLatency.ONLINE);
 
-        assertFalse("not equal by AccessLatency storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by AccessLatency storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -164,7 +171,7 @@ public class StorageInfoTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
         StorageInfo otherInfo = new GenericStorageInfo("enstore", "h1:raw");
 
-        assertFalse("not equal by HSM storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by HSM storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -175,7 +182,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setLegacySize(21);
 
-        assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -186,7 +193,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.setKey("not bla", "bla");
 
-        assertFalse("not equal by map storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by map storageInfo pass", storageInfo.equals(otherInfo));
     }
 
 
@@ -198,7 +205,7 @@ public class StorageInfoTest {
         StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
         otherInfo.addLocation(new URI("enstore://enstore?bf2"));
 
-        assertFalse("not equal by location storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by location storageInfo pass", storageInfo.equals(otherInfo));
     }
 
 
@@ -211,7 +218,7 @@ public class StorageInfoTest {
         storageInfo.setIsStored(false);
         otherInfo.setIsStored(true);
 
-        assertFalse("not equal by isSored storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by isSored storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -223,7 +230,7 @@ public class StorageInfoTest {
         storageInfo.setIsNew(false);
         otherInfo.setIsNew(true);
 
-        assertFalse("not equal by isNew storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by isNew storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
@@ -235,12 +242,11 @@ public class StorageInfoTest {
         storageInfo.setBitfileId("1");
         otherInfo.setBitfileId("2");
 
-        assertFalse("not equal by BitfileId storageInfo pass", storageInfo.equals(otherInfo) );
+        assertFalse("not equal by BitfileId storageInfo pass", storageInfo.equals(otherInfo));
     }
 
     @Test
-    public void testClone() throws URISyntaxException
-    {
+    public void testClone() throws URISyntaxException {
         StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
 
         final String URI_STRING = "osm://osm/&foo=bar";
@@ -254,12 +260,11 @@ public class StorageInfoTest {
         storageInfo.setLegacyAccessLatency(AccessLatency.NEARLINE);
 
         assertTrue("Clone is not equals to original",
-                   storageInfo.equals(storageInfo.clone()));
+              storageInfo.equals(storageInfo.clone()));
     }
 
     private static StorageInfo readStorageInfo(InputStream objIn)
-        throws IOException
-    {
+          throws IOException {
         ObjectInputStream in = null;
         StorageInfo storageInfo = null;
 
@@ -272,11 +277,11 @@ public class StorageInfoTest {
 
         } catch (InvalidClassException ife) {
             // valid exception if siFIle is broken
-        } catch( StreamCorruptedException sce ) {
+        } catch (StreamCorruptedException sce) {
             // valid exception if siFIle is broken
         } catch (OptionalDataException ode) {
             // valid exception if siFIle is broken
-        } catch (EOFException eof){
+        } catch (EOFException eof) {
             // object file size mismatch
         } finally {
             if (in != null) {

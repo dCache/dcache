@@ -1,10 +1,9 @@
 package diskCacheV111.util;
 
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
-
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 public class HsmLocationExtractorFactoryTest {
 
@@ -14,7 +13,7 @@ public class HsmLocationExtractorFactoryTest {
         try {
             HsmLocationExtractorFactory.validate(location);
             fail("invalid location not detected");
-        }catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // OK
         }
     }
@@ -44,11 +43,13 @@ public class HsmLocationExtractorFactoryTest {
 
     @Test
     public void testExample1ValidateOk() throws Exception {
-        HsmLocationExtractorFactory.validate(new URI("osm://desy-main/?store=sql&group=chimera&bfid=3434.0.994.1188400818542"));
+        HsmLocationExtractorFactory.validate(
+              new URI("osm://desy-main/?store=sql&group=chimera&bfid=3434.0.994.1188400818542"));
     }
 
     @Test
     public void testExample2ValidateOk() throws Exception {
-        HsmLocationExtractorFactory.validate(new URI("osm://desy-dup/?store=sql&group=chimera&bfid=3434.0.994.1188400818542"));
+        HsmLocationExtractorFactory.validate(
+              new URI("osm://desy-dup/?store=sql&group=chimera&bfid=3434.0.994.1188400818542"));
     }
 }

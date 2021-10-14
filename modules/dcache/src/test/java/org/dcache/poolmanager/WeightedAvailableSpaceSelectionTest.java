@@ -1,32 +1,27 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Functions;
-import org.junit.Test;
-
-import java.util.Collections;
-
-import diskCacheV111.pools.PoolCostInfo;
-
-import org.dcache.pool.classic.IoQueueManager;
-
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-public class WeightedAvailableSpaceSelectionTest
-{
+import com.google.common.base.Functions;
+import diskCacheV111.pools.PoolCostInfo;
+import org.dcache.pool.classic.IoQueueManager;
+import org.junit.Test;
+
+public class WeightedAvailableSpaceSelectionTest {
+
     private final WeightedAvailableSpaceSelection wass =
-        new WeightedAvailableSpaceSelection(1.0, 1.0);
+          new WeightedAvailableSpaceSelection(1.0, 1.0);
 
     public void checkAvailable(long expected,
-                               long free,
-                               long removable,
-                               double breakeven,
-                               long lru,
-                               long gap)
-    {
+          long free,
+          long removable,
+          double breakeven,
+          long lru,
+          long gap) {
         PoolCostInfo info = new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(free + removable, free, 0, removable, lru);
         info.getSpaceInfo().setParameter(breakeven, gap);
@@ -34,59 +29,51 @@ public class WeightedAvailableSpaceSelectionTest
     }
 
     @Test
-    public void testNoRemovable()
-    {
+    public void testNoRemovable() {
         checkAvailable(1000000, 1000000, 0, 0.5, 1000, 1000);
     }
 
     @Test
-    public void testNoRemovableLessThanGap()
-    {
+    public void testNoRemovableLessThanGap() {
         checkAvailable(0, 1000000, 0, 0.5, 1000, 1000000);
     }
 
     @Test
-    public void testBreakEvenZero()
-    {
+    public void testBreakEvenZero() {
         checkAvailable(1500000, 1000000, 500000, 0.0, 1000, 1000);
     }
 
     @Test
-    public void testBreakLruZero()
-    {
+    public void testBreakLruZero() {
         checkAvailable(1000000, 1000000, 500000, 0.5, 0, 1000);
     }
 
     @Test
-    public void testLruOneWeekHalflifeOneWeek()
-    {
+    public void testLruOneWeekHalflifeOneWeek() {
         checkAvailable((long) (1000000 + 500000 - 500000 * 0.5 / Math.log(2)),
-                       1000000, 500000, 0.5, (7 * 24 * 3600), 1000);
+              1000000, 500000, 0.5, (7 * 24 * 3600), 1000);
     }
 
     @Test
-    public void testLruOneWeekHalflifeOneWeekLessThanGap()
-    {
+    public void testLruOneWeekHalflifeOneWeekLessThanGap() {
         checkAvailable(0, 1000000, 500000, 0.5, (7 * 24 * 3600), 1500000);
     }
 
     @Test
-    public void testLargeLoad()
-    {
+    public void testLargeLoad() {
         PoolCostInfo info = new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(100000000, 100000000, 0, 0);
         info.getSpaceInfo().setParameter(0, 1000);
         info.setMoverCostFactor(0.5);
         info.addExtendedMoverQueueSizes("movers", 3000, 3000, 0, 0, 3000);
         PoolCostInfo selected =
-                wass.selectByAvailableSpace(singletonList(info), 1000,
-                                            Functions.<PoolCostInfo>identity());
+              wass.selectByAvailableSpace(singletonList(info), 1000,
+                    Functions.<PoolCostInfo>identity());
         assertThat(selected, is(info));
     }
 
     @Test
-    public void testIdleFullPoolDoesNotAffectLoadNormalization()
-    {
+    public void testIdleFullPoolDoesNotAffectLoadNormalization() {
         PoolCostInfo busy = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
         busy.setSpaceUsage(100000000, 100000000, 0, 0);
         busy.getSpaceInfo().setParameter(0, 1000);
@@ -103,14 +90,13 @@ public class WeightedAvailableSpaceSelectionTest
         full.setMoverCostFactor(0.5);
         full.addExtendedMoverQueueSizes("movers", 0, 3000, 0, 0, 0);
         PoolCostInfo selected =
-                wass.selectByAvailableSpace(asList(full, busy, veryBusy), 1000,
-                                            Functions.<PoolCostInfo>identity());
+              wass.selectByAvailableSpace(asList(full, busy, veryBusy), 1000,
+                    Functions.<PoolCostInfo>identity());
         assertThat(selected, is(busy));
     }
 
     @Test
-    public void testYoungLruDoesNotPreventPoolSelection()
-    {
+    public void testYoungLruDoesNotPreventPoolSelection() {
         int total = 100_000_000;
         int free = 100;
         int precious = 0;
@@ -130,10 +116,11 @@ public class WeightedAvailableSpaceSelectionTest
         info.setSpaceUsage(total, free, precious, removable, lru);
         info.getSpaceInfo().setParameter(breakEven, gap);
         info.setMoverCostFactor(moverCostFactor);
-        info.addExtendedMoverQueueSizes("movers", moverActive, moverMaxActive, moverQueued, moverReaders, moverWriters);
+        info.addExtendedMoverQueueSizes("movers", moverActive, moverMaxActive, moverQueued,
+              moverReaders, moverWriters);
         PoolCostInfo selected =
-                wass.selectByAvailableSpace(singletonList(info), filesize,
-                                            Functions.<PoolCostInfo>identity());
+              wass.selectByAvailableSpace(singletonList(info), filesize,
+                    Functions.<PoolCostInfo>identity());
         assertThat(selected, is(info));
     }
 }

@@ -61,13 +61,11 @@ package org.dcache.chimera;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
-
-import javax.security.auth.Subject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
 import java.util.List;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.posix.Stat;
 
@@ -78,6 +76,7 @@ import org.dcache.chimera.posix.Stat;
  * <p>Input is validated for URI structure.</p>
  */
 public class FsInode_SURI extends FsInode {
+
     private static final String NEWLINE = "\n";
 
     /**
@@ -103,9 +102,9 @@ public class FsInode_SURI extends FsInode {
 
     private static boolean isRoot() {
         return Subjects.isRoot(
-                        Subject.getSubject(AccessController.getContext()));
+              Subject.getSubject(AccessController.getContext()));
     }
-    
+
     private List<StorageLocatable> locations;
 
     public FsInode_SURI(FileSystemProvider fs, long ino) {
@@ -124,7 +123,7 @@ public class FsInode_SURI extends FsInode {
 
     @Override
     public int read(long pos, byte[] data, int offset, int len)
-                    throws ChimeraFsException {
+          throws ChimeraFsException {
         String locations = getLocations();
 
         byte[] b = locations.getBytes();
@@ -163,7 +162,7 @@ public class FsInode_SURI extends FsInode {
 
     @Override
     public int write(long pos, byte[] data, int offset, int len)
-                    throws ChimeraFsException {
+          throws ChimeraFsException {
         String input = new String(data, offset, len).trim();
 
         if (input.isEmpty()) {
@@ -184,8 +183,8 @@ public class FsInode_SURI extends FsInode {
 
             if (!line.isEmpty()) {
                 _fs.addInodeLocation(this,
-                                     StorageGenericLocation.TAPE,
-                                     line);
+                      StorageGenericLocation.TAPE,
+                      line);
             }
         }
 
@@ -199,10 +198,10 @@ public class FsInode_SURI extends FsInode {
         }
 
         return Joiner.on(NEWLINE)
-                     .join(locations.stream()
-                                    .map(StorageLocatable::location)
-                                    .filter((l) -> l.trim().length() != 0)
-                                    .toArray())
-                        + NEWLINE;
+              .join(locations.stream()
+                    .map(StorageLocatable::location)
+                    .filter((l) -> l.trim().length() != 0)
+                    .toArray())
+              + NEWLINE;
     }
 }

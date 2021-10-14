@@ -82,7 +82,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
 import org.dcache.srm.v2_2.SrmSetPermissionRequest;
 import org.dcache.srm.v2_2.SrmSetPermissionResponse;
@@ -92,8 +91,8 @@ import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMSetPermissionClientV2 extends SRMClient
-{
+public class SRMSetPermissionClientV2 extends SRMClient {
+
     //
     // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
     // dCache SRM ignores this value and uses group id it retrieves from
@@ -106,22 +105,19 @@ public class SRMSetPermissionClientV2 extends SRMClient
     private final String surl_string;
 
     public SRMSetPermissionClientV2(Configuration configuration,
-                                    java.net.URI surl, String surl_string)
-    {
+          java.net.URI surl, String surl_string) {
         super(configuration);
         this.surl = surl;
         this.surl_string = surl_string;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surl;
     }
 
     @Override
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         checkCredentialValid();
         URI uri = new URI(surl_string);
         SrmSetPermissionRequest req = new SrmSetPermissionRequest();
@@ -129,43 +125,42 @@ public class SRMSetPermissionClientV2 extends SRMClient
         TPermissionType type = TPermissionType.fromString(configuration.getSetPermissionType());
         req.setPermissionType(type);
         TPermissionMode mode = null;
-        if ( configuration.getSetOwnerPermissionMode() != null ) {
+        if (configuration.getSetOwnerPermissionMode() != null) {
             mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
         }
         req.setOwnerPermission(mode);
         ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
         TGroupPermission grouppermissions[] = null;
-        if ( configuration.getSetGroupPermissionMode()!=null ) {
-            grouppermissions = new  TGroupPermission[1];
+        if (configuration.getSetGroupPermissionMode() != null) {
+            grouppermissions = new TGroupPermission[1];
             grouppermissions[0] = new TGroupPermission();
-            grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
+            grouppermissions[0].setMode(
+                  TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
             grouppermissions[0].setGroupID(DEFAULT_DUMMY_GROUP_ID);
         }
         arrayOfGroupPermissions.setGroupPermissionArray(grouppermissions);
         req.setArrayOfGroupPermissions(arrayOfGroupPermissions);
         TPermissionMode other = null;
-        if ( configuration.getSetOtherPermissionMode()!=null) {
+        if (configuration.getSetOtherPermissionMode() != null) {
             other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
         }
         req.setOtherPermission(other);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmSetPermissionResponse resp = srm.srmSetPermission(req);
         try {
-            TReturnStatus rs   = resp.getReturnStatus();
+            TReturnStatus rs = resp.getReturnStatus();
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                TStatusCode rc  = rs.getStatusCode();
+                TStatusCode rc = rs.getStatusCode();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Return code: ").append(rc.toString()).append("\n");
                 sb.append("Explanation: ").append(rs.getExplanation())
-                        .append("\n");
+                      .append("\n");
                 System.out.println(sb.toString());
                 System.exit(1);
-            }
-            else {
+            } else {
                 System.exit(0);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

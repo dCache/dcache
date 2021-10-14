@@ -67,7 +67,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import org.dcache.services.bulk.BulkJobStorageException;
 import org.dcache.services.bulk.job.BulkJob;
 import org.dcache.services.bulk.job.BulkJob.State;
@@ -75,33 +74,31 @@ import org.dcache.services.bulk.job.BulkJobKey;
 import org.dcache.services.bulk.store.BulkJobStore;
 
 /**
- *  Provides quick access to jobs, which are also queued.
+ * Provides quick access to jobs, which are also queued.
  */
-public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore
-{
-    private final Map<String, BulkJob>     jobs    = new HashMap<>();
+public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore {
 
-    public void cancelAll(String requestId)
-    {
+    private final Map<String, BulkJob> jobs = new HashMap<>();
+
+    public void cancelAll(String requestId) {
         Predicate<BulkJob> filter = job -> job.getKey().getRequestId()
-                                              .equals(requestId);
+              .equals(requestId);
         write.lock();
         try {
             /*
              *  Avoid concurrent modification on the stream.
              */
             jobs.values()
-                .stream()
-                .filter(filter)
-                .collect(Collectors.toList())
-                .stream().forEach(BulkJob::cancel);
+                  .stream()
+                  .filter(filter)
+                  .collect(Collectors.toList())
+                  .stream().forEach(BulkJob::cancel);
         } finally {
             write.unlock();
         }
     }
 
-    public void delete(BulkJobKey key)
-    {
+    public void delete(BulkJobKey key) {
         write.lock();
         try {
             jobs.remove(key.toString());
@@ -111,8 +108,7 @@ public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore
     }
 
     @Override
-    public Collection<BulkJob> find(Predicate<BulkJob> filter, Long limit)
-    {
+    public Collection<BulkJob> find(Predicate<BulkJob> filter, Long limit) {
         if (limit == null) {
             limit = Long.MAX_VALUE;
         }
@@ -120,17 +116,16 @@ public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore
         read.lock();
         try {
             return jobs.values().stream()
-                       .filter(filter)
-                       .limit(limit)
-                       .collect(Collectors.toList());
+                  .filter(filter)
+                  .limit(limit)
+                  .collect(Collectors.toList());
         } finally {
             read.unlock();
         }
     }
 
     @Override
-    public Optional<BulkJob> getJob(BulkJobKey key)
-    {
+    public Optional<BulkJob> getJob(BulkJobKey key) {
         read.lock();
         try {
             return Optional.ofNullable(jobs.get(key.toString()));
@@ -140,23 +135,21 @@ public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore
     }
 
     @Override
-    public List<BulkJobKey> keys()
-    {
+    public List<BulkJobKey> keys() {
         read.lock();
         try {
             return jobs.values()
-                       .stream()
-                       .map(BulkJob::getKey)
-                       .sorted(Comparator.comparing(BulkJobKey::getKey))
-                       .collect(Collectors.toList());
+                  .stream()
+                  .map(BulkJob::getKey)
+                  .sorted(Comparator.comparing(BulkJobKey::getKey))
+                  .collect(Collectors.toList());
         } finally {
             read.unlock();
         }
     }
 
     @Override
-    public void store(BulkJob job)
-    {
+    public void store(BulkJob job) {
         write.lock();
         try {
             jobs.put(job.getKey().toString(), job);
@@ -167,8 +160,7 @@ public class InMemoryBulkJobStore extends InMemoryStore implements BulkJobStore
 
     @Override
     public void update(BulkJobKey key, State status, Throwable exception)
-                    throws BulkJobStorageException
-    {
+          throws BulkJobStorageException {
         write.lock();
         try {
             BulkJob job = jobs.get(key.toString());

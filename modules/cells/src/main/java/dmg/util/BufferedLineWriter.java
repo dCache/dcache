@@ -6,25 +6,22 @@ import java.io.Writer;
  * Buffered LineWriter adaptor implementing the Writer interface.
  */
 public class BufferedLineWriter
-    extends Writer
-{
+      extends Writer {
+
     private final LineWriter _writer;
     private final StringBuilder _buffer;
 
-    public BufferedLineWriter(LineWriter writer)
-    {
+    public BufferedLineWriter(LineWriter writer) {
         _writer = writer;
         _buffer = new StringBuilder();
     }
 
     @Override
-    public void close()
-    {
+    public void close() {
         flush();
     }
 
-    private void flushCompletedLines()
-    {
+    private void flushCompletedLines() {
         int i;
         while ((i = _buffer.indexOf("\n")) > -1) {
             _writer.writeLine(_buffer.substring(0, i));
@@ -33,8 +30,7 @@ public class BufferedLineWriter
     }
 
     @Override
-    public void flush()
-    {
+    public void flush() {
         flushCompletedLines();
         if (_buffer.length() > 0) {
             _writer.writeLine(_buffer.toString());
@@ -43,8 +39,7 @@ public class BufferedLineWriter
     }
 
     @Override
-    public void write(char[] cbuf, int off, int len)
-    {
+    public void write(char[] cbuf, int off, int len) {
         _buffer.append(cbuf, off, len);
         flushCompletedLines();
     }

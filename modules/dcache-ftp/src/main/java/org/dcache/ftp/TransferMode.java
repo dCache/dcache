@@ -18,7 +18,6 @@
 package org.dcache.ftp;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -26,42 +25,36 @@ import java.util.Optional;
 /**
  * The protocol used over a data channel.
  */
-public enum TransferMode
-{
+public enum TransferMode {
     MODE_S("S", "Stream mode"),
     MODE_E("E", "Extended Block mode"),
     MODE_X("X", "GridFTP 2 eXtended block mode");
 
-    private static final Map<String,TransferMode> MODE_BY_LABEL;
+    private static final Map<String, TransferMode> MODE_BY_LABEL;
 
-    static
-    {
-        ImmutableMap.Builder<String,TransferMode> builder = ImmutableMap.builder();
+    static {
+        ImmutableMap.Builder<String, TransferMode> builder = ImmutableMap.builder();
         Arrays.stream(TransferMode.values()).forEach(m -> builder.put(m.getLabel(), m));
         MODE_BY_LABEL = builder.build();
     }
 
-    public static Optional<TransferMode> forLabel(String label)
-    {
+    public static Optional<TransferMode> forLabel(String label) {
         return Optional.ofNullable(MODE_BY_LABEL.get(label));
     }
 
     private final String label;
     private final String description;
 
-    TransferMode(String label, String description)
-    {
+    TransferMode(String label, String description) {
         this.label = label;
         this.description = description;
     }
 
-    public String getLabel()
-    {
+    public String getLabel() {
         return label;
     }
 
-    public String getDescription()
-    {
+    public String getDescription() {
         return description;
     }
 }

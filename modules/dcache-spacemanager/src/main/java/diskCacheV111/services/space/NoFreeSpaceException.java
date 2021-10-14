@@ -10,14 +10,15 @@
 package diskCacheV111.services.space;
 
 /**
- *
  * @author timur
  */
-public class NoFreeSpaceException extends SpaceException{
+public class NoFreeSpaceException extends SpaceException {
 
     private static final long serialVersionUID = -7223681758683713971L;
 
-    /** Creates a new instance of SpaceException */
+    /**
+     * Creates a new instance of SpaceException
+     */
     public NoFreeSpaceException() {
         super();
     }
@@ -26,8 +27,8 @@ public class NoFreeSpaceException extends SpaceException{
         super(message);
     }
 
-    public NoFreeSpaceException(String message,Throwable cause) {
-        super(message,cause);
+    public NoFreeSpaceException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public NoFreeSpaceException(Throwable cause) {

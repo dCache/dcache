@@ -4,8 +4,8 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.RsType;
 
 /**
- * Objects of type Permission are returned by the AclMapper to the AclMatcher
- * and contains the result obtained by evaluating a request.
+ * Objects of type Permission are returned by the AclMapper to the AclMatcher and contains the
+ * result obtained by evaluating a request.
  *
  * @author David Melkumyan, DESY Zeuthen
  */
@@ -15,8 +15,7 @@ public class Permission {
     public static final int ALLOW_ALL = 0x001F01FF;
 
     /**
-     * The defMsk defines the flags which have been set to either “allow” or
-     * “deny”.
+     * The defMsk defines the flags which have been set to either “allow” or “deny”.
      */
     private int _defMsk = 0;
 
@@ -86,19 +85,19 @@ public class Permission {
     }
 
     public String asString(RsType rsType) {
-        if ( _defMsk == 0 ) {
+        if (_defMsk == 0) {
             return "has not been defined";
         }
 
         StringBuilder sb = new StringBuilder();
         sb.append("defMsk = ").append(AccessMask.asString(_defMsk, rsType));
-        if ( _allowMsk != 0) {
+        if (_allowMsk != 0) {
             sb.append(", allowMsk = ")
-                    .append(AccessMask.asString(_allowMsk, rsType));
+                  .append(AccessMask.asString(_allowMsk, rsType));
         }
-        if ( (_defMsk ^ _allowMsk) != 0 ) {
+        if ((_defMsk ^ _allowMsk) != 0) {
             sb.append(", denyMsk = ")
-                    .append(AccessMask.asString(_defMsk ^ _allowMsk, rsType));
+                  .append(AccessMask.asString(_defMsk ^ _allowMsk, rsType));
         }
         return sb.toString();
     }

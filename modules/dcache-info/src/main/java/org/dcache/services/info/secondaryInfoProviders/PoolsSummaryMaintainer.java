@@ -1,26 +1,25 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSummaryVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class PoolsSummaryMaintainer extends AbstractStateWatcher
-{
+public class PoolsSummaryMaintainer extends AbstractStateWatcher {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PoolsSummaryMaintainer.class);
-    private static final String PREDICATE_PATHS[] = { "pools.*.space.*"};
-    private static final StatePath SUMMARY_POOLS_SPACE_PATH = StatePath.parsePath("summary.pools.space");
+    private static final String PREDICATE_PATHS[] = {"pools.*.space.*"};
+    private static final StatePath SUMMARY_POOLS_SPACE_PATH = StatePath.parsePath(
+          "summary.pools.space");
 
     /**
      * Provide a list of the paths we're interested in.
      */
     @Override
-    protected String[] getPredicates()
-    {
+    protected String[] getPredicates() {
         return PREDICATE_PATHS;
     }
 
@@ -29,8 +28,7 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher
      */
     @Override
     public void trigger(StateUpdate update, StateExhibitor currentState,
-            StateExhibitor futureState)
-    {
+          StateExhibitor futureState) {
         super.trigger(update, currentState, futureState);
 
         LOGGER.trace("Watcher {} triggered", getClass().getSimpleName());

@@ -2,16 +2,15 @@ package org.dcache.srm.request;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-
 import org.dcache.srm.v2_2.TOverwriteMode;
 
 public enum OverwriteMode {
-    NEVER            (TOverwriteMode.NEVER),
-    ALWAYS            (TOverwriteMode.ALWAYS),
-    WHEN_FILES_ARE_DIFFERENT           (TOverwriteMode.WHEN_FILES_ARE_DIFFERENT);
+    NEVER(TOverwriteMode.NEVER),
+    ALWAYS(TOverwriteMode.ALWAYS),
+    WHEN_FILES_ARE_DIFFERENT(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT);
 
     private final TOverwriteMode _mode;
-    private static final ImmutableMap<TOverwriteMode,OverwriteMode> MAP;
+    private static final ImmutableMap<TOverwriteMode, OverwriteMode> MAP;
     private static final String ERROR_MESSAGE;
 
     OverwriteMode(TOverwriteMode mode) {
@@ -23,11 +22,11 @@ public enum OverwriteMode {
         sb.append("Unknown OverwriteMode: \"%s\".");
         sb.append(" Supported values :");
 
-        Builder<TOverwriteMode,OverwriteMode> builder =
-            new Builder<>();
+        Builder<TOverwriteMode, OverwriteMode> builder =
+              new Builder<>();
         for (OverwriteMode value : values()) {
-                builder.put(value._mode,value);
-                sb.append(" \"").append(value._mode).append("\"");
+            builder.put(value._mode, value);
+            sb.append(" \"").append(value._mode).append("\"");
         }
         MAP = builder.build();
         ERROR_MESSAGE = sb.toString();
@@ -39,27 +38,25 @@ public enum OverwriteMode {
     }
 
     public static OverwriteMode fromTOverwriteMode(TOverwriteMode mode) {
-        if ( mode == null ) {
+        if (mode == null) {
             return null;
-        }
-        else {
+        } else {
             return MAP.get(mode);
         }
     }
 
     /**
-     * this function provides wrapper of TOverwriteMode.fromString
-     *  so that user gets better error handling
+     * this function provides wrapper of TOverwriteMode.fromString so that user gets better error
+     * handling
      */
     public static OverwriteMode fromString(String txt)
-        throws IllegalArgumentException  {
+          throws IllegalArgumentException {
         try {
             TOverwriteMode mode = TOverwriteMode.fromString(txt);
             return fromTOverwriteMode(mode);
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(String.format(ERROR_MESSAGE,
-                                                             txt));
+                  txt));
         }
     }
 }

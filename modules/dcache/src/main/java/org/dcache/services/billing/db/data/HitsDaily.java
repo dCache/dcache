@@ -65,13 +65,14 @@ import java.util.Map;
  * @author arossi
  */
 public final class HitsDaily extends BaseEntry {
+
     private static final long serialVersionUID = -8162571424839245552L;
 
     public static final String NOT_CACHED = "notcached";
     public static final String CACHED = "cached";
 
-    private Long notcached= 0L;
-    private Long cached= 0L;
+    private Long notcached = 0L;
+    private Long cached = 0L;
 
     public Long getNotcached() {
         return notcached;
@@ -99,6 +100,6 @@ public final class HitsDaily extends BaseEntry {
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + notcached + ","
-                        + cached + ")";
+              + cached + ")";
     }
 }

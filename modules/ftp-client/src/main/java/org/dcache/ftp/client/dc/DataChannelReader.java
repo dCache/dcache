@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,13 +15,11 @@
  */
 package org.dcache.ftp.client.dc;
 
-import java.io.InputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
 import org.dcache.ftp.client.Buffer;
 
-public interface DataChannelReader
-{
+public interface DataChannelReader {
 
     void setDataStream(InputStream in);
 
@@ -31,9 +29,9 @@ public interface DataChannelReader
      * @return Buffer of read data or null if end of data
      **/
     Buffer read()
-            throws IOException;
+          throws IOException;
 
     void close()
-            throws IOException;
+          throws IOException;
 
 }

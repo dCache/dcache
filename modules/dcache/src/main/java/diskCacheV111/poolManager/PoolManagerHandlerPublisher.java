@@ -18,8 +18,24 @@
  */
 package diskCacheV111.poolManager;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.stream.Collectors.toList;
+
 import ch.qos.logback.core.util.CloseUtil;
 import com.google.common.collect.Sets;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
@@ -29,43 +45,24 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.PostConstruct;
-
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
-import java.util.concurrent.TimeUnit;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.poolmanager.PoolMgrGetHandler;
 import org.dcache.poolmanager.PoolMgrGetUpdatedHandler;
 import org.dcache.poolmanager.RemotePoolManagerHandler;
 import org.dcache.poolmanager.RendezvousPoolManagerHandler;
 import org.dcache.poolmanager.SerializablePoolManagerHandler;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.stream.Collectors.toList;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * This class responds to requests to provide a PoolManagerHandler.
- *
+ * <p>
  * Synchronizes with other instances of this class using ZooKeeper to provide a
  * RendezvousPoolManagerHandler that directs requests to the appropriate backend.
  */
 public class PoolManagerHandlerPublisher
-        implements CellLifeCycleAware, CellIdentityAware, CuratorFrameworkAware, CellMessageReceiver, PathChildrenCacheListener
-{
+      implements CellLifeCycleAware, CellIdentityAware, CuratorFrameworkAware, CellMessageReceiver,
+      PathChildrenCacheListener {
+
     /**
      * Our cell address.
      */
@@ -102,38 +99,33 @@ public class PoolManagerHandlerPublisher
     private volatile SerializablePoolManagerHandler handler;
 
     /**
-     * Tracks blocked update requests. If the list of backends changes, these requests
-     * are processed.
+     * Tracks blocked update requests. If the list of backends changes, these requests are
+     * processed.
      */
     private final Set<UpdateRequest> requests = Sets.newConcurrentHashSet();
 
     /**
-     * Tracks expiration of update requests. Requests are dropped lazily as new
-     * requests are added.
+     * Tracks expiration of update requests. Requests are dropped lazily as new requests are added.
      */
     private final DelayQueue<UpdateRequest> delays = new DelayQueue<>();
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         this.address = address;
     }
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         this.client = client;
     }
 
     @Required
-    public void setServiceName(String serviceName)
-    {
+    public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 
     @PostConstruct
-    public void start() throws Exception
-    {
+    public void start() throws Exception {
         handler = new RemotePoolManagerHandler(new CellAddressCore(serviceName));
         cache = new PathChildrenCache(client, getZooKeeperPath(), true);
         cache.getListenable().addListener(this);
@@ -141,10 +133,9 @@ public class PoolManagerHandlerPublisher
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         String path = ZKPaths.makePath(getZooKeeperPath(), address.toString());
-        byte[] data =  address.toString().getBytes(US_ASCII);
+        byte[] data = address.toString().getBytes(US_ASCII);
         node = new PersistentNode(client, CreateMode.EPHEMERAL, false, path, data);
 
         /* When starting, a pool manager will not know about any pools. As satellite
@@ -164,8 +155,7 @@ public class PoolManagerHandlerPublisher
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         if (cache != null) {
             CloseUtil.closeQuietly(cache);
         }
@@ -175,8 +165,7 @@ public class PoolManagerHandlerPublisher
         requests.stream().filter(requests::remove).forEach(UpdateRequest::shutdown);
     }
 
-    private synchronized void checkPublicationTimestamp()
-    {
+    private synchronized void checkPublicationTimestamp() {
         if (publicationTimestamp > 0 && publicationTimestamp < System.currentTimeMillis()) {
             node.start();
             publicationTimestamp = 0;
@@ -184,27 +173,25 @@ public class PoolManagerHandlerPublisher
     }
 
     @Override
-    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
-    {
+    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
         switch (event.getType()) {
-        case CHILD_ADDED:
-        case CHILD_UPDATED:
-        case CHILD_REMOVED:
-            rebuildHandler();
-            break;
-        default:
-            break;
+            case CHILD_ADDED:
+            case CHILD_UPDATED:
+            case CHILD_REMOVED:
+                rebuildHandler();
+                break;
+            default:
+                break;
         }
     }
 
-    private void rebuildHandler()
-    {
+    private void rebuildHandler() {
         List<CellAddressCore> backends =
-                cache.getCurrentData().stream()
-                        .map(ChildData::getPath)
-                        .map(ZKPaths::getNodeFromPath)
-                        .map(CellAddressCore::new)
-                        .collect(toList());
+              cache.getCurrentData().stream()
+                    .map(ChildData::getPath)
+                    .map(ZKPaths::getNodeFromPath)
+                    .map(CellAddressCore::new)
+                    .collect(toList());
         SerializablePoolManagerHandler handler;
         if (backends.isEmpty()) {
             handler = new RemotePoolManagerHandler(new CellAddressCore(serviceName));
@@ -217,8 +204,7 @@ public class PoolManagerHandlerPublisher
         requests.stream().filter(requests::remove).forEach(r -> r.send(handler));
     }
 
-    public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message)
-    {
+    public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message) {
         checkPublicationTimestamp();
         if (message.isReply()) {
             return null;
@@ -228,8 +214,7 @@ public class PoolManagerHandlerPublisher
         return message;
     }
 
-    public DelayedReply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
-    {
+    public DelayedReply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message) {
         checkPublicationTimestamp();
         if (message.isReply()) {
             return null;
@@ -249,44 +234,38 @@ public class PoolManagerHandlerPublisher
         return request;
     }
 
-    public String getZooKeeperPath()
-    {
+    public String getZooKeeperPath() {
         return ZKPaths.makePath("/dcache/poolmanager", serviceName, "backends");
     }
 
-    private static class UpdateRequest extends DelayedReply implements Delayed
-    {
+    private static class UpdateRequest extends DelayedReply implements Delayed {
+
         private final PoolMgrGetUpdatedHandler message;
 
         private final CellMessage envelope;
 
-        public UpdateRequest(CellMessage envelope, PoolMgrGetUpdatedHandler message)
-        {
+        public UpdateRequest(CellMessage envelope, PoolMgrGetUpdatedHandler message) {
             this.envelope = envelope;
             this.message = message;
         }
 
-        public void send(SerializablePoolManagerHandler handler)
-        {
+        public void send(SerializablePoolManagerHandler handler) {
             message.setHandler(handler);
             message.setSucceeded();
             reply(message);
         }
 
-        public void shutdown()
-        {
+        public void shutdown() {
             reply(new NoRouteToCellException(envelope, "Pool manager is shutting down."));
         }
 
         @Override
-        public long getDelay(TimeUnit unit)
-        {
+        public long getDelay(TimeUnit unit) {
             return unit.convert(envelope.getTtl() - envelope.getLocalAge(), TimeUnit.MILLISECONDS);
         }
 
         @Override
-        public int compareTo(Delayed o)
-        {
+        public int compareTo(Delayed o) {
             return Long.compare(getDelay(TimeUnit.MILLISECONDS), o.getDelay(TimeUnit.MILLISECONDS));
         }
     }

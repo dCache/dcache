@@ -20,124 +20,107 @@ package org.dcache.gplazma.scitoken;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import java.util.List;
 
 /**
- *  A JsonNode that executes some common task before calling the delegate.
+ * A JsonNode that executes some common task before calling the delegate.
  */
-public abstract class PreparationJsonNode extends ForwardingJsonNode
-{
+public abstract class PreparationJsonNode extends ForwardingJsonNode {
+
     protected abstract void prepare();
 
     @Override
-    public JsonToken asToken()
-    {
+    public JsonToken asToken() {
         prepare();
         return super.asToken();
     }
 
     @Override
-    public JsonParser.NumberType numberType()
-    {
+    public JsonParser.NumberType numberType() {
         prepare();
         return super.numberType();
     }
 
     @Override
-    public JsonNode get(int index)
-    {
+    public JsonNode get(int index) {
         prepare();
         return super.get(index);
     }
 
     @Override
-    public JsonNode get(String fieldName)
-    {
+    public JsonNode get(String fieldName) {
         prepare();
         return super.get(fieldName);
     }
 
     @Override
-    public String asText()
-    {
+    public String asText() {
         prepare();
         return super.asText();
     }
 
     @Override
-    public JsonNode findValue(String fieldName)
-    {
+    public JsonNode findValue(String fieldName) {
         prepare();
         return super.findValue(fieldName);
     }
 
     @Override
-    public JsonNode findPath(String fieldName)
-    {
+    public JsonNode findPath(String fieldName) {
         prepare();
         return super.findPath(fieldName);
     }
 
     @Override
-    public JsonNode findParent(String fieldName)
-    {
+    public JsonNode findParent(String fieldName) {
         prepare();
         return super.findParent(fieldName);
     }
 
     @Override
-    public List<JsonNode> findValues(String fieldName, List<JsonNode> foundSoFar)
-    {
+    public List<JsonNode> findValues(String fieldName, List<JsonNode> foundSoFar) {
         prepare();
         return super.findValues(fieldName, foundSoFar);
     }
 
     @Override
-    public List<String> findValuesAsText(String fieldName, List<String> foundSoFar)
-    {
+    public List<String> findValuesAsText(String fieldName, List<String> foundSoFar) {
         prepare();
         return super.findValuesAsText(fieldName, foundSoFar);
     }
 
     @Override
-    public List<JsonNode> findParents(String fieldName, List<JsonNode> foundSoFar)
-    {
+    public List<JsonNode> findParents(String fieldName, List<JsonNode> foundSoFar) {
         prepare();
         return super.findParents(fieldName, foundSoFar);
     }
 
     @Override
-    public JsonNode path(String fieldName)
-    {
+    public JsonNode path(String fieldName) {
         prepare();
         return super.path(fieldName);
     }
 
     @Override
-    public JsonNode path(int index)
-    {
+    public JsonNode path(int index) {
         prepare();
         return super.path(index);
     }
 
     @Override
-    public JsonParser traverse()
-    {
+    public JsonParser traverse() {
         prepare();
         return super.traverse();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         prepare();
         return super.toString();
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         prepare();
         return super.equals(o);
     }

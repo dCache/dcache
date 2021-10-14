@@ -21,18 +21,16 @@ package org.dcache.gridsite;
 import java.io.Serializable;
 import java.util.Calendar;
 
-public class GetTerminationTimeResponse implements Serializable
-{
+public class GetTerminationTimeResponse implements Serializable {
+
     private static final long serialVersionUID = -1154015744975905802L;
     private final Calendar terminationTime;
 
-    public GetTerminationTimeResponse(Calendar terminationTime)
-    {
+    public GetTerminationTimeResponse(Calendar terminationTime) {
         this.terminationTime = terminationTime;
     }
 
-    public Calendar getTerminationTime()
-    {
+    public Calendar getTerminationTime() {
         return terminationTime;
     }
 }

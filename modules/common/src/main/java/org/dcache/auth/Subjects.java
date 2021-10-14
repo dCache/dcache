@@ -1,13 +1,10 @@
 package org.dcache.auth;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.net.InetAddresses;
 import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
@@ -21,31 +18,30 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.util.PrincipalSetMaker;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
-import static com.google.common.base.Preconditions.checkArgument;
+public class Subjects {
 
-public class Subjects
-{
     public static final String UNKNOWN = "<unknown>";
 
     /**
      * Ordered list of principals considered as displayable.
      */
     private static final Class<? extends Principal>[] DISPLAYABLE = new Class[]
-    {
-        FullNamePrincipal.class,
-        UserNamePrincipal.class,
-        GlobusPrincipal.class,
-        KerberosPrincipal.class,
-        Origin.class,
-        Principal.class
-    };
+          {
+                FullNamePrincipal.class,
+                UserNamePrincipal.class,
+                GlobusPrincipal.class,
+                KerberosPrincipal.class,
+                Origin.class,
+                Principal.class
+          };
 
     /**
-     * The subject representing the root user, that is, a user that is
-     * empowered to do everything.
+     * The subject representing the root user, that is, a user that is empowered to do everything.
      */
     public static final Subject ROOT;
     public static final Subject NOBODY;
@@ -61,41 +57,35 @@ public class Subjects
     }
 
     /**
-     * Returns true if and only if the subject is root, that is, has
-     * the user ID 0.
+     * Returns true if and only if the subject is root, that is, has the user ID 0.
      */
-    public static boolean isRoot(Subject subject)
-    {
+    public static boolean isRoot(Subject subject) {
         return hasUid(subject, 0);
     }
 
     /**
-     * Return true if the subject is root or has the special
-     * ExemptFromNamespaceChecks principal.
+     * Return true if the subject is root or has the special ExemptFromNamespaceChecks principal.
+     *
      * @param subject The identity of the user.
      * @return if the user is except from namespace checks.
      * @see #isRoot(javax.security.auth.Subject)
      */
-    public static boolean isExemptFromNamespaceChecks(Subject subject)
-    {
+    public static boolean isExemptFromNamespaceChecks(Subject subject) {
         return subject.getPrincipals().stream()
-                .anyMatch(p -> p instanceof UidPrincipal && ((UidPrincipal)p).getUid() == 0
-                                ||
-                        p instanceof ExemptFromNamespaceChecks);
+              .anyMatch(p -> p instanceof UidPrincipal && ((UidPrincipal) p).getUid() == 0
+                    ||
+                    p instanceof ExemptFromNamespaceChecks);
     }
 
     /**
-     * Returns true if and only if the subject is nobody, i.e., does
-     * not have a UID.
-     *
-     * Being nobody does not imply that the user is anonymous: The
-     * subjects's identiy may have been established through some
-     * authentication mechanism. However the subject could not be
-     * assigned an internal identity in dCache.
+     * Returns true if and only if the subject is nobody, i.e., does not have a UID.
+     * <p>
+     * Being nobody does not imply that the user is anonymous: The subjects's identiy may have been
+     * established through some authentication mechanism. However the subject could not be assigned
+     * an internal identity in dCache.
      */
-    public static boolean isNobody(Subject subject)
-    {
-        for (Principal principal: subject.getPrincipals()) {
+    public static boolean isNobody(Subject subject) {
+        for (Principal principal : subject.getPrincipals()) {
             if (principal instanceof UidPrincipal) {
                 return false;
             }
@@ -106,10 +96,9 @@ public class Subjects
     /**
      * Returns true if and only if the subject has the given user ID.
      */
-    public static boolean hasUid(Subject subject, long uid)
-    {
+    public static boolean hasUid(Subject subject, long uid) {
         Set<UidPrincipal> principals =
-                subject.getPrincipals(UidPrincipal.class);
+              subject.getPrincipals(UidPrincipal.class);
         for (UidPrincipal principal : principals) {
             if (principal.getUid() == uid) {
                 return true;
@@ -121,10 +110,9 @@ public class Subjects
     /**
      * Returns true if and only if the subject has the given group ID.
      */
-    public static boolean hasGid(Subject subject, long gid)
-    {
+    public static boolean hasGid(Subject subject, long gid) {
         Set<GidPrincipal> principals =
-                subject.getPrincipals(GidPrincipal.class);
+              subject.getPrincipals(GidPrincipal.class);
         for (GidPrincipal principal : principals) {
             if (principal.getGid() == gid) {
                 return true;
@@ -136,10 +124,9 @@ public class Subjects
     /**
      * Returns the users IDs of a subject.
      */
-    public static long[] getUids(Subject subject)
-    {
+    public static long[] getUids(Subject subject) {
         Set<UidPrincipal> principals =
-                subject.getPrincipals(UidPrincipal.class);
+              subject.getPrincipals(UidPrincipal.class);
         long[] uids = new long[principals.size()];
         int i = 0;
         for (UidPrincipal principal : principals) {
@@ -149,24 +136,24 @@ public class Subjects
     }
 
     /**
-     * Returns the principal of the given type of the subject. Returns
-     * null if there is no such principal.
+     * Returns the principal of the given type of the subject. Returns null if there is no such
+     * principal.
      *
      * @throws IllegalArgumentException is subject has more than one such principal
      */
     private static <T> T getUniquePrincipal(Subject subject, Class<T> type)
-        throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         T result = null;
 
-        if( subject == null) {
+        if (subject == null) {
             return null;
         }
 
-        for (Principal principal: subject.getPrincipals()) {
+        for (Principal principal : subject.getPrincipals()) {
             if (type.isInstance(principal)) {
                 if (result != null) {
-                    throw new IllegalArgumentException("Subject has multiple principals of type " + type.getSimpleName());
+                    throw new IllegalArgumentException(
+                          "Subject has multiple principals of type " + type.getSimpleName());
                 }
                 result = type.cast(principal);
             }
@@ -177,12 +164,11 @@ public class Subjects
     /**
      * Returns the UID of a subject.
      *
-     * @throws NoSuchElementException if subject has no UID
+     * @throws NoSuchElementException   if subject has no UID
      * @throws IllegalArgumentException is subject has more than one UID
      */
     public static long getUid(Subject subject)
-        throws NoSuchElementException, IllegalArgumentException
-    {
+          throws NoSuchElementException, IllegalArgumentException {
         UidPrincipal uid = getUniquePrincipal(subject, UidPrincipal.class);
         if (uid == null) {
             throw new NoSuchElementException("Subject has no UID");
@@ -191,12 +177,12 @@ public class Subjects
     }
 
     /**
-     * Returns the group IDs of a subject. If the user has a primary
-     * group, then first element will be a primary group ID.
+     * Returns the group IDs of a subject. If the user has a primary group, then first element will
+     * be a primary group ID.
      */
     public static long[] getGids(Subject subject) {
         Set<GidPrincipal> principals =
-                subject.getPrincipals(GidPrincipal.class);
+              subject.getPrincipals(GidPrincipal.class);
         long[] gids = new long[principals.size()];
         int i = 0;
         for (GidPrincipal principal : principals) {
@@ -213,14 +199,13 @@ public class Subjects
     /**
      * Returns the primary group ID of a subject.
      *
-     * @throws NoSuchElementException if subject has no primary GID
+     * @throws NoSuchElementException   if subject has no primary GID
      * @throws IllegalArgumentException if subject has several primary GID
      */
     public static long getPrimaryGid(Subject subject)
-        throws NoSuchElementException, IllegalArgumentException
-    {
+          throws NoSuchElementException, IllegalArgumentException {
         Set<GidPrincipal> principals =
-                subject.getPrincipals(GidPrincipal.class);
+              subject.getPrincipals(GidPrincipal.class);
         int counter = 0;
         long gid = 0;
         for (GidPrincipal principal : principals) {
@@ -241,14 +226,12 @@ public class Subjects
     }
 
     /**
-     * Returns the origin of a subject. Returns null if subject has no
-     * origin.
+     * Returns the origin of a subject. Returns null if subject has no origin.
      *
      * @throws IllegalArgumentException if there is more than one origin
-    */
+     */
     public static Origin getOrigin(Subject subject)
-        throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         return getUniquePrincipal(subject, Origin.class);
     }
 
@@ -258,27 +241,23 @@ public class Subjects
      * @throws IllegalArgumentException if there is more than one origin
      */
     public static String getDn(Subject subject)
-        throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         GlobusPrincipal principal =
-            getUniquePrincipal(subject, GlobusPrincipal.class);
+              getUniquePrincipal(subject, GlobusPrincipal.class);
         return (principal == null) ? null : principal.getName();
     }
 
     /**
-     * Returns the primary FQANs of a subject. Returns null if subject
-     * has no primary FQAN.
+     * Returns the primary FQANs of a subject. Returns null if subject has no primary FQAN.
      *
-     * @throws IllegalArgumentException if subject has more than one
-     *         primary FQANs
+     * @throws IllegalArgumentException if subject has more than one primary FQANs
      */
     public static FQAN getPrimaryFqan(Subject subject)
-        throws IllegalArgumentException
-    {
+          throws IllegalArgumentException {
         Set<FQANPrincipal> principals =
-            subject.getPrincipals(FQANPrincipal.class);
+              subject.getPrincipals(FQANPrincipal.class);
         FQAN fqan = null;
-        for (FQANPrincipal principal: principals) {
+        for (FQANPrincipal principal : principals) {
             if (principal.isPrimaryGroup()) {
                 if (fqan != null) {
                     throw new IllegalArgumentException("Subject has multiple primary FQANs");
@@ -292,10 +271,9 @@ public class Subjects
     /**
      * Returns the collection of FQANs of a subject.
      */
-    public static Collection<FQAN> getFqans(Subject subject)
-    {
+    public static Collection<FQAN> getFqans(Subject subject) {
         Collection<FQAN> fqans = new ArrayList<>();
-        for (Principal principal: subject.getPrincipals()) {
+        for (Principal principal : subject.getPrincipals()) {
             if (principal instanceof FQANPrincipal) {
                 fqans.add(((FQANPrincipal) principal).getFqan());
             }
@@ -304,40 +282,34 @@ public class Subjects
     }
 
     /**
-     * Returns the the user name of a subject. If UserNamePrincipal is
-     * not defined then null is returned.
+     * Returns the the user name of a subject. If UserNamePrincipal is not defined then null is
+     * returned.
      *
-     * @throws IllegalArgumentException if subject has more than one
-     *        user name
+     * @throws IllegalArgumentException if subject has more than one user name
      */
-    public static String getUserName(Subject subject)
-    {
+    public static String getUserName(Subject subject) {
         UserNamePrincipal principal =
-            getUniquePrincipal(subject, UserNamePrincipal.class);
+              getUniquePrincipal(subject, UserNamePrincipal.class);
         return (principal == null) ? null : principal.getName();
     }
 
     /**
-     * Returns the the login name of a subject. If LoginNamePrincipal
-     * is not defined then null is returned.
+     * Returns the the login name of a subject. If LoginNamePrincipal is not defined then null is
+     * returned.
      *
-     * @throws IllegalArgumentException if subject has more than one
-     *        login name
+     * @throws IllegalArgumentException if subject has more than one login name
      */
-    public static String getLoginName(Subject subject)
-    {
+    public static String getLoginName(Subject subject) {
         LoginNamePrincipal principal =
-            getUniquePrincipal(subject, LoginNamePrincipal.class);
+              getUniquePrincipal(subject, LoginNamePrincipal.class);
         return (principal == null) ? null : principal.getName();
     }
 
     /**
-     * Returns a displayable name derived from one of the principals
-     * of the Subject.
+     * Returns a displayable name derived from one of the principals of the Subject.
      */
-    public static String getDisplayName(Subject subject)
-    {
-        for (Class<? extends Principal> clazz: DISPLAYABLE) {
+    public static String getDisplayName(Subject subject) {
+        for (Class<? extends Principal> clazz : DISPLAYABLE) {
             Set<? extends Principal> principals = subject.getPrincipals(clazz);
             if (!principals.isEmpty()) {
                 return principals.iterator().next().getName();
@@ -347,44 +319,39 @@ public class Subjects
     }
 
     /**
-     * Returns the "Kerberos principal" for the user (as specified in
-     * Section 2.1 of RFC 1964) if they logged in via Kerberos or null if
-     * Kerberos was not used.
-     * @throws IllegalArgumentException if the subject contains multiple
-     * KerberosPrincipal.
+     * Returns the "Kerberos principal" for the user (as specified in Section 2.1 of RFC 1964) if
+     * they logged in via Kerberos or null if Kerberos was not used.
+     *
+     * @throws IllegalArgumentException if the subject contains multiple KerberosPrincipal.
      */
-    public static String getKerberosName(Subject subject) throws IllegalArgumentException
-    {
+    public static String getKerberosName(Subject subject) throws IllegalArgumentException {
         KerberosPrincipal principal =
-                getUniquePrincipal(subject, KerberosPrincipal.class);
+              getUniquePrincipal(subject, KerberosPrincipal.class);
         return (principal == null) ? null : principal.getName();
     }
 
-    public static List<String> getEmailAddresses(Subject subject)
-    {
+    public static List<String> getEmailAddresses(Subject subject) {
         return subject.getPrincipals(EmailAddressPrincipal.class).stream()
-                .map(EmailAddressPrincipal::getName)
-                .sorted()
-                .collect(Collectors.toList());
+              .map(EmailAddressPrincipal::getName)
+              .sorted()
+              .collect(Collectors.toList());
     }
 
     /**
-     * Maps a UserAuthBase to a Subject.  The Subject will contain the
-     * UID (UidPrincipal), GID (GidPrincipal), user name
-     * (UserNamePrincipal), DN (GlobusPrincipal), and FQAN
-     * (FQANPrincipal) principals.
+     * Maps a UserAuthBase to a Subject.  The Subject will contain the UID (UidPrincipal), GID
+     * (GidPrincipal), user name (UserNamePrincipal), DN (GlobusPrincipal), and FQAN (FQANPrincipal)
+     * principals.
      *
-     * @param user UserAuthBase to convert
+     * @param user    UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups
      */
-    public static final Subject getSubject(UserAuthBase user, boolean primary)
-    {
+    public static final Subject getSubject(UserAuthBase user, boolean primary) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
 
         boolean isPrimary = primary;
-        for (int gid: user.GIDs) {
+        for (int gid : user.GIDs) {
             principals.add(new GidPrincipal(gid, isPrimary));
             isPrimary = false;
         }
@@ -408,21 +375,19 @@ public class Subjects
     }
 
     /**
-     * Maps a UserAuthRecord to a Subject.  The Subject will contain
-     * the UID (UidPrincipal), GID (GidPrincipal), user name
-     * (UserNamePrincipal), DN (GlobusPrincipal), and FQAN
-     * (FQANPrincipal) principals.
+     * Maps a UserAuthRecord to a Subject.  The Subject will contain the UID (UidPrincipal), GID
+     * (GidPrincipal), user name (UserNamePrincipal), DN (GlobusPrincipal), and FQAN (FQANPrincipal)
+     * principals.
      *
      * @param user UserAuthRecord to convert
      */
-    public static final Subject getSubject(UserAuthRecord user)
-    {
+    public static final Subject getSubject(UserAuthRecord user) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
 
         boolean primary = true;
-        for (int gid: user.GIDs) {
+        for (int gid : user.GIDs) {
             principals.add(new GidPrincipal(gid, primary));
             primary = false;
         }
@@ -438,7 +403,7 @@ public class Subjects
         }
 
         FQAN fqan = user.getFqan();
-        if (fqan!=null) {
+        if (fqan != null) {
             String fqanstr = fqan.toString();
             if (fqanstr != null && !fqanstr.isEmpty()) {
                 principals.add(new FQANPrincipal(fqanstr, true));
@@ -448,38 +413,35 @@ public class Subjects
     }
 
     /**
-     * Create a subject from a list of principals.  The principals are
-     * presented as String-based representations that are parsed.  They
-     * have a common format {@literal <type>:<value>} where
-     * {@literal <type>} is one of name, kerberos, dn and dqan and
-     * {@literal <value>} is a string representation of the principal.
+     * Create a subject from a list of principals.  The principals are presented as String-based
+     * representations that are parsed.  They have a common format {@literal <type>:<value>} where
+     * {@literal <type>} is one of name, kerberos, dn and dqan and {@literal <value>} is a string
+     * representation of the principal.
      */
-    public static Subject subjectFromArgs(List<String> args)
-    {
+    public static Subject subjectFromArgs(List<String> args) {
         Set<Principal> principals = principalsFromArgs(args);
 
         Set<Object> publicCredentials = Collections.emptySet();
         Set<Object> privateCredentials = Collections.emptySet();
 
         return new Subject(false, principals, publicCredentials,
-                privateCredentials);
+              privateCredentials);
     }
 
 
-    public static Set<Principal> principalsFromArgs(List<String> args)
-    {
+    public static Set<Principal> principalsFromArgs(List<String> args) {
         Set<Principal> principals = new HashSet<>();
         boolean isPrimaryFqan = true;
         boolean isPrimaryGid = true;
 
-        for(String arg : args) {
+        for (String arg : args) {
             int idx = arg.indexOf(':');
-            if(idx == -1) {
+            if (idx == -1) {
                 throw new IllegalArgumentException("format for principals is <type>:<value>");
             }
 
             String type = arg.substring(0, idx);
-            String value = arg.substring(idx+1);
+            String value = arg.substring(idx + 1);
 
             Principal principal;
 
@@ -508,7 +470,7 @@ public class Subjects
                     int atIndex = value.lastIndexOf('@');
                     checkArgument(atIndex != -1, "format for 'oidc' principals is <value>@<OP>");
                     String oidcClaim = value.substring(0, atIndex);
-                    String op = value.substring(atIndex+1);
+                    String op = value.substring(atIndex + 1);
                     principal = new OidcSubjectPrincipal(oidcClaim, op);
                     break;
                 case "email":
@@ -522,19 +484,22 @@ public class Subjects
                     break;
                 default:
                     try {
-                        Class<? extends Principal> principalClass = Class.forName(type).asSubclass(Principal.class);
-                        Constructor<? extends Principal> principalConstructor = principalClass.getConstructor(String.class);
+                        Class<? extends Principal> principalClass = Class.forName(type)
+                              .asSubclass(Principal.class);
+                        Constructor<? extends Principal> principalConstructor = principalClass.getConstructor(
+                              String.class);
                         principal = principalConstructor.newInstance(value);
                     } catch (NoSuchMethodException e) {
-                        throw new IllegalArgumentException("No matching constructor found: "+type+"(String)");
+                        throw new IllegalArgumentException(
+                              "No matching constructor found: " + type + "(String)");
                     } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("No matching class found: "+type);
+                        throw new IllegalArgumentException("No matching class found: " + type);
                     } catch (InvocationTargetException e) {
-                        throw new IllegalArgumentException("Invocation failed: "+e.toString());
+                        throw new IllegalArgumentException("Invocation failed: " + e.toString());
                     } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Instantiation failed: "+e.toString());
+                        throw new IllegalArgumentException("Instantiation failed: " + e.toString());
                     } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Access Exception: "+e.toString());
+                        throw new IllegalArgumentException("Access Exception: " + e.toString());
                     }
             }
 
@@ -544,17 +509,16 @@ public class Subjects
     }
 
     /**
-     * Provide a one-line description of argument.  This is ostensibly the
-     * same job as Subject#toString.  In contrast, this method never includes
-     * any line-break characters, provides a better description for X.509 proxy
-     * chains, and uses a more terse format.
+     * Provide a one-line description of argument.  This is ostensibly the same job as
+     * Subject#toString.  In contrast, this method never includes any line-break characters,
+     * provides a better description for X.509 proxy chains, and uses a more terse format.
      * <p>
      * Note: the resulting line may be quite long.
+     *
      * @param subject the identity to print
      * @return a single line describing that identity
      */
-    public static String toString(Subject subject)
-    {
+    public static String toString(Subject subject) {
         StringBuilder sb = new StringBuilder();
 
         for (Object credential : subject.getPublicCredentials()) {
@@ -564,7 +528,7 @@ public class Subjects
                 X509Certificate[] chain = certificates.toArray(X509Certificate[]::new);
                 appendX509Array(sb, chain);
             } else if (credential instanceof X509Certificate[]) {
-                appendX509Array(sb, (X509Certificate[])credential);
+                appendX509Array(sb, (X509Certificate[]) credential);
             } else {
                 appendOptionallyInQuotes(sb, credential.toString());
             }
@@ -577,7 +541,7 @@ public class Subjects
                 sb.append("username-with-password:");
                 appendOptionallyInQuotes(sb, username);
             } else if (credential instanceof BearerTokenCredential) {
-                String token = ((BearerTokenCredential)credential).describeToken();
+                String token = ((BearerTokenCredential) credential).describeToken();
                 sb.append("bearer-token:");
                 appendOptionallyInQuotes(sb, token);
             } else {
@@ -595,9 +559,9 @@ public class Subjects
                 appendOptionallyInQuotes(sb, principal.getName());
             } else if (principal instanceof FQANPrincipal) {
                 sb.append("fqan:");
-                String label = ((FQANPrincipal)principal).isPrimaryGroup()
-                        ? "!" + principal.getName()
-                        : principal.getName();
+                String label = ((FQANPrincipal) principal).isPrimaryGroup()
+                      ? "!" + principal.getName()
+                      : principal.getName();
                 appendOptionallyInQuotes(sb, label);
             } else if (principal instanceof LoginNamePrincipal) {
                 sb.append("desired-username:");
@@ -616,15 +580,15 @@ public class Subjects
                 appendOptionallyInQuotes(sb, principal.getName());
             } else if (principal instanceof GroupNamePrincipal) {
                 sb.append("group:");
-                String label = ((GroupNamePrincipal)principal).isPrimaryGroup()
-                        ? "!" + principal.getName()
-                        : principal.getName();
+                String label = ((GroupNamePrincipal) principal).isPrimaryGroup()
+                      ? "!" + principal.getName()
+                      : principal.getName();
                 appendOptionallyInQuotes(sb, label);
             } else if (principal instanceof UidPrincipal) {
                 sb.append("uid:").append(((UidPrincipal) principal).getUid());
             } else if (principal instanceof GidPrincipal) {
                 sb.append("gid:");
-                if (((GidPrincipal)principal).isPrimaryGroup()) {
+                if (((GidPrincipal) principal).isPrimaryGroup()) {
                     sb.append('!');
                 }
                 sb.append(principal.getName());
@@ -665,25 +629,23 @@ public class Subjects
         return "{" + sb + "}";
     }
 
-    private static StringBuilder appendX509Array(StringBuilder sb, X509Certificate[] chain)
-    {
+    private static StringBuilder appendX509Array(StringBuilder sb, X509Certificate[] chain) {
         X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
-        String dn = OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true);
+        String dn = OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(),
+              true);
         sb.append(ProxyUtils.isProxy(chain) ? "proxy" : "x509").append("-chain:");
         appendOptionallyInQuotes(sb, dn);
         return sb;
     }
 
-    private static StringBuilder appendComma(StringBuilder sb)
-    {
+    private static StringBuilder appendComma(StringBuilder sb) {
         if (sb.length() > 0) {
             sb.append(", ");
         }
         return sb;
     }
 
-    private static StringBuilder appendOptionallyInQuotes(StringBuilder sb, String argument)
-    {
+    private static StringBuilder appendOptionallyInQuotes(StringBuilder sb, String argument) {
         if (argument.contains(" ")) {
             sb.append('"').append(argument).append('"');
         } else {
@@ -693,8 +655,7 @@ public class Subjects
     }
 
     // Returned Subject must NOT be readOnly.
-    public static Subject of(int uid, int gid, int[] gids)
-    {
+    public static Subject of(int uid, int gid, int[] gids) {
         Builder builder = Subjects.of().uid(uid).gid(gid);
         for (int g : gids) {
             builder.gid(g);
@@ -702,95 +663,83 @@ public class Subjects
         return builder.build();
     }
 
-    public static Builder of()
-    {
+    public static Builder of() {
         return new Builder();
     }
 
-    public static Subject ofPrincipals(Set<Principal> principals)
-    {
+    public static Subject ofPrincipals(Set<Principal> principals) {
         Subject subject = new Subject();
         subject.getPrincipals().addAll(principals);
         return subject;
     }
 
-    public static Subject of(PrincipalSetMaker maker)
-    {
+    public static Subject of(PrincipalSetMaker maker) {
         return ofPrincipals(maker.build());
     }
 
-    public static class Builder
-    {
+    public static class Builder {
+
         private final Subject _subject = new Subject();
 
         private boolean haveFqan;
         private boolean haveGid;
         private boolean readOnly;
 
-        public Subject build()
-        {
+        public Subject build() {
             if (readOnly) {
                 _subject.setReadOnly();
             }
             return _subject;
         }
 
-        private void add(Principal principal)
-        {
+        private void add(Principal principal) {
             _subject.getPrincipals().add(principal);
         }
 
-        public Builder readOnly()
-        {
+        public Builder readOnly() {
             readOnly = true;
             return this;
         }
 
-        public Builder dn(String dn)
-        {
+        public Builder dn(String dn) {
             add(new GlobusPrincipal(dn));
             return this;
         }
 
-        public Builder uid(long uid)
-        {
+        public Builder uid(long uid) {
             add(new UidPrincipal(uid));
             return this;
         }
 
         /**
-         * Add a gid Principal.  The first gid is automatically the primary
-         * gid; any subsequent calls add non-primary gid principals.
+         * Add a gid Principal.  The first gid is automatically the primary gid; any subsequent
+         * calls add non-primary gid principals.
          */
-        public Builder gid(long gid)
-        {
+        public Builder gid(long gid) {
             add(new GidPrincipal(gid, !haveGid));
             haveGid = true;
             return this;
         }
 
         /**
-         * Add an FQAN Principal.  The first FQAN is automatically a
-         * primary FQAN and subsequent FQAN are non-primary FQANs.
+         * Add an FQAN Principal.  The first FQAN is automatically a primary FQAN and subsequent
+         * FQAN are non-primary FQANs.
          */
-        public Builder fqan(String fqan)
-        {
+        public Builder fqan(String fqan) {
             return fqan(new FQAN(fqan));
         }
 
         /**
-         * Add an FQAN Principal.  The first FQAN is automatically a
-         * primary FQAN and subsequent FQAN are non-primary FQANs.
+         * Add an FQAN Principal.  The first FQAN is automatically a primary FQAN and subsequent
+         * FQAN are non-primary FQANs.
          */
-        public Builder fqan(FQAN fqan)
-        {
+        public Builder fqan(FQAN fqan) {
             add(new FQANPrincipal(fqan, !haveFqan));
             haveFqan = true;
             return this;
         }
 
-        public Builder username(String name)
-        {
+        public Builder username(String name) {
             add(new UserNamePrincipal(name));
             return this;
         }

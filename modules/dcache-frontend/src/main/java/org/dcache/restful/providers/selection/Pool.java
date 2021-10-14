@@ -59,19 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-
 @ApiModel(description = "Information about a specific pool.")
 public final class Pool extends SelectionTypeWithLinks {
+
     private static final long serialVersionUID = -6670696822057242568L;
 
     @ApiModelProperty("The groups to which this pool belongs.")
@@ -84,21 +83,21 @@ public final class Pool extends SelectionTypeWithLinks {
     public Pool(String pool, PoolSelectionUnit psu) {
         super(pool, psu);
         groups = psu.getPoolGroupsOfPool(pool)
-                    .stream()
-                    .map(SelectionPoolGroup::getName)
-                    .collect(Collectors.toList());
+              .stream()
+              .map(SelectionPoolGroup::getName)
+              .collect(Collectors.toList());
     }
 
     @Override
     protected List<String> extractLinks(PoolSelectionUnit psu) {
         return psu.getPoolGroupsOfPool(name)
-                  .stream()
-                  .map(SelectionPoolGroup::getName)
-                  .map(psu::getLinksPointingToPoolGroup)
-                  .flatMap(links -> links.stream())
-                  .sorted(Comparator.comparing(SelectionLink::getName))
-                  .map(SelectionLink::getName)
-                  .collect(Collectors.toList());
+              .stream()
+              .map(SelectionPoolGroup::getName)
+              .map(psu::getLinksPointingToPoolGroup)
+              .flatMap(links -> links.stream())
+              .sorted(Comparator.comparing(SelectionLink::getName))
+              .map(SelectionLink::getName)
+              .collect(Collectors.toList());
     }
 
     public List<String> getGroups() {

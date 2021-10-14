@@ -19,12 +19,17 @@
 
 package diskCacheV111.vehicles;
 
-public interface InfoMessageVisitor
-{
+public interface InfoMessageVisitor {
+
     void visit(DoorRequestInfoMessage message);
+
     void visit(MoverInfoMessage message);
+
     void visit(PoolHitInfoMessage message);
+
     void visit(RemoveFileInfoMessage message);
+
     void visit(StorageInfoMessage message);
+
     void visit(WarningPnfsFileInfoMessage message);
 }

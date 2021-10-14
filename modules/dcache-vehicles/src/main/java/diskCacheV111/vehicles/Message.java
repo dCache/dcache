@@ -2,108 +2,110 @@
 
 package diskCacheV111.vehicles;
 
-import javax.security.auth.Subject;
-
-import java.io.Serializable;
-
 import dmg.cells.nucleus.HasDiagnosticContext;
-
+import java.io.Serializable;
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 
 // Base class for all Messages
 
 public class Message
-    implements Serializable,
-               HasDiagnosticContext
-{
+      implements Serializable,
+      HasDiagnosticContext {
+
     private boolean _replyRequired;
     private boolean _isReply;
-    private int     _returnCode;
-    private Object  _errorObject;
-    private long    _id;
+    private int _returnCode;
+    private Object _errorObject;
+    private long _id;
     private Subject _subject;
 
     private static final long serialVersionUID = 2056896713066252504L;
 
-    public Message(){
+    public Message() {
     }
 
-    public Message(boolean replyRequired){
-	_replyRequired = replyRequired;
+    public Message(boolean replyRequired) {
+        _replyRequired = replyRequired;
     }
+
     @Override
-    public String toString(){
-        return _returnCode==0?"":"("+_returnCode+")="+_errorObject ;
-    }
-    public void setSucceeded(){
-	setReply(0,null);
+    public String toString() {
+        return _returnCode == 0 ? "" : "(" + _returnCode + ")=" + _errorObject;
     }
 
-    public void setFailedConditionally(int rc, Serializable errorObject)
-    {
+    public void setSucceeded() {
+        setReply(0, null);
+    }
+
+    public void setFailedConditionally(int rc, Serializable errorObject) {
         if (getReturnCode() == 0) {
             setFailed(rc, errorObject);
         }
     }
 
-    public void setFailed(int errorCode, Serializable errorObject){
-	setReply(errorCode, errorObject);
-    }
-    public void setReply(){
-        _isReply = true ;
-    }
-    public void setReply(int returnCode, Serializable errorObject){
-	_isReply     = true;
-	_returnCode  = returnCode;
-	_errorObject = errorObject;
+    public void setFailed(int errorCode, Serializable errorObject) {
+        setReply(errorCode, errorObject);
     }
 
-    public boolean isReply(){
-	return _isReply;
+    public void setReply() {
+        _isReply = true;
     }
 
-    public void clearReply(){
-	//allows us to reuse message objects
-	_isReply     = false;
-	_returnCode  = 0;
-	_errorObject = null;
+    public void setReply(int returnCode, Serializable errorObject) {
+        _isReply = true;
+        _returnCode = returnCode;
+        _errorObject = errorObject;
     }
 
-    public int getReturnCode(){
-	return _returnCode;
+    public boolean isReply() {
+        return _isReply;
     }
 
-    public Serializable getErrorObject(){
-	return (Serializable) _errorObject;
+    public void clearReply() {
+        //allows us to reuse message objects
+        _isReply = false;
+        _returnCode = 0;
+        _errorObject = null;
     }
 
-    public boolean getReplyRequired(){
-	return _replyRequired;
+    public int getReturnCode() {
+        return _returnCode;
     }
 
-    public void setReplyRequired(boolean replyRequired){
-	_replyRequired = replyRequired;
+    public Serializable getErrorObject() {
+        return (Serializable) _errorObject;
     }
-    public void setId( long id ){ _id = id ; }
-    public long getId(){ return _id ; }
 
-    public void setSubject(Subject subject)
-    {
+    public boolean getReplyRequired() {
+        return _replyRequired;
+    }
+
+    public void setReplyRequired(boolean replyRequired) {
+        _replyRequired = replyRequired;
+    }
+
+    public void setId(long id) {
+        _id = id;
+    }
+
+    public long getId() {
+        return _id;
+    }
+
+    public void setSubject(Subject subject) {
         _subject = subject;
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return (_subject == null) ? Subjects.ROOT : _subject;
     }
 
     /**
-     * Returns a human readable name of the message class. By default
-     * this is the short class name with the "Message" or "Msg" suffix
-     * removed.
+     * Returns a human readable name of the message class. By default this is the short class name
+     * with the "Message" or "Msg" suffix removed.
      */
-    public String getMessageName()
-    {
+    public String getMessageName() {
         String name = getClass().getSimpleName();
         int length = name.length();
         if ((length > 7) && name.endsWith("Message")) {
@@ -116,47 +118,40 @@ public class Message
     }
 
     @Override
-    public String getDiagnosticContext()
-    {
+    public String getDiagnosticContext() {
         return getMessageName();
     }
 
     /**
-     * Returns true if this message could possibly change the effect
-     * or result of <code>message</code>.
-     *
-     * In a message queue, a message can be used to fold other
-     * messages as long as it is not invalidated by any intermediate
-     * messages.
+     * Returns true if this message could possibly change the effect or result of
+     * <code>message</code>.
+     * <p>
+     * In a message queue, a message can be used to fold other messages as long as it is not
+     * invalidated by any intermediate messages.
      */
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return true;
     }
 
     /**
      * Folds the reply of another Messages into this Message.
-     *
-     * For some Messages the correct reply can be derived from the
-     * reply of another Message. In those cases processing of this
-     * Message can be skipped and instead the reply of the other
+     * <p>
+     * For some Messages the correct reply can be derived from the reply of another Message. In
+     * those cases processing of this Message can be skipped and instead the reply of the other
      * Message can be folded into this Message.
-     *
-     * A prerequiste for folding to succeed is that this Message is
-     * side effect free. It does however not matter whether the other
-     * Message has side effects.
-     *
-     * This method updates this Message by extracting the correct
-     * reply from the Message given as an argument. If successfull,
-     * this Message can be send as a valid reply back to the
-     * requestor. If not successful, this Message is unmodified.
+     * <p>
+     * A prerequiste for folding to succeed is that this Message is side effect free. It does
+     * however not matter whether the other Message has side effects.
+     * <p>
+     * This method updates this Message by extracting the correct reply from the Message given as an
+     * argument. If successfull, this Message can be send as a valid reply back to the requestor. If
+     * not successful, this Message is unmodified.
      *
      * @param message Another Message to fold into this Message
      * @return true if the operation succeeded, false otherwise
      * @see invalidates
      */
-    public boolean fold(Message message)
-    {
+    public boolean fold(Message message) {
         return false;
     }
 }

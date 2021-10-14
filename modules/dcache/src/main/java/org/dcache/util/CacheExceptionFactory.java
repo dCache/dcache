@@ -1,6 +1,34 @@
 package org.dcache.util;
 
-import java.util.Objects;
+import static diskCacheV111.util.CacheException.ATTRIBUTE_FORMAT_ERROR;
+import static diskCacheV111.util.CacheException.ERROR_IO_DISK;
+import static diskCacheV111.util.CacheException.FILESIZE_UNKNOWN;
+import static diskCacheV111.util.CacheException.FILE_CORRUPTED;
+import static diskCacheV111.util.CacheException.FILE_EXISTS;
+import static diskCacheV111.util.CacheException.FILE_IN_CACHE;
+import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
+import static diskCacheV111.util.CacheException.FILE_NOT_IN_REPOSITORY;
+import static diskCacheV111.util.CacheException.FILE_NOT_ONLINE;
+import static diskCacheV111.util.CacheException.FILE_NOT_STORED;
+import static diskCacheV111.util.CacheException.FILE_PRECIOUS;
+import static diskCacheV111.util.CacheException.HSM_DELAY_ERROR;
+import static diskCacheV111.util.CacheException.INVALID_ARGS;
+import static diskCacheV111.util.CacheException.LOCKED;
+import static diskCacheV111.util.CacheException.MOVER_NOT_FOUND;
+import static diskCacheV111.util.CacheException.NOT_DIR;
+import static diskCacheV111.util.CacheException.NOT_FILE;
+import static diskCacheV111.util.CacheException.NOT_IN_TRASH;
+import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
+import static diskCacheV111.util.CacheException.NO_POOL_ONLINE;
+import static diskCacheV111.util.CacheException.OUT_OF_DATE;
+import static diskCacheV111.util.CacheException.PANIC;
+import static diskCacheV111.util.CacheException.PERMISSION_DENIED;
+import static diskCacheV111.util.CacheException.POOL_DISABLED;
+import static diskCacheV111.util.CacheException.RESOURCE;
+import static diskCacheV111.util.CacheException.SERVICE_UNAVAILABLE;
+import static diskCacheV111.util.CacheException.THIRD_PARTY_TRANSFER_FAILED;
+import static diskCacheV111.util.CacheException.TIMEOUT;
+import static diskCacheV111.util.CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -22,15 +50,12 @@ import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
-
-import static diskCacheV111.util.CacheException.*;
+import java.util.Objects;
 
 /**
- *CacheException factory.
- *
+ * CacheException factory.
  *
  * @since 1.9.5
- *
  */
 public class CacheExceptionFactory {
 
@@ -75,11 +100,11 @@ public class CacheExceptionFactory {
             case FILE_CORRUPTED:
                 return new FileCorruptedCacheException(message, cause);
             case SERVICE_UNAVAILABLE:
-                 return new ServiceUnavailableException(message, cause);
+                return new ServiceUnavailableException(message, cause);
             case INVALID_ARGS:
-                 return new InvalidMessageCacheException(message, cause);
+                return new InvalidMessageCacheException(message, cause);
             case THIRD_PARTY_TRANSFER_FAILED:
-                 return new ThirdPartyTransferFailedCacheException(message, cause);
+                return new ThirdPartyTransferFailedCacheException(message, cause);
 
             /*
              * these do not have exception classes
@@ -100,8 +125,7 @@ public class CacheExceptionFactory {
         }
     }
 
-    public static CacheException exceptionOf(Message message)
-    {
+    public static CacheException exceptionOf(Message message) {
         Object error = message.getErrorObject();
         if (!(error instanceof CacheException)) {
             return exceptionOf(message.getReturnCode(), Objects.toString(error, null));

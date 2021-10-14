@@ -1,29 +1,29 @@
 package org.dcache.util;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 /**
- *
  * @author tigran
  */
 public class BytesTest {
 
 
     private byte[] _b;
+
     @Before
     public void setUp() {
         _b = new byte[8];
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPutLongIntoSmall() {
         Bytes.putLong(_b, 6, 0);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPutIntIntoSmall() {
         Bytes.putInt(_b, 6, 0);
     }

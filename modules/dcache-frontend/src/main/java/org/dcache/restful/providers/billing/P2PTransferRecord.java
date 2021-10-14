@@ -61,7 +61,6 @@ package org.dcache.restful.providers.billing;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import org.dcache.services.billing.db.data.TransferRecord;
 
 @ApiModel(description = "Properties pertinent to Pool-to-pool transfers.")
@@ -103,11 +102,11 @@ public final class P2PTransferRecord extends DiskTransferRecord {
 
     public String toDisplayString() {
         return String.format(MAINFORMAT,
-                             datestamp,
-                             serverPool,
-                             clientPool,
-                             client,
-                             transfersize,
-                             errormessage);
+              datestamp,
+              serverPool,
+              clientPool,
+              client,
+              transfersize,
+              errormessage);
     }
 }

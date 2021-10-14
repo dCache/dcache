@@ -1,6 +1,16 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Collections2;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.Set;
+import org.dcache.gplazma.AuthenticationException;
 import org.glite.authz.common.model.Request;
 import org.glite.authz.common.model.Response;
 import org.glite.authz.common.model.Result;
@@ -13,26 +23,12 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
-
-import org.dcache.gplazma.AuthenticationException;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-
 /**
  * Implementation of an Argus Authorisation plugin for gPlazma2
- *
- * The plugin supports blacklisting of subjects identified by X509 Certificates
- * and/or their DN.
+ * <p>
+ * The plugin supports blacklisting of subjects identified by X509 Certificates and/or their DN.
  *
  * @author karsten
- *
  */
 public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
@@ -51,19 +47,19 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String DECISION_CODE_code = "Decision code: ";
 
     private static final String KEY_PASS =
-        "gplazma.argus.hostkey.password";
+          "gplazma.argus.hostkey.password";
     private static final String HOST_KEY =
-        "gplazma.argus.hostkey";
+          "gplazma.argus.hostkey";
     private static final String HOST_CERT =
-        "gplazma.argus.hostcert";
+          "gplazma.argus.hostcert";
     private static final String TRUST_MATERIAL =
-        "gplazma.argus.ca";
+          "gplazma.argus.ca";
     private static final String ACTION_ID =
-        "gplazma.argus.action";
+          "gplazma.argus.action";
     private static final String RESOURCE_ID =
-        "gplazma.argus.resource";
+          "gplazma.argus.resource";
     private static final String PEP_ENDPOINT =
-        "gplazma.argus.endpoint";
+          "gplazma.argus.endpoint";
 
     private final PEPClient _pepClient;
 
@@ -72,6 +68,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     /**
      * Constructor
+     *
      * @param properties a set of key value pairs containing the plugins configuration.
      */
     public GPlazmaArgusPlugin(Properties properties) {
@@ -89,6 +86,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     /**
      * Constructor
+     *
      * @param pepClient client to be used by plugin
      */
     public GPlazmaArgusPlugin(PEPClient pepClient) {
@@ -96,12 +94,15 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     }
 
     /**
-     * This method initialises the instance's configuration, by parsing
-     * the parameters given in args. Required key/value is PEPEndpoint.
-     * @param properties array of key value pairs containing the plugins configuration ( key1, value1, key2, value2, ...)
+     * This method initialises the instance's configuration, by parsing the parameters given in
+     * args. Required key/value is PEPEndpoint.
+     *
+     * @param properties array of key value pairs containing the plugins configuration ( key1,
+     *                   value1, key2, value2, ...)
      * @throws PEPClientConfigurationException
      */
-    private PEPClientConfiguration initPepConfiguration(Properties properties) throws PEPClientConfigurationException {
+    private PEPClientConfiguration initPepConfiguration(Properties properties)
+          throws PEPClientConfigurationException {
         requireNonNull(properties, G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
@@ -124,8 +125,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         return pepConfig;
     }
 
-    private String getProperty(Properties properties, String key)
-    {
+    private String getProperty(Properties properties, String key) {
         String value = properties.getProperty(key);
         checkArgument(value != null, "Undefined property: " + key);
         return value;
@@ -133,7 +133,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     @Override
     public void account(Set<Principal> authorizedPrincipals)
-            throws AuthenticationException {
+          throws AuthenticationException {
 
         int decision = Result.DECISION_NOT_APPLICABLE;
 
@@ -142,14 +142,15 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
             Collection<Principal> globusPrincipals = Collections.emptySet();
             if (authorizedPrincipals != null) {
                 globusPrincipals = Collections2
-                        .filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
+                      .filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
             }
 
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();
 
                 LOGGER.info(AUTHORISING_SUBJECT_dn, dn);
-                Request request = ArgusPepRequestFactory.create(dn, _resourceId, _actionId, GridWNAuthorizationProfile.getInstance());
+                Request request = ArgusPepRequestFactory.create(dn, _resourceId, _actionId,
+                      GridWNAuthorizationProfile.getInstance());
                 LOGGER.debug(CREATED_REQUEST_request, request);
                 Response response = _pepClient.authorize(request);
                 LOGGER.debug(RECEIVED_RESPONSE_response, response);
@@ -157,16 +158,16 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
                 for (Result result : response.getResults()) {
                     decision = result.getDecision();
                     switch (decision) {
-                    case Result.DECISION_DENY:
-                        throw new AuthenticationException("user banned");
-                    case Result.DECISION_INDETERMINATE:
-                        throw new AuthenticationException("indeterminate result");
+                        case Result.DECISION_DENY:
+                            throw new AuthenticationException("user banned");
+                        case Result.DECISION_INDETERMINATE:
+                            throw new AuthenticationException("indeterminate result");
                     }
                 }
             }
         } catch (PEPClientException e) {
             decision = Result.DECISION_DENY;
-            LOGGER.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn ,e);
+            LOGGER.warn(BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN, dn, e);
             throw new AuthenticationException("check failed", e);
         } finally {
             LOGGER.info(DECISION_CODE_code, decision);

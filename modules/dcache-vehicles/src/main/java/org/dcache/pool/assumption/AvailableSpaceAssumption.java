@@ -22,37 +22,33 @@ import diskCacheV111.pools.PoolCostInfo;
 
 /**
  * An assumption on the available space in a pool.
- *
- * Available space is the sum of free and removable space. The assumption
- * fails if a pool has less available space than assumed.
+ * <p>
+ * Available space is the sum of free and removable space. The assumption fails if a pool has less
+ * available space than assumed.
  */
-public class AvailableSpaceAssumption implements Assumption
-{
+public class AvailableSpaceAssumption implements Assumption {
+
     private static final long serialVersionUID = -8945173816059261047L;
 
     private final long limit;
 
-    public AvailableSpaceAssumption(long limit)
-    {
+    public AvailableSpaceAssumption(long limit) {
         this.limit = limit;
     }
 
     @Override
-    public boolean isSatisfied(Pool pool)
-    {
+    public boolean isSatisfied(Pool pool) {
         PoolCostInfo.PoolSpaceInfo space = pool.space();
         return space.getFreeSpace() + space.getRemovableSpace() - space.getGap() >= limit;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "available space is at least " + limit;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -66,8 +62,7 @@ public class AvailableSpaceAssumption implements Assumption
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Long.hashCode(limit);
     }
 }

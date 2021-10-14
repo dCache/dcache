@@ -2,17 +2,15 @@ package org.dcache.gplazma.configuration.parser;
 
 import org.dcache.gplazma.GPlazmaInternalException;
 
-public class FactoryConfigurationException extends GPlazmaInternalException
-{
+public class FactoryConfigurationException extends GPlazmaInternalException {
+
     private static final long serialVersionUID = -465585959811498555L;
 
-    public FactoryConfigurationException(String msg)
-    {
+    public FactoryConfigurationException(String msg) {
         super(msg);
     }
 
-    public FactoryConfigurationException(String msg, Throwable cause)
-    {
+    public FactoryConfigurationException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }

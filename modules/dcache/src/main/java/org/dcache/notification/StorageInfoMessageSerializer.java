@@ -17,9 +17,10 @@
  */
 package org.dcache.notification;
 
-import org.apache.kafka.common.serialization.Serializer;
-import org.json.JSONObject;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfoMessage;
 import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -30,11 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfoMessage;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.kafka.common.serialization.Serializer;
+import org.json.JSONObject;
 
 public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessage> {
 
@@ -45,7 +43,8 @@ public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessa
         o.put("version", "1.0");
         o.put("msgType", data.getMessageType());
         o.put("date", DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()), ZoneId.systemDefault())));
+              .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(data.getTimestamp()),
+                    ZoneId.systemDefault())));
         o.put("queuingTime", data.getTimeQueued());
         o.put("transaction", data.getTransaction());
         o.put("cellName", data.getCellAddress().getCellName());
@@ -71,36 +70,36 @@ public class StorageInfoMessageSerializer implements Serializer<StorageInfoMessa
         o.put("pnfsid", data.getPnfsId());
         o.put("billingPath", data.getBillingPath());
         o.put("fileSize", data.getFileSize());
-        o.put("storageInfo", data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
+        o.put("storageInfo",
+              data.getStorageInfo().getStorageClass() + "@" + data.getStorageInfo().getHsm());
 
         o.put("transferTime", data.getTransferTime());
 
         return o.toString().getBytes(UTF_8);
     }
 
-    private List<URI> buildLocations(StorageInfoMessage data)
-    {
+    private List<URI> buildLocations(StorageInfoMessage data) {
         StorageInfo si = data.getStorageInfo();
 
         switch (data.getMessageType()) {
-        case StorageInfoMessage.STORE_MSG_TYPE:
-            return si.isSetAddLocation() ? si.locations() : Collections.emptyList();
+            case StorageInfoMessage.STORE_MSG_TYPE:
+                return si.isSetAddLocation() ? si.locations() : Collections.emptyList();
 
-        case StorageInfoMessage.RESTORE_MSG_TYPE:
-            String hsmType = data.getHsmType();
-            String hsmInstance = data.getHsmInstance();
+            case StorageInfoMessage.RESTORE_MSG_TYPE:
+                String hsmType = data.getHsmType();
+                String hsmInstance = data.getHsmInstance();
 
-            // REVISIT this is (more-or-less) a copy-n-paste from
-            // AbstractBlockingNearlineStorage#getLocations and follows
-            // similar assumptions in HsmSet#getInstanceName.
-            return si.locations().stream()
-                .filter(uri -> Objects.equals(uri.getScheme(), hsmType))
-                .filter(uri -> Objects.equals(uri.getAuthority(), hsmInstance))
-                .collect(Collectors.toList());
+                // REVISIT this is (more-or-less) a copy-n-paste from
+                // AbstractBlockingNearlineStorage#getLocations and follows
+                // similar assumptions in HsmSet#getInstanceName.
+                return si.locations().stream()
+                      .filter(uri -> Objects.equals(uri.getScheme(), hsmType))
+                      .filter(uri -> Objects.equals(uri.getAuthority(), hsmInstance))
+                      .collect(Collectors.toList());
 
-        default:
-            throw new IllegalArgumentException("Unexpected message type \""
-                    + data.getMessageType() + "\"");
+            default:
+                throw new IllegalArgumentException("Unexpected message type \""
+                      + data.getMessageType() + "\"");
         }
     }
 

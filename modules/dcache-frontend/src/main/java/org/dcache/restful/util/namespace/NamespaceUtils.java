@@ -2,22 +2,17 @@ package org.dcache.restful.util.namespace;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-
-import javax.servlet.http.HttpServletRequest;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.vehicles.StorageInfo;
-
-import dmg.cells.nucleus.NoRouteToCellException;
-
+import javax.servlet.http.HttpServletRequest;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -31,39 +26,39 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * <p>Utilities for obtaining and returning file attributes and qos
- *    information.</p>
+ * information.</p>
  */
 public final class NamespaceUtils {
 
     private static final FileNameMap MIME_TYPE_MAP =
-            URLConnection.getFileNameMap();
+          URLConnection.getFileNameMap();
 
     /**
      * <p>Add quality-of-service attributes (pinned, locality, etc.) </p>
      *
-     * @param json               mapped from attributes
-     * @param attributes         returned by the query to namespace
-     * @param request            to check for client info
-     * @param poolMonitor        a PoolMonitor to check locality
-     * @param pinmanager         communication with pinmanager
+     * @param json        mapped from attributes
+     * @param attributes  returned by the query to namespace
+     * @param request     to check for client info
+     * @param poolMonitor a PoolMonitor to check locality
+     * @param pinmanager  communication with pinmanager
      */
     public static void addQoSAttributes(JsonFileAttributes json,
-                                        FileAttributes attributes,
-                                        HttpServletRequest request,
-                                        PoolMonitor poolMonitor,
-                                        CellStub pinmanager)
-                    throws CacheException, NoRouteToCellException,
-                    InterruptedException {
+          FileAttributes attributes,
+          HttpServletRequest request,
+          PoolMonitor poolMonitor,
+          CellStub pinmanager)
+          throws CacheException, NoRouteToCellException,
+          InterruptedException {
         if (RequestUser.isAnonymous()) {
             throw new PermissionDeniedCacheException("Permission denied");
         }
 
         QosStatus status = new QoSTransitionEngine(poolMonitor, pinmanager)
-                        .getQosStatus(attributes, request.getRemoteHost());
+              .getQosStatus(attributes, request.getRemoteHost());
 
         json.setCurrentQos(status.getCurrent().displayName());
         Qos target = status.getTarget();
-        if (target != null){
+        if (target != null) {
             json.setTargetQos(target.displayName());
         }
     }
@@ -71,25 +66,24 @@ public final class NamespaceUtils {
     /**
      * <p>Map returned attributes to JsonFileAttributes object.</p>
      *
-     * @param name                of file
-     * @param json                mapped from attributes
-     * @param attributes          returned by the query to namespace
-     * @param isLocality          used to check weather user queried
-     *                            locality of the file
-     * @param isLocations         add locations if true
-     * @param isOptional          add optional attributes if true
-     * @param request             to check for client info
-     * @param poolMonitor         for access to remote PoolMonitor
+     * @param name        of file
+     * @param json        mapped from attributes
+     * @param attributes  returned by the query to namespace
+     * @param isLocality  used to check weather user queried locality of the file
+     * @param isLocations add locations if true
+     * @param isOptional  add optional attributes if true
+     * @param request     to check for client info
+     * @param poolMonitor for access to remote PoolMonitor
      */
     public static void chimeraToJsonAttributes(String name,
-                                               JsonFileAttributes json,
-                                               FileAttributes attributes,
-                                               boolean isLocality,
-                                               boolean isLocations,
-                                               boolean isOptional,
-                                               boolean isXattr,
-                                               HttpServletRequest request,
-                                               PoolMonitor poolMonitor) throws CacheException {
+          JsonFileAttributes json,
+          FileAttributes attributes,
+          boolean isLocality,
+          boolean isLocations,
+          boolean isOptional,
+          boolean isXattr,
+          HttpServletRequest request,
+          PoolMonitor poolMonitor) throws CacheException {
         json.setPnfsId(attributes.getPnfsId());
 
         if (attributes.isDefined(FileAttribute.NLINK)) {
@@ -120,14 +114,13 @@ public final class NamespaceUtils {
             json.setFileMimeType(mimeTypeOf(name, attributes));
         }
 
-
         // when user set locality param in the request,
         // the locality should be returned only for directories
         if ((isLocality) && fileType != FileType.DIR) {
             String client = request.getRemoteHost();
             FileLocality fileLocality
-                            = poolMonitor.getFileLocality(attributes,
-                                                                client);
+                  = poolMonitor.getFileLocality(attributes,
+                  client);
             json.setFileLocality(fileLocality);
         }
 
@@ -142,49 +135,48 @@ public final class NamespaceUtils {
         }
 
         if (isXattr) {
-            Map<String,String> xattr = attributes.getXattrs();
+            Map<String, String> xattr = attributes.getXattrs();
             json.setExtendedAttributes(xattr);
         }
     }
 
-    private static String mimeTypeOf(String name, FileAttributes attributes)
-    {
+    private static String mimeTypeOf(String name, FileAttributes attributes) {
         switch (attributes.getFileType()) {
-        case DIR:
-            return "application/vnd.dcache.folder";
+            case DIR:
+                return "application/vnd.dcache.folder";
 
-        case LINK:
-            return "application/vnd.dcache.link";
+            case LINK:
+                return "application/vnd.dcache.link";
 
-        case SPECIAL:
-            return "application/vnd.dcache.special";
+            case SPECIAL:
+                return "application/vnd.dcache.special";
 
-        case REGULAR:
-            if (attributes.hasXattr("mime_type")) {
-                try {
-                    String xattrMimeType = attributes.getXattrs().get("mime_type");
-                    return MediaType.parse(xattrMimeType).toString();
-                } catch (IllegalArgumentException e) {
-                    // ignore badly formed mimeType;
+            case REGULAR:
+                if (attributes.hasXattr("mime_type")) {
+                    try {
+                        String xattrMimeType = attributes.getXattrs().get("mime_type");
+                        return MediaType.parse(xattrMimeType).toString();
+                    } catch (IllegalArgumentException e) {
+                        // ignore badly formed mimeType;
+                    }
                 }
-            }
-            String guess = MIME_TYPE_MAP.getContentTypeFor(name);
-            return guess != null ? guess : "application/octet-stream";
+                String guess = MIME_TYPE_MAP.getContentTypeFor(name);
+                return guess != null ? guess : "application/octet-stream";
 
-        default:
-            throw new RuntimeException("Unexpected file type " + attributes.getFileType());
+            default:
+                throw new RuntimeException("Unexpected file type " + attributes.getFileType());
         }
     }
 
     /**
      * <p>Adds the rest of the file attributes in the case full
-     *    information on the file is requested.</p>
+     * information on the file is requested.</p>
      *
-     * @param json                mapped from attributes
-     * @param attributes          returned by the query to namespace
+     * @param json       mapped from attributes
+     * @param attributes returned by the query to namespace
      */
     private static void addAllOptionalAttributes(JsonFileAttributes json,
-                                                 FileAttributes attributes) {
+          FileAttributes attributes) {
         if (attributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
             json.setAccessLatency(attributes.getAccessLatency());
         }
@@ -241,9 +233,9 @@ public final class NamespaceUtils {
     }
 
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
-                                                            boolean locations,
-                                                            boolean qos,
-                                                            boolean optional) {
+          boolean locations,
+          boolean qos,
+          boolean optional) {
         Set<FileAttribute> attributes = new HashSet<>();
         attributes.add(FileAttribute.PNFSID);
         attributes.add(FileAttribute.NLINK);

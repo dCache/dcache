@@ -63,21 +63,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-
 import org.dcache.services.bulk.BulkJobStorageException;
 import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.job.BulkJob;
 import org.dcache.services.bulk.job.BulkJob.State;
 import org.dcache.services.bulk.job.BulkJobKey;
 
-public interface BulkJobStore
-{
+public interface BulkJobStore {
+
     /**
      * @param requestId of the jobs to cancel.
      * @throws BulkJobStorageException
      */
     void cancelAll(String requestId)
-        throws BulkJobStorageException;
+          throws BulkJobStorageException;
 
     /**
      * @param key unique key of job to remove.
@@ -88,12 +87,11 @@ public interface BulkJobStore
     /**
      * @param filter on the job.
      * @param limit  max jobs to return (can be <code>null</code>).
-     * @return a collection of jobs in the store which match
-     * the filter.
+     * @return a collection of jobs in the store which match the filter.
      * @throws BulkJobStorageException
      */
     Collection<BulkJob> find(Predicate<BulkJob> filter, Long limit)
-                    throws BulkJobStorageException;
+          throws BulkJobStorageException;
 
     /**
      * @param key unique key of the job.
@@ -124,5 +122,5 @@ public interface BulkJobStore
      * @throws BulkJobStorageException
      */
     void update(BulkJobKey key, State status, Throwable exception)
-                    throws BulkJobStorageException;
+          throws BulkJobStorageException;
 }

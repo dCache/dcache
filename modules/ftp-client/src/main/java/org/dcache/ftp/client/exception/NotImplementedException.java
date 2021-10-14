@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,14 @@
 package org.dcache.ftp.client.exception;
 
 /**
- * Not used.
- * This exception should be thrown on an attempt of accessing
- * functionality that has not been implemented.
+ * Not used. This exception should be thrown on an attempt of accessing functionality that has not
+ * been implemented.
  **/
-public class NotImplementedException extends RuntimeException
-{
+public class NotImplementedException extends RuntimeException {
+
     private static final long serialVersionUID = 8514401642930835941L;
 
-    public NotImplementedException()
-    {
+    public NotImplementedException() {
         super("This method has not been implemented.");
     }
 }

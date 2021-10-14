@@ -13,16 +13,16 @@ public class StickyRecord implements Serializable {
     private final String _owner;
 
     /**
-     * Timestamp in milliseconds since January 1, 1970 UTC specifying when this
-     * record will expire. The value -1 indicates that the record will never expire.
+     * Timestamp in milliseconds since January 1, 1970 UTC specifying when this record will expire.
+     * The value -1 indicates that the record will never expire.
      */
     private final long _expire;
 
     /**
-     * Create a sticky record for given {@code owner} which will expire at a
-     * specified point in time. When the value of {@code expire} is -1, the record
-     * will never expire.
-     * @param owner The owner of this record.
+     * Create a sticky record for given {@code owner} which will expire at a specified point in
+     * time. When the value of {@code expire} is -1, the record will never expire.
+     *
+     * @param owner  The owner of this record.
      * @param expire Timestamp in milliseconds since January 1, 1970 UTC.
      */
     public StickyRecord(String owner, long expire) {

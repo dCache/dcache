@@ -59,15 +59,15 @@ documents or software obtained from this server.
  */
 package diskCacheV111.pools.json;
 
-import java.io.Serializable;
-
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
+import java.io.Serializable;
 
 /**
  * <p>Bean analogous to {@link PoolQueueInfo}.</p>
  */
 public class PoolQueueData implements Serializable {
+
     private static final long serialVersionUID = -9151237352985968435L;
     private String name;
     private Integer active;

@@ -61,23 +61,20 @@ package org.dcache.resilience;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
-
-import java.io.Serializable;
-import java.util.Map;
-import java.util.concurrent.Executor;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
-
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
-
+import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.Executor;
 import org.dcache.cells.CellStub;
 
 final class TestStub extends CellStub {
+
     private TestMessageProcessor processor;
     private TestNotifyProcessor notifyProcessor;
 
@@ -86,14 +83,14 @@ final class TestStub extends CellStub {
         setCellEndpoint(new CellEndpoint() {
             @Override
             public void sendMessage(CellMessage envelope, SendFlag... flags)
-                            throws SerializationException {
+                  throws SerializationException {
 
             }
 
             @Override
             public void sendMessage(CellMessage envelope,
-                                    CellMessageAnswerable callback, Executor executor,
-                                    long timeout, SendFlag... flags) throws SerializationException {
+                  CellMessageAnswerable callback, Executor executor,
+                  long timeout, SendFlag... flags) throws SerializationException {
 
             }
 
@@ -110,7 +107,7 @@ final class TestStub extends CellStub {
     }
 
     public <T extends Message> T sendAndWait(T msg, long timeout)
-                    throws CacheException, InterruptedException{
+          throws CacheException, InterruptedException {
         send(msg);
         return msg;
     }
@@ -122,30 +119,32 @@ final class TestStub extends CellStub {
         }
     }
 
-    @Override public <T extends Message> ListenableFuture<T> send(CellPath destination,
-                                                                  T message, CellEndpoint.SendFlag... flags) {
+    @Override
+    public <T extends Message> ListenableFuture<T> send(CellPath destination,
+          T message, CellEndpoint.SendFlag... flags) {
         return send(message, flags);
     }
 
     @Override
-    public <T extends Message> ListenableFuture<T> send(final T message, CellEndpoint.SendFlag... flags) {
+    public <T extends Message> ListenableFuture<T> send(final T message,
+          CellEndpoint.SendFlag... flags) {
         ListenableFutureTask<T> future;
         future = ListenableFutureTask.create(() -> {
-                    processor.processMessage(message);
-                    return message;
-                });
+            processor.processMessage(message);
+            return message;
+        });
         future.run();
         return future;
     }
 
     public <T> ListenableFuture<T> send(CellPath destination,
-                                        Serializable message,
-                                        Class<T> type,
-                                        long timeout,
-                                        CellEndpoint.SendFlag... flags) {
+          Serializable message,
+          Class<T> type,
+          long timeout,
+          CellEndpoint.SendFlag... flags) {
         ListenableFutureTask<T> future;
         future = ListenableFutureTask.create(() -> {
-            processor.processMessage((Message)message);
+            processor.processMessage((Message) message);
             return type.cast(message);
         });
         future.run();

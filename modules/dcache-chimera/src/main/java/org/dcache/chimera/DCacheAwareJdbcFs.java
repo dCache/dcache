@@ -60,14 +60,17 @@ documents or software obtained from this server.
 package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
-import org.dcache.poolmanager.RemotePoolMonitor;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.PlatformTransactionManager;
-
-import javax.security.auth.Subject;
-import javax.sql.DataSource;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -81,20 +84,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileLocality;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.NoRouteToCellException;
-
+import javax.security.auth.Subject;
+import javax.sql.DataSource;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -103,20 +95,23 @@ import org.dcache.pinmanager.PinManagerListPinsMessage;
 import org.dcache.pinmanager.PinManagerListPinsMessage.Info;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.vehicles.FileAttributes;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.PlatformTransactionManager;
 
 
 /**
- * Overrides protected methods so as to be able to provide live locality
- * information if requested; the latter calls the PNFS and Pool managers.
- * Also implements requests to pin manager for STAGE command.
+ * Overrides protected methods so as to be able to provide live locality information if requested;
+ * the latter calls the PNFS and Pool managers. Also implements requests to pin manager for STAGE
+ * command.
  *
  * @author arossi
  */
-public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
-{
-    public class DcachePinInfo implements PinInfo
-    {
+public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
+
+    public class DcachePinInfo implements PinInfo {
+
         private final Instant creation;
         private final Optional<Instant> expiration;
         private final PinState state;
@@ -124,8 +119,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         private final long id;
         private final boolean isUnpinnable;
 
-        public DcachePinInfo(Info info)
-        {
+        public DcachePinInfo(Info info) {
             creation = info.getCreationTime();
             expiration = info.getExpirationTime();
             state = TO_PIN_STATE.get(info.getState());
@@ -135,46 +129,40 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         }
 
         @Override
-        public Instant getCreationTime()
-        {
+        public Instant getCreationTime() {
             return creation;
         }
 
         @Override
-        public Optional<Instant> getExpirationTime()
-        {
+        public Optional<Instant> getExpirationTime() {
             return expiration;
         }
 
         @Override
-        public PinState getState()
-        {
+        public PinState getState() {
             return state;
         }
 
         @Override
-        public Optional<String> getRequestId()
-        {
+        public Optional<String> getRequestId() {
             return requestId;
         }
 
         @Override
-        public long getId()
-        {
+        public long getId() {
             return id;
         }
 
         @Override
-        public boolean isUnpinnable()
-        {
+        public boolean isUnpinnable() {
             return isUnpinnable;
         }
     }
 
     private static final Map<PinManagerListPinsMessage.State, PinState> TO_PIN_STATE = ImmutableMap.of(
-            PinManagerListPinsMessage.State.PINNING, PinState.PINNING,
-            PinManagerListPinsMessage.State.PINNED, PinState.PINNED,
-            PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING);
+          PinManagerListPinsMessage.State.PINNING, PinState.PINNING,
+          PinManagerListPinsMessage.State.PINNED, PinState.PINNED,
+          PinManagerListPinsMessage.State.UNPINNING, PinState.UNPINNING);
 
     private CellStub pinManagerStub;
     private CellStub billingStub;
@@ -188,18 +176,17 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     private RemotePoolMonitor poolMonitor;
 
     @Required
-    public void setQueryPnfsManagerOnRename(boolean yes)
-    {
+    public void setQueryPnfsManagerOnRename(boolean yes) {
         queryPnfsManagerOnRename = yes;
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws ChimeraFsException, SQLException
-    {
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
+          throws ChimeraFsException, SQLException {
         super(dataSource, txManager);
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id) throws ChimeraFsException, SQLException
-    {
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id)
+          throws ChimeraFsException, SQLException {
         super(dataSource, txManager, id);
     }
 
@@ -215,8 +202,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         this.billingStub = billingStub;
     }
 
-    public void setPoolMonitor(RemotePoolMonitor poolMonitor)
-    {
+    public void setPoolMonitor(RemotePoolMonitor poolMonitor) {
         this.poolMonitor = poolMonitor;
     }
 
@@ -232,19 +218,17 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     }
 
     /**
-     * This method sends a request to the pin manager to pin
-     * a given file.
+     * This method sends a request to the pin manager to pin a given file.
      */
     @Override
-    public void pin(FsInode inode, long lifetime) throws ChimeraFsException
-    {
+    public void pin(FsInode inode, long lifetime) throws ChimeraFsException {
         Subject subject = Subject.getSubject(AccessController.getContext());
         InetAddress client = Subjects.getOrigin(subject).getAddress();
         ProtocolInfo protocolInfo
-            =  new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(client, 0));
+              = new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(client, 0));
         PinManagerPinMessage message
-            = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
-                    protocolInfo, null, lifetime);
+              = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
+              protocolInfo, null, lifetime);
         message.setSubject(subject);
 
         message.setReplyWhenStarted(true);
@@ -264,13 +248,12 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     }
 
     /**
-     * This method sends a request to the pin manager to unpin
-     * a given file.
+     * This method sends a request to the pin manager to unpin a given file.
      */
     @Override
     public void unpin(FsInode inode) throws ChimeraFsException {
         PinManagerUnpinMessage message
-            = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
+              = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
         Subject subject = Subject.getSubject(AccessController.getContext());
         message.setSubject(subject);
 
@@ -291,16 +274,15 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     }
 
     @Override
-    public List<PinInfo> listPins(FsInode inode) throws ChimeraFsException
-    {
+    public List<PinInfo> listPins(FsInode inode) throws ChimeraFsException {
         PnfsId pnfsid = new PnfsId(inode.getId());
         PinManagerListPinsMessage request = new PinManagerListPinsMessage(pnfsid);
         Subject subject = Subject.getSubject(AccessController.getContext());
         request.setSubject(subject);
         try {
             return pinManagerStub.sendAndWait(request).getInfo().stream()
-                    .map(DcachePinInfo::new)
-                    .collect(Collectors.toList());
+                  .map(DcachePinInfo::new)
+                  .collect(Collectors.toList());
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
             throw new InvalidArgumentChimeraException(e.getMessage());
         }
@@ -312,36 +294,37 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
         super.remove(directory, name, inode);
         Subject subject = Subject.getSubject(AccessController.getContext());
         DoorRequestInfoMessage infoRemove
-                = new DoorRequestInfoMessage(myAddress, "remove");
+              = new DoorRequestInfoMessage(myAddress, "remove");
 
         infoRemove.setSubject(subject);
         infoRemove.setPnfsId(new PnfsId(inode.getId()));
         infoRemove.setFileSize(0L);
         infoRemove.setBillingPath("parent:[" + directory.getId() + "]/" + name);
         // FIXME: in some cases subject is not set
-        infoRemove.setClient(subject == null? "0.0.0.0" : Subjects.getOrigin(subject).getAddress().getHostAddress());
+        infoRemove.setClient(subject == null ? "0.0.0.0"
+              : Subjects.getOrigin(subject).getAddress().getHostAddress());
         infoRemove.setClientChain(infoRemove.getClient());
 
         billingStub.notify(infoRemove);
     }
 
     /**
-     * Callout to get pool monitor and check for live (network) status of a file
-     * instead of simply its status as recorded in the Chimera database.
+     * Callout to get pool monitor and check for live (network) status of a file instead of simply
+     * its status as recorded in the Chimera database.
      */
     private String getFileLocality(String filePath) throws ChimeraFsException {
         FileLocality locality = FileLocality.UNAVAILABLE;
 
         try {
             Set<FileAttribute> requestedAttributes
-                = EnumSet.of(FileAttribute.TYPE,
-                             FileAttribute.SIZE,
-                             FileAttribute.STORAGEINFO,
-                             FileAttribute.LOCATIONS);
+                  = EnumSet.of(FileAttribute.TYPE,
+                  FileAttribute.SIZE,
+                  FileAttribute.STORAGEINFO,
+                  FileAttribute.LOCATIONS);
             Set<AccessMask> accessMask = EnumSet.of(AccessMask.READ_DATA);
             FileAttributes attributes
-                = pnfsHandler.getFileAttributes(filePath, requestedAttributes,
-                                                accessMask, false);
+                  = pnfsHandler.getFileAttributes(filePath, requestedAttributes,
+                  accessMask, false);
             /*
              * TODO improve code to pass in the actual InetAddress of the
              * client so that link net masks do not interfere; note that SRM uses
@@ -356,24 +339,24 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware
     }
 
     @Override
-    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir,
+          String dest) throws ChimeraFsException {
         if (!queryPnfsManagerOnRename) {
-            return super.rename(inode,srcDir,source,destDir,dest);
+            return super.rename(inode, srcDir, source, destDir, dest);
         }
         boolean rc = true;
         try {
             String sourceDirectory = inode2path(srcDir);
-            File sourcePath = new File(sourceDirectory,source);
+            File sourcePath = new File(sourceDirectory, source);
             String destinationDirectory = inode2path(destDir);
-            File destinationPath = new File(destinationDirectory,dest);
-            pnfsHandler.renameEntry(sourcePath.getCanonicalPath(),destinationPath.getCanonicalPath(),true);
-        }
-        catch (PermissionDeniedCacheException e) {
+            File destinationPath = new File(destinationDirectory, dest);
+            pnfsHandler.renameEntry(sourcePath.getCanonicalPath(),
+                  destinationPath.getCanonicalPath(), true);
+        } catch (PermissionDeniedCacheException e) {
             throw new PermissionDeniedChimeraFsException(e.getMessage());
-        }
-        catch (CacheException | IOException e) {
+        } catch (CacheException | IOException e) {
             Throwables.propagateIfInstanceOf(e, ChimeraFsException.class);
-            throw new ChimeraFsException(e.getMessage(),e);
+            throw new ChimeraFsException(e.getMessage(), e);
         }
         return rc;
     }

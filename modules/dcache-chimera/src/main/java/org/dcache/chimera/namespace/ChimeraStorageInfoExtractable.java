@@ -4,17 +4,16 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.chimera.FsInode;
 
 /**
- * Implementations of this interface extract information specific to particular
- * HSM types from the name space.
- *
- * A typical implementation will have means to obtain default values from
- * directory tags.
+ * Implementations of this interface extract information specific to particular HSM types from the
+ * name space.
+ * <p>
+ * A typical implementation will have means to obtain default values from directory tags.
  */
 public interface ChimeraStorageInfoExtractable {
+
     /**
      * Returns the AccessLatency of an inode.
      *
@@ -45,7 +44,7 @@ public interface ChimeraStorageInfoExtractable {
     /**
      * Updates the StorageInfo of an inode.
      *
-     * @param inode An inode
+     * @param inode       An inode
      * @param storageInfo StorageInfo to write to inode
      * @throws CacheException if the StorageInfo could not be written
      */

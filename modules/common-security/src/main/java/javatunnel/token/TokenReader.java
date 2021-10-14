@@ -19,8 +19,8 @@ package javatunnel.token;
 
 import java.io.IOException;
 
-public interface TokenReader
-{
+public interface TokenReader {
+
     byte[] readToken() throws IOException;
 
     void close() throws IOException;

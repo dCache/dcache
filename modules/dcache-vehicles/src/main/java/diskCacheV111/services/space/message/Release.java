@@ -13,19 +13,21 @@ import diskCacheV111.vehicles.Message;
 
 
 /**
- *
  * @author timur
  */
-public class Release extends Message{
+public class Release extends Message {
+
     private static final long serialVersionUID = 5429671420465560457L;
     private long spaceToken;
     private Long releaseSizeInBytes; // all if null
     private long remainingSizeInBytes;
 
-    /** Creates a new instance of Reserve */
+    /**
+     * Creates a new instance of Reserve
+     */
     public Release(
-            long spaceToken,
-            Long releaseSizeInBytes){
+          long spaceToken,
+          Long releaseSizeInBytes) {
         this.spaceToken = spaceToken;
         this.releaseSizeInBytes = releaseSizeInBytes;
         setReplyRequired(true);

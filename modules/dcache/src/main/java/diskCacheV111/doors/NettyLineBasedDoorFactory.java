@@ -22,10 +22,14 @@ package diskCacheV111.doors;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import diskCacheV111.services.space.Space;
+import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginCellFactory;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
@@ -33,14 +37,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.services.space.Space;
-
-import dmg.cells.nucleus.Cell;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginCellFactory;
-
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
@@ -53,8 +49,8 @@ import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.Option;
 import org.dcache.util.OptionParser;
 
-public class NettyLineBasedDoorFactory extends AbstractService implements LoginCellFactory
-{
+public class NettyLineBasedDoorFactory extends AbstractService implements LoginCellFactory {
+
     private final CellEndpoint parentEndpoint;
     private final String parentCellName;
     private final Args args;
@@ -64,42 +60,42 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     private PoolManagerHandlerSubscriber poolManagerHandler;
     private NioEventLoopGroup socketGroup;
     private LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache;
-    private LoadingCache<String,Optional<Space>> spaceLookupCache;
+    private LoadingCache<String, Optional<Space>> spaceLookupCache;
 
     @Option(name = "poolManager",
-            description = "Well known name of the pool manager",
-            defaultValue = "PoolManager")
+          description = "Well known name of the pool manager",
+          defaultValue = "PoolManager")
     protected CellPath poolManager;
 
     @Option(name = "poolManagerTimeout",
-            defaultValue = "1500")
+          defaultValue = "1500")
     protected int poolManagerTimeout;
 
     @Option(name = "poolManagerTimeoutUnit",
-            defaultValue = "SECONDS")
+          defaultValue = "SECONDS")
     protected TimeUnit poolManagerTimeoutUnit;
 
     @Option(name = "poolTimeout",
-            defaultValue = "300")
+          defaultValue = "300")
     protected int poolTimeout;
 
     @Option(name = "poolTimeoutUnit",
-            defaultValue = "SECONDS")
+          defaultValue = "SECONDS")
     protected TimeUnit poolTimeoutUnit;
 
     @Option(name = "gplazma",
-            description = "Cell path to gPlazma",
-            defaultValue = "gPlazma")
+          description = "Cell path to gPlazma",
+          defaultValue = "gPlazma")
     protected CellPath gPlazma;
 
     @Option(name = "spaceManager",
-            description = "Cell path to SpaceManager",
-            defaultValue = "SpaceManager")
+          description = "Cell path to SpaceManager",
+          defaultValue = "SpaceManager")
     protected CellPath spaceManagerPath;
 
-    public NettyLineBasedDoorFactory(NettyLineBasedInterpreterFactory factory, Args args, CellEndpoint parentEndpoint,
-                                     String parentCellName)
-    {
+    public NettyLineBasedDoorFactory(NettyLineBasedInterpreterFactory factory, Args args,
+          CellEndpoint parentEndpoint,
+          String parentCellName) {
         this.factory = factory;
         this.parentEndpoint = parentEndpoint;
         this.parentCellName = parentCellName;
@@ -109,17 +105,15 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return factory.getClass().getSimpleName();
     }
 
     @Override
-    public Cell newCell(Socket socket) throws InvocationTargetException
-    {
+    public Cell newCell(Socket socket) throws InvocationTargetException {
         NettyLineBasedDoor door = new NettyLineBasedDoor(parentCellName + "*", args,
-                factory, executor, poolManagerHandler, idResolverFactory,
-                spaceDescriptionCache, spaceLookupCache);
+              factory, executor, poolManagerHandler, idResolverFactory,
+              spaceDescriptionCache, spaceLookupCache);
 
         NioSocketChannel channel = new NioSocketChannel(socket.getChannel());
 
@@ -133,37 +127,39 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("  Interpreter    : " + factory.getClass());
     }
 
     @Override
-    protected void doStart()
-    {
+    protected void doStart() {
         executor = Executors.newCachedThreadPool(
-                new ThreadFactoryBuilder().setNameFormat(parentCellName + "-%d").build());
+              new ThreadFactoryBuilder().setNameFormat(parentCellName + "-%d").build());
 
         CellStub spaceManager = new CellStub(parentEndpoint, spaceManagerPath, 30_000);
-        spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager, executor);
+        spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager,
+              executor);
         spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor);
 
-        LoginStrategy loginStrategy = new RemoteLoginStrategy(new CellStub(parentEndpoint, gPlazma, 30_000));
+        LoginStrategy loginStrategy = new RemoteLoginStrategy(
+              new CellStub(parentEndpoint, gPlazma, 30_000));
         idResolverFactory = new IdentityResolverFactory(loginStrategy);
 
         poolManagerHandler = new PoolManagerHandlerSubscriber();
-        poolManagerHandler.setPoolManager(new CellStub(parentEndpoint, poolManager, poolManagerTimeout, poolManagerTimeoutUnit));
+        poolManagerHandler.setPoolManager(
+              new CellStub(parentEndpoint, poolManager, poolManagerTimeout,
+                    poolManagerTimeoutUnit));
         poolManagerHandler.start();
         poolManagerHandler.afterStart();
 
-        socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(parentCellName + "-io-%d").build()));
+        socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(
+              new ThreadFactoryBuilder().setNameFormat(parentCellName + "-io-%d").build()));
 
         notifyStarted();
     }
 
     @Override
-    protected void doStop()
-    {
+    protected void doStop() {
         socketGroup.shutdownGracefully(500, 2000, TimeUnit.MILLISECONDS).syncUninterruptibly();
         poolManagerHandler.beforeStop();
         executor.shutdown();

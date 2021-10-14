@@ -61,7 +61,6 @@ package org.dcache.restful.providers.billing;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import org.dcache.services.billing.db.data.StorageRecord;
 
 @ApiModel(description = "Properties pertinent to tape operations.")
@@ -70,7 +69,7 @@ public final class HSMTransferRecord extends BillingTransferRecord {
     private static final String MAINFORMAT = "%s (pool %s)(connect %s)(queued %s) %s\n";
 
     @ApiModelProperty("Pool to which the file is staged "
-                    + "or from which it is flushed to tape.")
+          + "or from which it is flushed to tape.")
     private String pool;
 
     public HSMTransferRecord() {
@@ -92,10 +91,10 @@ public final class HSMTransferRecord extends BillingTransferRecord {
 
     public String toDisplayString() {
         return String.format(MAINFORMAT,
-                             datestamp,
-                             pool,
-                             connectiontime,
-                             queuedtime,
-                             errormessage);
+              datestamp,
+              pool,
+              connectiontime,
+              queuedtime,
+              errormessage);
     }
 }

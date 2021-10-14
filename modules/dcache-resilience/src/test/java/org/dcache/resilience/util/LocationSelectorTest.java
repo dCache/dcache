@@ -59,29 +59,28 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.util.CacheException;
-import org.dcache.resilience.TestBase;
-import org.dcache.resilience.data.PoolStateUpdate;
-import org.dcache.vehicles.FileAttributes;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.dcache.resilience.TestBase;
+import org.dcache.resilience.data.PoolStateUpdate;
+import org.dcache.vehicles.FileAttributes;
+import org.junit.Before;
+import org.junit.Test;
+
 public final class LocationSelectorTest extends TestBase {
+
     String pool;
     String selected;
     Integer group;
@@ -139,7 +138,7 @@ public final class LocationSelectorTest extends TestBase {
 
     @Test
     public void shouldSelectARandomGroupMemberWhichHasNotBeenTried()
-                    throws Exception {
+          throws Exception {
         givenAFileOnlyOnOnePool();
         givenTheSetOfOnlinePoolsForTheGroup();
         givenTheCurrentLocationHasBeenTried();
@@ -182,9 +181,9 @@ public final class LocationSelectorTest extends TestBase {
     }
 
     private void givenLocationGoesOffline(String location)
-                    throws CacheException {
+          throws CacheException {
         PoolStateUpdate update = new PoolStateUpdate(location,
-                                    new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
+              new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
         poolInfoMap.updatePoolStatus(update);
     }
 
@@ -194,13 +193,13 @@ public final class LocationSelectorTest extends TestBase {
 
     private void givenTheSetOfOnlinePoolsForTheGroup() {
         readable = poolInfoMap.getPoolsOfGroup(group).stream()
-                        .map((i) -> poolInfoMap.getPool(i))
-                        .filter((p) -> poolInfoMap.getPoolState(p).mode.isEnabled())
-                        .collect(Collectors.toSet());
+              .map((i) -> poolInfoMap.getPool(i))
+              .filter((p) -> poolInfoMap.getPoolState(p).mode.isEnabled())
+              .collect(Collectors.toSet());
     }
 
     private void givenThisManyLocationsAreOffline(int offline)
-                    throws CacheException {
+          throws CacheException {
         collection = attributes.getLocations();
         int count = 0;
 
@@ -213,9 +212,9 @@ public final class LocationSelectorTest extends TestBase {
     }
 
     private void givenThisManyOtherPoolsInTheGroupAreDown(int down)
-                    throws CacheException {
+          throws CacheException {
         available = Sets.difference(readable,
-                        ImmutableSet.copyOf(attributes.getLocations()));
+              ImmutableSet.copyOf(attributes.getLocations()));
         down = Math.min(available.size(), down);
         int count = 0;
         for (String pool : available) {
@@ -229,15 +228,15 @@ public final class LocationSelectorTest extends TestBase {
     private void setInfoFromAttributes() {
         pool = attributes.getLocations().iterator().next();
         group = poolInfoMap.getResilientPoolGroup(
-                        poolInfoMap.getPoolIndex(pool));
+              poolInfoMap.getPoolIndex(pool));
     }
 
     private void whenCopyTargetIsSelected() {
         try {
             selected = locationSelector.selectCopyTarget(group,
-                                                         attributes.getLocations(),
-                                                         Collections.EMPTY_SET,
-                                                         Collections.EMPTY_SET);
+                  attributes.getLocations(),
+                  Collections.EMPTY_SET,
+                  Collections.EMPTY_SET);
         } catch (Exception e) {
             LOGGER.error("{}", new ExceptionMessage(e));
         }

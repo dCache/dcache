@@ -59,16 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.alarms;
 
+import diskCacheV111.util.CacheException;
 import java.util.List;
 import java.util.Map;
-
-import diskCacheV111.util.CacheException;
 import org.dcache.alarms.LogEntry;
 
 /**
  * <p>Internal API for calling the alarms info service.</p>
  */
 public interface AlarmsInfoService {
+
     /**
      * <p>Return the list of alarms.</p>
      *
@@ -87,22 +87,22 @@ public interface AlarmsInfoService {
      * @param service       Filter on service
      * @param info          Filter on info
      * @param sort          List of fields on which to sort
-     * @return              List of LogEntry objects.
+     * @return List of LogEntry objects.
      * @throws CacheException if the fetch operation fails.
      */
     List<LogEntry> get(Long offset,
-                       Long limit,
-                       Long after,
-                       Long before,
-                       Boolean includeClosed,
-                       String severity,
-                       String type,
-                       String host,
-                       String domain,
-                       String service,
-                       String info,
-                       String sort)
-            throws CacheException, InterruptedException;
+          Long limit,
+          Long after,
+          Long before,
+          Boolean includeClosed,
+          String severity,
+          String type,
+          String host,
+          String domain,
+          String service,
+          String info,
+          String sort)
+          throws CacheException, InterruptedException;
 
     /**
      * @return the current mapping of alarm types to alarms priority level.
@@ -121,8 +121,7 @@ public interface AlarmsInfoService {
      * <p>The service will only mutate the 'closed' and 'notes' fields.</p>
      *
      * @param entries to update.
-     * @throws CacheException if the indicated alarm does not exist or if
-     *                        update fails.
+     * @throws CacheException if the indicated alarm does not exist or if update fails.
      */
     void update(List<LogEntry> entries) throws CacheException, InterruptedException;
 }

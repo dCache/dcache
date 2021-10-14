@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.billing;
 
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -66,10 +69,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
@@ -79,14 +78,14 @@ import org.dcache.vehicles.billing.RecordRequestMessage;
  * <p>Handles the message-passing to the actual billing service.</p>
  *
  * <p>In the case of this front-end service, the collector is lightweight, and
- * is maintained in the interest of architectural symmetry with the other
- * admin services.</p>
+ * is maintained in the interest of architectural symmetry with the other admin services.</p>
  *
  * <p>The {@link BillingInfoService} implementation is responsible for
  * the front-end caching of the information gathered.</p>
  */
 public class BillingInfoCollector
-                extends CellMessagingCollector<Map<String, Future<BillingDataRequestMessage>>>{
+      extends CellMessagingCollector<Map<String, Future<BillingDataRequestMessage>>> {
+
     private CellPath billingPath;
 
     /**
@@ -102,17 +101,17 @@ public class BillingInfoCollector
         Map<String, Future<BillingDataRequestMessage>> replies = new TreeMap<>();
 
         List<BillingDataRequestMessage> messages
-                        = BillingInfoCollectionUtils.generateMessages();
+              = BillingInfoCollectionUtils.generateMessages();
 
         for (BillingDataRequestMessage message : messages) {
             String key = BillingInfoCollectionUtils.getKey(message);
             try {
                 replies.put(key, stub.send(billingPath, message));
             } catch (IllegalStateException e) {
-                   /*
-                    * This can occur on startup, racing against the billing
-                    * service.  Just add the empty future
-                    */
+                /*
+                 * This can occur on startup, racing against the billing
+                 * service.  Just add the empty future
+                 */
                 replies.put(key, new Future<BillingDataRequestMessage>() {
                     @Override
                     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -121,17 +120,17 @@ public class BillingInfoCollector
 
                     @Override
                     public BillingDataRequestMessage get()
-                                    throws InterruptedException,
-                                    ExecutionException {
+                          throws InterruptedException,
+                          ExecutionException {
                         return message;
                     }
 
                     @Override
                     public BillingDataRequestMessage get(long timeout,
-                                                         TimeUnit unit)
-                                    throws InterruptedException,
-                                    ExecutionException,
-                                    TimeoutException {
+                          TimeUnit unit)
+                          throws InterruptedException,
+                          ExecutionException,
+                          TimeoutException {
                         return message;
                     }
 
@@ -159,8 +158,8 @@ public class BillingInfoCollector
      * @return message with the data added.
      */
     public <M extends RecordRequestMessage> M sendRecordRequest(M message)
-                    throws InterruptedException, CacheException,
-                    NoRouteToCellException {
+          throws InterruptedException, CacheException,
+          NoRouteToCellException {
         return stub.sendAndWait(billingPath, message);
     }
 

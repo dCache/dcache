@@ -59,84 +59,80 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.bulk;
 
-import com.google.common.base.Throwables;
+import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
 
+import com.google.common.base.Throwables;
+import dmg.util.Exceptions;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
-
 import org.dcache.cells.CellStub;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
 import org.dcache.services.bulk.BulkQuotaExceededException;
 import org.dcache.services.bulk.BulkRequestNotFoundException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkServiceMessage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-
-import dmg.util.Exceptions;
-
-import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
 
 /**
  * For injection convenience.
  */
 public class BulkServiceCommunicator {
-  private static final Logger LOGGER
-      = LoggerFactory.getLogger(BulkServiceCommunicator.class);
 
-  protected CellStub bulkService;
+    private static final Logger LOGGER
+          = LoggerFactory.getLogger(BulkServiceCommunicator.class);
 
-  public <M extends BulkServiceMessage> M send(M message)
-      throws ClientErrorException, InternalServerErrorException {
-    Future<M> future = bulkService.send(message);
+    protected CellStub bulkService;
 
-    try {
-      message = future.get();
-      LOGGER.trace("BulkServiceMessage reply: {}.", message);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new BadRequestException(e.getMessage(), e);
+    public <M extends BulkServiceMessage> M send(M message)
+          throws ClientErrorException, InternalServerErrorException {
+        Future<M> future = bulkService.send(message);
+
+        try {
+            message = future.get();
+            LOGGER.trace("BulkServiceMessage reply: {}.", message);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new BadRequestException(e.getMessage(), e);
+        }
+
+        checkError(message);
+
+        return message;
     }
 
-    checkError(message);
-
-    return message;
-  }
-
-  @Required
-  public void setBulkService(CellStub bulkService) {
-    this.bulkService = bulkService;
-  }
-
-  private void checkError(BulkServiceMessage message) {
-    Throwable error = (Throwable) message.getErrorObject();
-
-    if (error == null) {
-      return;
+    @Required
+    public void setBulkService(CellStub bulkService) {
+        this.bulkService = bulkService;
     }
 
-    LOGGER.trace("check error, received {}.", error.toString());
+    private void checkError(BulkServiceMessage message) {
+        Throwable error = (Throwable) message.getErrorObject();
 
-    Throwables.throwIfUnchecked(error);
+        if (error == null) {
+            return;
+        }
 
-    if (error instanceof BulkPermissionDeniedException) {
-      throw new ForbiddenException(error);
-    } else if (error instanceof BulkQuotaExceededException) {
-      throw new ClientErrorException(TOO_MANY_REQUESTS, error);
-    } else if (error instanceof BulkRequestNotFoundException) {
-      throw new NotFoundException(error);
-    } else if (error instanceof BulkServiceException) {
-      throw new BadRequestException(error);
-    } else {
-        LOGGER.warn(Exceptions.meaningfulMessage(error));
-      throw new InternalServerErrorException(error);
+        LOGGER.trace("check error, received {}.", error.toString());
+
+        Throwables.throwIfUnchecked(error);
+
+        if (error instanceof BulkPermissionDeniedException) {
+            throw new ForbiddenException(error);
+        } else if (error instanceof BulkQuotaExceededException) {
+            throw new ClientErrorException(TOO_MANY_REQUESTS, error);
+        } else if (error instanceof BulkRequestNotFoundException) {
+            throw new NotFoundException(error);
+        } else if (error instanceof BulkServiceException) {
+            throw new BadRequestException(error);
+        } else {
+            LOGGER.warn(Exceptions.meaningfulMessage(error));
+            throw new InternalServerErrorException(error);
+        }
     }
-  }
 }

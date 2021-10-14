@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-public class BulkQuotaExceededException extends BulkServiceException
-{
+public class BulkQuotaExceededException extends BulkServiceException {
+
     private static final long serialVersionUID = -2776212873761086957L;
 
-    public BulkQuotaExceededException(String message)
-    {
+    public BulkQuotaExceededException(String message) {
         super(message);
     }
 
-    public BulkQuotaExceededException(String message, Throwable cause)
-    {
+    public BulkQuotaExceededException(String message, Throwable cause) {
         super(message, cause);
     }
 }

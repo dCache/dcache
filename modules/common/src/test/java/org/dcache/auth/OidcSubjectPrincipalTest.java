@@ -17,104 +17,94 @@
  */
 package org.dcache.auth;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+public class OidcSubjectPrincipalTest {
 
-public class OidcSubjectPrincipalTest
-{
-
-    @Test(expected=NullPointerException.class)
-    public void shouldRejectNullSubClaim()
-    {
+    @Test(expected = NullPointerException.class)
+    public void shouldRejectNullSubClaim() {
         new OidcSubjectPrincipal(null, "OP");
     }
 
-    @Test(expected=NullPointerException.class)
-    public void shouldRejectNullOP()
-    {
+    @Test(expected = NullPointerException.class)
+    public void shouldRejectNullOP() {
         new OidcSubjectPrincipal("sub-claim", null);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectNonASCIISubClaim()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectNonASCIISubClaim() {
         new OidcSubjectPrincipal("\uD80C\uDC80", "OP");
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void shouldRejectTooLongSubClaim()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectTooLongSubClaim() {
         new OidcSubjectPrincipal(
-                  "01234567890123456789012345678901234567890123456789"
-                + "01234567890123456789012345678901234567890123456789"
-                + "01234567890123456789012345678901234567890123456789"
-                + "01234567890123456789012345678901234567890123456789"
-                + "01234567890123456789012345678901234567890123456789"
-                + "123456", "OP");
+              "01234567890123456789012345678901234567890123456789"
+                    + "01234567890123456789012345678901234567890123456789"
+                    + "01234567890123456789012345678901234567890123456789"
+                    + "01234567890123456789012345678901234567890123456789"
+                    + "01234567890123456789012345678901234567890123456789"
+                    + "123456", "OP");
     }
 
     @Test
-    public void shouldReturnSubClaim()
-    {
+    public void shouldReturnSubClaim() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p.getSubClaim(), is(equalTo("sub-claim")));
     }
 
     @Test
-    public void shouldReturnOP()
-    {
+    public void shouldReturnOP() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p.getOP(), is(equalTo("OP")));
     }
 
     @Test
-    public void shouldReturnReasonableName()
-    {
+    public void shouldReturnReasonableName() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p.getName(), is(equalTo("sub-claim@OP")));
     }
 
     @Test
-    public void shouldBeEqualWithSameObject()
-    {
+    public void shouldBeEqualWithSameObject() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p, is(equalTo(p)));
     }
 
     @Test
-    public void shouldBeEqualWithOidcPrincipalWithSameStrings()
-    {
+    public void shouldBeEqualWithOidcPrincipalWithSameStrings() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p, is(equalTo(new OidcSubjectPrincipal("sub-claim", "OP"))));
-        assertThat(p.hashCode(), is(equalTo(new OidcSubjectPrincipal("sub-claim", "OP").hashCode())));
+        assertThat(p.hashCode(),
+              is(equalTo(new OidcSubjectPrincipal("sub-claim", "OP").hashCode())));
     }
 
     @Test
-    public void shouldNotBeEqualWithOidcPrincipalWithDifferentSubClaim()
-    {
+    public void shouldNotBeEqualWithOidcPrincipalWithDifferentSubClaim() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p, is(not(equalTo(new OidcSubjectPrincipal("different-sub-claim", "OP")))));
     }
 
     @Test
-    public void shouldNotBeEqualWithOidcPrincipalWithDifferentOP()
-    {
+    public void shouldNotBeEqualWithOidcPrincipalWithDifferentOP() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p, is(not(equalTo(new OidcSubjectPrincipal("sub-claim", "other-OP")))));
     }
 
     @Test
-    public void shouldHaveExpectedToString()
-    {
+    public void shouldHaveExpectedToString() {
         OidcSubjectPrincipal p = new OidcSubjectPrincipal("sub-claim", "OP");
 
         assertThat(p.toString(), is(equalTo("OidcSubjectPrincipal[sub-claim@OP]")));

@@ -2,7 +2,6 @@ package org.dcache.gplazma.plugins;
 
 import java.security.Principal;
 import java.util.Set;
-
 import org.dcache.gplazma.NoSuchPrincipalException;
 
 /**
@@ -12,6 +11,7 @@ public interface GPlazmaIdentityPlugin extends GPlazmaPlugin {
 
     /**
      * Forward mapping.
+     *
      * @param principal
      * @return mapped principal
      * @throws NoSuchPrincipalException if mapping does not exists.
@@ -19,8 +19,9 @@ public interface GPlazmaIdentityPlugin extends GPlazmaPlugin {
     Principal map(Principal principal) throws NoSuchPrincipalException;
 
     /**
-     * Reverse mapping. The resulting {@link Set} MUST contain only principals on which <code>map</code>
-     * call will return the provided <code>principal</code>
+     * Reverse mapping. The resulting {@link Set} MUST contain only principals on which
+     * <code>map</code> call will return the provided <code>principal</code>
+     *
      * @param principal
      * @return non empty {@link Set} of equivalent principals.
      * @throws NoSuchPrincipalException if mapping does not exists.

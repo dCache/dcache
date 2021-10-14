@@ -1,16 +1,13 @@
 package org.dcache.pinmanager.model;
 
+import diskCacheV111.util.PnfsId;
+import java.util.Date;
 import javax.annotation.concurrent.Immutable;
 
-import java.util.Date;
-
-import diskCacheV111.util.PnfsId;
-
 @Immutable
-public final class Pin
-{
-    public enum State
-    {
+public final class Pin {
+
+    public enum State {
         PINNING, PINNED, UNPINNING
     }
 
@@ -20,7 +17,9 @@ public final class Pin
 
     private final long gid;
 
-    /** ID provided by the requestor eg. the SRM door. */
+    /**
+     * ID provided by the requestor eg. the SRM door.
+     */
     private final String requestId;
 
     private final Date creationTime;
@@ -29,16 +28,19 @@ public final class Pin
 
     private final PnfsId pnfsId;
 
-    /** Name of pool on which the file is pinned. */
+    /**
+     * Name of pool on which the file is pinned.
+     */
     private final String pool;
 
-    /** Owner of sticky flag. */
+    /**
+     * Owner of sticky flag.
+     */
     private final String sticky;
 
     private final State state;
 
-    public Pin(long id)
-    {
+    public Pin(long id) {
         this.id = id;
         this.creationTime = new Date();
         this.uid = 0;
@@ -52,8 +54,8 @@ public final class Pin
     }
 
     public Pin(long id, PnfsId pnfsid, String requestId,
-               Date createdAt, Date expiresAt, long uid, long gid, State state, String pool, String sticky)
-    {
+          Date createdAt, Date expiresAt, long uid, long gid, State state, String pool,
+          String sticky) {
         this.id = id;
         this.pnfsId = pnfsid;
         this.requestId = requestId;
@@ -66,66 +68,54 @@ public final class Pin
         this.sticky = sticky;
     }
 
-    public long getPinId()
-    {
+    public long getPinId() {
         return id;
     }
 
-    public long getUid()
-    {
+    public long getUid() {
         return uid;
     }
 
-    public long getGid()
-    {
+    public long getGid() {
         return gid;
     }
 
-    public String getRequestId()
-    {
+    public String getRequestId() {
         return requestId;
     }
 
-    public Date getCreationTime()
-    {
+    public Date getCreationTime() {
         return creationTime;
     }
 
-    public Date getExpirationTime()
-    {
+    public Date getExpirationTime() {
         return expirationTime;
     }
 
-    public PnfsId getPnfsId()
-    {
+    public PnfsId getPnfsId() {
         return pnfsId;
     }
 
-    public String getPool()
-    {
+    public String getPool() {
         return pool;
     }
 
-    public String getSticky()
-    {
+    public String getSticky() {
         return sticky;
     }
 
-    public State getState()
-    {
+    public State getState() {
         return state;
     }
 
-    public boolean hasRemainingLifetimeLessThan(long lifetime)
-    {
+    public boolean hasRemainingLifetimeLessThan(long lifetime) {
         long now = System.currentTimeMillis();
         return (expirationTime != null) &&
-               (lifetime == -1 || expirationTime.before(new Date(now + lifetime)));
+              (lifetime == -1 || expirationTime.before(new Date(now + lifetime)));
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder s = new StringBuilder();
         s.append(String.format("[%d] %s", id, pnfsId));
         if (requestId != null) {

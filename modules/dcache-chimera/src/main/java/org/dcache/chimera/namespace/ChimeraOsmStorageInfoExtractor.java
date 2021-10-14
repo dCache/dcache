@@ -1,40 +1,38 @@
 package org.dcache.chimera.namespace;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
-public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChimeraOsmStorageInfoExtractor.class);
+public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          ChimeraOsmStorageInfoExtractor.class);
 
     public ChimeraOsmStorageInfoExtractor(AccessLatency defaultAL,
-                                          RetentionPolicy defaultRP) {
-        super(defaultAL,defaultRP);
+          RetentionPolicy defaultRP) {
+        super(defaultAL, defaultRP);
     }
 
     @Override
     public StorageInfo getFileStorageInfo(ExtendedInode inode)
-            throws CacheException {
+          throws CacheException {
         try {
             if (inode.statCache().getState() == FileState.CREATED) {
                 return getDirStorageInfo(inode);
@@ -51,7 +49,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
             InodeStorageInformation inodeStorageInfo = inode.getStorageInfo();
 
             StorageInfo info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
-                    inodeStorageInfo.storageSubGroup());
+                  inodeStorageInfo.storageSubGroup());
 
             for (String location : tapeLocations) {
                 try {
@@ -70,8 +68,8 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
     @Override
     public StorageInfo getDirStorageInfo(ExtendedInode inode)
-            throws CacheException {
-        ExtendedInode directory = inode.isDirectory() ? inode: inode.getParent();
+          throws CacheException {
+        ExtendedInode directory = inode.isDirectory() ? inode : inode.getParent();
 
         if (directory == null) {
             throw new FileNotFoundCacheException("file unlinked");
@@ -81,9 +79,9 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
         Map<String, String> hash = new HashMap<>();
         osmTemplateTag.stream()
-                .map(StringTokenizer::new)
-                .filter(t -> t.countTokens() >= 2)
-                .forEach(t -> hash.put(t.nextToken().intern(), t.nextToken()));
+              .map(StringTokenizer::new)
+              .filter(t -> t.countTokens() >= 2)
+              .forEach(t -> hash.put(t.nextToken().intern(), t.nextToken()));
 
         String store = hash.get("StoreName");
 

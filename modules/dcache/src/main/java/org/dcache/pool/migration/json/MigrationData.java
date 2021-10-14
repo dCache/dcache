@@ -64,16 +64,16 @@ import java.io.Serializable;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.migration.MigrationModule} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}, with
- * number of server requests added
+ * from the {@link org.dcache.pool.migration.MigrationModule} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}, with number of server requests added
  * from {@link org.dcache.pool.migration.MigrationModuleServer}.</p>
  */
 public class MigrationData implements Serializable {
+
     private static final long serialVersionUID = 1926893050211983621L;
     private String label;
     private String[] jobInfo;
-    private Integer  serverRequests;
+    private Integer serverRequests;
 
     public MigrationData() {
     }

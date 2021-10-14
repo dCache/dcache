@@ -69,33 +69,51 @@ package org.dcache.srm.scheduler;
 import java.util.Arrays;
 
 public enum State {
-    /** Initial state: no processing has happened for job. */
-    UNSCHEDULED    ("Unscheduled",    0),
+    /**
+     * Initial state: no processing has happened for job.
+     */
+    UNSCHEDULED("Unscheduled", 0),
 
-    /** Job is waiting in scheduler for initial activity. */
-    QUEUED         ("Queued"         ,2),
+    /**
+     * Job is waiting in scheduler for initial activity.
+     */
+    QUEUED("Queued", 2),
 
-    /** Job is being processed. */
-    INPROGRESS     ("InProgress"     ,3),
+    /**
+     * Job is being processed.
+     */
+    INPROGRESS("InProgress", 3),
 
-    /** Job is successful and waits client requesting its status when the Ready queue isn't full. */
-    RQUEUED        ("RQueued"        ,6),
+    /**
+     * Job is successful and waits client requesting its status when the Ready queue isn't full.
+     */
+    RQUEUED("RQueued", 6),
 
-    /** Job is successful, this is known to client and further client interaction is expected. */
-    READY          ("Ready"          ,7),
+    /**
+     * Job is successful, this is known to client and further client interaction is expected.
+     */
+    READY("Ready", 7),
 
-    /** Client has called SRMv1 setFileStatus("Running"). */
-    TRANSFERRING   ("Transferring"   ,8),
+    /**
+     * Client has called SRMv1 setFileStatus("Running").
+     */
+    TRANSFERRING("Transferring", 8),
 
-    /** Job is successful and no further client interaction is possible. */
-    DONE           ("Done"           ,9, true),
+    /**
+     * Job is successful and no further client interaction is possible.
+     */
+    DONE("Done", 9, true),
 
-    /** Client interaction prevented job from completing successfully. */
-    CANCELED       ("Canceled"       ,10, true),
+    /**
+     * Client interaction prevented job from completing successfully.
+     */
+    CANCELED("Canceled", 10, true),
 
-    /** A resource limitation or some failure prevented job from completing successfully. */
-    FAILED         ("Failed"         ,11, true),
-    RESTORED       ("Restored"       ,12);
+    /**
+     * A resource limitation or some failure prevented job from completing successfully.
+     */
+    FAILED("Failed", 11, true),
+    RESTORED("Restored", 12);
 
     private final String name;
     private final int stateId;
@@ -133,8 +151,8 @@ public enum State {
         return isFinal;
     }
 
-    /** this package visible method is used to restore the State from
-     * the database
+    /**
+     * this package visible method is used to restore the State from the database
      */
     public static State getState(String state) throws IllegalArgumentException {
         if (state == null || state.equalsIgnoreCase("null")) {
@@ -142,18 +160,18 @@ public enum State {
         }
         try {
             return Arrays.stream(values())
-                    .filter(s -> s.hasName(state))
-                    .findFirst()
-                    .orElseGet(() -> getState(Integer.parseInt(state)));
+                  .filter(s -> s.hasName(state))
+                  .findFirst()
+                  .orElseGet(() -> getState(Integer.parseInt(state)));
         } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Unknown State:"+state);
+            throw new IllegalArgumentException("Unknown State:" + state);
         }
     }
 
     public static State getState(int stateId) throws IllegalArgumentException {
         return Arrays.stream(values())
-                .filter(s -> s.hasId(stateId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown State Id:"+stateId));
+              .filter(s -> s.hasId(stateId))
+              .findFirst()
+              .orElseThrow(() -> new IllegalArgumentException("Unknown State Id:" + stateId));
     }
 }

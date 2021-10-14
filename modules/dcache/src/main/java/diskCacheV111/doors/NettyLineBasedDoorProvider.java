@@ -20,18 +20,15 @@
 package diskCacheV111.doors;
 
 import diskCacheV111.util.ConfigurationException;
-
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.services.login.LoginCellFactory;
 import dmg.cells.services.login.LoginCellProvider;
-
 import org.dcache.util.Args;
 
-public class NettyLineBasedDoorProvider implements LoginCellProvider
-{
+public class NettyLineBasedDoorProvider implements LoginCellProvider {
+
     @Override
-    public int getPriority(String name)
-    {
+    public int getPriority(String name) {
         try {
             if (NettyLineBasedInterpreterFactory.class.isAssignableFrom(Class.forName(name))) {
                 return 100;
@@ -42,19 +39,22 @@ public class NettyLineBasedDoorProvider implements LoginCellProvider
     }
 
     @Override
-    public LoginCellFactory createFactory(String name, Args args, CellEndpoint parentEndpoint, String parentCellName)
-            throws IllegalArgumentException
-    {
+    public LoginCellFactory createFactory(String name, Args args, CellEndpoint parentEndpoint,
+          String parentCellName)
+          throws IllegalArgumentException {
         try {
             Class<?> interpreter = Class.forName(name);
             if (NettyLineBasedInterpreterFactory.class.isAssignableFrom(interpreter)) {
-                NettyLineBasedInterpreterFactory factory = interpreter.asSubclass(NettyLineBasedInterpreterFactory.class).newInstance();
+                NettyLineBasedInterpreterFactory factory = interpreter.asSubclass(
+                      NettyLineBasedInterpreterFactory.class).newInstance();
                 factory.configure(args);
                 return new NettyLineBasedDoorFactory(factory, args, parentEndpoint, parentCellName);
             }
-            throw new IllegalArgumentException("Not a NettyLineBasedInterpreterFactory: " + interpreter);
+            throw new IllegalArgumentException(
+                  "Not a NettyLineBasedInterpreterFactory: " + interpreter);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | ConfigurationException e) {
-            throw new IllegalArgumentException("Failed to instantiate interpreter factory: " + e.toString(), e);
+            throw new IllegalArgumentException(
+                  "Failed to instantiate interpreter factory: " + e.toString(), e);
         }
     }
 }

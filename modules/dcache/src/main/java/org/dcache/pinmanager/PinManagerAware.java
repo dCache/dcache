@@ -62,5 +62,6 @@ package org.dcache.pinmanager;
 import org.dcache.cells.CellStub;
 
 public interface PinManagerAware {
-  void setPinManager(CellStub pinManager);
+
+    void setPinManager(CellStub pinManager);
 }

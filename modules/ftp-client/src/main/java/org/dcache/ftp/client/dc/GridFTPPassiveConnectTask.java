@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,56 +15,49 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.ServerSocket;
 import java.net.Socket;
-
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.GridFTPSession;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Unlike in the parent class, here we use authentication
- * and protection.
+ * Unlike in the parent class, here we use authentication and protection.
  **/
-public class GridFTPPassiveConnectTask extends PassiveConnectTask
-{
+public class GridFTPPassiveConnectTask extends PassiveConnectTask {
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(GridFTPPassiveConnectTask.class);
+          LoggerFactory.getLogger(GridFTPPassiveConnectTask.class);
 
     // alias to session
     final GridFTPSession gSession;
 
     public GridFTPPassiveConnectTask(ServerSocket myServer,
-                                     DataSink sink,
-                                     BasicServerControlChannel control,
-                                     GridFTPSession session,
-                                     DataChannelFactory factory,
-                                     EBlockParallelTransferContext context)
-    {
+          DataSink sink,
+          BasicServerControlChannel control,
+          GridFTPSession session,
+          DataChannelFactory factory,
+          EBlockParallelTransferContext context) {
         super(myServer, sink, control, session, factory, context);
         gSession = session;
     }
 
     public GridFTPPassiveConnectTask(ServerSocket myServer,
-                                     DataSource source,
-                                     BasicServerControlChannel control,
-                                     GridFTPSession session,
-                                     DataChannelFactory factory,
-                                     EBlockParallelTransferContext context)
-    {
+          DataSource source,
+          BasicServerControlChannel control,
+          GridFTPSession session,
+          DataChannelFactory factory,
+          EBlockParallelTransferContext context) {
         super(myServer, source, control, session, factory, context);
         gSession = session;
     }
 
     @Override
-    protected SocketBox openSocket() throws Exception
-    {
+    protected SocketBox openSocket() throws Exception {
 
         logger.debug("server.accept()");
 
@@ -73,7 +66,7 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
         logger.debug("server.accept() returned");
 
         if (!gSession.dataChannelAuthentication.equals(
-                DataChannelAuthentication.NONE)) {
+              DataChannelAuthentication.NONE)) {
             logger.debug("authenticating");
             throw new UnsupportedOperationException("DCAU is not supported by this client.");
         } else {
@@ -100,7 +93,7 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
         logger.debug("adding new socket to the pool");
         socketPool.add(sBox);
         logger.debug("available cached sockets: {} ; busy: {}", socketPool.countFree(),
-                     socketPool.countBusy());
+              socketPool.countBusy());
 
         return sBox;
 

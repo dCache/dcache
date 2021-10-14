@@ -20,10 +20,8 @@
 package org.dcache.poolmanager;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -35,75 +33,77 @@ import dmg.cells.nucleus.CellMessage;
  * movers on pools.
  *
  * <p>The simplest implementation would forward these requests to the pool
- * manager, however more advanced implementations may process some of the requests
- * locally or load balance requests over multiple pool managers.
+ * manager, however more advanced implementations may process some of the requests locally or load
+ * balance requests over multiple pool managers.
  *
  * <p>Implementations are typically obtained from the pool manager through a
  * {@link PoolManagerHandlerSubscriber}.
  */
-public interface PoolManagerHandler
-{
-    /**
-     * Submit a request to a pool.
-     *
-     * Some pool requests are intercepted by pool manager and thus should be
-     * submitted through a PoolManagerHandler.
-     *
-     * @param endpoint endpoint through which to send messages
-     * @param pool The address of the pool
-     * @param msg  The mover creation request
-     * @param timeout timeout in milliseconds
-     * @return An asynchronous reply
-     */
-    <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout);
+public interface PoolManagerHandler {
 
     /**
      * Submit a request to a pool.
+     * <p>
+     * Some pool requests are intercepted by pool manager and thus should be submitted through a
+     * PoolManagerHandler.
      *
-     * Some pool requests are intercepted by pool manager and thus should be
-     * submitted through a PoolManagerHandler.
-     *
-     * In contrast to {@link PoolManagerHandler#startAsync(CellEndpoint, CellAddressCore, PoolIoFileMessage, long)},
-     * this method sends the reply by returning the given envelope (i.e. the reply is sent
-     * to the source path of the envelope). This avoids the need for registering a callback.  Note
-     * that if the hosting cell is to receive the reply, its address has to be added to the source
-     * path of the envelope before calling this method.
+     * @param endpoint endpoint through which to send messages
+     * @param pool     The address of the pool
+     * @param msg      The mover creation request
+     * @param timeout  timeout in milliseconds
+     * @return An asynchronous reply
+     */
+    <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellEndpoint endpoint,
+          CellAddressCore pool, T msg, long timeout);
+
+    /**
+     * Submit a request to a pool.
+     * <p>
+     * Some pool requests are intercepted by pool manager and thus should be submitted through a
+     * PoolManagerHandler.
+     * <p>
+     * In contrast to {@link PoolManagerHandler#startAsync(CellEndpoint, CellAddressCore,
+     * PoolIoFileMessage, long)}, this method sends the reply by returning the given envelope (i.e.
+     * the reply is sent to the source path of the envelope). This avoids the need for registering a
+     * callback.  Note that if the hosting cell is to receive the reply, its address has to be added
+     * to the source path of the envelope before calling this method.
      *
      * @param endpoint endpoint through which to send messages
      * @param envelope The envelope to return with the reply
-     * @param msg The mover creation request
+     * @param msg      The mover creation request
      * @return An asynchronous reply
      */
     void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg);
 
     /**
      * Submit a request to pool manager.
-     *
-     * Implementations are free to process such requests locally or proxy the requests
-     * through other services if desired.
+     * <p>
+     * Implementations are free to process such requests locally or proxy the requests through other
+     * services if desired.
      *
      * @param endpoint endpoint through which to send messages
-     * @param msg The pool manager request
-     * @param timeout timeout in milliseconds
+     * @param msg      The pool manager request
+     * @param timeout  timeout in milliseconds
      * @return An asynchronous reply
      */
-    <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg, long timeout);
+    <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg,
+          long timeout);
 
     /**
      * Submit a request to pool manager.
-     *
-     * Implementations are free to process such requests locally or proxy the requests
-     * through other services if desired.
-     *
+     * <p>
+     * Implementations are free to process such requests locally or proxy the requests through other
+     * services if desired.
+     * <p>
      * In contrast to {@link PoolManagerHandler#sendAsync(CellEndpoint, PoolManagerMessage, long)},
-     * this method sends the reply by returning the given envelope (i.e. the reply is sent
-     * to the source path of the envelope). This avoids the need for registering a callback. Note
-     * that if the hosting cell is to receive the reply, its address has to be added to the source
-     * path of the envelope before calling this method.
+     * this method sends the reply by returning the given envelope (i.e. the reply is sent to the
+     * source path of the envelope). This avoids the need for registering a callback. Note that if
+     * the hosting cell is to receive the reply, its address has to be added to the source path of
+     * the envelope before calling this method.
      *
      * @param endpoint endpoint through which to send messages
      * @param envelope The envelope to return with the reply
-     * @param msg The pool manager request
+     * @param msg      The pool manager request
      */
     void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg);
 }

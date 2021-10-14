@@ -1,52 +1,46 @@
 package org.dcache.boot;
 
 import com.google.common.base.Strings;
-
 import java.io.PrintStream;
 import java.util.Enumeration;
 import java.util.Map;
-
 import org.dcache.util.configuration.ConfigurationProperties;
 
 /**
- * Provide a clean view of the configuration properties.  This is intended to
- * be used for diagnosing problems with configuration.
+ * Provide a clean view of the configuration properties.  This is intended to be used for diagnosing
+ * problems with configuration.
  * <p/>
- * Each property assignment is listed as either a one- or two-line form.  In
- * both cases, the first line is like:
+ * Each property assignment is listed as either a one- or two-line form.  In both cases, the first
+ * line is like:
  *
  * <pre>
  *     &lt;key> = &lt;value>
  * </pre>
- *
- * If the value is derived from other property values then the definition
- * without any expansion is printed on the following line as a comment:
+ * <p>
+ * If the value is derived from other property values then the definition without any expansion is
+ * printed on the following line as a comment:
  *
  * <pre>
  *     &lt;key> = &lt;value>
  *     #        &lt;unexpanded-value>
  * </pre>
- *
- * The output format is (deliberately) similar to a dCache configuration file,
- * with domain and service declarations and context-specific assignments.
- * However, please note that, unlike dCache configuration files, there is no
- * encoding of special characters.  This means that the output from this class
- * cannot be used as valid dCache configuration.
+ * <p>
+ * The output format is (deliberately) similar to a dCache configuration file, with domain and
+ * service declarations and context-specific assignments. However, please note that, unlike dCache
+ * configuration files, there is no encoding of special characters.  This means that the output from
+ * this class cannot be used as valid dCache configuration.
  */
-public class DebugLayoutPrinter implements LayoutPrinter
-{
+public class DebugLayoutPrinter implements LayoutPrinter {
 
     private final Layout _layout;
     private PrintStream _out;
 
-    public DebugLayoutPrinter(Layout layout)
-    {
+    public DebugLayoutPrinter(Layout layout) {
         _layout = layout;
     }
 
     @Override
-    public void print(PrintStream out)
-    {
+    public void print(PrintStream out) {
         _out = out;
         out.println("#        --- DEFAULTS ---\n");
 
@@ -58,18 +52,17 @@ public class DebugLayoutPrinter implements LayoutPrinter
 
         for (Domain domain : _layout.getDomains()) {
             listProperties(domain.properties(),
-                    "[" + domain.getName() + "]", 2);
+                  "[" + domain.getName() + "]", 2);
 
             for (ConfigurationProperties properties :
-                    domain.getServices()) {
+                  domain.getServices()) {
                 listProperties(properties, "[" + domain.getName() + "/"
-                        + properties.getValue(Properties.PROPERTY_DOMAIN_SERVICE) + "]", 2);
+                      + properties.getValue(Properties.PROPERTY_DOMAIN_SERVICE) + "]", 2);
             }
         }
     }
 
-    private void listDefaults(ConfigurationProperties properties)
-    {
+    private void listDefaults(ConfigurationProperties properties) {
         Enumeration<?> propertyNames = properties.propertyNames();
         while (propertyNames.hasMoreElements()) {
             String key = (String) propertyNames.nextElement();
@@ -80,8 +73,7 @@ public class DebugLayoutPrinter implements LayoutPrinter
     }
 
     private void listProperties(ConfigurationProperties properties,
-            String label, int indent)
-    {
+          String label, int indent) {
         _out.println();
 
         if (!label.isEmpty()) {
@@ -97,16 +89,15 @@ public class DebugLayoutPrinter implements LayoutPrinter
     }
 
     private void showProperty(ConfigurationProperties properties, int indent,
-            String key)
-    {
+          String key) {
         String rawValue = properties.getProperty(key);
-        _out.format("%s = %s\n", Strings.padStart(key, indent+key.length(),' '),
-                rawValue);
+        _out.format("%s = %s\n", Strings.padStart(key, indent + key.length(), ' '),
+              rawValue);
 
         String value = properties.getValue(key);
         if (!rawValue.equals(value)) {
             _out.format("#%s\n", Strings.padStart(value,
-                    indent+key.length()+2+value.length(), ' '));
+                  indent + key.length() + 2 + value.length(), ' '));
         }
     }
 }

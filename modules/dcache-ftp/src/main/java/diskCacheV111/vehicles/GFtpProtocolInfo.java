@@ -64,21 +64,21 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
 */
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
-
 import org.dcache.ftp.TransferMode;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
-    private String _name  = "Unkown" ;
-    private final int    _minor;
-    private final int    _major;
+
+    private String _name = "Unkown";
+    private final int _minor;
+    private final int _major;
     private InetSocketAddress _addr;
-    private long   _transferTime;
-    private long   _bytesTransferred;
-    private String	_mode = "S";
+    private long _transferTime;
+    private long _bytesTransferred;
+    private String _mode = "S";
     private int _parallelStart = 5;
     private int _parallelMin = 5;
     private int _parallelMax = 5;
@@ -89,32 +89,30 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 
     /**
      * The cell name of the FTP door handling the control channel.
-     *
+     * <p>
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _doorCellName;
 
     /**
-     * The cell domain name of the FTP door handling the control
-     * channel.
-     *
+     * The cell domain name of the FTP door handling the control channel.
+     * <p>
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _doorCellDomainName;
 
     /**
      * The control channel address of the FTP client.
-     *
+     * <p>
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _clientAddress;
 
     /**
      * Whether the pool is requested to be passive.
-     *
-     * Added for GFtp/2. We rely on default initialisation to false. Like _passive,
-     * but while _passive is only used for IPv4, this field is used for both IPv4
-     * and IPv6.
+     * <p>
+     * Added for GFtp/2. We rely on default initialisation to false. Like _passive, but while
+     * _passive is only used for IPv4, this field is used for both IPv4 and IPv6.
      */
     private boolean _extendedPassive;
 
@@ -125,13 +123,13 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 
     private static final long serialVersionUID = 5591743387114320262L;
 
-    public GFtpProtocolInfo( String protocol, int major , int minor ,
-                             InetSocketAddress addr, int start, int min,
-                             int max, int bufferSize ,long offset, long size){
-        _name  = protocol ;
-        _minor = minor ;
-        _major = major ;
-        _addr  = addr ;
+    public GFtpProtocolInfo(String protocol, int major, int minor,
+          InetSocketAddress addr, int start, int min,
+          int max, int bufferSize, long offset, long size) {
+        _name = protocol;
+        _minor = minor;
+        _major = major;
+        _addr = addr;
         _parallelStart = start;
         _parallelMin = min;
         _parallelMax = max;
@@ -143,138 +141,159 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     //
     //  the ProtocolInfo interface
     //
-    public int getParallelStart() {return _parallelStart; }
-    public int getMin() {return _parallelMin; }
-    public int getMax() { return _parallelMax; }
+    public int getParallelStart() {
+        return _parallelStart;
+    }
+
+    public int getMin() {
+        return _parallelMin;
+    }
+
+    public int getMax() {
+        return _parallelMax;
+    }
 
     @Override
-    public String getProtocol(){ return _name ; }
-    @Override
-    public int    getMinorVersion(){ return _minor ; }
-    @Override
-    public int    getMajorVersion(){ return _major ; }
-    @Override
-    public String getVersionString(){
-        return _name+"-"+_major+"."+_minor ;
+    public String getProtocol() {
+        return _name;
     }
+
+    @Override
+    public int getMinorVersion() {
+        return _minor;
+    }
+
+    @Override
+    public int getMajorVersion() {
+        return _major;
+    }
+
+    @Override
+    public String getVersionString() {
+        return _name + "-" + _major + "." + _minor;
+    }
+
     //
     // and the private stuff
     //
-    public void   setBytesTransferred( long bytesTransferred ){
-        _bytesTransferred = bytesTransferred ;
-    }
-    public void   setTransferTime( long transferTime ){
-        _transferTime = transferTime ;
+    public void setBytesTransferred(long bytesTransferred) {
+        _bytesTransferred = bytesTransferred;
     }
 
-    public void setBufferSize( int bufferSize ) {
+    public void setTransferTime(long transferTime) {
+        _transferTime = transferTime;
+    }
+
+    public void setBufferSize(int bufferSize) {
         _bufferSize = bufferSize;
     }
 
-    public int getBufferSize() { return _bufferSize; }
-    public long getTransferTime(){ return _transferTime ; }
-    public long getBytesTransferred(){ return _bytesTransferred ; }
+    public int getBufferSize() {
+        return _bufferSize;
+    }
+
+    public long getTransferTime() {
+        return _transferTime;
+    }
+
+    public long getBytesTransferred() {
+        return _bytesTransferred;
+    }
+
     //
-    public String toString(){  return getVersionString() +
-            " " + _addr.getAddress().getHostAddress() +" "
-            +  _addr.getPort();
+    public String toString() {
+        return getVersionString() +
+              " " + _addr.getAddress().getHostAddress() + " "
+              + _addr.getPort();
     }
 
     public void setMode(TransferMode mode) {
         _mode = mode.getLabel();
     }
 
-    public String getMode()
-    {	return _mode;	}
+    public String getMode() {
+        return _mode;
+    }
 
     //offset of read
-    public long getOffset()
-    {
+    public long getOffset() {
         return _offset;
     }
 
     //size of read
-    public long getSize()
-    {
+    public long getSize() {
         return _size;
     }
 
     /**
      * Returns the cell name of the FTP door. May be null.
      */
-    public String getDoorCellName()
-    {
+    public String getDoorCellName() {
         return _doorCellName;
     }
 
-    /** Sets the cell name of the FTP door. */
-    public void setDoorCellName(String name)
-    {
+    /**
+     * Sets the cell name of the FTP door.
+     */
+    public void setDoorCellName(String name) {
         _doorCellName = name;
     }
 
     /**
      * Returns the cell domain name of the FTP door. May be null.
      */
-    public String getDoorCellDomainName()
-    {
+    public String getDoorCellDomainName() {
         return _doorCellDomainName;
     }
 
-    /** Sets the cell domain name of the FTP door. */
-    public void setDoorCellDomainName(String name)
-    {
+    /**
+     * Sets the cell domain name of the FTP door.
+     */
+    public void setDoorCellDomainName(String name) {
         _doorCellDomainName = name;
     }
 
     /**
-     * Returns the IP address of the client end of the control
-     * channel.  May be null.
+     * Returns the IP address of the client end of the control channel.  May be null.
      */
-    public String getClientAddress()
-    {
+    public String getClientAddress() {
         return _clientAddress;
     }
 
     /**
      * Sets the IP address of the client end of the control channel.
      */
-    public void setClientAddress(String address)
-    {
+    public void setClientAddress(String address) {
         _clientAddress = address;
     }
 
     /**
      * Returns whether the pool is requested to be passive.
      */
-    public boolean getPassive()
-    {
+    public boolean getPassive() {
         return _extendedPassive;
     }
 
     /**
      * Sets whether the pool is requested to be passive.
      */
-    public void setPassive(boolean passive)
-    {
+    public void setPassive(boolean passive) {
         _extendedPassive = passive;
     }
 
-    public void setChecksumType(String f){
+    public void setChecksumType(String f) {
         _checksumType = f;
     }
 
-    public String getChecksumType(){
+    public String getChecksumType() {
         return _checksumType;
     }
 
-    public void setProtocolFamily(ProtocolFamily protocolFamily)
-    {
+    public void setProtocolFamily(ProtocolFamily protocolFamily) {
         _protocolFamily = protocolFamily;
     }
 
-    public ProtocolFamily getProtocolFamily()
-    {
+    public ProtocolFamily getProtocolFamily() {
         return _protocolFamily;
     }
 

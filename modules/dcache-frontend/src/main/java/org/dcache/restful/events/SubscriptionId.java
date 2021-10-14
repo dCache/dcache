@@ -20,27 +20,26 @@ package org.dcache.restful.events;
 
 import static java.util.Objects.requireNonNull;
 
-/** The identity of some subscription. */
-class SubscriptionId
-{
+/**
+ * The identity of some subscription.
+ */
+class SubscriptionId {
+
     private final String eventType;
     private final String id;
 
-    SubscriptionId(String eventType, String id)
-    {
+    SubscriptionId(String eventType, String id) {
         this.eventType = requireNonNull(eventType);
         this.id = requireNonNull(id);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return id.hashCode() ^ eventType.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }

@@ -63,6 +63,7 @@ package org.dcache.services.history.pools;
  * <p>Defines service which can list the current pools and pool groups.</p>
  */
 public interface PoolListingService {
+
     /**
      * <p>Designation for pool group containing all pools.</p>
      */

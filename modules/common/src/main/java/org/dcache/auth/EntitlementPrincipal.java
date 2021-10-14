@@ -22,17 +22,14 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 
 /**
- * A Principal that represents an eduPersonEntitlement asserted value.
- * The eduPerson set of assertions are defined by REFEDS.  For further details
- * see:
- * https://wiki.refeds.org/display/STAN/eduPerson+2020-01#eduPerson202001-eduPersonEntitlement
+ * A Principal that represents an eduPersonEntitlement asserted value. The eduPerson set of
+ * assertions are defined by REFEDS.  For further details see: https://wiki.refeds.org/display/STAN/eduPerson+2020-01#eduPerson202001-eduPersonEntitlement
  */
-public class EntitlementPrincipal implements Principal
-{
+public class EntitlementPrincipal implements Principal {
+
     private final String name;
 
-    public EntitlementPrincipal(String value) throws URISyntaxException
-    {
+    public EntitlementPrincipal(String value) throws URISyntaxException {
         URI uri = new URI(value);
 
         // REVISIT validate URI further?
@@ -41,20 +38,17 @@ public class EntitlementPrincipal implements Principal
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return name.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -68,8 +62,7 @@ public class EntitlementPrincipal implements Principal
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Entitlement[" + name + "]";
     }
 }

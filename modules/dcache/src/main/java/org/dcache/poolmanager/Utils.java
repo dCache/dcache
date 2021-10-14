@@ -1,14 +1,12 @@
 package org.dcache.poolmanager;
 
 import com.google.common.collect.Maps;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolCostInfo;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class Utils {
 
@@ -20,15 +18,15 @@ public class Utils {
         // static methods only
     }
 
-    public static Map<String, PoolLinkGroupInfo> linkGroupInfos(PoolSelectionUnit selectionUnit, CostModule costModule)
-    {
+    public static Map<String, PoolLinkGroupInfo> linkGroupInfos(PoolSelectionUnit selectionUnit,
+          CostModule costModule) {
         return Maps.newHashMap(Maps.transformValues(selectionUnit.getLinkGroups(),
-                                                    linkGroup -> toPoolLinkGroupInfo(linkGroup, costModule)));
+              linkGroup -> toPoolLinkGroupInfo(linkGroup, costModule)));
     }
 
-    private static PoolLinkGroupInfo toPoolLinkGroupInfo(PoolSelectionUnit.SelectionLinkGroup linkGroup,
-                                                         CostModule costModule)
-    {
+    private static PoolLinkGroupInfo toPoolLinkGroupInfo(
+          PoolSelectionUnit.SelectionLinkGroup linkGroup,
+          CostModule costModule) {
         long linkAvailableSpace = 0;
         long linkTotalSpace = 0;
 
@@ -44,10 +42,10 @@ public class Utils {
                     if (!referencedPools.contains(poolName)) {
                         referencedPools.add(poolName);
                         PoolCostInfo poolCostInfo =
-                                costModule.getPoolCostInfo(poolName);
+                              costModule.getPoolCostInfo(poolName);
                         if (poolCostInfo != null) {
                             linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace()
-                                                  + poolCostInfo.getSpaceInfo().getRemovableSpace();
+                                  + poolCostInfo.getSpaceInfo().getRemovableSpace();
                             linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
                         }
                     }

@@ -1,16 +1,7 @@
 package org.dcache.tests.poolmanager;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
@@ -28,31 +19,36 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
-
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+public class PoolMonitorTest {
 
-public class PoolMonitorTest
-{
     private PoolMonitorV5 _poolMonitor;
-    private CostModuleV1 _costModule ;
+    private CostModuleV1 _costModule;
     private PoolSelectionUnit _selectionUnit;
     private PoolSelectionUnitAccess _access;
     private PartitionManager _partitionManager = new PartitionManager();
 
     private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
-            new InetSocketAddress("127.0.0.1", 17));
+          new InetSocketAddress("127.0.0.1", 17));
     private final StorageInfo _storageInfo = new OSMStorageInfo("h1", "rawd");
-    private PnfsId        _pnfsId;
-    private List<String>  _pools;
+    private PnfsId _pnfsId;
+    private List<String> _pools;
     private String _localhost;
 
     @Before
@@ -80,10 +76,10 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).locations(_pools).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations =
-            _poolMonitor.getPoolSelector(attributes,
-                                         _protocolInfo,
-                                         null,
-                                         Collections.EMPTY_SET);
+              _poolMonitor.getPoolSelector(attributes,
+                    _protocolInfo,
+                    null,
+                    Collections.EMPTY_SET);
 
         /* The following isn't testing much as both pools are valid
          * replies.
@@ -104,15 +100,15 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).locations(location).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations
-                = _poolMonitor.getPoolSelector(attributes,
-                                               _protocolInfo,
-                                               null,
-                                               Collections.EMPTY_SET);
+              = _poolMonitor.getPoolSelector(attributes,
+              _protocolInfo,
+              null,
+              Collections.EMPTY_SET);
 
         assertEquals("pool1", availableLocations.selectReadPool().name());
     }
 
-    @Test(expected=PermissionDeniedCacheException.class)
+    @Test(expected = PermissionDeniedCacheException.class)
     public void testLinkFallbackDisabled() throws Exception {
 
         _poolMonitor.setEnableLinkFallback(false);
@@ -125,21 +121,21 @@ public class PoolMonitorTest
         FileAttributes attributes = FileAttributes.of().pnfsId(_pnfsId).locations(location).build();
         StorageInfos.injectInto(_storageInfo, attributes);
         PoolSelector availableLocations
-                = _poolMonitor.getPoolSelector(attributes,
-                                               _protocolInfo,
-                                               null,
-                                               Collections.EMPTY_SET);
+              = _poolMonitor.getPoolSelector(attributes,
+              _protocolInfo,
+              null,
+              Collections.EMPTY_SET);
 
         availableLocations.selectReadPool();
     }
 
-    @Test(expected=CacheException.class)
+    @Test(expected = CacheException.class)
     public void testHostFilterForRead() throws Exception {
         prepareCostModule(false);
         prepareHostExclusion().selectReadPool();
     }
 
-    @Test(expected=CacheException.class)
+    @Test(expected = CacheException.class)
     public void testHostFilterForWrite() throws Exception {
         prepareCostModule(false);
         prepareHostExclusion().selectWritePool(0);
@@ -166,9 +162,9 @@ public class PoolMonitorTest
         poolCost2.setSpaceUsage(100, 20, 30, 50);
 
         PoolManagerPoolUpMessage pool1UpMessage = new PoolManagerPoolUpMessage("pool1",
-                                                                               serialId, poolMode, poolCost1);
+              serialId, poolMode, poolCost1);
         PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
-                                                                               serialId, poolMode, poolCost2);
+              serialId, poolMode, poolCost2);
 
         pool1UpMessage.setHostName(_localhost);
         pool2UpMessage.setHostName(_localhost);

@@ -59,12 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
+import diskCacheV111.util.FsPath;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-
-import diskCacheV111.util.FsPath;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
@@ -72,68 +70,60 @@ import org.dcache.services.bulk.handlers.BulkSubmissionHandler;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  Parent of job types which handle multiple targets, including
- *  directories.
+ * Parent of job types which handle multiple targets, including directories.
  */
-public abstract class MultipleTargetJob extends BulkJob
-{
-    public static FsPath computeFsPath(String prefix, String target)
-    {
+public abstract class MultipleTargetJob extends BulkJob {
+
+    public static FsPath computeFsPath(String prefix, String target) {
         FsPath path;
 
         if (prefix == null) {
             path = FsPath.create(FsPath.ROOT + target);
         } else {
             path = FsPath.create(FsPath.ROOT + (prefix.endsWith("/")
-                            ? prefix : prefix + "/") + target);
+                  ? prefix : prefix + "/") + target);
         }
 
         return path;
     }
 
-    public enum TargetType
-    {
+    public enum TargetType {
         FILE, DIR, BOTH
     }
 
     protected static final Set<FileAttribute> REQUIRED_ATTRIBUTES
-                    = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
-                                                             FileAttribute.TYPE));
+          = Collections.unmodifiableSet(EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.TYPE));
 
-    protected final BulkRequest        request;
-    protected final TargetType         targetType;
+    protected final BulkRequest request;
+    protected final TargetType targetType;
 
     protected BulkSubmissionHandler submissionHandler;
 
     protected MultipleTargetJob(BulkJobKey key,
-                                BulkJobKey parentKey,
-                                BulkRequest request,
-                                TargetType targetType)
-    {
+          BulkJobKey parentKey,
+          BulkRequest request,
+          TargetType targetType) {
         super(key, parentKey, request.getActivity());
         this.request = request;
         this.targetType = targetType;
     }
 
-    public BulkRequest getRequest()
-    {
+    public BulkRequest getRequest() {
         return request;
     }
 
-    public TargetType getTargetType()
-    {
+    public TargetType getTargetType() {
         return targetType;
     }
 
-    public void setSubmissionHandler(BulkSubmissionHandler requestHandler)
-    {
+    public void setSubmissionHandler(BulkSubmissionHandler requestHandler) {
         this.submissionHandler = requestHandler;
     }
 
     protected void submitTargetExpansionJob(String target,
-                                            FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          FileAttributes attributes)
+          throws BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
@@ -142,18 +132,17 @@ public abstract class MultipleTargetJob extends BulkJob
         }
 
         LOGGER.trace("MultipleTargetJob, submitTargetExpansionJob() "
-                                     + "called for {}.", target);
+              + "called for {}.", target);
 
         submissionHandler.submitTargetExpansionJob(target,
-                                                attributes,
-                                                this);
+              attributes,
+              this);
     }
 
     protected void submitSingleTargetJob(String target,
-                                         BulkJobKey parentKey,
-                                         FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          BulkJobKey parentKey,
+          FileAttributes attributes)
+          throws BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
@@ -162,11 +151,11 @@ public abstract class MultipleTargetJob extends BulkJob
         }
 
         LOGGER.trace("MultipleTargetJob, submitSingleTargetJob() "
-                                     + "called for {}.", target);
+              + "called for {}.", target);
 
         submissionHandler.submitSingleTargetJob(target,
-                                             parentKey,
-                                             attributes,
-                                             this);
+              parentKey,
+              attributes,
+              this);
     }
 }

@@ -80,18 +80,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.StringTokenizer;
-
 import org.dcache.srm.Logger;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 
 public class ShellCommandExecuter implements Runnable {
-    public static int execute(String command,Logger logger) {
 
-        logger.log("executing command "+command);
+    public static int execute(String command, Logger logger) {
+
+        logger.log("executing command " + command);
         Process proc;
         InputStream StdErr;
         InputStream StdOut;
@@ -99,32 +98,30 @@ public class ShellCommandExecuter implements Runnable {
         try {
             proc = Runtime.getRuntime().exec(command);
             StdErr = proc.getErrorStream();
-            StdOut  = proc.getInputStream();
-        }
-        catch(IOException ioe) {
+            StdOut = proc.getInputStream();
+        } catch (IOException ioe) {
             ioe.printStackTrace();
             return 1;
         }
 
         BufferedReader OutReader =
-            new BufferedReader(new InputStreamReader(StdOut));
-        new ShellCommandExecuter(OutReader,new PrintWriter(System.out),logger);
+              new BufferedReader(new InputStreamReader(StdOut));
+        new ShellCommandExecuter(OutReader, new PrintWriter(System.out), logger);
         BufferedReader ErrReader =
-            new BufferedReader(new InputStreamReader(StdErr));
-        new ShellCommandExecuter(ErrReader,new PrintWriter(System.out),logger);
-        int exit_value=1;
+              new BufferedReader(new InputStreamReader(StdErr));
+        new ShellCommandExecuter(ErrReader, new PrintWriter(System.out), logger);
+        int exit_value = 1;
         try {
-            exit_value =  proc.waitFor();
+            exit_value = proc.waitFor();
+        } catch (InterruptedException ie) {
         }
-        catch(InterruptedException ie) {
-        }
-        logger.log(" exit value is "+ exit_value);
+        logger.log(" exit value is " + exit_value);
         return exit_value;
     }
 
-    public static String[] executeAndReturnOutput(String command,Logger logger) {
+    public static String[] executeAndReturnOutput(String command, Logger logger) {
 
-        logger.log("executing command "+command);
+        logger.log("executing command " + command);
         Process proc;
         InputStream StdErr;
         InputStream StdOut;
@@ -132,31 +129,29 @@ public class ShellCommandExecuter implements Runnable {
         try {
             proc = Runtime.getRuntime().exec(command);
             StdErr = proc.getErrorStream();
-            StdOut  = proc.getInputStream();
-        }
-        catch(IOException ioe) {
+            StdOut = proc.getInputStream();
+        } catch (IOException ioe) {
             ioe.printStackTrace();
             return null;
         }
 
         StringWriter string_writer = new StringWriter();
         BufferedReader OutReader =
-            new BufferedReader(new InputStreamReader(StdOut));
-        new ShellCommandExecuter(OutReader,string_writer,logger);
+              new BufferedReader(new InputStreamReader(StdOut));
+        new ShellCommandExecuter(OutReader, string_writer, logger);
         BufferedReader ErrReader =
-            new BufferedReader(new InputStreamReader(StdErr));
-        new ShellCommandExecuter(ErrReader,new PrintWriter(System.err),logger);
-        int exit_value=1;
+              new BufferedReader(new InputStreamReader(StdErr));
+        new ShellCommandExecuter(ErrReader, new PrintWriter(System.err), logger);
+        int exit_value = 1;
         try {
-            exit_value =  proc.waitFor();
+            exit_value = proc.waitFor();
+        } catch (InterruptedException ie) {
         }
-        catch(InterruptedException ie) {
-        }
-        logger.log(" exit value is "+ exit_value);
+        logger.log(" exit value is " + exit_value);
         StringTokenizer tokenizer = new StringTokenizer(string_writer.getBuffer().toString());
         int len = tokenizer.countTokens();
         String result[] = new String[len];
-        for(int i =0; i<len;++i) {
+        for (int i = 0; i < len; ++i) {
             result[i] = tokenizer.nextToken();
         }
         return result;
@@ -166,9 +161,9 @@ public class ShellCommandExecuter implements Runnable {
     BufferedReader ErrReader;
     private Writer out;
 
-    private  ShellCommandExecuter(BufferedReader reader,
-                                  Writer out,
-                                  Logger logger) {
+    private ShellCommandExecuter(BufferedReader reader,
+          Writer out,
+          Logger logger) {
         this.reader = reader;
         this.out = out;
         new Thread(this).start();
@@ -179,13 +174,12 @@ public class ShellCommandExecuter implements Runnable {
     public void run() {
         try {
             String line;
-            while((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 out.write(line);
                 out.write('\n');
                 out.flush();
             }
-        }
-        catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

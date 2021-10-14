@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.pool;
 
 import java.io.Serializable;
-
 import org.dcache.pool.json.PoolData;
 
 /**
@@ -68,9 +67,9 @@ import org.dcache.pool.json.PoolData;
  * populate a {@link PoolData} request.</p>
  */
 public interface PoolDataBeanProvider<T extends Serializable> {
+
     /**
-     * @return the populated bean to be composed into a
-     * {@link PoolData} object.
+     * @return the populated bean to be composed into a {@link PoolData} object.
      */
     T getDataObject() throws InterruptedException;
 }

@@ -65,35 +65,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.dcache.xrootd.tpc.XrootdTpcInfo.Status;
 
 /**
  * <p>Can be scheduled to do cache eviction on stale third-party copy
- *    metadata which has not been removed because of failed connections,
- *    etc.</p>
+ * metadata which has not been removed because of failed connections, etc.</p>
  */
 public class XrootdTpcInfoCleanerTask implements Runnable {
+
     private static final long TIME_TO_LIVE = TimeUnit.MINUTES.toMillis(1);
 
     private final Map<String, XrootdTpcInfo> tpcInfo;
-    private final Map<Integer, String>       tpcFdIndex;
+    private final Map<Integer, String> tpcFdIndex;
 
     public XrootdTpcInfoCleanerTask(Map<String, XrootdTpcInfo> tpcInfo,
-                                    Map<Integer, String> tpcFdIndex)
-    {
+          Map<Integer, String> tpcFdIndex) {
         this.tpcInfo = tpcInfo;
         this.tpcFdIndex = tpcFdIndex;
     }
 
-    public void run()
-    {
+    public void run() {
         Set<String> removedKeys = new HashSet<>();
 
         synchronized (tpcFdIndex) {
             for (Iterator<Entry<String, XrootdTpcInfo>> i
-                            = tpcInfo.entrySet().iterator(); i.hasNext(); ) {
+                  = tpcInfo.entrySet().iterator(); i.hasNext(); ) {
 
                 Entry<String, XrootdTpcInfo> entry = i.next();
                 if (shouldEvict(entry.getValue())) {
@@ -103,7 +99,7 @@ public class XrootdTpcInfoCleanerTask implements Runnable {
             }
 
             for (Iterator<Entry<Integer, String>> i
-                            = tpcFdIndex.entrySet().iterator(); i.hasNext(); ) {
+                  = tpcFdIndex.entrySet().iterator(); i.hasNext(); ) {
                 Entry<Integer, String> entry = i.next();
                 if (removedKeys.contains(entry.getValue())) {
                     i.remove();
@@ -112,9 +108,8 @@ public class XrootdTpcInfoCleanerTask implements Runnable {
         }
     }
 
-    private static boolean shouldEvict(XrootdTpcInfo info)
-    {
+    private static boolean shouldEvict(XrootdTpcInfo info) {
         return info.getStatus() == Status.PENDING && System.currentTimeMillis()
-                        > (info.getCreatedTime() + TIME_TO_LIVE);
+              > (info.getCreatedTime() + TIME_TO_LIVE);
     }
 }

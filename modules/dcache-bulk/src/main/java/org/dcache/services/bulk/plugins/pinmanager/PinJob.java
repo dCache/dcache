@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins.pinmanager;
 
+import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME;
+import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME_UNIT;
+
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import java.net.InetSocketAddress;
@@ -69,51 +72,48 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.services.bulk.job.BulkJobKey;
 
-import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME;
-import static org.dcache.services.bulk.plugins.pinmanager.PinJobProvider.LIFETIME_UNIT;
-
 public class PinJob extends PinManagerJob {
 
-  public PinJob(BulkJobKey key,
-                BulkJobKey parentKey,
-                String activity) {
-    super(key, parentKey, activity);
-  }
-
-  static long getLifetime(Map<String, String> arguments) {
-    TimeUnit defaultUnit = TimeUnit.valueOf(LIFETIME_UNIT.getDefaultValue());
-    Long defaultValue = Long.parseLong(LIFETIME.getDefaultValue());
-
-    if (arguments == null) {
-      return defaultUnit.toMillis(defaultValue);
+    public PinJob(BulkJobKey key,
+          BulkJobKey parentKey,
+          String activity) {
+        super(key, parentKey, activity);
     }
 
-    String expire = arguments.get(LIFETIME.getName());
-    String unit = arguments.get(LIFETIME_UNIT.getName());
+    static long getLifetime(Map<String, String> arguments) {
+        TimeUnit defaultUnit = TimeUnit.valueOf(LIFETIME_UNIT.getDefaultValue());
+        Long defaultValue = Long.parseLong(LIFETIME.getDefaultValue());
 
-    long lifetime = expire == null ? defaultUnit.toMillis(defaultValue)
-                                   : unit == null ? defaultUnit.toMillis(Long.valueOf(expire))
-                                                  : TimeUnit.valueOf(unit).toMillis(Long.valueOf(expire));
+        if (arguments == null) {
+            return defaultUnit.toMillis(defaultValue);
+        }
 
-    return lifetime;
-  }
+        String expire = arguments.get(LIFETIME.getName());
+        String unit = arguments.get(LIFETIME_UNIT.getName());
 
-  @Override
-  protected void doRun() {
-    long lifetime = getLifetime(arguments);
-    try {
-      PinManagerPinMessage message
-          = new PinManagerPinMessage(attributes, getProtocolInfo(), null, lifetime);
-      sendToPinManager(message);
-    } catch (URISyntaxException e) {
-      setError(e);
+        long lifetime = expire == null ? defaultUnit.toMillis(defaultValue)
+              : unit == null ? defaultUnit.toMillis(Long.valueOf(expire))
+                    : TimeUnit.valueOf(unit).toMillis(Long.valueOf(expire));
+
+        return lifetime;
     }
-  }
 
-  private ProtocolInfo getProtocolInfo() throws URISyntaxException  {
-    return  new HttpProtocolInfo("Http", 1, 1,
-                                  new InetSocketAddress("localhost",0),
-                  null,null, null,
-                                  new URI("http","localhost",null, null));
-  }
+    @Override
+    protected void doRun() {
+        long lifetime = getLifetime(arguments);
+        try {
+            PinManagerPinMessage message
+                  = new PinManagerPinMessage(attributes, getProtocolInfo(), null, lifetime);
+            sendToPinManager(message);
+        } catch (URISyntaxException e) {
+            setError(e);
+        }
+    }
+
+    private ProtocolInfo getProtocolInfo() throws URISyntaxException {
+        return new HttpProtocolInfo("Http", 1, 1,
+              new InetSocketAddress("localhost", 0),
+              null, null, null,
+              new URI("http", "localhost", null, null));
+    }
 }

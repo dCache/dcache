@@ -18,32 +18,29 @@ package org.dcache.chimera;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.io.IOException;
+import java.sql.SQLException;
+import org.dcache.db.AlarmEnabledDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
-import java.sql.SQLException;
+public class FsFactory {
 
-import org.dcache.db.AlarmEnabledDataSource;
-
-public class FsFactory
-{
-    public static FileSystemProvider createFileSystem(String url, String user, String password) throws SQLException, ChimeraFsException
-    {
-        AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
-        PlatformTransactionManager txManager =  new DataSourceTransactionManager(dataSource);
+    public static FileSystemProvider createFileSystem(String url, String user, String password)
+          throws SQLException, ChimeraFsException {
+        AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url,
+              FsFactory.class.getSimpleName(), getDataSource(url, user, password));
+        PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
         return new JdbcFs(dataSource, txManager) {
             @Override
-            public void close() throws IOException
-            {
+            public void close() throws IOException {
                 super.close();
                 dataSource.close();
             }
         };
     }
 
-    public static HikariDataSource getDataSource(String url, String user, String pass)
-    {
+    public static HikariDataSource getDataSource(String url, String user, String pass) {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
         config.setUsername(user);

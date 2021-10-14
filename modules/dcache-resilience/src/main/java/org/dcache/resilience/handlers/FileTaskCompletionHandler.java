@@ -59,15 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Calendar;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.util.Calendar;
+import java.util.Set;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.migration.Task;
@@ -76,36 +71,39 @@ import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.ExceptionMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Implements the handling of pnfsid task termination.
- *      Also implements the migration task termination logic.</p>
+ * Also implements the migration task termination logic.</p>
  */
 public final class FileTaskCompletionHandler implements TaskCompletionHandler {
+
     static final String ABORT_REPLICATION_LOG_MESSAGE
-                    = "Storage unit {}: aborted replication for {}; "
-                    + "referring pool {}; pools tried: {}; {}";
+          = "Storage unit {}: aborted replication for {}; "
+          + "referring pool {}; pools tried: {}; {}";
 
     static final String ABORT_REPLICATION_ALARM_MESSAGE
-                    = "There are files in storage unit {} for which replication "
-                    + "has been aborted; please consult the resilience-specific "
-                    + "log or 'history errors' for details.";
+          = "There are files in storage unit {} for which replication "
+          + "has been aborted; please consult the resilience-specific "
+          + "log or 'history errors' for details.";
 
     static final String VERIFY_FAILURE_MESSAGE
-                    = "Processing for %s failed during verify. %s%s";
+          = "Processing for %s failed during verify. %s%s";
 
     static final String FAILED_COPY_MESSAGE
-                    = "Migration task for %s failed. %s%s.";
+          = "Migration task for %s failed. %s%s.";
 
     static final String FAILED_REMOVE_MESSAGE
-                    = "Failed to remove %s from %s; %s. "
-                    + "This means that an unnecessary copy may still exist.";
+          = "Failed to remove %s from %s; %s. "
+          + "This means that an unnecessary copy may still exist.";
 
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(FileTaskCompletionHandler.class);
+          = LoggerFactory.getLogger(FileTaskCompletionHandler.class);
 
     private static final Logger ABORTED_LOGGER
-                    = LoggerFactory.getLogger("org.dcache.resilience-log");
+          = LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private FileOperationMap map;
 
@@ -114,16 +112,16 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     }
 
     public void taskAborted(PnfsId pnfsId,
-                            String pool,
-                            String storageUnit,
-                            Set<String> triedSources,
-                            int retried,
-                            int maxRetries,
-                            Exception e) {
+          String pool,
+          String storageUnit,
+          Set<String> triedSources,
+          int retried,
+          int maxRetries,
+          Exception e) {
         if (retried >= maxRetries) {
             e = new Exception(String.format("Maximum number of attempts "
-                                            + "(%s) has been reached",
-                                maxRetries), e);
+                        + "(%s) has been reached",
+                  maxRetries), e);
         }
 
         Calendar ref = Calendar.getInstance();
@@ -138,17 +136,17 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
          *  messages in the domain log.
          */
         LOGGER.warn(AlarmMarkerFactory.getMarker(
-                                        PredefinedAlarm.FAILED_REPLICATION,
-                                        storageUnit, "ABORT_REPLICATION-"
-                                                        + ref.getTimeInMillis()),
-                        ABORT_REPLICATION_ALARM_MESSAGE, storageUnit);
+                    PredefinedAlarm.FAILED_REPLICATION,
+                    storageUnit, "ABORT_REPLICATION-"
+                          + ref.getTimeInMillis()),
+              ABORT_REPLICATION_ALARM_MESSAGE, storageUnit);
 
         /*
          *  Full info on the file is logged to the ".resilience" log.
          */
         ABORTED_LOGGER.error(ABORT_REPLICATION_LOG_MESSAGE, storageUnit, pnfsId,
-                             pool == null ? "none" : pool, triedSources,
-                             new ExceptionMessage(e));
+              pool == null ? "none" : pool, triedSources,
+              new ExceptionMessage(e));
     }
 
     @Override
@@ -189,7 +187,7 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     @Override
     public void taskCompleted(Task task) {
         LOGGER.trace("Migration Task for {} completed successfully.",
-                        task.getPnfsId());
+              task.getPnfsId());
         taskCompleted(task.getPnfsId());
     }
 
@@ -213,16 +211,15 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
         LOGGER.trace("Migration task {} failed.", task.getPnfsId());
         PnfsId pnfsId = task.getPnfsId();
         CacheException exception
-                        = CacheExceptionUtils.getCacheException(rc,
-                          FAILED_COPY_MESSAGE, pnfsId, Type.COPY, msg, null);
+              = CacheExceptionUtils.getCacheException(rc,
+              FAILED_COPY_MESSAGE, pnfsId, Type.COPY, msg, null);
         taskFailed(pnfsId, exception);
     }
 
     /**
      * <p>Permanent failures do not receive special treatment, since, for example,
-     *      the file not found on the source can at times be an ephemeral error.
-     *      Delegates to #taskFailed(Task task, int rc, String msg)
-     *      to decide what should be done.</p>
+     * the file not found on the source can at times be an ephemeral error. Delegates to
+     * #taskFailed(Task task, int rc, String msg) to decide what should be done.</p>
      */
     @Override
     public void taskFailedPermanently(Task task, int rc, String msg) {

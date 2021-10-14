@@ -1,24 +1,21 @@
 package org.dcache.pool.migration;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
+import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.UUID;
-
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * MigrationModuleServer message to request that a replica is
- * transferred.
+ * MigrationModuleServer message to request that a replica is transferred.
  */
 @ParametersAreNonnullByDefault
-public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
-{
+public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage {
+
     private static final long serialVersionUID = 6328444770149191656L;
 
     private final FileAttributes _fileAttributes;
@@ -30,13 +27,12 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final boolean _isMetaOnly;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
-                                           FileAttributes fileAttributes,
-                                           ReplicaState state,
-                                           List<StickyRecord> stickyRecords,
-                                           boolean computeChecksumOnUpdate,
-                                           boolean forceSourceMode,
-                                           @Nullable Long atime, boolean isMetaOnly)
-    {
+          FileAttributes fileAttributes,
+          ReplicaState state,
+          List<StickyRecord> stickyRecords,
+          boolean computeChecksumOnUpdate,
+          boolean forceSourceMode,
+          @Nullable Long atime, boolean isMetaOnly) {
         super(uuid, pool, fileAttributes.getPnfsId());
         _fileAttributes = requireNonNull(fileAttributes);
         _state = requireNonNull(state);
@@ -47,43 +43,36 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         _isMetaOnly = isMetaOnly;
     }
 
-    public ReplicaState getState()
-    {
+    public ReplicaState getState() {
         return _state;
     }
 
-    public List<StickyRecord> getStickyRecords()
-    {
+    public List<StickyRecord> getStickyRecords() {
         return _stickyRecords;
     }
 
-    public boolean getComputeChecksumOnUpdate()
-    {
+    public boolean getComputeChecksumOnUpdate() {
         return _computeChecksumOnUpdate;
     }
 
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return _fileAttributes;
     }
 
-    public boolean isForceSourceMode()
-    {
+    public boolean isForceSourceMode() {
         return _forceSourceMode;
     }
 
-    public boolean isMetaOnly()
-    {
+    public boolean isMetaOnly() {
         return _isMetaOnly;
     }
 
     /**
-     * Last access time to use for target replica. null means that no access time is provided
-     * and the target should decide which access time to use.
+     * Last access time to use for target replica. null means that no access time is provided and
+     * the target should decide which access time to use.
      */
     @Nullable
-    public Long getAtime()
-    {
+    public Long getAtime() {
         return _atime;
     }
 }

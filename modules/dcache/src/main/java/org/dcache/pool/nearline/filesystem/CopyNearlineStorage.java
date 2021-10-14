@@ -22,28 +22,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-public class CopyNearlineStorage extends FileSystemNearlineStorage
-{
-    public CopyNearlineStorage(String type, String name)
-    {
+public class CopyNearlineStorage extends FileSystemNearlineStorage {
+
+    public CopyNearlineStorage(String type, String name) {
         super(type, name);
     }
 
     @Override
-    protected void flush(Path path, Path externalPath) throws IOException
-    {
+    protected void flush(Path path, Path externalPath) throws IOException {
         Files.copy(path, externalPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Override
-    protected void stage(Path externalPath, Path path) throws IOException
-    {
+    protected void stage(Path externalPath, Path path) throws IOException {
         Files.copy(externalPath, path);
     }
 
     @Override
-    protected void remove(Path externalPath) throws IOException
-    {
+    protected void remove(Path externalPath) throws IOException {
         Files.deleteIfExists(externalPath);
     }
 }

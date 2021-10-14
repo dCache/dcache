@@ -74,28 +74,28 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class Version {
-    private static String specVersion= "2.2";
+
+    private static String specVersion = "2.2";
     private static String specVendor = "SRM Working Group http://sdm.lbl.gov/srm-wg";
-    private static String specTitle  = "Storage Resource Manager (SRM)";
+    private static String specTitle = "Storage Resource Manager (SRM)";
     private static String implVendor;
     private static String implVersion;
 
     static {
         Package p = Package.getPackage("gov.fnal.srm.util");
-        if (p!=null) {
+        if (p != null) {
             String tmp;
-            p.getSpecificationTitle() ;
-            if( ( tmp =  p.getSpecificationTitle() ) != null   ) {
+            p.getSpecificationTitle();
+            if ((tmp = p.getSpecificationTitle()) != null) {
                 specTitle = tmp;
             }
-            if( ( tmp =  p.getSpecificationVersion() ) != null ) {
+            if ((tmp = p.getSpecificationVersion()) != null) {
                 specVersion = tmp;
             }
-            if( ( tmp =  p.getSpecificationVendor() ) != null  ) {
+            if ((tmp = p.getSpecificationVendor()) != null) {
                 specVendor = tmp;
             }
             implVendor = p.getImplementationVendor();
@@ -103,7 +103,9 @@ public class Version {
         }
     }
 
-    /** Creates a new instance of Version */
+    /**
+     * Creates a new instance of Version
+     */
     public Version() {
     }
 
@@ -118,7 +120,8 @@ public class Version {
             sb.append(" from ").append(implVendor);
         }
         sb.append("\n");
-        sb.append("This client is for any ").append(specTitle).append(" v").append(specVersion).append(" server.\n");
+        sb.append("This client is for any ").append(specTitle).append(" v").append(specVersion)
+              .append(" server.\n");
         sb.append("For more details on SRM contact ").append(specVendor);
         return sb.toString();
     }

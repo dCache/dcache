@@ -65,19 +65,20 @@ import java.util.Map;
  * @author arossi
  */
 public final class DcacheTimeDaily extends BaseEntry implements IHistogramData {
+
     private static final long serialVersionUID = 8589296884966419466L;
 
     public static final String MIN_TIME = "minimum";
     public static final String MAX_TIME = "maximum";
     public static final String AVG_TIME = "average";
 
-    private Double average= 0.0;
-    private Long minimum= 0L;
-    private Long maximum= 0L;
+    private Double average = 0.0;
+    private Long minimum = 0L;
+    private Long maximum = 0L;
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + minimum + "," + maximum
-                        + "," + average + ")";
+              + "," + average + ")";
     }
 
     public Double getAverage() {

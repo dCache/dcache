@@ -59,22 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.services.history.pools;
 
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.Reply;
+import dmg.util.command.Command;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.vehicles.Message;
-
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.Reply;
-import dmg.util.command.Command;
-
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
@@ -89,17 +84,18 @@ import org.dcache.vehicles.histograms.AggregateFileLifetimeRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>This is an implementation of the {@link PoolTimeseriesService} interface
- * which uses the {@link CellDataCollectingService} abstraction in order
- * to maintain and serve local file copies of the JSON objects containing
- * historical/timeseries pool data.</p>
+ * which uses the {@link CellDataCollectingService} abstraction in order to maintain and serve local
+ * file copies of the JSON objects containing historical/timeseries pool data.</p>
  */
 public final class PoolTimeseriesServiceImpl extends
-                CellDataCollectingService<Map<String, ListenableFutureWrapper<PoolLiveDataForHistoriesMessage>>,
-                                PoolLiveDataCollector>
-                implements CellMessageReceiver, PoolListingService {
+      CellDataCollectingService<Map<String, ListenableFutureWrapper<PoolLiveDataForHistoriesMessage>>,
+            PoolLiveDataCollector>
+      implements CellMessageReceiver, PoolListingService {
+
     private final Map<String, PoolInfoWrapper> cache = new HashMap<>();
 
     private PoolHistoriesRequestProcessor processor;
@@ -109,17 +105,19 @@ public final class PoolTimeseriesServiceImpl extends
     protected Executor executor;
 
     @Command(name = "pools set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "collections of pool information")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "collections of pool information")
     class PoolsSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "pools refresh",
-                    hint = "Query for current pool info",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query for current pool info",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class PoolsRefreshCommand extends RefreshCommand {
+
         @Override
         public String call() {
             processor.cancel();
@@ -147,7 +145,7 @@ public final class PoolTimeseriesServiceImpl extends
     }
 
     public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String key,
-                                                                  Set<TimeseriesType> types) {
+          Set<TimeseriesType> types) {
         Map<TimeseriesType, TimeseriesHistogram> histograms = new HashMap<>();
 
         PoolInfoWrapper info = getWrapper(key);
@@ -155,26 +153,26 @@ public final class PoolTimeseriesServiceImpl extends
         if (info != null) {
             histograms.put(TimeseriesType.ACTIVE_FLUSH, info.getActiveFlush());
             histograms.put(TimeseriesType.ACTIVE_MOVERS,
-                           info.getActiveMovers());
+                  info.getActiveMovers());
             histograms.put(TimeseriesType.ACTIVE_P2P, info.getActiveP2P());
             histograms.put(TimeseriesType.ACTIVE_P2P_CLIENT,
-                           info.getActiveP2PClient());
+                  info.getActiveP2PClient());
             histograms.put(TimeseriesType.ACTIVE_STAGE, info.getActiveStage());
             histograms.put(TimeseriesType.QUEUED_FLUSH, info.getQueuedFlush());
             histograms.put(TimeseriesType.QUEUED_MOVERS,
-                           info.getQueuedMovers());
+                  info.getQueuedMovers());
             histograms.put(TimeseriesType.QUEUED_P2P, info.getQueuedP2P());
             histograms.put(TimeseriesType.QUEUED_P2P_CLIENT,
-                           info.getQueuedP2PClient());
+                  info.getQueuedP2PClient());
             histograms.put(TimeseriesType.QUEUED_STAGE, info.getQueuedStage());
             histograms.put(TimeseriesType.FILE_LIFETIME_MAX,
-                           info.getFileLiftimeMax());
+                  info.getFileLiftimeMax());
             histograms.put(TimeseriesType.FILE_LIFETIME_AVG,
-                           info.getFileLiftimeAvg());
+                  info.getFileLiftimeAvg());
             histograms.put(TimeseriesType.FILE_LIFETIME_MIN,
-                           info.getFileLiftimeMin());
+                  info.getFileLiftimeMin());
             histograms.put(TimeseriesType.FILE_LIFETIME_STDDEV,
-                           info.getFileLiftimeStddev());
+                  info.getFileLiftimeStddev());
         }
 
         return histograms;
@@ -219,7 +217,7 @@ public final class PoolTimeseriesServiceImpl extends
         executor.execute(() -> {
             try {
                 message.setHistogramMap(getTimeseries(message.getPool(),
-                                                      message.getKeys()));
+                      message.getKeys()));
                 message.setSweeperData(getSweeperData(message.getPool()));
                 reply.reply(message);
             } catch (Exception e) {
@@ -234,9 +232,9 @@ public final class PoolTimeseriesServiceImpl extends
         executor.execute(() -> {
             try {
                 message.setAggregateLifetime(getWrapper(message.getPoolGroup())
-                                                               .getInfo()
-                                                               .getSweeperData()
-                                                               .getLastAccessHistogram());
+                      .getInfo()
+                      .getSweeperData()
+                      .getLastAccessHistogram());
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -287,7 +285,7 @@ public final class PoolTimeseriesServiceImpl extends
              */
             cache.putAll(next);
             Set<String> valid = validKeys();
-            for (Iterator i = cache.keySet().iterator(); i.hasNext();) {
+            for (Iterator i = cache.keySet().iterator(); i.hasNext(); ) {
                 if (!valid.contains(i.next())) {
                     i.remove();
                 }
@@ -297,7 +295,7 @@ public final class PoolTimeseriesServiceImpl extends
 
     @Override
     protected void update(
-                    Map<String, ListenableFutureWrapper<PoolLiveDataForHistoriesMessage>> data) {
+          Map<String, ListenableFutureWrapper<PoolLiveDataForHistoriesMessage>> data) {
         processor.process(data);
     }
 }

@@ -59,15 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.chimera.nfsv41.door;
 
-import org.dcache.nfs.util.UnixSubjects;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import javax.security.auth.Subject;
-import javax.security.auth.SubjectDomainCombiner;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.doAnswer;
 
 import java.net.URISyntaxException;
 import java.security.AccessControlContext;
@@ -75,7 +74,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
-
+import javax.security.auth.Subject;
+import javax.security.auth.SubjectDomainCombiner;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
@@ -85,66 +85,62 @@ import org.dcache.chimera.PermissionDeniedChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.doAnswer;
+import org.dcache.nfs.util.UnixSubjects;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class StorageUriTest {
-    private static final String[] INVALID = { "boguspath",
-                                              ":boguspath",
-                                              "/boguspath",
-                                              "foobar:/boguspath",
-                                              "foobar://boguspath",
-                                              "foobar://path with spaces",
-                                              "urn:bogus" };
+
+    private static final String[] INVALID = {"boguspath",
+          ":boguspath",
+          "/boguspath",
+          "foobar:/boguspath",
+          "foobar://boguspath",
+          "foobar://path with spaces",
+          "urn:bogus"};
 
     private static final String[] VALID = {
-                    "foobar://mrhost?somevariable=somevalue&someother=somethingelse" };
+          "foobar://mrhost?somevariable=somevalue&someother=somethingelse"};
 
     private static final String NEWLINE = "\n";
     private static final String HSMLOC1 =
-                    "foobar://mrhost?somethingbogus=1" + NEWLINE;
+          "foobar://mrhost?somethingbogus=1" + NEWLINE;
     private static final String HSMLOC2 =
-                    "foobar://mrhost?somethingbogus=2" + NEWLINE;
+          "foobar://mrhost?somethingbogus=2" + NEWLINE;
 
-    private FsInode                root;
-    private FsInode                file;
-    private FileSystemProvider     fs;
+    private FsInode root;
+    private FsInode file;
+    private FileSystemProvider fs;
     private List<StorageLocatable> locations;
-    private FsInode_SURI           inode_suri;
-    private Stat                   stat;
+    private FsInode_SURI inode_suri;
+    private Stat stat;
 
-    private static class RootInode extends FsInode
-    {
-        public RootInode(FileSystemProvider fs, long ino)
-        {
+    private static class RootInode extends FsInode {
+
+        public RootInode(FileSystemProvider fs, long ino) {
             super(fs, ino);
         }
 
         @Override
-        public boolean exists() throws ChimeraFsException
-        {
+        public boolean exists() throws ChimeraFsException {
             return true;
         }
 
         @Override
-        public boolean isDirectory()
-        {
+        public boolean isDirectory() {
             return true;
         }
 
         @Override
-        public boolean isLink()
-        {
+        public boolean isLink() {
             return false;
         }
 
         @Override
-        public FsInode getParent()
-        {
+        public FsInode getParent() {
             return null;
         }
     }
@@ -358,13 +354,13 @@ public class StorageUriTest {
     }
 
     private void runTestWithSubject(Subject subject,
-                                    PrivilegedAction<Void> action) {
+          PrivilegedAction<Void> action) {
         SubjectDomainCombiner domainCombiner = new SubjectDomainCombiner(
-                        subject);
+              subject);
         AccessControlContext testContext
-                        = new AccessControlContext(
-                        AccessController.getContext(),
-                        domainCombiner);
+              = new AccessControlContext(
+              AccessController.getContext(),
+              domainCombiner);
         AccessController.doPrivileged(action, testContext);
     }
 
@@ -395,15 +391,15 @@ public class StorageUriTest {
     private void addStorageLocation(String location) {
         long now = System.currentTimeMillis();
         locations.add(new StorageGenericLocation(1, 1,
-                                                 location.trim(),
-                                                 now, now,
-                                                 true));
+              location.trim(),
+              now, now,
+              true));
     }
 
     private void mockFileSystem() throws ChimeraFsException {
         given(fs.getInodeLocations(inode_suri)).willReturn(locations);
         given(fs.getInodeLocations(inode_suri, StorageGenericLocation.TAPE))
-                        .willReturn(locations);
+              .willReturn(locations);
         given(fs.stat(inode_suri, 0)).willReturn(stat);
         Answer<Void> clearAnswer = new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) {

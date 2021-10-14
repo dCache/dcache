@@ -1,11 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.StandardOpenOption;
-
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.BadStateidException;
@@ -21,6 +17,8 @@ import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
@@ -42,14 +40,15 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         try {
 
             NfsMover mover = _moverHandler.getOrCreateMover(context.getRemoteSocketAddress(),
-                    _args.opwrite.stateid,
-                    context.currentInode().toNfsHandle());
+                  _args.opwrite.stateid,
+                  context.currentInode().toNfsHandle());
             if (mover == null) {
-                throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
+                throw new BadStateidException(
+                      "No mover associated with given stateid: " + _args.opwrite.stateid);
             }
 
             mover.attachSession(context.getSession());
-            if(!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
+            if (!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new PermException("an attempt to write without IO mode enabled");
             }
 
@@ -74,16 +73,16 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
             _log.debug("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
 
-        }catch(ChimeraNFSException he) {
+        } catch (ChimeraNFSException he) {
             _log.debug(he.getMessage());
             res.status = he.getStatus();
-        }catch (OutOfDiskException e) {
+        } catch (OutOfDiskException e) {
             _log.error("DSWRITE: no allocatable space left on the pool");
             res.status = nfsstat.NFSERR_NOSPC;
-        }catch(IOException ioe) {
+        } catch (IOException ioe) {
             _log.error("DSWRITE: ", ioe);
             res.status = nfsstat.NFSERR_IO;
-        }catch(Exception e) {
+        } catch (Exception e) {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }

@@ -2,43 +2,37 @@ package org.dcache.util.cli;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSortedMap;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import org.dcache.util.Args;
 
 /**
- * Support for commands, where a command is an Args-based request to some named
- * entity that provides a Serializable response.
- *
- * Commands are found by scanning one or more command-listener objects.  The
- * process of discovering these commands is abstracted, and provided by one or
- * more CommandScanner objects.
- *
- * Command-listener objects and CommandScanners are added after CommandInterpreter
- * is created.
+ * Support for commands, where a command is an Args-based request to some named entity that provides
+ * a Serializable response.
+ * <p>
+ * Commands are found by scanning one or more command-listener objects.  The process of discovering
+ * these commands is abstracted, and provided by one or more CommandScanner objects.
+ * <p>
+ * Command-listener objects and CommandScanners are added after CommandInterpreter is created.
  */
-public class CommandInterpreter
-{
+public class CommandInterpreter {
+
     private final CommandEntry _rootEntry = new CommandEntry("");
 
     private final List<CommandScanner> _scanners = new ArrayList<>();
 
     private final List<Object> _commandListeners = new ArrayList<>();
 
-    protected synchronized void addCommandScanner(CommandScanner scanner)
-    {
+    protected synchronized void addCommandScanner(CommandScanner scanner) {
         _scanners.add(scanner);
         for (Object commandListener : _commandListeners) {
             addCommands(scanner.scan(commandListener));
@@ -47,10 +41,10 @@ public class CommandInterpreter
 
     /**
      * Adds an interpreter too the current object.
+     *
      * @params commandListener is the object which will be inspected.
      */
-    public final synchronized void addCommandListener(Object commandListener)
-    {
+    public final synchronized void addCommandListener(Object commandListener) {
         for (CommandScanner scanner : _scanners) {
             addCommands(scanner.scan(commandListener));
         }
@@ -58,42 +52,36 @@ public class CommandInterpreter
         _commandListeners.add(commandListener);
     }
 
-    private void addCommands(Map<List<String>,? extends CommandExecutor> commands)
-    {
-        for (Map.Entry<List<String>,? extends CommandExecutor> entry: commands.entrySet()) {
+    private void addCommands(Map<List<String>, ? extends CommandExecutor> commands) {
+        for (Map.Entry<List<String>, ? extends CommandExecutor> entry : commands.entrySet()) {
             CommandEntry currentEntry = _rootEntry.getOrCreate(entry.getKey());
             if (currentEntry.hasCommand()) {
-                throw new IllegalArgumentException("Conflicting implementations of shell command '" +
-                        Joiner.on(" ").join(entry.getKey()) + "': " +
-                        currentEntry.getCommand() + " and " + entry.getValue());
+                throw new IllegalArgumentException(
+                      "Conflicting implementations of shell command '" +
+                            Joiner.on(" ").join(entry.getKey()) + "': " +
+                            currentEntry.getCommand() + " and " + entry.getValue());
             }
             currentEntry.setCommand(entry.getValue());
         }
     }
 
     /**
-     * Interpreters the specified arguments and calles the
-     * corresponding method of the connected Object.
+     * Interpreters the specified arguments and calles the corresponding method of the connected
+     * Object.
      *
-     * @params args is the initialized Args Object containing
-     *         the commands.
-     * @return the string returned by the corresponding
-     *         method of the reflected object.
-     *
-     * @exception CommandSyntaxException if the used command syntax
-     *            doesn't match any of the corresponding methods.
-     *            The .getHelpText() method provides a short
-     *            description of the correct syntax, if possible.
-     * @exception CommandExitException if the corresponding
-     *            object doesn't want to be used any more.
-     *            Usually shells send this Exception to 'exit'.
-     * @exception CommandThrowableException if the corresponding
-     *            method throws any kind of throwable.
-     *            The thrown throwable can be obtaines by calling
-     *            .getTargetException of the CommandThrowableException.
-     * @exception CommandPanicException if the invocation of the
-     *            corresponding method failed. .getTargetException
-     *            provides the actual Exception of the failure.
+     * @return the string returned by the corresponding method of the reflected object.
+     * @throws CommandSyntaxException    if the used command syntax doesn't match any of the
+     *                                   corresponding methods. The .getHelpText() method provides a
+     *                                   short description of the correct syntax, if possible.
+     * @throws CommandExitException      if the corresponding object doesn't want to be used any
+     *                                   more. Usually shells send this Exception to 'exit'.
+     * @throws CommandThrowableException if the corresponding method throws any kind of throwable.
+     *                                   The thrown throwable can be obtaines by calling
+     *                                   .getTargetException of the CommandThrowableException.
+     * @throws CommandPanicException     if the invocation of the corresponding method failed.
+     *                                   .getTargetException provides the actual Exception of the
+     *                                   failure.
+     * @params args is the initialized Args Object containing the commands.
      */
     public Serializable command(Args args) throws CommandException {
         //
@@ -138,19 +126,18 @@ public class CommandInterpreter
     }
 
     protected Serializable doExecute(CommandEntry entry, Args args,
-            String[] acls) throws CommandException
-    {
+          String[] acls) throws CommandException {
         return entry.execute(args);
     }
 
     /**
-     * A CommandEntry is a node in a tree representing command prefixes. Each node
-     * can be associated with a CommandExecutor.
+     * A CommandEntry is a node in a tree representing command prefixes. Each node can be associated
+     * with a CommandExecutor.
      */
-    protected static class CommandEntry
-    {
-        private ImmutableSortedMap<String,CommandEntry> _suffixes =
-                ImmutableSortedMap.of();
+    protected static class CommandEntry {
+
+        private ImmutableSortedMap<String, CommandEntry> _suffixes =
+              ImmutableSortedMap.of();
 
         private final String _name;
         private CommandExecutor _commandExecutor;
@@ -164,10 +151,10 @@ public class CommandInterpreter
         }
 
         public void put(String str, CommandEntry e) {
-            _suffixes = ImmutableSortedMap.<String,CommandEntry>naturalOrder()
-                    .putAll(_suffixes)
-                    .put(str,e)
-                    .build();
+            _suffixes = ImmutableSortedMap.<String, CommandEntry>naturalOrder()
+                  .putAll(_suffixes)
+                  .put(str, e)
+                  .build();
         }
 
         public CommandEntry get(String str) {
@@ -185,58 +172,50 @@ public class CommandInterpreter
 
         public CommandEntry getOrCreate(List<String> names) {
             CommandEntry entry = this;
-            for (String name: names) {
+            for (String name : names) {
                 entry = entry.getOrCreate(name);
             }
             return entry;
         }
 
-        public void setCommand(CommandExecutor commandExecutor)
-        {
+        public void setCommand(CommandExecutor commandExecutor) {
             _commandExecutor = commandExecutor;
         }
 
-        public CommandExecutor getCommand()
-        {
+        public CommandExecutor getCommand() {
             return _commandExecutor;
         }
 
-        boolean hasCommand()
-        {
+        boolean hasCommand() {
             return _commandExecutor != null;
         }
 
-        public boolean hasACLs()
-        {
+        public boolean hasACLs() {
             return (_commandExecutor != null) && _commandExecutor.hasACLs();
         }
 
-        public void dumpHelpHint(String top, StringBuilder sb, HelpFormat format)
-        {
+        public void dumpHelpHint(String top, StringBuilder sb, HelpFormat format) {
             if (_commandExecutor != null && !_commandExecutor.isDeprecated()) {
                 String hint = _commandExecutor.getHelpHint(format);
                 if (hint != null) {
                     sb.append(top).append(hint).append("\n");
                 }
             }
-            for (CommandEntry ce: _suffixes.values()) {
+            for (CommandEntry ce : _suffixes.values()) {
                 ce.dumpHelpHint(top + ce.getName() + " ", sb, format);
             }
         }
 
         public Serializable execute(Args arguments)
-                throws CommandException
-        {
+              throws CommandException {
             return _commandExecutor.execute(arguments);
         }
 
-        public String getFullHelp(HelpFormat format)
-        {
+        public String getFullHelp(HelpFormat format) {
             return (_commandExecutor == null) ? null : _commandExecutor.getFullHelp(format);
         }
 
-        public String[] getACLs()
-        {
+        public String[] getACLs() {
             return (_commandExecutor == null) ? new String[0] : _commandExecutor.getACLs();
         }
 
@@ -244,15 +223,14 @@ public class CommandInterpreter
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("Entry : ").append(getName());
-            for (String key: _suffixes.keySet()) {
+            for (String key : _suffixes.keySet()) {
                 sb.append(" -> ").append(key).append("\n");
             }
             return sb.toString();
         }
     }
 
-    public String getHelp(HelpFormat format, String... command)
-    {
+    public String getHelp(HelpFormat format, String... command) {
         CommandEntry entry = _rootEntry;
         StringBuilder path = new StringBuilder();
         for (String word : command) {
@@ -273,23 +251,22 @@ public class CommandInterpreter
         return help;
     }
 
-    public class HelpCommands
-    {
+    public class HelpCommands {
+
         @Command(name = "help", hint = "display help pages")
-        public class HelpCommand implements Callable<String>
-        {
+        public class HelpCommand implements Callable<String> {
+
             @Option(name = "format", usage = "Output format.")
             HelpFormat format = HelpFormat.PLAIN;
 
             @Argument(valueSpec = "COMMAND", required = false,
-                      usage = "When invoked with a specific command, detailed help for that " +
-                              "command is displayed. When invoked with a partial command or without " +
-                              "an argument, a summary of all matching commands is shown.")
+                  usage = "When invoked with a specific command, detailed help for that " +
+                        "command is displayed. When invoked with a partial command or without " +
+                        "an argument, a summary of all matching commands is shown.")
             String[] command = {};
 
             @Override
-            public String call()
-            {
+            public String call() {
                 return getHelp(format, command);
             }
         }

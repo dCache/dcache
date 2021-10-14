@@ -17,40 +17,34 @@
  */
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.PnfsId;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.PnfsId;
 
 /**
  * Remove one or more extended attributes.
  */
-public class PnfsRemoveExtendedAttributesMessage extends PnfsMessage
-{
+public class PnfsRemoveExtendedAttributesMessage extends PnfsMessage {
+
     private final Set<String> _names = new HashSet<>();
 
-    public PnfsRemoveExtendedAttributesMessage(PnfsId id)
-    {
+    public PnfsRemoveExtendedAttributesMessage(PnfsId id) {
         super(id);
     }
 
-    public PnfsRemoveExtendedAttributesMessage(String path)
-    {
+    public PnfsRemoveExtendedAttributesMessage(String path) {
         setPnfsPath(path);
     }
 
-    public void addName(String name)
-    {
+    public void addName(String name) {
         _names.add(name);
     }
 
-    public Set<String> getAllNames()
-    {
+    public Set<String> getAllNames() {
         return _names;
     }
 
-    public void clearNames()
-    {
+    public void clearNames() {
         _names.clear();
     }
 }

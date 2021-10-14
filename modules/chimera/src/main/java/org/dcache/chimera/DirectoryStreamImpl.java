@@ -16,33 +16,32 @@
  */
 package org.dcache.chimera;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.jdbc.support.JdbcUtils;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.support.JdbcUtils;
 
-public class DirectoryStreamImpl
-{
+public class DirectoryStreamImpl {
+
     private static final String QUERY =
-            "SELECT i.*, d.iname FROM t_inodes i JOIN t_dirs d ON i.inumber = d.ichild WHERE d.iparent=? " +
-            "UNION ALL " +
-            "SELECT i.*, '.' FROM t_inodes i WHERE i.inumber=? " +
-            "UNION ALL " +
-            "SELECT i.*, '..' FROM t_inodes i JOIN t_dirs d ON i.inumber = d.iparent WHERE d.ichild=?";
+          "SELECT i.*, d.iname FROM t_inodes i JOIN t_dirs d ON i.inumber = d.ichild WHERE d.iparent=? "
+                +
+                "UNION ALL " +
+                "SELECT i.*, '.' FROM t_inodes i WHERE i.inumber=? " +
+                "UNION ALL " +
+                "SELECT i.*, '..' FROM t_inodes i JOIN t_dirs d ON i.inumber = d.iparent WHERE d.ichild=?";
 
     private final ResultSet _resultSet;
     private final JdbcTemplate _jdbc;
     private final Connection _connection;
     private final PreparedStatement _statement;
 
-    DirectoryStreamImpl(FsInode dir, JdbcTemplate jdbc)
-    {
+    DirectoryStreamImpl(FsInode dir, JdbcTemplate jdbc) {
         _jdbc = jdbc;
 
         Connection connection = null;
@@ -66,8 +65,7 @@ public class DirectoryStreamImpl
         _statement = ps;
     }
 
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         try {
             JdbcUtils.closeResultSet(_resultSet);
             JdbcUtils.closeStatement(_statement);
@@ -77,8 +75,7 @@ public class DirectoryStreamImpl
         }
     }
 
-    public ResultSet next() throws SQLException
-    {
+    public ResultSet next() throws SQLException {
         return _resultSet.next() ? _resultSet : null;
     }
 }

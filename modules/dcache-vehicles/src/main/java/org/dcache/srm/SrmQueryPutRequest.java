@@ -24,37 +24,34 @@ import java.net.URI;
 
 /**
  * Queries whether an upload on a particular SURL or SURL prefix exists.
- *
- * The given SURL is considered a prefix for SURLs to search for. The intention
- * is that given a directory SURL, an upload to that directory or a directory
- * within that directory tree may be returned. In such cases the return message
- * will contain the SURL of the actual transfer.
- *
- * Although a particular SrmManager instance can have several put requests for the
- * same SURL or within the same directory tree, the reply to this message only
- * contains information about the transfer with the lexicographically smallest SURL.
- *
- * If no matching upload is found, the response contains null values for the surl,
- * file id and request id.
- *
- * The intended use of this message is when an SrmManager queries other SrmManagers
- * for the existence of other uploads.
- *
+ * <p>
+ * The given SURL is considered a prefix for SURLs to search for. The intention is that given a
+ * directory SURL, an upload to that directory or a directory within that directory tree may be
+ * returned. In such cases the return message will contain the SURL of the actual transfer.
+ * <p>
+ * Although a particular SrmManager instance can have several put requests for the same SURL or
+ * within the same directory tree, the reply to this message only contains information about the
+ * transfer with the lexicographically smallest SURL.
+ * <p>
+ * If no matching upload is found, the response contains null values for the surl, file id and
+ * request id.
+ * <p>
+ * The intended use of this message is when an SrmManager queries other SrmManagers for the
+ * existence of other uploads.
+ * <p>
  * Responses to this request are SrmQueryPutResponse and SrmException.
  */
-public class SrmQueryPutRequest implements Serializable
-{
+public class SrmQueryPutRequest implements Serializable {
+
     private static final long serialVersionUID = 6336465316695026669L;
 
     private final URI surl;
 
-    public SrmQueryPutRequest(URI surl)
-    {
+    public SrmQueryPutRequest(URI surl) {
         this.surl = surl;
     }
 
-    public URI getSurl()
-    {
+    public URI getSurl() {
         return surl;
     }
 }

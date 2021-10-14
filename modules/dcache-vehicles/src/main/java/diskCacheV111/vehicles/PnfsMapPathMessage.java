@@ -6,24 +6,26 @@ import diskCacheV111.util.PnfsId;
 
 public class PnfsMapPathMessage extends PnfsMessage {
 
-   private String _globalPath;
+    private String _globalPath;
 
-   private static final long serialVersionUID = 1592692201158065130L;
+    private static final long serialVersionUID = 1592692201158065130L;
 
-   public PnfsMapPathMessage( PnfsId pnfsId ){
-      super( pnfsId ) ;
-      setReplyRequired(true);
-   }
+    public PnfsMapPathMessage(PnfsId pnfsId) {
+        super(pnfsId);
+        setReplyRequired(true);
+    }
 
-   public String getGlobalPath(){ return _globalPath ; }
-   public void setGlobalPath( String globalPath ){
-      _globalPath = globalPath ;
-      setPnfsPath(globalPath);
-   }
+    public String getGlobalPath() {
+        return _globalPath;
+    }
+
+    public void setGlobalPath(String globalPath) {
+        _globalPath = globalPath;
+        setPnfsPath(globalPath);
+    }
 
     @Override
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return false;
     }
 }

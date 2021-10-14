@@ -91,8 +91,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Called during the collection gathering in order to obtain
- * historical (i.e., stateful) pool data such as queue/mover timeseries
- * counts or the running statistics on file lifetime.</p>
+ * historical (i.e., stateful) pool data such as queue/mover timeseries counts or the running
+ * statistics on file lifetime.</p>
  *
  * <p>Delegates to a service interface to obtain the individual pool
  * data objects.</p>
@@ -101,10 +101,11 @@ import org.springframework.beans.factory.annotation.Required;
  * pool groups.</p>
  */
 public final class PoolHistoriesHandler extends PoolInfoAggregator
-                implements PoolTimeseriesService {
+      implements PoolTimeseriesService {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(PoolHistoriesHandler.class);
-    private CellStub            historyService;
+          = LoggerFactory.getLogger(PoolHistoriesHandler.class);
+    private CellStub historyService;
     private PoolInfoServiceImpl poolInfoService;
 
     /**
@@ -117,37 +118,37 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
      * @throws CacheException
      */
     public void addHistoricalData(PoolInfoWrapper info)
-                    throws InterruptedException,
-                    CacheException, NoRouteToCellException {
+          throws InterruptedException,
+          CacheException, NoRouteToCellException {
         PoolTimeseriesRequestMessage message =
-                        getHistogramAndSweeperData(info.getKey(),
-                                                   PoolTimeseriesRequestMessage.ALL);
+              getHistogramAndSweeperData(info.getKey(),
+                    PoolTimeseriesRequestMessage.ALL);
         PoolData poolData = info.getInfo();
         poolData.setSweeperData(message.getSweeperData());
 
         Map<TimeseriesType, TimeseriesHistogram> timeseries
-                        = message.getHistogramMap();
+              = message.getHistogramMap();
 
         info.setActiveFlush(timeseries.get(TimeseriesType.ACTIVE_FLUSH));
         info.setActiveMovers(timeseries.get(TimeseriesType.ACTIVE_MOVERS));
         info.setActiveP2P(timeseries.get(TimeseriesType.ACTIVE_P2P));
         info.setActiveP2PClient(
-                        timeseries.get(TimeseriesType.ACTIVE_P2P_CLIENT));
+              timeseries.get(TimeseriesType.ACTIVE_P2P_CLIENT));
         info.setActiveStage(timeseries.get(TimeseriesType.ACTIVE_STAGE));
         info.setQueuedFlush(timeseries.get(TimeseriesType.QUEUED_FLUSH));
         info.setQueuedMovers(timeseries.get(TimeseriesType.QUEUED_MOVERS));
         info.setQueuedP2P(timeseries.get(TimeseriesType.QUEUED_P2P));
         info.setQueuedP2PClient(
-                        timeseries.get(TimeseriesType.QUEUED_P2P_CLIENT));
+              timeseries.get(TimeseriesType.QUEUED_P2P_CLIENT));
         info.setQueuedStage(timeseries.get(TimeseriesType.QUEUED_STAGE));
         info.setFileLiftimeMax(
-                        timeseries.get(TimeseriesType.FILE_LIFETIME_MAX));
+              timeseries.get(TimeseriesType.FILE_LIFETIME_MAX));
         info.setFileLiftimeAvg(
-                        timeseries.get(TimeseriesType.FILE_LIFETIME_AVG));
+              timeseries.get(TimeseriesType.FILE_LIFETIME_AVG));
         info.setFileLiftimeMin(
-                        timeseries.get(TimeseriesType.FILE_LIFETIME_MIN));
+              timeseries.get(TimeseriesType.FILE_LIFETIME_MIN));
         info.setFileLiftimeStddev(
-                        timeseries.get(TimeseriesType.FILE_LIFETIME_STDDEV));
+              timeseries.get(TimeseriesType.FILE_LIFETIME_STDDEV));
     }
 
     /*
@@ -155,26 +156,26 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
      *  Failing that, do the aggregation here.
      */
     public CountingHistogram getAggregateFileLifetime(String poolGroup,
-                                                      List<PoolInfoWrapper> pools){
+          List<PoolInfoWrapper> pools) {
         AggregateFileLifetimeRequestMessage message
-                        = new AggregateFileLifetimeRequestMessage(poolGroup);
+              = new AggregateFileLifetimeRequestMessage(poolGroup);
 
         try {
             message = historyService.sendAndWait(message,
-                                                 historyService.getTimeoutInMillis());
+                  historyService.getTimeoutInMillis());
         } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
             LOGGER.debug("Could not fetch aggregated lifetime data for {}: {}.",
-                         poolGroup, e.getMessage());
+                  poolGroup, e.getMessage());
         } catch (CacheException e) {
             LOGGER.warn("Could not fetch aggregated lifetime data for {}: {}.",
-                        poolGroup, e.getMessage());
+                  poolGroup, e.getMessage());
         }
 
         Serializable error = message.getErrorObject();
 
         if (error != null) {
             LOGGER.warn("Could not fetch aggregated lifetime data for {}: {}.",
-                         message.getPoolGroup(), error);
+                  message.getPoolGroup(), error);
         }
 
         CountingHistogram histogram = message.getAggregateLifetime();
@@ -184,7 +185,7 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
          */
         if (histogram == null) {
             LOGGER.info("Fetch of aggregated lifetime histogram unsuccessful; "
-                                        + "merging data here.");
+                  + "merging data here.");
             histogram = PoolInfoCollectorUtils.mergeLastAccess(pools);
         }
 
@@ -192,21 +193,21 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
     }
 
     public PoolTimeseriesRequestMessage getHistogramAndSweeperData(String pool,
-                                                                   Set<TimeseriesType> types)
-                    throws CacheException, InterruptedException,
-                    NoRouteToCellException {
+          Set<TimeseriesType> types)
+          throws CacheException, InterruptedException,
+          NoRouteToCellException {
         PoolTimeseriesRequestMessage message = new PoolTimeseriesRequestMessage();
         message.setPool(pool);
         message.setKeys(types);
         return historyService.sendAndWait(message,
-                                          historyService.getTimeoutInMillis());
+              historyService.getTimeoutInMillis());
     }
 
     @Override
     public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
-                                                                  Set<TimeseriesType> types)
-                    throws CacheException, InterruptedException,
-                    NoRouteToCellException {
+          Set<TimeseriesType> types)
+          throws CacheException, InterruptedException,
+          NoRouteToCellException {
         return getHistogramAndSweeperData(pool, types).getHistogramMap();
     }
 
@@ -240,23 +241,23 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
         PoolSpaceData groupSpace = new PoolSpaceData();
         groupCost.setSpace(groupSpace);
         pools.stream()
-             .map(PoolInfoWrapper::getInfo)
-             .filter(Objects::nonNull)
-             .map(PoolData::getDetailsData)
-             .filter(Objects::nonNull)
-             .map(PoolDataDetails::getCostData)
-             .filter(Objects::nonNull)
-             .map(PoolCostData::getSpace)
-             .filter(Objects::nonNull)
-             .forEach(groupSpace::aggregateData);
+              .map(PoolInfoWrapper::getInfo)
+              .filter(Objects::nonNull)
+              .map(PoolData::getDetailsData)
+              .filter(Objects::nonNull)
+              .map(PoolDataDetails::getCostData)
+              .filter(Objects::nonNull)
+              .map(PoolCostData::getSpace)
+              .filter(Objects::nonNull)
+              .forEach(groupSpace::aggregateData);
 
         Map<String, StorageUnitSpaceStatistics> byStorageUnit = new HashMap<>();
         pools.stream()
-            .map(PoolInfoWrapper::getInfo)
-            .filter(Objects::nonNull)
-            .map(PoolData::getSpaceByStorageUnit)
-            .filter(Objects::nonNull)
-            .forEach(map -> StorageUnitSpaceStatistics.aggregate(byStorageUnit, map));
+              .map(PoolInfoWrapper::getInfo)
+              .filter(Objects::nonNull)
+              .map(PoolData::getSpaceByStorageUnit)
+              .filter(Objects::nonNull)
+              .forEach(map -> StorageUnitSpaceStatistics.aggregate(byStorageUnit, map));
 
         PoolData poolData = new PoolData();
         poolData.setSpaceByStorageUnit(byStorageUnit);
@@ -273,10 +274,10 @@ public final class PoolHistoriesHandler extends PoolInfoAggregator
             addHistoricalData(group);
         } catch (NoRouteToCellException | InterruptedException | TimeoutCacheException e) {
             LOGGER.debug("Could not add historical data for {}: {}.",
-                         group, e.getMessage());
+                  group, e.getMessage());
         } catch (CacheException e) {
             LOGGER.error("Could not add historical data for {}: {}.",
-                         group, e.getMessage());
+                  group, e.getMessage());
         }
     }
 }

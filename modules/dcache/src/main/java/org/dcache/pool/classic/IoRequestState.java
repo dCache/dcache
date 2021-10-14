@@ -1,7 +1,6 @@
 package org.dcache.pool.classic;
 
 /**
- *
  * @author tigran
  * @since 1.9.11
  */

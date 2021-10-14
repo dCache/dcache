@@ -89,61 +89,54 @@ package org.dcache.srm;
 
 
 /**
- * This interface is used for asyncronous notification of SRM of the varios
- * states of actions performed  for "getting"file from the storage
- *
- * Instance of this class is passed to implementation
- * of AbstractStorageElement.prepareToGet(...) method
- * storage should call its methods in this order:
- *
- * if error occured at any time, call GetStorageInfoFailed,
- * SelectReadPoolFailed, PinRequestFailed, Exception, Timeout
- * or Error and do not make any further calls, nullify the
- * reference to this PrepareToGetCallbacks instance to allow garbage
- * collection
- *
- * if everything works fine, do the following,
- * discover the info about the requested file
- * create the instance of the FileId for the requested file and call
- * StorageInfoArrived with FileId and file size as arguments
- *
+ * This interface is used for asyncronous notification of SRM of the varios states of actions
+ * performed  for "getting"file from the storage
+ * <p>
+ * Instance of this class is passed to implementation of AbstractStorageElement.prepareToGet(...)
+ * method storage should call its methods in this order:
+ * <p>
+ * if error occured at any time, call GetStorageInfoFailed, SelectReadPoolFailed, PinRequestFailed,
+ * Exception, Timeout or Error and do not make any further calls, nullify the reference to this
+ * PrepareToGetCallbacks instance to allow garbage collection
+ * <p>
+ * if everything works fine, do the following, discover the info about the requested file create the
+ * instance of the FileId for the requested file and call StorageInfoArrived with FileId and file
+ * size as arguments
+ * <p>
  * if StorageInfoArrived returns false no futher action is needed
- *
- * if StorageInfoArrived returns true, file has to be brought to the fast access
- * state (staged) . once it is done
- * call SelectReadPool with the name of the storage element
- * that will host this file after it is brought to the fast access state (staged)
- * (name of the pool in case of dCache)
- * the AbstractStorageElement.unPinFile(FileId fileId,String pool) will be called
- * with after the SRM does not need this resource anymore.
- *
- * if system does not support staging and pinning pass some arbitrary
- * nonnull string.
- *
+ * <p>
+ * if StorageInfoArrived returns true, file has to be brought to the fast access state (staged) .
+ * once it is done call SelectReadPool with the name of the storage element that will host this file
+ * after it is brought to the fast access state (staged) (name of the pool in case of dCache) the
+ * AbstractStorageElement.unPinFile(FileId fileId,String pool) will be called with after the SRM
+ * does not need this resource anymore.
+ * <p>
+ * if system does not support staging and pinning pass some arbitrary nonnull string.
+ * <p>
  * If SelectReadPool returns false no futher action is needed
- *
- * If SelectReadPool returns true, pin the file in the "fast access state"
- * and call Pinned()
- * if system does not support pinning, just call Pinned() anyway
- *
- *Keep the file in the pinned state untill
- *
- *AbstractStorageElement.unPinFile(FileId fileId,String pool) is called.
- *
- *
- *
+ * <p>
+ * If SelectReadPool returns true, pin the file in the "fast access state" and call Pinned() if
+ * system does not support pinning, just call Pinned() anyway
+ * <p>
+ * Keep the file in the pinned state untill
+ * <p>
+ * AbstractStorageElement.unPinFile(FileId fileId,String pool) is called.
+ * <p>
+ * <p>
+ * <p>
  * if Storage
- * @author  timur
+ *
+ * @author timur
  */
 public interface ReserveSpaceCallbacks {
-    
+
     void ReserveSpaceFailed(String reason);
-    
+
     void SpaceReserved(String spaceReservationToken, long reservedSpaceSize);
-    
+
     void Exception(Exception e);
-    
+
     void Timeout();
-    
+
     void Error(String error);
 }

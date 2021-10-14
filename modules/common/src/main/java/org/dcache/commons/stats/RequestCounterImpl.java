@@ -6,6 +6,8 @@
 
 package org.dcache.commons.stats;
 
+import java.lang.management.ManagementFactory;
+import java.util.Formatter;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -14,23 +16,22 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
-import java.lang.management.ManagementFactory;
-import java.util.Formatter;
-
 /**
- * This class encapsulates two integer counters and  provides utility methods
- * for increments and discovery of the count of  request invocations and
- * failures
- * This class is thread safe.
+ * This class encapsulates two integer counters and  provides utility methods for increments and
+ * discovery of the count of  request invocations and failures This class is thread safe.
+ *
  * @author timur
  */
 public class RequestCounterImpl implements RequestCounterMXBean {
+
     private final String name;
-    private int   requests;
-    private int    failed;
+    private int requests;
+    private int failed;
     private ObjectName mxBeanName;
 
-    /** Creates a new instance of Counter
+    /**
+     * Creates a new instance of Counter
+     *
      * @param name
      */
     public RequestCounterImpl(String name, String family) {
@@ -39,7 +40,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         try {
             String mxName = String.format("%s:type=RequestCounter,family=%s,name=%s",
-                    this.getClass().getPackage().getName(), family, this.name);
+                  this.getClass().getPackage().getName(), family, this.name);
             mxBeanName = new ObjectName(mxName);
             if (!server.isRegistered(mxBeanName)) {
                 server.registerMBean(this, mxBeanName);
@@ -50,7 +51,6 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     }
 
     /**
-     *
      * @return name of this counter
      */
     @Override
@@ -61,19 +61,18 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     @Override
     public synchronized String toString() {
         String aName = name;
-        if(name.length() >34) {
-             aName = aName.substring(0,34);
+        if (name.length() > 34) {
+            aName = aName.substring(0, 34);
         }
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
-            formatter.format("%-34s %9d %9d", aName, requests,  failed);
+            formatter.format("%-34s %9d %9d", aName, requests, failed);
         }
 
         return sb.toString();
     }
 
     /**
-     *
      * @return number of request invocations known to this counter
      */
     @Override
@@ -89,11 +88,11 @@ public class RequestCounterImpl implements RequestCounterMXBean {
 
     @Override
     public synchronized void shutdown() {
-        if(mxBeanName != null) {
+        if (mxBeanName != null) {
             try {
                 MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-                server.unregisterMBean( mxBeanName);
-            }catch( InstanceNotFoundException | MBeanRegistrationException e) {
+                server.unregisterMBean(mxBeanName);
+            } catch (InstanceNotFoundException | MBeanRegistrationException e) {
                 // ignored
             }
         }
@@ -101,6 +100,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
 
     /**
      * increments the number of request invocations known to this counter
+     *
      * @param requests number by which to increment
      */
     public synchronized void incrementRequests(int requests) {
@@ -115,7 +115,6 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     }
 
     /**
-     *
      * @return number of faild request invocations known to this counter
      */
     @Override
@@ -124,8 +123,8 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     }
 
     /**
-     * increments the number of failed request invocations known to this
-     * counter
+     * increments the number of failed request invocations known to this counter
+     *
      * @param failed number by which to increment
      */
     public synchronized void incrementFailed(int failed) {
@@ -133,21 +132,17 @@ public class RequestCounterImpl implements RequestCounterMXBean {
     }
 
     /**
-     * increments the number of failed request invocations known to this counter
-     * by 1
+     * increments the number of failed request invocations known to this counter by 1
      */
     public synchronized void incrementFailed() {
         failed++;
     }
 
     /**
-     *
-     * @return number of requests that succeed
-     *  This number is calculated as a difference between the
-     *  total number of requests executed and the failed requests.
-     *  The number of Successful requests  is accurate only if both
-     *  number of requests executed and the failed requests are recorded
-     *  accurately
+     * @return number of requests that succeed This number is calculated as a difference between the
+     * total number of requests executed and the failed requests. The number of Successful requests
+     * is accurate only if both number of requests executed and the failed requests are recorded
+     * accurately
      */
     @Override
     public synchronized int getSuccessful() {

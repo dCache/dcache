@@ -97,7 +97,7 @@ public enum Operation {
             return FILE;
         }
 
-        switch(status) {
+        switch (status) {
             case DOWN:
                 return POOL_SCAN_DOWN;
             default:

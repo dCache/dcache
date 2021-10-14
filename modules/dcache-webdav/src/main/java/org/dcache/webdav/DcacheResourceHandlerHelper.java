@@ -13,28 +13,25 @@ import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.http.http11.Http11ResponseHandler;
 import io.milton.resource.Resource;
-
 import org.dcache.webdav.transfer.CopyFilter;
 
 /**
- * This class provides extended behaviour for Milton so it can support
- * some experimental/new protocol extensions, like 3rd-party transfers.
+ * This class provides extended behaviour for Milton so it can support some experimental/new
+ * protocol extensions, like 3rd-party transfers.
  */
-public class DcacheResourceHandlerHelper extends ResourceHandlerHelper
-{
+public class DcacheResourceHandlerHelper extends ResourceHandlerHelper {
+
     public DcacheResourceHandlerHelper(HandlerHelper handlerHelper,
-            UrlAdapter urlAdapter, Http11ResponseHandler responseHandler,
-            AuthenticationService authenticationService)
-    {
+          UrlAdapter urlAdapter, Http11ResponseHandler responseHandler,
+          AuthenticationService authenticationService) {
         super(handlerHelper, urlAdapter, responseHandler, authenticationService);
     }
 
     @Override
     public void process(HttpManager manager, Request request, Response response,
-                        ResourceHandler handler) throws NotAuthorizedException,
-                                                        ConflictException,
-                                                        BadRequestException
-    {
+          ResourceHandler handler) throws NotAuthorizedException,
+          ConflictException,
+          BadRequestException {
         String url = getUrlAdapter().getUrl(request);
         String host = request.getHostHeader();
         if (CopyFilter.isRequestThirdPartyCopy(request)) {

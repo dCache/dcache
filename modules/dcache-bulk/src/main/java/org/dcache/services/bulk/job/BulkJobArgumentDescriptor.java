@@ -59,15 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
-import com.google.common.base.Objects;
-
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Objects;
+
 /**
- *  Metadata for optional argument to a bulk job.
+ * Metadata for optional argument to a bulk job.
  */
-public class BulkJobArgumentDescriptor
-{
+public class BulkJobArgumentDescriptor {
+
     private final String name;
     private final String description;
     private final boolean required;
@@ -75,62 +75,55 @@ public class BulkJobArgumentDescriptor
     private final String valueSpec;
 
     public BulkJobArgumentDescriptor(String name,
-                                     String description,
-                                     String valueSpec,
-                                     boolean required,
-                                     String defaultValue)
-    {
-        this.name = requireNonNull(name,"name cannot "
-                        + "be null.");
-        this.description = requireNonNull(description,"description "
-                        + "cannot be null.");
-        this.valueSpec = requireNonNull(valueSpec,"possible values "
-                                                                    + "must be "
-                                                                    + "specified");
+          String description,
+          String valueSpec,
+          boolean required,
+          String defaultValue) {
+        this.name = requireNonNull(name, "name cannot "
+              + "be null.");
+        this.description = requireNonNull(description, "description "
+              + "cannot be null.");
+        this.valueSpec = requireNonNull(valueSpec, "possible values "
+              + "must be "
+              + "specified");
         this.required = required;
         if (!required) {
             requireNonNull(defaultValue, "default value "
-                                       + "must be provided if arg is not required.");
+                  + "must be provided if arg is not required.");
             this.defaultValue = defaultValue;
         } else {
             this.defaultValue = null;
         }
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getDescription()
-    {
+    public String getDescription() {
         return description;
     }
 
-    public boolean isRequired()
-    {
+    public boolean isRequired() {
         return required;
     }
 
-    public String getDefaultValue()
-    {
+    public String getDefaultValue() {
         return defaultValue;
     }
 
-    public String getValueSpec()
-    {
+    public String getValueSpec() {
         return valueSpec;
     }
 
-    public String toString()
-    {
+    public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(name)
-               .append(", [")
-               .append(valueSpec)
-               .append("](required ")
-               .append(required)
-               .append(") ");
+              .append(", [")
+              .append(valueSpec)
+              .append("](required ")
+              .append(required)
+              .append(") ");
         if (!required) {
             builder.append("(default ").append(defaultValue).append(") ");
         }
@@ -139,22 +132,20 @@ public class BulkJobArgumentDescriptor
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hashCode(name);
     }
 
     @Override
-    public boolean equals(Object other)
-    {
-       if (other == null) {
-           return false;
-       }
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
 
-       if (!(other instanceof BulkJobArgumentDescriptor)) {
-           return false;
-       }
+        if (!(other instanceof BulkJobArgumentDescriptor)) {
+            return false;
+        }
 
-       return name.equals(((BulkJobArgumentDescriptor) other).name);
+        return name.equals(((BulkJobArgumentDescriptor) other).name);
     }
 }

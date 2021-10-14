@@ -18,20 +18,18 @@
  */
 package org.dcache.util;
 
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.net.URI;
 import java.util.Optional;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+public class URIsTest {
 
-public class URIsTest
-{
     @Test
-    public void testPortWithDefaultForHttpWithoutPort()
-    {
+    public void testPortWithDefaultForHttpWithoutPort() {
         URI uri = URI.create("http://www.example.org/test");
 
         int port = URIs.portWithDefault(uri);
@@ -40,8 +38,7 @@ public class URIsTest
     }
 
     @Test
-    public void testPortWithDefaultForUnknownTypeWithoutPort()
-    {
+    public void testPortWithDefaultForUnknownTypeWithoutPort() {
         URI uri = URI.create("unknown://server.example.org/foo");
 
         int port = URIs.portWithDefault(uri);
@@ -50,8 +47,7 @@ public class URIsTest
     }
 
     @Test
-    public void testPortWithDefaultForHttpWithPort()
-    {
+    public void testPortWithDefaultForHttpWithPort() {
         URI uri = URI.create("http://www.example.org:8080/test");
 
         int port = URIs.portWithDefault(uri);
@@ -60,8 +56,7 @@ public class URIsTest
     }
 
     @Test
-    public void testPortWithDefaultAndOverrideForSrmWithPortWithSrmOverride()
-    {
+    public void testPortWithDefaultAndOverrideForSrmWithPortWithSrmOverride() {
         URI uri = URI.create("srm://srm-server.example.org:8441/path/to/file");
 
         int port = URIs.portWithDefault(uri, "srm", 8443);
@@ -70,8 +65,7 @@ public class URIsTest
     }
 
     @Test
-    public void testPortWithDefaultAndOverrideForSrmWithoutPortWithSrmOverride()
-    {
+    public void testPortWithDefaultAndOverrideForSrmWithoutPortWithSrmOverride() {
         URI uri = URI.create("srm://srm-server.example.org/path/to/file");
 
         int port = URIs.portWithDefault(uri, "srm", 8441);
@@ -80,8 +74,7 @@ public class URIsTest
     }
 
     @Test
-    public void testPortWithDefaultAndOverrideForHttpWithSrmOverride()
-    {
+    public void testPortWithDefaultAndOverrideForHttpWithSrmOverride() {
         URI uri = URI.create("http://http-server.example.org:8080/path/to/file");
 
         int port = URIs.portWithDefault(uri, "srm", 8443);
@@ -90,8 +83,7 @@ public class URIsTest
     }
 
     @Test
-    public void testIsPortUndefinedWithHttpWithPort()
-    {
+    public void testIsPortUndefinedWithHttpWithPort() {
         URI uri = URI.create("http://web-server.example.org:8080/path/to/file");
 
         URI uriWithPort = URIs.withDefaultPort(uri);
@@ -103,8 +95,7 @@ public class URIsTest
     }
 
     @Test
-    public void testIsPortUndefinedForFile()
-    {
+    public void testIsPortUndefinedForFile() {
         URI uri = URI.create("file:///etc/passwd");
 
         URI uriWithPort = URIs.withDefaultPort(uri);
@@ -115,9 +106,9 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPort()
-    {
-        URI uri = URI.create("http://user:password@www.example.org/path/to/file?query-string#fragment");
+    public void testWithDefaultPort() {
+        URI uri = URI.create(
+              "http://user:password@www.example.org/path/to/file?query-string#fragment");
 
         URI uriWithPort = URIs.withDefaultPort(uri);
 
@@ -131,8 +122,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithUnknownSchemeAndDefaultPort()
-    {
+    public void testWithDefaultPortWithUnknownSchemeAndDefaultPort() {
         URI uri = URI.create("unknown://server.example.org/foo");
 
         URI uriWithPort = URIs.withDefaultPort(uri);
@@ -144,8 +134,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithOverrideWithMatchingUriNoPort()
-    {
+    public void testWithDefaultPortWithOverrideWithMatchingUriNoPort() {
         URI uri = URI.create("srm://srm-server.example.org/path/to/file");
 
         URI uriWithPort = URIs.withDefaultPort(uri, "srm", 8441);
@@ -157,8 +146,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithOverrideWithMatchingUriWithPort()
-    {
+    public void testWithDefaultPortWithOverrideWithMatchingUriWithPort() {
         URI uri = URI.create("srm://srm-server.example.org:8440/path/to/file");
 
         URI uriWithPort = URIs.withDefaultPort(uri, "srm", 8441);
@@ -170,8 +158,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithOverrideWithNonMatchingUriNoPort()
-    {
+    public void testWithDefaultPortWithOverrideWithNonMatchingUriNoPort() {
         URI uri = URI.create("http://web-server.example.org/path/to/file");
 
         URI uriWithPort = URIs.withDefaultPort(uri, "srm", 8441);
@@ -183,8 +170,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithOverrideWithNonMatchingUriWithPort()
-    {
+    public void testWithDefaultPortWithOverrideWithNonMatchingUriWithPort() {
         URI uri = URI.create("http://web-server.example.org:8080/path/to/file");
 
         URI uriWithPort = URIs.withDefaultPort(uri, "srm", 8441);
@@ -196,8 +182,7 @@ public class URIsTest
     }
 
     @Test
-    public void testWithDefaultPortWithOverrideWithUnknownUriNoPort()
-    {
+    public void testWithDefaultPortWithOverrideWithUnknownUriNoPort() {
         URI uri = URI.create("unknown://server.example.org/foo");
 
         URI uriWithPort = URIs.withDefaultPort(uri, "srm", 8441);
@@ -209,8 +194,7 @@ public class URIsTest
     }
 
     @Test
-    public void testOptionalPortWithDefaultWithNoPort()
-    {
+    public void testOptionalPortWithDefaultWithNoPort() {
         URI uri = URI.create("http://www.example.org/path/to/file");
 
         Optional<Integer> port = URIs.optionalPortWithDefault(uri);
@@ -220,8 +204,7 @@ public class URIsTest
     }
 
     @Test
-    public void testOptionalPortWithDefaultWithPort()
-    {
+    public void testOptionalPortWithDefaultWithPort() {
         URI uri = URI.create("http://www.example.org:8080/path/to/file");
 
         Optional<Integer> port = URIs.optionalPortWithDefault(uri);
@@ -231,8 +214,7 @@ public class URIsTest
     }
 
     @Test
-    public void testOptionalPortWithDefaultWithUnknown()
-    {
+    public void testOptionalPortWithDefaultWithUnknown() {
         URI uri = URI.create("unknown://server.example.org/foo");
 
         Optional<Integer> port = URIs.optionalPortWithDefault(uri);

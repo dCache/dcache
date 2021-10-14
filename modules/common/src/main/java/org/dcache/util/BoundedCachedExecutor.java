@@ -25,52 +25,44 @@ import java.util.concurrent.ThreadFactory;
 /**
  * A BoundedExecutor that uses a cached thread pool to source threads.
  */
-public class BoundedCachedExecutor extends BoundedExecutor
-{
+public class BoundedCachedExecutor extends BoundedExecutor {
+
     private final ExecutorService executor;
 
-    public BoundedCachedExecutor(int maxThreads)
-    {
+    public BoundedCachedExecutor(int maxThreads) {
         this(Executors.defaultThreadFactory(), maxThreads);
     }
 
-    public BoundedCachedExecutor(int maxThreads, int maxQueued)
-    {
+    public BoundedCachedExecutor(int maxThreads, int maxQueued) {
         this(Executors.defaultThreadFactory(), maxThreads, maxQueued);
     }
 
-    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads)
-    {
+    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads) {
         this(Executors.newCachedThreadPool(threadFactory), maxThreads);
     }
 
-    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads, int maxQueued)
-    {
+    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads, int maxQueued) {
         this(Executors.newCachedThreadPool(threadFactory), maxThreads, maxQueued);
     }
 
-    protected BoundedCachedExecutor(ExecutorService executor, int maxThreads)
-    {
+    protected BoundedCachedExecutor(ExecutorService executor, int maxThreads) {
         super(executor, maxThreads);
         this.executor = executor;
     }
 
-    protected BoundedCachedExecutor(ExecutorService executor, int maxThreads, int maxQueued)
-    {
+    protected BoundedCachedExecutor(ExecutorService executor, int maxThreads, int maxQueued) {
         super(executor, maxThreads, maxQueued);
         this.executor = executor;
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         super.shutdown();
         executor.shutdown();
     }
 
     @Override
-    public List<Runnable> shutdownNow()
-    {
+    public List<Runnable> shutdownNow() {
         List<Runnable> runnables = super.shutdownNow();
         executor.shutdown();
         return runnables;

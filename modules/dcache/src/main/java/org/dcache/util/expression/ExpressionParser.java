@@ -1,6 +1,19 @@
 package org.dcache.util.expression;
 
+import static org.dcache.util.ByteUnit.GB;
+import static org.dcache.util.ByteUnit.GiB;
+import static org.dcache.util.ByteUnit.KB;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MB;
+import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.ByteUnit.PB;
+import static org.dcache.util.ByteUnit.PiB;
+import static org.dcache.util.ByteUnit.TB;
+import static org.dcache.util.ByteUnit.TiB;
+import static org.dcache.util.ByteUnits.isoPrefix;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.dcache.util.ByteUnit;
 import org.parboiled.BaseParser;
 import org.parboiled.Rule;
 import org.parboiled.annotations.BuildParseTree;
@@ -9,26 +22,21 @@ import org.parboiled.annotations.DontLabel;
 import org.parboiled.annotations.SuppressNode;
 import org.parboiled.support.Var;
 
-import org.dcache.util.ByteUnit;
-
-import static org.dcache.util.ByteUnit.*;
-import static org.dcache.util.ByteUnits.isoPrefix;
-
 @BuildParseTree
-public abstract class ExpressionParser extends BaseParser<Expression>
-{
+public abstract class ExpressionParser extends BaseParser<Expression> {
+
     public Rule Top() {
         return sequence(If(), EOI);
     }
 
     @SuppressWarnings("InfiniteRecursion")
-    @SuppressFBWarnings(value="IL_INFINITE_RECURSIVE_LOOP",
-            justification = "Parboil injects code to prevent infinite loops")
+    @SuppressFBWarnings(value = "IL_INFINITE_RECURSIVE_LOOP",
+          justification = "Parboil injects code to prevent infinite loops")
     Rule If() {
         return sequence(Disjunction(),
-                        optional(QUERY, If(), COLON, If(),
-                                 push(new Expression(Token.IF,
-                                                     pop(2), pop(1), pop()))));
+              optional(QUERY, If(), COLON, If(),
+                    push(new Expression(Token.IF,
+                          pop(2), pop(1), pop()))));
     }
 
     Rule Disjunction() {
@@ -45,7 +53,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
 
     Rule Relational() {
         return BinaryOperatorRule(Additive(),
-                                  firstOf(EQ, NE, LE, LT, GE, GT));
+              firstOf(EQ, NE, LE, LT, GE, GT));
     }
 
     Rule Additive() {
@@ -63,14 +71,14 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     Rule Unary() {
         Var<Boolean> neg = new Var<>();
         return sequence(neg.set(false),
-                        zeroOrMore(firstOf(PLUS,
-                                           sequence(MINUS, neg.set(!neg.get()))
-                                           )
-                                   ),
-                        Power(),
-                        neg.get()
-                        ? push(new Expression(Token.UMINUS, pop()))
-                        : true);
+              zeroOrMore(firstOf(PLUS,
+                          sequence(MINUS, neg.set(!neg.get()))
+                    )
+              ),
+              Power(),
+              neg.get()
+                    ? push(new Expression(Token.UMINUS, pop()))
+                    : true);
     }
 
     Rule Power() {
@@ -79,44 +87,44 @@ public abstract class ExpressionParser extends BaseParser<Expression>
 
     Rule Primary() {
         return firstOf(sequence(LPAR, If(), RPAR),
-                       Literal(),
-                       QualifiedIdentifier());
+              Literal(),
+              QualifiedIdentifier());
     }
 
     Rule Literal() {
         return sequence(firstOf(sequence("true", testNot(LetterOrDigit()),
-                                         push(new Expression(Token.TRUE))),
-                                sequence("false", testNot(LetterOrDigit()),
-                                         push(new Expression(Token.FALSE))),
-                                Number(),
-                                StringLiteral()),
-                        Spacing());
+                          push(new Expression(Token.TRUE))),
+                    sequence("false", testNot(LetterOrDigit()),
+                          push(new Expression(Token.FALSE))),
+                    Number(),
+                    StringLiteral()),
+              Spacing());
 
     }
 
     Rule StringLiteral() {
         return firstOf(sequence('"',
-                                zeroOrMore(sequence(testNot(anyOf("\r\n\"\\")), ANY)
-                                           ).suppressSubnodes(),
-                                push(new Expression(Token.STRING_LITERAL,
-                                                    match())),
-                                '"'
-                                ),
-                       sequence('\'',
-                                zeroOrMore(sequence(testNot(anyOf("\r\n'\\")), ANY)
-                                           ).suppressSubnodes(),
-                                push(new Expression(Token.STRING_LITERAL,
-                                                    match())),
-                                '\''
-                                )
-                       );
+                    zeroOrMore(sequence(testNot(anyOf("\r\n\"\\")), ANY)
+                    ).suppressSubnodes(),
+                    push(new Expression(Token.STRING_LITERAL,
+                          match())),
+                    '"'
+              ),
+              sequence('\'',
+                    zeroOrMore(sequence(testNot(anyOf("\r\n'\\")), ANY)
+                    ).suppressSubnodes(),
+                    push(new Expression(Token.STRING_LITERAL,
+                          match())),
+                    '\''
+              )
+        );
     }
 
     Rule QualifiedIdentifier() {
         return sequence(sequence(Identifier(),
-                                 zeroOrMore(ch('.'), Identifier())),
-                        push(new Expression(Token.IDENTIFIER, match())),
-                        Spacing());
+                    zeroOrMore(ch('.'), Identifier())),
+              push(new Expression(Token.IDENTIFIER, match())),
+              Spacing());
     }
 
     Rule Identifier() {
@@ -133,54 +141,54 @@ public abstract class ExpressionParser extends BaseParser<Expression>
 
     @SuppressWarnings("InfiniteRecursion")
     @SuppressFBWarnings(value = "IL_INFINITE_RECURSIVE_LOOP",
-            justification = "Parboil injects code to prevent infinite loops")
+          justification = "Parboil injects code to prevent infinite loops")
     @Cached
     Rule UnaryOperatorRule(Rule subRule, Rule operatorRule) {
         Var<Token> op = new Var<>();
         return firstOf(sequence(operatorRule,
-                                op.set(Token.find(match().trim())),
-                                UnaryOperatorRule(subRule, operatorRule),
-                                push(new Expression(op.get(), pop()))),
-                       subRule);
+                    op.set(Token.find(match().trim())),
+                    UnaryOperatorRule(subRule, operatorRule),
+                    push(new Expression(op.get(), pop()))),
+              subRule);
     }
 
     Rule BinaryOperatorRule(Rule subRule, Rule operatorRule) {
         Var<Token> op = new Var<>();
         return sequence(subRule,
-                        zeroOrMore(operatorRule,
-                                   op.set(Token.find(match().trim())),
-                                   subRule,
-                                   push(new Expression(op.get(), pop(1), pop()))
-                                   )
-                        );
+              zeroOrMore(operatorRule,
+                    op.set(Token.find(match().trim())),
+                    subRule,
+                    push(new Expression(op.get(), pop(1), pop()))
+              )
+        );
     }
 
     Rule Number() {
         return sequence(sequence(oneOrMore(Digit()),
-                                 optional(ch('.'), oneOrMore(Digit()))
-                                 ),
-                        push(new Expression(Double.parseDouble(match()))),
-                        Spacing(),
-                        optional(Unit(),
-                                 push(new Expression(Token.MULT,
-                                                     pop(), pop()))
-                                 )
-                        );
+                    optional(ch('.'), oneOrMore(Digit()))
+              ),
+              push(new Expression(Double.parseDouble(match()))),
+              Spacing(),
+              optional(Unit(),
+                    push(new Expression(Token.MULT,
+                          pop(), pop()))
+              )
+        );
     }
 
     Rule Unit() {
         return firstOf(UnitRule(KiB),
-                       UnitRule(MiB),
-                       UnitRule(GiB),
-                       UnitRule(TiB),
-                       UnitRule(PiB),
-                       UnitRule(KB),
-                       UnitRule("K", KB.toBytes(1L)),
-                       UnitRule(MB),
-                       UnitRule(GB),
-                       UnitRule(TB),
-                       UnitRule(PB)
-                       );
+              UnitRule(MiB),
+              UnitRule(GiB),
+              UnitRule(TiB),
+              UnitRule(PiB),
+              UnitRule(KB),
+              UnitRule("K", KB.toBytes(1L)),
+              UnitRule(MB),
+              UnitRule(GB),
+              UnitRule(TB),
+              UnitRule(PB)
+        );
     }
 
     Rule UnitRule(ByteUnit units) {

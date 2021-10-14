@@ -3,22 +3,33 @@ package org.dcache.ftp.data;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
-/** Empty implementation of MultiplexerListener. */
-public class AbstractMultiplexerListener implements MultiplexerListener
-{
+/**
+ * Empty implementation of MultiplexerListener.
+ */
+public class AbstractMultiplexerListener implements MultiplexerListener {
+
     @Override
     public void register(Multiplexer multiplexer)
-            throws IOException {}
+          throws IOException {
+    }
+
     @Override
     public void accept(Multiplexer multiplexer, SelectionKey key)
-            throws IOException {}
+          throws IOException {
+    }
+
     @Override
     public void connect(Multiplexer multiplexer, SelectionKey key)
-            throws IOException {}
+          throws IOException {
+    }
+
     @Override
     public void read(Multiplexer multiplexer, SelectionKey key)
-            throws IOException, FTPException, InterruptedException {}
+          throws IOException, FTPException, InterruptedException {
+    }
+
     @Override
     public void write(Multiplexer multiplexer, SelectionKey key)
-            throws IOException, FTPException {}
+          throws IOException, FTPException {
+    }
 }

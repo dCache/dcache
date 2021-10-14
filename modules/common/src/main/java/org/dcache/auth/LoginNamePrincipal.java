@@ -4,23 +4,21 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * This Principal represents the untrusted username: the username that
- * the user wishes to become.  Typically, no checks are made to verify
- * that the end-user is identified as that user; there, it is
- * recommended not to use this principal for any authorisation decisions.
+ * This Principal represents the untrusted username: the username that the user wishes to become.
+ * Typically, no checks are made to verify that the end-user is identified as that user; there, it
+ * is recommended not to use this principal for any authorisation decisions.
  *
  * @see UserNamePrincipal
  * @since 2.1
  */
 @AuthenticationInput
-public class LoginNamePrincipal implements Principal, Serializable
-{
+public class LoginNamePrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = -6665363415876118030L;
 
     private final String _name;
 
-    public LoginNamePrincipal(String name)
-    {
+    public LoginNamePrincipal(String name) {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -28,14 +26,12 @@ public class LoginNamePrincipal implements Principal, Serializable
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -47,8 +43,7 @@ public class LoginNamePrincipal implements Principal, Serializable
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _name.hashCode();
     }
 

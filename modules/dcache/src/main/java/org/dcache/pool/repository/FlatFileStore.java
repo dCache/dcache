@@ -1,29 +1,26 @@
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.PnfsId;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
-import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import diskCacheV111.util.PnfsId;
-
 
 /**
- * A file store layout keeping all files in a single subdirectory
- * called "data".
+ * A file store layout keeping all files in a single subdirectory called "data".
  */
-public class FlatFileStore implements FileStore
-{
+public class FlatFileStore implements FileStore {
+
     private final Path _dataDir;
 
-    public FlatFileStore(Path baseDir) throws IOException
-    {
+    public FlatFileStore(Path baseDir) throws IOException {
         if (!Files.isDirectory(baseDir)) {
             throw new FileNotFoundException("No such directory: " + baseDir);
         }
@@ -39,8 +36,7 @@ public class FlatFileStore implements FileStore
     /**
      * Returns a human readable description of the file store.
      */
-    public String toString()
-    {
+    public String toString() {
         return _dataDir.toString();
     }
 
@@ -49,8 +45,7 @@ public class FlatFileStore implements FileStore
     }
 
     @Override
-    public URI get(PnfsId id)
-    {
+    public URI get(PnfsId id) {
         return getPath(id).toUri();
     }
 
@@ -66,51 +61,46 @@ public class FlatFileStore implements FileStore
     }
 
     @Override
-    public URI create(PnfsId id) throws IOException
-    {
+    public URI create(PnfsId id) throws IOException {
         Path p = getPath(id);
         Files.createFile(p);
         return p.toUri();
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode)
+          throws IOException {
         return new FileRepositoryChannel(getPath(id), mode);
     }
 
     @Override
-    public void remove(PnfsId id) throws IOException
-    {
+    public void remove(PnfsId id) throws IOException {
         Files.deleteIfExists(getPath(id));
     }
 
     @Override
-    public Set<PnfsId> index() throws IOException
-    {
+    public Set<PnfsId> index() throws IOException {
         try (Stream<Path> files = Files.list(_dataDir)) {
             return files
-                    .map(p -> p.getFileName().toString())
-                    .filter(PnfsId::isValid)
-                    .map(PnfsId::new)
-                    .collect(Collectors.toSet());
+                  .map(p -> p.getFileName().toString())
+                  .filter(PnfsId::isValid)
+                  .map(PnfsId::new)
+                  .collect(Collectors.toSet());
         }
     }
 
     @Override
-    public long getFreeSpace() throws IOException
-    {
+    public long getFreeSpace() throws IOException {
         return Files.getFileStore(_dataDir).getUsableSpace();
     }
 
     @Override
-    public long getTotalSpace() throws IOException
-    {
+    public long getTotalSpace() throws IOException {
         return Files.getFileStore(_dataDir).getTotalSpace();
     }
 
     @Override
-    public boolean isOk()
-    {
+    public boolean isOk() {
         try {
             Path tmp = _dataDir.resolve(".repository_is_ok");
             Files.deleteIfExists(tmp);

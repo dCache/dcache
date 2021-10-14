@@ -48,17 +48,15 @@ public enum AccessType {
     /**
      * Returns ACCESS_ALLOWED for true and ACCESS_DENIED for false.
      */
-    public static AccessType valueOf(boolean value)
-    {
+    public static AccessType valueOf(boolean value) {
         return value ? ACCESS_ALLOWED : ACCESS_DENIED;
     }
 
     /**
-     * Conjunction in ternary Kleene logic with ALLOWED being true,
-     * DENIED being false, and UNDEFINED being unknown.
+     * Conjunction in ternary Kleene logic with ALLOWED being true, DENIED being false, and
+     * UNDEFINED being unknown.
      */
-    public AccessType and(AccessType other)
-    {
+    public AccessType and(AccessType other) {
         if (this == ACCESS_ALLOWED && other == ACCESS_ALLOWED) {
             return ACCESS_ALLOWED;
         }

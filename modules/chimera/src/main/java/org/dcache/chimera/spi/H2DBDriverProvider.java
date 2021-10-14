@@ -1,12 +1,13 @@
 package org.dcache.chimera.spi;
 
+import static org.dcache.util.SqlHelper.tryToClose;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
 import org.dcache.chimera.H2FsSqlDriver;
-import static org.dcache.util.SqlHelper.tryToClose;
 
 public class H2DBDriverProvider implements DBDriverProvider {
 

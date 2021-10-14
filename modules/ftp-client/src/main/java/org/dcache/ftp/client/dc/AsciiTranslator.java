@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +16,9 @@
 package org.dcache.ftp.client.dc;
 
 import java.io.ByteArrayOutputStream;
-
 import org.dcache.ftp.client.Buffer;
 
-public class AsciiTranslator
-{
+public class AsciiTranslator {
 
     public static final byte[] CRLF = {'\r', '\n'};
 
@@ -43,22 +41,19 @@ public class AsciiTranslator
      * Output tokens with system specific line separators
      */
     public AsciiTranslator(boolean rnSep,
-                           boolean nSep)
-    {
+          boolean nSep) {
         this(rnSep, nSep, systemLineSep);
     }
 
     public AsciiTranslator(boolean rnSep,
-                           boolean nSep,
-                           byte[] lineSeparator)
-    {
+          boolean nSep,
+          byte[] lineSeparator) {
         this.rnSep = rnSep;
         this.nSep = nSep;
         this.lineSep = lineSeparator;
     }
 
-    public Buffer translate(Buffer buffer)
-    {
+    public Buffer translate(Buffer buffer) {
         // TODO: This can be optimized if destination line separator
         // is the same
         byte[] buf = buffer.getBuffer();

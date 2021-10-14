@@ -17,59 +17,53 @@
  */
 package org.dcache.webdav;
 
+import static java.util.Objects.requireNonNull;
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Factory for creating the reloadable template.
  */
-public class ReloadableTemplateFactory implements FactoryBean
-{
+public class ReloadableTemplateFactory implements FactoryBean {
+
     private Resource _templateResource;
     private boolean _isAutoReloadEnabled;
     private String _templateName;
 
     @Override
-    public Object getObject() throws Exception
-    {
+    public Object getObject() throws Exception {
         ReloadableTemplate t = _isAutoReloadEnabled
-                ? new AutoReloadingTemplate(_templateResource)
-                : new AdminReloadingTemplate(_templateResource);
+              ? new AutoReloadingTemplate(_templateResource)
+              : new AdminReloadingTemplate(_templateResource);
         t.setTemplateName(_templateName);
         t.reload();
         return t;
     }
 
     @Override
-    public Class getObjectType()
-    {
+    public Class getObjectType() {
         return ReloadableTemplate.class;
     }
 
     @Override
-    public boolean isSingleton()
-    {
+    public boolean isSingleton() {
         return true;
     }
 
     @Required
-    public void setResource(Resource resource)
-    {
+    public void setResource(Resource resource) {
         _templateResource = requireNonNull(resource);
     }
 
     @Required
-    public void setAutoReload(boolean isEnabled)
-    {
+    public void setAutoReload(boolean isEnabled) {
         _isAutoReloadEnabled = isEnabled;
     }
 
     @Required
-    public void setWorkaroundTemplate(String name)
-    {
+    public void setWorkaroundTemplate(String name) {
         _templateName = requireNonNull(name);
     }
 }

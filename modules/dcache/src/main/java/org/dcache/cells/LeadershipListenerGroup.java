@@ -18,13 +18,12 @@
  */
 package org.dcache.cells;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Group of components that listen to common leadership events.

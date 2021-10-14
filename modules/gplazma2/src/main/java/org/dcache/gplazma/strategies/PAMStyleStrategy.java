@@ -1,58 +1,52 @@
 package org.dcache.gplazma.strategies;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
 
 import java.util.Collections;
 import java.util.List;
-
-import org.dcache.util.NDC;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
+import org.dcache.util.NDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class provides a common mechanism to iterate through a list of
- * plugins that have been defined with a PAM-like configuration.  Calling
- * #callPlugins will iterate through the list, honouring the control settings
- * (REQUIRED, REQUISIT, OPTIONAL, etc).
+ * This class provides a common mechanism to iterate through a list of plugins that have been
+ * defined with a PAM-like configuration.  Calling #callPlugins will iterate through the list,
+ * honouring the control settings (REQUIRED, REQUISIT, OPTIONAL, etc).
  * <p/>
- * The exact invocation is chain-specific: an AUTH plugin is called differently
- * from how a MAP plugin is called.  Therefore, the task of calling each plugin
- * is delegated to the supplied PluginCaller object.
+ * The exact invocation is chain-specific: an AUTH plugin is called differently from how a MAP
+ * plugin is called.  Therefore, the task of calling each plugin is delegated to the supplied
+ * PluginCaller object.
  */
-public class PAMStyleStrategy<T extends GPlazmaPlugin>
-{
+public class PAMStyleStrategy<T extends GPlazmaPlugin> {
+
     private static final Logger logger =
-            LoggerFactory.getLogger(PAMStyleStrategy.class);
+          LoggerFactory.getLogger(PAMStyleStrategy.class);
 
     public List<GPlazmaPluginService<T>> pluginElements;
 
     /**
      * creates a new instance of the PAMStyleStrategy
+     *
      * @param pluginElements
      */
-    public PAMStyleStrategy(List<GPlazmaPluginService<T>> pluginElements)
-    {
+    public PAMStyleStrategy(List<GPlazmaPluginService<T>> pluginElements) {
         this.pluginElements = Collections.unmodifiableList(pluginElements);
     }
 
     /**
-    * Execute the the
-     * {@link PluginCaller#call(GPlazmaPluginService)}
-     * methods of the plugins supplied in
-     * {@link PAMStyleStrategy(List<T>) constructor}
-     *  in the order of the plugin elements in the list.
-     * The implementation attempts to mimic the following PAM standard execution
-     *  policies based on the contol flag.
+     * Execute the the {@link PluginCaller#call(GPlazmaPluginService)} methods of the plugins
+     * supplied in {@link PAMStyleStrategy(List<T>) constructor} in the order of the plugin elements
+     * in the list. The implementation attempts to mimic the following PAM standard execution
+     * policies based on the contol flag.
      * <br>
      * Source:
      * <i href="http://www.redhat.com/docs/manuals/linux/RHL-8.0-Manual/ref-guide/s1-pam-control-flags.html">
      * Red Hat Manual, PAM Module Control Flags </i>
      * <br>
-     *  Four types of control flags are defined by the PAM standard:
+     * Four types of control flags are defined by the PAM standard:
      * <br>
      * <ul>
      * <li>
@@ -84,10 +78,9 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
      * </ul>
      */
     public void callPlugins(PluginCaller<T> caller)
-            throws AuthenticationException
-    {
-        AuthenticationException firstRequiredPluginException=null;
-        for(GPlazmaPluginService<T> pluginElement: pluginElements) {
+          throws AuthenticationException {
+        AuthenticationException firstRequiredPluginException = null;
+        for (GPlazmaPluginService<T> pluginElement : pluginElements) {
             ConfigurationItemControl control = pluginElement.getControl();
             NDC ndc = NDC.cloneNdc();
 
@@ -96,25 +89,25 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
 
                 try {
                     caller.call(pluginElement);
-                } catch(RuntimeException e) {
+                } catch (RuntimeException e) {
                     logger.error("Bug in plugin: ", e);
                     throw new AuthenticationException("bug in plugin " +
-                            pluginElement.getName() + ": " + e.getMessage());
+                          pluginElement.getName() + ": " + e.getMessage());
                 }
 
                 logger.debug("{} plugin completed", control.name());
 
-                if(control == SUFFICIENT) {
+                if (control == SUFFICIENT) {
                     return;
                 }
             } catch (AuthenticationException currentPluginException) {
                 logger.debug("{} plugin failed: {}", control.name(),
-                        currentPluginException.getMessage());
+                      currentPluginException.getMessage());
 
                 switch (control) {
                     case SUFFICIENT:
                     case OPTIONAL:
-                       break;
+                        break;
 
                     case REQUIRED:
                         if (firstRequiredPluginException == null) {
@@ -136,9 +129,10 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
             }
         }
 
-        if(firstRequiredPluginException != null) {
-            logger.info("all session plugins ran, at least one required failed, throwing exception : {}",
-                    firstRequiredPluginException);
+        if (firstRequiredPluginException != null) {
+            logger.info(
+                  "all session plugins ran, at least one required failed, throwing exception : {}",
+                  firstRequiredPluginException);
             throw firstRequiredPluginException;
         }
     }

@@ -19,30 +19,26 @@
 package org.dcache.cells;
 
 import com.google.common.util.concurrent.AbstractFuture;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
-
 import org.dcache.util.CacheExceptionFactory;
 
 /**
  * A ListenableFuture that can be used as CellMessageAnswerable callback.
  */
-public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements CellMessageAnswerable
-{
+public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements
+      CellMessageAnswerable {
+
     protected final Class<? extends T> _type;
 
-    public FutureCellMessageAnswerable(Class<? extends T> type)
-    {
+    public FutureCellMessageAnswerable(Class<? extends T> type) {
         _type = type;
     }
 
     @Override
-    public void answerArrived(CellMessage request, CellMessage answer)
-    {
+    public void answerArrived(CellMessage request, CellMessage answer) {
         Object o = answer.getMessageObject();
         if (_type.isInstance(o)) {
             set(_type.cast(o));
@@ -50,19 +46,18 @@ public class FutureCellMessageAnswerable<T> extends AbstractFuture<T> implements
             exceptionArrived(request, (Exception) o);
         } else {
             setException(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                            "Unexpected reply: " + o));
+                  "Unexpected reply: " + o));
         }
     }
 
     @Override
-    public void answerTimedOut(CellMessage request)
-    {
-        setException(new TimeoutCacheException("Request to " + request.getDestinationPath() + " timed out."));
+    public void answerTimedOut(CellMessage request) {
+        setException(new TimeoutCacheException(
+              "Request to " + request.getDestinationPath() + " timed out."));
     }
 
     @Override
-    public void exceptionArrived(CellMessage request, Exception exception)
-    {
+    public void exceptionArrived(CellMessage request, Exception exception) {
         if (exception.getClass() == CacheException.class) {
             CacheException e = (CacheException) exception;
             exception = CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage(), e);

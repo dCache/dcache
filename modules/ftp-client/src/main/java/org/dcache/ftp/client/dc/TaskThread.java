@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,25 +18,22 @@ package org.dcache.ftp.client.dc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TaskThread implements Runnable
-{
+public class TaskThread implements Runnable {
 
     static final int MAX_TASK_QUEUE = 100;
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(TaskThread.class);
+          LoggerFactory.getLogger(TaskThread.class);
 
     protected final Buffer buffer;
     protected boolean stop;
     protected Thread thread;
 
-    public TaskThread()
-    {
+    public TaskThread() {
         buffer = new Buffer(MAX_TASK_QUEUE);
     }
 
-    public synchronized void start()
-    {
+    public synchronized void start() {
         if (thread == null) {
             thread = new Thread(this);
             thread.setName("Task" + thread.getName());
@@ -45,8 +42,7 @@ public class TaskThread implements Runnable
         }
     }
 
-    public void runTask(Task task)
-    {
+    public void runTask(Task task) {
         start();
         try {
             buffer.put(task);
@@ -54,8 +50,7 @@ public class TaskThread implements Runnable
         }
     }
 
-    public Task getNextTask()
-    {
+    public Task getNextTask() {
         try {
             return (Task) buffer.get();
         } catch (Exception e) {
@@ -64,14 +59,15 @@ public class TaskThread implements Runnable
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         stop = false;
         Exception exception;
         Task task;
         while (!stop) {
             task = getNextTask();
-            if (task == null) break;
+            if (task == null) {
+                break;
+            }
             exception = null;
             try {
                 logger.debug("executing task: {}", task.toString());
@@ -84,14 +80,12 @@ public class TaskThread implements Runnable
         }
     }
 
-    public synchronized void stop()
-    {
+    public synchronized void stop() {
         stop = true;
         buffer.release();
     }
 
-    public void join()
-    {
+    public void join() {
         if (thread != null) {
             try {
                 thread.join();
@@ -100,8 +94,7 @@ public class TaskThread implements Runnable
         }
     }
 
-    class Buffer
-    {
+    class Buffer {
 
         protected final Object[] buf;
         protected int in = 0;
@@ -109,18 +102,18 @@ public class TaskThread implements Runnable
         protected int count = 0;
         protected final int size;
 
-        public Buffer(int size)
-        {
+        public Buffer(int size) {
             this.size = size;
             buf = new Object[size];
         }
 
         public synchronized void put(Object o)
-                throws InterruptedException
-        {
+              throws InterruptedException {
             while (count == size) {
                 wait();
-                if (stop) return;
+                if (stop) {
+                    return;
+                }
             }
             buf[in] = o;
             ++count;
@@ -129,11 +122,12 @@ public class TaskThread implements Runnable
         }
 
         public synchronized Object get()
-                throws InterruptedException
-        {
+              throws InterruptedException {
             while (count == 0) {
                 wait();
-                if (stop) return null;
+                if (stop) {
+                    return null;
+                }
             }
             Object o = buf[out];
             buf[out] = null;
@@ -143,8 +137,7 @@ public class TaskThread implements Runnable
             return (o);
         }
 
-        public synchronized void release()
-        {
+        public synchronized void release() {
             notify();
         }
 

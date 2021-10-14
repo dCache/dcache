@@ -17,13 +17,14 @@
  */
 package dmg.util.command;
 
+import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.transform;
+import static java.util.Arrays.asList;
+
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
@@ -32,74 +33,66 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import org.dcache.util.Strings;
-
-import static com.google.common.collect.Iterables.any;
-import static com.google.common.collect.Iterables.transform;
-import static java.util.Arrays.asList;
 
 /**
  * Abstract base class for help printers generating man-page style textual help.
  */
-public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
-{
+public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter {
+
     // Split between any
     //
     //     [ ] | ...
     //
     // and any sequence of upper case letters.
     private static final Pattern VALUESPEC_SEPARATOR =
-            Pattern.compile("(?<=[\\[\\]|]|\\.{3})|(?=[\\[\\]|]|\\.{3})|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Z])(?=[^A-Z])");
+          Pattern.compile(
+                "(?<=[\\[\\]|]|\\.{3})|(?=[\\[\\]|]|\\.{3})|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Z])(?=[^A-Z])");
 
     private static final int WIDTH = 72;
 
     private static final Predicate<? super Field> shouldBeDocumented =
-            new Predicate<Field>()
-            {
-                @Override
-                public boolean apply(Field field)
-                {
-                    Argument argument = field.getAnnotation(Argument.class);
-                    ExpandWith expandWith = field.getAnnotation(ExpandWith.class);
+          new Predicate<Field>() {
+              @Override
+              public boolean apply(Field field) {
+                  Argument argument = field.getAnnotation(Argument.class);
+                  ExpandWith expandWith = field.getAnnotation(ExpandWith.class);
 
-                    /* Arguments that are not required might have a default value and should thus
-                     * be included in the help output.
-                     */
-                    return argument != null && (expandWith != null || !argument.usage().isEmpty() || !argument.required());
-                }
-            };
+                  /* Arguments that are not required might have a default value and should thus
+                   * be included in the help output.
+                   */
+                  return argument != null && (expandWith != null || !argument.usage().isEmpty()
+                        || !argument.required());
+              }
+          };
 
-    private <T> Iterable<String> literal(T[] values)
-    {
+    private <T> Iterable<String> literal(T[] values) {
         return transform(asList(values), (s) -> literal(s.toString()));
     }
 
-    protected String valuespec(String valuespec)
-    {
+    protected String valuespec(String valuespec) {
         StringBuilder out = new StringBuilder();
         for (String s : VALUESPEC_SEPARATOR.split(valuespec, 0)) {
             switch (s) {
-            case "[":
-            case "]":
-            case "|":
-            case "...":
-                out.append(s);
-                break;
-            default:
-                if (CharMatcher.javaUpperCase().matchesAllOf(s)) {
-                    out.append(value(s));
-                } else {
-                    out.append(literal(s));
-                }
-                break;
+                case "[":
+                case "]":
+                case "|":
+                case "...":
+                    out.append(s);
+                    break;
+                default:
+                    if (CharMatcher.javaUpperCase().matchesAllOf(s)) {
+                        out.append(value(s));
+                    } else {
+                        out.append(literal(s));
+                    }
+                    break;
             }
         }
         return out.toString();
     }
 
-    private String getMetaVar(Class<?> type, Option option)
-    {
+    private String getMetaVar(Class<?> type, Option option) {
         if (!option.metaVar().isEmpty()) {
             return value(option.metaVar().toUpperCase());
         }
@@ -115,8 +108,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return value(type.getSimpleName().toUpperCase());
     }
 
-    private String getMetaVar(Field field, Argument argument)
-    {
+    private String getMetaVar(Field field, Argument argument) {
         if (!argument.valueSpec().isEmpty()) {
             return valuespec(argument.valueSpec());
         }
@@ -126,12 +118,11 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return value(field.getName().toUpperCase());
     }
 
-    private String getSignature(Class<?> clazz)
-    {
+    private String getSignature(Class<?> clazz) {
         StringBuilder signature = new StringBuilder();
 
-        Multimap<String,Field> options = AnnotatedCommandUtils.getOptionsByCategory(clazz);
-        for (Field field: options.values()) {
+        Multimap<String, Field> options = AnnotatedCommandUtils.getOptionsByCategory(clazz);
+        for (Field field : options.values()) {
             Class<?> type = field.getType();
             Option option = field.getAnnotation(Option.class);
             if (option != null) {
@@ -143,9 +134,9 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                     signature.append(literal("-" + option.name()));
 
                     if (!Boolean.class.equals(type) && !Boolean.TYPE
-                            .equals(type)) {
+                          .equals(type)) {
                         signature.append("=")
-                                .append(getMetaVar(type, option));
+                              .append(getMetaVar(type, option));
                     }
 
                     if (!option.required()) {
@@ -158,7 +149,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
 
                     signature.append(literal("-" + option.name()));
                     signature.append("=").append(getMetaVar(type
-                            .getComponentType(), option));
+                          .getComponentType(), option));
 
                     if (!option.required()) {
                         signature.append("]");
@@ -170,11 +161,11 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                     }
 
                     String metaVar = getMetaVar(type
-                            .getComponentType(), option);
+                          .getComponentType(), option);
                     signature.append(literal("-" + option.name()));
                     signature.append("=").append(metaVar);
                     signature.append("[").append(option.separator())
-                            .append(metaVar).append("]").append(value("..."));
+                          .append(metaVar).append("]").append(value("..."));
 
                     if (!option.required()) {
                         signature.append("]").append(value("..."));
@@ -188,7 +179,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
             }
         }
 
-        for (Field field: AnnotatedCommandUtils.getArguments(clazz)) {
+        for (Field field : AnnotatedCommandUtils.getArguments(clazz)) {
             Argument argument = field.getAnnotation(Argument.class);
             String metaVar = getMetaVar(field, argument);
             if (argument.required()) {
@@ -205,14 +196,13 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return signature.toString();
     }
 
-    private String getShortSignature(Class<?> clazz)
-    {
+    private String getShortSignature(Class<?> clazz) {
         StringBuilder signature = new StringBuilder();
         if (!AnnotatedCommandUtils.getOptionsByCategory(clazz).isEmpty()) {
             signature.append("[OPTIONS] ");
         }
 
-        for (Field field: AnnotatedCommandUtils.getArguments(clazz)) {
+        for (Field field : AnnotatedCommandUtils.getArguments(clazz)) {
             Argument argument = field.getAnnotation(Argument.class);
             String metaVar = getMetaVar(field, argument);
             if (argument.required()) {
@@ -230,8 +220,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     }
 
     @Override
-    public String getHelpHint(Command command, Class<?> clazz)
-    {
+    public String getHelpHint(Command command, Class<?> clazz) {
         String hint = (command.hint().isEmpty() ? "" : "# " + command.hint());
         String signature = getSignature(clazz);
         if (plainLength(signature) + plainLength(hint) > 78) {
@@ -241,8 +230,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     }
 
     @Override
-    public String getHelp(Object instance)
-    {
+    public String getHelp(Object instance) {
         Class<?> clazz = instance.getClass();
         Command command = clazz.getAnnotation(Command.class);
 
@@ -258,11 +246,13 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         writer.println();
 
         writer.println(heading("SYNOPSIS"));
-        writer.append(Strings.wrap("       ", literal(command.name()) + " " + getSignature(clazz), WIDTH));
+        writer.append(
+              Strings.wrap("       ", literal(command.name()) + " " + getSignature(clazz), WIDTH));
         writer.println();
 
         if (clazz.getAnnotation(Deprecated.class) != null) {
-            writer.append(Strings.wrap("       ", "This command is deprecated and will be removed in a future release.", WIDTH));
+            writer.append(Strings.wrap("       ",
+                  "This command is deprecated and will be removed in a future release.", WIDTH));
             writer.println();
         }
 
@@ -292,15 +282,15 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
             writer.println();
         }
 
-        Multimap<String,Field> options = AnnotatedCommandUtils.getOptionsByCategory(clazz);
+        Multimap<String, Field> options = AnnotatedCommandUtils.getOptionsByCategory(clazz);
         if (!options.isEmpty()) {
             writer.println(heading("OPTIONS"));
-            for (Map.Entry<String,Collection<Field>> category: options.asMap().entrySet()) {
+            for (Map.Entry<String, Collection<Field>> category : options.asMap().entrySet()) {
                 if (!category.getKey().isEmpty()) {
                     writer.println();
                     writer.append("       ").println(heading(category.getKey() + ":"));
                 }
-                for (Field field: category.getValue()) {
+                for (Field field : category.getValue()) {
                     Class<?> type = field.getType();
                     Option option = field.getAnnotation(Option.class);
                     if (option != null) {
@@ -315,13 +305,15 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                         } else {
                             String metaVar = getMetaVar(type.getComponentType(), option);
                             writer.append("=").append(metaVar);
-                            writer.append("[").append(option.separator()).append(metaVar).append("]");
+                            writer.append("[").append(option.separator()).append(metaVar)
+                                  .append("]");
                             writer.append(value("..."));
                         }
                         writer.println();
                         String usage = option.usage();
                         if (!option.required()) {
-                            usage = Joiner.on(' ').join(usage, getDefaultDescription(instance, field));
+                            usage = Joiner.on(' ')
+                                  .join(usage, getDefaultDescription(instance, field));
                         }
                         if (!usage.isEmpty()) {
                             writer.append(Strings.wrap("              ", usage, WIDTH));
@@ -343,8 +335,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return out.toString();
     }
 
-    private String getDefaultDescription(Object instance, Field field)
-    {
+    private String getDefaultDescription(Object instance, Field field) {
         try {
             field.setAccessible(true);
             Object value = field.get(instance);
@@ -357,8 +348,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return "";
     }
 
-    private String literal(Object value)
-    {
+    private String literal(Object value) {
         if (value.getClass().isArray()) {
             int length = Array.getLength(value);
             StringBuilder s = new StringBuilder();
@@ -373,8 +363,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return literal(value.toString());
     }
 
-    private boolean hasDefaultDescription(Class<?> type, Object value)
-    {
+    private boolean hasDefaultDescription(Class<?> type, Object value) {
         if (type.isArray()) {
             if (Array.getLength(value) == 0) {
                 return false;
@@ -387,8 +376,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         return true;
     }
 
-    protected int plainLength(String s)
-    {
+    protected int plainLength(String s) {
         return s.length();
     }
 

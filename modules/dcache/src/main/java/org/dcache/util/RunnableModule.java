@@ -59,15 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.util;
 
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Abstracts daemon thread management.</p>
  */
 public abstract class RunnableModule implements Runnable {
+
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
     protected long timeout = 30;

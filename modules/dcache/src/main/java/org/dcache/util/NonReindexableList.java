@@ -78,32 +78,29 @@ import java.util.stream.Stream;
  * <p>A list whose elements, once assigned, cannot be re-indexed.</p>
  *
  * <p>Add operations append to the end of the list as usual, but removes
- *      do not collapse the list.  Hence index numbers are monotonically
- *      increasing at each add.</p>
+ * do not collapse the list.  Hence index numbers are monotonically increasing at each add.</p>
  *
  * <p>Iteration is based on a realized list detached from the underlying
- *      data structures, and thus side-effects through the iterator will
- *      not change the list itself.</p>
+ * data structures, and thus side-effects through the iterator will not change the list itself.</p>
  *
  * <p>This realized (iterable) list is guaranteed to respect the order
- *      of insertion, but the value returned by indexOf() may not be
- *      equal to the implicit index of the iterable list returned for
- *      iteration or streaming unless the value of <code>includeNulls</code>
- *      is set to true (false by default).  In that case, it then becomes
- *      imperative that the caller check for <code>null</code> values, as
- *      any index assigned to an element which has been removed will be
- *      marked by <code>null</code>.</p>
+ * of insertion, but the value returned by indexOf() may not be equal to the implicit index of the
+ * iterable list returned for iteration or streaming unless the value of <code>includeNulls</code>
+ * is set to true (false by default).  In that case, it then becomes imperative that the caller
+ * check for <code>null</code> values, as any index assigned to an element which has been removed
+ * will be marked by <code>null</code>.</p>
  *
  * <p>Any operation which requires the reassignment of list positions
- *      to existing elements is unsupported.  Mutation of the list via the
- *      <code>set</code> operation is also unsupported.</p>
+ * to existing elements is unsupported.  Mutation of the list via the
+ * <code>set</code> operation is also unsupported.</p>
  *
  * <p>This list contains unique elements.  Adding the same element twice
- *      overwrites the previous index. Nulls cannot be added to the list.</p>
+ * overwrites the previous index. Nulls cannot be added to the list.</p>
  *
  * <p>Not thread-safe.</p>
  */
 public final class NonReindexableList<E> implements List<E> {
+
     public static final int MISSING_INDEX = -1728;
     public static final String MISSING = "missing_element";
 
@@ -127,8 +124,7 @@ public final class NonReindexableList<E> implements List<E> {
     }
 
     private static final String UNSUPPORTED_ERROR_MSG
-                    = "This list can only be modified by appending or removing.";
-
+          = "This list can only be modified by appending or removing.";
 
 
     private final Map<E, Integer> index = new HashMap<>();
@@ -312,8 +308,8 @@ public final class NonReindexableList<E> implements List<E> {
     @Override
     public void sort(Comparator<? super E> c) {
         throw new UnsupportedOperationException(
-                        "This list uses a fixed monotonically increasing "
-                                        + "order of insertion indexing.");
+              "This list uses a fixed monotonically increasing "
+                    + "order of insertion indexing.");
     }
 
     @Override
@@ -344,7 +340,7 @@ public final class NonReindexableList<E> implements List<E> {
     private boolean append(E element) {
         if (element == null) {
             throw new IllegalArgumentException("Cannot add null "
-                            + "values to this list.");
+                  + "values to this list.");
         }
 
         if (index.containsKey(element)) {
@@ -359,7 +355,7 @@ public final class NonReindexableList<E> implements List<E> {
 
     private int appendAll(Collection<? extends E> collection) {
         int added = 0;
-        for (E element: collection) {
+        for (E element : collection) {
             if (append(element)) {
                 ++added;
             }

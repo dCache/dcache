@@ -59,30 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.command.CommandFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.Arrays;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
-
+import java.util.Arrays;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
 import org.dcache.cells.CellStub;
 import org.dcache.util.list.ListDirectoryHandler;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Implementation of Command Factory interface that enables
- * direct command execution in dCache admin server. Commands
- * are semicolon (;) separated:
- *   ssh -p PORT user@example.org "command1;command2;command3"
+ * Implementation of Command Factory interface that enables direct command execution in dCache admin
+ * server. Commands are semicolon (;) separated: ssh -p PORT user@example.org
+ * "command1;command2;command3"
  *
  * @author litvinse
  */
-public class DirectCommandFactory implements CommandFactory, CellMessageSender
-{
+public class DirectCommandFactory implements CommandFactory, CellMessageSender {
+
     private static String COMMAND_SEPARATOR = ";";
     private CellEndpoint endpoint;
     private CellStub pnfsManager;
@@ -92,37 +88,31 @@ public class DirectCommandFactory implements CommandFactory, CellMessageSender
     private ListDirectoryHandler list;
 
     @Required
-    public void setPnfsManager(CellStub stub)
-    {
+    public void setPnfsManager(CellStub stub) {
         this.pnfsManager = stub;
     }
 
     @Required
-    public void setPoolManager(CellStub stub)
-    {
+    public void setPoolManager(CellStub stub) {
         this.poolManager = stub;
     }
 
     @Required
-    public void setAcm(CellStub stub)
-    {
+    public void setAcm(CellStub stub) {
         this.acm = stub;
     }
 
     @Required
-    public void setPrompt(String prompt)
-    {
+    public void setPrompt(String prompt) {
         this.prompt = prompt;
     }
 
     @Required
-    public void setListHandler(ListDirectoryHandler list)
-    {
+    public void setListHandler(ListDirectoryHandler list) {
         this.list = list;
     }
 
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         this.endpoint = endpoint;
     }
 
@@ -130,12 +120,12 @@ public class DirectCommandFactory implements CommandFactory, CellMessageSender
     public Command createCommand(String command) {
         checkArgument(command != null, "No command");
         return new DirectCommand(Arrays.asList(command.split(COMMAND_SEPARATOR)),
-                endpoint,
-                poolManager,
-                pnfsManager,
-                acm,
-                prompt,
-                list);
+              endpoint,
+              poolManager,
+              pnfsManager,
+              acm,
+              prompt,
+              list);
     }
 }
 

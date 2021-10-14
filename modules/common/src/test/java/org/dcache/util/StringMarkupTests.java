@@ -1,19 +1,17 @@
 package org.dcache.util;
 
-import org.junit.Test;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class StringMarkupTests
-{
+import org.junit.Test;
+
+public class StringMarkupTests {
 
     String _src;
     String _markedUp;
 
     @Test
-    public void quotedStringShouldJustAddQuotesForEmptyString()
-    {
+    public void quotedStringShouldJustAddQuotesForEmptyString() {
         givenSourceString("");
 
         whenMarkedUpWithQuotedString();
@@ -23,8 +21,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void quotedStringShouldJustAddQuotesForSimpleToken()
-    {
+    public void quotedStringShouldJustAddQuotesForSimpleToken() {
         givenSourceString("foo");
 
         whenMarkedUpWithQuotedString();
@@ -34,8 +31,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void quotedStringShouldMarkupDoubleQuoteForTokenWithDoubleQuote()
-    {
+    public void quotedStringShouldMarkupDoubleQuoteForTokenWithDoubleQuote() {
         givenSourceString("foo\"bar");
 
         whenMarkedUpWithQuotedString();
@@ -45,8 +41,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void quotedStringShouldMarkupBackslashForTokenWithBackslash()
-    {
+    public void quotedStringShouldMarkupBackslashForTokenWithBackslash() {
         givenSourceString("foo\\bar");
 
         whenMarkedUpWithQuotedString();
@@ -56,8 +51,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void quotedStringShouldCorrectlyMarkupTokenWithBackslashQuote()
-    {
+    public void quotedStringShouldCorrectlyMarkupTokenWithBackslashQuote() {
         givenSourceString("foo\\\"bar");
 
         whenMarkedUpWithQuotedString();
@@ -67,8 +61,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldGivenEmptyStringForEmptySource()
-    {
+    public void percentEncodeShouldGivenEmptyStringForEmptySource() {
         givenSourceString("");
 
         whenMarkedUpWithPercentEncode();
@@ -78,8 +71,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldGivenSameStringForAsciiSource()
-    {
+    public void percentEncodeShouldGivenSameStringForAsciiSource() {
         givenSourceString("simple-string");
 
         whenMarkedUpWithPercentEncode();
@@ -89,8 +81,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldNotThrowExceptionForSourceWithSpaceColon()
-    {
+    public void percentEncodeShouldNotThrowExceptionForSourceWithSpaceColon() {
         givenSourceString("foo :bar");
 
         whenMarkedUpWithPercentEncode();
@@ -104,8 +95,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldNotThrowExceptionForSourceWithIllegalSchemaNameThenColon()
-    {
+    public void percentEncodeShouldNotThrowExceptionForSourceWithIllegalSchemaNameThenColon() {
         givenSourceString("G\u00F6ttingen:bar");
 
         whenMarkedUpWithPercentEncode();
@@ -118,8 +108,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithMiddleSlash()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithMiddleSlash() {
         givenSourceString("path/element");
 
         whenMarkedUpWithPercentEncode();
@@ -128,8 +117,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithEndSlash()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithEndSlash() {
         givenSourceString("pathElement/");
 
         whenMarkedUpWithPercentEncode();
@@ -138,8 +126,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithStartSlash()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithStartSlash() {
         givenSourceString("/pathElement");
 
         whenMarkedUpWithPercentEncode();
@@ -148,8 +135,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithDoubleStartSlash()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithDoubleStartSlash() {
         givenSourceString("//pathElement");
 
         whenMarkedUpWithPercentEncode();
@@ -159,8 +145,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithPercent()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithPercent() {
         givenSourceString("path%element");
 
         whenMarkedUpWithPercentEncode();
@@ -170,8 +155,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithQuestion()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithQuestion() {
         givenSourceString("path?element");
 
         whenMarkedUpWithPercentEncode();
@@ -181,8 +165,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithSquareBrackets()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithSquareBrackets() {
         givenSourceString("path[element]");
 
         whenMarkedUpWithPercentEncode();
@@ -192,8 +175,7 @@ public class StringMarkupTests
 
 
     @Test
-    public void percentEncodeShouldCorrectlyMarkupSourceWithHash()
-    {
+    public void percentEncodeShouldCorrectlyMarkupSourceWithHash() {
         givenSourceString("path#element");
 
         whenMarkedUpWithPercentEncode();
@@ -202,8 +184,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldMarkupSpacesForSourceWithSpaces()
-    {
+    public void percentEncodeShouldMarkupSpacesForSourceWithSpaces() {
         givenSourceString("path element");
 
         whenMarkedUpWithPercentEncode();
@@ -212,8 +193,7 @@ public class StringMarkupTests
     }
 
     @Test
-    public void percentEncodeShouldCorrectlyEncodeNonASCIIWords()
-    {
+    public void percentEncodeShouldCorrectlyEncodeNonASCIIWords() {
         givenSourceString("\u0561\u0580\u0574\u0578\u0582\u0576\u056F\u0020");
 
         whenMarkedUpWithPercentEncode();
@@ -222,24 +202,19 @@ public class StringMarkupTests
     }
 
 
-
-    public void givenSourceString(String src)
-    {
+    public void givenSourceString(String src) {
         _src = src;
     }
 
-    public void whenMarkedUpWithQuotedString()
-    {
+    public void whenMarkedUpWithQuotedString() {
         _markedUp = StringMarkup.quotedString(_src);
     }
 
-    public void whenMarkedUpWithPercentEncode()
-    {
+    public void whenMarkedUpWithPercentEncode() {
         _markedUp = StringMarkup.percentEncode(_src);
     }
 
-    public void assertResultIs(String result)
-    {
+    public void assertResultIs(String result) {
         assertThat(_markedUp, is(result));
     }
 }

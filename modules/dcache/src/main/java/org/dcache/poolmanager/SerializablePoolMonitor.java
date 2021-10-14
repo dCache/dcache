@@ -20,7 +20,7 @@ package org.dcache.poolmanager;
 
 import java.io.Serializable;
 
-public abstract class SerializablePoolMonitor implements PoolMonitor, Serializable
-{
+public abstract class SerializablePoolMonitor implements PoolMonitor, Serializable {
+
     private static final long serialVersionUID = -3568502579459711629L;
 }
