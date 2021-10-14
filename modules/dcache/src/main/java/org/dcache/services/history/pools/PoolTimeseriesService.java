@@ -59,32 +59,31 @@ documents or software obtained from this server.
  */
 package org.dcache.services.history.pools;
 
-import java.util.Map;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
+import java.util.Map;
+import java.util.Set;
 import org.dcache.util.histograms.TimeseriesHistogram;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 
 /**
  * <p>This service should respond to requests for historical (timeseries)
- *      data concerning pools.  This includes statistical timelines for
- *      file lifetime min, max and averages, as well as the counts
- *      for active and queued requests over the period of a
- *      predetermined window.</p>
+ * data concerning pools.  This includes statistical timelines for file lifetime min, max and
+ * averages, as well as the counts for active and queued requests over the period of a predetermined
+ * window.</p>
  */
 public interface PoolTimeseriesService {
+
     /**
      * <p>Retrieves the requested timeseries data.</p>
      *
-     * @param pool for which data is requested.
+     * @param pool  for which data is requested.
      * @param types of timeseries to return.
      * @return histogram models for the requested types.
      * @throws CacheException
      */
     Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
-                                                           Set<TimeseriesType> types)
-                    throws CacheException, InterruptedException,
-                    NoRouteToCellException;
+          Set<TimeseriesType> types)
+          throws CacheException, InterruptedException,
+          NoRouteToCellException;
 }

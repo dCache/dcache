@@ -72,36 +72,38 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.TransactionException;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
-
 import org.dcache.srm.request.Job;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public interface JobStorage<J extends Job> {
+
     void init() throws DataAccessException;
+
     J getJob(long jobId) throws DataAccessException;
+
     J getJob(long jobId, Connection connection) throws SQLException;
+
     /**
-     *
-     * @param job Job to save
-     * @param force if this is false and monitoring jdbc login
-     *         disabled, this operation will be ignored
+     * @param job   Job to save
+     * @param force if this is false and monitoring jdbc login disabled, this operation will be
+     *              ignored
      * @throws TransactionException if there was a problem
      */
     void saveJob(J job, boolean force)
-            throws TransactionException;
+          throws TransactionException;
 
     Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException;
+
     Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException;
+
     Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException;
 
     Set<J> getActiveJobs() throws DataAccessException;

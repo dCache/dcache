@@ -66,6 +66,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import javax.sql.DataSource;
+import org.dcache.srm.scheduler.JobIdGenerator;
+import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -74,21 +79,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
-
-import org.dcache.srm.scheduler.JobIdGenerator;
-import org.dcache.srm.scheduler.JobIdGeneratorFactory;
-
-import static com.google.common.base.Preconditions.checkState;
-
 /**
- * This class is used by srm to generate long and int ids
- * that are guaranteed to be unique as long as the database used by the
- * class is preserved and can be connected to.
- * @author  timur
+ * This class is used by srm to generate long and int ids that are guaranteed to be unique as long
+ * as the database used by the class is preserved and can be connected to.
+ *
+ * @author timur
  */
-public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator
-{
+public class RequestsPropertyStorage extends JobIdGeneratorFactory implements JobIdGenerator {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestsPropertyStorage.class);
     private static final int NEXT_INT_STEP = 1000;
     private static final long NEXT_LONG_STEP = 10000;
@@ -102,37 +100,39 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private long nextLongBase;
     private long nextLongIncrement = NEXT_LONG_STEP;
 
-    /** Creates a new instance of RequestsPropertyStorage */
-    private RequestsPropertyStorage(PlatformTransactionManager transactionManager, DataSource dataSource)
-            throws DataAccessException
-    {
+    /**
+     * Creates a new instance of RequestsPropertyStorage
+     */
+    private RequestsPropertyStorage(PlatformTransactionManager transactionManager,
+          DataSource dataSource)
+          throws DataAccessException {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     /**
-     * Generate a next unique int request id
-     * Database table is used to preserve the state of the request generator.
-     * In this table we store a single record with field NEXTINT
-     * We read the value of this field and increase it by NEXT_INT_STEP (1000 by
-     * default), Thus reserving the 1000 values for use by this instance.
-     * Once we used up all of the values we repeat the database update.
-     * This is done to minimize the number of database operations.
+     * Generate a next unique int request id Database table is used to preserve the state of the
+     * request generator. In this table we store a single record with field NEXTINT We read the
+     * value of this field and increase it by NEXT_INT_STEP (1000 by default), Thus reserving the
+     * 1000 values for use by this instance. Once we used up all of the values we repeat the
+     * database update. This is done to minimize the number of database operations.
+     *
      * @return new int request id
      */
-    public  int getNextRequestId()  {
+    public int getNextRequestId() {
         return nextInt();
     }
 
-    public synchronized  int nextInt()   {
+    public synchronized int nextInt() {
         if (nextIntIncrement >= NEXT_INT_STEP) {
             nextIntBase = transactionTemplate.execute(status -> {
-                int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM srmnextrequestid FOR UPDATE", Integer.class);
+                int base = jdbcTemplate.queryForObject(
+                      "SELECT NEXTINT FROM srmnextrequestid FOR UPDATE", Integer.class);
                 int newBase = base + NEXT_INT_STEP;
                 int n = jdbcTemplate.update("UPDATE srmnextrequestid SET NEXTINT=?", newBase);
                 if (n != 1) {
                     throw new IncorrectResultSizeDataAccessException(
-                            "Unexpected number of rows got updated in srmnextrequestid", 1, n);
+                          "Unexpected number of rows got updated in srmnextrequestid", 1, n);
                 }
                 return newBase;
             });
@@ -149,26 +149,25 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
 
     /**
-     * Generate a next unique long id
-     * Database table is used to preserve the state of the long id generator.
-     * In this table we store a single record with field NEXTLONG
-     * We read the value of this field and increase it by NEXT_LONG_STEP (10000
-     * by default), thus reserving the 10000 values for use by this instance.
-     * Once we used up all of the values we repeat the database update.
-     * This is done to minimize the number of database operations.
-
+     * Generate a next unique long id Database table is used to preserve the state of the long id
+     * generator. In this table we store a single record with field NEXTLONG We read the value of
+     * this field and increase it by NEXT_LONG_STEP (10000 by default), thus reserving the 10000
+     * values for use by this instance. Once we used up all of the values we repeat the database
+     * update. This is done to minimize the number of database operations.
+     *
      * @return next unique long number
      */
     @Override
     public synchronized long nextLong() {
         if (nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongBase = transactionTemplate.execute(status -> {
-                long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM srmnextrequestid FOR UPDATE", Long.class);
+                long base = jdbcTemplate.queryForObject(
+                      "SELECT NEXTLONG FROM srmnextrequestid FOR UPDATE", Long.class);
                 long newBase = base + NEXT_LONG_STEP;
                 int n = jdbcTemplate.update("UPDATE srmnextrequestid SET NEXTLONG=?", newBase);
                 if (n != 1) {
                     throw new IncorrectResultSizeDataAccessException(
-                            "Unexpected number of rows got updated in srmnextrequestid", 1, n);
+                          "Unexpected number of rows got updated in srmnextrequestid", 1, n);
                 }
                 return newBase;
             });
@@ -186,13 +185,12 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
 
     public static final synchronized void initPropertyStorage(
-            PlatformTransactionManager transactionManager, DataSource dataSource)
-            throws DataAccessException
-    {
+          PlatformTransactionManager transactionManager, DataSource dataSource)
+          throws DataAccessException {
         checkState(RequestsPropertyStorage.requestsPropertyStorage == null,
-                "RequestsPropertyStorage is already initialized");
-        requestsPropertyStorage  =
-                new RequestsPropertyStorage(transactionManager, dataSource);
+              "RequestsPropertyStorage is already initialized");
+        requestsPropertyStorage =
+              new RequestsPropertyStorage(transactionManager, dataSource);
         initJobIdGeneratorFactory(requestsPropertyStorage);
     }
 }

@@ -21,11 +21,10 @@ package org.dcache.restful.events.spi;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Represents a client's subscription to some subset of an EventStream's
- * events.
+ * Represents a client's subscription to some subset of an EventStream's events.
  */
-public interface SelectedEventStream
-{
+public interface SelectedEventStream {
+
     /**
      * Provide the ID associated with this selection.
      */
@@ -37,10 +36,9 @@ public interface SelectedEventStream
     JsonNode selector();
 
     /**
-     * Stop sending events.  This method is called either when the client
-     * requests to cancel the subscription, or when the channel is closed.
-     * Calling this method multiple times has the same effect as calling it
-     * once.
+     * Stop sending events.  This method is called either when the client requests to cancel the
+     * subscription, or when the channel is closed. Calling this method multiple times has the same
+     * effect as calling it once.
      */
     void close();
 }

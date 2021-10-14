@@ -22,32 +22,28 @@ package org.dcache.cells;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-
+import dmg.cells.nucleus.DelayedReply;
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
-
-import dmg.cells.nucleus.DelayedReply;
 
 /**
  * Adapts a Future to be a Reply.
  *
  * <p>Once the future completes, the reply is submitted. If the future returns null, no
- * reply is generated. Otherwise the result is submitted as is. If the future fails
- * with an exception, the exception is submitted as a reply.
+ * reply is generated. Otherwise the result is submitted as is. If the future fails with an
+ * exception, the exception is submitted as a reply.
  */
-public class FutureReply<T extends Serializable> extends DelayedReply implements Runnable
-{
+public class FutureReply<T extends Serializable> extends DelayedReply implements Runnable {
+
     private final ListenableFuture<? extends T> future;
 
-    public FutureReply(ListenableFuture<? extends T> future)
-    {
+    public FutureReply(ListenableFuture<? extends T> future) {
         this.future = future;
         future.addListener(this, MoreExecutors.directExecutor());
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             T msg = Uninterruptibles.getUninterruptibly(future);
             if (msg != null) {

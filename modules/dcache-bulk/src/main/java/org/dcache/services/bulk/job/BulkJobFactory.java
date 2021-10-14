@@ -60,6 +60,8 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import com.google.common.collect.ImmutableMap;
+import diskCacheV111.poolManager.PoolManagerAware;
+import diskCacheV111.util.NamespaceHandlerAware;
 import diskCacheV111.util.PnfsHandler;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -71,14 +73,12 @@ import java.util.ServiceLoader;
 import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.PinManagerAware;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.PoolMonitorAware;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
-import diskCacheV111.util.NamespaceHandlerAware;
-import org.dcache.pinmanager.PinManagerAware;
 import org.dcache.services.bulk.PingServiceAware;
-import diskCacheV111.poolManager.PoolManagerAware;
-import org.dcache.poolmanager.PoolMonitorAware;
 import org.dcache.services.bulk.handlers.BulkJobCompletionHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.springframework.beans.factory.annotation.Required;
@@ -92,161 +92,164 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class BulkJobFactory implements CellLifeCycleAware, CellMessageSender {
 
-  private final Map<String, BulkJobProvider> providers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, BulkJobProvider> providers = Collections.synchronizedMap(
+          new HashMap<>());
 
-  private CellStub pnfsManager;
-  private CellStub pinManager;
-  private CellStub poolManager;
-  private CellStub pingService;
-  private PoolMonitor poolMonitor;
-  private CellEndpoint endpoint;
+    private CellStub pnfsManager;
+    private CellStub pinManager;
+    private CellStub poolManager;
+    private CellStub pingService;
+    private PoolMonitor poolMonitor;
+    private CellEndpoint endpoint;
 
-  @Override
-  public void setCellEndpoint(CellEndpoint endpoint) {
-    this.endpoint = endpoint;
-  }
-
-  @Required
-  public void setPinManager(CellStub pinManager) {
-    this.pinManager = pinManager;
-  }
-
-  @Required
-  public void setPingService(CellStub pingService) {
-    this.pingService = pingService;
-  }
-
-  @Required
-  public void setPnfsManager(CellStub pnfsManager) {
-    this.pnfsManager = pnfsManager;
-  }
-
-  @Required
-  public void setPoolManager(CellStub poolManager) {
-    this.poolManager = poolManager;
-  }
-
-  @Required
-  public void setPoolMonitor(PoolMonitor poolMonitor) {
-    this.poolMonitor = poolMonitor;
-  }
-
-  @Override
-  public void afterStart() {
-    ServiceLoader<BulkJobProvider> serviceLoader
-        = ServiceLoader.load(BulkJobProvider.class);
-    for (BulkJobProvider provider : serviceLoader) {
-      providers.put(provider.getActivity(), provider);
-    }
-  }
-
-  public Map<String, BulkJobProvider> getProviders() {
-    return ImmutableMap.copyOf(providers);
-  }
-
-  public BulkRequestJob createRequestJob(BulkRequest request,
-                                         Subject subject,
-                                         Restriction restriction)
-      throws BulkServiceException {
-    String activity = request.getActivity();
-    BulkJobProvider provider = providers.get(activity);
-    if (provider == null) {
-      throw new BulkServiceException("cannot create BulkRequestJob; no such activity: " + activity);
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
-    BulkRequestJob job = provider.createRequestJob(request);
-    job.setSubject(subject);
-    job.setRestriction(restriction);
-    configureEndpoints(job);
-    return job;
-  }
-
-  public TargetExpansionJob createTargetExpansionJob(String target,
-                                                     FileAttributes attributes,
-                                                     MultipleTargetJob parent)
-      throws BulkServiceException {
-    BulkRequest request = parent.getRequest();
-    BulkJobKey parentKey = parent.getKey();
-    String activity = request.getActivity();
-    BulkJobProvider provider = providers.get(activity);
-    if (provider == null) {
-      throw new BulkServiceException("cannot create TargetExpansionJob; no such activity: "
-                                      + activity);
+    @Required
+    public void setPinManager(CellStub pinManager) {
+        this.pinManager = pinManager;
     }
 
-    TargetExpansionJob job = provider.createExpansionJob(parentKey, request);
-    configureTarget(target, attributes, job);
-    configurePermissionsFromParent(parent, job);
-    configureEndpoints(job);
-    configureHandler(parent, job);
-    return job;
-  }
-
-  public SingleTargetJob createSingleTargetJob(String target,
-                                               BulkJobKey parentKey,
-                                               FileAttributes attributes,
-                                               MultipleTargetJob parent)
-      throws BulkServiceException {
-    BulkJobProvider provider = providers.get(parent.getActivity());
-    if (provider == null) {
-      throw new BulkServiceException("cannot create SingleTargetJob; "
-          + "no such activity: "
-          + parent.getActivity());
+    @Required
+    public void setPingService(CellStub pingService) {
+        this.pingService = pingService;
     }
 
-    SingleTargetJob job = provider.createJob(BulkJobKey.newKey(parentKey.getRequestId()), parentKey);
-    configureTarget(target, attributes, job);
-    configurePermissionsFromParent(parent, job);
-    configureEndpoints(job);
-    configureHandler(parent, job);
-    BulkRequest request = parent.getRequest();
-    job.setArguments(request.getArguments());
-    job.setPath(MultipleTargetJob.computeFsPath(request.getTargetPrefix(), target));
-    return job;
-  }
-
-  private void configureEndpoints(BulkJob job) {
-    if (job instanceof NamespaceHandlerAware) {
-      PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
-      pnfsHandler.setRestriction(job.getRestriction());
-      pnfsHandler.setSubject(job.getSubject());
-      ((NamespaceHandlerAware) job).setNamespaceHandler(pnfsHandler);
+    @Required
+    public void setPnfsManager(CellStub pnfsManager) {
+        this.pnfsManager = pnfsManager;
     }
 
-    if (job instanceof PinManagerAware) {
-      ((PinManagerAware) job).setPinManager(pinManager);
+    @Required
+    public void setPoolManager(CellStub poolManager) {
+        this.poolManager = poolManager;
     }
 
-    if (job instanceof PoolManagerAware) {
-      ((PoolManagerAware) job).setPoolManager(poolManager);
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor) {
+        this.poolMonitor = poolMonitor;
     }
 
-    if (job instanceof PoolMonitorAware) {
-      ((PoolMonitorAware) job).setPoolMonitor(poolMonitor);
+    @Override
+    public void afterStart() {
+        ServiceLoader<BulkJobProvider> serviceLoader
+              = ServiceLoader.load(BulkJobProvider.class);
+        for (BulkJobProvider provider : serviceLoader) {
+            providers.put(provider.getActivity(), provider);
+        }
     }
 
-    if (job instanceof PingServiceAware) {
-      ((PingServiceAware) job).setPingService(pingService);
+    public Map<String, BulkJobProvider> getProviders() {
+        return ImmutableMap.copyOf(providers);
     }
 
-    if (job instanceof CellMessageSender) {
-      ((CellMessageSender) job).setCellEndpoint(endpoint);
+    public BulkRequestJob createRequestJob(BulkRequest request,
+          Subject subject,
+          Restriction restriction)
+          throws BulkServiceException {
+        String activity = request.getActivity();
+        BulkJobProvider provider = providers.get(activity);
+        if (provider == null) {
+            throw new BulkServiceException(
+                  "cannot create BulkRequestJob; no such activity: " + activity);
+        }
+
+        BulkRequestJob job = provider.createRequestJob(request);
+        job.setSubject(subject);
+        job.setRestriction(restriction);
+        configureEndpoints(job);
+        return job;
     }
-  }
 
-  private void configureHandler(MultipleTargetJob parent, BulkJob job) {
-    BulkJobCompletionHandler handler = parent.getCompletionHandler();
-    job.setCompletionHandler(handler);
-    handler.addChild(job);
-  }
+    public TargetExpansionJob createTargetExpansionJob(String target,
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException {
+        BulkRequest request = parent.getRequest();
+        BulkJobKey parentKey = parent.getKey();
+        String activity = request.getActivity();
+        BulkJobProvider provider = providers.get(activity);
+        if (provider == null) {
+            throw new BulkServiceException("cannot create TargetExpansionJob; no such activity: "
+                  + activity);
+        }
 
-  private void configurePermissionsFromParent(MultipleTargetJob parent, BulkJob job) {
-    job.setSubject(parent.getSubject());
-    job.setRestriction(parent.getRestriction());
-  }
+        TargetExpansionJob job = provider.createExpansionJob(parentKey, request);
+        configureTarget(target, attributes, job);
+        configurePermissionsFromParent(parent, job);
+        configureEndpoints(job);
+        configureHandler(parent, job);
+        return job;
+    }
 
-  private void configureTarget(String target, FileAttributes attributes, BulkJob job) {
-    job.setTarget(target);
-    job.setAttributes(attributes);
-  }
+    public SingleTargetJob createSingleTargetJob(String target,
+          BulkJobKey parentKey,
+          FileAttributes attributes,
+          MultipleTargetJob parent)
+          throws BulkServiceException {
+        BulkJobProvider provider = providers.get(parent.getActivity());
+        if (provider == null) {
+            throw new BulkServiceException("cannot create SingleTargetJob; "
+                  + "no such activity: "
+                  + parent.getActivity());
+        }
+
+        SingleTargetJob job = provider.createJob(BulkJobKey.newKey(parentKey.getRequestId()),
+              parentKey);
+        configureTarget(target, attributes, job);
+        configurePermissionsFromParent(parent, job);
+        configureEndpoints(job);
+        configureHandler(parent, job);
+        BulkRequest request = parent.getRequest();
+        job.setArguments(request.getArguments());
+        job.setPath(MultipleTargetJob.computeFsPath(request.getTargetPrefix(), target));
+        return job;
+    }
+
+    private void configureEndpoints(BulkJob job) {
+        if (job instanceof NamespaceHandlerAware) {
+            PnfsHandler pnfsHandler = new PnfsHandler(pnfsManager);
+            pnfsHandler.setRestriction(job.getRestriction());
+            pnfsHandler.setSubject(job.getSubject());
+            ((NamespaceHandlerAware) job).setNamespaceHandler(pnfsHandler);
+        }
+
+        if (job instanceof PinManagerAware) {
+            ((PinManagerAware) job).setPinManager(pinManager);
+        }
+
+        if (job instanceof PoolManagerAware) {
+            ((PoolManagerAware) job).setPoolManager(poolManager);
+        }
+
+        if (job instanceof PoolMonitorAware) {
+            ((PoolMonitorAware) job).setPoolMonitor(poolMonitor);
+        }
+
+        if (job instanceof PingServiceAware) {
+            ((PingServiceAware) job).setPingService(pingService);
+        }
+
+        if (job instanceof CellMessageSender) {
+            ((CellMessageSender) job).setCellEndpoint(endpoint);
+        }
+    }
+
+    private void configureHandler(MultipleTargetJob parent, BulkJob job) {
+        BulkJobCompletionHandler handler = parent.getCompletionHandler();
+        job.setCompletionHandler(handler);
+        handler.addChild(job);
+    }
+
+    private void configurePermissionsFromParent(MultipleTargetJob parent, BulkJob job) {
+        job.setSubject(parent.getSubject());
+        job.setRestriction(parent.getRestriction());
+    }
+
+    private void configureTarget(String target, FileAttributes attributes, BulkJob job) {
+        job.setTarget(target);
+        job.setAttributes(attributes);
+    }
 }

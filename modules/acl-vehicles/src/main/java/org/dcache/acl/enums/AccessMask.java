@@ -1,8 +1,7 @@
 package org.dcache.acl.enums;
 
 /**
- * This object consists of a enumeration (implemented as bit mask) of possible
- * access permissions.
+ * This object consists of a enumeration (implemented as bit mask) of possible access permissions.
  *
  * @author David Melkumyan, DESY Zeuthen
  */
@@ -38,14 +37,13 @@ public enum AccessMask {
     ADD_SUBDIRECTORY(0x00000004, 's', RsType.DIR), // 0000 0000 0000 0100
 
     /**
-     * Permission to read the named attributes of a file or to lookup the named
-     * attributes directory.
+     * Permission to read the named attributes of a file or to lookup the named attributes
+     * directory.
      */
     READ_NAMED_ATTRS(0x00000008, 'n'), // 0000 0000 0000 1000
 
     /**
-     * Permission to write the named attributes of a file or to create a named
-     * attribute directory.
+     * Permission to write the named attributes of a file or to create a named attribute directory.
      */
     WRITE_NAMED_ATTRS(0x00000010, 'N'), // 0000 0000 0001 0000
 
@@ -65,8 +63,7 @@ public enum AccessMask {
     READ_ATTRIBUTES(0x00000080, 't'), // 0000 0000 1000 0000
 
     /**
-     * Permission to change the times associated with a file or directory to an
-     * arbitrary value.
+     * Permission to change the times associated with a file or directory to an arbitrary value.
      */
     WRITE_ATTRIBUTES(0x00000100, 'T'), // 0000 0001 0000 0000
 
@@ -132,8 +129,7 @@ public enum AccessMask {
     }
 
     /**
-     * @param accessMask
-     *            ACE access bit mask
+     * @param accessMask ACE access bit mask
      * @return Return string representation of access bit mask
      */
     public static String asString(int accessMask) throws IllegalArgumentException {
@@ -148,17 +144,15 @@ public enum AccessMask {
     }
 
     /**
-     * @param accessMask
-     *            ACE access bit mask
-     * @param type
-     *            Type of resource
+     * @param accessMask ACE access bit mask
+     * @param type       Type of resource
      * @return Return string representation of access bit mask
      */
     public static String asString(int accessMask, RsType type) throws IllegalArgumentException {
         StringBuilder sb = new StringBuilder();
         for (AccessMask accessMsk : AccessMask.values()) {
             if ((accessMsk._type == null || type == null || accessMsk._type == type) && accessMsk
-                    .matches(accessMask)) {
+                  .matches(accessMask)) {
                 sb.append(accessMsk.getAbbreviation());
             }
         }
@@ -167,14 +161,14 @@ public enum AccessMask {
     }
 
     /**
-     * @param strAccessMask
-     *            String representation of the accessMask
+     * @param strAccessMask String representation of the accessMask
      * @return accessMask
      * @throws IllegalArgumentException
      */
     public static int parseInt(String strAccessMask) throws IllegalArgumentException {
-        if ( strAccessMask == null || strAccessMask.length() == 0 ) {
-            throw new IllegalArgumentException("accessMask is " + (strAccessMask == null ? "NULL" : "Empty"));
+        if (strAccessMask == null || strAccessMask.length() == 0) {
+            throw new IllegalArgumentException(
+                  "accessMask is " + (strAccessMask == null ? "NULL" : "Empty"));
         }
 
         int mask = 0;
@@ -187,49 +181,49 @@ public enum AccessMask {
     }
 
     /**
-     * @param abbreviation
-     *            of the AccessMask
+     * @param abbreviation of the AccessMask
      * @return AccessMask
      * @throws IllegalArgumentException
      */
     public static AccessMask fromAbbreviation(char abbreviation) throws IllegalArgumentException {
         switch (abbreviation) {
-        case 'r':
-            return READ_DATA;
-        case 'l':
-            return LIST_DIRECTORY;
-        case 'w':
-            return WRITE_DATA;
-        case 'f':
-            return ADD_FILE;
-        case 'a':
-            return APPEND_DATA;
-        case 's':
-            return ADD_SUBDIRECTORY;
-        case 'n':
-            return READ_NAMED_ATTRS;
-        case 'N':
-            return WRITE_NAMED_ATTRS;
-        case 'x':
-            return EXECUTE;
-        case 'D':
-            return DELETE_CHILD;
-        case 't':
-            return READ_ATTRIBUTES;
-        case 'T':
-            return WRITE_ATTRIBUTES;
-        case 'd':
-            return DELETE;
-        case 'c':
-            return READ_ACL;
-        case 'C':
-            return WRITE_ACL;
-        case 'o':
-            return WRITE_OWNER;
-        case 'y':
-            return SYNCHRONIZE;
-        default:
-            throw new IllegalArgumentException("Invalid access mask abbreviation: " + abbreviation);
+            case 'r':
+                return READ_DATA;
+            case 'l':
+                return LIST_DIRECTORY;
+            case 'w':
+                return WRITE_DATA;
+            case 'f':
+                return ADD_FILE;
+            case 'a':
+                return APPEND_DATA;
+            case 's':
+                return ADD_SUBDIRECTORY;
+            case 'n':
+                return READ_NAMED_ATTRS;
+            case 'N':
+                return WRITE_NAMED_ATTRS;
+            case 'x':
+                return EXECUTE;
+            case 'D':
+                return DELETE_CHILD;
+            case 't':
+                return READ_ATTRIBUTES;
+            case 'T':
+                return WRITE_ATTRIBUTES;
+            case 'd':
+                return DELETE;
+            case 'c':
+                return READ_ACL;
+            case 'C':
+                return WRITE_ACL;
+            case 'o':
+                return WRITE_OWNER;
+            case 'y':
+                return SYNCHRONIZE;
+            default:
+                throw new IllegalArgumentException(
+                      "Invalid access mask abbreviation: " + abbreviation);
         }
     }
 

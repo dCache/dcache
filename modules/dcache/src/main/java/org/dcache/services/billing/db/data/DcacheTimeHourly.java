@@ -71,13 +71,13 @@ public final class DcacheTimeHourly extends BaseEntry implements IHistogramData 
     public static final String MAX_TIME = "maximum";
     public static final String AVG_TIME = "average";
 
-    private Double average= 0.0;
-    private Long minimum= 0L;
-    private Long maximum= 0L;
+    private Double average = 0.0;
+    private Long minimum = 0L;
+    private Long maximum = 0L;
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + minimum + "," + maximum
-                        + "," + average + ")";
+              + "," + average + ")";
     }
 
     public Double getAverage() {
@@ -96,8 +96,7 @@ public final class DcacheTimeHourly extends BaseEntry implements IHistogramData 
     }
 
     /**
-     * @param minimum
-     *            the minimum to set
+     * @param minimum the minimum to set
      */
     public void setMinimum(Long minimum) {
         this.minimum = minimum;
@@ -111,8 +110,7 @@ public final class DcacheTimeHourly extends BaseEntry implements IHistogramData 
     }
 
     /**
-     * @param maximum
-     *            the maximum to set
+     * @param maximum the maximum to set
      */
     public void setMaximum(Long maximum) {
         this.maximum = maximum;

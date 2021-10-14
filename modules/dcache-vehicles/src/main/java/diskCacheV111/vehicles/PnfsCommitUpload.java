@@ -17,32 +17,25 @@
  */
 package diskCacheV111.vehicles;
 
-import com.google.common.collect.Sets;
-
-import javax.security.auth.Subject;
-
-import java.util.Collections;
-import java.util.Set;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 import diskCacheV111.util.FsPath;
-
+import java.util.Collections;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.concat;
-import static java.util.Collections.singleton;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-
 /**
  * Commit an upload path to its final name.
- *
- * The file written to the temporary upload path is moved to its final
- * location. The upload path will no longer be writable after this message.
+ * <p>
+ * The file written to the temporary upload path is moved to its final location. The upload path
+ * will no longer be writable after this message.
  */
-public class PnfsCommitUpload extends PnfsMessage
-{
+public class PnfsCommitUpload extends PnfsMessage {
+
     private static final long serialVersionUID = -2574528537801095072L;
 
     private final String uploadPath;
@@ -51,12 +44,11 @@ public class PnfsCommitUpload extends PnfsMessage
     private FileAttributes fileAttributes;
 
     public PnfsCommitUpload(Subject subject,
-                            Restriction restriction,
-                            FsPath uploadPath,
-                            FsPath path,
-                            Set<CreateOption> options,
-                            Set<FileAttribute> requestedAttributes)
-    {
+          Restriction restriction,
+          FsPath uploadPath,
+          FsPath path,
+          Set<CreateOption> options,
+          Set<FileAttribute> requestedAttributes) {
         setSubject(subject);
         setRestriction(restriction);
         setPnfsPath(path.toString());
@@ -66,33 +58,27 @@ public class PnfsCommitUpload extends PnfsMessage
         this.uploadPath = uploadPath.toString();
     }
 
-    public FsPath getPath()
-    {
+    public FsPath getPath() {
         return FsPath.create(getPnfsPath());
     }
 
-    public FsPath getUploadPath()
-    {
+    public FsPath getUploadPath() {
         return FsPath.create(uploadPath);
     }
 
-    public Set<CreateOption> getOptions()
-    {
+    public Set<CreateOption> getOptions() {
         return Collections.unmodifiableSet(options);
     }
 
-    public Set<FileAttribute> getRequestedAttributes()
-    {
+    public Set<FileAttribute> getRequestedAttributes() {
         return requestedAttributes;
     }
 
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return fileAttributes;
     }
 
-    public void setFileAttributes(FileAttributes fileAttributes)
-    {
+    public void setFileAttributes(FileAttributes fileAttributes) {
         if (fileAttributes.isDefined(PNFSID)) {
             setPnfsId(fileAttributes.getPnfsId());
         }

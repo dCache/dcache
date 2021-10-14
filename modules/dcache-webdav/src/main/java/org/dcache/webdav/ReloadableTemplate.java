@@ -17,6 +17,10 @@
  */
 package org.dcache.webdav;
 
+import static java.util.Objects.requireNonNull;
+
+import java.io.IOException;
+import org.dcache.util.Slf4jSTErrorListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -25,17 +29,11 @@ import org.stringtemplate.v4.STErrorListener;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
-import java.io.IOException;
-
-import org.dcache.util.Slf4jSTErrorListener;
-
-import static java.util.Objects.requireNonNull;
-
 /**
  * This is a simple wrapper to allow reloading a template-group.
  */
-public class ReloadableTemplate
-{
+public class ReloadableTemplate {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ReloadableTemplate.class);
 
     private final Resource _resource;
@@ -45,24 +43,20 @@ public class ReloadableTemplate
     private String _templateName;
     private STGroup _templateGroup;
 
-    public ReloadableTemplate(Resource resource) throws IOException
-    {
+    public ReloadableTemplate(Resource resource) throws IOException {
         _resource = requireNonNull(resource);
         _path = _resource.getFile().getCanonicalPath();
     }
 
     /**
-     * Register a template name that should be instantiated when the
-     * template is loaded.  This is a work-around for race conditions in
-     * ST.
+     * Register a template name that should be instantiated when the template is loaded.  This is a
+     * work-around for race conditions in ST.
      */
-    public void setTemplateName(String templateName)
-    {
+    public void setTemplateName(String templateName) {
         _templateName = requireNonNull(templateName);
     }
 
-    protected void reload() throws IOException
-    {
+    protected void reload() throws IOException {
         STGroupFile group = new STGroupFile(_resource.getURL(), "UTF-8", '$', '$');
 
         group.setListener(_listener);
@@ -81,23 +75,19 @@ public class ReloadableTemplate
         _templateGroup = group;
     }
 
-    protected STGroup getTemplateGroup()
-    {
+    protected STGroup getTemplateGroup() {
         return _templateGroup;
     }
 
-    public ST getInstanceOf(String name)
-    {
+    public ST getInstanceOf(String name) {
         return getInstanceOf(name, false);
     }
 
-    public ST getInstanceOfQuietly(String name)
-    {
+    public ST getInstanceOfQuietly(String name) {
         return getInstanceOf(name, true);
     }
 
-    private ST getInstanceOf(String name, boolean quiet)
-    {
+    private ST getInstanceOf(String name, boolean quiet) {
         ST template = null;
 
         STGroup group = getTemplateGroup();
@@ -108,10 +98,10 @@ public class ReloadableTemplate
             if (template == null) {
                 if (quiet) {
                     LOGGER.debug("template '{}' not found in templategroup: {}",
-                            name, _path);
+                          name, _path);
                 } else {
                     LOGGER.error("template '{}' not found in templategroup: {}",
-                            name, _path);
+                          name, _path);
                 }
             }
         }
@@ -119,13 +109,11 @@ public class ReloadableTemplate
         return template;
     }
 
-    public String getPath()
-    {
+    public String getPath() {
         return _path;
     }
 
-    protected Resource getResource()
-    {
+    protected Resource getResource() {
         return _resource;
     }
 }

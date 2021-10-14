@@ -1,10 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -17,39 +15,36 @@ import org.dcache.srm.v2_2.SrmMkdirRequest;
 import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmMkdir {
 
-public class SrmMkdir
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmMkdir.class);
+          LoggerFactory.getLogger(SrmMkdir.class);
     private final AbstractStorageElement storage;
     private final SrmMkdirRequest request;
     private final SRMUser user;
     SrmMkdirResponse response;
 
     public SrmMkdir(SRMUser user,
-                    SrmMkdirRequest request,
-                    AbstractStorageElement storage,
-                    SRM srm,
-                    String clientHost)
-    {
+          SrmMkdirRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
     }
 
-    public SrmMkdirResponse getResponse()
-    {
+    public SrmMkdirResponse getResponse() {
         if (response == null) {
             response = srmMkdir();
         }
         return response;
     }
 
-    private SrmMkdirResponse srmMkdir()
-    {
+    private SrmMkdirResponse srmMkdir() {
         TReturnStatus returnStatus;
         try {
             storage.createDirectory(user, URI.create(request.getSURL().toString()));
@@ -69,13 +64,11 @@ public class SrmMkdir
         return new SrmMkdirResponse(returnStatus);
     }
 
-    public static final SrmMkdirResponse getFailedResponse(String error)
-    {
+    public static final SrmMkdirResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmMkdirResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmMkdirResponse getFailedResponse(String error, TStatusCode statusCode) {
         SrmMkdirResponse response = new SrmMkdirResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

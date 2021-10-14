@@ -60,8 +60,7 @@ public enum AceTag {
     }
 
     /**
-     * @param tags
-     *            ACE Unix tags bit mask
+     * @param tags ACE Unix tags bit mask
      * @return Return string representaion of tags bit mask
      */
     public static String toString(int tags) throws IllegalArgumentException {

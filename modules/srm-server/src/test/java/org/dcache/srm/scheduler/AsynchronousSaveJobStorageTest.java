@@ -1,27 +1,27 @@
 package org.dcache.srm.scheduler;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-
 import org.dcache.srm.request.Job;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.mockito.Mockito.*;
+public class AsynchronousSaveJobStorageTest {
 
-public class AsynchronousSaveJobStorageTest
-{
     private JobStorage<Job> storage;
     private List<Runnable> tasks;
     private AsynchronousSaveJobStorage<Job> asyncStorage;
     private Job job;
 
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         storage = mock(JobStorage.class);
         job = mock(Job.class);
         tasks = new ArrayList<>();
@@ -29,24 +29,21 @@ public class AsynchronousSaveJobStorageTest
     }
 
     @Test
-    public void whenSavingWithForceThenActualSaveIsWithForce() throws Exception
-    {
+    public void whenSavingWithForceThenActualSaveIsWithForce() throws Exception {
         asyncStorage.saveJob(job, true);
         runTasks();
         verify(storage).saveJob(job, true);
     }
 
     @Test
-    public void whenSavingWithoutForceThenActualSaveIsWithoutForce() throws Exception
-    {
+    public void whenSavingWithoutForceThenActualSaveIsWithoutForce() throws Exception {
         asyncStorage.saveJob(job, false);
         runTasks();
         verify(storage).saveJob(job, false);
     }
 
     @Test
-    public void whenSavingTwiceWithForceThenActualSaveIsOnceWithForce() throws Exception
-    {
+    public void whenSavingTwiceWithForceThenActualSaveIsOnceWithForce() throws Exception {
         asyncStorage.saveJob(job, true);
         asyncStorage.saveJob(job, true);
         runTasks();
@@ -54,8 +51,7 @@ public class AsynchronousSaveJobStorageTest
     }
 
     @Test
-    public void whenSavingTwiceWithAndWithoutForceThenActualSaveIsOnceWithForce() throws Exception
-    {
+    public void whenSavingTwiceWithAndWithoutForceThenActualSaveIsOnceWithForce() throws Exception {
         asyncStorage.saveJob(job, true);
         asyncStorage.saveJob(job, false);
         runTasks();
@@ -63,8 +59,7 @@ public class AsynchronousSaveJobStorageTest
     }
 
     @Test
-    public void whenSavingTwiceWithoutAndWithForceThenActualSaveIsOnceWithForce() throws Exception
-    {
+    public void whenSavingTwiceWithoutAndWithForceThenActualSaveIsOnceWithForce() throws Exception {
         asyncStorage.saveJob(job, false);
         asyncStorage.saveJob(job, true);
         runTasks();
@@ -72,8 +67,7 @@ public class AsynchronousSaveJobStorageTest
     }
 
     @Test
-    public void whenExecutionQueueIsFullForcedSaveIsStillExecuted() throws Exception
-    {
+    public void whenExecutionQueueIsFullForcedSaveIsStillExecuted() throws Exception {
         Executor executor = mock(Executor.class);
         asyncStorage = new AsynchronousSaveJobStorage<>(storage, executor);
         doThrow(RejectedExecutionException.class).when(executor).execute(any(Runnable.class));
@@ -81,26 +75,23 @@ public class AsynchronousSaveJobStorageTest
         verify(storage).saveJob(job, true);
     }
 
-    private void runTasks()
-    {
+    private void runTasks() {
         for (Runnable task : tasks) {
             task.run();
         }
     }
 
-    private static class ListExecutor implements Executor
-    {
+    private static class ListExecutor implements Executor {
+
         private final List<Runnable> tasks;
 
-        private ListExecutor(List<Runnable> tasks)
-        {
+        private ListExecutor(List<Runnable> tasks) {
             this.tasks = tasks;
         }
 
         @Override
         public void execute(
-                Runnable command)
-        {
+              Runnable command) {
             tasks.add(command);
         }
     }

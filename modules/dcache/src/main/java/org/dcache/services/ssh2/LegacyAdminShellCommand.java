@@ -1,25 +1,9 @@
 package org.dcache.services.ssh2;
 
-import jline.TerminalSupport;
-import jline.console.ConsoleReader;
-import jline.console.history.FileHistory;
-import jline.console.history.MemoryHistory;
-import jline.console.history.PersistentHistory;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.fusesource.jansi.Ansi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import static org.fusesource.jansi.Ansi.Color.CYAN;
+import static org.fusesource.jansi.Ansi.Color.RED;
 
 import diskCacheV111.admin.LegacyAdminShell;
-
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -29,19 +13,31 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.HelpFormat;
-
+import java.io.File;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import jline.TerminalSupport;
+import jline.console.ConsoleReader;
+import jline.console.history.FileHistory;
+import jline.console.history.MemoryHistory;
+import jline.console.history.PersistentHistory;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.command.Command;
 import org.dcache.util.Strings;
-
-import static org.fusesource.jansi.Ansi.Color.CYAN;
-import static org.fusesource.jansi.Ansi.Color.RED;
+import org.fusesource.jansi.Ansi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements legacy ssh subsystem of the admin door.
  */
-public class LegacyAdminShellCommand implements Command, Runnable
-{
+public class LegacyAdminShellCommand implements Command, Runnable {
+
     private static final Logger _logger =
-        LoggerFactory.getLogger(LegacyAdminShellCommand.class);
+          LoggerFactory.getLogger(LegacyAdminShellCommand.class);
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -53,14 +49,14 @@ public class LegacyAdminShellCommand implements Command, Runnable
     private final CellEndpoint _endpoint;
     private final String _prompt;
 
-    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, int historySize, String prompt, boolean useColor)
-    {
+    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, int historySize,
+          String prompt, boolean useColor) {
         _useColors = useColor;
         _endpoint = endpoint;
         _prompt = prompt;
         if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
-                _history  = new FileHistory(historyFile);
+                _history = new FileHistory(historyFile);
                 _history.setMaxSize(historySize);
             } catch (IOException e) {
                 _logger.warn("History creation failed: {}", e.getMessage());
@@ -101,9 +97,8 @@ public class LegacyAdminShellCommand implements Command, Runnable
         _shell = new LegacyAdminShell(user, _endpoint, _prompt);
         _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env)) {
             @Override
-            public void print(CharSequence s) throws IOException
-            {
-            /* See https://github.com/jline/jline2/issues/205 */
+            public void print(CharSequence s) throws IOException {
+                /* See https://github.com/jline/jline2/issues/205 */
                 getOutput().append(s);
             }
         };
@@ -123,7 +118,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 cleanUp();
             } catch (IOException e) {
                 _logger.warn("Failed to shutdown console cleanly: {}"
-                        , e.getMessage());
+                      , e.getMessage());
             }
             _exitCallback.onExit(0);
         }
@@ -165,10 +160,10 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 result = _shell.executeCommand(str);
             } catch (IllegalArgumentException e) {
                 result = e.getMessage()
-                + " (Please check the spelling of your command or your config file(s)!)";
+                      + " (Please check the spelling of your command or your config file(s)!)";
             } catch (SerializationException e) {
                 result =
-                    "There is a bug here, please report to support@dcache.org";
+                      "There is a bug here, please report to support@dcache.org";
                 _logger.error("This must be a bug, please report to support@dcache.org.", e);
             } catch (CommandSyntaxException e) {
                 result = e;
@@ -178,27 +173,27 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 break;
             } catch (CommandPanicException e) {
                 result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
-                         "); the service log file contains additional information. Please " +
-                         "contact support@dcache.org.";
+                      "); the service log file contains additional information. Please " +
+                      "contact support@dcache.org.";
             } catch (CommandException e) {
                 result = e.getMessage();
             } catch (NoRouteToCellException e) {
                 result =
-                    "Cell name does not exist or cell is not started: "
-                    + e.getMessage();
+                      "Cell name does not exist or cell is not started: "
+                            + e.getMessage();
                 _logger.warn("The cell the command was sent to is no "
-                        + "longer there: {}", e.getMessage());
+                      + "longer there: {}", e.getMessage());
             } catch (InterruptedException e) {
                 result = e.getMessage();
             } catch (RuntimeException e) {
                 result = String.format("Command '%s' triggered a bug (%s); please" +
-                                       " locate this message in the log file of the admin service and" +
-                                       " send an email to support@dcache.org with this line and the" +
-                                       " following stack-trace", str, e);
+                      " locate this message in the log file of the admin service and" +
+                      " send an email to support@dcache.org with this line and the" +
+                      " following stack-trace", str, e);
                 _logger.error((String) result, e);
             } catch (Exception e) {
                 result = e.getMessage();
-                if(result == null) {
+                if (result == null) {
                     result = e.getClass().getSimpleName() + ": (null)";
                 }
             }
@@ -236,12 +231,11 @@ public class LegacyAdminShellCommand implements Command, Runnable
         _console.flush();
     }
 
-    private static class ConsoleReaderTerminal extends TerminalSupport
-    {
+    private static class ConsoleReaderTerminal extends TerminalSupport {
+
         private final Environment _env;
 
-        private ConsoleReaderTerminal(Environment env)
-        {
+        private ConsoleReaderTerminal(Environment env) {
             super(true);
             _env = env;
             setAnsiSupported(env.getEnv().get(Environment.ENV_TERM) != null);
@@ -260,7 +254,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                     if (i > 0) {
                         return i;
                     }
-                } catch(NumberFormatException ignored) {
+                } catch (NumberFormatException ignored) {
                 }
             }
             return Integer.MAX_VALUE;
@@ -278,15 +272,15 @@ public class LegacyAdminShellCommand implements Command, Runnable
                     if (i > 0) {
                         return i;
                     }
-                } catch(NumberFormatException ignored) {
+                } catch (NumberFormatException ignored) {
                 }
             }
             return Integer.MAX_VALUE;
         }
     }
 
-    private static class SshOutputStream extends FilterOutputStream
-    {
+    private static class SshOutputStream extends FilterOutputStream {
+
         public SshOutputStream(OutputStream out) {
             super(out);
         }

@@ -20,18 +20,16 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class GetProxyReqResponse implements Serializable
-{
+public class GetProxyReqResponse implements Serializable {
+
     private static final long serialVersionUID = -6112961629576693162L;
     private final String proxyReq;
 
-    public GetProxyReqResponse(String proxyReq)
-    {
+    public GetProxyReqResponse(String proxyReq) {
         this.proxyReq = proxyReq;
     }
 
-    public String getProxyReq()
-    {
+    public String getProxyReq() {
         return proxyReq;
     }
 }

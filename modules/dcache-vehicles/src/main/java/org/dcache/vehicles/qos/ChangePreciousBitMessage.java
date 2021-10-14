@@ -64,6 +64,7 @@ import diskCacheV111.vehicles.Message;
 import java.util.Objects;
 
 public final class ChangePreciousBitMessage extends Message {
+
     private static final long serialVersionUID = 7740008309835102565L;
     private final String pool;
     private final PnfsId pnfsId;
@@ -83,6 +84,6 @@ public final class ChangePreciousBitMessage extends Message {
 
     public String toString() {
         return String.format("%s: (pool %s) (pnfsid %s) - %s", getMessageName(),
-                        pool, pnfsId, super.toString());
+              pool, pnfsId, super.toString());
     }
 }

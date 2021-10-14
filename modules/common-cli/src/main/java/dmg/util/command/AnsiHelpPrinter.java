@@ -17,38 +17,34 @@
  */
 package dmg.util.command;
 
-import org.dcache.util.Strings;
-
 import static org.fusesource.jansi.Ansi.Attribute.UNDERLINE;
 import static org.fusesource.jansi.Ansi.Attribute.UNDERLINE_OFF;
 import static org.fusesource.jansi.Ansi.ansi;
 
+import org.dcache.util.Strings;
+
 /**
  * Utility class to produce help texts suitable for an ANSI terminal.
  */
-public class AnsiHelpPrinter extends TextHelpPrinter
-{
+public class AnsiHelpPrinter extends TextHelpPrinter {
+
     @Override
-    protected int plainLength(String s)
-    {
+    protected int plainLength(String s) {
         return Strings.plainLength(s);
     }
 
     @Override
-    protected String value(String value)
-    {
+    protected String value(String value) {
         return ansi().a(UNDERLINE).a(value.toLowerCase()).a(UNDERLINE_OFF).toString();
     }
 
     @Override
-    protected String literal(String option)
-    {
+    protected String literal(String option) {
         return ansi().bold().a(option).boldOff().toString();
     }
 
     @Override
-    protected String heading(String heading)
-    {
+    protected String heading(String heading) {
         return ansi().bold().a(heading).boldOff().toString();
     }
 }

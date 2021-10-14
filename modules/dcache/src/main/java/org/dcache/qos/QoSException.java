@@ -61,20 +61,20 @@ package org.dcache.qos;
 
 public class QoSException extends Exception {
 
-  public QoSException(String message) {
-    super(message);
-  }
+    public QoSException(String message) {
+        super(message);
+    }
 
-  public QoSException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    public QoSException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  public QoSException(Throwable cause) {
-    super(cause);
-  }
+    public QoSException(Throwable cause) {
+        super(cause);
+    }
 
-  protected QoSException(String message, Throwable cause, boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-  }
+    protected QoSException(String message, Throwable cause, boolean enableSuppression,
+          boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

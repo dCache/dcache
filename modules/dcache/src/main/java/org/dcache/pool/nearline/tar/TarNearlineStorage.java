@@ -17,14 +17,17 @@
  */
 package org.dcache.pool.nearline.tar;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getFirst;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,74 +46,66 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.InvalidMessageCacheException;
-import diskCacheV111.util.PnfsId;
-
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
-import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.getFirst;
 
 /**
  * This class is for demonstration only. The code is a bit messy and incomplete.
  */
-public class TarNearlineStorage implements NearlineStorage
-{
+public class TarNearlineStorage implements NearlineStorage {
+
     private final String type;
     private final String name;
 
     private final BlockingQueue<FlushRequest> flushQueue = new LinkedBlockingDeque<>();
-    private final Multimap<String,StageRequest> stageRequests =
-            Multimaps.synchronizedMultimap(ArrayListMultimap.<String,StageRequest>create());
+    private final Multimap<String, StageRequest> stageRequests =
+          Multimaps.synchronizedMultimap(ArrayListMultimap.<String, StageRequest>create());
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private volatile File directory;
 
-    public TarNearlineStorage(String type, String name)
-    {
+    public TarNearlineStorage(String type, String name) {
         this.type = type;
         this.name = name;
     }
 
-    protected Iterable<URI> getLocations(FileAttributes fileAttributes)
-    {
+    protected Iterable<URI> getLocations(FileAttributes fileAttributes) {
         return filter(fileAttributes.getStorageInfo().locations(),
-                      uri -> uri.getScheme().equals(type) && uri.getAuthority().equals(name));
+              uri -> uri.getScheme().equals(type) && uri.getAuthority().equals(name));
     }
 
     @Override
-    public void flush(Iterable<FlushRequest> requests)
-    {
+    public void flush(Iterable<FlushRequest> requests) {
         Iterables.addAll(flushQueue, requests);
         executor.execute(new FlushTask());
     }
 
     @Override
-    public void stage(Iterable<StageRequest> requests)
-    {
+    public void stage(Iterable<StageRequest> requests) {
         for (StageRequest request : requests) {
             File tarFile;
             try {
                 FileAttributes fileAttributes = request.getFileAttributes();
                 URI location = getFirst(getLocations(fileAttributes), null);
                 if (location == null) {
-                    throw new CacheException(CacheException.BROKEN_ON_TAPE, "File not on nearline storage: " + fileAttributes.getPnfsId());
+                    throw new CacheException(CacheException.BROKEN_ON_TAPE,
+                          "File not on nearline storage: " + fileAttributes.getPnfsId());
                 }
                 String path = location.getPath();
                 if (path == null) {
-                    throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
+                    throw new InvalidMessageCacheException(
+                          "Invalid nearline storage URI: " + location);
                 }
                 tarFile = new File(path).getParentFile();
                 if (tarFile == null) {
-                    throw new InvalidMessageCacheException("Invalid nearline storage URI: " + location);
+                    throw new InvalidMessageCacheException(
+                          "Invalid nearline storage URI: " + location);
                 }
             } catch (CacheException e) {
                 request.failed(e);
@@ -122,38 +117,34 @@ public class TarNearlineStorage implements NearlineStorage
     }
 
     @Override
-    public void remove(Iterable<RemoveRequest> requests)
-    {
+    public void remove(Iterable<RemoveRequest> requests) {
         for (RemoveRequest request : requests) {
-            request.failed(new CacheException("Remove from tar nearline storage is not supported."));
+            request.failed(
+                  new CacheException("Remove from tar nearline storage is not supported."));
         }
     }
 
     @Override
-    public void cancel(UUID uuid)
-    {
+    public void cancel(UUID uuid) {
         // Not implemented
     }
 
     @Override
-    public void configure(Map<String, String> properties) throws IllegalArgumentException
-    {
+    public void configure(Map<String, String> properties) throws IllegalArgumentException {
         String directory = properties.get("directory");
         checkArgument(directory != null, "directory attribute is required");
         this.directory = new File(directory);
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         executor.shutdownNow();
     }
 
-    private class FlushTask implements Runnable
-    {
+    private class FlushTask implements Runnable {
+
         @Override
-        public void run()
-        {
+        public void run() {
             List<FlushRequest> requests = new ArrayList<>();
             flushQueue.drainTo(requests);
             if (!requests.isEmpty()) {
@@ -171,7 +162,9 @@ public class TarNearlineStorage implements NearlineStorage
                             tarStream.putArchiveEntry(entry);
                             Files.copy(file, tarStream);
                             tarStream.closeArchiveEntry();
-                            uris.put(request.getReplicaUri(), new URI(type, name, '/' + tarName + '/' + pnfsId.toString(), null, null));
+                            uris.put(request.getReplicaUri(),
+                                  new URI(type, name, '/' + tarName + '/' + pnfsId.toString(), null,
+                                        null));
                         }
                         tarStream.finish();
                     }
@@ -193,13 +186,12 @@ public class TarNearlineStorage implements NearlineStorage
         }
     }
 
-    private class StageTask implements Runnable
-    {
+    private class StageTask implements Runnable {
+
         @Override
-        public void run()
-        {
+        public void run() {
             List<String> archives;
-            synchronized(stageRequests) {
+            synchronized (stageRequests) {
                 archives = new ArrayList<>(stageRequests.keySet());
             }
             for (String archive : archives) {
@@ -217,7 +209,8 @@ public class TarNearlineStorage implements NearlineStorage
                 try (FileInputStream in = new FileInputStream(tarFile)) {
                     try (TarArchiveInputStream tarStream = new TarArchiveInputStream(in)) {
                         TarArchiveEntry entry;
-                        while (!requests.isEmpty() && (entry = tarStream.getNextTarEntry()) != null) {
+                        while (!requests.isEmpty()
+                              && (entry = tarStream.getNextTarEntry()) != null) {
                             StageRequest request = requests.remove(entry.getName());
                             if (request != null) {
                                 try {
@@ -237,7 +230,8 @@ public class TarNearlineStorage implements NearlineStorage
                 }
 
                 for (StageRequest request : requests.values()) {
-                    request.failed(new CacheException(CacheException.BROKEN_ON_TAPE, "File not found: " + request.getFileAttributes().getPnfsId()));
+                    request.failed(new CacheException(CacheException.BROKEN_ON_TAPE,
+                          "File not found: " + request.getFileAttributes().getPnfsId()));
                 }
             }
         }

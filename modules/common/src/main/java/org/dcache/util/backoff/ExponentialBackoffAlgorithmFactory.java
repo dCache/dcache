@@ -59,10 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Factory implementation for creating an {@link ExponentialBackoffAlgorithm}.
@@ -70,18 +70,18 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @author arossi
  */
 public class ExponentialBackoffAlgorithmFactory implements
-                IBackoffAlgorithmFactory {
+      IBackoffAlgorithmFactory {
+
     /**
      * Standard exponential backoff algorithm. Computes recursive function: <br>
      * <br>
-     *
-     * W(0) = W[min] <br>
-     * W(n) = (W[min] + W(n-1) * 2)/2 <br>
+     * <p>
+     * W(0) = W[min] <br> W(n) = (W[min] + W(n-1) * 2)/2 <br>
      * <br>
-     *
-     * where W[min] is the minimum delay time, and n is the attempt number. The
-     * algorithm can also be given a maximum delay (default is Long.MAX_VALUE).
-     * The minimum delay must be positive; the default is 1.
+     * <p>
+     * where W[min] is the minimum delay time, and n is the attempt number. The algorithm can also
+     * be given a maximum delay (default is Long.MAX_VALUE). The minimum delay must be positive; the
+     * default is 1.
      *
      * <p>
      * The default {@link TimeUnit} for both min and max is MINUTES.
@@ -90,9 +90,8 @@ public class ExponentialBackoffAlgorithmFactory implements
      * {@link #quitAtMaxDelay} is false by default.
      *
      * <p>
-     * Note that the algorithm is stateful and therefore not thread-safe; hence
-     * the factory creates a new copy at each call to
-     * {@link ExponentialBackoffAlgorithmFactory#getAlgorithm()}.
+     * Note that the algorithm is stateful and therefore not thread-safe; hence the factory creates
+     * a new copy at each call to {@link ExponentialBackoffAlgorithmFactory#getAlgorithm()}.
      */
     private class ExponentialBackoffAlgorithm implements IBackoffAlgorithm {
 
@@ -134,7 +133,7 @@ public class ExponentialBackoffAlgorithmFactory implements
             }
 
             if (maxAllowedAttempts != null
-                            && ++previousAttempts >= maxAllowedAttempts) {
+                  && ++previousAttempts >= maxAllowedAttempts) {
                 previousDelay = NO_WAIT;
             }
 
@@ -158,7 +157,7 @@ public class ExponentialBackoffAlgorithmFactory implements
         algorithm.minDelayInMillis = minUnit.toMillis(minDelay);
         if (maxDelay != null) {
             algorithm.maxDelayInMillis = maxUnit.toMillis(maxDelay);
-            checkArgument(algorithm.maxDelayInMillis  >= algorithm.minDelayInMillis);
+            checkArgument(algorithm.maxDelayInMillis >= algorithm.minDelayInMillis);
         }
 
         return algorithm;

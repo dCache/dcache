@@ -1,17 +1,15 @@
 package org.dcache.gplazma.plugins;
 
-import com.google.common.collect.Sets;
-import org.junit.Test;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.find;
 
+import com.google.common.collect.Sets;
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
-
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.find;
+import org.junit.Test;
 
 public class MutatorPluginTest {
 

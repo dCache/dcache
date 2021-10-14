@@ -59,20 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.cells;
 
-import org.springframework.beans.factory.annotation.Required;
-
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>Used in conjunction with the {@link CellInfoCollector} as message
  * post-processor.  Updates the cell data based on the info received.</p>
  */
 public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
+      RequestFutureProcessor<CellData, CellInfo> {
+
     private static void update(CellData cellData, CellInfo received) {
         cellData.setCreationTime(received.getCreationTime());
         cellData.setDomainName(received.getDomainName());
@@ -104,8 +104,8 @@ public final class CellInfoFutureProcessor extends
 
     @Override
     protected CellData process(String key,
-                               CellInfo received,
-                               long sent) {
+          CellInfo received,
+          long sent) {
         CellData cellData = new CellData();
         cellData.setRoundTripTime(System.currentTimeMillis() - sent);
         update(cellData, received);

@@ -18,41 +18,39 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Sets;
-import java.nio.file.OpenOption;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
-
 import dmg.cells.nucleus.CellPath;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-
+import java.util.Set;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
  * Mover factories provide means for creating movers for transfer requests.
  */
-public interface MoverFactory
-{
+public interface MoverFactory {
+
     /**
      * Creates a new mover for the given file and request.
+     * <p>
+     * Upon closing the mover, the mover must close the <code>handle</code> and signal the request
+     * initiator (door) about the completion. A mover typically delegates this to a
+     * PostTransferService, which also enforces the checksum policy and notifies billing.
      *
-     * Upon closing the mover, the mover must close the <code>handle</code>
-     * and signal the request initiator (door) about the completion. A mover
-     * typically delegates this to a PostTransferService, which also enforces
-     * the checksum policy and notifies billing.
-     *
-     * @param handle Handle to the replica to move
-     * @param message The request message from the initiator
+     * @param handle     Handle to the replica to move
+     * @param message    The request message from the initiator
      * @param pathToDoor Cell path to the initiator
      * @return A mover than will serve the transfer
      * @throws CacheException If the mover could not be created
      */
-    Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException;
+    Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor)
+          throws CacheException;
 
     /**
-     * Get set of option which have to be used by ReplicaDescriptor when
-     * a new RepositoryChannel is created.
+     * Get set of option which have to be used by ReplicaDescriptor when a new RepositoryChannel is
+     * created.
+     *
      * @return set of open options.
      */
     default Set<? extends OpenOption> getChannelCreateOptions() {

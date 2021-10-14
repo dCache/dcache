@@ -1,21 +1,21 @@
 package diskCacheV111.repository;
 
+import diskCacheV111.util.PnfsId;
 import java.io.Serializable;
 
-import diskCacheV111.util.PnfsId;
-
 public class CacheRepositoryEntryInfo implements Serializable {
+
     private static final long serialVersionUID = -4494188511917602601L;
 
-    public static final int PRECIOUS_BIT=0;
-    public static final int CACHED_BIT=1;
-    public static final int RECEIVINGFROMCLIENT_BIT=2;
-    public static final int RECEIVINGFROMSTORE_BIT=3;
-    public static final int SENDINGTOSTORE_BIT=4;
-    public static final int BAD_BIT=5;
-    public static final int REMOVED_BIT=6;
-    public static final int DESTROYED_BIT=7;
-    public static final int STICKY_BIT=8;
+    public static final int PRECIOUS_BIT = 0;
+    public static final int CACHED_BIT = 1;
+    public static final int RECEIVINGFROMCLIENT_BIT = 2;
+    public static final int RECEIVINGFROMSTORE_BIT = 3;
+    public static final int SENDINGTOSTORE_BIT = 4;
+    public static final int BAD_BIT = 5;
+    public static final int REMOVED_BIT = 6;
+    public static final int DESTROYED_BIT = 7;
+    public static final int STICKY_BIT = 8;
 
 
     private final PnfsId pnfsId;
@@ -25,8 +25,7 @@ public class CacheRepositoryEntryInfo implements Serializable {
     private final long size;
 
     public CacheRepositoryEntryInfo(PnfsId pnfsId, int bitmask, long lastAccessTime,
-                                    long creationTime, long size)
-    {
+          long creationTime, long size) {
         this.pnfsId = pnfsId;
         this.bitmask = bitmask;
         this.lastAccessTime = lastAccessTime;
@@ -42,7 +41,7 @@ public class CacheRepositoryEntryInfo implements Serializable {
         return bitmask;
     }
 
-    public boolean isPrecious()  {
+    public boolean isPrecious() {
         return getBit(PRECIOUS_BIT);
     }
 
@@ -71,7 +70,7 @@ public class CacheRepositoryEntryInfo implements Serializable {
         return getBit(DESTROYED_BIT);
     }
 
-    public boolean isSticky()  {
+    public boolean isSticky() {
         return getBit(STICKY_BIT);
     }
 

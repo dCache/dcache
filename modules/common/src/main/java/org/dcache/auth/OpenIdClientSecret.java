@@ -1,11 +1,11 @@
 package org.dcache.auth;
 
-import java.io.Serializable;
-
 import static java.util.Objects.requireNonNull;
 
-public class OpenIdClientSecret implements Serializable
-{
+import java.io.Serializable;
+
+public class OpenIdClientSecret implements Serializable {
+
     private final String id;
     private final String secret;
 

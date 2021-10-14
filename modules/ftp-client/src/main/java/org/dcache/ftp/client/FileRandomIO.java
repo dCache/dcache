@@ -15,21 +15,19 @@
  */
 package org.dcache.ftp.client;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import static org.dcache.util.ByteUnit.KiB;
-
 /**
- * Thread safe reference implementation of DataSink and DataSource.
- * Implements reading and writing data to a local file.
+ * Thread safe reference implementation of DataSink and DataSource. Implements reading and writing
+ * data to a local file.
  * <b>Note: Does not work with {@link Session#MODE_STREAM Session.STREAM}
- * transfer mode, only with {@link GridFTPSession#MODE_EBLOCK
- * GridFTPSession.EBLOCK} mode.</b>
+ * transfer mode, only with {@link GridFTPSession#MODE_EBLOCK GridFTPSession.EBLOCK} mode.</b>
  */
 public class FileRandomIO
-        implements DataSink, DataSource
-{
+      implements DataSink, DataSource {
 
     public static final int DEFAULT_BUFFER_SIZE = KiB.toBytes(16);
 
@@ -40,30 +38,24 @@ public class FileRandomIO
     /**
      * Behave like FileRandomIO(file, DEFAULT_BUFFER_SIZE)
      *
-     * @param file local file that will be be used as data source or
-     *             destination
+     * @param file local file that will be be used as data source or destination
      */
-    public FileRandomIO(RandomAccessFile file)
-    {
+    public FileRandomIO(RandomAccessFile file) {
         this(file, DEFAULT_BUFFER_SIZE);
     }
 
     /**
-     * @param file       local file that will be be used as data source or
-     *                   destination
-     * @param bufferSize size of the buffer returned during single
-     *                   read operation
+     * @param file       local file that will be be used as data source or destination
+     * @param bufferSize size of the buffer returned during single read operation
      */
-    public FileRandomIO(RandomAccessFile file, int bufferSize)
-    {
+    public FileRandomIO(RandomAccessFile file, int bufferSize) {
         this.file = file;
         this.bufferSize = bufferSize;
     }
 
     @Override
     public synchronized void write(Buffer buffer)
-            throws IOException
-    {
+          throws IOException {
         long bufOffset = buffer.getOffset();
 
         if (bufOffset == -1) {
@@ -83,8 +75,7 @@ public class FileRandomIO
      */
     @Override
     public synchronized Buffer read()
-            throws IOException
-    {
+          throws IOException {
         long offset = file.getFilePointer();
         byte[] buf = new byte[bufferSize];
         int read = file.read(buf);
@@ -100,16 +91,14 @@ public class FileRandomIO
      */
     @Override
     public synchronized void close()
-            throws IOException
-    {
+          throws IOException {
         file.close();
     }
 
 
     @Override
     public long totalSize()
-            throws IOException
-    {
+          throws IOException {
         return file.length();
     }
 }

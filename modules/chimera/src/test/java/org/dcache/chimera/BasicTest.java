@@ -1,33 +1,42 @@
 package org.dcache.chimera;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
-
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
@@ -36,13 +45,11 @@ import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
-import static org.dcache.chimera.FileSystemProvider.SetXattrMode;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
@@ -75,10 +82,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode newDir = _rootInode.mkdir("junit");
 
         assertEquals("mkdir have to incrise parent's nlink count by one",
-                _rootInode.stat().getNlink(), stat.getNlink() + 1);
-        assertTrue("mkdir have to update parent's mtime", _rootInode.stat().getMTime() > stat.getMTime());
+              _rootInode.stat().getNlink(), stat.getNlink() + 1);
+        assertTrue("mkdir have to update parent's mtime",
+              _rootInode.stat().getMTime() > stat.getMTime());
         assertEquals("new dir should have link count equal to two", newDir.stat().getNlink(), 2);
-        assertTrue("change count is not updated", stat.getGeneration() != _rootInode.stat().getGeneration());
+        assertTrue("change count is not updated",
+              stat.getGeneration() != _rootInode.stat().getGeneration());
     }
 
     @Test
@@ -88,10 +97,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode newDir = _fs.mkdir("/junit");
 
         assertEquals("mkdir has to increase parent's nlink count by one",
-                stat.getNlink() + 1, _rootInode.stat().getNlink());
-        assertTrue("mkdir has to update parent's mtime", _rootInode.stat().getMTime() > stat.getMTime());
+              stat.getNlink() + 1, _rootInode.stat().getNlink());
+        assertTrue("mkdir has to update parent's mtime",
+              _rootInode.stat().getMTime() > stat.getMTime());
         assertEquals("new dir should have link count equal to two", 2, newDir.stat().getNlink());
-        assertTrue("change count is not updated", stat.getGeneration() != _rootInode.stat().getGeneration());
+        assertTrue("change count is not updated",
+              stat.getGeneration() != _rootInode.stat().getGeneration());
     }
 
     @Test
@@ -103,13 +114,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("owner is not respected", dir2.stat().getUid(), 1);
         assertEquals("setgid is not respected", dir2.stat().getGid(), 2);
         assertEquals("setgid is not respected",
-                dir2.stat().getMode() & UnixPermission.S_PERMS, 02755);
+              dir2.stat().getMode() & UnixPermission.S_PERMS, 02755);
     }
 
     @Test
     public void testMkDirWithTags() throws Exception {
         byte[] bytes = "value".getBytes();
-        FsInode dir1 = _fs.mkdir(_rootInode, "junit", 1, 2, 02755, Collections.emptyList(), ImmutableMap.of("tag", bytes));
+        FsInode dir1 = _fs.mkdir(_rootInode, "junit", 1, 2, 02755, Collections.emptyList(),
+              ImmutableMap.of("tag", bytes));
         assertThat(_fs.getAllTags(dir1), hasEntry("tag", bytes));
     }
 
@@ -123,10 +135,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode newFile = base.create("testCreateFile", 0, 0, 0644);
 
         assertEquals("file creation has to increase parent's nlink count by one",
-                base.stat().getNlink(), stat.getNlink() + 1);
-        assertTrue("file creation has to update parent's mtime", base.stat().getMTime() > stat.getMTime());
+              base.stat().getNlink(), stat.getNlink() + 1);
+        assertTrue("file creation has to update parent's mtime",
+              base.stat().getMTime() > stat.getMTime());
         assertEquals("new file should have link count equal to one", newFile.stat().getNlink(), 1);
-        assertTrue("change count is not updated", stat.getGeneration() != base.stat().getGeneration());
+        assertTrue("change count is not updated",
+              stat.getGeneration() != base.stat().getGeneration());
     }
 
     @Test
@@ -139,9 +153,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode file2 = base.create("testCreateFilePermission2", 0, 0, mode2);
 
         assertEquals("creare pemissions are not respected",
-                file1.stat().getMode() & UnixPermission.S_PERMS, mode1);
+              file1.stat().getMode() & UnixPermission.S_PERMS, mode1);
         assertEquals("creare pemissions are not respected",
-                file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
+              file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
 
     }
 
@@ -156,12 +170,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("owner is not respected", file1.stat().getUid(), 0);
         assertEquals("setgid is not respected", file1.stat().getGid(), 2);
         assertEquals("create pemissions are not respected",
-                file1.stat().getMode() & UnixPermission.S_PERMS, mode1);
+              file1.stat().getMode() & UnixPermission.S_PERMS, mode1);
 
         assertEquals("owner is not respected", file2.stat().getUid(), 0);
         assertEquals("setgid is not respected", file2.stat().getGid(), 2);
         assertEquals("create pemissions are not respected",
-                file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
+              file2.stat().getMode() & UnixPermission.S_PERMS, mode2);
     }
 
     @Test // (expected=FileExistsChimeraFsException.class)
@@ -196,7 +210,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         }
     }
 
-    @Test(expected= DirNotEmptyChimeraFsException.class)
+    @Test(expected = DirNotEmptyChimeraFsException.class)
     public void testDeleteNonEmptyDir() throws Exception {
 
         FsInode base = _rootInode.mkdir("junit");
@@ -218,8 +232,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         base.remove("testCreateFile");
 
-        assertEquals("remove have to decrease parents link count", base.stat().getNlink(), stat.getNlink() - 1);
-        assertFalse("remove have to update parent's mtime", stat.getMTime() == base.stat().getMTime());
+        assertEquals("remove have to decrease parents link count", base.stat().getNlink(),
+              stat.getNlink() - 1);
+        assertFalse("remove have to update parent's mtime",
+              stat.getMTime() == base.stat().getMTime());
 
     }
 
@@ -235,12 +251,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         base.remove("testCreateDir");
 
-        assertEquals("remove have to decrease parents link count", base.stat().getNlink(), stat.getNlink() - 1);
-        assertFalse("remove have to update parent's mtime", stat.getMTime() == base.stat().getMTime());
+        assertEquals("remove have to decrease parents link count", base.stat().getNlink(),
+              stat.getNlink() - 1);
+        assertFalse("remove have to update parent's mtime",
+              stat.getMTime() == base.stat().getMTime());
 
     }
 
-    @Test(expected= FileNotFoundChimeraFsException.class)
+    @Test(expected = FileNotFoundChimeraFsException.class)
     public void testDeleteNonExistingFile() throws Exception {
         _rootInode.remove("testCreateFile");
     }
@@ -274,29 +292,27 @@ public class BasicTest extends ChimeraTestCaseHelper {
             // OK
         }
     }
+
     private final static int PARALLEL_THREADS_COUNT = 10;
 
     /**
-     * Run some database activity in a separate thread, providing a
-     * ListenableFuture of that activity's result.
-     * A <i>CountDownLatch</i> is accepted for synchronising the start of the
+     * Run some database activity in a separate thread, providing a ListenableFuture of that
+     * activity's result. A <i>CountDownLatch</i> is accepted for synchronising the start of the
      * task.
      */
-    private static class ParallelDbFuture<T> extends AbstractFuture<T> implements Runnable
-    {
+    private static class ParallelDbFuture<T> extends AbstractFuture<T> implements Runnable {
+
         private final Thread _thread;
         private final Callable<T> _task;
         private final CountDownLatch _start;
 
-        public ParallelDbFuture(CountDownLatch start, Callable<T> task)
-        {
+        public ParallelDbFuture(CountDownLatch start, Callable<T> task) {
             _thread = new Thread(this);
             _start = start;
             _task = task;
         }
 
-        public void start()
-        {
+        public void start() {
             _thread.start();
         }
 
@@ -312,17 +328,16 @@ public class BasicTest extends ChimeraTestCaseHelper {
         }
     }
 
-    @Test(timeout=60_000)
-    public void testParallelCreate() throws ChimeraFsException
-    {
+    @Test(timeout = 60_000)
+    public void testParallelCreate() throws ChimeraFsException {
         FsInode base = _rootInode.mkdir("junit");
         Stat stat = base.stat();
 
         CountDownLatch start = new CountDownLatch(PARALLEL_THREADS_COUNT);
         List<ParallelDbFuture> futures = IntStream.range(0, PARALLEL_THREADS_COUNT)
-                .mapToObj(i -> "file-" + i)
-                .map(name -> new ParallelDbFuture<>(start, () -> base.create(name, 0, 0, 0644)))
-                .collect(Collectors.toList());
+              .mapToObj(i -> "file-" + i)
+              .map(name -> new ParallelDbFuture<>(start, () -> base.create(name, 0, 0, 0644)))
+              .collect(Collectors.toList());
         futures.stream().forEach(ParallelDbFuture::start);
 
         int nlink = stat.getNlink();
@@ -359,10 +374,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode hardLinkInode = _fs.createHLink(base, fileInode, "hardLinkTestDestinationFile");
 
-        assertEquals("hard link's  have to increase link count by one", stat.getNlink() + 1, hardLinkInode.stat().getNlink());
+        assertEquals("hard link's  have to increase link count by one", stat.getNlink() + 1,
+              hardLinkInode.stat().getNlink());
 
         _fs.remove(base, "hardLinkTestDestinationFile", hardLinkInode);
-        assertTrue("removing of hard link have to decrease link count by one", 1 == fileInode.stat().getNlink());
+        assertTrue("removing of hard link have to decrease link count by one",
+              1 == fileInode.stat().getNlink());
 
     }
 
@@ -432,11 +449,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
-
-
         assertTrue("can't move", ok);
-        assertEquals("link count of base directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
-        assertEquals("link count of file shold not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of base directory should not be modified in case of rename",
+              preStatBase.getNlink(), base.stat().getNlink());
+        assertEquals("link count of file shold not be modified in case of rename",
+              preStatFile.getNlink(), fileInode.stat().getNlink());
 
     }
 
@@ -453,7 +470,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of base directory should decrease by one", preStatBase.getNlink() - 1, base.stat().getNlink());
+        assertEquals("link count of base directory should decrease by one",
+              preStatBase.getNlink() - 1, base.stat().getNlink());
 
         assertFalse("ghost file", file2Inode.exists());
 
@@ -473,11 +491,13 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
-                     base.stat().getNlink());
-        assertEquals("link count of destination directory should increase on move in", preStatBase2.getNlink() + 1, base2.stat().getNlink());
+        assertEquals("link count of source directory should decrese on move out",
+              preStatBase.getNlink() - 1,
+              base.stat().getNlink());
+        assertEquals("link count of destination directory should increase on move in",
+              preStatBase2.getNlink() + 1, base2.stat().getNlink());
         assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
-                     fileInode.stat().getNlink());
+              fileInode.stat().getNlink());
 
     }
 
@@ -497,17 +517,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
-                     base.stat().getNlink());
-        assertEquals("link count of destination directory should not be modified on replace", preStatBase2.getNlink(), base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of source directory should decrese on move out",
+              preStatBase.getNlink() - 1,
+              base.stat().getNlink());
+        assertEquals("link count of destination directory should not be modified on replace",
+              preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
+              fileInode.stat().getNlink());
 
         assertFalse("ghost file", fileInode2.exists());
     }
 
     @Test
     public void testRenameHardLinkToItselfSameDir() throws Exception {
-
 
         FsInode base = _rootInode.mkdir("junit");
         FsInode fileInode = base.create("testCreateFile", 0, 0, 0644);
@@ -519,15 +541,16 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
-        assertEquals("link count of base directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
-        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(),
-                     fileInode.stat().getNlink());
+        assertEquals("link count of base directory should not be modified in case of rename",
+              preStatBase.getNlink(), base.stat().getNlink());
+        assertEquals("link count of file should not be modified in case of rename",
+              preStatFile.getNlink(),
+              fileInode.stat().getNlink());
 
     }
 
     @Test
     public void testRenameHardLinkToItselfNotSameDir() throws Exception {
-
 
         FsInode base = _rootInode.mkdir("junit");
         FsInode base2 = _rootInode.mkdir("junit2");
@@ -541,16 +564,18 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
-        assertEquals("link count of source directory should not be modified in case of rename", preStatBase.getNlink(),
-                     base.stat().getNlink());
-        assertEquals("link count of destination directory should not be modified in case of rename", preStatBase2.getNlink(), base2.stat().getNlink());
-        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of source directory should not be modified in case of rename",
+              preStatBase.getNlink(),
+              base.stat().getNlink());
+        assertEquals("link count of destination directory should not be modified in case of rename",
+              preStatBase2.getNlink(), base2.stat().getNlink());
+        assertEquals("link count of file should not be modified in case of rename",
+              preStatFile.getNlink(), fileInode.stat().getNlink());
 
     }
 
     @Test
-    public void testRemoveFileById() throws Exception
-    {
+    public void testRemoveFileById() throws Exception {
         long n = getDirEntryCount(_rootInode);
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.remove(file);
@@ -558,8 +583,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testRemoveSeveralHardlinksById() throws Exception
-    {
+    public void testRemoveSeveralHardlinksById() throws Exception {
         long n = getDirEntryCount(_rootInode);
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.createHLink(_rootInode, file, "bar");
@@ -569,34 +593,32 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testRemoveDirById() throws Exception
-    {
+    public void testRemoveDirById() throws Exception {
         long n = getDirEntryCount(_rootInode);
         FsInode foo = _rootInode.mkdir("foo");
         _fs.remove(foo);
         assertEquals(n, getDirEntryCount(_rootInode));
     }
 
-    @Test(expected= DirNotEmptyChimeraFsException.class)
-    public void testRemoveNonEmptyDirById() throws Exception
-    {
+    @Test(expected = DirNotEmptyChimeraFsException.class)
+    public void testRemoveNonEmptyDirById() throws Exception {
         FsInode foo = _rootInode.mkdir("foo");
         FsInode bar = foo.mkdir("bar");
         _fs.remove(foo);
     }
 
-    @Test(expected=InvalidArgumentChimeraException.class)
+    @Test(expected = InvalidArgumentChimeraException.class)
     public void testRemoveRootById() throws Exception {
         _fs.remove(_rootInode);
     }
 
-    @Test(expected= FileNotFoundChimeraFsException.class)
+    @Test(expected = FileNotFoundChimeraFsException.class)
     public void testRemoveNonexistgById() throws Exception {
         FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
         _fs.remove(inode);
     }
 
-    @Test(expected= FileNotFoundChimeraFsException.class)
+    @Test(expected = FileNotFoundChimeraFsException.class)
     public void testRemoveNonexistgByPath() throws Exception {
         FsInode base = _rootInode.mkdir("junit");
         base.remove("notexist");
@@ -618,15 +640,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals(n, getDirEntryCount(_rootInode));
     }
 
-    @Test(expected= DirNotEmptyChimeraFsException.class)
-    public void testRemoveNonEmptyDirByPath() throws Exception
-    {
+    @Test(expected = DirNotEmptyChimeraFsException.class)
+    public void testRemoveNonEmptyDirByPath() throws Exception {
         FsInode foo = _rootInode.mkdir("foo");
         FsInode bar = foo.mkdir("bar");
         _fs.remove("/foo");
     }
 
-    @Test(expected=InvalidArgumentChimeraException.class)
+    @Test(expected = InvalidArgumentChimeraException.class)
     public void testRemoveRootByPath() throws Exception {
         _fs.remove("/");
     }
@@ -656,8 +677,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
     public void testSetSizeNotExist() throws Exception {
 
         FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
-	Stat stat = new Stat();
-	stat.setSize(1);
+        Stat stat = new Stat();
+        stat.setSize(1);
 
         _fs.setInodeAttributes(inode, 0, stat);
     }
@@ -666,8 +687,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
     public void testChowneNotExist() throws Exception {
 
         FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
-	Stat stat = new Stat();
-	stat.setUid(3750);
+        Stat stat = new Stat();
+        stat.setUid(3750);
         _fs.setInodeAttributes(inode, 0, stat);
     }
 
@@ -766,15 +787,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResolveLinkOnPathToIds() throws Exception
-    {
+    public void testResolveLinkOnPathToIds() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "testDir".getBytes());
 
         List<FsInode> inodes = _fs.path2inodes("aLink", _rootInode);
         assertEquals("Link resolution did not work",
-                     Lists.newArrayList(_rootInode, linkInode, dirInode),
-                     inodes);
+              Lists.newArrayList(_rootInode, linkInode, dirInode),
+              inodes);
     }
 
     @Test
@@ -789,15 +809,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResolveLinkOnPathToIdsRelative() throws Exception
-    {
+    public void testResolveLinkOnPathToIdsRelative() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "../testDir".getBytes());
 
         List<FsInode> inodes = _fs.path2inodes("aLink", _rootInode);
         assertEquals("Link resolution did not work",
-                     Lists.newArrayList(_rootInode, linkInode, _rootInode, dirInode),
-                     inodes);
+              Lists.newArrayList(_rootInode, linkInode, _rootInode, dirInode),
+              inodes);
     }
 
     @Test(expected = FileExistsChimeraFsException.class)
@@ -820,16 +839,15 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResolveLinkOnPathToIdsAbsolute() throws Exception
-    {
+    public void testResolveLinkOnPathToIdsAbsolute() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode subdirInode = dirInode.mkdir("testDir2", 0, 0, 0755);
         FsInode linkInode = dirInode.createLink("aLink", 0, 0, 055, "/testDir/testDir2".getBytes());
 
         List<FsInode> inodes = _fs.path2inodes("aLink", dirInode);
         assertEquals("Link resolution did not work",
-                     Lists.newArrayList(dirInode, linkInode, _rootInode, dirInode, subdirInode),
-                     inodes);
+              Lists.newArrayList(dirInode, linkInode, _rootInode, dirInode, subdirInode),
+              inodes);
     }
 
     @Test
@@ -837,8 +855,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         long oldCtime = dirInode.stat().getCTime();
 
-	Stat stat = new Stat();
-	stat.setUid(3750);
+        Stat stat = new Stat();
+        stat.setUid(3750);
         dirInode.setStat(stat);
         assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
     }
@@ -849,8 +867,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldCtime = dirInode.stat().getCTime();
         long oldChage = dirInode.stat().getGeneration();
 
-	Stat stat = new Stat();
-	stat.setGid(3750);
+        Stat stat = new Stat();
+        stat.setGid(3750);
         dirInode.setStat(stat);
         assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
         assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
@@ -862,8 +880,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldCtime = dirInode.stat().getCTime();
         long oldChage = dirInode.stat().getGeneration();
 
-	Stat stat = new Stat();
-	stat.setMode(0700);
+        Stat stat = new Stat();
+        stat.setMode(0700);
         dirInode.setStat(stat);
         assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
         assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
@@ -875,8 +893,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldMtime = inode.stat().getMTime();
         long oldChage = inode.stat().getGeneration();
 
-	Stat stat = new Stat();
-	stat.setSize(17);
+        Stat stat = new Stat();
+        stat.setSize(17);
         inode.setStat(stat);
         assertTrue("The mtime is not updated", inode.stat().getMTime() >= oldMtime);
         assertTrue("change count is not updated", inode.stat().getGeneration() != oldChage);
@@ -886,14 +904,16 @@ public class BasicTest extends ChimeraTestCaseHelper {
     public void testSetAcl() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
 
-
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_SUBDIRECTORY.getValue(),
+              Who.USER, 1001));
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
+        aces.add(
+              new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER,
+                    1001));
 
         _fs.setACL(dirInode, aces);
         List<ACE> l2 = _fs.getACL(dirInode);
@@ -904,23 +924,22 @@ public class BasicTest extends ChimeraTestCaseHelper {
     public void testReSetAcl() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
 
-
         RsType rsType = RsType.FILE;
 
         List<ACE> aces = new ArrayList<>();
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
+              AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-                AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
+              AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
 
         _fs.setACL(dirInode, aces);
-        _fs.setACL(dirInode, new ArrayList<ACE>() );
+        _fs.setACL(dirInode, new ArrayList<ACE>());
         assertTrue(_fs.getACL(dirInode).isEmpty());
     }
 
-    @Test(expected= FileNotFoundChimeraFsException.class)
+    @Test(expected = FileNotFoundChimeraFsException.class)
     public void testGetInodeByPathNotExist() throws Exception {
         _fs.path2inode("/some/nonexisting/path");
         fail("Expected exception not thrown");
@@ -945,17 +964,17 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = NotDirChimeraException.class)
     public void testMoveIntoFile() throws Exception {
 
-	FsInode src = _rootInode.create("testMoveIntoFile1", 0, 0, 0644);
-	FsInode dest = _rootInode.create("testMoveIntoFile2", 0, 0, 0644);
-	_fs.rename(src, _rootInode, "testMoveIntoFile1", dest, "testMoveIntoFile3");
+        FsInode src = _rootInode.create("testMoveIntoFile1", 0, 0, 0644);
+        FsInode dest = _rootInode.create("testMoveIntoFile2", 0, 0, 0644);
+        _fs.rename(src, _rootInode, "testMoveIntoFile1", dest, "testMoveIntoFile3");
     }
 
     @Test(expected = FileExistsChimeraFsException.class)
     public void testMoveIntoDir() throws Exception {
 
-	FsInode src = _rootInode.create("testMoveIntoDir", 0, 0, 0644);
-	FsInode dir = _rootInode.mkdir("dir", 0, 0, 0755);
-	_fs.rename(src, _rootInode, "testMoveIntoDir", _rootInode, "dir");
+        FsInode src = _rootInode.create("testMoveIntoDir", 0, 0, 0644);
+        FsInode dir = _rootInode.mkdir("dir", 0, 0, 0755);
+        _fs.rename(src, _rootInode, "testMoveIntoDir", _rootInode, "dir");
     }
 
     @Test(expected = FileNotFoundChimeraFsException.class)
@@ -966,10 +985,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = DirNotEmptyChimeraFsException.class)
     public void testMoveNotEmptyDir() throws Exception {
 
-	FsInode dir1 = _rootInode.mkdir("dir1", 0, 0, 0755);
-	FsInode dir2 = _rootInode.mkdir("dir2", 0, 0, 0755);
-	FsInode src = dir2.create("testMoveIntoDir", 0, 0, 0644);
-	_fs.rename(dir1, _rootInode, "dir1", _rootInode, "dir2");
+        FsInode dir1 = _rootInode.mkdir("dir1", 0, 0, 0755);
+        FsInode dir2 = _rootInode.mkdir("dir2", 0, 0, 0755);
+        FsInode src = dir2.create("testMoveIntoDir", 0, 0, 0644);
+        _fs.rename(dir1, _rootInode, "dir1", _rootInode, "dir2");
     }
 
     @Test
@@ -1013,8 +1032,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
         FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
-	Stat stat = new Stat();
-	stat.setUid(1);
+        Stat stat = new Stat();
+        stat.setUid(1);
         tagInode.setStat(stat);
 
         assertEquals(1, tagInode.stat().getUid());
@@ -1027,8 +1046,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
         FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
-	Stat stat = new Stat();
-	stat.setGid(1);
+        Stat stat = new Stat();
+        stat.setGid(1);
         tagInode.setStat(stat);
 
         assertEquals(1, tagInode.stat().getGid());
@@ -1041,8 +1060,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
         FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
-	Stat stat = new Stat();
-	stat.setMode(0007);
+        Stat stat = new Stat();
+        stat.setMode(0007);
         tagInode.setStat(stat);
 
         assertEquals(0007 | UnixPermission.S_IFREG, tagInode.stat().getMode());
@@ -1094,9 +1113,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testGenerationOnReaddir() throws Exception {
         FsInode inode = _rootInode.mkdir("junit");
-	Stat stat = new Stat();
+        Stat stat = new Stat();
         inode.setStat(stat); // to bump generation
-        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(_rootInode)) {
+        try (DirectoryStreamB<ChimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(
+              _rootInode)) {
 
             for (ChimeraDirectoryEntry entry : dirStream) {
                 if (entry.getName().equals("junit") && entry.getStat().getGeneration() == 1) {
@@ -1109,7 +1129,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     private void assertHasChecksum(Checksum expectedChecksum, FsInode inode) throws Exception {
-        for(Checksum checksum: _fs.getInodeChecksums(inode)) {
+        for (Checksum checksum : _fs.getInodeChecksums(inode)) {
             if (checksum.equals(expectedChecksum)) {
                 return;
             }
@@ -1202,38 +1222,45 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testCreateBlockDev() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aBlockDev", 0, 0, 0644 |  UnixPermission.S_IFBLK,  UnixPermission.S_IFBLK);
+        _fs.createFile(_rootInode, "aBlockDev", 0, 0, 0644 | UnixPermission.S_IFBLK,
+              UnixPermission.S_IFBLK);
     }
 
     @Test
     public void testCreateCharDev() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aCharDev", 0, 0, 0644 | UnixPermission.S_IFCHR, UnixPermission.S_IFCHR);
+        _fs.createFile(_rootInode, "aCharDev", 0, 0, 0644 | UnixPermission.S_IFCHR,
+              UnixPermission.S_IFCHR);
     }
 
     @Test
     public void testCreateSocketDev() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aSocket", 0, 0, 0644 | UnixPermission.S_IFSOCK, UnixPermission.S_IFSOCK);
+        _fs.createFile(_rootInode, "aSocket", 0, 0, 0644 | UnixPermission.S_IFSOCK,
+              UnixPermission.S_IFSOCK);
     }
 
     @Test
     public void testCreateFifoDev() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aFifo", 0, 0, 0644 | UnixPermission.S_IFIFO, UnixPermission.S_IFIFO);
+        _fs.createFile(_rootInode, "aFifo", 0, 0, 0644 | UnixPermission.S_IFIFO,
+              UnixPermission.S_IFIFO);
     }
 
     @Test
     public void testCreateSymLink() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aSymlink", 0, 0, 0644 | UnixPermission.S_IFLNK, UnixPermission.S_IFLNK);
+        _fs.createFile(_rootInode, "aSymlink", 0, 0, 0644 | UnixPermission.S_IFLNK,
+              UnixPermission.S_IFLNK);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateDir() throws ChimeraFsException {
-        _fs.createFile(_rootInode, "aDir", 0, 0, 0755 | UnixPermission.S_IFDIR, UnixPermission.S_IFDIR);
+        _fs.createFile(_rootInode, "aDir", 0, 0, 0755 | UnixPermission.S_IFDIR,
+              UnixPermission.S_IFDIR);
     }
 
     @Test
     public void testLevelCreation() throws ChimeraFsException {
 
-        FsInode file = _fs.createFile(_rootInode, "aFile", 0, 0, 0755 | UnixPermission.S_IFREG, UnixPermission.S_IFREG);
+        FsInode file = _fs.createFile(_rootInode, "aFile", 0, 0, 0755 | UnixPermission.S_IFREG,
+              UnixPermission.S_IFREG);
         FsInode level = _fs.createFileLevel(file, 2);
 
         byte[] data = "some random data".getBytes(UTF_8);
@@ -1269,8 +1296,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.remove(_rootInode, "top", top);
 
         // as we don't have a way to access tags, use direct SQL
-        try(Connection c = _dataSource.getConnection()) {
-            ResultSet rs = c.createStatement().executeQuery("SELECT * from t_tags where itagid=" + tagid);
+        try (Connection c = _dataSource.getConnection()) {
+            ResultSet rs = c.createStatement()
+                  .executeQuery("SELECT * from t_tags where itagid=" + tagid);
             // on last remove tag must be gone
             assertFalse("Tag is not garbage collected on last remove", rs.next());
         }
@@ -1294,7 +1322,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertArrayEquals(new String[0], _fs.tags(d));
 
         _fs.pushTag(top, tagName);
-        assertArrayEquals(new String[] {tagName}, _fs.tags(d));
+        assertArrayEquals(new String[]{tagName}, _fs.tags(d));
     }
 
     @Test
@@ -1303,7 +1331,6 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode = _rootInode.create(name, 0, 0, 0644);
         String id = inode.getId();
 
-
         // ensure location to get entry in the trash table
         _fs.addInodeLocation(inode, 1, "aPool");
         JdbcTemplate jdbc = new JdbcTemplate(_dataSource);
@@ -1311,13 +1338,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
         // wind back timestamp
         Instant day0 = Instant.parse("2000-09-16T09:00:00.00Z"); // dCache birth day
         jdbc.update("update t_locationinfo set ictime=?",
-                ps -> ps.setTimestamp(1, Timestamp.from(day0)));
+              ps -> ps.setTimestamp(1, Timestamp.from(day0)));
 
         _fs.remove(_rootInode, name, inode);
 
-        Timestamp ctime = jdbc.query("SELECT * from t_locationinfo_trash where ipnfsid=? and itype=1",
-                ps -> ps.setString(1, id),
-                rs -> rs.next() ? rs.getTimestamp("ictime"): null);
+        Timestamp ctime = jdbc.query(
+              "SELECT * from t_locationinfo_trash where ipnfsid=? and itype=1",
+              ps -> ps.setString(1, id),
+              rs -> rs.next() ? rs.getTimestamp("ictime") : null);
 
         assertNotNull("No entries in trash table", ctime);
 
@@ -1341,8 +1369,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
         file2.setStat(stat);
 
         FsStat fsStat = _fs.getFsStat();
-        assertThat(fsStat.getUsedFiles(),greaterThan(0L));
+        assertThat(fsStat.getUsedFiles(), greaterThan(0L));
     }
+
     @Test
     public void testEmptyFsStat() throws ChimeraFsException {
 
@@ -1362,7 +1391,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value, SetXattrMode.CREATE);
         assertThat("inode generate must be update on xattr create",
-                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+              _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
         byte[] result = _fs.getXattr(inode, key);
 
         assertArrayEquals("Get xattr returns unexpected value", value, result);
@@ -1404,7 +1433,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value2, SetXattrMode.REPLACE);
         assertThat("inode generation must be update on xattr replace",
-                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+              _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
 
         byte[] result = _fs.getXattr(inode, key);
 
@@ -1428,7 +1457,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat s0 = _fs.stat(inode);
         _fs.setXattr(inode, key, value2, SetXattrMode.EITHER);
         assertThat("inode generation must be update on xattr create/replace",
-                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+              _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
 
         result = _fs.getXattr(inode, key);
 
@@ -1490,7 +1519,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat s0 = _fs.stat(inode);
         _fs.removeXattr(inode, key);
         assertThat("inode generation must be update on xattr remote",
-                _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
+              _fs.stat(inode).getGeneration(), greaterThan(s0.getGeneration()));
     }
 
     private long getDirEntryCount(FsInode dir) throws IOException {

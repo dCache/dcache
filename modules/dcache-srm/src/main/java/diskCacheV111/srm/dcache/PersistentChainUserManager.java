@@ -17,11 +17,9 @@
  */
 package diskCacheV111.srm.dcache;
 
-import com.google.common.base.Throwables;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.springframework.dao.DataRetrievalFailureException;
-
-import javax.sql.DataSource;
+import static diskCacheV111.srm.dcache.CanonicalizingByteArrayStore.Token;
+import static eu.emi.security.authn.x509.impl.OpensslNameUtils.convertFromRfc2253;
+import static eu.emi.security.authn.x509.proxy.ProxyUtils.getOriginalUserDN;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertPath;
@@ -29,48 +27,43 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-
+import javax.sql.DataSource;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
-
-import static diskCacheV111.srm.dcache.CanonicalizingByteArrayStore.Token;
-import static eu.emi.security.authn.x509.impl.OpensslNameUtils.convertFromRfc2253;
-import static eu.emi.security.authn.x509.proxy.ProxyUtils.getOriginalUserDN;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
+import org.springframework.dao.DataRetrievalFailureException;
 
 /**
- * An SRM user manager that delegates authorization and user mapping to a {@code LoginStrategy}
- * and persists users by storing the encoded X.509 certificate chain to a database.
- *
- * Upon restoring users from the database a new login session is established by delegating
- * to the {@code LoginStrategy}. This does present a unique failure mode in which the login
- * may fail upon restore. In that case a special user instance that is flagged as not being
- * logged in is returned.
- *
- * Due to the repeated login, the mapped user identity may change upon restore (this may
- * be considered a feature).
+ * An SRM user manager that delegates authorization and user mapping to a {@code LoginStrategy} and
+ * persists users by storing the encoded X.509 certificate chain to a database.
+ * <p>
+ * Upon restoring users from the database a new login session is established by delegating to the
+ * {@code LoginStrategy}. This does present a unique failure mode in which the login may fail upon
+ * restore. In that case a special user instance that is flagged as not being logged in is
+ * returned.
+ * <p>
+ * Due to the repeated login, the mapped user identity may change upon restore (this may be
+ * considered a feature).
  */
-public final class PersistentChainUserManager extends DcacheUserManager
-{
+public final class PersistentChainUserManager extends DcacheUserManager {
+
     private static final String ENCODING = "PkiPath";
     private static final String TYPE = "PkiPath";
 
-    public PersistentChainUserManager(LoginStrategy loginStrategy, DataSource dataSource)
-    {
+    public PersistentChainUserManager(LoginStrategy loginStrategy, DataSource dataSource) {
         super(loginStrategy, dataSource, TYPE);
     }
 
     @Override
-    protected byte[] encode(CertPath path, LoginReply login) throws CertificateEncodingException
-    {
+    protected byte[] encode(CertPath path, LoginReply login) throws CertificateEncodingException {
         return path.getEncoded(ENCODING);
     }
 
     @Override
-    protected SRMUser decode(String clientHost, Token token, byte[] encoded)
-    {
+    protected SRMUser decode(String clientHost, Token token, byte[] encoded) {
         try {
             CertPath path = cf.generateCertPath(new ByteArrayInputStream(encoded), ENCODING);
             try {
@@ -93,8 +86,7 @@ public final class PersistentChainUserManager extends DcacheUserManager
         }
     }
 
-    private GlobusPrincipal getGlobusPrincipal(CertPath path)
-    {
+    private GlobusPrincipal getGlobusPrincipal(CertPath path) {
         List<X509Certificate> certificates = (List<X509Certificate>) path.getCertificates();
         X509Certificate[] chain = certificates.toArray(X509Certificate[]::new);
         return new GlobusPrincipal(convertFromRfc2253(getOriginalUserDN(chain).getName(), true));

@@ -63,137 +63,114 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- *  Generic bulk request.  It is up to the request store to
- *  map the request to an appropriate id and type.
+ * Generic bulk request.  It is up to the request store to map the request to an appropriate id and
+ * type.
  */
-public class BulkRequest implements Serializable
-{
+public class BulkRequest implements Serializable {
+
     private static final long serialVersionUID = 5314015926727327490L;
 
-    public enum Depth
-    {
+    public enum Depth {
         NONE, TARGETS, ALL
     }
 
-    private String              urlPrefix;
-    private String              id;
-    private String              target;
-    private String              targetPrefix;
-    private String              activity;
-    private boolean             clearOnSuccess;
-    private boolean             clearOnFailure;
-    private boolean             cancelOnFailure;
-    private Integer             delayClear;
+    private String urlPrefix;
+    private String id;
+    private String target;
+    private String targetPrefix;
+    private String activity;
+    private boolean clearOnSuccess;
+    private boolean clearOnFailure;
+    private boolean cancelOnFailure;
+    private Integer delayClear;
     private Map<String, String> arguments;
-    private Depth               expandDirectories;
+    private Depth expandDirectories;
 
-    public String getActivity()
-    {
+    public String getActivity() {
         return activity;
     }
 
-    public Map<String, String> getArguments()
-    {
+    public Map<String, String> getArguments() {
         return arguments;
     }
 
-    public Integer getDelayClear()
-    {
+    public Integer getDelayClear() {
         return delayClear;
     }
 
-    public Depth getExpandDirectories()
-    {
+    public Depth getExpandDirectories() {
         return expandDirectories;
     }
 
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    public String getTarget()
-    {
+    public String getTarget() {
         return target;
     }
 
-    public String getTargetPrefix()
-    {
+    public String getTargetPrefix() {
         return targetPrefix;
     }
 
-    public String getUrlPrefix()
-    {
+    public String getUrlPrefix() {
         return urlPrefix;
     }
 
-    public boolean isCancelOnFailure()
-    {
+    public boolean isCancelOnFailure() {
         return cancelOnFailure;
     }
 
-    public boolean isClearOnFailure()
-    {
+    public boolean isClearOnFailure() {
         return clearOnFailure;
     }
 
-    public boolean isClearOnSuccess()
-    {
+    public boolean isClearOnSuccess() {
         return clearOnSuccess;
     }
 
-    public void setActivity(String activity)
-    {
+    public void setActivity(String activity) {
         this.activity = activity;
     }
 
-    public void setArguments(Map<String, String> arguments)
-    {
+    public void setArguments(Map<String, String> arguments) {
         this.arguments = arguments;
     }
 
-    public void setCancelOnFailure(boolean cancelOnFailure)
-    {
+    public void setCancelOnFailure(boolean cancelOnFailure) {
         this.cancelOnFailure = cancelOnFailure;
     }
 
-    public void setClearOnFailure(boolean clearOnFailure)
-    {
+    public void setClearOnFailure(boolean clearOnFailure) {
         this.clearOnFailure = clearOnFailure;
     }
 
-    public void setClearOnSuccess(boolean clearOnSuccess)
-    {
+    public void setClearOnSuccess(boolean clearOnSuccess) {
         this.clearOnSuccess = clearOnSuccess;
     }
 
-    public void setDelayClear(Integer delayClear)
-    {
+    public void setDelayClear(Integer delayClear) {
         this.delayClear = delayClear;
     }
 
-    public void setExpandDirectories(Depth expandDirectories)
-    {
+    public void setExpandDirectories(Depth expandDirectories) {
         this.expandDirectories = expandDirectories;
     }
 
-    public void setId(String id)
-    {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public void setTarget(String target)
-    {
+    public void setTarget(String target) {
         this.target = target;
     }
 
-    public void setTargetPrefix(String targetPrefix)
-    {
+    public void setTargetPrefix(String targetPrefix) {
         this.targetPrefix = targetPrefix;
     }
 
-    public void setUrlPrefix(String urlPrefix)
-    {
+    public void setUrlPrefix(String urlPrefix) {
         this.urlPrefix = urlPrefix;
     }
 }

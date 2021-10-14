@@ -1,27 +1,22 @@
 package org.dcache.services.topology;
 
 import com.google.common.collect.Sets;
+import diskCacheV111.util.SpreadAndWait;
+import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellPath;
+import java.util.HashSet;
+import java.util.Set;
+import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import diskCacheV111.util.SpreadAndWait;
-
-import dmg.cells.network.CellDomainNode;
-import dmg.cells.nucleus.CellPath;
-
-import org.dcache.cells.CellStub;
-
 /**
- *
  * @author jans
  */
-public class CellsHostnameService implements HostnameService
-{
+public class CellsHostnameService implements HostnameService {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(CellsHostnameService.class);
+          LoggerFactory.getLogger(CellsHostnameService.class);
 
     private CellsTopology _topology;
     private Set<String> _hostnames = new HashSet<>();
@@ -36,7 +31,8 @@ public class CellsHostnameService implements HostnameService
     public void updateHostnames() {
         CellDomainNode[] info = _topology.getInfoMap();
         if (info == null) {
-            LOGGER.info("Cannot update host names. Domains not known yet. Try to run update first.");
+            LOGGER.info(
+                  "Cannot update host names. Domains not known yet. Try to run update first.");
             return;
         }
         LOGGER.debug("Host name update started");

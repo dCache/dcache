@@ -1,9 +1,15 @@
 package org.dcache.gplazma.plugins;
 
-import com.google.common.base.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.find;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
+import com.google.common.base.Strings;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -11,12 +17,6 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchResult;
-
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -25,15 +25,12 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Iterables.find;
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * gPlazma plug-in which uses NIS (YP) server to provide requested information.
- *
+ * <p>
  * Can be combined with other map/auth plugins:
  * <pre>
  *   auth optional  x509
@@ -47,7 +44,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  *
  * @since 2.1
  */
-public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin{
+public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Nis.class);
 
@@ -80,6 +77,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
     /**
      * Create a NIS identity plugin.
+     *
      * @throws NamingException
      */
     public Nis(Properties properties) throws NamingException {
@@ -92,7 +90,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
         Properties env = new Properties();
         env.put(DirContext.INITIAL_CONTEXT_FACTORY,
-                "com.sun.jndi.nis.NISCtxFactory");
+              "com.sun.jndi.nis.NISCtxFactory");
         env.put(DirContext.PROVIDER_URL, String.format("nis://%s/%s", server, domain));
 
         _ctx = new InitialDirContext(env);
@@ -102,21 +100,25 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     public void map(Set<Principal> principals) throws AuthenticationException {
         boolean mapped;
         Principal principal =
-                find(principals, instanceOf(UserNamePrincipal.class), null);
+              find(principals, instanceOf(UserNamePrincipal.class), null);
 
         checkAuthentication(principal != null, "no username principal");
 
         try {
-            Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
+            Attributes userAttr = _ctx.getAttributes(
+                  NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
             principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-            principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
+            principals.add(
+                  new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
             NamingEnumeration<SearchResult> groupResult = _ctx.search(NISMAP_GROUP_BY_NAME,
-                    new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
+                  new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
             mapped = true;
             while (groupResult.hasMore()) {
                 SearchResult result = groupResult.next();
                 principals.add(
-                        new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
+                      new GidPrincipal(
+                            (String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(),
+                            false));
             }
         } catch (NamingException e) {
             LOGGER.debug("Failed to get mapping: {}", e.toString());
@@ -153,8 +155,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
             if (principal instanceof GidPrincipal) {
                 NamingEnumeration<SearchResult> ne = _ctx.search(NISMAP_GROUP_BY_GID,
-                        new BasicAttributes(GID_NUMBER_ATTRIBUTE, id));
-
+                      new BasicAttributes(GID_NUMBER_ATTRIBUTE, id));
 
                 while (ne.hasMore()) {
                     SearchResult result = ne.next();
@@ -163,8 +164,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
                 }
             } else if (principal instanceof UidPrincipal) {
                 NamingEnumeration<SearchResult> ne = _ctx.search(NISMAP_PASSWORD_BY_UID,
-                        new BasicAttributes(UID_NUMBER_ATTRIBUTE, id));
-
+                      new BasicAttributes(UID_NUMBER_ATTRIBUTE, id));
 
                 while (ne.hasMore()) {
                     SearchResult result = ne.next();
@@ -180,18 +180,20 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     }
 
     @Override
-    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib)
+          throws AuthenticationException {
         Principal principal =
-            find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
+              find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
         checkAuthentication(principal != null, "no username principal");
 
         try {
-            Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
+            Attributes userAttr = _ctx.getAttributes(
+                  NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
             attrib.add(new HomeDirectory((String) userAttr.get(HOME_DIR_ATTRIBUTE).get()));
             attrib.add(new RootDirectory("/"));
         } catch (NamingException e) {
             throw new AuthenticationException("no mapping: "
-                    + e.getMessage(), e);
+                  + e.getMessage(), e);
         }
     }
 }

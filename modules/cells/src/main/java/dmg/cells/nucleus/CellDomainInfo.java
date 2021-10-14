@@ -17,16 +17,15 @@
  */
 package dmg.cells.nucleus;
 
-import java.io.Serializable;
-import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 import dmg.util.Releases;
 import dmg.util.Releases.BadVersionException;
+import java.io.Serializable;
+import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
+public class CellDomainInfo implements Serializable {
 
-public class CellDomainInfo implements Serializable
-{
     private static final long serialVersionUID = 486982068268709272L;
     private final String _domainName;
     private final String _version;
@@ -34,39 +33,33 @@ public class CellDomainInfo implements Serializable
     private CellDomainRole _role;
 
     public CellDomainInfo(String name, String version, CellDomainRole role,
-            Optional<String> zone)
-    {
+          Optional<String> zone) {
         _domainName = requireNonNull(name);
         _version = requireNonNull(version);
         _role = requireNonNull(role);
         _zone = zone.orElse(null);
     }
 
-    public String getVersion()
-    {
+    public String getVersion() {
         return _version;
     }
 
-    public short getRelease() throws BadVersionException
-    {
+    public short getRelease() throws BadVersionException {
         return _version == null ? Releases.PRE_2_6 : Releases.getRelease(_version);
     }
 
-    public String getCellDomainName()
-    {
+    public String getCellDomainName() {
         return _domainName;
     }
 
-    public CellDomainRole getRole()
-    {
+    public CellDomainRole getRole() {
         return _role;
     }
 
     /**
      * Returns the optional zone within which the remote domain resides.
      */
-    public Optional<String> getZone()
-    {
+    public Optional<String> getZone() {
         // NB. _zone may be null due to either the remote domain being
         // configured not to be part of a zone, or if the dCache version is
         // v5.1 or earlier.  In either case returning Optional.empty() correctly
@@ -74,8 +67,7 @@ public class CellDomainInfo implements Serializable
         return Optional.ofNullable(_zone);
     }
 
-    public String toString()
-    {
+    public String toString() {
         return _domainName + ',' + _version + ',' + _role;
     }
 }

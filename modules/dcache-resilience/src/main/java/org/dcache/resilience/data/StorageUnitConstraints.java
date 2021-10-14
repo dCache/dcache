@@ -60,25 +60,25 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * <p>Encapsulates the constraints for resilience, defined
- *      for a storage unit.  These include the number of copies required,
- *      and how they are to be distributed according to pool tags.</p>
+ * for a storage unit.  These include the number of copies required, and how they are to be
+ * distributed according to pool tags.</p>
  */
 public final class StorageUnitConstraints extends ResilienceMarker {
+
     /**
-     *  <p>The number of copies which should be maintained.</p>
+     * <p>The number of copies which should be maintained.</p>
      */
     private final Integer required;
 
     /**
-     *  <p>Copies should be distributed across pools in such a way that
-     *      no two copies have the same values for a given tag.</p>
+     * <p>Copies should be distributed across pools in such a way that
+     * no two copies have the same values for a given tag.</p>
      */
     private final ImmutableSet<String> oneCopyPer;
 
@@ -101,7 +101,7 @@ public final class StorageUnitConstraints extends ResilienceMarker {
         StorageUnitConstraints otherConstraints = (StorageUnitConstraints) other;
 
         return Objects.equals(required, otherConstraints.required)
-                        && this.oneCopyPer.equals(otherConstraints.oneCopyPer);
+              && this.oneCopyPer.equals(otherConstraints.oneCopyPer);
     }
 
     @Override
@@ -117,9 +117,9 @@ public final class StorageUnitConstraints extends ResilienceMarker {
     public int getRequired() {
         if (required == null) {
             throw new RuntimeException("Trying to verify required replicas "
-                                                       + "for a storage unit "
-                                                       + "which is not resilient; "
-                                                       + "this is a bug.");
+                  + "for a storage unit "
+                  + "which is not resilient; "
+                  + "this is a bug.");
         }
 
         return required;

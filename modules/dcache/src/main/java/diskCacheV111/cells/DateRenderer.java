@@ -1,16 +1,15 @@
 package diskCacheV111.cells;
 
 import com.google.common.collect.Maps;
-import org.stringtemplate.v4.AttributeRenderer;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import org.stringtemplate.v4.AttributeRenderer;
 
-public class DateRenderer implements AttributeRenderer
-{
+public class DateRenderer implements AttributeRenderer {
+
     private final Map<String, DateFormat> formatMap = Maps.newHashMap();
     private static final String DEFAULT_FORMAT_PATTERN = "MM.dd HH:mm:ss";
 

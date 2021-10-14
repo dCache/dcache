@@ -18,18 +18,17 @@
 package org.dcache.gridsite;
 
 import java.security.cert.CertPath;
-
 import org.dcache.delegation.gridsite2.DelegationException;
 
 /**
- * A class that implements CredentialDelegationFactory provides
- * CredentialDelegation objects.  These represent an agent's desire to
- * delegate a credential.
+ * A class that implements CredentialDelegationFactory provides CredentialDelegation objects.  These
+ * represent an agent's desire to delegate a credential.
  */
-public interface CredentialDelegationFactory
-{
+public interface CredentialDelegationFactory {
+
     /**
      * Return a fluent interface for building a CredentialDelegation object.
      */
-    CredentialDelegation newDelegation(DelegationIdentity id, CertPath certPath) throws DelegationException;
+    CredentialDelegation newDelegation(DelegationIdentity id, CertPath certPath)
+          throws DelegationException;
 }

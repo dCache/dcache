@@ -59,26 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
+import java.util.concurrent.TimeUnit;
 import org.dcache.cells.CellStub;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>The primary function of the services in support of
- *    the RESTful admin resources is to gather information
- *    from other dCache cells via messaging, and to cache it.</p>
+ * the RESTful admin resources is to gather information from other dCache cells via messaging, and
+ * to cache it.</p>
  *
  * <p>This class provides the common API for the collection of data.</p>
  */
 public abstract class CellMessagingCollector<D> implements CellMessageSender {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(CellMessagingCollector.class);
+          = LoggerFactory.getLogger(CellMessagingCollector.class);
 
     /**
      * <p>For querying various endpoints during information collection.</p>
@@ -88,7 +87,7 @@ public abstract class CellMessagingCollector<D> implements CellMessageSender {
     /**
      * <p>Should be overridden to do any special internal initialization.</p>
      *
-     * @param timeout cell timeout value.
+     * @param timeout  cell timeout value.
      * @param timeUnit cell timeout unit.
      */
     public void initialize(Long timeout, TimeUnit timeUnit) {
@@ -97,11 +96,11 @@ public abstract class CellMessagingCollector<D> implements CellMessageSender {
 
     /**
      * <p>Provides for dynamic changes to timeout period, e.g., from
-     *      an admin command.</p>
+     * an admin command.</p>
      *
      * <p>Should be called at least at initialization.</p>
      *
-     * @param timeout cell timeout value.
+     * @param timeout  cell timeout value.
      * @param timeUnit cell timeout unit.
      */
     public void reset(Long timeout, TimeUnit timeUnit) {

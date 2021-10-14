@@ -3,40 +3,11 @@ package org.dcache.services.ssh2;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import com.google.common.io.BaseEncoding;
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.common.FactoryManager;
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.common.PropertyResolverUtils;
-import org.apache.sshd.common.config.keys.KeyUtils;
-import org.apache.sshd.common.keyprovider.KeyPairProvider;
-import org.apache.sshd.common.session.Session;
-import org.apache.sshd.common.session.SessionListener;
-import org.apache.sshd.common.util.security.SecurityUtils;
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.command.CommandFactory;
-import org.apache.sshd.server.SshServer;
-import org.apache.sshd.server.auth.gss.GSSAuthenticator;
-import org.apache.sshd.server.auth.password.PasswordAuthenticator;
-import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
-import org.apache.sshd.server.session.ServerSession;
-
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.Origin;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.Subjects;
-import org.dcache.util.Glob;
-import org.dcache.util.Subnet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
-
+import diskCacheV111.util.AuthorizedKeyParser;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -51,42 +22,62 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.AuthorizedKeyParser;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
-
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import org.apache.sshd.common.Factory;
+import org.apache.sshd.common.FactoryManager;
+import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.config.keys.KeyUtils;
+import org.apache.sshd.common.keyprovider.KeyPairProvider;
+import org.apache.sshd.common.session.Session;
+import org.apache.sshd.common.session.SessionListener;
+import org.apache.sshd.common.util.security.SecurityUtils;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.gss.GSSAuthenticator;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.command.CommandFactory;
+import org.apache.sshd.server.session.ServerSession;
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.Subjects;
 import org.dcache.util.Files;
+import org.dcache.util.Glob;
 import org.dcache.util.NetLoggerBuilder;
+import org.dcache.util.Subnet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * This class starts the ssh server. It is however not started in the
- * constructor, but in afterStart() to avoid race conditions. The class starts
- * the UserAdminShell via the factory CommandFactory, which in turn create the
- * Command_ConsoleReader that actually creates an instance of UserAdminShell.
+ * This class starts the ssh server. It is however not started in the constructor, but in
+ * afterStart() to avoid race conditions. The class starts the UserAdminShell via the factory
+ * CommandFactory, which in turn create the Command_ConsoleReader that actually creates an instance
+ * of UserAdminShell.
  *
  * @author bernardt
  */
-public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
-{
+public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware {
+
     private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private static final Logger _accessLog =
-            LoggerFactory.getLogger("org.dcache.access.ssh2");
+          LoggerFactory.getLogger("org.dcache.access.ssh2");
 
     // get the user part from a public key line like
     // ... ssh-rsa AAAA...... user@hostname
     private static final Pattern _pubKeyFileUsername =
-            Pattern.compile(".*ssh-.* (.*?)@.*");
+          Pattern.compile(".*ssh-.* (.*?)@.*");
 
     private final SshServer _server;
     // UniversalSpringCell injected parameters
@@ -98,10 +89,13 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private LoginStrategy _loginStrategy;
     private TimeUnit _idleTimeoutUnit;
     private long _idleTimeout;
-    private enum Outcome { ALLOW, DENY, DEFER }
+
+    private enum Outcome {ALLOW, DENY, DEFER}
+
     // switches for different Authenticators
     private enum AuthenticationMechanism {KERBEROS, PASSWORD, PUBLICKEY}
-    private EnumSet<AuthenticationMechanism>  enabledAuthenticationMechanisms;
+
+    private EnumSet<AuthenticationMechanism> enabledAuthenticationMechanisms;
     private String keyTabFile;
 
     public Ssh2Admin() {
@@ -165,14 +159,12 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     @Required
-    public void setSubsystemFactories(List<NamedFactory<Command>> subsystemFactories)
-    {
+    public void setSubsystemFactories(List<NamedFactory<Command>> subsystemFactories) {
         _server.setSubsystemFactories(subsystemFactories);
     }
 
     @Required
-    public void setIdleTimeout(long timeout)
-    {
+    public void setIdleTimeout(long timeout) {
         _idleTimeout = timeout;
     }
 
@@ -184,14 +176,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     @Required
     public void setEnabledAuthenticationMechanisms(String mechanisms) {
         enabledAuthenticationMechanisms = EnumSet.copyOf(
-                Arrays.stream(
-                        Iterables.toArray(
+              Arrays.stream(
+                          Iterables.toArray(
                                 Splitter.on(',')
-                                        .trimResults()
-                                        .split(mechanisms.toUpperCase()),
+                                      .trimResults()
+                                      .split(mechanisms.toUpperCase()),
                                 String.class))
-                        .map(AuthenticationMechanism::valueOf)
-                        .collect(Collectors.toList()));
+                    .map(AuthenticationMechanism::valueOf)
+                    .collect(Collectors.toList()));
     }
 
     @Required
@@ -200,12 +192,15 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void configureAuthentication() {
-        _server.setGSSAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.KERBEROS) ?
-                new AdminGssAuthenticator() : null);
-        _server.setPasswordAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PASSWORD) ?
-                new AdminPasswordAuthenticator() : null);
-        _server.setPublickeyAuthenticator(enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PUBLICKEY) ?
-                new AdminPublickeyAuthenticator() : null);
+        _server.setGSSAuthenticator(
+              enabledAuthenticationMechanisms.contains(AuthenticationMechanism.KERBEROS) ?
+                    new AdminGssAuthenticator() : null);
+        _server.setPasswordAuthenticator(
+              enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PASSWORD) ?
+                    new AdminPasswordAuthenticator() : null);
+        _server.setPublickeyAuthenticator(
+              enabledAuthenticationMechanisms.contains(AuthenticationMechanism.PUBLICKEY) ?
+                    new AdminPublickeyAuthenticator() : null);
     }
 
     @Override
@@ -233,9 +228,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private void startServer() {
         long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout);
-        PropertyResolverUtils.updateProperty(_server, FactoryManager.IDLE_TIMEOUT, effectiveTimeout);
+        PropertyResolverUtils.updateProperty(_server, FactoryManager.IDLE_TIMEOUT,
+              effectiveTimeout);
         // esure, that read timeout is longer than idle timeout
-        PropertyResolverUtils.updateProperty(_server, FactoryManager.NIO2_READ_TIMEOUT, effectiveTimeout*2);
+        PropertyResolverUtils.updateProperty(_server, FactoryManager.NIO2_READ_TIMEOUT,
+              effectiveTimeout * 2);
 
         _server.setPort(_port);
         _server.setHost(_host);
@@ -248,8 +245,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
-    private void addOrigin(ServerSession session, Subject subject)
-    {
+    private void addOrigin(ServerSession session, Subject subject) {
         SocketAddress remote = session.getIoSession().getRemoteAddress();
         if (remote instanceof InetSocketAddress) {
             InetAddress address = ((InetSocketAddress) remote).getAddress();
@@ -258,21 +254,20 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void logLoginTry(String username, ServerSession session,
-                             String method, boolean successful, String reason)
-    {
+          String method, boolean successful, String reason) {
         NetLoggerBuilder.Level logLevel = NetLoggerBuilder.Level.INFO;
         if (!successful) {
             logLevel = NetLoggerBuilder.Level.WARN;
         }
 
         new NetLoggerBuilder(logLevel, "org.dcache.services.ssh2.login")
-                .omitNullValues()
-                .add("session", Sessions.connectionId(session))
-                .add("username", username)
-                .add("method", method)
-                .add("successful", successful)
-                .add("reason", reason)
-                .toLogger(_accessLog);
+              .omitNullValues()
+              .add("session", Sessions.connectionId(session))
+              .add("username", username)
+              .add("method", method)
+              .add("successful", successful)
+              .add("reason", reason)
+              .toLogger(_accessLog);
 
         // set session parameter
         if (successful) {
@@ -281,7 +276,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 session.setUsername(username);
             } catch (IOException e) {
                 _log.error("Failed to set Authenticated: {}",
-                        e.getMessage());
+                      e.getMessage());
             }
         }
     }
@@ -290,13 +285,13 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         @Override
         public boolean authenticate(String userName, String password,
-                ServerSession session) {
+              ServerSession session) {
             boolean successful = false;
             String reason = null;
             Subject subject = new Subject();
             addOrigin(session, subject);
             subject.getPrivateCredentials().add(new PasswordCredential(userName,
-                    password));
+                  password));
 
             try {
                 LoginReply reply = _loginStrategy.login(subject);
@@ -342,18 +337,19 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         @Override
         public boolean authenticate(String userName, PublicKey key,
-                ServerSession session) {
+              ServerSession session) {
             boolean successful = false;
             String reason = null;
             _log.debug("Authentication username set to: {} publicKey: {}",
-                    userName, key);
+                  userName, key);
             try {
-                try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
+                try (Stream<String> fileStream = java.nio.file.Files.lines(
+                      _authorizedKeyList.toPath())) {
                     String matchedPubKey = fileStream
-                            .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
-                            .filter(l -> key.equals(toPublicKey(l)))
-                            .findFirst()
-                            .orElse(null);
+                          .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
+                          .filter(l -> key.equals(toPublicKey(l)))
+                          .findFirst()
+                          .orElse(null);
 
                     if (null == matchedPubKey) {
                         reason = "key file: no match";
@@ -363,12 +359,12 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                         String keyUsername = getUserFromKeyLine(matchedPubKey);
                         if (keyUsername.isEmpty()) {
                             reason =
-                                "key file: no username@host for publickey set";
+                                  "key file: no username@host for publickey set";
                         } else if (userName.equals(keyUsername)) {
                             successful = true;
                         } else {
                             reason = "key file: different username for "
-                                    + "publickey expected";
+                                  + "publickey expected";
                         }
                     }
                 }
@@ -376,14 +372,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 _log.debug("File not found: {}", _authorizedKeyList);
             } catch (IOException e) {
                 _log.error("Failed to read {}: {}", _authorizedKeyList,
-                        e.getMessage());
+                      e.getMessage());
             }
 
             // the method gets called twice while pubkey authentication,
             // to avoid duplicate logging, check if already authenticated
             if (!session.isAuthenticated()) {
                 String method = "PublicKey (" + key.getAlgorithm() + " "
-                        + KeyUtils.getFingerPrint(key) + ")";
+                      + KeyUtils.getFingerPrint(key) + ")";
                 logLoginTry(userName, session, method, successful, reason);
             }
             return successful;
@@ -392,9 +388,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         private boolean isValidHost(String line, ServerSession session) {
             for (String linePart : Splitter.on(" ").trimResults().omitEmptyStrings().split(line)) {
                 if (linePart.startsWith("from=\"") && linePart.endsWith("\"")) {
-                    String from = linePart.substring(6, linePart.length()-1);
+                    String from = linePart.substring(6, linePart.length() - 1);
                     Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
-                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(from)) {
+                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings()
+                          .split(from)) {
                         outcomes.add(patternMatchesHost(pattern, session));
                     }
                     return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
@@ -419,7 +416,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     }
                 } else {
                     Glob glob = new Glob(pattern);
-                    if (glob.matches(remote.getHostName()) || glob.matches(remoteAddress.getHostAddress())) {
+                    if (glob.matches(remote.getHostName()) || glob.matches(
+                          remoteAddress.getHostAddress())) {
                         return matchOutcome;
                     }
                 }
@@ -429,25 +427,24 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
 
-
     private class AdminConnectionLogger implements SessionListener {
 
         @Override
         public void sessionCreated(Session session) {
             new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.connect")
-                    .omitNullValues()
-                    .add("session", Sessions.connectionId(session))
-                    .add("remote.socket", session.getIoSession()
-                            .getRemoteAddress())
-                    .toLogger(_accessLog);
+                  .omitNullValues()
+                  .add("session", Sessions.connectionId(session))
+                  .add("remote.socket", session.getIoSession()
+                        .getRemoteAddress())
+                  .toLogger(_accessLog);
         }
 
         @Override
         public void sessionClosed(Session session) {
             new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.services.ssh2.disconnect")
-                    .omitNullValues()
-                    .add("session", Sessions.connectionId(session))
-                    .toLogger(_accessLog);
+                  .omitNullValues()
+                  .add("session", Sessions.connectionId(session))
+                  .toLogger(_accessLog);
         }
     }
 
@@ -483,14 +480,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 successful = true;
             } catch (PermissionDeniedCacheException e) {
                 _log.error("Login for {} denied: {}",
-                           Strings.nullToEmpty(userName),
-                           e.getMessage());
+                      Strings.nullToEmpty(userName),
+                      e.getMessage());
                 reason = e.getMessage();
             } catch (CacheException e) {
                 reason = e.toString();
                 _log.error("Login for {} failed: {}",
-                           Strings.nullToEmpty(userName),
-                           e.toString());
+                      Strings.nullToEmpty(userName),
+                      e.toString());
             }
             logLoginTry(userName, session, "GSS", successful, reason);
             return successful;

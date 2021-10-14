@@ -59,18 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import static java.util.Objects.requireNonNull;
+
 import diskCacheV111.util.CacheException;
 import java.util.function.Consumer;
 import org.dcache.util.FireAndForgetTask;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- *  Base class which provides a Fire-and-Forget wrapper to catch and handle properly
- *  RuntimeExceptions.
+ * Base class which provides a Fire-and-Forget wrapper to catch and handle properly
+ * RuntimeExceptions.
  */
 public abstract class ErrorAwareTask implements Runnable {
-    protected Consumer<CacheException> errorHandler = (e) -> {};
+
+    protected Consumer<CacheException> errorHandler = (e) -> {
+    };
 
     public void setErrorHandler(Consumer<CacheException> handler) {
         errorHandler = requireNonNull(handler);
@@ -82,7 +84,7 @@ public abstract class ErrorAwareTask implements Runnable {
                 run();
             } catch (RuntimeException e) {
                 errorHandler.accept(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                                       "Bug detected: " + e.toString(), e));
+                      "Bug detected: " + e.toString(), e));
                 throw e;
             }
         });

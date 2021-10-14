@@ -64,17 +64,18 @@ import org.dcache.qos.listeners.QoSPoolScanResponseListener;
 import org.dcache.qos.vehicles.QoSScannerVerificationResponseMessage;
 
 /**
- *  Use this client when communicating with a remote scanner service.
+ * Use this client when communicating with a remote scanner service.
  */
 public final class RemoteQoSScannerClient implements QoSPoolScanResponseListener {
-  private CellStub scannerService;
 
-  @Override
-  public void scanRequestUpdated(String pool, int succeeded, int failed) {
-    scannerService.send(new QoSScannerVerificationResponseMessage(pool, succeeded, failed));
-  }
+    private CellStub scannerService;
 
-  public void setScannerService(CellStub scannerService) {
-    this.scannerService = scannerService;
-  }
+    @Override
+    public void scanRequestUpdated(String pool, int succeeded, int failed) {
+        scannerService.send(new QoSScannerVerificationResponseMessage(pool, succeeded, failed));
+    }
+
+    public void setScannerService(CellStub scannerService) {
+        this.scannerService = scannerService;
+    }
 }

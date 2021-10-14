@@ -17,65 +17,54 @@
  */
 package org.dcache.auth.attributes;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-
-import java.util.Collection;
-
 import diskCacheV111.util.FsPath;
-
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 /**
- * This class represents a restriction that only allows certain activities with
- * specific paths.
+ * This class represents a restriction that only allows certain activities with specific paths.
  */
-public class MultiTargetedRestriction implements Restriction
-{
+public class MultiTargetedRestriction implements Restriction {
+
     private static final EnumSet<Activity> ALLOWED_PARENT_ACTIVITIES
-            = EnumSet.of(Activity.LIST, Activity.READ_METADATA);
+          = EnumSet.of(Activity.LIST, Activity.READ_METADATA);
 
     /**
-     * An Authorisation is a set of activities that are allowed for some path
-     * and its children.
+     * An Authorisation is a set of activities that are allowed for some path and its children.
      */
-    public static class Authorisation implements Serializable, Comparable<Authorisation>
-    {
+    public static class Authorisation implements Serializable, Comparable<Authorisation> {
+
         private static final long serialVersionUID = 1L;
 
         private final EnumSet<Activity> activities;
         private final FsPath path;
 
-        public Authorisation(Collection<Activity> activities, FsPath path)
-        {
+        public Authorisation(Collection<Activity> activities, FsPath path) {
             this.activities = EnumSet.copyOf(activities);
             this.path = path;
         }
 
-        public EnumSet<Activity> getActivity()
-        {
+        public EnumSet<Activity> getActivity() {
             return activities;
         }
 
-        public FsPath getPath()
-        {
+        public FsPath getPath() {
             return path;
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return activities.hashCode() ^ path.hashCode();
         }
 
         @Override
-        public boolean equals(Object other)
-        {
+        public boolean equals(Object other) {
             if (other == this) {
                 return true;
             }
@@ -86,21 +75,19 @@ public class MultiTargetedRestriction implements Restriction
 
             Authorisation otherAuthorisation = (Authorisation) other;
             return otherAuthorisation.activities.equals(activities)
-                    && otherAuthorisation.path.equals(path);
+                  && otherAuthorisation.path.equals(path);
         }
 
         @Override
-        public int compareTo(Authorisation other)
-        {
+        public int compareTo(Authorisation other) {
             return ComparisonChain.start()
-                    .compare(this.path, other.path, Ordering.usingToString())
-                    .compare(this.activities, other.activities, Ordering.natural().lexicographical())
-                    .result();
+                  .compare(this.path, other.path, Ordering.usingToString())
+                  .compare(this.activities, other.activities, Ordering.natural().lexicographical())
+                  .result();
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "Authorisation{allowing " + activities + " on " + path + "}";
         }
     }
@@ -108,21 +95,18 @@ public class MultiTargetedRestriction implements Restriction
     private final Collection<Authorisation> authorisations;
 
     /**
-     * Create a Restriction based on the supplied collection of Authorisations.
-     * An Authorisation with the path FsPath.ROOT implies its activities are
-     * unrestricted.  If no authorisation has a particular activity then that
-     * activity is restricted for all paths.
+     * Create a Restriction based on the supplied collection of Authorisations. An Authorisation
+     * with the path FsPath.ROOT implies its activities are unrestricted.  If no authorisation has a
+     * particular activity then that activity is restricted for all paths.
      */
-    public MultiTargetedRestriction(Collection<Authorisation> authorisations)
-    {
+    public MultiTargetedRestriction(Collection<Authorisation> authorisations) {
         // Sort authorisations to form a canonical ordering.  This simplifies
         // MultiTargetedRestriction#hashCode and #equals methods.
         this.authorisations = authorisations.stream().sorted().collect(toImmutableList());
     }
 
     @Override
-    public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
-    {
+    public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
         for (Authorisation authorisation : authorisations) {
             FsPath allowedPath = authorisation.getPath();
             EnumSet<Activity> allowedActivity = authorisation.getActivity();
@@ -132,7 +116,7 @@ public class MultiTargetedRestriction implements Restriction
              *  but return false if parent is /path/to/other/dir.
              */
             if (allowedActivity.contains(activity) &&
-                    (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
+                  (allowedPath.hasPrefix(parent) || parent.hasPrefix(allowedPath))) {
                 return true;
             }
         }
@@ -140,8 +124,7 @@ public class MultiTargetedRestriction implements Restriction
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath path)
-    {
+    public boolean isRestricted(Activity activity, FsPath path) {
         for (Authorisation authorisation : authorisations) {
             FsPath allowedPath = authorisation.getPath();
             EnumSet<Activity> allowedActivity = authorisation.getActivity();
@@ -160,14 +143,12 @@ public class MultiTargetedRestriction implements Restriction
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String child)
-    {
+    public boolean isRestricted(Activity activity, FsPath directory, String child) {
         return isRestricted(activity, directory.child(child));
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -176,52 +157,47 @@ public class MultiTargetedRestriction implements Restriction
             return false;
         }
 
-        return ((MultiTargetedRestriction)other).authorisations.equals(authorisations);
+        return ((MultiTargetedRestriction) other).authorisations.equals(authorisations);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return authorisations.hashCode();
     }
 
     /**
-     * Check whether this restriction subsumes the other restriction.  Return
-     * true if this restriction is as restrictive or more restrictive than other.
+     * Check whether this restriction subsumes the other restriction.  Return true if this
+     * restriction is as restrictive or more restrictive than other.
      */
-    private boolean subsumes(MultiTargetedRestriction other)
-    {
+    private boolean subsumes(MultiTargetedRestriction other) {
         return authorisations.stream()
-                .allMatch(ap -> other.hasAuthorisationSubsumedBy(ap));
+              .allMatch(ap -> other.hasAuthorisationSubsumedBy(ap));
     }
 
     /**
-     * Return true iff this restriction has an Authorisation that is subsumed by
-     * other.
+     * Return true iff this restriction has an Authorisation that is subsumed by other.
      */
-    private boolean hasAuthorisationSubsumedBy(Authorisation other)
-    {
+    private boolean hasAuthorisationSubsumedBy(Authorisation other) {
         EnumSet<Activity> disallowedOtherActivities = EnumSet.complementOf(other.activities);
         return authorisations.stream()
-                .anyMatch(ap -> disallowedOtherActivities.containsAll(EnumSet.complementOf(ap.activities))
-                        && other.getPath().hasPrefix(ap.getPath()));
+              .anyMatch(
+                    ap -> disallowedOtherActivities.containsAll(EnumSet.complementOf(ap.activities))
+                          && other.getPath().hasPrefix(ap.getPath()));
     }
 
     @Override
-    public boolean isSubsumedBy(Restriction other)
-    {
+    public boolean isSubsumedBy(Restriction other) {
         if (other instanceof MultiTargetedRestriction) {
-            return ((MultiTargetedRestriction)other).subsumes(this);
+            return ((MultiTargetedRestriction) other).subsumes(this);
         }
 
         return false;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return authorisations.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
+              .map(Object::toString)
+              .collect(Collectors.joining(", ", "MultiTargetedRestriction[", "]"));
     }
 }

@@ -21,56 +21,49 @@ package org.dcache.chimera;
 
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
-
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.dcache.chimera.FileSystemProvider.PinInfo;
 
 /**
- * An FsInode representing the dot command that lists pins on the targeted
- * file, as returned by PinManager.  Reading the contents of this dot-command
- * file returns a table of all pins.  Fields are separated by tab command, with
- * missing optional values represented by a '-' character.
+ * An FsInode representing the dot command that lists pins on the targeted file, as returned by
+ * PinManager.  Reading the contents of this dot-command file returns a table of all pins.  Fields
+ * are separated by tab command, with missing optional values represented by a '-' character.
  */
-public class FsInode_PINS extends FsInode_PGET
-{
+public class FsInode_PINS extends FsInode_PGET {
+
     private static final Escaper REQUEST_ID_ESCAPER = Escapers.builder()
-        .addEscape('"', "\"")
-        .addEscape('\\', "\\")
-        .build();
+          .addEscape('"', "\"")
+          .addEscape('\\', "\\")
+          .build();
 
     private String value;
 
-    public FsInode_PINS(FileSystemProvider fs, long ino)
-    {
+    public FsInode_PINS(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.PINS);
     }
 
     @Override
-    protected String value() throws ChimeraFsException
-    {
+    protected String value() throws ChimeraFsException {
         if (value == null) {
             value = buildOutput();
         }
         return value;
     }
 
-    private String buildOutput() throws ChimeraFsException
-    {
+    private String buildOutput() throws ChimeraFsException {
         List<PinInfo> pins = _fs.listPins(this);
 
         return pins.isEmpty() ? "" : pins.stream()
-                .map(this::formatLine)
-                .collect(Collectors.joining("\n", "", "\n"));
+              .map(this::formatLine)
+              .collect(Collectors.joining("\n", "", "\n"));
     }
 
-    private String formatLine(PinInfo pin)
-    {
+    private String formatLine(PinInfo pin) {
         String displayExpiration = pin.getExpirationTime().map(Instant::toString).orElse("-");
-        String displayRequestId = pin.getRequestId().map(id -> "\"" + REQUEST_ID_ESCAPER.escape(id) + "\"").orElse("-");
+        String displayRequestId = pin.getRequestId()
+              .map(id -> "\"" + REQUEST_ID_ESCAPER.escape(id) + "\"").orElse("-");
         String displayUnpinnable = pin.isUnpinnable() ? "REMOVABLE" : "NONREMOVABLE";
 
         StringBuilder sb = new StringBuilder();

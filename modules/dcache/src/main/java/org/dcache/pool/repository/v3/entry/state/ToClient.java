@@ -20,9 +20,9 @@ public class ToClient {
 
 
     public String stringValue() {
-        if(_isSet) {
+        if (_isSet) {
             return "to_client";
-        }else{
+        } else {
             return "";
         }
     }

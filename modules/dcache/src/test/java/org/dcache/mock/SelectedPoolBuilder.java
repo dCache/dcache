@@ -18,56 +18,53 @@
  */
 package org.dcache.mock;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.mockito.Mockito.mock;
+
 import dmg.cells.nucleus.CellAddressCore;
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.SelectedPool;
 import org.mockito.BDDMockito;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.mockito.Mockito.mock;
-
 public class SelectedPoolBuilder {
-  /**
-   * Build a SelectedPool mock, based on the naming-convention that the
-   * pool name is also the cell's name.
-   * @param address The cell address (i.e., with a '@')
-   * @return a mocked SelectedPool.
-   */
-  public static SelectedPool aPool(String address)
-  {
-    int index = address.indexOf('@');
-    checkArgument(index > -1);
-    String name = address.substring(0, index);
-    return new SelectedPoolBuilder().withName(name).withAddress(address).build();
-  }
 
-  private final SelectedPool pool = mock(SelectedPool.class);
-  private final Assumption assumption = mock(Assumption.class);
+    /**
+     * Build a SelectedPool mock, based on the naming-convention that the pool name is also the
+     * cell's name.
+     *
+     * @param address The cell address (i.e., with a '@')
+     * @return a mocked SelectedPool.
+     */
+    public static SelectedPool aPool(String address) {
+        int index = address.indexOf('@');
+        checkArgument(index > -1);
+        String name = address.substring(0, index);
+        return new SelectedPoolBuilder().withName(name).withAddress(address).build();
+    }
 
-  public SelectedPoolBuilder()
-  {
-    BDDMockito.given(pool.assumption()).willReturn(assumption);
-  }
+    private final SelectedPool pool = mock(SelectedPool.class);
+    private final Assumption assumption = mock(Assumption.class);
 
-  public SelectedPoolBuilder withName(String name)
-  {
-    BDDMockito.given(pool.name()).willReturn(name);
-    return this;
-  }
+    public SelectedPoolBuilder() {
+        BDDMockito.given(pool.assumption()).willReturn(assumption);
+    }
 
-  public SelectedPoolBuilder withAddress(String address)
-  {
-    CellAddressCore addressCore = new CellAddressCore(address);
-    PoolInfo info = mock(PoolInfo.class);
-    BDDMockito.given(info.getAddress()).willReturn(addressCore);
-    BDDMockito.given(pool.info()).willReturn(info);
-    BDDMockito.given(pool.address()).willReturn(addressCore);
-    return this;
-  }
+    public SelectedPoolBuilder withName(String name) {
+        BDDMockito.given(pool.name()).willReturn(name);
+        return this;
+    }
 
-  public SelectedPool build()
-  {
-    return pool;
-  }
+    public SelectedPoolBuilder withAddress(String address) {
+        CellAddressCore addressCore = new CellAddressCore(address);
+        PoolInfo info = mock(PoolInfo.class);
+        BDDMockito.given(info.getAddress()).willReturn(addressCore);
+        BDDMockito.given(pool.info()).willReturn(info);
+        BDDMockito.given(pool.address()).willReturn(addressCore);
+        return this;
+    }
+
+    public SelectedPool build() {
+        return pool;
+    }
 }

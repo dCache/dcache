@@ -22,7 +22,7 @@ import java.io.Serializable;
 /**
  * A request for a CredentialServiceAnnouncement.
  */
-public class CredentialServiceRequest implements Serializable
-{
+public class CredentialServiceRequest implements Serializable {
+
     private static final long serialVersionUID = -5421189240277063482L;
 }

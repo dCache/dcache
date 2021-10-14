@@ -20,10 +20,10 @@ package org.dcache.restful.interceptors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Utf8;
-import org.apache.commons.io.input.TeeInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
@@ -34,19 +34,16 @@ import javax.ws.rs.ext.ReaderInterceptor;
 import javax.ws.rs.ext.ReaderInterceptorContext;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
+import org.apache.commons.io.input.TeeInputStream;
 import org.dcache.util.Exceptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Interceptor that supports the access log file.
+ * Interceptor that supports the access log file.
  */
-public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
-{
+public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggingInterceptor.class);
     private static final String REQUEST_ENTITY_KEY = "org.dcache.request";
     private static final String RESPONSE_ENTITY_KEY = "org.dcache.response";
@@ -58,39 +55,36 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
     @Context
     private HttpServletRequest request;
 
-    public static String getRequestEntity(ServletRequest request)
-    {
+    public static String getRequestEntity(ServletRequest request) {
         Object value = request.getAttribute(REQUEST_ENTITY_KEY);
         return value == null ? null : String.valueOf(value);
     }
 
-    public static String getResponseEntity(ServletRequest request)
-    {
+    public static String getResponseEntity(ServletRequest request) {
         Object value = request.getAttribute(RESPONSE_ENTITY_KEY);
         return value == null ? null : String.valueOf(value);
     }
 
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException,
-            WebApplicationException
-    {
+          WebApplicationException {
         ByteArrayOutputStream capture = new ByteArrayOutputStream();
         LimitedTeeOutputStream tee = new LimitedTeeOutputStream(context.getOutputStream(),
-                capture, MAXIMUM_FIELD_SIZE);
+              capture, MAXIMUM_FIELD_SIZE);
         context.setOutputStream(tee);
 
         try {
             context.proceed();
         } finally {
             String entity = describeEntity(capture.toByteArray(), context,
-                    tee.isBranchTruncated());
+                  tee.isBranchTruncated());
             request.setAttribute(RESPONSE_ENTITY_KEY, entity);
         }
     }
 
     @Override
-    public Object aroundReadFrom(ReaderInterceptorContext context) throws IOException, WebApplicationException
-    {
+    public Object aroundReadFrom(ReaderInterceptorContext context)
+          throws IOException, WebApplicationException {
         ByteArrayOutputStream capture = new ByteArrayOutputStream();
         InputStream tis = new TeeInputStream(context.getInputStream(), capture);
         context.setInputStream(tis);
@@ -104,15 +98,14 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
     }
 
     private String describeEntity(byte[] entityData, InterceptorContext context,
-            boolean isTruncated)
-    {
+          boolean isTruncated) {
         if (entityData.length == 0) {
             return null; /* suppress recording anything */
         } else if (Utf8.isWellFormed(entityData)) {
             String data = new String(entityData, StandardCharsets.UTF_8);
 
             if (isTruncated) {
-                return data.substring(0, data.length()-ELLIPSIS.length()) + ELLIPSIS;
+                return data.substring(0, data.length() - ELLIPSIS.length()) + ELLIPSIS;
             }
 
             MediaType type = context.getMediaType();
@@ -125,25 +118,28 @@ public class LoggingInterceptor implements ReaderInterceptor, WriterInterceptor
         }
     }
 
-    /** Avoid unnecessary white-space. */
-    private static String minimiseJson(String in)
-    {
+    /**
+     * Avoid unnecessary white-space.
+     */
+    private static String minimiseJson(String in) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readValue(in, JsonNode.class);
             return jsonNode.toString();
         } catch (IOException e) {
             LOGGER.warn("Failed to parse JSON \"{}\": {}", in,
-                    Exceptions.messageOrClassName(e));
+                  Exceptions.messageOrClassName(e));
             return in;
         }
     }
 
-    /** Enforce maximum field length. */
-    private static String truncate(String output)
-    {
+    /**
+     * Enforce maximum field length.
+     */
+    private static String truncate(String output) {
         if (output.length() > MAXIMUM_FIELD_SIZE) {
-            return output.substring(0, TRUNCATED_LENGTH) + "[...]" + output.substring(output.length() - TRUNCATED_LENGTH);
+            return output.substring(0, TRUNCATED_LENGTH) + "[...]" + output.substring(
+                  output.length() - TRUNCATED_LENGTH);
         } else {
             return output;
         }

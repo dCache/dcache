@@ -49,12 +49,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Iterator;
 import org.slf4j.IMarkerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import java.util.Iterator;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Provides internal API for constructing alarm markers.
@@ -62,6 +62,7 @@ import static java.util.Objects.requireNonNull;
  * @author arossi
  */
 public final class AlarmMarkerFactory {
+
     /**
      * The base marker; all alarms must carry this marker.
      */
@@ -73,8 +74,7 @@ public final class AlarmMarkerFactory {
     private static final String ALARM_MARKER_TYPE = "ALARM_TYPE";
 
     /**
-     * The key marker; submarker specifies the key properties determining alarm
-     * identity.
+     * The key marker; submarker specifies the key properties determining alarm identity.
      */
     private static final String ALARM_MARKER_KEY = "ALARM_KEY";
     private static final IMarkerFactory factory = MarkerFactory.getIMarkerFactory();
@@ -122,7 +122,7 @@ public final class AlarmMarkerFactory {
     private static Marker getSubmarker(Marker marker, String name) {
         requireNonNull(marker);
         requireNonNull(name);
-        for (Iterator<Marker> m = marker.iterator(); m.hasNext();) {
+        for (Iterator<Marker> m = marker.iterator(); m.hasNext(); ) {
             Marker next = m.next();
             if (name.equals(next.getName())) {
                 return next;

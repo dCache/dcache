@@ -60,15 +60,13 @@ documents or software obtained from this server.
 package org.dcache.alarms.dao.impl;
 
 import java.util.Collection;
-
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
 
 /**
- * For use with the 'off' Spring profile.
- * Should never be called, but just in case,
- * this avoids NPEs.
+ * For use with the 'off' Spring profile. Should never be called, but just in case, this avoids
+ * NPEs.
  */
 public class NOPLogEntryStore implements LogEntryDAO {
 

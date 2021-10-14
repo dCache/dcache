@@ -1,17 +1,16 @@
 package org.dcache.srm.scheduler;
 
+import static org.dcache.srm.scheduler.State.INPROGRESS;
+import static org.dcache.srm.scheduler.State.UNSCHEDULED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.BDDMockito.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.times;
+import static org.mockito.BDDMockito.verify;
+
 import com.google.common.collect.Lists;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import java.util.List;
-
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.CopyFileRequest;
@@ -24,22 +23,24 @@ import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
-
-import static org.dcache.srm.scheduler.State.INPROGRESS;
-import static org.dcache.srm.scheduler.State.UNSCHEDULED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.BDDMockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Scheduler.class, CopyRequest.class, CopyFileRequest.class,
-    GetRequest.class, GetFileRequest.class, PutRequest.class, PutFileRequest.class,
-    BringOnlineRequest.class, BringOnlineFileRequest.class,
-    LsRequest.class, LsFileRequest.class, ReserveSpaceRequest.class})
+      GetRequest.class, GetFileRequest.class, PutRequest.class, PutFileRequest.class,
+      BringOnlineRequest.class, BringOnlineFileRequest.class,
+      LsRequest.class, LsFileRequest.class, ReserveSpaceRequest.class})
 @PowerMockIgnore({"com.sun.org.apache.xerces.*",
-    "javax.xml.*", "org.xml.*", "org.w3c.*", "jdk.xml.*"})
-public class SchedulerContainerTests
-{
+      "javax.xml.*", "org.xml.*", "org.w3c.*", "jdk.xml.*"})
+public class SchedulerContainerTests {
+
     SchedulerContainer container;
     Scheduler getScheduler;
     Scheduler lsScheduler;
@@ -48,21 +49,18 @@ public class SchedulerContainerTests
     Scheduler reserveSpaceScheduler;
     Scheduler genericScheduler;
 
-    private Scheduler mockScheduler(Class<? extends Job> type, String id)
-    {
+    private Scheduler mockScheduler(Class<? extends Job> type, String id) {
         Scheduler scheduler = PowerMockito.mock(Scheduler.class);
         given(scheduler.getType()).willReturn(type);
         given(scheduler.getId()).willReturn(id);
         return scheduler;
     }
 
-    private <T extends Job> T mockJob(Class<T> type)
-    {
+    private <T extends Job> T mockJob(Class<T> type) {
         return mockJob(type, UNSCHEDULED, null);
     }
 
-    private <T extends Job> T mockJob(Class<T> type, State state, String schedulerId)
-    {
+    private <T extends Job> T mockJob(Class<T> type, State state, String schedulerId) {
         T job = PowerMockito.mock(type);
         given(job.getSchedulerType()).willCallRealMethod();
         given(job.getState()).willReturn(state);
@@ -72,27 +70,26 @@ public class SchedulerContainerTests
     }
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         getScheduler = mockScheduler(GetFileRequest.class, "get_localhost");
         lsScheduler = mockScheduler(LsFileRequest.class, "ls_localhost");
         putScheduler = mockScheduler(PutFileRequest.class, "put_localhost");
-        bringOnlineScheduler = mockScheduler(BringOnlineFileRequest.class, "bring_online_localhost");
+        bringOnlineScheduler = mockScheduler(BringOnlineFileRequest.class,
+              "bring_online_localhost");
         reserveSpaceScheduler = mockScheduler(ReserveSpaceRequest.class, "reserve_space_localhost");
         genericScheduler = mockScheduler(Job.class, "copy_localhost");
 
         container = new SchedulerContainer();
         List<Scheduler<?>> schedulers = Lists.<Scheduler<?>>newArrayList(getScheduler,
-                lsScheduler, putScheduler, bringOnlineScheduler,
-                reserveSpaceScheduler, genericScheduler);
+              lsScheduler, putScheduler, bringOnlineScheduler,
+              reserveSpaceScheduler, genericScheduler);
         container.setSchedulers(schedulers);
     }
 
     /* Check correct scheduler is selected when new Job is created */
 
     @Test
-    public void shouldScheduleCopyRequest() throws Exception
-    {
+    public void shouldScheduleCopyRequest() throws Exception {
         CopyRequest job = mockJob(CopyRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -103,8 +100,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleCopyFileRequest() throws Exception
-    {
+    public void shouldScheduleCopyFileRequest() throws Exception {
         CopyFileRequest job = mockJob(CopyFileRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -115,8 +111,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleGetRequest() throws Exception
-    {
+    public void shouldScheduleGetRequest() throws Exception {
         GetRequest job = mockJob(GetRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -127,8 +122,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleGetFileRequest() throws Exception
-    {
+    public void shouldScheduleGetFileRequest() throws Exception {
         GetFileRequest job = mockJob(GetFileRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -139,8 +133,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleBringOnlineRequest() throws Exception
-    {
+    public void shouldScheduleBringOnlineRequest() throws Exception {
         BringOnlineRequest job = mockJob(BringOnlineRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -151,8 +144,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleBringOnlineFileRequest() throws Exception
-    {
+    public void shouldScheduleBringOnlineFileRequest() throws Exception {
         BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -163,8 +155,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleLsFileRequest() throws Exception
-    {
+    public void shouldScheduleLsFileRequest() throws Exception {
         LsFileRequest job = mockJob(LsFileRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -175,8 +166,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleLsRequest() throws Exception
-    {
+    public void shouldScheduleLsRequest() throws Exception {
         LsRequest job = mockJob(LsRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -188,8 +178,7 @@ public class SchedulerContainerTests
 
 
     @Test
-    public void shouldSchedulePutFileRequest() throws Exception
-    {
+    public void shouldSchedulePutFileRequest() throws Exception {
         PutFileRequest job = mockJob(PutFileRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -200,8 +189,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldSchedulePutRequest() throws Exception
-    {
+    public void shouldSchedulePutRequest() throws Exception {
         PutRequest job = mockJob(PutRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -212,8 +200,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleReserveSpaceRequest() throws Exception
-    {
+    public void shouldScheduleReserveSpaceRequest() throws Exception {
         ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class);
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
 
@@ -230,8 +217,7 @@ public class SchedulerContainerTests
      * scheduling on SRM restart */
 
     @Test
-    public void shouldScheduleRestoredLsFileRequests() throws Exception
-    {
+    public void shouldScheduleRestoredLsFileRequests() throws Exception {
         LsFileRequest job = mockJob(LsFileRequest.class, INPROGRESS, "ls_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
@@ -242,10 +228,9 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredBringOnlineFileRequests() throws Exception
-    {
+    public void shouldScheduleRestoredBringOnlineFileRequests() throws Exception {
         BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class,
-                INPROGRESS, "bring_online_localhost");
+              INPROGRESS, "bring_online_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -255,10 +240,9 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredGetFileRequests() throws Exception
-    {
+    public void shouldScheduleRestoredGetFileRequests() throws Exception {
         GetFileRequest job = mockJob(GetFileRequest.class, INPROGRESS,
-                "get_localhost");
+              "get_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -268,8 +252,7 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredCopyRequests() throws Exception
-    {
+    public void shouldScheduleRestoredCopyRequests() throws Exception {
         CopyRequest job = mockJob(CopyRequest.class, INPROGRESS, "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
@@ -280,10 +263,9 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredCopyFileRequests() throws Exception
-    {
+    public void shouldScheduleRestoredCopyFileRequests() throws Exception {
         CopyFileRequest job = mockJob(CopyFileRequest.class, INPROGRESS,
-                "copy_localhost");
+              "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -293,10 +275,9 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredPutFileRequests() throws Exception
-    {
+    public void shouldScheduleRestoredPutFileRequests() throws Exception {
         PutFileRequest job = mockJob(PutFileRequest.class, INPROGRESS,
-                "put_localhost");
+              "put_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -306,10 +287,9 @@ public class SchedulerContainerTests
     }
 
     @Test
-    public void shouldScheduleRestoredReserveSpaceRequests() throws Exception
-    {
+    public void shouldScheduleRestoredReserveSpaceRequests() throws Exception {
         ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, INPROGRESS,
-                "reserve_space_localhost");
+              "reserve_space_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 

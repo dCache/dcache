@@ -20,68 +20,62 @@ package org.dcache.pool.classic;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-
 import dmg.cells.nucleus.CDC;
-
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
 
-public class RemoteGsiftpTransferService extends SecureRemoteTransferService
-{
+public class RemoteGsiftpTransferService extends SecureRemoteTransferService {
+
     private CanlContextFactory sslContextFactory;
     private String[] bannedCiphers;
     private PortRange portRange;
 
-    public String[] getBannedCiphers()
-    {
+    public String[] getBannedCiphers() {
         return bannedCiphers;
     }
 
-    public void setBannedCiphers(String[] bannedCiphers)
-    {
+    public void setBannedCiphers(String[] bannedCiphers) {
         this.bannedCiphers = bannedCiphers;
     }
 
-    public PortRange getPortRange()
-    {
+    public PortRange getPortRange() {
         return portRange;
     }
 
-    public void setPortRange(PortRange portRange)
-    {
+    public void setPortRange(PortRange portRange) {
         this.portRange = portRange;
     }
 
     @Override
-    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception
-    {
+    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception {
         MoverProtocol moverProtocol;
         if (info instanceof RemoteGsiftpTransferProtocolInfo) {
-            moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange, bannedCiphers, getContextFactory());
+            moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange,
+                  bannedCiphers, getContextFactory());
         } else {
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
-                    "Could not create third-party GSIFTP mover for " + info);
+                  "Could not create third-party GSIFTP mover for " + info);
         }
         return moverProtocol;
     }
 
-    private synchronized SslContextFactory getContextFactory()
-    {
+    private synchronized SslContextFactory getContextFactory() {
         if (sslContextFactory == null) {
             sslContextFactory =
-                    CanlContextFactory.custom()
-                            .withCertificateAuthorityPath(getCertificateAuthorityPath())
-                            .withCertificateAuthorityUpdateInterval(getCertificateAuthorityUpdateInterval(),
-                                                                    getCertificateAuthorityUpdateIntervalUnit())
-                            .withCrlCheckingMode(getCrlCheckingMode())
-                            .withOcspCheckingMode(getOcspCheckingMode())
-                            .withNamespaceMode(getNamespaceMode())
-                            .withLazy(false)
-                            .withLoggingContext(new CDC()::restore)
-                            .build();
+                  CanlContextFactory.custom()
+                        .withCertificateAuthorityPath(getCertificateAuthorityPath())
+                        .withCertificateAuthorityUpdateInterval(
+                              getCertificateAuthorityUpdateInterval(),
+                              getCertificateAuthorityUpdateIntervalUnit())
+                        .withCrlCheckingMode(getCrlCheckingMode())
+                        .withOcspCheckingMode(getOcspCheckingMode())
+                        .withNamespaceMode(getNamespaceMode())
+                        .withLazy(false)
+                        .withLoggingContext(new CDC()::restore)
+                        .build();
         }
         return sslContextFactory;
     }

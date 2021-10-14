@@ -60,16 +60,14 @@ documents or software obtained from this server.
 package org.dcache.alarms.messages;
 
 import com.google.common.base.Strings;
-
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.Reply;
 import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.vehicles.Message;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.Reply;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.LogEntry;
@@ -88,6 +86,7 @@ import org.dcache.vehicles.alarms.AlarmsUpdateMessage;
  * map, which gives available alarm types mapped to their priority.</p>
  */
 public class AlarmsRequestHandler implements CellMessageReceiver {
+
     private static Function<FieldSort, Comparator<LogEntry>> nextComparator() {
         return (sort) -> {
             Comparator<LogEntry> comparator;
@@ -119,8 +118,8 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                     break;
                 default:
                     throw new IllegalArgumentException(
-                                    "sort field " + sort.getName()
-                                                    + " not supported.");
+                          "sort field " + sort.getName()
+                                + " not supported.");
             }
 
             if (sort.isReverse()) {
@@ -141,33 +140,33 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
         final String info = message.getInfo();
 
         Predicate<LogEntry> matchesInclude =
-                        (entry) -> include == null || include || !entry.isClosed();
+              (entry) -> include == null || include || !entry.isClosed();
         Predicate<LogEntry> matchesSeverity =
-                        (entry) -> severity == null || AlarmPriority.get(entry.getSeverity()).name()
-                                                                    .contains(severity);
+              (entry) -> severity == null || AlarmPriority.get(entry.getSeverity()).name()
+                    .contains(severity);
         Predicate<LogEntry> matchesType =
-                        (entry) -> type == null || Strings.nullToEmpty(entry.getType())
-                                                          .contains(type);
+              (entry) -> type == null || Strings.nullToEmpty(entry.getType())
+                    .contains(type);
         Predicate<LogEntry> matchesHost =
-                        (entry) -> host == null || Strings.nullToEmpty(entry.getHost())
-                                                          .contains(host);
+              (entry) -> host == null || Strings.nullToEmpty(entry.getHost())
+                    .contains(host);
         Predicate<LogEntry> matchesDomain =
-                        (entry) -> domain == null || Strings.nullToEmpty(entry.getDomain())
-                                                            .contains(domain);
+              (entry) -> domain == null || Strings.nullToEmpty(entry.getDomain())
+                    .contains(domain);
         Predicate<LogEntry> matchesService =
-                        (entry) -> service == null || Strings.nullToEmpty(entry.getService())
-                                                             .contains(service);
+              (entry) -> service == null || Strings.nullToEmpty(entry.getService())
+                    .contains(service);
         Predicate<LogEntry> matchesInfo =
-                        (entry) -> info == null || Strings.nullToEmpty(entry.getInfo())
-                                                          .contains(info);
+              (entry) -> info == null || Strings.nullToEmpty(entry.getInfo())
+                    .contains(info);
         return matchesInclude.and(matchesSeverity).and(matchesType)
-                             .and(matchesHost).and(matchesDomain)
-                             .and(matchesService).and(matchesInfo);
+              .and(matchesHost).and(matchesDomain)
+              .and(matchesService).and(matchesInfo);
     }
 
     private AlarmPriorityMap map;
-    private LogEntryDAO      access;
-    private Executor         executor;
+    private LogEntryDAO access;
+    private Executor executor;
 
     public Reply messageArrived(AlarmsRequestMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
@@ -178,23 +177,23 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                 Long offset = message.getOffset();
                 Long limit = message.getLimit();
                 Comparator<LogEntry> sorter = FieldSort.getSorter(message.getSort(),
-                                                                  nextComparator());
+                      nextComparator());
                 /*
                  * 'type' on the db filter denotes exact match, so we do not
                  * use it here.
                  */
                 AlarmDAOFilter daofilter
-                                = AlarmJDOUtils.getFilter(after, before, null);
+                      = AlarmJDOUtils.getFilter(after, before, null);
                 Predicate<LogEntry> filter = getFilter(message);
                 message.setAlarms(access.get(daofilter)
-                                        .stream()
-                                        .map(this::setSeverity)
-                                        .filter(filter)
-                                        .sorted(sorter)
-                                        .skip(offset == null ? 0 : offset)
-                                        .limit(limit == null ? Long.MAX_VALUE :
-                                                               limit)
-                                        .collect(Collectors.toList()));
+                      .stream()
+                      .map(this::setSeverity)
+                      .filter(filter)
+                      .sorted(sorter)
+                      .skip(offset == null ? 0 : offset)
+                      .limit(limit == null ? Long.MAX_VALUE :
+                            limit)
+                      .collect(Collectors.toList()));
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

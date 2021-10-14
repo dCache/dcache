@@ -1,5 +1,11 @@
 package dmg.cells.nucleus;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -7,12 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class CellRoutingTableTest {
 
@@ -54,7 +54,7 @@ public class CellRoutingTableTest {
 
         routingTable.add(route);
         routingTable.delete(gateway);
-       assertEquals(0, routingTable.getRoutingList().length);
+        assertEquals(0, routingTable.getRoutingList().length);
     }
 
     @Test
@@ -91,12 +91,13 @@ public class CellRoutingTableTest {
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj( i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
-                .map(r -> r.getTarget())
-                .map(t -> t.toString())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(
+                    i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+              .map(r -> r.getTarget())
+              .map(t -> t.toString())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(2, alternativeRoutes.size());
     }
@@ -113,12 +114,13 @@ public class CellRoutingTableTest {
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
-                .map(r -> r.getTarget())
-                .map(t -> t.toString())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(
+                    i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+              .map(r -> r.getTarget())
+              .map(t -> t.toString())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(1, alternativeRoutes.size());
     }
@@ -174,12 +176,13 @@ public class CellRoutingTableTest {
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"), true))
-                .map(r -> r.getTarget())
-                .map(t -> t.toString())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"),
+                    true))
+              .map(r -> r.getTarget())
+              .map(t -> t.toString())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(1, alternativeRoutes.size());
     }
@@ -196,12 +199,13 @@ public class CellRoutingTableTest {
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
-                .map(r -> r.getTarget())
-                .map(t -> t.toString())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(
+                    i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+              .map(r -> r.getTarget())
+              .map(t -> t.toString())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(1, alternativeRoutes.size());
     }
@@ -211,18 +215,21 @@ public class CellRoutingTableTest {
 
         CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
         CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
-        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"), CellRoute.QUEUE);
-        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"), CellRoute.QUEUE);
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"),
+              CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"),
+              CellRoute.QUEUE);
 
         routingTable.add(route1);
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"), true))
-                .map(r -> r.getZone().get())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-A"),
+                    true))
+              .map(r -> r.getZone().get())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(1, alternativeRoutes.size());
         assertNotNull(alternativeRoutes.get("zone-A"));
@@ -233,18 +240,21 @@ public class CellRoutingTableTest {
 
         CellAddressCore gateway1 = new CellAddressCore("gw-1", "core-1");
         CellAddressCore gateway2 = new CellAddressCore("gw-2", "core-2");
-        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"), CellRoute.QUEUE);
-        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"), CellRoute.QUEUE);
+        CellRoute route1 = new CellRoute("cell-A", gateway1, Optional.of("zone-A"),
+              CellRoute.QUEUE);
+        CellRoute route2 = new CellRoute("cell-A", gateway2, Optional.of("zone-B"),
+              CellRoute.QUEUE);
 
         routingTable.add(route1);
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
-                .map(r -> r.getZone().get())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(
+                    i -> routingTable.find(new CellAddressCore("cell-A"), Optional.empty(), true))
+              .map(r -> r.getZone().get())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(2, alternativeRoutes.size());
     }
@@ -261,12 +271,13 @@ public class CellRoutingTableTest {
         routingTable.add(route2);
 
         Map<String, Long> alternativeRoutes = IntStream
-                .generate(() -> 1)
-                .limit(10)
-                .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-B"), true))
-                .map(r -> r.getTarget())
-                .map(t -> t.toString())
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+              .generate(() -> 1)
+              .limit(10)
+              .mapToObj(i -> routingTable.find(new CellAddressCore("cell-A"), Optional.of("zone-B"),
+                    true))
+              .map(r -> r.getTarget())
+              .map(t -> t.toString())
+              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         assertEquals(2, alternativeRoutes.size());
     }

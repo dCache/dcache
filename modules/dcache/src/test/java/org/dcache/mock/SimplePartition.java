@@ -30,51 +30,51 @@ import org.dcache.poolmanager.SelectedPool;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * This class provides a minimal concrete implementation of the Partition.
- * All partition-specific behaviour is left unimplemented.
+ * This class provides a minimal concrete implementation of the Partition. All partition-specific
+ * behaviour is left unimplemented.
  */
 public class SimplePartition extends Partition {
-  private static final Map<String,String> DEFAULTS = Collections.emptyMap();
-  private static final Map<String,String> INHERITED = Collections.emptyMap();
 
-  public SimplePartition(Map<String,String> args)
-  {
-    super(DEFAULTS, INHERITED, args);
-  }
+    private static final Map<String, String> DEFAULTS = Collections.emptyMap();
+    private static final Map<String, String> INHERITED = Collections.emptyMap();
 
-  @Override
-  protected Partition create(Map<String, String> inherited, Map<String, String> defined) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    public SimplePartition(Map<String, String> args) {
+        super(DEFAULTS, INHERITED, args);
+    }
 
-  @Override
-  public String getType() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    @Override
+    protected Partition create(Map<String, String> inherited, Map<String, String> defined) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-  @Override
-  public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools,
-      FileAttributes attributes, long preallocated) throws CacheException {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    @Override
+    public String getType() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-  @Override
-  public SelectedPool selectReadPool(CostModule cm, List<PoolInfo> pools,
-      FileAttributes attributes) throws CacheException {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    @Override
+    public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools,
+          FileAttributes attributes, long preallocated) throws CacheException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-  @Override
-  public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src,
-      List<PoolInfo> dst, FileAttributes attributes, boolean force)
-      throws CacheException {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    @Override
+    public SelectedPool selectReadPool(CostModule cm, List<PoolInfo> pools,
+          FileAttributes attributes) throws CacheException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
-  @Override
-  public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools,
-      Optional<PoolInfo> previous, FileAttributes attributes)
-      throws CacheException {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    @Override
+    public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src,
+          List<PoolInfo> dst, FileAttributes attributes, boolean force)
+          throws CacheException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools,
+          Optional<PoolInfo> previous, FileAttributes attributes)
+          throws CacheException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

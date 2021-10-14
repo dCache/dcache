@@ -81,404 +81,417 @@ import org.dcache.qos.util.QoSHistory;
 
 public final class QoSAdjusterAdmin implements CellCommandListener {
 
-  abstract class FilteredAdjusterTaskCommand extends InitializerAwareCommand {
-    @Option(name = "action",
-        valueSpec = "COPY_REPLICA|CACHE_REPLICA|PERSIST_REPLICA|WAIT_FOR_STAGE|FLUSH",
-        usage = "Match only operations for files with this action type.")
-    protected QoSAction action;
+    abstract class FilteredAdjusterTaskCommand extends InitializerAwareCommand {
 
-    @Option(name = "state",
-        valueSpec = "INITIALIZED|RUNNING|CANCELLED|DONE",
-        separator = ",",
-        usage = "Match only operations for files matching this comma-delimited set of states; "
-            + "default is RUNNING.")
-    protected String[] state = {"RUNNING"};
+        @Option(name = "action",
+              valueSpec = "COPY_REPLICA|CACHE_REPLICA|PERSIST_REPLICA|WAIT_FOR_STAGE|FLUSH",
+              usage = "Match only operations for files with this action type.")
+        protected QoSAction action;
 
-    @Option(name = "group",
-        usage = "Match only operations with this preferred pool group; use the option with no "
-            + "value to match only operations without a specified group.")
-    protected String poolGroup;
+        @Option(name = "state",
+              valueSpec = "INITIALIZED|RUNNING|CANCELLED|DONE",
+              separator = ",",
+              usage =
+                    "Match only operations for files matching this comma-delimited set of states; "
+                          + "default is RUNNING.")
+        protected String[] state = {"RUNNING"};
 
-    @Option(name = "source",
-        usage = "Match only operations with this source pool name; use the option with no value "
-            + "to match only operations without a source pool.")
-    protected String source;
+        @Option(name = "group",
+              usage =
+                    "Match only operations with this preferred pool group; use the option with no "
+                          + "value to match only operations without a specified group.")
+        protected String poolGroup;
 
-    @Option(name = "target",
-        usage = "Match only operations with this target pool name; use the option with no value "
-            + "to match only operations without a target pool.")
-    protected String target;
+        @Option(name = "source",
+              usage =
+                    "Match only operations with this source pool name; use the option with no value "
+                          + "to match only operations without a source pool.")
+        protected String source;
 
-    @Option(name = "retry",
-        usage = "Match only the operation with this number of retries.")
-    protected Integer retry;
+        @Option(name = "target",
+              usage =
+                    "Match only operations with this target pool name; use the option with no value "
+                          + "to match only operations without a target pool.")
+        protected String target;
 
-    @Option(name = "startedBefore",
-        valueSpec = FORMAT_STRING,
-        usage = "Match only operations whose start time is before this date-time.")
-    protected String startedBefore;
+        @Option(name = "retry",
+              usage = "Match only the operation with this number of retries.")
+        protected Integer retry;
 
-    @Option(name = "startedAfter",
-        valueSpec = FORMAT_STRING,
-        usage = "Match only operations whose start time is after this date-time.")
-    protected String startedAfter;
+        @Option(name = "startedBefore",
+              valueSpec = FORMAT_STRING,
+              usage = "Match only operations whose start time is before this date-time.")
+        protected String startedBefore;
 
-    @Argument(required = false,
-        usage = "Match only activities for this comma-delimited list of pnfsids. '*' "
-            + "matches all operations.")
-    protected String pnfsids;
+        @Option(name = "startedAfter",
+              valueSpec = FORMAT_STRING,
+              usage = "Match only operations whose start time is after this date-time.")
+        protected String startedAfter;
 
-    protected FilteredAdjusterTaskCommand() {
-      super(initializer);
-    }
+        @Argument(required = false,
+              usage = "Match only activities for this comma-delimited list of pnfsids. '*' "
+                    + "matches all operations.")
+        protected String pnfsids;
 
-    protected Predicate<QoSAdjusterTask> getFilter() {
-      Pattern grpPattern = poolGroup == null ? null : Pattern.compile(poolGroup);
-      Pattern srcPattern = source == null ? null : Pattern.compile(source);
-      Pattern tgtPattern = target == null ? null : Pattern.compile(target);
-
-      Set<String> stateSet;
-      if (state == null) {
-        stateSet = null;
-      } else {
-        stateSet = Arrays.stream(state).collect(Collectors.toSet());
-      }
-
-      Set<String> pnfsIdSet;
-      if (pnfsids == null || pnfsids.equals("*")) {
-        pnfsIdSet = null;
-      } else {
-        pnfsIdSet = Arrays.stream(pnfsids.split(",")).collect(Collectors.toSet());
-      }
-
-      Long before = startedBefore == null ? null : getTimestamp(startedBefore);
-      Long after = startedAfter == null ? null : getTimestamp(startedAfter);
-
-      Predicate<QoSAdjusterTask> matchesAction = (task) -> action == null
-          || action == task.getAction();
-
-      Predicate<QoSAdjusterTask> matchesState = (task) -> stateSet == null
-          || stateSet.contains(task.getStatusName());
-
-      Predicate<QoSAdjusterTask> matchesGroup = (task) -> grpPattern == null
-          || grpPattern.matcher(Strings.nullToEmpty(task.getPoolGroup())).find();
-
-      Predicate<QoSAdjusterTask> matchesSource = (task) -> srcPattern == null
-          || srcPattern.matcher(Strings.nullToEmpty(task.getSource())).find();
-
-      Predicate<QoSAdjusterTask> matchesTarget = (task) -> tgtPattern == null
-          || tgtPattern.matcher(Strings.nullToEmpty(task.getTarget())).find();
-
-      Predicate<QoSAdjusterTask> matchesRetry = (task) -> retry == null
-          || task.getRetry() == retry;
-
-      Predicate<QoSAdjusterTask> matchesPnfsIds = (task) -> pnfsIdSet == null
-          || pnfsIdSet.contains(task.getPnfsId().toString());
-
-      Predicate<QoSAdjusterTask> matchesBefore = (task) -> before == null
-          || task.getStartTime() <= before;
-
-      Predicate<QoSAdjusterTask> matchesAfter = (task) -> after == null
-          || task.getStartTime() >= after;
-
-      return matchesBefore.and(matchesAfter)
-                          .and(matchesAction)
-                          .and(matchesState)
-                          .and(matchesGroup)
-                          .and(matchesSource)
-                          .and(matchesTarget)
-                          .and(matchesRetry)
-                          .and(matchesPnfsIds);
-    }
-  }
-
-  @Command(name = "task cancel",
-      hint = "cancel adjuster tasks ",
-      description = "Scans the file table and cancels tasks matching the filter parameters.")
-  class TaskCancelCommand extends FilteredAdjusterTaskCommand {
-
-    @Override
-    protected String doCall() {
-      if (pnfsids == null) {
-        return "To cancel you must specify one or more pnfsids, or '*' for all matching pnfsids.";
-      }
-
-      taskMap.cancel(getFilter());
-      return "Issued cancel command to cancel file operations.";
-    }
-  }
-
-  @Command(name = "task ctrl",
-      hint = "control  handling of tasks",
-      description = "Turn processing of task on or off "
-          + "(start/shutdown), wake up the queue, or display info relevant to queue processing. "
-          + "NOTE that the max number of running tasks must be reset through properties "
-          + "(with domain restart) as it is also used to initialize the thread pool.")
-  class TaskControlCommand extends InitializerAwareCommand {
-    @Argument(valueSpec = "START|SHUTDOWN|RESET|RUN|INFO",
-        required = false,
-        usage = "info = information (default); reset = reset properties; start = (re)start "
-            + "processing of file operations; shutdown = stop all processing of file operations; "
-            + "run = wake up queue." )
-    String arg = "INFO";
-
-    @Option(name = "sweep",
-        usage = "With reset mode. Minimal interval between sweeps of the task queues.")
-    Long sweep;
-
-    @Option(name = "unit",
-        valueSpec = "SECONDS|MINUTES|HOURS",
-        usage = "sweep interval unit.")
-    TimeUnit unit;
-
-    @Option(name = "retries",
-        usage = "Maximum number of retries on a failed operation.")
-    Integer retries;
-
-    private ControlMode mode;
-
-    TaskControlCommand() {
-      super(initializer);
-    }
-
-    @Override
-    public String call() {
-      mode = ControlMode.valueOf(arg.toUpperCase());
-      if (mode == ControlMode.START) {
-        new Thread(() -> startAll()).start();
-        return "Consumer initialization started.";
-      }
-      return super.call();
-    }
-
-    @Override
-    protected String doCall() throws Exception {
-      switch (mode) {
-        case SHUTDOWN:
-          shutdownAll();
-          return "Consumer has been shutdown.";
-        case RUN:
-          if (!taskMap.isRunning()) {
-            return "Consumer is not running.";
-          }
-          taskMap.signalAll();
-          return "Woke up consumer.";
-        case RESET:
-          if (sweep != null) {
-            taskMap.setTimeout(sweep);
-          }
-
-          if (unit != null) {
-            taskMap.setTimeoutUnit(unit);
-          }
-
-          if (retries != null) {
-            taskMap.setMaxRetries(retries);
-          }
-
-          taskMap.signalAll();
-          // fall through here
-        case INFO:
-        default:
-          StringBuilder builder = new StringBuilder();
-          taskMap.getInfo(builder);
-          return builder.toString();
-      }
-    }
-  }
-
-  @Command(name = "task details",
-           hint = "list diagnostic information concerning tasks by pool",
-      description = "Gives task counts by activity and role (source, target).")
-  class TaskDetailsCommand extends InitializerAwareCommand {
-    TaskDetailsCommand() { super(initializer); }
-
-    @Override
-    protected String doCall() throws Exception {
-      StringBuilder builder = new StringBuilder();
-      counters.appendDetails(builder);
-      return builder.toString();
-    }
-  }
-
-  @Command(name = "task history",
-      hint = "display a history of the most recent terminated file operations",
-      description = "When file operations complete or are aborted, their string representations "
-          + "are added to a circular buffer whose capacity is set by the property "
-          + "'qos.limits.file.operation-history'.")
-  class TaskHistoryCommand extends InitializerAwareCommand {
-    @Argument(required = false, valueSpec = "errors", usage = "Display just the failures.")
-    String errors;
-
-    @Option(name = "limit", usage = "Display up to this number of entries.")
-    Integer limit;
-
-    @Option(name = "order", valueSpec = "ASC|DESC",
-            usage = "Display entries in ascending (default) or descending order of arrival.")
-    String order = "ASC";
-
-    TaskHistoryCommand() {
-      super(initializer);
-    }
-
-    @Override
-    protected String doCall() throws Exception {
-      boolean failed = false;
-      if (errors != null) {
-        if (!"errors".equals(errors)) {
-          return  "Optional argument must be 'errors'";
+        protected FilteredAdjusterTaskCommand() {
+            super(initializer);
         }
-        failed = true;
-      }
 
-      SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
+        protected Predicate<QoSAdjusterTask> getFilter() {
+            Pattern grpPattern = poolGroup == null ? null : Pattern.compile(poolGroup);
+            Pattern srcPattern = source == null ? null : Pattern.compile(source);
+            Pattern tgtPattern = target == null ? null : Pattern.compile(target);
 
-      switch (order) {
-        case DESC:
-          if (limit != null) {
-            return history.descending(failed, limit);
-          }
-          return history.descending(failed);
-        default:
-          if (limit != null) {
-            return history.ascending(failed, limit);
-          }
-          return history.ascending(failed);
-      }
-    }
-  }
+            Set<String> stateSet;
+            if (state == null) {
+                stateSet = null;
+            } else {
+                stateSet = Arrays.stream(state).collect(Collectors.toSet());
+            }
 
-  @Command(name = "task ls",
-      hint = "list entries in the adjuster task table",
-      description = "Scans the table and returns tasks matching the filter parameters.")
-  class TaskLsCommand extends FilteredAdjusterTaskCommand {
+            Set<String> pnfsIdSet;
+            if (pnfsids == null || pnfsids.equals("*")) {
+                pnfsIdSet = null;
+            } else {
+                pnfsIdSet = Arrays.stream(pnfsids.split(",")).collect(Collectors.toSet());
+            }
 
-    @Option(name = "count", usage="Do not list, but return only the number of matches.")
-    boolean count = false;
+            Long before = startedBefore == null ? null : getTimestamp(startedBefore);
+            Long after = startedAfter == null ? null : getTimestamp(startedAfter);
 
-    @Option(name = "limit",
-        usage = "Maximum number of rows to list.  This option becomes required when "
-            + "the operation queues reach " + LS_THRESHOLD + "; be aware that "
-            + "listing more than this number of rows may provoke an out of memory "
-            + "error for the domain.")
-    protected Integer limit;
+            Predicate<QoSAdjusterTask> matchesAction = (task) -> action == null
+                  || action == task.getAction();
 
-    @Override
-    protected String doCall() throws Exception {
-      Predicate<QoSAdjusterTask> filter = getFilter();
-      if (count) {
-        return taskMap.count(filter) + " matching pnfsids";
-      } else {
-        if (limit == null) {
-          int size = taskMap.size();
-          if ((state == null || Arrays.asList(state).contains("WAITING"))
-              && size >= LS_THRESHOLD) {
-            return String.format(REQUIRE_LIMIT, size, size);
-          }
+            Predicate<QoSAdjusterTask> matchesState = (task) -> stateSet == null
+                  || stateSet.contains(task.getStatusName());
+
+            Predicate<QoSAdjusterTask> matchesGroup = (task) -> grpPattern == null
+                  || grpPattern.matcher(Strings.nullToEmpty(task.getPoolGroup())).find();
+
+            Predicate<QoSAdjusterTask> matchesSource = (task) -> srcPattern == null
+                  || srcPattern.matcher(Strings.nullToEmpty(task.getSource())).find();
+
+            Predicate<QoSAdjusterTask> matchesTarget = (task) -> tgtPattern == null
+                  || tgtPattern.matcher(Strings.nullToEmpty(task.getTarget())).find();
+
+            Predicate<QoSAdjusterTask> matchesRetry = (task) -> retry == null
+                  || task.getRetry() == retry;
+
+            Predicate<QoSAdjusterTask> matchesPnfsIds = (task) -> pnfsIdSet == null
+                  || pnfsIdSet.contains(task.getPnfsId().toString());
+
+            Predicate<QoSAdjusterTask> matchesBefore = (task) -> before == null
+                  || task.getStartTime() <= before;
+
+            Predicate<QoSAdjusterTask> matchesAfter = (task) -> after == null
+                  || task.getStartTime() >= after;
+
+            return matchesBefore.and(matchesAfter)
+                  .and(matchesAction)
+                  .and(matchesState)
+                  .and(matchesGroup)
+                  .and(matchesSource)
+                  .and(matchesTarget)
+                  .and(matchesRetry)
+                  .and(matchesPnfsIds);
         }
-        return taskMap.list(filter, limit == null ? Integer.MAX_VALUE : limit);
-      }
-    }
-  }
-
-  @Command(name = "task stats", hint = "print diagnostic statistics history",
-      description = "Reads in the contents of the diagnostic history file recording task statistics.")
-  class TaskStatsCommand extends InitializerAwareCommand {
-    @Option(name = "offset", usage = "Start at this line number.")
-    Integer offset = 0;
-
-    @Option(name = "limit", usage = "Display up to this number of lines (default is 5000).")
-    Integer limit = 5000;
-
-    @Option(name = "order", valueSpec = "asc|desc",
-            usage = "Display lines in ascending (default) or descending order by timestamp.")
-    String order = "asc";
-
-    @Option(name = "enable", usage = "Turn the recording of statistics to file on or off (default).")
-    Boolean enable = null;
-
-    TaskStatsCommand() {
-      super(initializer);
     }
 
-    protected String doCall() throws Exception {
-      if (enable != null) {
-        counters.setToFile(enable);
-        return "Recording to file is now " + (enable ? "on." : "off.");
-      }
+    @Command(name = "task cancel",
+          hint = "cancel adjuster tasks ",
+          description = "Scans the file table and cancels tasks matching the filter parameters.")
+    class TaskCancelCommand extends FilteredAdjusterTaskCommand {
 
-      SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
-      StringBuilder builder = new StringBuilder();
-      counters.readStatistics(builder, offset, limit, order == SortOrder.DESC);
-      return builder.toString();
-    }
-  }
+        @Override
+        protected String doCall() {
+            if (pnfsids == null) {
+                return "To cancel you must specify one or more pnfsids, or '*' for all matching pnfsids.";
+            }
 
-  class NoPMapInitializer extends MapInitializer {
-    NoPMapInitializer() {
-      setInitialized();
+            taskMap.cancel(getFilter());
+            return "Issued cancel command to cancel file operations.";
+        }
     }
 
-    public boolean initialize() {
-      if (isInitialized()) {
-        return false;
-      }
-      setInitialized();
-      return true;
+    @Command(name = "task ctrl",
+          hint = "control  handling of tasks",
+          description = "Turn processing of task on or off "
+                + "(start/shutdown), wake up the queue, or display info relevant to queue processing. "
+                + "NOTE that the max number of running tasks must be reset through properties "
+                + "(with domain restart) as it is also used to initialize the thread pool.")
+    class TaskControlCommand extends InitializerAwareCommand {
+
+        @Argument(valueSpec = "START|SHUTDOWN|RESET|RUN|INFO",
+              required = false,
+              usage = "info = information (default); reset = reset properties; start = (re)start "
+                    + "processing of file operations; shutdown = stop all processing of file operations; "
+                    + "run = wake up queue.")
+        String arg = "INFO";
+
+        @Option(name = "sweep",
+              usage = "With reset mode. Minimal interval between sweeps of the task queues.")
+        Long sweep;
+
+        @Option(name = "unit",
+              valueSpec = "SECONDS|MINUTES|HOURS",
+              usage = "sweep interval unit.")
+        TimeUnit unit;
+
+        @Option(name = "retries",
+              usage = "Maximum number of retries on a failed operation.")
+        Integer retries;
+
+        private ControlMode mode;
+
+        TaskControlCommand() {
+            super(initializer);
+        }
+
+        @Override
+        public String call() {
+            mode = ControlMode.valueOf(arg.toUpperCase());
+            if (mode == ControlMode.START) {
+                new Thread(() -> startAll()).start();
+                return "Consumer initialization started.";
+            }
+            return super.call();
+        }
+
+        @Override
+        protected String doCall() throws Exception {
+            switch (mode) {
+                case SHUTDOWN:
+                    shutdownAll();
+                    return "Consumer has been shutdown.";
+                case RUN:
+                    if (!taskMap.isRunning()) {
+                        return "Consumer is not running.";
+                    }
+                    taskMap.signalAll();
+                    return "Woke up consumer.";
+                case RESET:
+                    if (sweep != null) {
+                        taskMap.setTimeout(sweep);
+                    }
+
+                    if (unit != null) {
+                        taskMap.setTimeoutUnit(unit);
+                    }
+
+                    if (retries != null) {
+                        taskMap.setMaxRetries(retries);
+                    }
+
+                    taskMap.signalAll();
+                    // fall through here
+                case INFO:
+                default:
+                    StringBuilder builder = new StringBuilder();
+                    taskMap.getInfo(builder);
+                    return builder.toString();
+            }
+        }
     }
 
-    @Override
-    public void run() {
+    @Command(name = "task details",
+          hint = "list diagnostic information concerning tasks by pool",
+          description = "Gives task counts by activity and role (source, target).")
+    class TaskDetailsCommand extends InitializerAwareCommand {
+
+        TaskDetailsCommand() {
+            super(initializer);
+        }
+
+        @Override
+        protected String doCall() throws Exception {
+            StringBuilder builder = new StringBuilder();
+            counters.appendDetails(builder);
+            return builder.toString();
+        }
     }
 
-    @Override
-    protected long getRefreshTimeout() {
-      return 0;
+    @Command(name = "task history",
+          hint = "display a history of the most recent terminated file operations",
+          description =
+                "When file operations complete or are aborted, their string representations "
+                      + "are added to a circular buffer whose capacity is set by the property "
+                      + "'qos.limits.file.operation-history'.")
+    class TaskHistoryCommand extends InitializerAwareCommand {
+
+        @Argument(required = false, valueSpec = "errors", usage = "Display just the failures.")
+        String errors;
+
+        @Option(name = "limit", usage = "Display up to this number of entries.")
+        Integer limit;
+
+        @Option(name = "order", valueSpec = "ASC|DESC",
+              usage = "Display entries in ascending (default) or descending order of arrival.")
+        String order = "ASC";
+
+        TaskHistoryCommand() {
+            super(initializer);
+        }
+
+        @Override
+        protected String doCall() throws Exception {
+            boolean failed = false;
+            if (errors != null) {
+                if (!"errors".equals(errors)) {
+                    return "Optional argument must be 'errors'";
+                }
+                failed = true;
+            }
+
+            SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
+
+            switch (order) {
+                case DESC:
+                    if (limit != null) {
+                        return history.descending(failed, limit);
+                    }
+                    return history.descending(failed);
+                default:
+                    if (limit != null) {
+                        return history.ascending(failed, limit);
+                    }
+                    return history.ascending(failed);
+            }
+        }
     }
 
-    @Override
-    protected TimeUnit getRefreshTimeoutUnit() {
-      return TimeUnit.MILLISECONDS;
+    @Command(name = "task ls",
+          hint = "list entries in the adjuster task table",
+          description = "Scans the table and returns tasks matching the filter parameters.")
+    class TaskLsCommand extends FilteredAdjusterTaskCommand {
+
+        @Option(name = "count", usage = "Do not list, but return only the number of matches.")
+        boolean count = false;
+
+        @Option(name = "limit",
+              usage = "Maximum number of rows to list.  This option becomes required when "
+                    + "the operation queues reach " + LS_THRESHOLD + "; be aware that "
+                    + "listing more than this number of rows may provoke an out of memory "
+                    + "error for the domain.")
+        protected Integer limit;
+
+        @Override
+        protected String doCall() throws Exception {
+            Predicate<QoSAdjusterTask> filter = getFilter();
+            if (count) {
+                return taskMap.count(filter) + " matching pnfsids";
+            } else {
+                if (limit == null) {
+                    int size = taskMap.size();
+                    if ((state == null || Arrays.asList(state).contains("WAITING"))
+                          && size >= LS_THRESHOLD) {
+                        return String.format(REQUIRE_LIMIT, size, size);
+                    }
+                }
+                return taskMap.list(filter, limit == null ? Integer.MAX_VALUE : limit);
+            }
+        }
     }
-  }
 
-  private final MapInitializer initializer = new NoPMapInitializer();
+    @Command(name = "task stats", hint = "print diagnostic statistics history",
+          description = "Reads in the contents of the diagnostic history file recording task statistics.")
+    class TaskStatsCommand extends InitializerAwareCommand {
 
-  private MessageGuard messageGuard;
-  private QoSHistory history;
-  private QoSAdjusterCounters counters;
-  private QoSAdjusterTaskMap taskMap;
+        @Option(name = "offset", usage = "Start at this line number.")
+        Integer offset = 0;
 
-  public void setHistory(QoSHistory history) {
-    this.history = history;
-  }
+        @Option(name = "limit", usage = "Display up to this number of lines (default is 5000).")
+        Integer limit = 5000;
 
-  public void setCounters(QoSAdjusterCounters counters) {
-    this.counters = counters;
-  }
+        @Option(name = "order", valueSpec = "asc|desc",
+              usage = "Display lines in ascending (default) or descending order by timestamp.")
+        String order = "asc";
 
-  public void setMessageGuard(MessageGuard messageGuard) {
-    this.messageGuard = messageGuard;
-  }
+        @Option(name = "enable", usage = "Turn the recording of statistics to file on or off (default).")
+        Boolean enable = null;
 
-  public void setTaskMap(QoSAdjusterTaskMap taskMap) {
-    this.taskMap = taskMap;
-  }
+        TaskStatsCommand() {
+            super(initializer);
+        }
 
-  private void startAll() {
-    initializer.initialize();
-    if (taskMap.isRunning()) {
-      taskMap.shutdown();
+        protected String doCall() throws Exception {
+            if (enable != null) {
+                counters.setToFile(enable);
+                return "Recording to file is now " + (enable ? "on." : "off.");
+            }
+
+            SortOrder order = SortOrder.valueOf(this.order.toUpperCase());
+            StringBuilder builder = new StringBuilder();
+            counters.readStatistics(builder, offset, limit, order == SortOrder.DESC);
+            return builder.toString();
+        }
     }
-    taskMap.initialize();
-    messageGuard.enable();
-  }
 
-  private void shutdownAll() {
-    if (taskMap.isRunning()) {
-      taskMap.shutdown();
+    class NoPMapInitializer extends MapInitializer {
+
+        NoPMapInitializer() {
+            setInitialized();
+        }
+
+        public boolean initialize() {
+            if (isInitialized()) {
+                return false;
+            }
+            setInitialized();
+            return true;
+        }
+
+        @Override
+        public void run() {
+        }
+
+        @Override
+        protected long getRefreshTimeout() {
+            return 0;
+        }
+
+        @Override
+        protected TimeUnit getRefreshTimeoutUnit() {
+            return TimeUnit.MILLISECONDS;
+        }
     }
-    messageGuard.disable(true);
-    initializer.shutDown();
-  }
+
+    private final MapInitializer initializer = new NoPMapInitializer();
+
+    private MessageGuard messageGuard;
+    private QoSHistory history;
+    private QoSAdjusterCounters counters;
+    private QoSAdjusterTaskMap taskMap;
+
+    public void setHistory(QoSHistory history) {
+        this.history = history;
+    }
+
+    public void setCounters(QoSAdjusterCounters counters) {
+        this.counters = counters;
+    }
+
+    public void setMessageGuard(MessageGuard messageGuard) {
+        this.messageGuard = messageGuard;
+    }
+
+    public void setTaskMap(QoSAdjusterTaskMap taskMap) {
+        this.taskMap = taskMap;
+    }
+
+    private void startAll() {
+        initializer.initialize();
+        if (taskMap.isRunning()) {
+            taskMap.shutdown();
+        }
+        taskMap.initialize();
+        messageGuard.enable();
+    }
+
+    private void shutdownAll() {
+        if (taskMap.isRunning()) {
+            taskMap.shutdown();
+        }
+        messageGuard.disable(true);
+        initializer.shutDown();
+    }
 }

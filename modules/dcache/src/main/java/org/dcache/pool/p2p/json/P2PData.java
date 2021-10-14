@@ -65,10 +65,10 @@ import java.net.InetAddress;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.p2p.P2PClient} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.p2p.P2PClient} using {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class P2PData implements Serializable {
+
     private static final long serialVersionUID = -2748477589482721104L;
     private String label;
     private InetAddress ppInterface;

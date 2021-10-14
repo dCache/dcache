@@ -19,11 +19,9 @@
 
 package org.dcache.srm.server;
 
-import javax.naming.NamingException;
-
 import java.io.IOException;
 import java.rmi.RemoteException;
-
+import javax.naming.NamingException;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
@@ -105,268 +103,244 @@ import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
 import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
 
-public class AxisSrmDelegator implements ISRM
-{
+public class AxisSrmDelegator implements ISRM {
+
     private final ISRM delegate;
 
-    public AxisSrmDelegator() throws IOException, NamingException
-    {
+    public AxisSrmDelegator() throws IOException, NamingException {
         delegate = Axis.getSrmService();
     }
 
     @Override
-    public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest srmReserveSpaceRequest) throws RemoteException
-    {
+    public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest srmReserveSpaceRequest)
+          throws RemoteException {
         return delegate.srmReserveSpace(srmReserveSpaceRequest);
     }
 
     @Override
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(
-            SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException
-    {
+          SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest)
+          throws RemoteException {
         return delegate.srmStatusOfReserveSpaceRequest(srmStatusOfReserveSpaceRequestRequest);
     }
 
     @Override
-    public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest srmReleaseSpaceRequest) throws RemoteException
-    {
+    public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest srmReleaseSpaceRequest)
+          throws RemoteException {
         return delegate.srmReleaseSpace(srmReleaseSpaceRequest);
     }
 
     @Override
-    public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest srmUpdateSpaceRequest) throws RemoteException
-    {
+    public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest srmUpdateSpaceRequest)
+          throws RemoteException {
         return delegate.srmUpdateSpace(srmUpdateSpaceRequest);
     }
 
     @Override
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(
-            SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException
-    {
+          SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest)
+          throws RemoteException {
         return delegate.srmStatusOfUpdateSpaceRequest(srmStatusOfUpdateSpaceRequestRequest);
     }
 
     @Override
     public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
-            SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest) throws RemoteException
-    {
+          SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest) throws RemoteException {
         return delegate.srmGetSpaceMetaData(srmGetSpaceMetaDataRequest);
     }
 
     @Override
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(
-            SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException
-    {
+          SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return delegate.srmChangeSpaceForFiles(srmChangeSpaceForFilesRequest);
     }
 
     @Override
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(
-            SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException
-    {
-        return delegate.srmStatusOfChangeSpaceForFilesRequest(srmStatusOfChangeSpaceForFilesRequestRequest);
+          SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest)
+          throws RemoteException {
+        return delegate.srmStatusOfChangeSpaceForFilesRequest(
+              srmStatusOfChangeSpaceForFilesRequestRequest);
     }
 
     @Override
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(
-            SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException
-    {
+          SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest)
+          throws RemoteException {
         return delegate.srmExtendFileLifeTimeInSpace(srmExtendFileLifeTimeInSpaceRequest);
     }
 
     @Override
     public SrmPurgeFromSpaceResponse srmPurgeFromSpace(
-            SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException
-    {
+          SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return delegate.srmPurgeFromSpace(srmPurgeFromSpaceRequest);
     }
 
     @Override
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(
-            SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException
-    {
+          SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return delegate.srmGetSpaceTokens(srmGetSpaceTokensRequest);
     }
 
     @Override
     public SrmSetPermissionResponse srmSetPermission(
-            SrmSetPermissionRequest srmSetPermissionRequest) throws RemoteException
-    {
+          SrmSetPermissionRequest srmSetPermissionRequest) throws RemoteException {
         return delegate.srmSetPermission(srmSetPermissionRequest);
     }
 
     @Override
     public SrmCheckPermissionResponse srmCheckPermission(
-            SrmCheckPermissionRequest srmCheckPermissionRequest) throws RemoteException
-    {
+          SrmCheckPermissionRequest srmCheckPermissionRequest) throws RemoteException {
         return delegate.srmCheckPermission(srmCheckPermissionRequest);
     }
 
     @Override
     public SrmGetPermissionResponse srmGetPermission(
-            SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException
-    {
+          SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return delegate.srmGetPermission(srmGetPermissionRequest);
     }
 
     @Override
-    public SrmMkdirResponse srmMkdir(SrmMkdirRequest srmMkdirRequest) throws RemoteException
-    {
+    public SrmMkdirResponse srmMkdir(SrmMkdirRequest srmMkdirRequest) throws RemoteException {
         return delegate.srmMkdir(srmMkdirRequest);
     }
 
     @Override
-    public SrmRmdirResponse srmRmdir(SrmRmdirRequest srmRmdirRequest) throws RemoteException
-    {
+    public SrmRmdirResponse srmRmdir(SrmRmdirRequest srmRmdirRequest) throws RemoteException {
         return delegate.srmRmdir(srmRmdirRequest);
     }
 
     @Override
-    public SrmRmResponse srmRm(SrmRmRequest srmRmRequest) throws RemoteException
-    {
+    public SrmRmResponse srmRm(SrmRmRequest srmRmRequest) throws RemoteException {
         return delegate.srmRm(srmRmRequest);
     }
 
     @Override
-    public SrmLsResponse srmLs(SrmLsRequest srmLsRequest) throws RemoteException
-    {
+    public SrmLsResponse srmLs(SrmLsRequest srmLsRequest) throws RemoteException {
         return delegate.srmLs(srmLsRequest);
     }
 
     @Override
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(
-            SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException
-    {
+          SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return delegate.srmStatusOfLsRequest(srmStatusOfLsRequestRequest);
     }
 
     @Override
-    public SrmMvResponse srmMv(SrmMvRequest srmMvRequest) throws RemoteException
-    {
+    public SrmMvResponse srmMv(SrmMvRequest srmMvRequest) throws RemoteException {
         return delegate.srmMv(srmMvRequest);
     }
 
     @Override
-    public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest srmPrepareToGetRequest) throws RemoteException
-    {
+    public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest srmPrepareToGetRequest)
+          throws RemoteException {
         return delegate.srmPrepareToGet(srmPrepareToGetRequest);
     }
 
     @Override
     public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
-            SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest) throws RemoteException
-    {
+          SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest) throws RemoteException {
         return delegate.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
     }
 
     @Override
-    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException
-    {
+    public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest)
+          throws RemoteException {
         return delegate.srmBringOnline(srmBringOnlineRequest);
     }
 
     @Override
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(
-            SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) throws RemoteException
-    {
+          SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest)
+          throws RemoteException {
         return delegate.srmStatusOfBringOnlineRequest(srmStatusOfBringOnlineRequestRequest);
     }
 
     @Override
-    public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest srmPrepareToPutRequest) throws RemoteException
-    {
+    public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest srmPrepareToPutRequest)
+          throws RemoteException {
         return delegate.srmPrepareToPut(srmPrepareToPutRequest);
     }
 
     @Override
     public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
-            SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest) throws RemoteException
-    {
+          SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest) throws RemoteException {
         return delegate.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
     }
 
     @Override
-    public SrmCopyResponse srmCopy(SrmCopyRequest srmCopyRequest) throws RemoteException
-    {
+    public SrmCopyResponse srmCopy(SrmCopyRequest srmCopyRequest) throws RemoteException {
         return delegate.srmCopy(srmCopyRequest);
     }
 
     @Override
     public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
-            SrmStatusOfCopyRequestRequest srmStatusOfCopyRequestRequest) throws RemoteException
-    {
+          SrmStatusOfCopyRequestRequest srmStatusOfCopyRequestRequest) throws RemoteException {
         return delegate.srmStatusOfCopyRequest(srmStatusOfCopyRequestRequest);
     }
 
     @Override
-    public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest srmReleaseFilesRequest) throws RemoteException
-    {
+    public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest srmReleaseFilesRequest)
+          throws RemoteException {
         return delegate.srmReleaseFiles(srmReleaseFilesRequest);
     }
 
     @Override
-    public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest srmPutDoneRequest) throws RemoteException
-    {
+    public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest srmPutDoneRequest)
+          throws RemoteException {
         return delegate.srmPutDone(srmPutDoneRequest);
     }
 
     @Override
-    public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest srmAbortRequestRequest) throws RemoteException
-    {
+    public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest srmAbortRequestRequest)
+          throws RemoteException {
         return delegate.srmAbortRequest(srmAbortRequestRequest);
     }
 
     @Override
-    public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest srmAbortFilesRequest) throws RemoteException
-    {
+    public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest srmAbortFilesRequest)
+          throws RemoteException {
         return delegate.srmAbortFiles(srmAbortFilesRequest);
     }
 
     @Override
     public SrmSuspendRequestResponse srmSuspendRequest(
-            SrmSuspendRequestRequest srmSuspendRequestRequest) throws RemoteException
-    {
+          SrmSuspendRequestRequest srmSuspendRequestRequest) throws RemoteException {
         return delegate.srmSuspendRequest(srmSuspendRequestRequest);
     }
 
     @Override
     public SrmResumeRequestResponse srmResumeRequest(
-            SrmResumeRequestRequest srmResumeRequestRequest) throws RemoteException
-    {
+          SrmResumeRequestRequest srmResumeRequestRequest) throws RemoteException {
         return delegate.srmResumeRequest(srmResumeRequestRequest);
     }
 
     @Override
     public SrmGetRequestSummaryResponse srmGetRequestSummary(
-            SrmGetRequestSummaryRequest srmGetRequestSummaryRequest) throws RemoteException
-    {
+          SrmGetRequestSummaryRequest srmGetRequestSummaryRequest) throws RemoteException {
         return delegate.srmGetRequestSummary(srmGetRequestSummaryRequest);
     }
 
     @Override
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
-            SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest) throws RemoteException
-    {
+          SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest) throws RemoteException {
         return delegate.srmExtendFileLifeTime(srmExtendFileLifeTimeRequest);
     }
 
     @Override
     public SrmGetRequestTokensResponse srmGetRequestTokens(
-            SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException
-    {
+          SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return delegate.srmGetRequestTokens(srmGetRequestTokensRequest);
     }
 
     @Override
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(
-            SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException
-    {
+          SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return delegate.srmGetTransferProtocols(srmGetTransferProtocolsRequest);
     }
 
     @Override
-    public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException
-    {
+    public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return delegate.srmPing(srmPingRequest);
     }
 }

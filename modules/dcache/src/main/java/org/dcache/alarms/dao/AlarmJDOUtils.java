@@ -59,34 +59,32 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Strings;
-
-import javax.jdo.FetchPlan;
-import javax.jdo.PersistenceManager;
-import javax.jdo.Query;
-import javax.jdo.Transaction;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
+import javax.jdo.FetchPlan;
+import javax.jdo.PersistenceManager;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
 import org.dcache.alarms.LogEntry;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Convenience methods for generating JDO queries from {@link LogEntry}
- * fields.
+ * Convenience methods for generating JDO queries from {@link LogEntry} fields.
  *
  * @author arossi
  */
 public class AlarmJDOUtils {
+
     private static final int MAXIMUM_QUERY_RESULTS = 10000;
 
     public static class AlarmDAOFilter {
+
         private String filter;
         private String parameters;
         private Object[] values;
@@ -96,7 +94,7 @@ public class AlarmJDOUtils {
         @Override
         public String toString() {
             return filter + ", " + parameters
-                    + (values == null ? null : ", " + Arrays.asList(values));
+                  + (values == null ? null : ", " + Arrays.asList(values));
         }
 
         public String getFilter() {
@@ -138,11 +136,11 @@ public class AlarmJDOUtils {
     public static long delete(PersistenceManager pm, AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
         return filter.values == null ? query.deletePersistentAll()
-                        : query.deletePersistentAll(filter.values);
+              : query.deletePersistentAll(filter.values);
     }
 
     public static Collection<LogEntry> execute(PersistenceManager pm,
-                    AlarmDAOFilter filter) {
+          AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
 
         /*
@@ -152,10 +150,10 @@ public class AlarmJDOUtils {
          * refine the query.
          */
         Integer from = filter.rangeStart == null ? 0
-                        : filter.rangeStart;
+              : filter.rangeStart;
         int limit = from + MAXIMUM_QUERY_RESULTS;
         Integer to = filter.rangeEnd == null ? limit
-                        : Math.min(filter.rangeEnd, limit);
+              : Math.min(filter.rangeEnd, limit);
         query.setRange(from, to);
 
         /*
@@ -164,7 +162,7 @@ public class AlarmJDOUtils {
          */
         query.setIgnoreCache(true);
         return (Collection<LogEntry>) (filter.values == null ? query.execute()
-                        : query.executeWithArray(filter.values));
+              : query.executeWithArray(filter.values));
     }
 
     /**
@@ -175,7 +173,7 @@ public class AlarmJDOUtils {
         AlarmDAOFilter filter = new AlarmDAOFilter();
         filter.filter = "lastUpdate<=b && closed==t";
         filter.parameters = "java.lang.Long b, java.lang.Boolean t";
-        filter.values = new Object[] { before, true };
+        filter.values = new Object[]{before, true};
         return filter;
     }
 
@@ -184,46 +182,38 @@ public class AlarmJDOUtils {
     }
 
     public static AlarmDAOFilter getFilter(Date after,
-                                           Date before,
-                                           String type,
-                                           boolean isAlarm,
-                                           Integer rangeStart,
-                                           Integer rangeEnd) {
+          Date before,
+          String type,
+          boolean isAlarm,
+          Integer rangeStart,
+          Integer rangeEnd) {
         return getFilter(after == null ? null : after.getTime(),
-                         before == null ? null : before.getTime(),
-                         type,
-                         isAlarm,
-                         rangeStart,
-                         rangeEnd);
+              before == null ? null : before.getTime(),
+              type,
+              isAlarm,
+              rangeStart,
+              rangeEnd);
     }
 
     /**
      * Construct filter based on values for the parameter fields (AND'd).
      * <br>
      *
-     * @param after
-     *            closed lower bound (>=) of date range; may be
-     *            <code>null</code>.
-     * @param before
-     *            closed upper bound (<=) of date range; may be
-     *            <code>null</code>.
-     * @param type
-     *            may be <code>null</code>.
-     * @param isAlarm
-     *            may be <code>null</code>.
-     * @param rangeStart
-     *            range beginning
-     *            may be <code>null</code>.
-     * @param rangeEnd
-     *            range ending
-     *            may be <code>null</code>.
+     * @param after      closed lower bound (>=) of date range; may be
+     *                   <code>null</code>.
+     * @param before     closed upper bound (<=) of date range; may be
+     *                   <code>null</code>.
+     * @param type       may be <code>null</code>.
+     * @param isAlarm    may be <code>null</code>.
+     * @param rangeStart range beginning may be <code>null</code>.
+     * @param rangeEnd   range ending may be <code>null</code>.
      */
     public static AlarmDAOFilter getFilter(Long after,
-                                           Long before,
-                                           String type,
-                                           Boolean isAlarm,
-                                           Integer rangeStart,
-                                           Integer rangeEnd) {
+          Long before,
+          String type,
+          Boolean isAlarm,
+          Integer rangeStart,
+          Integer rangeEnd) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
         List<Object> values = new ArrayList<>();
@@ -315,7 +305,7 @@ public class AlarmJDOUtils {
      * Construct an actual JDO query from the filter.
      */
     private static Query createQuery(PersistenceManager pm,
-                                     AlarmDAOFilter filter) {
+          AlarmDAOFilter filter) {
         filter.normalizeRange();
 
         Query query = pm.newQuery(LogEntry.class);
@@ -323,7 +313,7 @@ public class AlarmJDOUtils {
         query.declareParameters(filter.parameters);
         query.addExtension("datanucleus.query.resultCacheType", "none");
         query.addExtension("datanucleus.rdbms.query.resultSetType",
-                           "scroll-insensitive");
+              "scroll-insensitive");
         query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
         return query;
     }

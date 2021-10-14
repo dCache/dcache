@@ -18,38 +18,33 @@
  */
 package org.dcache.srm;
 
-import com.google.common.hash.Hashing;
-import org.springframework.beans.factory.FactoryBean;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellIdentityAware;
-
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
+import com.google.common.hash.Hashing;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import org.springframework.beans.factory.FactoryBean;
+
 /**
- * Generate the ID that will be used to identify this srm-manager instance.  The
- * value is returned to the client as the part of the SRM request identifier
- * before the colon.
+ * Generate the ID that will be used to identify this srm-manager instance.  The value is returned
+ * to the client as the part of the SRM request identifier before the colon.
  */
-public class SrmIdFactoryBean implements FactoryBean<String>, CellIdentityAware
-{
+public class SrmIdFactoryBean implements FactoryBean<String>, CellIdentityAware {
+
     String id;
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         this.id = Hashing.murmur3_32().hashString(address.toString(), US_ASCII).toString();
     }
 
     @Override
-    public String getObject() throws Exception
-    {
+    public String getObject() throws Exception {
         return id;
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return String.class;
     }
 }

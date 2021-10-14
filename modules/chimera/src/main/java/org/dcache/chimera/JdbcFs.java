@@ -16,28 +16,24 @@
  */
 package org.dcache.chimera;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.acl.enums.AceFlags.DIRECTORY_INHERIT_ACE;
+import static org.dcache.acl.enums.AceFlags.FILE_INHERIT_ACE;
+import static org.dcache.acl.enums.AceFlags.INHERIT_ONLY_ACE;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.util.ByteUnit.EiB;
+import static org.dcache.util.SqlHelper.tryToClose;
+
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.NonTransientDataAccessResourceException;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-
-import javax.sql.DataSource;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -50,46 +46,48 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+import javax.sql.DataSource;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import java.nio.charset.StandardCharsets;
-import static org.dcache.acl.enums.AceFlags.*;
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static org.dcache.util.ByteUnit.EiB;
-import static org.dcache.util.SqlHelper.tryToClose;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.NonTransientDataAccessResourceException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- *
- * JDBC-FS is THE building block of Chimera. It's an abstraction layer, which
- * allows to build filesystem on top of a RDBMS.
- *
+ * JDBC-FS is THE building block of Chimera. It's an abstraction layer, which allows to build
+ * filesystem on top of a RDBMS.
  *
  * @Immutable
  * @Threadsafe
  */
 public class JdbcFs implements FileSystemProvider {
+
     /**
      * common error message for unimplemented
      */
     private static final String NOT_IMPL =
-                    "this operation is unsupported for this "
-                                    + "file system; please install a dCache-aware "
-                                    + "implementation of the file system interface";
+          "this operation is unsupported for this "
+                + "file system; please install a dCache-aware "
+                + "implementation of the file system interface";
 
     /**
      * logger
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcFs.class);
     /**
-     * the number of pnfs levels. Level zero associated with file real
-     * content, which is not our regular case.
+     * the number of pnfs levels. Level zero associated with file real content, which is not our
+     * regular case.
      */
     public static final int LEVELS_NUMBER = 7;
 
@@ -116,38 +114,38 @@ public class JdbcFs implements FileSystemProvider {
      * Cache value of FsStat
      */
     private final Executor _fsStatUpdateExecutor =
-            Executors.newSingleThreadExecutor(
-                    new ThreadFactoryBuilder()
-                            .setNameFormat("fsstat-updater-thread-%d")
-                            .build()
-            );
+          Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder()
+                      .setNameFormat("fsstat-updater-thread-%d")
+                      .build()
+          );
 
     private final LoadingCache<Object, FsStat> _fsStatCache
-            = CacheBuilder.newBuilder()
-                .refreshAfterWrite(100, TimeUnit.MILLISECONDS)
-                .build(
-                    CacheLoader.asyncReloading(new CacheLoader<Object, FsStat>() {
+          = CacheBuilder.newBuilder()
+          .refreshAfterWrite(100, TimeUnit.MILLISECONDS)
+          .build(
+                CacheLoader.asyncReloading(new CacheLoader<Object, FsStat>() {
 
-                        @Override
-                        public FsStat load(Object k) throws Exception {
-                            return JdbcFs.this.getFsStat0();
-                        }
-                    }
-            , _fsStatUpdateExecutor));
+                                               @Override
+                                               public FsStat load(Object k) throws Exception {
+                                                   return JdbcFs.this.getFsStat0();
+                                               }
+                                           }
+                      , _fsStatUpdateExecutor));
 
     /* The PNFS ID to inode number mapping will never change while dCache is running.
      */
     protected final Cache<String, Long> _inoCache =
-            CacheBuilder.newBuilder()
-                    .maximumSize(100000)
-                    .build();
+          CacheBuilder.newBuilder()
+                .maximumSize(100000)
+                .build();
 
     /* The inode number to PNFS ID mapping will never change while dCache is running.
      */
     protected final Cache<Long, String> _idCache =
-            CacheBuilder.newBuilder()
-                    .maximumSize(100000)
-                    .build();
+          CacheBuilder.newBuilder()
+                .maximumSize(100000)
+                .build();
 
     /**
      * current fs id
@@ -167,13 +165,13 @@ public class JdbcFs implements FileSystemProvider {
      */
     private static final int MAX_NAME_LEN = 255;
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws SQLException, ChimeraFsException
-    {
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager)
+          throws SQLException, ChimeraFsException {
         this(dataSource, txManager, 0);
     }
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id) throws SQLException, ChimeraFsException
-    {
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id)
+          throws SQLException, ChimeraFsException {
         _dbConnectionsPool = dataSource;
         _fsId = id;
 
@@ -189,8 +187,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     private <T> T inTransaction(FallibleTransactionCallback<T> callback)
-            throws ChimeraFsException
-    {
+          throws ChimeraFsException {
         TransactionStatus status = _tx.getTransaction(_txDefinition);
         T result;
         try {
@@ -214,11 +211,13 @@ public class JdbcFs implements FileSystemProvider {
 
     /**
      * Perform a rollback, handling rollback exceptions properly.
+     *
      * @param status object representing the transaction
-     * @param ex the thrown application exception or error
+     * @param ex     the thrown application exception or error
      * @throws TransactionException in case of a rollback error
      */
-    private void rollbackOnException(TransactionStatus status, Throwable ex) throws TransactionException {
+    private void rollbackOnException(TransactionStatus status, Throwable ex)
+          throws TransactionException {
         LOGGER.debug("Initiating transaction rollback on application exception", ex);
         try {
             _tx.rollback(status);
@@ -244,16 +243,19 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public FsInode createLink(String src, String dest) throws ChimeraFsException {
         File file = new File(src);
-        return inTransaction(status -> createLink(path2inode(file.getParent()), file.getName(), dest));
+        return inTransaction(
+              status -> createLink(path2inode(file.getParent()), file.getName(), dest));
     }
 
     @Override
     public FsInode createLink(FsInode parent, String name, String dest) throws ChimeraFsException {
-        return inTransaction(status -> createLink(parent, name, 0, 0, 0644, dest.getBytes(StandardCharsets.UTF_8)));
+        return inTransaction(status -> createLink(parent, name, 0, 0, 0644,
+              dest.getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override
-    public FsInode createLink(FsInode parent, String name, int uid, int gid, int mode, byte[] dest) throws ChimeraFsException {
+    public FsInode createLink(FsInode parent, String name, int uid, int gid, int mode, byte[] dest)
+          throws ChimeraFsException {
 
         checkNameLength(name);
 
@@ -262,13 +264,14 @@ public class JdbcFs implements FileSystemProvider {
             try {
                 Stat stat = parent.statCache();
                 int group = (stat.getMode() & UnixPermission.S_ISGID) != 0 ? stat.getGid() : gid;
-                inode = _sqlDriver.createFile(parent, name, uid, group, mode, UnixPermission.S_IFLNK);
+                inode = _sqlDriver.createFile(parent, name, uid, group, mode,
+                      UnixPermission.S_IFLNK);
                 // link is a regular file where content is a reference
                 _sqlDriver.setInodeIo(inode, true);
                 _sqlDriver.write(inode, 0, 0, dest, 0, dest.length);
                 _sqlDriver.copyAcl(parent, inode, RsType.FILE,
-                                   EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
-                                   EnumSet.of(FILE_INHERIT_ACE));
+                      EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
+                      EnumSet.of(FILE_INHERIT_ACE));
                 fillIdCaches(inode);
             } catch (DuplicateKeyException e) {
                 throw new FileExistsChimeraFsException(e);
@@ -278,7 +281,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     /**
-     *
      * create a hard link
      *
      * @param parent inode of directory where to create
@@ -288,7 +290,8 @@ public class JdbcFs implements FileSystemProvider {
      * @throws ChimeraFsException
      */
     @Override
-    public FsInode createHLink(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
+    public FsInode createHLink(FsInode parent, FsInode inode, String name)
+          throws ChimeraFsException {
 
         checkNameLength(name);
 
@@ -317,16 +320,19 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode createFileLevel(FsInode inode, int level) throws ChimeraFsException {
-        return inTransaction(status -> _sqlDriver.createLevel(inode, 0, 0, 0644 | UnixPermission.S_IFREG, level));
+        return inTransaction(
+              status -> _sqlDriver.createLevel(inode, 0, 0, 0644 | UnixPermission.S_IFREG, level));
     }
 
     @Override
-    public FsInode createFile(FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException {
+    public FsInode createFile(FsInode parent, String name, int owner, int group, int mode)
+          throws ChimeraFsException {
         return createFile(parent, name, owner, group, mode, UnixPermission.S_IFREG);
     }
 
     @Override
-    public FsInode createFile(FsInode parent, String name, int owner, int group, int mode, int type) throws ChimeraFsException {
+    public FsInode createFile(FsInode parent, String name, int owner, int group, int mode, int type)
+          throws ChimeraFsException {
         if (name.startsWith(".(")) { // special files only
             String[] cmd = PnfsCommandProcessor.process(name);
 
@@ -336,7 +342,7 @@ public class JdbcFs implements FileSystemProvider {
             }
 
             if (name.startsWith(".(pset)(") || name.startsWith(".(fset)(")
-                            || name.startsWith(".(suri)(")) {
+                  || name.startsWith(".(suri)(")) {
                 /**
                  * This is not 100% correct, as we throw exist even if
                  * someone tries to set attribute for a file which does not exist.
@@ -354,8 +360,8 @@ public class JdbcFs implements FileSystemProvider {
                     try {
                         Stat stat = useInode.statCache();
                         return _sqlDriver.createLevel(useInode, stat.getUid(),
-                                                      stat.getGid(),
-                                                      stat.getMode(), level);
+                              stat.getGid(),
+                              stat.getMode(), level);
                     } catch (DuplicateKeyException e) {
                         throw new FileExistsChimeraFsException(name, e);
                     }
@@ -372,8 +378,8 @@ public class JdbcFs implements FileSystemProvider {
                         FsInode accessInode = id2inode(cmd[1], STAT);
                         Stat stat = accessInode.statCache();
                         return _sqlDriver.createLevel(accessInode,
-                                                      stat.getUid(), stat.getGid(),
-                                                      stat.getMode(), accessLevel);
+                              stat.getUid(), stat.getGid(),
+                              stat.getMode(), accessLevel);
                     } catch (DuplicateKeyException e) {
                         throw new FileExistsChimeraFsException(name, e);
                     }
@@ -397,11 +403,12 @@ public class JdbcFs implements FileSystemProvider {
                     throw new NotDirChimeraException(parent);
                 }
 
-                int gid = (parentStat.getMode() & UnixPermission.S_ISGID) != 0 ? parentStat.getGid() : group;
+                int gid = (parentStat.getMode() & UnixPermission.S_ISGID) != 0 ? parentStat.getGid()
+                      : group;
                 FsInode inode = _sqlDriver.createFile(parent, name, owner, gid, mode, type);
                 _sqlDriver.copyAcl(parent, inode, RsType.FILE,
-                                   EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
-                                   EnumSet.of(FILE_INHERIT_ACE));
+                      EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
+                      EnumSet.of(FILE_INHERIT_ACE));
                 fillIdCaches(inode);
                 return inode;
             } catch (DuplicateKeyException e) {
@@ -423,7 +430,8 @@ public class JdbcFs implements FileSystemProvider {
      * @throws ChimeraFsException
      */
     @Override
-    public void createFileWithId(FsInode parent, String id, String name, int owner, int group, int mode, int type) throws ChimeraFsException {
+    public void createFileWithId(FsInode parent, String id, String name, int owner, int group,
+          int mode, int type) throws ChimeraFsException {
 
         checkNameLength(name);
         checkArgument((type & UnixPermission.S_IFDIR) == 0);
@@ -438,10 +446,11 @@ public class JdbcFs implements FileSystemProvider {
                 }
                 Stat stat = parent.statCache();
                 int gid = (stat.getMode() & UnixPermission.S_ISGID) != 0 ? stat.getGid() : group;
-                FsInode inode = _sqlDriver.createFileWithId(parent, id, name, owner, gid, mode, type);
+                FsInode inode = _sqlDriver.createFileWithId(parent, id, name, owner, gid, mode,
+                      type);
                 _sqlDriver.copyAcl(parent, inode, RsType.FILE,
-                                   EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
-                                   EnumSet.of(FILE_INHERIT_ACE));
+                      EnumSet.of(INHERIT_ONLY_ACE, DIRECTORY_INHERIT_ACE, FILE_INHERIT_ACE),
+                      EnumSet.of(FILE_INHERIT_ACE));
                 fillIdCaches(inode);
                 return null;
             } catch (DuplicateKeyException e) {
@@ -451,7 +460,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir) throws ChimeraFsException {
+    public DirectoryStreamB<ChimeraDirectoryEntry> newDirectoryStream(FsInode dir)
+          throws ChimeraFsException {
         return _sqlDriver.newDirectoryStream(dir);
     }
 
@@ -544,7 +554,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException {
+    public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode)
+          throws ChimeraFsException {
         checkNameLength(name);
 
         return inTransaction(status -> {
@@ -568,7 +579,7 @@ public class JdbcFs implements FileSystemProvider {
                 FsInode inode = _sqlDriver.mkdir(parent, name, owner, gid, perm);
                 _sqlDriver.copyTags(parent, inode);
                 _sqlDriver.copyAcl(parent, inode, RsType.DIR, EnumSet.of(INHERIT_ONLY_ACE),
-                                   EnumSet.of(FILE_INHERIT_ACE, DIRECTORY_INHERIT_ACE));
+                      EnumSet.of(FILE_INHERIT_ACE, DIRECTORY_INHERIT_ACE));
                 fillIdCaches(inode);
                 return inode;
             } catch (DuplicateKeyException e) {
@@ -577,8 +588,7 @@ public class JdbcFs implements FileSystemProvider {
         });
     }
 
-    private void fillIdCaches(FsInode inode)
-    {
+    private void fillIdCaches(FsInode inode) {
         Stat stat = inode.getStatCache();
         if (stat != null) {
             _inoCache.put(stat.getId(), stat.getIno());
@@ -588,9 +598,8 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode,
-                         List<ACE> acl, Map<String, byte[]> tags)
-            throws ChimeraFsException
-    {
+          List<ACE> acl, Map<String, byte[]> tags)
+          throws ChimeraFsException {
         checkNameLength(name);
 
         return inTransaction(status -> {
@@ -686,8 +695,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public List<FsInode> path2inodes(String path, FsInode startFrom)
-        throws ChimeraFsException
-    {
+          throws ChimeraFsException {
         List<FsInode> inodes = _sqlDriver.path2inodes(startFrom, path);
         if (inodes.isEmpty()) {
             throw new FileNotFoundChimeraFsException(path);
@@ -697,7 +705,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public FsInode inodeOf(FsInode parent, String name, StatCacheOption cacheOption) throws ChimeraFsException {
+    public FsInode inodeOf(FsInode parent, String name, StatCacheOption cacheOption)
+          throws ChimeraFsException {
         // only if it's PNFS command
         if (name.startsWith(".(")) {
 
@@ -874,7 +883,7 @@ public class JdbcFs implements FileSystemProvider {
                 if (inode == null) {
                     throw new FileNotFoundChimeraFsException(cmd[1]);
                 }
-                switch(cmd[2]) {
+                switch (cmd[2]) {
                     case "locality":
                         return new FsInode_PLOC(this, inode.ino());
                     case "checksum":
@@ -936,7 +945,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     /**
-     *
      * @param inode
      * @param startFrom
      * @return path of inode starting from startFrom
@@ -961,36 +969,36 @@ public class JdbcFs implements FileSystemProvider {
     public void setInodeAttributes(FsInode inode, int level, Stat stat) throws ChimeraFsException {
         inTransaction(status -> {
             switch (inode.type()) {
-            case INODE:
-            case PSET:
-                boolean applied = _sqlDriver.setInodeAttributes(inode, level, stat);
-                if (!applied) {
-                    /**
-                     * there are two cases why update can fail: 1. inode
-                     * does not exists 2. we try to set a size on a non file
-                     * object
-                     */
-                    Stat s = _sqlDriver.stat(inode);
-                    if (s == null) {
-                        throw new FileNotFoundChimeraFsException();
+                case INODE:
+                case PSET:
+                    boolean applied = _sqlDriver.setInodeAttributes(inode, level, stat);
+                    if (!applied) {
+                        /**
+                         * there are two cases why update can fail: 1. inode
+                         * does not exists 2. we try to set a size on a non file
+                         * object
+                         */
+                        Stat s = _sqlDriver.stat(inode);
+                        if (s == null) {
+                            throw new FileNotFoundChimeraFsException();
+                        }
+                        if ((s.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
+                            throw new IsDirChimeraException(inode);
+                        }
+                        throw new InvalidArgumentChimeraException();
                     }
-                    if ((s.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
-                        throw new IsDirChimeraException(inode);
+                    break;
+                case TAG:
+                    if (stat.isDefined(Stat.StatAttributes.MODE)) {
+                        _sqlDriver.setTagMode((FsInode_TAG) inode, stat.getMode());
                     }
-                    throw new InvalidArgumentChimeraException();
-                }
-                break;
-            case TAG:
-                if (stat.isDefined(Stat.StatAttributes.MODE)) {
-                    _sqlDriver.setTagMode((FsInode_TAG) inode, stat.getMode());
-                }
-                if (stat.isDefined(Stat.StatAttributes.UID)) {
-                    _sqlDriver.setTagOwner((FsInode_TAG) inode, stat.getUid());
-                }
-                if (stat.isDefined(Stat.StatAttributes.GID)) {
-                    _sqlDriver.setTagOwnerGroup((FsInode_TAG) inode, stat.getGid());
-                }
-                break;
+                    if (stat.isDefined(Stat.StatAttributes.UID)) {
+                        _sqlDriver.setTagOwner((FsInode_TAG) inode, stat.getUid());
+                    }
+                    if (stat.isDefined(Stat.StatAttributes.GID)) {
+                        _sqlDriver.setTagOwnerGroup((FsInode_TAG) inode, stat.getGid());
+                    }
+                    break;
             }
             return null;
         });
@@ -1009,12 +1017,14 @@ public class JdbcFs implements FileSystemProvider {
         });
     }
 
-    public int write(FsInode inode, long beginIndex, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int write(FsInode inode, long beginIndex, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         return this.write(inode, 0, beginIndex, data, offset, len);
     }
 
     @Override
-    public int write(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int write(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         return inTransaction(status -> {
             try {
                 if (level == 0 && !inode.isIoEnabled()) {
@@ -1028,12 +1038,14 @@ public class JdbcFs implements FileSystemProvider {
         });
     }
 
-    public int read(FsInode inode, long beginIndex, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int read(FsInode inode, long beginIndex, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         return this.read(inode, 0, beginIndex, data, offset, len);
     }
 
     @Override
-    public int read(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int read(FsInode inode, int level, long beginIndex, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         if (level == 0 && !inode.isIoEnabled()) {
             LOGGER.debug("{}: IO(read) not allowed", inode);
             return -1;
@@ -1055,7 +1067,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir,
+          String dest) throws ChimeraFsException {
         checkNameLength(dest);
 
         return inTransaction(status -> {
@@ -1071,8 +1084,8 @@ public class JdbcFs implements FileSystemProvider {
                     return false;
                 }
 
-               /* Renaming into existing is only allowed for the same type of entry.
-                */
+                /* Renaming into existing is only allowed for the same type of entry.
+                 */
                 if (inode.isDirectory() != destInode.isDirectory()) {
                     throw new FileExistsChimeraFsException(dest);
                 }
@@ -1096,7 +1109,8 @@ public class JdbcFs implements FileSystemProvider {
     ////
     ////////////////////////////////////////////////////////////////////
     @Override
-    public List<StorageLocatable> getInodeLocations(FsInode inode, int type) throws ChimeraFsException {
+    public List<StorageLocatable> getInodeLocations(FsInode inode, int type)
+          throws ChimeraFsException {
         return _sqlDriver.getInodeLocations(inode, type);
     }
 
@@ -1106,7 +1120,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void addInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
+    public void addInodeLocation(FsInode inode, int type, String location)
+          throws ChimeraFsException {
         inTransaction(status -> {
             try {
                 _sqlDriver.addInodeLocation(inode, type, location);
@@ -1118,7 +1133,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void clearInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
+    public void clearInodeLocation(FsInode inode, int type, String location)
+          throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.clearInodeLocation(inode, type, location);
             return null;
@@ -1154,7 +1170,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void createTag(FsInode inode, String name, int uid, int gid, int mode) throws ChimeraFsException {
+    public void createTag(FsInode inode, String name, int uid, int gid, int mode)
+          throws ChimeraFsException {
         inTransaction(status -> {
             try {
                 _sqlDriver.createTag(inode, name, uid, gid, mode);
@@ -1171,13 +1188,13 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public int setTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int setTag(FsInode inode, String tagName, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         return inTransaction(status -> _sqlDriver.setTag(inode, tagName, data, offset, len));
     }
 
     @Override
-    public void removeTag(FsInode dir, String tagName) throws ChimeraFsException
-    {
+    public void removeTag(FsInode dir, String tagName) throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.removeTag(dir, tagName);
             return null;
@@ -1193,7 +1210,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public int getTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
+    public int getTag(FsInode inode, String tagName, byte[] data, int offset, int len)
+          throws ChimeraFsException {
         return _sqlDriver.getTag(inode, tagName, data, offset, len);
     }
 
@@ -1203,7 +1221,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void setTagOwner(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    public void setTagOwner(FsInode_TAG tagInode, String name, int owner)
+          throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.setTagOwner(tagInode, owner);
             return null;
@@ -1211,7 +1230,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner) throws ChimeraFsException {
+    public void setTagOwnerGroup(FsInode_TAG tagInode, String name, int owner)
+          throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.setTagOwnerGroup(tagInode, owner);
             return null;
@@ -1232,7 +1252,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
 
-
     ///////////////////////////////////////////////////////////////
     //
     // Id and Co.
@@ -1248,7 +1267,8 @@ public class JdbcFs implements FileSystemProvider {
      * currently it's not allowed to modify it
      */
     @Override
-    public void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) throws ChimeraFsException {
+    public void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo)
+          throws ChimeraFsException {
         inTransaction(status -> {
             try {
                 _sqlDriver.setStorageInfo(inode, storageInfo);
@@ -1268,7 +1288,8 @@ public class JdbcFs implements FileSystemProvider {
      * inode checksum handling
      */
     @Override
-    public void setInodeChecksum(FsInode inode, int type, String checksum) throws ChimeraFsException {
+    public void setInodeChecksum(FsInode inode, int type, String checksum)
+          throws ChimeraFsException {
         inTransaction(status -> {
             try {
                 _sqlDriver.setInodeChecksum(inode, type, checksum);
@@ -1293,8 +1314,9 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     /**
-     * Get inode's Access Control List. An empty list is returned if there are no ACL assigned
-     * to the <code>inode</code>.
+     * Get inode's Access Control List. An empty list is returned if there are no ACL assigned to
+     * the <code>inode</code>.
+     *
      * @param inode
      * @return acl
      */
@@ -1305,6 +1327,7 @@ public class JdbcFs implements FileSystemProvider {
 
     /**
      * Set inode's Access Control List. The existing ACL will be replaced.
+     *
      * @param inode
      * @param acl
      */
@@ -1338,7 +1361,7 @@ public class JdbcFs implements FileSystemProvider {
     public FsStat getFsStat() throws ChimeraFsException {
         try {
             return _fsStatCache.get(DUMMY_KEY);
-        } catch(ExecutionException e) {
+        } catch (ExecutionException e) {
             Throwable t = e.getCause();
             Throwables.propagateIfPossible(t, ChimeraFsException.class);
             throw new ChimeraFsException(t.getMessage(), t);
@@ -1370,9 +1393,11 @@ public class JdbcFs implements FileSystemProvider {
         StringBuilder sb = new StringBuilder();
 
         sb.append("DB        : ").append(_dbConnectionsPool).append('\n');
-        sb.append("DB Engine : ").append(databaseProductName).append(' ').append(databaseProductVersion).append('\n');
+        sb.append("DB Engine : ").append(databaseProductName).append(' ')
+              .append(databaseProductVersion).append('\n');
         try {
-            sb.append("rootID    : ").append(inode2id(new FsInode(this, _sqlDriver.getRootInumber()))).append('\n');
+            sb.append("rootID    : ")
+                  .append(inode2id(new FsInode(this, _sqlDriver.getRootInumber()))).append('\n');
         } catch (ChimeraFsException e) {
             sb.append("rootID    : ").append(e.getMessage()).append('\n');
         }
@@ -1387,7 +1412,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-	// enforced by the interface
+        // enforced by the interface
     }
 
     @Override
@@ -1396,21 +1421,19 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     /**
-     * To maintain the abstraction level, we relegate the actual
-     * callout to the subclass.
+     * To maintain the abstraction level, we relegate the actual callout to the subclass.
      */
     @Override
     public void pin(FsInode pnfsid, long lifetime) throws ChimeraFsException {
-       throw new ChimeraFsException(NOT_IMPL);
+        throw new ChimeraFsException(NOT_IMPL);
     }
 
-   /**
-    * To maintain the abstraction level, we relegate the actual
-    * callout to the subclass.
-    */
+    /**
+     * To maintain the abstraction level, we relegate the actual callout to the subclass.
+     */
     @Override
     public void unpin(FsInode pnfsid) throws ChimeraFsException {
-       throw new ChimeraFsException(NOT_IMPL);
+        throw new ChimeraFsException(NOT_IMPL);
     }
 
 
@@ -1420,7 +1443,8 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void setXattr(FsInode inode, String attr, byte[] value, SetXattrMode mode) throws ChimeraFsException {
+    public void setXattr(FsInode inode, String attr, byte[] value, SetXattrMode mode)
+          throws ChimeraFsException {
         inTransaction(status -> {
             try {
                 _sqlDriver.setXattr(inode, attr, value, mode);
@@ -1446,42 +1470,37 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public List<PinInfo> listPins(FsInode pnfsid) throws ChimeraFsException {
-       throw new ChimeraFsException(NOT_IMPL);
+        throw new ChimeraFsException(NOT_IMPL);
     }
 
-    private interface FallibleTransactionCallback<T>
-    {
+    private interface FallibleTransactionCallback<T> {
+
         T doInTransaction(TransactionStatus status) throws ChimeraFsException;
     }
 
-    private static class RootInode extends FsInode
-    {
-        public RootInode(FileSystemProvider fs, long ino)
-        {
+    private static class RootInode extends FsInode {
+
+        public RootInode(FileSystemProvider fs, long ino) {
             super(fs, ino);
         }
 
         @Override
-        public boolean exists() throws ChimeraFsException
-        {
+        public boolean exists() throws ChimeraFsException {
             return true;
         }
 
         @Override
-        public boolean isDirectory()
-        {
+        public boolean isDirectory() {
             return true;
         }
 
         @Override
-        public boolean isLink()
-        {
+        public boolean isLink() {
             return false;
         }
 
         @Override
-        public FsInode getParent()
-        {
+        public FsInode getParent() {
             return null;
         }
     }

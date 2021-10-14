@@ -76,13 +76,13 @@ package gov.fnal.srm.util;
 import java.net.URI;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 
 public interface CopyJob {
 
-    URI getSource() ;
+    URI getSource();
+
     URI getDestination();
 
     void done(boolean success, String error);

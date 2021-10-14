@@ -18,30 +18,26 @@
 package org.dcache.srm.scheduler.strategy;
 
 import java.util.Map;
-
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.spi.TransferStrategy;
 import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 
-public class FairShareTransferStrategyProvider implements TransferStrategyProvider
-{
+public class FairShareTransferStrategyProvider implements TransferStrategyProvider {
+
     private String discriminator;
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "fair-share";
     }
 
     @Override
-    public void setConfiguration(Map<String, String> configuration)
-    {
+    public void setConfiguration(Map<String, String> configuration) {
         discriminator = configuration.get("discriminator");
     }
 
     @Override
-    public TransferStrategy createStrategy(Scheduler scheduler)
-    {
+    public TransferStrategy createStrategy(Scheduler scheduler) {
         return new FairShareTransferStrategy(scheduler, discriminator);
     }
 }

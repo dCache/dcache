@@ -20,7 +20,7 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class DestroyResponse implements Serializable
-{
+public class DestroyResponse implements Serializable {
+
     private static final long serialVersionUID = -6502217211051397489L;
 }

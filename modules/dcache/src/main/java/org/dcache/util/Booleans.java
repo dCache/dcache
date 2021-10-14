@@ -10,6 +10,7 @@ public class Booleans {
 
     /**
      * Convert boolean value into Strings "yes" or "no"
+     *
      * @param value
      * @return "yes" if <code>value</code> is <code>true</code> and "no" otherwise.
      */
@@ -19,6 +20,7 @@ public class Booleans {
 
     /**
      * Convert boolean value into Strings "on" or "off"
+     *
      * @param value
      * @return "on" if <code>value</code> is <code>true</code> and "off" otherwise.
      */
@@ -28,6 +30,7 @@ public class Booleans {
 
     /**
      * Convert boolean value into Strings "true" or "false"
+     *
      * @param value
      * @return "true" if <code>value</code> is <code>true</code> and "false" otherwise.
      */
@@ -35,8 +38,9 @@ public class Booleans {
         return toPredefinedString(value, "true", "false");
     }
 
-        /**
+    /**
      * Convert boolean value into Strings "enable" or "disable"
+     *
      * @param value
      * @return "enable" if <code>value</code> is <code>true</code> and "disable" otherwise.
      */
@@ -46,8 +50,9 @@ public class Booleans {
 
     /**
      * Convert boolean value into corresponding string.
+     *
      * @param value
-     * @param ifTrue String representation for <code>true</code>
+     * @param ifTrue  String representation for <code>true</code>
      * @param ifFalse String representation for <code>false</code>
      * @return value of <code>ifTrue</code> if value is <code>true</code> and ifFalse otherwise.
      */
@@ -57,10 +62,11 @@ public class Booleans {
 
     /**
      * Get boolean value of specified string.
+     *
      * @param s string to check
-     * @throws IllegalArgumentException if provided string do not corresponds to
-     * any of <code>true</code> or <code>false</code> string.
      * @return true if <code>s</code> has corresponding value.
+     * @throws IllegalArgumentException if provided string do not corresponds to any of
+     *                                  <code>true</code> or <code>false</code> string.
      */
     public static boolean of(String s) {
         if (contains(trueStrings, s, true)) {
@@ -73,16 +79,17 @@ public class Booleans {
     }
 
     /**
-     * Get boolean value of specified string. If provided string is <code>null</code>
-     * then <code>defaultValue</code> is returned.
-     * @param s string to check
+     * Get boolean value of specified string. If provided string is <code>null</code> then
+     * <code>defaultValue</code> is returned.
+     *
+     * @param s            string to check
      * @param defaultValue
-     * @throws IllegalArgumentException if provided string do not corresponds to
-     * any of <code>true</code> or <code>false</code> string.
      * @return true if <code>s</code> has corresponding value.
+     * @throws IllegalArgumentException if provided string do not corresponds to any of
+     *                                  <code>true</code> or <code>false</code> string.
      */
     public static boolean of(String s, boolean defaultValue) {
-        if( s == null) {
+        if (s == null) {
             return defaultValue;
         }
 
@@ -97,8 +104,9 @@ public class Booleans {
 
     /**
      * Test the array.
-     * @param array where to test
-     * @param value to test
+     *
+     * @param array      where to test
+     * @param value      to test
      * @param ignoreCase
      * @return <code>true</code> is <code>array</code> contains <code>value</code>
      * and <code>false</code> otherwise.

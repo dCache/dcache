@@ -82,7 +82,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
 import org.dcache.srm.v2_2.ArrayOfTPermissionReturn;
@@ -96,33 +95,33 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TUserPermission;
 
 
-public class SRMGetPermissionClientV2 extends SRMClient
-{
+public class SRMGetPermissionClientV2 extends SRMClient {
+
     private final java.net.URI[] surls;
     private final String[] surl_string;
 
-    public SRMGetPermissionClientV2(Configuration configuration, java.net.URI[] surls, String[] surl_string) {
+    public SRMGetPermissionClientV2(Configuration configuration, java.net.URI[] surls,
+          String[] surl_string) {
         super(configuration);
-        this.surls       = surls;
+        this.surls = surls;
         this.surl_string = surl_string;
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
+    protected java.net.URI getServerUrl() {
         return surls[0];
     }
 
     @Override
     public void start() throws Exception {
         checkCredentialValid();
-        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
-        URI[] uriarray=new URI[surl_string.length];
+        ArrayOfAnyURI surlarray = new ArrayOfAnyURI();
+        URI[] uriarray = new URI[surl_string.length];
         URI uri;
 
-        for(int i=0;i<uriarray.length;i++){
-            uri=new URI(surl_string[i]);
-            uriarray[i]=uri;
+        for (int i = 0; i < uriarray.length; i++) {
+            uri = new URI(surl_string[i]);
+            uriarray[i] = uri;
         }
 
         surlarray.setUrlArray(uriarray);
@@ -131,14 +130,14 @@ public class SRMGetPermissionClientV2 extends SRMClient
         req.setArrayOfSURLs(surlarray);
         configuration.getStorageSystemInfo().ifPresent(req::setStorageSystemInfo);
         SrmGetPermissionResponse resp = srm.srmGetPermission(req);
-        TReturnStatus rs   = resp.getReturnStatus();
-        ArrayOfTPermissionReturn permissions=resp.getArrayOfPermissionReturns();
-        TPermissionReturn[] permissionarray=null;
-        if (permissions!=null) {
-            permissionarray=permissions.getPermissionArray();
+        TReturnStatus rs = resp.getReturnStatus();
+        ArrayOfTPermissionReturn permissions = resp.getArrayOfPermissionReturns();
+        TPermissionReturn[] permissionarray = null;
+        if (permissions != null) {
+            permissionarray = permissions.getPermissionArray();
         }
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-            TStatusCode rc  = rs.getStatusCode();
+            TStatusCode rc = rs.getStatusCode();
             StringBuilder sb = new StringBuilder();
             sb.append("Return code: ").append(rc.toString()).append("\n");
             sb.append("Explanation: ").append(rs.getExplanation()).append("\n");
@@ -146,69 +145,68 @@ public class SRMGetPermissionClientV2 extends SRMClient
         }
 
         StringBuilder txt = new StringBuilder();
-        if (permissionarray==null) {
+        if (permissionarray == null) {
             txt.append("permissions array is null\n");
             System.out.println(txt.toString());
             System.exit(1);
         }
         for (TPermissionReturn permission : permissionarray) {
             txt.append("# file  : ").append(permission.getSurl())
-                    .append("\n");
+                  .append("\n");
             if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 txt.append("Return code: ")
-                        .append(permission.getStatus().getStatusCode()
-                                .toString()).append("\n");
+                      .append(permission.getStatus().getStatusCode()
+                            .toString()).append("\n");
                 txt.append("Explanation: ")
-                        .append(permission.getStatus().getExplanation())
-                        .append("\n");
+                      .append(permission.getStatus().getExplanation())
+                      .append("\n");
                 if (permission.getStatus()
-                        .getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                      .getStatusCode() != TStatusCode.SRM_SUCCESS) {
                     continue;
                 }
             }
             txt.append("# owner : ").append(permission.getOwner()).append("\n");
             txt.append("owner:").append(permission.getOwner()).append(":")
-                    .append(permission.getOwnerPermission().toString()).append("\n");
+                  .append(permission.getOwnerPermission().toString()).append("\n");
             ArrayOfTUserPermission arrayOfUserPermissions =
-                    permission.getArrayOfUserPermissions();
+                  permission.getArrayOfUserPermissions();
             if (arrayOfUserPermissions != null) {
                 TUserPermission[] userPermissionArray = arrayOfUserPermissions
-                        .getUserPermissionArray();
+                      .getUserPermissionArray();
                 if (userPermissionArray != null) {
                     for (TUserPermission upr : userPermissionArray) {
                         if (upr != null) {
                             txt.append("user:").append(upr.getUserID())
-                                    .append(":")
-                                    .append(upr.getMode().toString())
-                                    .append("\n");
+                                  .append(":")
+                                  .append(upr.getMode().toString())
+                                  .append("\n");
                         }
                     }
                 }
             }
             ArrayOfTGroupPermission arrayOfGroupPermissions =
-                    permission.getArrayOfGroupPermissions();
+                  permission.getArrayOfGroupPermissions();
             if (arrayOfGroupPermissions != null) {
                 TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions
-                        .getGroupPermissionArray();
+                      .getGroupPermissionArray();
                 if (groupPermissionArray != null) {
                     for (TGroupPermission upr : groupPermissionArray) {
                         if (upr != null) {
                             txt.append("group:").append(upr.getGroupID())
-                                    .append(":")
-                                    .append(upr.getMode().toString())
-                                    .append("\n");
+                                  .append(":")
+                                  .append(upr.getMode().toString())
+                                  .append("\n");
                         }
                     }
                 }
             }
             txt.append("other:").append(permission.getOtherPermission().toString())
-                    .append("\n");
+                  .append("\n");
         }
         System.out.println(txt.toString());
         if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
             System.exit(1);
-        }
-        else {
+        } else {
             System.exit(0);
         }
     }

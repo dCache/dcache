@@ -17,6 +17,8 @@
  */
 package org.dcache.gplazma.scitoken;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -28,14 +30,6 @@ import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.google.common.net.MediaType;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -45,27 +39,29 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import static org.dcache.util.Exceptions.messageOrClassName;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A JsonNode that represents a JSON document at some remote location.  If there
- * is a network problem, or the document cannot be parsed as a JSON document
- * then this node behaves as if it is a MissingNode.  Otherwise it behaves as
- * the root node of the parsed document; e.g., an ObjectNode if the JSON document
- * is a JSON Object.
+ * A JsonNode that represents a JSON document at some remote location.  If there is a network
+ * problem, or the document cannot be parsed as a JSON document then this node behaves as if it is a
+ * MissingNode.  Otherwise it behaves as the root node of the parsed document; e.g., an ObjectNode
+ * if the JSON document is a JSON Object.
  * <p>
- * The node is cached for a configurable period, fetching fresh results once
- * that period has elapsed.  The caching period for successful and unsuccessful
- * reads may be different, allowing a more aggressive querying if the document
- * is missing.
+ * The node is cached for a configurable period, fetching fresh results once that period has
+ * elapsed.  The caching period for successful and unsuccessful reads may be different, allowing a
+ * more aggressive querying if the document is missing.
  * <p>
- * Any values (e.g., JsonNode) returned by this class represent a concrete
- * JSON document.  Therefore, no network activity is triggered while navigating
- * the cached document.
+ * Any values (e.g., JsonNode) returned by this class represent a concrete JSON document.
+ * Therefore, no network activity is triggered while navigating the cached document.
  */
-public class HttpJsonNode extends PreparationJsonNode
-{
+public class HttpJsonNode extends PreparationJsonNode {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpJsonNode.class);
 
     private final HttpClient client;
@@ -77,22 +73,20 @@ public class HttpJsonNode extends PreparationJsonNode
     private volatile JsonNode cached = MissingNode.getInstance();
     private Instant nextCheck;
 
-    public HttpJsonNode(HttpClient client, String url, Duration cacheHit, Duration cacheMiss)
-    {
+    public HttpJsonNode(HttpClient client, String url, Duration cacheHit, Duration cacheMiss) {
         this(client, () -> Optional.of(url), cacheHit, cacheMiss);
     }
 
     /**
-     * An HttpJsonNode that never caches the result.  Each request to this node
-     * will trigger an HTTP request to fetch up-to-date information.
+     * An HttpJsonNode that never caches the result.  Each request to this node will trigger an HTTP
+     * request to fetch up-to-date information.
      */
-    public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url)
-    {
+    public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url) {
         this(client, url, Duration.ZERO, Duration.ZERO);
     }
 
-    public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url, Duration cacheHit, Duration cacheMiss)
-    {
+    public HttpJsonNode(HttpClient client, Supplier<Optional<String>> url, Duration cacheHit,
+          Duration cacheMiss) {
         this.client = Objects.requireNonNull(client);
         this.urlSupplier = url;
         this.cacheHit = cacheHit;
@@ -100,8 +94,7 @@ public class HttpJsonNode extends PreparationJsonNode
     }
 
     @Override
-    protected synchronized void prepare()
-    {
+    protected synchronized void prepare() {
         Instant now = Instant.now();
         if (nextCheck == null || now.isAfter(nextCheck)) {
             cached = fetch();
@@ -109,15 +102,13 @@ public class HttpJsonNode extends PreparationJsonNode
         }
     }
 
-    private JsonNode fetch()
-    {
+    private JsonNode fetch() {
         return urlSupplier.get()
-                .flatMap(this::fetch)
-                .orElse(MissingNode.getInstance());
+              .flatMap(this::fetch)
+              .orElse(MissingNode.getInstance());
     }
 
-    private Optional<JsonNode> fetch(String url)
-    {
+    private Optional<JsonNode> fetch(String url) {
         HttpGet request = new HttpGet(url);
         request.addHeader("Accept", "application/json");
         try {
@@ -130,8 +121,7 @@ public class HttpJsonNode extends PreparationJsonNode
         }
     }
 
-    private static String readEntity(HttpResponse response) throws IOException
-    {
+    private static String readEntity(HttpResponse response) throws IOException {
         Charset charset = readCharset(response);
 
         HttpEntity entity = response.getEntity();
@@ -145,14 +135,14 @@ public class HttpJsonNode extends PreparationJsonNode
             throw new IOException("Document too big to be parsed");
         }
 
-        ByteArrayOutputStream os = (length > 0) ? new ByteArrayOutputStream((int)length) : new ByteArrayOutputStream();
+        ByteArrayOutputStream os =
+              (length > 0) ? new ByteArrayOutputStream((int) length) : new ByteArrayOutputStream();
         entity.writeTo(os);
         return os.toString(charset.name());
     }
 
 
-    private static Charset readCharset(HttpResponse response) throws IOException
-    {
+    private static Charset readCharset(HttpResponse response) throws IOException {
 
         Header contentType = response.getLastHeader("Content-Type");
         if (contentType == null || contentType.getValue() == null) {
@@ -172,8 +162,7 @@ public class HttpJsonNode extends PreparationJsonNode
     }
 
     @Override
-    protected JsonNode delegate()
-    {
+    protected JsonNode delegate() {
         return cached;
     }
 
@@ -193,12 +182,14 @@ public class HttpJsonNode extends PreparationJsonNode
     }
 
     @Override
-    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+          throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void serializeWithType(JsonGenerator jsonGenerator, SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
+    public void serializeWithType(JsonGenerator jsonGenerator,
+          SerializerProvider serializerProvider, TypeSerializer typeSerializer) throws IOException {
         throw new UnsupportedOperationException();
     }
 }

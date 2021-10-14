@@ -59,30 +59,28 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import com.google.gson.GsonBuilder;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.dcache.util.histograms.TimeFrame.BinType;
-import org.dcache.util.histograms.TimeFrame.Type;
-
 import static junit.framework.TestCase.assertEquals;
 import static org.dcache.util.ByteUnit.GiB;
 import static org.junit.Assert.assertTrue;
 
+import com.google.gson.GsonBuilder;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.dcache.util.histograms.TimeFrame.BinType;
+import org.dcache.util.histograms.TimeFrame.Type;
+import org.junit.Test;
+
 public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     TimeseriesHistogram timeseriesHistogram;
-    HistogramModel      originalModel;
-    long                now;
+    HistogramModel originalModel;
+    long now;
 
     @Test
     public void buildShouldSucceedForTimeseriesHistogramWithFileSizeValues()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenFileSizeValuesFor(24);
         givenValidTimeframeSpecification();
@@ -92,7 +90,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void buildShouldSucceedForTimeseriesHistogramWithoutData()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
         givenBinCountOf(48);
@@ -106,7 +104,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void buildShouldSucceedForTimeseriesHistogramWithoutFileSizeValues()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenValidTimeframeSpecification();
         whenConfigureIsCalled();
@@ -115,7 +113,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void rebuiltTimeseriesHistogramShouldBeTheSameAsOriginal()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -133,7 +131,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void serializedTimeseriesHistogramShouldDeserializeCorrectly()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -151,7 +149,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void updateOnTimeseriesHistogramShouldAverageLastValue()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -166,7 +164,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void updateOnTimeseriesHistogramShouldReplaceLastValue()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -181,7 +179,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void updateOnTimeseriesHistogramShouldRotateBuffer()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -196,7 +194,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void updateOnTimeseriesHistogramShouldRotateBufferToMaximum()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -211,7 +209,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     @Test
     public void updateOnTimeseriesHistogramShouldSumLastValue()
-                    throws Exception {
+          throws Exception {
         givenTimeseriesHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -226,20 +224,20 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void assertThatOriginalHistogramEqualsStored() {
         String original = new GsonBuilder().setPrettyPrinting()
-                                           .disableHtmlEscaping()
-                                           .create().toJson(originalModel);
+              .disableHtmlEscaping()
+              .create().toJson(originalModel);
         String restored = new GsonBuilder().setPrettyPrinting()
-                                           .disableHtmlEscaping()
-                                           .create().toJson(model);
+              .disableHtmlEscaping()
+              .create().toJson(model);
         assertEquals("object strings are not the same",
-                     original,
-                     restored);
+              original,
+              restored);
     }
 
     private void assertThatSerializationsAreEqual() {
         assertEquals("serializations are not equal",
-                     serialized1,
-                     serialized2);
+              serialized1,
+              serialized2);
     }
 
     private void assertThatUpdateAveragesLastValue() {
@@ -250,9 +248,9 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
         timeseriesHistogram.average(newValue, now);
         values = values();
         assertTrue("value was not replaced",
-                   lastValue != values[values.length - 1][1]);
+              lastValue != values[values.length - 1][1]);
         assertTrue("last value was replaced with faulty value",
-                   average == values[values.length - 1][1]);
+              average == values[values.length - 1][1]);
     }
 
     private void assertThatUpdateReplacesLastValue() {
@@ -262,9 +260,9 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
         timeseriesHistogram.replace(newValue, now);
         values = values();
         assertTrue("value was not replaced",
-                   lastValue != values[values.length - 1][1]);
+              lastValue != values[values.length - 1][1]);
         assertTrue("last value was replaced with faulty value",
-                   newValue == values[values.length - 1][1]);
+              newValue == values[values.length - 1][1]);
     }
 
     private void assertThatUpdateRotatesBuffer(int units) {
@@ -274,28 +272,28 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
         timeseriesHistogram.average(5.71, now);
         Double[][] rotated = values();
         assertTrue("new buffer has wrong size",
-                   originals.length == rotated.length);
+              originals.length == rotated.length);
 
         int r = 0;
 
         for (int i = units; i < originals.length; ++i) {
             assertTrue("rotated value " + r + " is incorrect",
-                       originals[i][1] == rotated[r][1]);
+                  originals[i][1] == rotated[r][1]);
             ++r;
         }
 
         for (; r < rotated.length - 1; ++r) {
             assertTrue("rotated value " + r + " is incorrect",
-                       null == rotated[r][1]);
+                  null == rotated[r][1]);
         }
 
         assertTrue("last rotated value is incorrect",
-                   rotated[rotated.length - 1][1] == 4.12);
+              rotated[rotated.length - 1][1] == 4.12);
 
         HistogramMetadata metadata = model.metadata;
         int[] counts = metadata.getBinCounts();
         assertTrue("last rotated count is incorrect",
-                   counts[metadata.rotatedIndex(rotated.length - 1)] == 2);
+              counts[metadata.rotatedIndex(rotated.length - 1)] == 2);
     }
 
     private void assertThatUpdateSumsLastValue() {
@@ -305,9 +303,9 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
         timeseriesHistogram.add(newValue, now);
         values = values();
         assertTrue("value was not replaced",
-                   lastValue != values[values.length - 1][1]);
+              lastValue != values[values.length - 1][1]);
         assertTrue("last value was replaced with faulty value",
-                   newValue + lastValue == values[values.length - 1][1]);
+              newValue + lastValue == values[values.length - 1][1]);
     }
 
     private double getHoursInThePastFromNow(int hours) {
@@ -376,23 +374,23 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void whenHistogramIsDeserialized() {
         model = new GsonBuilder().setPrettyPrinting()
-                                 .disableHtmlEscaping()
-                                 .create()
-                                 .fromJson(serialized1, model.getClass());
+              .disableHtmlEscaping()
+              .create()
+              .fromJson(serialized1, model.getClass());
     }
 
     private void whenHistogramIsSerialized() {
         serialized1 = new GsonBuilder().setPrettyPrinting()
-                                       .disableHtmlEscaping()
-                                       .create()
-                                       .toJson(model);
+              .disableHtmlEscaping()
+              .create()
+              .toJson(model);
     }
 
     private void whenHistogramIsSerializedAgain() {
         serialized2 = new GsonBuilder().setPrettyPrinting()
-                                       .disableHtmlEscaping()
-                                       .create()
-                                       .toJson(model);
+              .disableHtmlEscaping()
+              .create()
+              .toJson(model);
     }
 
     private void whenHistogramIsStored() throws Exception {

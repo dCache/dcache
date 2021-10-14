@@ -20,24 +20,20 @@ package org.dcache.webdav;
 import io.milton.resource.Resource;
 
 /**
- * An exception thrown to indicate the server should return a 400 Bad Request
- * response to the client, but in a place where milton did not anticipate this
- * possibility.
+ * An exception thrown to indicate the server should return a 400 Bad Request response to the
+ * client, but in a place where milton did not anticipate this possibility.
  */
-public class UncheckedBadRequestException extends WebDavException
-{
-    public UncheckedBadRequestException(Resource resource)
-    {
+public class UncheckedBadRequestException extends WebDavException {
+
+    public UncheckedBadRequestException(Resource resource) {
         super(resource);
     }
 
-    public UncheckedBadRequestException(String message, Resource resource)
-    {
+    public UncheckedBadRequestException(String message, Resource resource) {
         super(message, resource);
     }
 
-    public UncheckedBadRequestException(String message, Throwable cause, Resource resource)
-    {
+    public UncheckedBadRequestException(String message, Throwable cause, Resource resource) {
         super(message, cause, resource);
     }
 }

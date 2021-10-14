@@ -22,8 +22,10 @@ import java.util.concurrent.ThreadFactory;
 /**
  * A class that implements ThreadCreator wishes to create new threads.
  */
-public interface ThreadCreator
-{
-    /** Accept a ThreadFactory instance with which to create threads. */
+public interface ThreadCreator {
+
+    /**
+     * Accept a ThreadFactory instance with which to create threads.
+     */
     void setThreadFactory(ThreadFactory factory);
 }

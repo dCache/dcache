@@ -1,16 +1,14 @@
 package org.dcache.gplazma.plugins;
 
+import java.util.Properties;
 import org.apache.axis.EngineConfiguration;
+import org.dcache.gplazma.AuthenticationException;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 
-import java.util.Properties;
-
-import org.dcache.gplazma.AuthenticationException;
-
 /**
- * Simple wrapper around {@link MapCredentialsClient}. This is the default
- * client for the {@link XACMLPlugin}.
+ * Simple wrapper around {@link MapCredentialsClient}. This is the default client for the {@link
+ * XACMLPlugin}.
  *
  * @author arossi
  */
@@ -25,7 +23,7 @@ public class PrivilegeDelegate implements IMapCredentialsClient {
 
     @Override
     public LocalId mapCredentials(String mappingServiceURL)
-                    throws AuthenticationException {
+          throws AuthenticationException {
         try {
             return client.mapCredentials(mappingServiceURL);
             /*
@@ -94,8 +92,7 @@ public class PrivilegeDelegate implements IMapCredentialsClient {
     }
 
     @Override
-    public void setAxisConfiguration(EngineConfiguration axisConfiguration)
-    {
+    public void setAxisConfiguration(EngineConfiguration axisConfiguration) {
         client.setAxisConfiguration(axisConfiguration);
     }
 }

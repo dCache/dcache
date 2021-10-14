@@ -1,7 +1,6 @@
 package org.dcache.namespace;
 
 /**
- *
  * File attributes supported by dCache
  *
  * @since 1.9.4

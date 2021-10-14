@@ -1,51 +1,41 @@
 package org.dcache.services.login;
 
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.security.auth.Subject;
-
-import java.security.Principal;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.security.Principal;
+import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
+import org.springframework.beans.factory.annotation.Required;
 
-public class RemoteLoginStrategy implements LoginStrategy
-{
+public class RemoteLoginStrategy implements LoginStrategy {
+
     private CellStub _stub;
 
-    public RemoteLoginStrategy()
-    {
+    public RemoteLoginStrategy() {
     }
 
-    public RemoteLoginStrategy(CellStub stub)
-    {
+    public RemoteLoginStrategy(CellStub stub) {
         setCellStub(stub);
     }
 
     @Required
-    public void setCellStub(CellStub stub)
-    {
+    public void setCellStub(CellStub stub) {
         if (stub == null) {
             throw new NullPointerException();
         }
         _stub = stub;
     }
 
-    public CellStub getCellStub()
-    {
+    public CellStub getCellStub() {
         return _stub;
     }
 
     @Override
-    public LoginReply login(Subject subject) throws CacheException
-    {
+    public LoginReply login(Subject subject) throws CacheException {
         if (_stub == null) {
             throw new IllegalStateException("CellStub is not set");
         }
@@ -53,7 +43,7 @@ public class RemoteLoginStrategy implements LoginStrategy
         try {
             LoginMessage message = _stub.sendAndWait(new LoginMessage(subject));
             return new LoginReply(message.getSubject(),
-                                  message.getLoginAttributes());
+                  message.getLoginAttributes());
         } catch (CacheException e) {
             /* Note that dCache vehicles can transport errors.  These
              * are re-thrown as a CacheException (or subclass thereof)
@@ -90,8 +80,7 @@ public class RemoteLoginStrategy implements LoginStrategy
     }
 
     @Override
-    public Principal map(Principal principal) throws CacheException
-    {
+    public Principal map(Principal principal) throws CacheException {
         if (_stub == null) {
             throw new IllegalStateException("CellStub is not set");
         }
@@ -106,8 +95,7 @@ public class RemoteLoginStrategy implements LoginStrategy
     }
 
     @Override
-    public Set<Principal> reverseMap(Principal principal) throws CacheException
-    {
+    public Set<Principal> reverseMap(Principal principal) throws CacheException {
         if (_stub == null) {
             throw new IllegalStateException("CellStub is not set");
         }

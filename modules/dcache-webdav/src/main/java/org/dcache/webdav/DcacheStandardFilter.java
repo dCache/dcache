@@ -13,30 +13,27 @@ import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.quota.StorageChecker;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * Custom StandardFilter for Milton.
- *
- * As we do some things differently in dCache than expected by the
- * Milton WebDAV framework, we cannot always perform error handling
- * the Milton way. We therefore have a hierarchy of WebDAV
- * RuntimeExceptions which are caught by DcacheStandardFilter and
- * translated to HTTP response codes.
- *
+ * <p>
+ * As we do some things differently in dCache than expected by the Milton WebDAV framework, we
+ * cannot always perform error handling the Milton way. We therefore have a hierarchy of WebDAV
+ * RuntimeExceptions which are caught by DcacheStandardFilter and translated to HTTP response
+ * codes.
+ * <p>
  * Essentially the same as com.bradmcevoy.http.StandardFilter.
  */
-public class DcacheStandardFilter implements Filter
-{
+public class DcacheStandardFilter implements Filter {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(DcacheStandardFilter.class);
+          LoggerFactory.getLogger(DcacheStandardFilter.class);
 
     @Override
-    public void process(FilterChain chain, Request request, Response response)
-    {
+    public void process(FilterChain chain, Request request, Response response) {
         HttpManager manager = chain.getHttpManager();
         WebDavResponseHandler responseHandler = (WebDavResponseHandler) manager.getResponseHandler();
 
@@ -44,12 +41,13 @@ public class DcacheStandardFilter implements Filter
             Request.Method method = request.getMethod();
             Handler handler = manager.getMethodHandler(method);
             if (handler == null) {
-                responseHandler.respondMethodNotImplemented(new EmptyResource(request), response, request);
+                responseHandler.respondMethodNotImplemented(new EmptyResource(request), response,
+                      request);
                 return;
             }
 
             try {
-                handler.process(manager,request,response);
+                handler.process(manager, request, response);
                 if (response.getEntity() != null) {
                     manager.sendResponseEntity(response);
                 }
@@ -71,12 +69,14 @@ public class DcacheStandardFilter implements Filter
         } catch (BadRequestException e) {
             responseHandler.respondBadRequest(e.getResource(), response, request);
             // Work-around: milton doesn't allow non-standard text, so we update the value here.
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_BAD_REQUEST, e.getReason());
+            ServletResponse.getResponse()
+                  .setStatus(HttpServletResponse.SC_BAD_REQUEST, e.getReason());
         } catch (UncheckedBadRequestException e) {
             LOGGER.debug("Client supplied bad request parameters: {}", e.getMessage());
             responseHandler.respondBadRequest(e.getResource(), response, request);
         } catch (InsufficientStorageException e) {
-            responseHandler.respondInsufficientStorage(request, response, StorageChecker.StorageErrorReason.SER_DISK_FULL);
+            responseHandler.respondInsufficientStorage(request, response,
+                  StorageChecker.StorageErrorReason.SER_DISK_FULL);
         } catch (ConflictException e) {
             responseHandler.respondConflict(e.getResource(), response, request, e.getMessage());
         } catch (NotAuthorizedException e) {
@@ -98,7 +98,8 @@ public class DcacheStandardFilter implements Filter
         } catch (MethodNotAllowedException e) {
             responseHandler.respondMethodNotAllowed(e.getResource(), response, request);
             // Work-around: milton doesn't allow non-standard text, so we update the value here.
-            ServletResponse.getResponse().setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED, e.getMessage());
+            ServletResponse.getResponse()
+                  .setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED, e.getMessage());
         } catch (WebDavException e) {
             LOGGER.warn("Internal server error: {}", e.toString());
             responseHandler.respondServerError(request, response, e.getMessage());

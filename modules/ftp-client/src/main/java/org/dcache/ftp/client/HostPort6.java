@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +16,9 @@
 package org.dcache.ftp.client;
 
 /**
- * Utility class for parsing and converting host-port information from EPSV
- * and EPRT ftp commands.
+ * Utility class for parsing and converting host-port information from EPSV and EPRT ftp commands.
  */
-public class HostPort6 extends HostPort
-{
+public class HostPort6 extends HostPort {
 
     public static final String IPv4 = "1";
     public static final String IPv6 = "2";
@@ -29,23 +27,20 @@ public class HostPort6 extends HostPort
     private int port;
     private String version;
 
-    public HostPort6(String version, String host, int port)
-    {
+    public HostPort6(String version, String host, int port) {
         this.version = version;
         this.host = host;
         this.port = port;
     }
 
     /**
-     * Parses host-port from passive mode reply message.
-     * Note that the argument is not the whole message, but
-     * only the content of the brackets:
+     * Parses host-port from passive mode reply message. Note that the argument is not the whole
+     * message, but only the content of the brackets:
      * <d><net-prt><d><net-addr><d><tcp-port><d>
      *
      * @param passiveReplyMessage reply message for the EPSV command
      */
-    public HostPort6(String passiveReplyMessage)
-    {
+    public HostPort6(String passiveReplyMessage) {
         Parser tokens = new Parser(passiveReplyMessage);
         String token = null;
 
@@ -58,7 +53,7 @@ public class HostPort6 extends HostPort
             this.version = IPv6;
         } else {
             throw new IllegalArgumentException("Invalid network protocol: " +
-                                               token);
+                  token);
         }
 
         token = tokens.nextToken().trim();
@@ -75,19 +70,16 @@ public class HostPort6 extends HostPort
         this.port = Integer.parseInt(token);
     }
 
-    private static class Parser
-    {
+    private static class Parser {
 
         final String line;
         int offset = 0;
 
-        public Parser(String line)
-        {
+        public Parser(String line) {
             this.line = line;
         }
 
-        public String nextToken()
-        {
+        public String nextToken() {
             int start = line.indexOf('|', this.offset);
             if (start == -1) {
                 throw new IllegalArgumentException("Formatting error");
@@ -107,8 +99,7 @@ public class HostPort6 extends HostPort
      * @return port number
      */
     @Override
-    public int getPort()
-    {
+    public int getPort() {
         return this.port;
     }
 
@@ -117,8 +108,7 @@ public class HostPort6 extends HostPort
      *
      * @param host the host address
      */
-    public void setHost(String host)
-    {
+    public void setHost(String host) {
         this.host = host;
     }
 
@@ -128,8 +118,7 @@ public class HostPort6 extends HostPort
      * @return host address
      */
     @Override
-    public String getHost()
-    {
+    public String getHost() {
         return this.host;
     }
 
@@ -138,8 +127,7 @@ public class HostPort6 extends HostPort
      *
      * @return address version
      */
-    public String getVersion()
-    {
+    public String getVersion() {
         return this.version;
     }
 
@@ -148,22 +136,18 @@ public class HostPort6 extends HostPort
      *
      * @param version the address version
      */
-    public void setVersion(String version)
-    {
+    public void setVersion(String version) {
         this.version = version;
     }
 
     /**
-     * Returns the host-port information in the
-     * format used by EPRT command.
+     * Returns the host-port information in the format used by EPRT command.
      * <d><net-prt><d><net-addr><d><tcp-port><d>
      *
-     * @return host-port information in EPRT command
-     * representation.
+     * @return host-port information in EPRT command representation.
      */
     @Override
-    public String toFtpCmdArgument()
-    {
+    public String toFtpCmdArgument() {
         StringBuilder msg = new StringBuilder();
         msg.append("|");
         if (this.version != null) {
@@ -179,8 +163,7 @@ public class HostPort6 extends HostPort
         return msg.toString();
     }
 
-    public static String getIPAddressVersion(String address)
-    {
+    public static String getIPAddressVersion(String address) {
         return (address.indexOf(':') == -1) ? IPv4 : IPv6;
     }
 

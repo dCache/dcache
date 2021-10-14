@@ -16,11 +16,23 @@
  */
 package org.dcache.chimera.cli;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.padStart;
+import static com.google.common.io.ByteStreams.toByteArray;
+import static dmg.util.CommandException.checkCommand;
+import static java.util.stream.Collectors.toList;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.util.ByteUnit.KiB;
+
 import com.google.common.primitives.Booleans;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.Pgpass;
+import diskCacheV111.util.RetentionPolicy;
+import dmg.util.CommandException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -36,21 +48,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.Pgpass;
-
-import dmg.util.CommandException;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACEParser;
+import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
@@ -58,7 +62,6 @@ import org.dcache.chimera.FileNotFoundChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.ChimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.OriginTag;
 import org.dcache.chimera.UnixPermission;
@@ -70,16 +73,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.cli.ShellApplication;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.padStart;
-import static com.google.common.io.ByteStreams.toByteArray;
-import static dmg.util.CommandException.checkCommand;
-import static java.util.stream.Collectors.toList;
-import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static org.dcache.util.ByteUnit.KiB;
+public class Shell extends ShellApplication {
 
-public class Shell extends ShellApplication
-{
     private final FileSystemProvider fs;
     private final ChimeraStorageInfoExtractable extractor;
 
@@ -89,21 +84,22 @@ public class Shell extends ShellApplication
     public static void main(String[] arguments) throws Throwable {
         if (arguments.length < 7) {
             System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass> <dbPassFile> " +
-                    "<storageInfoExtractor> <accessLatency> <retentionPolicy>");
+                  "<storageInfoExtractor> <accessLatency> <retentionPolicy>");
             System.exit(4);
         }
         Args args = new Args(arguments);
         args.shift(7);
 
-        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6])) {
+        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3],
+              arguments[4], arguments[5], arguments[6])) {
             shell.start(args);
         }
     }
 
-    public Shell(String url, String user, String password, String file, String extractor, String accessLatency, String retentionPolicy) throws Exception
-    {
+    public Shell(String url, String user, String password, String file, String extractor,
+          String accessLatency, String retentionPolicy) throws Exception {
         if (password.isEmpty() && !file.isEmpty()) {
-            if(new File(file).exists()) {
+            if (new File(file).exists()) {
                 password = Pgpass.getPassword(file, url, user, password);
             } else {
                 System.err.println("chimera.db.password.file path is wrong");
@@ -114,34 +110,31 @@ public class Shell extends ShellApplication
         pwd = fs.path2inode(path);
 
         Class<? extends ChimeraStorageInfoExtractable> storageInfoExtractor =
-                Class.forName(extractor).asSubclass(ChimeraStorageInfoExtractable.class);
-        Constructor<? extends ChimeraStorageInfoExtractable> constructor = storageInfoExtractor.getConstructor(AccessLatency.class, RetentionPolicy.class);
+              Class.forName(extractor).asSubclass(ChimeraStorageInfoExtractable.class);
+        Constructor<? extends ChimeraStorageInfoExtractable> constructor = storageInfoExtractor.getConstructor(
+              AccessLatency.class, RetentionPolicy.class);
 
         this.extractor = constructor.newInstance(AccessLatency.getAccessLatency(accessLatency),
-                RetentionPolicy.getRetentionPolicy(retentionPolicy));
+              RetentionPolicy.getRetentionPolicy(retentionPolicy));
     }
 
     @Override
-    protected String getCommandName()
-    {
+    protected String getCommandName() {
         return "chimera";
     }
 
     @Override
-    protected String getPrompt()
-    {
+    protected String getPrompt() {
         return "chimera:" + path + "# ";
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         fs.close();
     }
 
     @Nonnull
-    private FsInode lookup(@Nullable File path) throws ChimeraFsException
-    {
+    private FsInode lookup(@Nullable File path) throws ChimeraFsException {
         if (path == null) {
             return pwd;
         } else if (path.isAbsolute()) {
@@ -152,14 +145,13 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "cd", hint = "change current directory")
-    public class CdCommand implements Callable<Serializable>
-    {
+    public class CdCommand implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             pwd = lookup(path);
             Shell.this.path = (pwd.getParent() != null) ? fs.inode2path(pwd) : "/";
             return null;
@@ -167,10 +159,10 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "chgrp", hint = "change file group",
-             description = "The chgrp command sets the group ID of PATH to GID. Mapped group names " +
-                     "cannot be used.")
-    public class ChgrpCommand implements Callable<Serializable>
-    {
+          description = "The chgrp command sets the group ID of PATH to GID. Mapped group names " +
+                "cannot be used.")
+    public class ChgrpCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         int gid;
 
@@ -178,20 +170,20 @@ public class Shell extends ShellApplication
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
-	    Stat stat = new Stat();
-	    stat.setGid(gid);
+        public Serializable call() throws ChimeraFsException {
+            Stat stat = new Stat();
+            stat.setGid(gid);
             lookup(path).setStat(stat);
             return null;
         }
     }
 
     @Command(name = "chmod", hint = "change file mode",
-             description = "The chmod command modifies the file mode bits of PATH to MODE. The MODE must " +
-                     "be expressed as an octal bit mask.")
-    public class ChmodCommand implements Callable<Serializable>
-    {
+          description =
+                "The chmod command modifies the file mode bits of PATH to MODE. The MODE must " +
+                      "be expressed as an octal bit mask.")
+    public class ChmodCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         String mode; // octal
 
@@ -199,42 +191,40 @@ public class Shell extends ShellApplication
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
-	    Stat stat = new Stat();
-	    stat.setMode(Integer.parseInt(mode, 8));
+        public Serializable call() throws ChimeraFsException {
+            Stat stat = new Stat();
+            stat.setMode(Integer.parseInt(mode, 8));
             lookup(path).setStat(stat);
             return null;
         }
     }
 
     @Command(name = "chown", hint = "change file owner and group",
-             description = "The chown command sets the owner of <path> to <uid>. "
-                     + "The group-ownership may also be updated by specifying "
-                     + "the desired <gid> value with a colon separating the two "
-                     + "values.  Non-numerial values (such as username or "
-                     + "groupname) cannot be used to describe the desired "
-                     + "ownership.\n"
-                     + "\n"
-                     + "By default, the command targets an individual file or "
-                     + "directory.  If the -R option used along with a "
-                     + "directory target then both that directory and all of "
-                     + "its contents are updated.  This is repeated for any "
-                     + "subdirectories contained within the target directory.")
-    public class ChownCommand implements Callable<Serializable>
-    {
+          description = "The chown command sets the owner of <path> to <uid>. "
+                + "The group-ownership may also be updated by specifying "
+                + "the desired <gid> value with a colon separating the two "
+                + "values.  Non-numerial values (such as username or "
+                + "groupname) cannot be used to describe the desired "
+                + "ownership.\n"
+                + "\n"
+                + "By default, the command targets an individual file or "
+                + "directory.  If the -R option used along with a "
+                + "directory target then both that directory and all of "
+                + "its contents are updated.  This is repeated for any "
+                + "subdirectories contained within the target directory.")
+    public class ChownCommand implements Callable<Serializable> {
+
         @Argument(index = 0, valueSpec = "UID[:GID]")
         String owner;
 
         @Argument(index = 1)
         File path;
 
-        @Option(name="R", usage="Apply the change recursively.  This requires "
-                + "<path> to be a directory.")
+        @Option(name = "R", usage = "Apply the change recursively.  This requires "
+              + "<path> to be a directory.")
         boolean recursive;
 
-        private Stat buildUpdatedOwnership(String ownership) throws CommandException
-        {
+        private Stat buildUpdatedOwnership(String ownership) throws CommandException {
             Stat stat = new Stat();
 
             int colon = ownership.indexOf(':');
@@ -243,7 +233,7 @@ public class Shell extends ShellApplication
                 stat.setUid(uid);
             } else {
                 checkCommand(colon > 0 && colon < ownership.length() - 1,
-                              "Colon must separate two integers.");
+                      "Colon must separate two integers.");
                 int uid = parseInteger(ownership.substring(0, colon));
                 stat.setUid(uid);
                 int gid = parseInteger(ownership.substring(colon + 1));
@@ -255,22 +245,21 @@ public class Shell extends ShellApplication
             return stat;
         }
 
-        private int parseInteger(String value) throws CommandException
-        {
+        private int parseInteger(String value) throws CommandException {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new CommandException("Only integer values are allowed and \"" + value +"\" is not an integer.");
+                throw new CommandException(
+                      "Only integer values are allowed and \"" + value + "\" is not an integer.");
             }
         }
 
         @Override
-        public Serializable call() throws IOException, CommandException
-        {
+        public Serializable call() throws IOException, CommandException {
             Stat updateOwnership = buildUpdatedOwnership(owner);
 
-	    FsInode inode = lookup(path);
-	    inode.setStat(updateOwnership);
+            FsInode inode = lookup(path);
+            inode.setStat(updateOwnership);
 
             if (recursive && inode.isDirectory()) {
                 chownRecursively(updateOwnership, inode);
@@ -280,8 +269,7 @@ public class Shell extends ShellApplication
         }
 
         private void chownRecursively(Stat updateOwnership, FsInode dirNode)
-                throws IOException
-        {
+              throws IOException {
             assert dirNode.isDirectory();
 
             try (var dirStream = dirNode.newDirectoryStream()) {
@@ -303,22 +291,22 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "ls", hint = "list directory contents")
-    public class LsCommand implements Callable<Serializable>
-    {
+    public class LsCommand implements Callable<Serializable> {
+
         private static final String DEFAULT_TIME = "mtime";
 
         /* The block size is purely nominal; we use 1KiB here as historically
          * filesystems have used a 1KiB block size. */
         private final int BLOCK_SIZE = KiB.toBytes(1);
 
-        private final  int[] INT_SIZE_TABLE = {9, 99, 999, 9999, 99999,
-                999999, 9999999, 99999999, 999999999, Integer.MAX_VALUE};
+        private final int[] INT_SIZE_TABLE = {9, 99, 999, 9999, 99999,
+              999999, 9999999, 99999999, 999999999, Integer.MAX_VALUE};
 
         private final DateFormat WITH_YEAR =
-                new SimpleDateFormat("MMM dd  yyyy");
+              new SimpleDateFormat("MMM dd  yyyy");
 
         private final DateFormat WITHOUT_YEAR =
-                new SimpleDateFormat("MMM dd HH:mm");
+              new SimpleDateFormat("MMM dd HH:mm");
 
         private int nlinkWidth = 0;
         private int uidWidth = 0;
@@ -328,29 +316,34 @@ public class Shell extends ShellApplication
         private final long sixMonthsInPast = sixMonthsInPast();
         private final long oneHourInFuture = oneHourInFuture();
 
-        @Option(name = "time", values = { "access", "use", "atime", "status", "ctime", "modify", "mtime", "create" },
-                usage = "Show alternative time instead of modification time: access/use/atime is the last access time, " +
-                        "status/ctime is the last file status modification time, modify/mtime is the last write time, " +
-                        "create is the creation time.")
+        @Option(name = "time", values = {"access", "use", "atime", "status", "ctime", "modify",
+              "mtime", "create"},
+              usage =
+                    "Show alternative time instead of modification time: access/use/atime is the last access time, "
+                          +
+                          "status/ctime is the last file status modification time, modify/mtime is the last write time, "
+                          +
+                          "create is the creation time.")
         String time = DEFAULT_TIME;
 
         @Option(name = "c",
-                usage = "Use time of last modification of the file status information instead of last modification " +
-                        "of the file itself.")
+              usage =
+                    "Use time of last modification of the file status information instead of last modification "
+                          +
+                          "of the file itself.")
         boolean ctime;
 
         @Option(name = "u",
-                usage = "Use time of last access instead of last modification of the file.")
+              usage = "Use time of last access instead of last modification of the file.")
         boolean atime;
 
         @Argument(required = false)
         File path;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             checkArgument(Booleans.countTrue(atime, ctime, time != DEFAULT_TIME) <= 1,
-                          "Conflicting time arguments.");
+                  "Conflicting time arguments.");
             if (ctime) {
                 time = "ctime";
             } else if (atime) {
@@ -372,15 +365,15 @@ public class Shell extends ShellApplication
                     Stat stat = entry.getStat();
 
                     switch (name) {
-                    case ".":
-                        dot = entry;
-                        break;
-                    case "..":
-                        dotdot = entry;
-                        break;
-                    default:
-                        entries.add(entry);
-                        break;
+                        case ".":
+                            dot = entry;
+                            break;
+                        case "..":
+                            dotdot = entry;
+                            break;
+                        default:
+                            entries.add(entry);
+                            break;
                     }
 
                     totalBlocks = updateTotalBlocks(totalBlocks, stat);
@@ -401,39 +394,38 @@ public class Shell extends ShellApplication
             return sb.toString();
         }
 
-        private void printEntry(StringBuilder sb, ChimeraDirectoryEntry entry) throws IOException
-        {
+        private void printEntry(StringBuilder sb, ChimeraDirectoryEntry entry) throws IOException {
             if (entry != null) {
                 Stat stat = entry.getStat();
                 long time;
                 switch (this.time) {
-                case "access":
-                case "atime":
-                case "use":
-                    time = stat.getATime();
-                    break;
-                case "status":
-                case "ctime":
-                    time = stat.getCTime();
-                    break;
-                case "modify":
-                case "mtime":
-                    time = stat.getMTime();
-                    break;
-                case "create":
-                    time = stat.getCrTime();
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown time field: " + this.time);
+                    case "access":
+                    case "atime":
+                    case "use":
+                        time = stat.getATime();
+                        break;
+                    case "status":
+                    case "ctime":
+                        time = stat.getCTime();
+                        break;
+                    case "modify":
+                    case "mtime":
+                        time = stat.getMTime();
+                        break;
+                    case "create":
+                        time = stat.getCrTime();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown time field: " + this.time);
                 }
                 String s = String.format("%s %s %s %s %s %s %s",
-                                         permissionsFor(stat),
-                                         pad(stat.getNlink(), nlinkWidth),
-                                         pad(stat.getUid(), uidWidth),
-                                         pad(stat.getGid(), gidWidth),
-                                         pad(stat.getSize(), sizeWidth),
-                                         dateOf(time),
-                                         entry.getName());
+                      permissionsFor(stat),
+                      pad(stat.getNlink(), nlinkWidth),
+                      pad(stat.getUid(), uidWidth),
+                      pad(stat.getGid(), gidWidth),
+                      pad(stat.getSize(), sizeWidth),
+                      dateOf(time),
+                      entry.getName());
 
                 sb.append(s).append('\n');
             }
@@ -442,73 +434,63 @@ public class Shell extends ShellApplication
         // For files with a time that is more than 6 months old or more than 1
         // hour into the future, the timestamp contains the year instead of the
         // time of day.
-        private String dateOf(long time)
-        {
+        private String dateOf(long time) {
             Date d = new Date(time);
 
-            if(time < sixMonthsInPast || time > oneHourInFuture) {
+            if (time < sixMonthsInPast || time > oneHourInFuture) {
                 return WITH_YEAR.format(d);
             } else {
                 return WITHOUT_YEAR.format(d);
             }
         }
 
-        private long sixMonthsInPast()
-        {
+        private long sixMonthsInPast() {
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.MONTH, -6);
             return calendar.getTimeInMillis();
         }
 
-        private long oneHourInFuture()
-        {
+        private long oneHourInFuture() {
             return System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
         }
 
-        private String pad(long value, int width)
-        {
+        private String pad(long value, int width) {
             String str = String.valueOf(value);
             return padStart(str, width, ' ');
         }
 
-        private long updateTotalBlocks(long total, Stat stat)
-        {
+        private long updateTotalBlocks(long total, Stat stat) {
             // calculate number of blocks, but rounding up
-            long nBlocks = 1 + (stat.getSize() -1)/ BLOCK_SIZE;
+            long nBlocks = 1 + (stat.getSize() - 1) / BLOCK_SIZE;
             return total + nBlocks;
         }
 
-        private int updateMaxWidth(int max, int value)
-        {
+        private int updateMaxWidth(int max, int value) {
             int width = widthOf(value);
             return width > max ? width : max;
         }
 
-        private int updateMaxWidth(int max, long value)
-        {
+        private int updateMaxWidth(int max, long value) {
             int width = widthOf(value);
             return width > max ? width : max;
         }
 
-        private String permissionsFor(Stat stat)
-        {
+        private String permissionsFor(Stat stat) {
             return new UnixPermission(stat.getMode()).toString();
         }
 
         // Requires positive x
-        private int widthOf(int x)
-        {
-            for (int i=0; ; i++) {
+        private int widthOf(int x) {
+            for (int i = 0; ; i++) {
                 if (x <= INT_SIZE_TABLE[i]) {
-                    return i+1;
+                    return i + 1;
                 }
             }
         }
 
         // Requires positive x
-        private int widthOf(long x)
-        {
-            if(x <= Integer.MAX_VALUE) {
+        private int widthOf(long x) {
+            if (x <= Integer.MAX_VALUE) {
                 return widthOf((int) x);
             }
 
@@ -539,14 +521,13 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "lstag", hint = "list directory tags")
-    public class LstagCommand implements Callable<Serializable>
-    {
+    public class LstagCommand implements Callable<Serializable> {
+
         @Argument(required = false)
         File path;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             StringBuilder sb = new StringBuilder();
             String[] tags = fs.tags(lookup(path));
             sb.append("Total: ").append(tags.length).append('\n');
@@ -558,14 +539,13 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "mkdir", hint = "make directory")
-    public class MkdirCommand implements Callable<Serializable>
-    {
+    public class MkdirCommand implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             if (path.isAbsolute()) {
                 fs.mkdir(path.toString());
             } else {
@@ -576,21 +556,20 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "mv", hint = "move file",
-             description = "Renames or moves SOURCE to TARGET. If TARGET is a directory, the source " +
-                     "file is moved into TARGET.")
-    public class MvCommand implements Callable<Serializable>
-    {
+          description = "Renames or moves SOURCE to TARGET. If TARGET is a directory, the source " +
+                "file is moved into TARGET.")
+    public class MvCommand implements Callable<Serializable> {
+
         @Argument(index = 0, metaVar = "source",
-                  usage = "File to move or rename.")
+              usage = "File to move or rename.")
         File source;
 
         @Argument(index = 1, metaVar = "target",
-                  usage = "Target path or directory.")
+              usage = "Target path or directory.")
         File destination;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode dst;
             try {
                 dst = lookup(destination);
@@ -603,24 +582,23 @@ public class Shell extends ShellApplication
                 fs.rename(inode, srcDir, source.getName(), lookup(destination), source.getName());
             } else {
                 fs.rename(inode, srcDir, source.getName(), lookup(destination.getParentFile()),
-                          destination.getName());
+                      destination.getName());
             }
             return null;
         }
     }
 
     @Command(name = "rm", hint = "remove a file",
-             description = "The rm command deletes the file.  If the file has data " +
-                     "stored in dCache then dCache will remove that data in a " +
-                     "timely fashion.")
-    public class RmCommand implements Callable<Serializable>
-    {
+          description = "The rm command deletes the file.  If the file has data " +
+                "stored in dCache then dCache will remove that data in a " +
+                "timely fashion.")
+    public class RmCommand implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             if (lookup(path).isDirectory()) {
                 throw new ChimeraFsException(path + " is a directory");
             }
@@ -636,14 +614,13 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "rmdir", hint = "remove directory")
-    public class RmdirCommand implements Callable<Serializable>
-    {
+    public class RmdirCommand implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             if (!inode.isDirectory()) {
                 throw new NotDirChimeraException(inode);
@@ -654,22 +631,21 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "findtags", hint = "find origin tags in the filesystem",
-            description = "Search chimera for all origin tags with the given"
-                    + " tag name.  An origin tag is one that is created"
-                    + " explicitly, with a specific value.  Tags that are"
-                    + " inherited, and so created automatically, are not"
-                    + " included in the output.\n"
-                    + "\n"
-                    + "The output consists of the directory path in which the"
-                    + " tag is defined followed by the value of the tag.")
-    public class FindTagsCommand implements Callable<Serializable>
-    {
+          description = "Search chimera for all origin tags with the given"
+                + " tag name.  An origin tag is one that is created"
+                + " explicitly, with a specific value.  Tags that are"
+                + " inherited, and so created automatically, are not"
+                + " included in the output.\n"
+                + "\n"
+                + "The output consists of the directory path in which the"
+                + " tag is defined followed by the value of the tag.")
+    public class FindTagsCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         String name;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             List<OriginTag> tags = fs.findTags(name);
 
             StringBuilder sb = new StringBuilder();
@@ -688,8 +664,8 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "readtag", hint = "display tag data")
-    public class ReadTagCommand implements Callable<Serializable>
-    {
+    public class ReadTagCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -697,8 +673,7 @@ public class Shell extends ShellApplication
         String tag;
 
         @Override
-        public Serializable call() throws IOException, CacheException
-        {
+        public Serializable call() throws IOException, CacheException {
             FsInode inode = lookup(path);
 
             Stat stat = fs.statTag(inode, tag);
@@ -709,14 +684,13 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "get AccessLatency", hint = "display access latency of files/directories")
-    public class GetAccessLatencyCommand implements Callable<Serializable>
-    {
+    public class GetAccessLatencyCommand implements Callable<Serializable> {
+
         @Argument(required = false)
         File path;
 
         @Override
-        public Serializable call() throws IOException, CacheException
-        {
+        public Serializable call() throws IOException, CacheException {
 
             ExtendedInode inode = new ExtendedInode(fs, lookup(path));
             AccessLatency accessLatency = extractor.getAccessLatency(inode);
@@ -727,15 +701,13 @@ public class Shell extends ShellApplication
 
 
     @Command(name = "get RetentionPolicy", hint = "display retention policy of files/directories")
-    public class GetRetentionPolicyCommand implements Callable<Serializable>
-    {
+    public class GetRetentionPolicyCommand implements Callable<Serializable> {
 
         @Argument(required = false)
         File path;
 
         @Override
-        public Serializable call() throws IOException, CacheException
-        {
+        public Serializable call() throws IOException, CacheException {
 
             ExtendedInode inode = new ExtendedInode(fs, lookup(path));
             RetentionPolicy retentionPolicy = extractor.getRetentionPolicy(inode);
@@ -745,8 +717,8 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "writetag", hint = "write tag data")
-    public class WriteTagCommand implements Callable<Serializable>
-    {
+    public class WriteTagCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -757,8 +729,7 @@ public class Shell extends ShellApplication
         String data;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             FsInode inode = lookup(path);
             try {
                 fs.statTag(inode, tag);
@@ -791,8 +762,8 @@ public class Shell extends ShellApplication
              * return.
              */
             byte[] bytes = (data == null)
-                    ? toByteArray(console.getInput())
-                    : newLineTerminated(data).getBytes();
+                  ? toByteArray(console.getInput())
+                  : newLineTerminated(data).getBytes();
             if (bytes.length > 0) {
                 fs.setTag(inode, tag, bytes, 0, bytes.length);
             }
@@ -800,15 +771,14 @@ public class Shell extends ShellApplication
             return null;
         }
 
-        private String newLineTerminated(String s)
-        {
+        private String newLineTerminated(String s) {
             return s.endsWith("\n") ? s : s + '\n';
         }
     }
 
     @Command(name = "rmtag", hint = "remove tag from directory")
-    public class RmTagCommand implements Callable<Serializable>
-    {
+    public class RmTagCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -816,8 +786,7 @@ public class Shell extends ShellApplication
         String tag;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             fs.removeTag(inode, tag);
             return null;
@@ -825,8 +794,8 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "pushtag", hint = "push tag into all subdirectories",
-            description = "Pushes given tag that exist in specified direcotry"
-                    + "down in the directory tree into all subdirectories.")
+          description = "Pushes given tag that exist in specified direcotry"
+                + "down in the directory tree into all subdirectories.")
     public class PushTagCommand implements Callable<Serializable> {
 
         @Argument(index = 0)
@@ -844,98 +813,116 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "setfacl", hint = "change access control lists",
-             description = "Sets a new ACL consisting of one or more ACEs to a resource (a file or directory), " +
-                     "which is defined by its pnfsId or globalPath.\n\n" +
+          description =
+                "Sets a new ACL consisting of one or more ACEs to a resource (a file or directory), "
+                      +
+                      "which is defined by its pnfsId or globalPath.\n\n" +
 
-                     "Each ACE defines permissions to access this resource " +
-                     "for a subject (a user or group of users). " +
-                     "ACEs are ordered by significance, i.e., first match wins.\n\n" +
+                      "Each ACE defines permissions to access this resource " +
+                      "for a subject (a user or group of users). " +
+                      "ACEs are ordered by significance, i.e., first match wins.\n\n" +
 
-                     "Description of the ACE structure. \n\n" +
+                      "Description of the ACE structure. \n\n" +
 
-                     "The element <subject> defines the subject of the ACE and " +
-                     "must be one of the following values: \n" +
-                     "   USER:<who_id> : user identified by the virtual user ID <who_id> \n" +
-                     "  GROUP:<who_id> : group identified by the virtual group ID <who_id> \n" +
-                     "          OWNER@ : user who owns the resource\n" +
-                     "          GROUP@ : group that owns the resource \n" +
-                     "       EVERYONE@ : world, including the owner and owning group\n" +
-                     "      ANONYMOUS@ : accessed without any authentication \n" +
-                     "  AUTHENTICATED@ : any authenticated user (opposite of ANONYMOUS) \n\n" +
+                      "The element <subject> defines the subject of the ACE and " +
+                      "must be one of the following values: \n" +
+                      "   USER:<who_id> : user identified by the virtual user ID <who_id> \n" +
+                      "  GROUP:<who_id> : group identified by the virtual group ID <who_id> \n" +
+                      "          OWNER@ : user who owns the resource\n" +
+                      "          GROUP@ : group that owns the resource \n" +
+                      "       EVERYONE@ : world, including the owner and owning group\n" +
+                      "      ANONYMOUS@ : accessed without any authentication \n" +
+                      "  AUTHENTICATED@ : any authenticated user (opposite of ANONYMOUS) \n\n" +
 
-                     "The MASK is a set of bits describing how correspondent permissions will " +
-                     "be modified for users matching the SUBJECT. If MASK is preceded by a '+' then " +
-                     "corresponding operations are allowed. If it is preceded by a '-' then " +
-                     "corresponding operations are disallowed. Some bits apply only to regular " +
-                     "files, others apply only to directories, and some to both. A bit is converted " +
-                     "to the appropriate one, as indicated in parentheses.\n\n" +
+                      "The MASK is a set of bits describing how correspondent permissions will " +
+                      "be modified for users matching the SUBJECT. If MASK is preceded by a '+' then "
+                      +
+                      "corresponding operations are allowed. If it is preceded by a '-' then " +
+                      "corresponding operations are disallowed. Some bits apply only to regular " +
+                      "files, others apply only to directories, and some to both. A bit is converted "
+                      +
+                      "to the appropriate one, as indicated in parentheses.\n\n" +
 
-                     "The following access permissions may be used: \n" +
-                     "   r : Permission to read the data of a file (converted to 'l' if directory). \n" +
-                     "   l : Permission to list the contents of a directory (converted to 'r' if file). \n" +
-                     "   w : Permission to modify a file's data anywhere in the file's offset range.\n" +
-                     "       This includes the ability to write to any arbitrary offset and \n" +
-                     "       as a result to grow the file. (Converted to 'f' if directory).\n" +
-                     "   f : Permission to add a new file in a directory (converted to 'w' if file).\n" +
-                     "   a : The ability to modify a file's data, but only starting at EOF \n"+
-                     "       (converted to 's' if directory).\n" +
-                     "   s : Permission to create a subdirectory in a directory (converted to 'a' if file).\n" +
-                     "   x : Permission to execute a file or traverse a directory.\n" +
-                     "   d : Permission to delete the file or directory.\n" +
-                     "   D : Permission to delete a file or directory within a directory.\n" +
-                     "   n : Permission to read the named attributes of a file or to lookup \n" +
-                     "       the named attributes directory.\n" +
-                     "   N : Permission to write the named attributes of a file or \n" +
-                     "       to create a named attribute directory.\n" +
-                     "   t : The ability to read basic attributes (non-ACLs) of a file or directory.\n" +
-                     "   T : Permission to change the times associated with a file \n" +
-                     "       or directory to an arbitrary value.\n" +
-                     "   c : Permission to read the ACL.\n" +
-                     "   C : Permission to write the acl and mode attributes.\n" +
-                     "   o : Permission to write the owner and owner group attributes.\n\n" +
+                      "The following access permissions may be used: \n" +
+                      "   r : Permission to read the data of a file (converted to 'l' if directory). \n"
+                      +
+                      "   l : Permission to list the contents of a directory (converted to 'r' if file). \n"
+                      +
+                      "   w : Permission to modify a file's data anywhere in the file's offset range.\n"
+                      +
+                      "       This includes the ability to write to any arbitrary offset and \n" +
+                      "       as a result to grow the file. (Converted to 'f' if directory).\n" +
+                      "   f : Permission to add a new file in a directory (converted to 'w' if file).\n"
+                      +
+                      "   a : The ability to modify a file's data, but only starting at EOF \n" +
+                      "       (converted to 's' if directory).\n" +
+                      "   s : Permission to create a subdirectory in a directory (converted to 'a' if file).\n"
+                      +
+                      "   x : Permission to execute a file or traverse a directory.\n" +
+                      "   d : Permission to delete the file or directory.\n" +
+                      "   D : Permission to delete a file or directory within a directory.\n" +
+                      "   n : Permission to read the named attributes of a file or to lookup \n" +
+                      "       the named attributes directory.\n" +
+                      "   N : Permission to write the named attributes of a file or \n" +
+                      "       to create a named attribute directory.\n" +
+                      "   t : The ability to read basic attributes (non-ACLs) of a file or directory.\n"
+                      +
+                      "   T : Permission to change the times associated with a file \n" +
+                      "       or directory to an arbitrary value.\n" +
+                      "   c : Permission to read the ACL.\n" +
+                      "   C : Permission to write the acl and mode attributes.\n" +
+                      "   o : Permission to write the owner and owner group attributes.\n\n" +
 
-                     "To enable ACL inheritance, the optional element <flags> must be defined. " +
-                     "Multiple bits may be specified as a simple concatenated list of letters. " +
-                     "Order doesn't matter.\n" +
-                     "   f : Can be placed on a directory and indicates that this ACE \n" +
-                     "       should be added to each new file created.\n" +
-                     "   d : Can be placed on a directory and indicates that this ACE \n" +
-                     "       should be added to each new directory created.\n" +
-                     "   o : Can be placed on a directory and indicates that this ACE \n" +
-                     "       should be ignored for this directory.\n" +
-                     "       Any ACE that inherit from an ACE with 'o' flag set will not have the 'o' flag set.\n" +
-                     "       Therefore, ACEs with this bit set take effect only if they are inherited \n" +
-                     "       by newly created files or directories as specified by the above two flags.\n" +
-                     "       REMARK: If 'o' flag is present on an ACE, then \n" +
-                     "       either 'd' or 'f' (or both) must be present as well.\n\n" +
+                      "To enable ACL inheritance, the optional element <flags> must be defined. " +
+                      "Multiple bits may be specified as a simple concatenated list of letters. " +
+                      "Order doesn't matter.\n" +
+                      "   f : Can be placed on a directory and indicates that this ACE \n" +
+                      "       should be added to each new file created.\n" +
+                      "   d : Can be placed on a directory and indicates that this ACE \n" +
+                      "       should be added to each new directory created.\n" +
+                      "   o : Can be placed on a directory and indicates that this ACE \n" +
+                      "       should be ignored for this directory.\n" +
+                      "       Any ACE that inherit from an ACE with 'o' flag set will not have the 'o' flag set.\n"
+                      +
+                      "       Therefore, ACEs with this bit set take effect only if they are inherited \n"
+                      +
+                      "       by newly created files or directories as specified by the above two flags.\n"
+                      +
+                      "       REMARK: If 'o' flag is present on an ACE, then \n" +
+                      "       either 'd' or 'f' (or both) must be present as well.\n\n" +
 
-                     "Examples: \n" +
-                     "setfacl /pnfs/example.org/data/TestDir USER:3750:+lfs:d EVERYONE@:+l GROUP:8745:-s USER:3452:+D\n" +
-                     "       Permissions for TestDir are altered so: \n" +
-                     "       First ACE: User with id 3750 (USER:3750) is allowed to \n"+
-                     "          list directory contents (l), \n" +
-                     "          create files (f), \n"+
-                     "          create subdirectories (s), \n" +
-                     "          and these permissions will be inherited by all newly created \n" +
-                     "          subdirectories as well (d). \n" +
-                     "       Second ACE: Everyone (EVERYONE@) is allowed to \n"+
-                     "          list directory contents. \n" +
-                     "       Third ACE: Group with id 8745 (GROUP:8745) is not allowed to \n" +
-                     "          create subdirectories.\n" +
-                     "       Fourth ACE: User with id 3452 (USER:3452) is allowed to \n" +
-                     "          delete objects within this directory (D). The user must also have \n" +
-                     "          the delete permission (d) for the object to be deleted. See next example.\n\n " +
-                     "       \n" +
-                     "setfacl /pnfs/example.org/data/TestDir/TestFile USER:3452:+d\n" +
-                     "       Permissions for TestFile are altered so: \n" +
-                     "          User with id 3452 (USER:3452) is allowed to \n" +
-                     "          delete this resource (d). To delete TestFile, the user must also \n"+
-                     "          have permission to delete directory contents (D). See previous example.\n\n" +
+                      "Examples: \n" +
+                      "setfacl /pnfs/example.org/data/TestDir USER:3750:+lfs:d EVERYONE@:+l GROUP:8745:-s USER:3452:+D\n"
+                      +
+                      "       Permissions for TestDir are altered so: \n" +
+                      "       First ACE: User with id 3750 (USER:3750) is allowed to \n" +
+                      "          list directory contents (l), \n" +
+                      "          create files (f), \n" +
+                      "          create subdirectories (s), \n" +
+                      "          and these permissions will be inherited by all newly created \n" +
+                      "          subdirectories as well (d). \n" +
+                      "       Second ACE: Everyone (EVERYONE@) is allowed to \n" +
+                      "          list directory contents. \n" +
+                      "       Third ACE: Group with id 8745 (GROUP:8745) is not allowed to \n" +
+                      "          create subdirectories.\n" +
+                      "       Fourth ACE: User with id 3452 (USER:3452) is allowed to \n" +
+                      "          delete objects within this directory (D). The user must also have \n"
+                      +
+                      "          the delete permission (d) for the object to be deleted. See next example.\n\n "
+                      +
+                      "       \n" +
+                      "setfacl /pnfs/example.org/data/TestDir/TestFile USER:3452:+d\n" +
+                      "       Permissions for TestFile are altered so: \n" +
+                      "          User with id 3452 (USER:3452) is allowed to \n" +
+                      "          delete this resource (d). To delete TestFile, the user must also \n"
+                      +
+                      "          have permission to delete directory contents (D). See previous example.\n\n"
+                      +
 
-                     "For further information on ACLs in dCache please refer to: " +
-                     "http://trac.dcache.org/trac.cgi/wiki/Integrate")
-    public class SetFaclCommand implements Callable<Serializable>
-    {
+                      "For further information on ACLs in dCache please refer to: " +
+                      "http://trac.dcache.org/trac.cgi/wiki/Integrate")
+    public class SetFaclCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -943,39 +930,38 @@ public class Shell extends ShellApplication
         String[] acl;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             fs.setACL(lookup(path), Stream.of(acl).map(ACEParser::parse).collect(toList()));
             return null;
         }
     }
 
     @Command(name = "getfacl", hint = "display access control lists")
-    public class GetFaclComamnd implements Callable<Serializable>
-    {
+    public class GetFaclComamnd implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws IOException, ACLException
-        {
+        public Serializable call() throws IOException, ACLException {
             FsInode inode = lookup(path);
             List<ACE> acl = fs.getACL(inode);
 
             StringBuilder sb = new StringBuilder();
             for (ACE ace : acl) {
                 sb.append(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE))
-                        .append('\n');
+                      .append('\n');
             }
             return sb.toString();
         }
     }
 
     @Command(name = "writedata", hint = "write file content",
-             description = "Be aware that such data is stored in the Chimera database and not in dCache. " +
-                     "The data will not be accessible through dCache.")
-    public class WriteDataCommand implements Callable<Serializable>
-    {
+          description =
+                "Be aware that such data is stored in the Chimera database and not in dCache. " +
+                      "The data will not be accessible through dCache.")
+    public class WriteDataCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -983,18 +969,16 @@ public class Shell extends ShellApplication
         String data;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             byte[] bytes = data == null
-                    ? toByteArray(System.in)
-                    : newLineTerminated(data).getBytes();
+                  ? toByteArray(System.in)
+                  : newLineTerminated(data).getBytes();
             writeDataIntoFile(bytes);
             return null;
         }
 
         private void writeDataIntoFile(byte[] data)
-                throws ChimeraFsException
-        {
+              throws ChimeraFsException {
             FsInode inode;
             try {
                 inode = lookup(path);
@@ -1009,34 +993,33 @@ public class Shell extends ShellApplication
             inode.write(0, data, 0, data.length);
         }
 
-        private String newLineTerminated(String s)
-        {
+        private String newLineTerminated(String s) {
             return s.endsWith("\n") ? s : s + '\n';
         }
     }
 
-    @Command(name = "checksum list", hint  = "list checksums of file")
-    public class ChecksumListCommand implements Callable<Serializable>
-    {
+    @Command(name = "checksum list", hint = "list checksums of file")
+    public class ChecksumListCommand implements Callable<Serializable> {
+
         @Argument
         File path;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             FsInode inode = lookup(path);
 
             StringBuilder sb = new StringBuilder();
             for (Checksum checksum : fs.getInodeChecksums(inode)) {
-                    sb.append(checksum.getType().getName()).append(':').append(checksum.getValue()).append('\n');
+                sb.append(checksum.getType().getName()).append(':').append(checksum.getValue())
+                      .append('\n');
             }
             return sb.toString();
         }
     }
 
     @Command(name = "checksum get", hint = "display checksum of file")
-    public class ChecksumGetComamnd implements Callable<Serializable>
-    {
+    public class ChecksumGetComamnd implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -1044,21 +1027,20 @@ public class Shell extends ShellApplication
         ChecksumType type;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             FsInode inode = lookup(path);
             String checksumValue = fs.getInodeChecksums(inode).stream()
-                    .filter(c -> c.getType() == type)
-                    .map(Checksum::getValue)
-                    .findFirst()
-                    .orElseGet(() -> "No checksum of type " + type.getName());
+                  .filter(c -> c.getType() == type)
+                  .map(Checksum::getValue)
+                  .findFirst()
+                  .orElseGet(() -> "No checksum of type " + type.getName());
             return checksumValue + '\n';
         }
     }
 
     @Command(name = "checksum add", hint = "add checksum to file")
-    public class ChecksumAddCommand implements Callable<Serializable>
-    {
+    public class ChecksumAddCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -1069,8 +1051,7 @@ public class Shell extends ShellApplication
         String checksum;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             Checksum c = new Checksum(type, checksum);
             FsInode inode = lookup(path);
             if (inode.isDirectory() || inode.isLink()) {
@@ -1082,8 +1063,8 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "checksum delete", hint = "remove checkusm from file")
-    public class ChecksumDeleteCommand implements Callable<Serializable>
-    {
+    public class ChecksumDeleteCommand implements Callable<Serializable> {
+
         @Argument(index = 0)
         File path;
 
@@ -1091,8 +1072,7 @@ public class Shell extends ShellApplication
         ChecksumType type;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             fs.removeInodeChecksum(inode, type.getType());
             return null;
@@ -1100,59 +1080,57 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "xattr ls", hint = "list extended attributes",
-            description = "Obtain the a list of all extended attributes that"
-                    + " are currently assigned to a file.")
-    public class ExtendedAttributesListCommand implements Callable<Serializable>
-    {
+          description = "Obtain the a list of all extended attributes that"
+                + " are currently assigned to a file.")
+    public class ExtendedAttributesListCommand implements Callable<Serializable> {
+
         @Argument(usage = "The file to examine")
         File path;
 
-        @Option(name="quote", usage = "Whether to place extended attribute"
-                + " values with within double-quote marks.")
+        @Option(name = "quote", usage = "Whether to place extended attribute"
+              + " values with within double-quote marks.")
         boolean quote;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             return fs.listXattrs(inode).stream()
-                    .map(m -> quote ? ("\"" + m + "\"") : m)
-                    .collect(Collectors.joining("\n    ", "    ", "\n"));
+                  .map(m -> quote ? ("\"" + m + "\"") : m)
+                  .collect(Collectors.joining("\n    ", "    ", "\n"));
         }
     }
 
     @Command(name = "xattr get", hint = "query an extended attribute value.",
-            description = "Obtain the current value of a specific extended"
-                    + " attribute assigned to a file.")
-    public class ExtendedAttributesGetCommand implements Callable<Serializable>
-    {
+          description = "Obtain the current value of a specific extended"
+                + " attribute assigned to a file.")
+    public class ExtendedAttributesGetCommand implements Callable<Serializable> {
+
         @Argument(index = 0, usage = "The file to query")
         File path;
 
         @Argument(index = 1, usage = "The name of the extended attribute")
         String name;
 
-        @Option(name="quote", usage = "Whether to wrap values with"
-                + " double-quote marks.")
+        @Option(name = "quote", usage = "Whether to wrap values with"
+              + " double-quote marks.")
         boolean quote;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             String value = new String(fs.getXattr(inode, name),
-                    StandardCharsets.UTF_8);
+                  StandardCharsets.UTF_8);
             return quote ? ("\"" + value + "\"") : value;
         }
     }
 
     @Command(name = "xattr set", hint = "modify an extended attribute",
-            description = "Create or modify the current value of an extended"
-                    + " attribute.  The 'mode' option is specifies whether the"
-                    + " attribute is created (if it does not exist) and"
-                    + " whether the attribute is modified (if it does exist).")
-    public class ExtendedAttributesSetCommand implements Callable<Serializable>
-    {
+          description = "Create or modify the current value of an extended"
+                + " attribute.  The 'mode' option is specifies whether the"
+                + " attribute is created (if it does not exist) and"
+                + " whether the attribute is modified (if it does exist).")
+    public class ExtendedAttributesSetCommand implements Callable<Serializable> {
+
         @Argument(index = 0, usage = "The file to modify")
         File path;
 
@@ -1163,19 +1141,18 @@ public class Shell extends ShellApplication
         String value;
 
         @Option(name = "mode", usage = "How to react if the attribute already"
-                + " exists or does not exist.  The values have the following"
-                + " meaning:\n\n"
-                + "    CREATE: add the attribute if it does not already exist;\n"
-                + "        fail the operation if attribute already exists.\n\n"
-                + "    REPLACE: update the attribute if it already exists; fail\n"
-                + "        the operation if the attribute does not exist.\n\n"
-                + "    EITHER: add the attribute if it does not already exist\n"
-                + "        or update the value if it already exists.")
+              + " exists or does not exist.  The values have the following"
+              + " meaning:\n\n"
+              + "    CREATE: add the attribute if it does not already exist;\n"
+              + "        fail the operation if attribute already exists.\n\n"
+              + "    REPLACE: update the attribute if it already exists; fail\n"
+              + "        the operation if the attribute does not exist.\n\n"
+              + "    EITHER: add the attribute if it does not already exist\n"
+              + "        or update the value if it already exists.")
         FileSystemProvider.SetXattrMode mode = FileSystemProvider.SetXattrMode.EITHER;
 
         @Override
-        public Serializable call() throws ChimeraFsException, CommandException
-        {
+        public Serializable call() throws ChimeraFsException, CommandException {
             try {
                 FsInode inode = lookup(path);
                 fs.setXattr(inode, name, value.getBytes(StandardCharsets.UTF_8), mode);
@@ -1188,9 +1165,9 @@ public class Shell extends ShellApplication
     }
 
     @Command(name = "xattr rm", hint = "remove an extended attribute",
-            description = "Remove the attribute from the file.")
-    public class ExtendedAttributesRmCommand implements Callable<Serializable>
-    {
+          description = "Remove the attribute from the file.")
+    public class ExtendedAttributesRmCommand implements Callable<Serializable> {
+
         @Argument(index = 0, usage = "The file to modify")
         File path;
 
@@ -1198,8 +1175,7 @@ public class Shell extends ShellApplication
         String name;
 
         @Override
-        public Serializable call() throws ChimeraFsException
-        {
+        public Serializable call() throws ChimeraFsException {
             FsInode inode = lookup(path);
             fs.removeXattr(inode, name);
             return null;

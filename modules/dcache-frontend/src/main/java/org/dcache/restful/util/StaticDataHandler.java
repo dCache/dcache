@@ -18,34 +18,30 @@
 package org.dcache.restful.util;
 
 import com.google.common.base.Splitter;
-import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.MetaData;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.google.gson.GsonBuilder;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.MetaData;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
- * A class that accepts client GET requests and replies with
- * static information.  The data is static, but the representation is
- * negotiable, based on the client-supplied preferences.  If the client
- * expresses no preference then the filename determines the format.
+ * A class that accepts client GET requests and replies with static information.  The data is
+ * static, but the representation is negotiable, based on the client-supplied preferences.  If the
+ * client expresses no preference then the filename determines the format.
  */
-public class StaticDataHandler extends AbstractHandler
-{
-    private static enum Media
-    {
+public class StaticDataHandler extends AbstractHandler {
+
+    private static enum Media {
         JSON("application/json", "", "\n"),
         JAVASCRIPT("application/javascript", "var CONFIG = ", ";\n");
 
@@ -53,8 +49,7 @@ public class StaticDataHandler extends AbstractHandler
         private final String post;
         private final String mime;
 
-        Media(String mime, String pre, String post)
-        {
+        Media(String mime, String pre, String post) {
             this.mime = mime;
             this.pre = pre;
             this.post = post;
@@ -65,20 +60,18 @@ public class StaticDataHandler extends AbstractHandler
     private String json;
 
     @Required
-    public void setPath(String path)
-    {
+    public void setPath(String path) {
         paths = Splitter.on(':').splitToList(path);
     }
 
     @Required
-    public void setData(Map<String,String> data)
-    {
+    public void setData(Map<String, String> data) {
         json = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(data);
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
-    {
+    public void handle(String target, Request baseRequest, HttpServletRequest request,
+          HttpServletResponse response) throws IOException, ServletException {
         if (isStarted() && !baseRequest.isHandled() && paths.contains(target)) {
             if (request.getMethod().equals("GET")) {
                 handleRequest(target, baseRequest, response);
@@ -89,40 +82,39 @@ public class StaticDataHandler extends AbstractHandler
         }
     }
 
-    private Media decideMedia(String target, Request request)
-    {
+    private Media decideMedia(String target, Request request) {
         MetaData.Request metadata = request.getMetaData();
         List<String> types = metadata == null
-                ? Collections.emptyList()
-                : metadata.getFields().getQualityCSV(HttpHeader.ACCEPT);
+              ? Collections.emptyList()
+              : metadata.getFields().getQualityCSV(HttpHeader.ACCEPT);
 
         for (String type : types) {
             switch (type) {
-            case "application/json":
-            case "text/json":
-                return Media.JSON;
-            case "application/javascript":
-            case "text/javascript":
-                return Media.JAVASCRIPT;
+                case "application/json":
+                case "text/json":
+                    return Media.JSON;
+                case "application/javascript":
+                case "text/javascript":
+                    return Media.JAVASCRIPT;
             }
         }
 
         int dot = target.lastIndexOf('.');
         if (dot != -1) {
-            String extension = target.substring(dot+1);
+            String extension = target.substring(dot + 1);
             switch (extension) {
-            case "js":
-                return Media.JAVASCRIPT;
-            case "json":
-                return Media.JSON;
+                case "js":
+                    return Media.JAVASCRIPT;
+                case "json":
+                    return Media.JSON;
             }
         }
 
         return Media.JAVASCRIPT;
     }
 
-    private void handleRequest(String target, Request request, HttpServletResponse response) throws IOException
-    {
+    private void handleRequest(String target, Request request, HttpServletResponse response)
+          throws IOException {
         Media media = decideMedia(target, request);
 
         response.setContentType(media.mime);

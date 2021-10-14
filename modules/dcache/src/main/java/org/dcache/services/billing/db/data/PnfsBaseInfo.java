@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
+import diskCacheV111.vehicles.PnfsFileInfoMessage;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -66,8 +67,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import diskCacheV111.vehicles.PnfsFileInfoMessage;
 
 /**
  * Base class for all billing objects.

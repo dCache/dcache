@@ -18,31 +18,29 @@
  */
 package diskCacheV111.doors;
 
+import java.util.function.Consumer;
 import javax.net.ssl.SSLEngine;
 
-import java.util.function.Consumer;
-
 /**
- * A class that implements TlsStarter is able to trigger a TLS handshake with
- * subsequent messages being encrypted.  This approach to encrypting the
- * channel is often called StartTLS.  Usually the client requests (in
- * plain-text) that the channel switches to an encrypted mode.  The server
- * responds that this is OK.  When the client receives the OK message, it
- * initiates the TLS handshake by sending the TLS ClientHello message.
+ * A class that implements TlsStarter is able to trigger a TLS handshake with subsequent messages
+ * being encrypted.  This approach to encrypting the channel is often called StartTLS.  Usually the
+ * client requests (in plain-text) that the channel switches to an encrypted mode.  The server
+ * responds that this is OK.  When the client receives the OK message, it initiates the TLS
+ * handshake by sending the TLS ClientHello message.
  */
-public interface TlsStarter
-{
+public interface TlsStarter {
+
     /**
-     * This method provides the class with a way of triggering a TLS handshake
-     * for subsequent traffic.  It is expected that the TlsStarter class will
-     * send a reply to the client <em>after</em> calling the {startTls#accept}
-     * method.  This reply will be sent in plain-text.  The client, on receiving
-     * the reply, should initiate the TLS handshake by sending the TLS
+     * This method provides the class with a way of triggering a TLS handshake for subsequent
+     * traffic.  It is expected that the TlsStarter class will send a reply to the client
+     * <em>after</em> calling the {startTls#accept} method.  This reply will be sent in plain-text.
+     * The client, on receiving the reply, should initiate the TLS handshake by sending the TLS
      * ClientHello message.
      * <p>
-     * The supplied SSLEngine instance should be configured but unused instance.
-     * The framework will call {@code SSLEngine.setUseClientMode(false)} to
-     * ensure the engine will respond as a server to the handshake.
+     * The supplied SSLEngine instance should be configured but unused instance. The framework will
+     * call {@code SSLEngine.setUseClientMode(false)} to ensure the engine will respond as a server
+     * to the handshake.
+     *
      * @param startTls indicate that the client will initiate TLS handshake.
      */
     void setTlsStarter(Consumer<SSLEngine> startTls);

@@ -3,14 +3,12 @@ package org.dcache.gplazma;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-
-import javax.security.auth.Subject;
-
 import java.util.Collections;
 import java.util.Set;
+import javax.security.auth.Subject;
 
-public class LoginReply
-{
+public class LoginReply {
+
     private Subject _subject;
     private Set<Object> _sessionAttributes = Collections.emptySet();
 

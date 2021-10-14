@@ -66,69 +66,70 @@ import org.dcache.qos.data.QoSAction;
 import org.dcache.vehicles.FileAttributes;
 
 public class QoSAdjustmentRequest implements Serializable {
-  private static final long serialVersionUID = -1201617117743113180L;
 
-  private PnfsId pnfsId;
-  private QoSAction action;
-  private FileAttributes attributes;
-  private PoolManagerPoolInformation targetInfo;
-  private String source;
-  private String target;
-  private String poolGroup;
+    private static final long serialVersionUID = -1201617117743113180L;
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    private PnfsId pnfsId;
+    private QoSAction action;
+    private FileAttributes attributes;
+    private PoolManagerPoolInformation targetInfo;
+    private String source;
+    private String target;
+    private String poolGroup;
 
-  public void setPnfsId(PnfsId pnfsId) {
-    this.pnfsId = pnfsId;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public QoSAction getAction() {
-    return action;
-  }
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
 
-  public void setAction(QoSAction action) {
-    this.action = action;
-  }
+    public QoSAction getAction() {
+        return action;
+    }
 
-  public FileAttributes getAttributes() {
-    return attributes;
-  }
+    public void setAction(QoSAction action) {
+        this.action = action;
+    }
 
-  public void setAttributes(FileAttributes attributes) {
-    this.attributes = attributes;
-  }
+    public FileAttributes getAttributes() {
+        return attributes;
+    }
 
-  public PoolManagerPoolInformation getTargetInfo() {
-    return targetInfo;
-  }
+    public void setAttributes(FileAttributes attributes) {
+        this.attributes = attributes;
+    }
 
-  public void setTargetInfo(PoolManagerPoolInformation targetInfo) {
-    this.targetInfo = targetInfo;
-  }
+    public PoolManagerPoolInformation getTargetInfo() {
+        return targetInfo;
+    }
 
-  public String getSource() {
-    return source;
-  }
+    public void setTargetInfo(PoolManagerPoolInformation targetInfo) {
+        this.targetInfo = targetInfo;
+    }
 
-  public void setSource(String source) {
-    this.source = source;
-  }
+    public String getSource() {
+        return source;
+    }
 
-  public String getTarget() {
-    return target;
-  }
+    public void setSource(String source) {
+        this.source = source;
+    }
 
-  public void setTarget(String target) {
-    this.target = target;
-  }
+    public String getTarget() {
+        return target;
+    }
 
-  public String getPoolGroup() {
-    return poolGroup;
-  }
+    public void setTarget(String target) {
+        this.target = target;
+    }
 
-  public void setPoolGroup(String poolGroup) {
-    this.poolGroup = poolGroup;
-  }
+    public String getPoolGroup() {
+        return poolGroup;
+    }
+
+    public void setPoolGroup(String poolGroup) {
+        this.poolGroup = poolGroup;
+    }
 }

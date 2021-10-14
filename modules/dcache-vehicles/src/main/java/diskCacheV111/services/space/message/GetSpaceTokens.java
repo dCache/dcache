@@ -12,14 +12,17 @@ package diskCacheV111.services.space.message;
 import diskCacheV111.vehicles.Message;
 
 /**
- *
  * @author timur
  */
-public class GetSpaceTokens extends Message{
+public class GetSpaceTokens extends Message {
+
     private static final long serialVersionUID = -2482510383290374236L;
     private long[] spaceTokens;
     private String description;
-    /** Creates a new instance of Reserve */
+
+    /**
+     * Creates a new instance of Reserve
+     */
     public GetSpaceTokens(String description) {
         this.description = description;
         setReplyRequired(true);

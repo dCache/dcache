@@ -6,17 +6,19 @@ package org.dcache.services.info.base;
 import java.util.Date;
 
 /**
- * A base-type for all metric values within the dCache state.  The different metrics types
- * all extend this base Class.
+ * A base-type for all metric values within the dCache state.  The different metrics types all
+ * extend this base Class.
  * <p>
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public abstract class StateValue implements StateComponent
-{
+public abstract class StateValue implements StateComponent {
+
     private static final boolean DUMMY_ISEPHEMERAL_VALUE = false;
 
-    /** The granularity of expiryTime, in milliseconds */
+    /**
+     * The granularity of expiryTime, in milliseconds
+     */
     private static final int _granularity = 500;
     private static final int _millisecondsInSecond = 1000;
 
@@ -25,23 +27,22 @@ public abstract class StateValue implements StateComponent
     private final boolean _isEphemeral;
 
     /**
-     *  Create a StateValue that is either Immortal or Ephemeral
-     *  @param isImmortal true if the StateValue is immortal
+     * Create a StateValue that is either Immortal or Ephemeral
+     *
+     * @param isImmortal true if the StateValue is immortal
      */
-    protected StateValue(boolean isImmortal)
-    {
+    protected StateValue(boolean isImmortal) {
         _expiryTime = null;
         _isEphemeral = !isImmortal;
     }
 
     /**
-     * Create a StateValue that will expire some point in
-     * the future.  This allows "soft state" registration of
-     * information.
+     * Create a StateValue that will expire some point in the future.  This allows "soft state"
+     * registration of information.
+     *
      * @param duration the length of time, in seconds, this information will be held.
      */
-    protected StateValue(long duration)
-    {
+    protected StateValue(long duration) {
         if (duration < 0) {
             duration = 0;
         }
@@ -55,7 +56,7 @@ public abstract class StateValue implements StateComponent
              *  round up to nearest _granularity milliseconds.  This is to allow
              *  metrics to be purged at the same time.
              */
-            tim = Math.round((double)tim / _granularity) * _granularity;
+            tim = Math.round((double) tim / _granularity) * _granularity;
         }
 
         _expiryTime = new Date(tim);
@@ -65,23 +66,22 @@ public abstract class StateValue implements StateComponent
 
     /**
      * Make the actual data/time this value will expire available.
+     *
      * @return when this StateValue will expire
      */
     @Override
-    public Date getExpiryDate()
-    {
+    public Date getExpiryDate() {
         return _expiryTime != null ? new Date(_expiryTime.getTime()) : null;
     }
 
     /**
-     * Discover whether the expiry time has elapsed.  For static StateValues
-     * (those without an expiry date), this will always return false.
-     * @return True if this value is scheduled to expiry and that time has elapsed,
-     * false otherwise.
+     * Discover whether the expiry time has elapsed.  For static StateValues (those without an
+     * expiry date), this will always return false.
+     *
+     * @return True if this value is scheduled to expiry and that time has elapsed, false otherwise.
      */
     @Override
-    public boolean hasExpired()
-    {
+    public boolean hasExpired() {
         if (_expiryTime == null) {
             return false;
         }
@@ -90,59 +90,61 @@ public abstract class StateValue implements StateComponent
         return !now.before(_expiryTime);
     }
 
-    /** Provide a generic name for subclasses of StateValue */
+    /**
+     * Provide a generic name for subclasses of StateValue
+     */
     public abstract String getTypeName();
 
-    /** Sub-classes must provide a leaf-node's visitor support */
+    /**
+     * Sub-classes must provide a leaf-node's visitor support
+     */
     @Override
     public abstract void acceptVisitor(StatePath path, StateVisitor visitor);
 
-    /** Force subclasses to override equals and hashCode */
+    /**
+     * Force subclasses to override equals and hashCode
+     */
     @Override
     public abstract boolean equals(Object other);
+
     @Override
     public abstract int hashCode();
 
 
     /**
-     * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite takes
-     * care of all effects from processing the transition.
+     * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite
+     * takes care of all effects from processing the transition.
      */
     @Override
     public void acceptVisitor(StateTransition transition, StatePath path,
-            StateVisitor visitor)
-    {
+          StateVisitor visitor) {
         acceptVisitor(path, visitor);
     }
 
 
     @Override
-    public void applyTransition(StatePath ourPath, StateTransition transition)
-    {
+    public void applyTransition(StatePath ourPath, StateTransition transition) {
         // Simply do nothing. All activity takes place in StateComposite.
     }
 
 
     @Override
     public void buildTransition(StatePath ourPath, StatePath childPath,
-            StateComponent newChild, StateTransition transition)
-            throws MetricStatePathException
-    {
+          StateComponent newChild, StateTransition transition)
+          throws MetricStatePathException {
         // If we're here, the user has specified a path with a metric in it.
         throw new MetricStatePathException(ourPath.toString());
     }
 
     @Override
     public void buildRemovalTransition(StatePath ourPath,
-            StateTransition transition, boolean forced)
-    {
+          StateTransition transition, boolean forced) {
         // Simply do nothing, all activity takes place in StateComposites
     }
 
     @Override
     public boolean predicateHasBeenTriggered(StatePath ourPath,
-            StatePathPredicate predicate, StateTransition transition)
-    {
+          StatePathPredicate predicate, StateTransition transition) {
         /*
          * If we've iterated down to a metric then we <i>know</i>
          * that nothing's changed:  any change that might satisfy this predicate would happen
@@ -153,37 +155,31 @@ public abstract class StateValue implements StateComponent
 
     @Override
     public void buildPurgeTransition(StateTransition transition,
-            StatePath ourPath, StatePath remainingPath)
-    {
+          StatePath ourPath, StatePath remainingPath) {
         // Simply do nothing, all activity takes place in parent StateComposite
     }
 
     @Override
-    public boolean isMortal()
-    {
+    public boolean isMortal() {
         return _expiryTime != null;
     }
 
     @Override
-    public boolean isEphemeral()
-    {
+    public boolean isEphemeral() {
         return _expiryTime == null && _isEphemeral;
     }
 
     @Override
-    public boolean isImmortal()
-    {
+    public boolean isImmortal() {
         return _expiryTime == null && !_isEphemeral;
     }
 
     @Override
-    public Date getEarliestChildExpiryDate()
-    {
+    public Date getEarliestChildExpiryDate() {
         return null; // we never have children.
     }
 
-    public Date getCreationTime()
-    {
+    public Date getCreationTime() {
         return _creationTime;
     }
 }

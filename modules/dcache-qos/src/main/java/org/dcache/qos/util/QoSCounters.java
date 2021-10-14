@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.util;
 
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnits.jedecSymbol;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -77,174 +80,174 @@ import org.dcache.util.ByteUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.util.ByteUnit.BYTES;
-import static org.dcache.util.ByteUnits.jedecSymbol;
-
 /**
- *  Base class for recording monitoring information and writing out statistics to a file.
+ * Base class for recording monitoring information and writing out statistics to a file.
  */
 public abstract class QoSCounters {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(QoSCounters.class);
-  protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
-      .ofPattern("yyyy/MM/dd-HH:mm:ss")
-      .withZone(ZoneId.systemDefault());
-  protected static final DateTimeFormatter SUFFIX_FORMATTER = DateTimeFormatter
-      .ofPattern("yyyy_MM_dd_HH");
 
-  private static final String LASTSTART = "Running since: %s\n";
-  private static final String UPTIME    = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
-  private static final String LASTSWP   = "Last sweep at %s\n";
-  private static final String LASTSWPD  = "Last sweep took %s seconds\n\n";
+    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSCounters.class);
+    protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
+          .ofPattern("yyyy/MM/dd-HH:mm:ss")
+          .withZone(ZoneId.systemDefault());
+    protected static final DateTimeFormatter SUFFIX_FORMATTER = DateTimeFormatter
+          .ofPattern("yyyy_MM_dd_HH");
 
-  protected static String formatWithPrefix(long count) {
-    ByteUnit units = ByteUnit.Type.BINARY.unitsOf(count);
-    if (units == BYTES) {
-      return String.format("%s", count);
-    } else {
-      return String.format("%.2f %s", units.convert((double)count, BYTES), jedecSymbol().of(units));
-    }
-  }
+    private static final String LASTSTART = "Running since: %s\n";
+    private static final String UPTIME = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
+    private static final String LASTSWP = "Last sweep at %s\n";
+    private static final String LASTSWPD = "Last sweep took %s seconds\n\n";
 
-  protected static String getRateChangeSinceLast(double current, double last) {
-    if (last == 0) {
-      return "?";
-    }
-    double delta = 100*(current - last)/last;
-    return String.format("%.2f%%", delta);
-  }
-
-  protected final Date started = new Date();
-  protected final List<String> statisticsBuffer = new ArrayList<>();
-
-  protected long lastSweep = started.getTime();
-  protected long lastSweepDuration = 0;
-  protected File statisticsPath;
-  protected boolean toFile = false;
-
-  protected Map<String, QoSCounterGroup> groupMap;
-
-  public void readStatistics(StringBuilder builder, Integer offset, Integer limit, boolean descending) {
-    List<String> buffer = new ArrayList<>();
-
-    File path = new File(getPath());
-    if (!path.exists()) {
-      return;
-    }
-
-    try (BufferedReader fr = new BufferedReader(new FileReader(getPath()))) {
-      /*
-       *  Title line should always be there.
-       */
-      buffer.add(fr.readLine());
-      int end = limit == null ? Integer.MAX_VALUE : limit+1;
-      for (int pos = 0; ; ++pos) {
-        String line = fr.readLine();
-        if (line == null) {
-          break;
-        }
-
-        if (pos < offset) {
-          continue;
-        }
-
-        if (descending) {
-          buffer.add(1, line);
-        } else if (buffer.size() < end) {
-          buffer.add(line);
+    protected static String formatWithPrefix(long count) {
+        ByteUnit units = ByteUnit.Type.BINARY.unitsOf(count);
+        if (units == BYTES) {
+            return String.format("%s", count);
         } else {
-          break;
+            return String.format("%.2f %s", units.convert((double) count, BYTES),
+                  jedecSymbol().of(units));
+        }
+    }
+
+    protected static String getRateChangeSinceLast(double current, double last) {
+        if (last == 0) {
+            return "?";
+        }
+        double delta = 100 * (current - last) / last;
+        return String.format("%.2f%%", delta);
+    }
+
+    protected final Date started = new Date();
+    protected final List<String> statisticsBuffer = new ArrayList<>();
+
+    protected long lastSweep = started.getTime();
+    protected long lastSweepDuration = 0;
+    protected File statisticsPath;
+    protected boolean toFile = false;
+
+    protected Map<String, QoSCounterGroup> groupMap;
+
+    public void readStatistics(StringBuilder builder, Integer offset, Integer limit,
+          boolean descending) {
+        List<String> buffer = new ArrayList<>();
+
+        File path = new File(getPath());
+        if (!path.exists()) {
+            return;
         }
 
-        if (buffer.size() > end) {
-          buffer.remove(end);
+        try (BufferedReader fr = new BufferedReader(new FileReader(getPath()))) {
+            /*
+             *  Title line should always be there.
+             */
+            buffer.add(fr.readLine());
+            int end = limit == null ? Integer.MAX_VALUE : limit + 1;
+            for (int pos = 0; ; ++pos) {
+                String line = fr.readLine();
+                if (line == null) {
+                    break;
+                }
+
+                if (pos < offset) {
+                    continue;
+                }
+
+                if (descending) {
+                    buffer.add(1, line);
+                } else if (buffer.size() < end) {
+                    buffer.add(line);
+                } else {
+                    break;
+                }
+
+                if (buffer.size() > end) {
+                    buffer.remove(end);
+                }
+            }
+        } catch (IOException e) {
+            builder.append(e.getMessage()).append("\n");
         }
-      }
-    } catch (IOException e) {
-      builder.append(e.getMessage()).append("\n");
+
+        buffer.stream().forEach((l) -> builder.append(l).append("\n"));
     }
 
-    buffer.stream().forEach((l) -> builder.append(l).append("\n"));
-  }
-
-  public void recordSweep(long ended, long duration) {
-    lastSweep = ended;
-    lastSweepDuration = duration;
-    writeStatistics();
-  }
-
-  public void setStatisticsPath(String statisticsPath) {
-    this.statisticsPath = new File(statisticsPath);
-  }
-
-  public void setToFile(boolean toFile) {
-    this.toFile = toFile;
-  }
-
-  public void appendRunning(StringBuilder builder) {
-    long elapsed = (System.currentTimeMillis() - started.getTime()) / 1000;
-    long seconds = elapsed % 60;
-    elapsed = elapsed / 60;
-    long minutes = elapsed % 60;
-    elapsed = elapsed / 60;
-    long hours = elapsed % 24;
-    long days = elapsed / 24;
-
-    builder.append(String.format(LASTSTART, started));
-    builder.append(String.format(UPTIME, days, hours, minutes, seconds));
-  }
-
-  public void appendSweep(StringBuilder builder) {
-    builder.append(String.format(LASTSWP, new Date(lastSweep)));
-    builder.append(String.format(LASTSWPD, TimeUnit.MILLISECONDS.toSeconds(lastSweepDuration)));
-  }
-
-  public abstract void initialize();
-
-  public abstract void appendCounts(StringBuilder builder);
-
-  public abstract void appendDetails(StringBuilder builder);
-
-  protected void writeStatistics() {
-    if (!toFile) {
-      return;
+    public void recordSweep(long ended, long duration) {
+        lastSweep = ended;
+        lastSweepDuration = duration;
+        writeStatistics();
     }
 
-    File path = new File(getPath());
-
-    if (!path.exists()) {
-      try (FileWriter fw = new FileWriter(path, true)) {
-        fw.write(String.format(getStatisticsFormat(), getStatisticsHeader()));
-        fw.flush();
-      } catch (FileNotFoundException e) {
-        LOGGER.error("Unable to initialize statistics file: {}", e.getMessage());
-      } catch (IOException e) {
-        LOGGER.error("Unrecoverable error during initialization of statistics file: {}",
-            e.getMessage());
-      }
+    public void setStatisticsPath(String statisticsPath) {
+        this.statisticsPath = new File(statisticsPath);
     }
 
-    synchronized (statisticsBuffer) {
-      try (FileWriter fw = new FileWriter(path, true)) {
-        for (String line : statisticsBuffer) {
-          fw.write(line);
+    public void setToFile(boolean toFile) {
+        this.toFile = toFile;
+    }
+
+    public void appendRunning(StringBuilder builder) {
+        long elapsed = (System.currentTimeMillis() - started.getTime()) / 1000;
+        long seconds = elapsed % 60;
+        elapsed = elapsed / 60;
+        long minutes = elapsed % 60;
+        elapsed = elapsed / 60;
+        long hours = elapsed % 24;
+        long days = elapsed / 24;
+
+        builder.append(String.format(LASTSTART, started));
+        builder.append(String.format(UPTIME, days, hours, minutes, seconds));
+    }
+
+    public void appendSweep(StringBuilder builder) {
+        builder.append(String.format(LASTSWP, new Date(lastSweep)));
+        builder.append(String.format(LASTSWPD, TimeUnit.MILLISECONDS.toSeconds(lastSweepDuration)));
+    }
+
+    public abstract void initialize();
+
+    public abstract void appendCounts(StringBuilder builder);
+
+    public abstract void appendDetails(StringBuilder builder);
+
+    protected void writeStatistics() {
+        if (!toFile) {
+            return;
         }
-        fw.flush();
-      } catch (FileNotFoundException e) {
-        LOGGER.error("Unable to write to statistics file: {}", e.getMessage());
-      } catch (IOException e) {
-        LOGGER.error("Unrecoverable error writing to statistics file: {}", e.getMessage());
-      }
 
-      statisticsBuffer.clear();
+        File path = new File(getPath());
+
+        if (!path.exists()) {
+            try (FileWriter fw = new FileWriter(path, true)) {
+                fw.write(String.format(getStatisticsFormat(), getStatisticsHeader()));
+                fw.flush();
+            } catch (FileNotFoundException e) {
+                LOGGER.error("Unable to initialize statistics file: {}", e.getMessage());
+            } catch (IOException e) {
+                LOGGER.error("Unrecoverable error during initialization of statistics file: {}",
+                      e.getMessage());
+            }
+        }
+
+        synchronized (statisticsBuffer) {
+            try (FileWriter fw = new FileWriter(path, true)) {
+                for (String line : statisticsBuffer) {
+                    fw.write(line);
+                }
+                fw.flush();
+            } catch (FileNotFoundException e) {
+                LOGGER.error("Unable to write to statistics file: {}", e.getMessage());
+            } catch (IOException e) {
+                LOGGER.error("Unrecoverable error writing to statistics file: {}", e.getMessage());
+            }
+
+            statisticsBuffer.clear();
+        }
     }
-  }
 
-  protected abstract String getStatisticsFormat();
+    protected abstract String getStatisticsFormat();
 
-  protected abstract String[] getStatisticsHeader();
+    protected abstract String[] getStatisticsHeader();
 
-  private String getPath() {
-    return statisticsPath.getAbsolutePath()
-        + "_" + SUFFIX_FORMATTER.format(Instant.ofEpochMilli(System.currentTimeMillis()));
-  }
+    private String getPath() {
+        return statisticsPath.getAbsolutePath()
+              + "_" + SUFFIX_FORMATTER.format(Instant.ofEpochMilli(System.currentTimeMillis()));
+    }
 }

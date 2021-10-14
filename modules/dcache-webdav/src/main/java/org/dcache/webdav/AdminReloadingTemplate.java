@@ -17,32 +17,27 @@
  */
 package org.dcache.webdav;
 
-import org.springframework.core.io.Resource;
-
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.command.Command;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.util.command.Command;
+import org.springframework.core.io.Resource;
 
 /**
- * This is a simple wrapper to allow support admin-triggered reloading of
- * a template-group.
+ * This is a simple wrapper to allow support admin-triggered reloading of a template-group.
  */
-public class AdminReloadingTemplate extends ReloadableTemplate implements CellCommandListener
-{
-    public AdminReloadingTemplate(Resource resource) throws IOException
-    {
+public class AdminReloadingTemplate extends ReloadableTemplate implements CellCommandListener {
+
+    public AdminReloadingTemplate(Resource resource) throws IOException {
         super(resource);
     }
 
-    @Command(name="reload template", hint="refresh HTML template from file")
-    class ReloadTemplateCommand implements Callable<Serializable>
-    {
+    @Command(name = "reload template", hint = "refresh HTML template from file")
+    class ReloadTemplateCommand implements Callable<Serializable> {
+
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             reload();
             return "";
         }

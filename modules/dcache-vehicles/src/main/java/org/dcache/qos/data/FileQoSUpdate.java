@@ -66,91 +66,94 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 /**
- *  A transient encapsulation of pertinent configuration data regarding a file, synthesized
- *  from a message received by the service.
+ * A transient encapsulation of pertinent configuration data regarding a file, synthesized from a
+ * message received by the service.
  */
 public final class FileQoSUpdate implements Serializable {
-  private static final long serialVersionUID = 4144355720999312042L;
 
-  private static final String FORMAT_STR = "yyyy/MM/dd HH:mm:ss";
-  private static final DateTimeFormatter DATE_FORMATTER
-      = DateTimeFormatter.ofPattern(FORMAT_STR).withZone(ZoneId.systemDefault());
+    private static final long serialVersionUID = 4144355720999312042L;
 
-  public static String getFormattedDateFromMillis(long millis) {
-    return DATE_FORMATTER.format(Instant.ofEpochMilli(millis));
-  }
+    private static final String FORMAT_STR = "yyyy/MM/dd HH:mm:ss";
+    private static final DateTimeFormatter DATE_FORMATTER
+          = DateTimeFormatter.ofPattern(FORMAT_STR).withZone(ZoneId.systemDefault());
 
-  private final PnfsId pnfsId;
-  private final QoSMessageType type;
-  private String pool;
-  private String effectivePoolGroup;
-  private String storageUnit;
-  private boolean forced;
+    public static String getFormattedDateFromMillis(long millis) {
+        return DATE_FORMATTER.format(Instant.ofEpochMilli(millis));
+    }
 
-  private long   size;
+    private final PnfsId pnfsId;
+    private final QoSMessageType type;
+    private String pool;
+    private String effectivePoolGroup;
+    private String storageUnit;
+    private boolean forced;
 
-  public FileQoSUpdate(PnfsId pnfsId, String pool, QoSMessageType type) {
-    this.pnfsId = pnfsId;
-    this.pool = pool;
-    this.type = type;
-  }
+    private long size;
 
-  /**
-   *  @param pnfsId of the file.
-   *  @param pool   either the source of the message, or the pool being scanned.
-   *  @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION, QOS_MODIFIED,
-   *                POOL_STATUS_DOWN, or POOL_STATUS_UP.
-   *  @param storageUnit being checked for changed constraints
-   *  @param forced periodic or admin scan
-   */
-  public FileQoSUpdate(PnfsId pnfsId, String pool, QoSMessageType type,
-      String group, String storageUnit, boolean forced) {
-    this(pnfsId, pool, type);
-    this.effectivePoolGroup = group;
-    this.storageUnit = storageUnit;
-    this.forced = forced;
-  }
+    public FileQoSUpdate(PnfsId pnfsId, String pool, QoSMessageType type) {
+        this.pnfsId = pnfsId;
+        this.pool = pool;
+        this.type = type;
+    }
 
-  public String getStorageUnit() {
-    return storageUnit;
-  }
+    /**
+     * @param pnfsId      of the file.
+     * @param pool        either the source of the message, or the pool being scanned.
+     * @param type        CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION, QOS_MODIFIED,
+     *                    POOL_STATUS_DOWN, or POOL_STATUS_UP.
+     * @param storageUnit being checked for changed constraints
+     * @param forced      periodic or admin scan
+     */
+    public FileQoSUpdate(PnfsId pnfsId, String pool, QoSMessageType type,
+          String group, String storageUnit, boolean forced) {
+        this(pnfsId, pool, type);
+        this.effectivePoolGroup = group;
+        this.storageUnit = storageUnit;
+        this.forced = forced;
+    }
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public String getStorageUnit() {
+        return storageUnit;
+    }
 
-  public QoSMessageType getMessageType() {
-    return type;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public String getPool() {
-    return pool;
-  }
+    public QoSMessageType getMessageType() {
+        return type;
+    }
 
-  public boolean isForced() { return forced; }
+    public String getPool() {
+        return pool;
+    }
 
-  public void setPool(String pool) {
-    this.pool = pool;
-  }
+    public boolean isForced() {
+        return forced;
+    }
 
-  public String toString() {
-    return String.format("(%s)(%s)(%s)(%s)(%s)",
-        pnfsId, pool, type, effectivePoolGroup, storageUnit);
-  }
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
-  public String getEffectivePoolGroup() {
-    return effectivePoolGroup;
-  }
+    public String toString() {
+        return String.format("(%s)(%s)(%s)(%s)(%s)",
+              pnfsId, pool, type, effectivePoolGroup, storageUnit);
+    }
 
-  public void setEffectivePoolGroup(String effectivePoolGroup) {
-    this.effectivePoolGroup = effectivePoolGroup;
-  }
+    public String getEffectivePoolGroup() {
+        return effectivePoolGroup;
+    }
 
-  public long getSize() {
-    return size;
-  }
+    public void setEffectivePoolGroup(String effectivePoolGroup) {
+        this.effectivePoolGroup = effectivePoolGroup;
+    }
 
-  public void setSize(long size) {
-    this.size = size;
-  }
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
 }

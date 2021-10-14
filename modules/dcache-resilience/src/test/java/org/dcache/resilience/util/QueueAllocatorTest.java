@@ -59,43 +59,43 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.util.ForegroundBackgroundAllocator.ForegroundBackgroundAllocation;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
 public class QueueAllocatorTest {
+
     private static final String FORMAT =
-                    "total threads %s, running %s, foreground queue %s, "
-                                    + "background queue %s, max %s: incorrect %s result";
+          "total threads %s, running %s, foreground queue %s, "
+                + "background queue %s, max %s: incorrect %s result";
 
     private static final long[][] EDGE_CASES = {
-                    { 200, 200000, 200000, 0, 0 },
-                    { 0, 0, 0, 0, 0 },
-                    { 0, 200000, 0, 200, 0 },
-                    { 0, 0, 200000, 0, 200 },
-                    { 0, 200000, 1, 199, 1 },
-                    { 0, 1, 200000, 1, 199 },
-                    { 199, 200000, 1, 1, 0 },
-                    { 199, 1, 200000, 1, 0 },
-                    { 198, 1, 200000, 1, 1 },
-                    { 198, 200000, 1, 1, 1 },
-                    { 100, 200000, 1, 99, 1 },
-                    { 100, 1, 200000, 1, 99 },
-                    { 2, 200000, 1, 197, 1 },
-                    { 2, 1, 200000, 1, 197 },
-                    { 1, 200000, 1, 198, 1 },
-                    { 1, 1, 200000, 1, 198 },
-                    { 0, 200000, 200000, 100, 100 },
-                    { 199, 200000, 200000, 1, 0 },
-                    { 198, 200000, 200000, 1, 1 },
-                    { 100, 200000, 200000, 50, 50 },
-                    { 2, 200000, 200000, 99, 99 },
-                    { 1, 200000, 200000, 100, 99 },
-                    };
+          {200, 200000, 200000, 0, 0},
+          {0, 0, 0, 0, 0},
+          {0, 200000, 0, 200, 0},
+          {0, 0, 200000, 0, 200},
+          {0, 200000, 1, 199, 1},
+          {0, 1, 200000, 1, 199},
+          {199, 200000, 1, 1, 0},
+          {199, 1, 200000, 1, 0},
+          {198, 1, 200000, 1, 1},
+          {198, 200000, 1, 1, 1},
+          {100, 200000, 1, 99, 1},
+          {100, 1, 200000, 1, 99},
+          {2, 200000, 1, 197, 1},
+          {2, 1, 200000, 1, 197},
+          {1, 200000, 1, 198, 1},
+          {1, 1, 200000, 1, 198},
+          {0, 200000, 200000, 100, 100},
+          {199, 200000, 200000, 1, 0},
+          {198, 200000, 200000, 1, 1},
+          {100, 200000, 200000, 50, 50},
+          {2, 200000, 200000, 99, 99},
+          {1, 200000, 200000, 100, 99},
+    };
 
     private static final long NUM_THREADS = 200L;
 
@@ -137,32 +137,32 @@ public class QueueAllocatorTest {
     }
 
     private void testCase(long running,
-                          long foreground,
-                          long background,
-                          double maxAllocation,
-                          long correctFgResult,
-                          long correctBgResult) {
+          long foreground,
+          long background,
+          double maxAllocation,
+          long correctFgResult,
+          long correctBgResult) {
         ForegroundBackgroundAllocation allocation = allocator.allocate(
-                        NUM_THREADS, running, foreground, background,
-                        maxAllocation);
+              NUM_THREADS, running, foreground, background,
+              maxAllocation);
 
         assertEquals(String.format(FORMAT, NUM_THREADS, running, foreground,
-                                   background, maxAllocation, "foreground"),
-                     correctFgResult, allocation.getForeground());
+                    background, maxAllocation, "foreground"),
+              correctFgResult, allocation.getForeground());
 
         assertEquals(String.format(FORMAT, NUM_THREADS, running, foreground,
-                                   background, maxAllocation, "background"),
-                     correctBgResult, allocation.getBackground());
+                    background, maxAllocation, "background"),
+              correctBgResult, allocation.getBackground());
     }
 
     private void testEdgeCases(double maxAllocation) {
         for (int i = 0; i < EDGE_CASES.length; ++i) {
             testCase(EDGE_CASES[i][0],
-                     EDGE_CASES[i][1],
-                     EDGE_CASES[i][2],
-                     maxAllocation,
-                     EDGE_CASES[i][3],
-                     EDGE_CASES[i][4]);
+                  EDGE_CASES[i][1],
+                  EDGE_CASES[i][2],
+                  maxAllocation,
+                  EDGE_CASES[i][3],
+                  EDGE_CASES[i][4]);
         }
     }
 }

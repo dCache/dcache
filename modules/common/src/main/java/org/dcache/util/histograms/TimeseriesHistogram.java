@@ -59,20 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import com.google.common.base.Preconditions;
-import org.apache.commons.math3.util.FastMath;
-
-import java.util.ArrayList;
-
 import static java.util.Objects.requireNonNull;
+
+import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * <p>Maintains a histogram data set which consists of a fixed number of
- * time value bins; the window is maintained by rotating a circular
- * buffer.</p>
+ * time value bins; the window is maintained by rotating a circular buffer.</p>
  */
 public class TimeseriesHistogram extends HistogramModel
-                implements UpdatableHistogramModel {
+      implements UpdatableHistogramModel {
+
     enum UpdateOperation {
         SUM, AVERAGE, REPLACE
     }
@@ -97,17 +96,17 @@ public class TimeseriesHistogram extends HistogramModel
     @Override
     public void configure() {
         requireNonNull(identifier,
-                                   "histogram type must be defined.");
+              "histogram type must be defined.");
         requireNonNull(binCount,
-                                   "bin count must be defined.");
+              "bin count must be defined.");
         Preconditions.checkArgument(binCount > 1,
-                                    "bin count must be > 1.");
+              "bin count must be > 1.");
         requireNonNull(binUnit,
-                                   "bin unit must be defined.");
+              "bin unit must be defined.");
         Preconditions.checkArgument(binUnit > 0,
-                                    "bin unit must be > 0.");
+              "bin unit must be > 0.");
         requireNonNull(highestBin,
-                                   "highest bin must be defined.");
+              "highest bin must be defined.");
 
         computeBinSizeFromWidthAndUnit();
 
@@ -130,9 +129,9 @@ public class TimeseriesHistogram extends HistogramModel
 
         String error = "bin count %s does not match array size %s.";
         Preconditions.checkArgument(data.size() == binCount,
-                                    String.format(error,
-                                                  binCount,
-                                                  data.size()));
+              String.format(error,
+                    binCount,
+                    data.size()));
 
         if (metadata == null) {
             metadata = new HistogramMetadata(binCount);
@@ -201,18 +200,16 @@ public class TimeseriesHistogram extends HistogramModel
 
     /**
      * <p>Find from the timestamp where to insert the data (which bin).
-     * If the bin index exceeds the last bin, rotate buffer.
-     * If the bin index is less than the first bin, discard the update.
-     * The operation type determines how to insert the value.</p>
+     * If the bin index exceeds the last bin, rotate buffer. If the bin index is less than the first
+     * bin, discard the update. The operation type determines how to insert the value.</p>
      *
-     * @param value can be null; replace operations will substitute the null
-     *              for the current value.  Other operations, however, will
-     *              only rotate the buffer if necessary, but will ignore the
-     *              null value.
+     * @param value can be null; replace operations will substitute the null for the current value.
+     *              Other operations, however, will only rotate the buffer if necessary, but will
+     *              ignore the null value.
      */
     private void update(Double value,
-                        UpdateOperation operation,
-                        Long timestamp) {
+          UpdateOperation operation,
+          Long timestamp) {
         int binIndex = findTimebinIndex(timestamp);
 
         if (binIndex < 0) {

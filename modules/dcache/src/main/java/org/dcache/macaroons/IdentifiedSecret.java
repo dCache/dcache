@@ -18,34 +18,30 @@
 package org.dcache.macaroons;
 
 /**
- * A secret along with an identifier that may be used subsequently to
- * retrieve the secret.
+ * A secret along with an identifier that may be used subsequently to retrieve the secret.
  */
-public class IdentifiedSecret
-{
+public class IdentifiedSecret {
+
     private final String identifier;
     private final byte[] secret;
 
-    public IdentifiedSecret(String identifier, byte[] secret)
-    {
+    public IdentifiedSecret(String identifier, byte[] secret) {
         this.identifier = identifier;
         this.secret = secret;
     }
 
     /**
-     * The identifier for this secret.  This value will be public, so must
-     * not yield any information about the secret.
+     * The identifier for this secret.  This value will be public, so must not yield any information
+     * about the secret.
      */
-    public String getIdentifier()
-    {
+    public String getIdentifier() {
         return identifier;
     }
 
     /**
      * The secret.
      */
-    public byte[] getSecret()
-    {
+    public byte[] getSecret() {
         return secret;
     }
 }

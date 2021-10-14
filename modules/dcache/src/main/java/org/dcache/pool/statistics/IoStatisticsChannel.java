@@ -1,15 +1,6 @@
 package org.dcache.pool.statistics;
 
 import com.google.common.base.Stopwatch;
-
-import org.dcache.pool.repository.ForwardingRepositoryChannel;
-import org.dcache.pool.repository.RepositoryChannel;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -19,24 +10,27 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.concurrent.GuardedBy;
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.LineIndentingPrintWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class decorates any RepositoryChannel and updates statistics for
- * monitored per-request quantities: requested bytes, transferred bytes,
- * various durations, instantaneous bandwidth, and concurrency (number of
- * concurrent in-flight requests).  It also keeps track of how much time is
- * spent with at least one IO request (i.e., when blocking) and the different
- * phases of a transfer: pre-transfer, transfer, post-transfer.
+ * This class decorates any RepositoryChannel and updates statistics for monitored per-request
+ * quantities: requested bytes, transferred bytes, various durations, instantaneous bandwidth, and
+ * concurrency (number of concurrent in-flight requests).  It also keeps track of how much time is
+ * spent with at least one IO request (i.e., when blocking) and the different phases of a transfer:
+ * pre-transfer, transfer, post-transfer.
  * <p>
- * Hint: It might be interesting for further developments to have a closer look
- * at return values from read and write methods, when they equal 0
+ * Hint: It might be interesting for further developments to have a closer look at return values
+ * from read and write methods, when they equal 0
  */
 public class IoStatisticsChannel extends ForwardingRepositoryChannel {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(IoStatisticsChannel.class);
+          LoggerFactory.getLogger(IoStatisticsChannel.class);
 
     /**
      * Inner channel to which all operations are delegated.
@@ -62,22 +56,19 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     private Instant latestWrite;
     private Instant whenClosed;
 
-    public IoStatisticsChannel(RepositoryChannel channel)
-    {
+    public IoStatisticsChannel(RepositoryChannel channel) {
         this.channel = channel;
     }
 
     @Override
-    protected RepositoryChannel delegate()
-    {
+    protected RepositoryChannel delegate() {
         return channel;
     }
 
     /**
      * Returns an immutable description of activity.
      */
-    public IoStatistics getStatistics()
-    {
+    public IoStatistics getStatistics() {
         Duration readIdleNow;
         Duration readActiveNow;
         Duration writeIdleNow;
@@ -101,29 +92,29 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
             postReadActivityWait = Duration.between(lastestReadOrNow, whenClosedOrNow);
             postWriteActivityWait = Duration.between(lastestWriteOrNow, whenClosedOrNow);
 
-            readIdleNow = Duration.ofNanos(readIdle.elapsed(TimeUnit.NANOSECONDS)).minus(postReadActivityWait);
+            readIdleNow = Duration.ofNanos(readIdle.elapsed(TimeUnit.NANOSECONDS))
+                  .minus(postReadActivityWait);
             readActiveNow = Duration.ofNanos(readActive.elapsed(TimeUnit.NANOSECONDS));
-            writeIdleNow = Duration.ofNanos(writeIdle.elapsed(TimeUnit.NANOSECONDS)).minus(postWriteActivityWait);
+            writeIdleNow = Duration.ofNanos(writeIdle.elapsed(TimeUnit.NANOSECONDS))
+                  .minus(postWriteActivityWait);
             writeActiveNow = Duration.ofNanos(writeActive.elapsed(TimeUnit.NANOSECONDS));
         }
 
         return new IoStatistics(
-                new DirectedIoStatistics(preReadActivityWait, readIdleNow,
-                        readActiveNow, firstRead, latestRead,
-                        postReadActivityWait, reads),
-                new DirectedIoStatistics(preWriteActivityWait, writeIdleNow,
-                        writeActiveNow, firstWrite, latestWrite,
-                        postWriteActivityWait, writes));
+              new DirectedIoStatistics(preReadActivityWait, readIdleNow,
+                    readActiveNow, firstRead, latestRead,
+                    postReadActivityWait, reads),
+              new DirectedIoStatistics(preWriteActivityWait, writeIdleNow,
+                    writeActiveNow, firstWrite, latestWrite,
+                    postWriteActivityWait, writes));
     }
 
     @GuardedBy("this")
-    private boolean isClosed()
-    {
+    private boolean isClosed() {
         return whenClosed != null;
     }
 
-    private synchronized int writeStarted()
-    {
+    private synchronized int writeStarted() {
         Instant now = Instant.now();
         if (firstWrite == null) {
             firstWrite = now;
@@ -142,8 +133,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         return concurrentWrites;
     }
 
-    private synchronized void writeCompleted()
-    {
+    private synchronized void writeCompleted() {
         if (--concurrentWrites == 0) {
             if (writeActive.isRunning()) {
                 writeActive.stop();
@@ -155,8 +145,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         }
     }
 
-    private synchronized int readStarted()
-    {
+    private synchronized int readStarted() {
         Instant now = Instant.now();
         if (firstRead == null) {
             firstRead = now;
@@ -175,8 +164,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         return concurrentReads;
     }
 
-    private synchronized void readCompleted()
-    {
+    private synchronized void readCompleted() {
         if (--concurrentReads == 0) {
             if (readActive.isRunning()) {
                 readActive.stop();
@@ -189,8 +177,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public int write(ByteBuffer buffer, long position) throws IOException
-    {
+    public int write(ByteBuffer buffer, long position) throws IOException {
         int concurrency = writeStarted();
         try {
             long requested = buffer.limit() - buffer.position();
@@ -204,15 +191,14 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public int read(ByteBuffer buffer, long position) throws IOException
-    {
+    public int read(ByteBuffer buffer, long position) throws IOException {
         int concurrency = readStarted();
         try {
             long requested = buffer.limit() - buffer.position();
             long startTime = System.nanoTime();
             int transferred = channel.read(buffer, position);
             reads.accept(concurrency, requested, transferred > 0 ? transferred : 0,
-                    startTime);
+                  startTime);
             return transferred;
         } finally {
             readCompleted();
@@ -221,8 +207,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
 
     @Override
     public long transferTo(long position, long count, WritableByteChannel target)
-            throws IOException
-    {
+          throws IOException {
         int concurrency = readStarted();
         try {
             long startTime = System.nanoTime();
@@ -236,8 +221,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count)
-            throws IOException
-    {
+          throws IOException {
         int concurrency = writeStarted();
         try {
             long startTime = System.nanoTime();
@@ -250,12 +234,11 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
-    {
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         int concurrency = writeStarted();
         try {
             long requested = Arrays.stream(srcs).skip(offset).limit(length)
-                    .mapToLong(b -> b.limit() - b.position()).sum();
+                  .mapToLong(b -> b.limit() - b.position()).sum();
             long startTime = System.nanoTime();
             long transferred = channel.write(srcs, offset, length);
             writes.accept(concurrency, requested, transferred, startTime);
@@ -266,13 +249,12 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public long write(ByteBuffer[] srcs) throws IOException
-    {
+    public long write(ByteBuffer[] srcs) throws IOException {
         int concurrency = writeStarted();
         try {
             long requested = Arrays.stream(srcs)
-                    .mapToLong(b -> b.limit() - b.position())
-                    .sum();
+                  .mapToLong(b -> b.limit() - b.position())
+                  .sum();
             long startTime = System.nanoTime();
             long transferred = channel.write(srcs);
             writes.accept(concurrency, requested, transferred, startTime);
@@ -283,16 +265,15 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
-    {
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         int concurrency = readStarted();
         try {
             long requested = Arrays.stream(dsts).skip(offset).limit(length)
-                    .mapToLong(b -> b.limit() - b.position()).sum();
+                  .mapToLong(b -> b.limit() - b.position()).sum();
             long startTime = System.nanoTime();
             long transferred = channel.read(dsts, offset, length);
             reads.accept(concurrency, requested, transferred > 0 ? transferred : 0,
-                    startTime);
+                  startTime);
             return transferred;
         } finally {
             readCompleted();
@@ -300,17 +281,16 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException
-    {
+    public long read(ByteBuffer[] dsts) throws IOException {
         int concurrency = readStarted();
         try {
             long requested = Arrays.stream(dsts)
-                    .mapToLong(b -> b.limit() - b.position())
-                    .sum();
+                  .mapToLong(b -> b.limit() - b.position())
+                  .sum();
             long startTime = System.nanoTime();
             long transferred = channel.read(dsts);
             reads.accept(concurrency, requested, transferred > 0 ? transferred : 0,
-                    startTime);
+                  startTime);
             return transferred;
         } finally {
             readCompleted();
@@ -318,15 +298,14 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException
-    {
+    public int read(ByteBuffer dst) throws IOException {
         int concurrency = readStarted();
         try {
             long requested = dst.limit() - dst.position();
             long startTime = System.nanoTime();
             int transferred = channel.read(dst);
             reads.accept(concurrency, requested, transferred > 0 ? transferred : 0,
-                    startTime);
+                  startTime);
             return transferred;
         } finally {
             readCompleted();
@@ -334,8 +313,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException
-    {
+    public int write(ByteBuffer src) throws IOException {
         int concurrency = writeStarted();
         try {
             long requested = src.limit() - src.position();
@@ -349,8 +327,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         synchronized (this) {
             if (!isClosed()) {
                 whenClosed = Instant.now();
@@ -378,8 +355,7 @@ public class IoStatisticsChannel extends ForwardingRepositoryChannel {
         channel.close();
     }
 
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         IoStatistics stats = getStatistics();
 
         if (stats.hasReads() && stats.hasWrites()) {

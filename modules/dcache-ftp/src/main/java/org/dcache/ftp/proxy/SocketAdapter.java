@@ -66,15 +66,17 @@
 
 package org.dcache.ftp.proxy;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.ftp.TransferMode.MODE_E;
+import static org.dcache.ftp.TransferMode.MODE_S;
+import static org.dcache.ftp.proxy.ProxyAdapter.Direction.UPLOAD;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.indentLines;
+
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
-
-import org.dcache.ftp.TransferMode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -85,64 +87,58 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.dcache.ftp.TransferMode;
 import org.dcache.util.NDC;
 import org.dcache.util.PortRange;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-import static org.dcache.ftp.TransferMode.MODE_E;
-import static org.dcache.ftp.TransferMode.MODE_S;
-import static org.dcache.ftp.proxy.ProxyAdapter.Direction.UPLOAD;
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.Strings.indentLines;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * The SocketAdapter relays data by listening on two server sockets.  The
- * behaviour is perhaps easiest to understand consider two roles: the data
- * sender and data recipient.  For a upload transfer, the data sender is the
- * client and the data receiver is the pool.  For a download transfer, these
- * roles are reversed.
+ * The SocketAdapter relays data by listening on two server sockets.  The behaviour is perhaps
+ * easiest to understand consider two roles: the data sender and data recipient.  For a upload
+ * transfer, the data sender is the client and the data receiver is the pool.  For a download
+ * transfer, these roles are reversed.
  * <p>
- * Independent of whether the transfer is an upload or download, or whether
- * the data protocol is MODE_S or MODE_E, there is only a single TCP connection
- * from the door to the data recipient.  Once this single data recipient
- * connection is established, the adapter accepts (potentially multiple)
- * incoming data sender connections.
+ * Independent of whether the transfer is an upload or download, or whether the data protocol is
+ * MODE_S or MODE_E, there is only a single TCP connection from the door to the data recipient.
+ * Once this single data recipient connection is established, the adapter accepts (potentially
+ * multiple) incoming data sender connections.
  * <p>
- * If the client connection is using MODE_S then the data sender establishes
- * only a single TCP connection.  The connection to the pool also uses MODE_S.
- * Data is simply read from the data sender and written to the data receiver.
+ * If the client connection is using MODE_S then the data sender establishes only a single TCP
+ * connection.  The connection to the pool also uses MODE_S. Data is simply read from the data
+ * sender and written to the data receiver.
  * <p>
- * If the client connection is using MODE_E then the data sender must be client
- * (i.e., the transfer is an upload).  The connection to the pool also uses
- * MODE_E.  The client may open multiple TCP connections; therefore, care is
- * taken to ensure complete blocks are sent when multiplexing the single pool
- * connection.
+ * If the client connection is using MODE_E then the data sender must be client (i.e., the transfer
+ * is an upload).  The connection to the pool also uses MODE_E.  The client may open multiple TCP
+ * connections; therefore, care is taken to ensure complete blocks are sent when multiplexing the
+ * single pool connection.
  */
-public class SocketAdapter implements Runnable, ProxyAdapter
-{
+public class SocketAdapter implements Runnable, ProxyAdapter {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketAdapter.class);
 
-    /** Connection orientated ChannelHandler references. */
+    /**
+     * Connection orientated ChannelHandler references.
+     */
     private final PassiveConnectionHandler _clientConnectionHandler;
     private final PassiveConnectionHandler _poolConnectionHandler;
 
-    /** Data direction orientated ChannelHandler references. */
+    /**
+     * Data direction orientated ChannelHandler references.
+     */
     private PassiveConnectionHandler _inbound;
     private PassiveConnectionHandler _outbound;
 
     private TransferMode _mode;
 
     /**
-     * The number of EOD markers we have seen. This is only used for mode E
-     * transfers.
+     * The number of EOD markers we have seen. This is only used for mode E transfers.
      */
     private int _eodSeen;
 
     /**
-     * The number of EOD markers expected, or zero if that number is
-     * not yet known.  This is only used for mode E transfers.
+     * The number of EOD markers expected, or zero if that number is not yet known.  This is only
+     * used for mode E transfers.
      */
     private long _eodExpected;
 
@@ -153,12 +149,14 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     private String _error;
 
-    /** All redirectores created by the SocketAdapter. */
+    /**
+     * All redirectores created by the SocketAdapter.
+     */
     private final List<Redirector> _redirectors = new ArrayList<>();
 
     /**
-     * Size of the largest block allocated in mode E. Blocks larger
-     * than this are divided into smaller blocks.
+     * Size of the largest block allocated in mode E. Blocks larger than this are divided into
+     * smaller blocks.
      */
     private int _maxBlockSize = KiB.toBytes(128);
 
@@ -168,8 +166,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private final Thread _thread;
 
     /**
-     * True when the adapter is closing or has been closed. Used to
-     * suppress error messages when killing the adapter.
+     * True when the adapter is closing or has been closed. Used to suppress error messages when
+     * killing the adapter.
      */
     private boolean _closing;
 
@@ -178,20 +176,20 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private String _outputRemoteAddress = "awaiting";
 
 
-    private abstract class Redirector extends Thread
-    {
+    private abstract class Redirector extends Thread {
+
         protected final SocketChannel _input;
         protected final String _inputLocalAddress;
         protected final String _inputRemoteAddress;
         private final String _shortName;
 
-        Redirector(SocketChannel input, String namePrefix)
-        {
+        Redirector(SocketChannel input, String namePrefix) {
             _input = requireNonNull(input);
 
             _shortName = namePrefix + "-proxy-"
-                    + BaseEncoding.base64().omitPadding().encode(Ints.toByteArray(hashCode()));
-            setName(_shortName + "-" + SocketAdapter.toString(_clientConnectionHandler.getLocalAddress()));
+                  + BaseEncoding.base64().omitPadding().encode(Ints.toByteArray(hashCode()));
+            setName(_shortName + "-" + SocketAdapter.toString(
+                  _clientConnectionHandler.getLocalAddress()));
 
             _inputRemoteAddress = SocketAdapter.toString(_input.socket().getRemoteSocketAddress());
             _inputLocalAddress = SocketAdapter.toString(_input.socket().getLocalSocketAddress());
@@ -200,14 +198,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         public abstract void runProxy();
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 NDC.push(_shortName);
                 LOGGER.debug("Accepting data: {} --> {}", _inputRemoteAddress,
-                        _inputLocalAddress);
+                      _inputLocalAddress);
                 LOGGER.debug("Sending data: {} --> {}", _outputLocalAddress,
-                        _outputRemoteAddress);
+                      _outputRemoteAddress);
                 runProxy();
             } finally {
                 NDC.pop();
@@ -216,21 +213,20 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /**
-     * A redirector moves data between an input channel and an output
-     * channel. This particular redirector does so in mode S.
+     * A redirector moves data between an input channel and an output channel. This particular
+     * redirector does so in mode S.
      */
-    class StreamRedirector extends Redirector
-    {
+    class StreamRedirector extends Redirector {
+
         private final ByteBuffer _initial;
-        public StreamRedirector(SocketChannel input, ByteBuffer initial)
-        {
+
+        public StreamRedirector(SocketChannel input, ByteBuffer initial) {
             super(input, "ModeS");
             _initial = initial;
         }
 
         @Override
-        public void runProxy()
-        {
+        public void runProxy() {
             try {
                 LOGGER.debug("Initial data: {}", _initial);
                 _inbound.finishAccept(); // only expect a single connection.
@@ -251,10 +247,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 } catch (IOException e) {
                     if (reading) {
                         setError("Error reading from " + _inputRemoteAddress + ": "
-                                         + e.getMessage());
+                              + e.getMessage());
                     } else {
                         setError("Error writing to " + _outputRemoteAddress + ": "
-                                         + e.getMessage());
+                              + e.getMessage());
                     }
                 } finally {
                     LOGGER.debug("Returning input channel");
@@ -265,8 +261,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             }
         }
 
-        private void markInputClosed(SocketChannel channel)
-        {
+        private void markInputClosed(SocketChannel channel) {
             try {
                 channel.shutdownInput();
             } catch (IOException e) {
@@ -276,22 +271,20 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /**
-     * A redirector moves data between an input channel and an output
-     * channel. This particular redirector does so in mode E.
+     * A redirector moves data between an input channel and an output channel. This particular
+     * redirector does so in mode E.
      */
-    class ModeERedirector extends Redirector
-    {
+    class ModeERedirector extends Redirector {
+
         private final ByteBuffer _initial;
 
-        public ModeERedirector(SocketChannel input, ByteBuffer initial)
-        {
+        public ModeERedirector(SocketChannel input, ByteBuffer initial) {
             super(input, "ModeE");
             _initial = initial;
         }
 
         @Override
-        public void runProxy()
-        {
+        public void runProxy() {
             boolean eod = false;
             boolean used = false;
             try {
@@ -303,7 +296,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                 long count, position;
 
                 try {
-                    loop: while (!eod && block.readHeader(_input) > -1) {
+                    loop:
+                    while (!eod && block.readHeader(_input) > -1) {
                         used = true;
                         /* EOF blocks are never forwarded as they do not
                          * contain any data and the SocketAdapter sends an
@@ -342,14 +336,14 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
                             /* Generate output header. */
                             header.clear();
-                            header.put((byte)0);
+                            header.put((byte) 0);
                             header.putLong(len);
                             header.putLong(position);
 
                             /* Write output. */
                             ByteBuffer[] buffers = {
-                                    header,
-                                    block.getData()
+                                  header,
+                                  block.getData()
                             };
                             buffers[0].flip();
                             buffers[1].flip();
@@ -378,17 +372,17 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                         }
                     } else if (used) {
                         setError("Data channel from " + _inputRemoteAddress
-                                + " was closed before EOD marker");
+                              + " was closed before EOD marker");
                     }
                 } catch (InterruptedException e) {
                     setError("Interrupted waiting for accept to shut down");
                 } catch (IOException e) {
                     if (reading) {
                         setError("Error reading from " + _inputRemoteAddress + ": "
-                                         + e.getMessage());
+                              + e.getMessage());
                     } else {
                         setError("Error writing to " + _outputRemoteAddress + ": "
-                                         + e.getMessage());
+                              + e.getMessage());
                     }
                 }
             } finally {
@@ -399,19 +393,18 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /**
-     * Provide a better string representation than String.valueOf(..).  The
-     * default representation always includes a '/' to seperate the hostname
-     * from the IP address, even if the hostname is not supplied.  In addition,
-     * any IPv6 address is not compressed.
+     * Provide a better string representation than String.valueOf(..).  The default representation
+     * always includes a '/' to seperate the hostname from the IP address, even if the hostname is
+     * not supplied.  In addition, any IPv6 address is not compressed.
      */
-    private static String toString(SocketAddress sockAddr)
-    {
+    private static String toString(SocketAddress sockAddr) {
         if (sockAddr == null) {
             return "disconnected";
         } else if (sockAddr instanceof InetSocketAddress) {
             InetSocketAddress inetSockAddr = (InetSocketAddress) sockAddr;
             InetAddress ip = inetSockAddr.getAddress();
-            String host = ip == null ? inetSockAddr.getHostString() : InetAddresses.toAddrString(ip);
+            String host =
+                  ip == null ? inetSockAddr.getHostString() : InetAddresses.toAddrString(ip);
             return host + ":" + inetSockAddr.getPort();
         } else {
             return sockAddr.toString();
@@ -420,68 +413,64 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
 
     public SocketAdapter(PassiveConnectionHandler handler, InetAddress addressForPools)
-            throws IOException
-    {
+          throws IOException {
         _clientConnectionHandler = handler;
         _clientConnectionHandler.setErrorConsumer(this::setError);
 
         _poolConnectionHandler = new PassiveConnectionHandler(addressForPools, PortRange.ANY);
         _poolConnectionHandler.open();
 
-        _thread = new Thread(this, "SocketAdapter-" + toString(_clientConnectionHandler.getLocalAddress()));
+        _thread = new Thread(this,
+              "SocketAdapter-" + toString(_clientConnectionHandler.getLocalAddress()));
     }
 
-    /** Increments the EOD seen counter. Thread safe. */
-    private synchronized void incrementEODSeen()
-    {
+    /**
+     * Increments the EOD seen counter. Thread safe.
+     */
+    private synchronized void incrementEODSeen() {
         _eodSeen++;
     }
 
-    /** Returns the EOD seen counter. Thread safe. */
-    private synchronized int getEODSeen()
-    {
+    /**
+     * Returns the EOD seen counter. Thread safe.
+     */
+    private synchronized int getEODSeen() {
         return _eodSeen;
     }
 
     /**
-     * Specify expected number of streams, so therefore expected number
-     * of EOD.
+     * Specify expected number of streams, so therefore expected number of EOD.
      */
-    private synchronized void setEODExcepted(long value)
-    {
+    private synchronized void setEODExcepted(long value) {
         checkArgument(value > 0);
         _eodExpected = value;
     }
 
     /**
-     * Returns true if the expected number of EOD is known and the
-     * number of observed EOD matches.
+     * Returns true if the expected number of EOD is known and the number of observed EOD matches.
      */
-    private synchronized boolean hasSeenAllExpectedEOD()
-    {
+    private synchronized boolean hasSeenAllExpectedEOD() {
         return isEODExpectedSpecified() && _eodSeen == _eodExpected;
     }
 
     /**
      * @return true iff setEODExpected has been called.
      */
-    private synchronized boolean isEODExpectedSpecified()
-    {
+    private synchronized boolean isEODExpectedSpecified() {
         return _eodExpected > 0;
     }
 
-    /** Returns the EOD seen counter. Thread safe. */
-    private synchronized long getEODExpected()
-    {
+    /**
+     * Returns the EOD seen counter. Thread safe.
+     */
+    private synchronized long getEODExpected() {
         return _eodExpected;
     }
 
     /**
-     * Sets the error field. This indicates that the transfer has
-     * failed.
+     * Sets the error field. This indicates that the transfer has failed.
      */
-    protected synchronized void setError(String msg)
-    {
+    protected synchronized void setError(String msg) {
         if (!isClosing()) {
             LOGGER.error(msg);
             if (_error == null) {
@@ -492,15 +481,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /**
-     * Sets the error field. This indicates that the transfer has
-     * failed. The SocketAdapter thread is interrupted, causing it to
-     * break out of the run() method.
+     * Sets the error field. This indicates that the transfer has failed. The SocketAdapter thread
+     * is interrupted, causing it to break out of the run() method.
      */
-    protected synchronized void setFatalError(Exception e)
-    {
+    protected synchronized void setFatalError(Exception e) {
         if (!isClosing()) {
             LOGGER.error("Socket adapter {} caught fatal error: {}",
-                    _clientConnectionHandler.getLocalAddress(), e.getMessage());
+                  _clientConnectionHandler.getLocalAddress(), e.getMessage());
 
             if (_error == null) {
                 _inbound.close();
@@ -513,8 +500,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * @see diskCacheV111.util.ProxyAdapter#getError()
      */
     @Override
-    public synchronized String getError()
-    {
+    public synchronized String getError() {
         return _error;
     }
 
@@ -522,8 +508,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * @see diskCacheV111.util.ProxyAdapter#hasError()
      */
     @Override
-    public synchronized boolean hasError()
-    {
+    public synchronized boolean hasError() {
         return _error != null;
     }
 
@@ -531,60 +516,53 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * @see diskCacheV111.util.ProxyAdapter#setMaxBlockSize(int)
      */
     @Override
-    public void setMaxBlockSize(int size)
-    {
+    public void setMaxBlockSize(int size) {
         _maxBlockSize = size;
     }
 
     @Override
-    public synchronized void setMode(TransferMode mode)
-    {
+    public synchronized void setMode(TransferMode mode) {
         checkArgument(mode == MODE_S || mode == MODE_E, "Unsupported transfer mode %s", mode);
         _mode = mode;
     }
 
     @Override
-    public InetSocketAddress getInternalAddress()
-    {
+    public InetSocketAddress getInternalAddress() {
         return _poolConnectionHandler.getLocalAddress();
     }
 
     @Override
-    public void setDataDirection(Direction dir)
-    {
+    public void setDataDirection(Direction dir) {
         _direction = dir;
 
         switch (dir) {
-        case UPLOAD:
-            _inbound = _clientConnectionHandler;
-            _outbound = _poolConnectionHandler;
-            break;
-        case DOWNLOAD:
-            _inbound = _poolConnectionHandler;
-            _outbound = _clientConnectionHandler;
-            break;
+            case UPLOAD:
+                _inbound = _clientConnectionHandler;
+                _outbound = _poolConnectionHandler;
+                break;
+            case DOWNLOAD:
+                _inbound = _poolConnectionHandler;
+                _outbound = _clientConnectionHandler;
+                break;
         }
     }
 
     /**
      * Sets the closing flag. @see _closing
      */
-    private synchronized void setClosing(boolean closing)
-    {
+    private synchronized void setClosing(boolean closing) {
         _closing = closing;
     }
 
     /**
      * Returns the value of the closing flag. @see _closing
      */
-    private synchronized boolean isClosing()
-    {
+    private synchronized boolean isClosing() {
         return _closing;
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         LOGGER.debug("Socket adapter thread starting");
         assert _direction == UPLOAD || _mode == MODE_S;
 
@@ -597,9 +575,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              * one connection on the output channel.
              */
             _output = _outbound.accept();
-            _outputRemoteAddress = SocketAdapter.toString(_output.socket().getRemoteSocketAddress());
+            _outputRemoteAddress = SocketAdapter.toString(
+                  _output.socket().getRemoteSocketAddress());
             _outputLocalAddress = SocketAdapter.toString(_output.socket().getLocalSocketAddress());
-
 
             try {
                 /* Send the EOF. The GridFTP protocol allows us to send
@@ -623,7 +601,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                         setError("Did not receive EOF marker. Transfer failed.");
                     } else if (!hasSeenAllExpectedEOD()) {
                         setError("Transfer failed: not enough EOD markers (expected " +
-                                getEODExpected() + ", got " + getEODSeen() + ")");
+                              getEODExpected() + ", got " + getEODSeen() + ")");
                     } else {
                         sendEod();
                     }
@@ -662,28 +640,25 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         }
     }
 
-    private void sendEof() throws IOException
-    {
+    private void sendEof() throws IOException {
         ByteBuffer block = ByteBuffer.allocate(17);
-        block.put((byte)(EDataBlockNio.EOF_DESCRIPTOR));
+        block.put((byte) (EDataBlockNio.EOF_DESCRIPTOR));
         block.putLong(0);
         block.putLong(1);
         block.flip();
         _output.write(block);
     }
 
-    private void sendEod() throws IOException
-    {
+    private void sendEod() throws IOException {
         ByteBuffer block = ByteBuffer.allocate(17);
-        block.put((byte)EDataBlockNio.EOD_DESCRIPTOR);
+        block.put((byte) EDataBlockNio.EOD_DESCRIPTOR);
         block.putLong(0);
         block.putLong(0);
         block.flip();
         _output.write(block);
     }
 
-    private void awaitRedirectors() throws InterruptedException
-    {
+    private void awaitRedirectors() throws InterruptedException {
         LOGGER.debug("Waiting for {} redirectors to finish", _redirectors.size());
         for (Thread redirector : _redirectors) {
             redirector.join();
@@ -693,20 +668,19 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         LOGGER.debug("All redirectors have finished");
     }
 
-    private void acceptNewChannel(SocketChannel input, ByteBuffer initialInput)
-    {
+    private void acceptNewChannel(SocketChannel input, ByteBuffer initialInput) {
         LOGGER.debug("Accepting new TCP connection");
 
         Redirector redir;
         switch (_mode) {
-        case MODE_E:
-            redir = new ModeERedirector(input, initialInput);
-            break;
-        case MODE_S:
-            redir = new StreamRedirector(input, initialInput);
-            break;
-        default:
-            throw new RuntimeException("Unsupported transfer mode: " + _mode);
+            case MODE_E:
+                redir = new ModeERedirector(input, initialInput);
+                break;
+            case MODE_S:
+                redir = new StreamRedirector(input, initialInput);
+                break;
+            default:
+                throw new RuntimeException("Unsupported transfer mode: " + _mode);
         }
         redir.start();
 
@@ -756,12 +730,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
     @Override
     public String toString() {
-        return "SocketAdapter[mode=" + _mode.getLabel() + " in=" + _inbound + ", out=" + _outbound + "]";
+        return "SocketAdapter[mode=" + _mode.getLabel() + " in=" + _inbound + ", out=" + _outbound
+              + "]";
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("Passive adapter:");
         pw.println("    Transfer mode: " + _mode.getLabel());
         pw.println("    Listening on:");

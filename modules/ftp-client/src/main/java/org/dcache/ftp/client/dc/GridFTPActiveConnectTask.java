@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,28 +15,24 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.GridFTPSession;
 import org.dcache.ftp.client.HostPort;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Unlike in the parent class, here we use authentication
- * and protection.
+ * Unlike in the parent class, here we use authentication and protection.
  **/
-public class GridFTPActiveConnectTask extends Task
-{
+public class GridFTPActiveConnectTask extends Task {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(GridFTPActiveConnectTask.class);
+          LoggerFactory.getLogger(GridFTPActiveConnectTask.class);
 
     protected HostPort hostPort;
     protected BasicServerControlChannel control;
@@ -44,10 +40,9 @@ public class GridFTPActiveConnectTask extends Task
     protected GridFTPSession gSession;
 
     public GridFTPActiveConnectTask(HostPort hostPort,
-                                    BasicServerControlChannel control,
-                                    SocketBox box,
-                                    GridFTPSession gSession)
-    {
+          BasicServerControlChannel control,
+          SocketBox box,
+          GridFTPSession gSession) {
         if (box == null) {
             throw new IllegalArgumentException("Socket box is null");
         }
@@ -58,20 +53,20 @@ public class GridFTPActiveConnectTask extends Task
     }
 
     @Override
-    public void execute()
-    {
+    public void execute() {
         Socket mySocket = null;
 
         if (logger.isDebugEnabled()) {
             logger.debug("connecting new socket to: {} {}",
-                         hostPort.getHost(), hostPort.getPort());
+                  hostPort.getHost(), hostPort.getPort());
         }
 
         try {
-            mySocket = SocketChannel.open(new InetSocketAddress(hostPort.getHost(), hostPort.getPort())).socket();
+            mySocket = SocketChannel.open(
+                  new InetSocketAddress(hostPort.getHost(), hostPort.getPort())).socket();
 
             if (!gSession.dataChannelAuthentication.equals(
-                    DataChannelAuthentication.NONE)) {
+                  DataChannelAuthentication.NONE)) {
 
                 logger.debug("authenticating");
                 throw new UnsupportedOperationException("DCAU is not supported by this client.");
@@ -89,9 +84,9 @@ public class GridFTPActiveConnectTask extends Task
 
         } catch (Exception e) {
             FTPServerFacade.exceptionToControlChannel(
-                    e,
-                    "active connection to server failed",
-                    control);
+                  e,
+                  "active connection to server failed",
+                  control);
             try {
                 if (mySocket != null) {
                     mySocket.close();

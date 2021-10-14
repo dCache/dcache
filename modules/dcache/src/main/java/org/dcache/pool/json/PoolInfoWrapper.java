@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.pool.json;
 
 import java.io.Serializable;
-
 import org.dcache.util.histograms.Histogram;
 import org.dcache.util.histograms.HistogramModel;
 import org.dcache.util.histograms.TimeseriesHistogram;
@@ -72,6 +71,7 @@ import org.dcache.util.histograms.TimeseriesHistogram;
  * {@link Histogram} is used in order to enable updating and regeneration.</p>
  */
 public class PoolInfoWrapper implements Serializable {
+
     /**
      * <p>Full pool name or pool group name.</p>
      */
@@ -174,7 +174,7 @@ public class PoolInfoWrapper implements Serializable {
     }
 
     public void setActiveMovers(
-                    TimeseriesHistogram activeMovers) {
+          TimeseriesHistogram activeMovers) {
         this.activeMovers = activeMovers;
     }
 
@@ -183,7 +183,7 @@ public class PoolInfoWrapper implements Serializable {
     }
 
     public void setActiveP2PClient(
-                    TimeseriesHistogram activeP2PClient) {
+          TimeseriesHistogram activeP2PClient) {
         this.activeP2PClient = activeP2PClient;
     }
 
@@ -192,22 +192,22 @@ public class PoolInfoWrapper implements Serializable {
     }
 
     public void setFileLiftimeAvg(
-                    TimeseriesHistogram fileLiftimeAvg) {
+          TimeseriesHistogram fileLiftimeAvg) {
         this.fileLiftimeAvg = fileLiftimeAvg;
     }
 
     public void setFileLiftimeMax(
-                    TimeseriesHistogram fileLiftimeMax) {
+          TimeseriesHistogram fileLiftimeMax) {
         this.fileLiftimeMax = fileLiftimeMax;
     }
 
     public void setFileLiftimeMin(
-                    TimeseriesHistogram fileLiftimeMin) {
+          TimeseriesHistogram fileLiftimeMin) {
         this.fileLiftimeMin = fileLiftimeMin;
     }
 
     public void setFileLiftimeStddev(
-                    TimeseriesHistogram fileLiftimeStddev) {
+          TimeseriesHistogram fileLiftimeStddev) {
         this.fileLiftimeStddev = fileLiftimeStddev;
     }
 
@@ -224,7 +224,7 @@ public class PoolInfoWrapper implements Serializable {
     }
 
     public void setQueuedMovers(
-                    TimeseriesHistogram queuedMovers) {
+          TimeseriesHistogram queuedMovers) {
         this.queuedMovers = queuedMovers;
     }
 
@@ -233,7 +233,7 @@ public class PoolInfoWrapper implements Serializable {
     }
 
     public void setQueuedP2PClient(
-                    TimeseriesHistogram queuedP2PClient) {
+          TimeseriesHistogram queuedP2PClient) {
         this.queuedP2PClient = queuedP2PClient;
     }
 

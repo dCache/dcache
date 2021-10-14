@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * A helper class for opaque data manipulations.
- * Enabled opaque date to be used as a key in {@link Collection}
+ * A helper class for opaque data manipulations. Enabled opaque date to be used as a key in {@link
+ * Collection}
  */
 public class Opaque {
 

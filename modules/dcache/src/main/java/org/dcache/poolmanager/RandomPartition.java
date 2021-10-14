@@ -1,76 +1,67 @@
 package org.dcache.poolmanager;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import static java.util.stream.Collectors.toList;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
-
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import org.dcache.pool.assumption.AvailableSpaceAssumption;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Partition that selects pools randomly.
  */
-public class RandomPartition extends Partition
-{
+public class RandomPartition extends Partition {
+
     private static final long serialVersionUID = -2614882036844578650L;
 
     static final String TYPE = "random";
 
     public static final Random random = new Random();
 
-    public RandomPartition(Map<String,String> inherited)
-    {
+    public RandomPartition(Map<String, String> inherited) {
         this(inherited, NO_PROPERTIES);
     }
 
-    public RandomPartition(Map<String,String> inherited,
-                           Map<String,String> properties)
-    {
+    public RandomPartition(Map<String, String> inherited,
+          Map<String, String> properties) {
         super(NO_PROPERTIES, inherited, properties);
     }
 
     @Override
-    protected Partition create(Map<String,String> inherited,
-                               Map<String,String> properties)
-    {
+    protected Partition create(Map<String, String> inherited,
+          Map<String, String> properties) {
         return new RandomPartition(inherited, properties);
     }
 
     @Override
-    public String getType()
-    {
+    public String getType() {
         return TYPE;
     }
 
-    private boolean canHoldFile(PoolInfo pool, long size)
-    {
+    private boolean canHoldFile(PoolInfo pool, long size) {
         PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
         long available =
-            space.getFreeSpace() + space.getRemovableSpace();
+              space.getFreeSpace() + space.getRemovableSpace();
         return available - size > space.getGap();
     }
 
-    private PoolInfo select(List<PoolInfo> pools)
-    {
+    private PoolInfo select(List<PoolInfo> pools) {
         return pools.get(random.nextInt(pools.size()));
     }
 
     @Override
     public SelectedPool selectWritePool(CostModule cm,
-                                        List<PoolInfo> pools,
-                                        FileAttributes attributes,
-                                        long preallocated)
-        throws CacheException
-    {
+          List<PoolInfo> pools,
+          FileAttributes attributes,
+          long preallocated)
+          throws CacheException {
         List<PoolInfo> freePools =
-                pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
+              pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
         if (freePools.isEmpty()) {
             throw new CostException("All pools are full", null, false, false);
         }
@@ -79,33 +70,30 @@ public class RandomPartition extends Partition
 
     @Override
     public SelectedPool selectReadPool(CostModule cm,
-                                       List<PoolInfo> pools,
-                                       FileAttributes attributes)
-        throws CacheException
-    {
+          List<PoolInfo> pools,
+          FileAttributes attributes)
+          throws CacheException {
         return new SelectedPool(select(pools));
     }
 
     @Override
     public P2pPair
-        selectPool2Pool(CostModule cm,
-                        List<PoolInfo> src,
-                        List<PoolInfo> dst,
-                        FileAttributes attributes,
-                        boolean force)
-        throws CacheException
-    {
+    selectPool2Pool(CostModule cm,
+          List<PoolInfo> src,
+          List<PoolInfo> dst,
+          FileAttributes attributes,
+          boolean force)
+          throws CacheException {
         return new P2pPair(new SelectedPool(select(src)),
-                           selectWritePool(cm, dst, attributes, attributes.getSize()));
+              selectWritePool(cm, dst, attributes, attributes.getSize()));
     }
 
     @Override
     public SelectedPool selectStagePool(CostModule cm,
-                                        List<PoolInfo> pools,
-                                        Optional<PoolInfo> previous,
-                                        FileAttributes attributes)
-        throws CacheException
-    {
+          List<PoolInfo> pools,
+          Optional<PoolInfo> previous,
+          FileAttributes attributes)
+          throws CacheException {
         return selectWritePool(cm, pools, attributes, attributes.getSize());
     }
 }

@@ -59,58 +59,54 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.tpc;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ChkSumErr;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
-
 import java.util.Set;
-
 import org.dcache.util.ByteUnit;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.xrootd.tpc.protocol.messages.InboundChecksumResponse;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ChkSumErr;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
-
 /**
  * <p>Executes optional checksum verification by requesting the
- *    checksum from the channel and from the source server.</p>
+ * checksum from the channel and from the source server.</p>
  */
-public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
-{
+public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler {
+
     private static final int DEFAULT_CHUNK = ByteUnit.MiB.toBytes(4);
 
     private final TpcWriteDescriptor descriptor;
 
-    public TpcWriteDescriptorHandler(TpcWriteDescriptor descriptor)
-    {
+    public TpcWriteDescriptorHandler(TpcWriteDescriptor descriptor) {
         this.descriptor = descriptor;
     }
 
     @Override
     protected void validateChecksum(InboundChecksumResponse response,
-                                    ChannelHandlerContext ctx)
-    {
+          ChannelHandlerContext ctx) {
         ChannelId id = ctx.channel().id();
         int streamId = client.getStreamId();
         XrootdTpcInfo info = client.getInfo();
         String requestedType = info.getCks();
         ChecksumType type
-                        = ChecksumType.getChecksumType(requestedType.toUpperCase());
+              = ChecksumType.getChecksumType(requestedType.toUpperCase());
         Set<Checksum> fileCksums =
-                        descriptor.getChannel().getFileAttributes().getChecksums();
+              descriptor.getChannel().getFileAttributes().getChecksums();
         String sourceValue = response.getChecksums().get(requestedType);
         String dCacheValue = null;
-        for (Checksum checksum: fileCksums) {
+        for (Checksum checksum : fileCksums) {
             if (checksum.getType() == type) {
                 dCacheValue = checksum.getValue();
                 if (sourceValue != null && sourceValue.equals(dCacheValue)) {
                     LOGGER.debug("Checksum query for {} on {}, "
-                                                 + "channel {}, stream {}, succeeded.",
-                                 info.getLfn(),
-                                 info.getSrc(),
-                                 id,
-                                 streamId);
+                                + "channel {}, stream {}, succeeded.",
+                          info.getLfn(),
+                          info.getSrc(),
+                          id,
+                          streamId);
                     handleTransferTerminated(kXR_ok, null, ctx);
                     return;
                 }
@@ -118,18 +114,17 @@ public final class TpcWriteDescriptorHandler extends TpcSourceReadHandler
         }
 
         String error = String.format("Checksum for %s not found or did not match "
-                        + "(channel %s, stream %d): source was %s, dcache was %s.",
-                                     info.getLfn(),
-                                     id,
-                                     streamId,
-                                     sourceValue,
-                                     dCacheValue);
+                    + "(channel %s, stream %d): source was %s, dcache was %s.",
+              info.getLfn(),
+              id,
+              streamId,
+              sourceValue,
+              dCacheValue);
         handleTransferTerminated(kXR_ChkSumErr, error, ctx);
     }
 
     @Override
-    protected int getChunkSize()
-    {
+    protected int getChunkSize() {
         return DEFAULT_CHUNK;
     }
 }

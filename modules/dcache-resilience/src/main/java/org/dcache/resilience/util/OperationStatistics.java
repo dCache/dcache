@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnits.jedecSymbol;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -81,73 +81,71 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.util.ByteUnit;
-
-import static org.dcache.util.ByteUnit.BYTES;
-import static org.dcache.util.ByteUnits.jedecSymbol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>For recording cumulative activity.  This data is either
- *      exposed through the admin terminal via commands, or
- *      written out to the resilience home directory as a log file
- *      (see {@link #printStatistics}); the latter can be turned on and off
- *      through the admin terminal.</p>
+ * exposed through the admin terminal via commands, or written out to the resilience home directory
+ * as a log file (see {@link #printStatistics}); the latter can be turned on and off through the
+ * admin terminal.</p>
  */
 public final class OperationStatistics {
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-                    OperationStatistics.class);
 
-    private static final String FORMAT_MSG      = "    %-26s %15s %9s\n";
-    private static final String FORMAT_OPS      = "    %-26s %15s %9s %12s\n";
-    private static final String FORMAT_POOLS    = "%-24s %15s %15s %15s %12s   %15s %15s %12s\n";
-    private static final String FORMAT_FILE     = "%-28s | %15s %9s %9s | %15s %9s %9s %12s | %15s\n";
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          OperationStatistics.class);
+
+    private static final String FORMAT_MSG = "    %-26s %15s %9s\n";
+    private static final String FORMAT_OPS = "    %-26s %15s %9s %12s\n";
+    private static final String FORMAT_POOLS = "%-24s %15s %15s %15s %12s   %15s %15s %12s\n";
+    private static final String FORMAT_FILE = "%-28s | %15s %9s %9s | %15s %9s %9s %12s | %15s\n";
 
     private static final String MSGS_TITLE
-                    = String.format("%-30s %15s %9s\n",
-                                    CounterType.MESSAGE.name(),
-                                    "received", "msgs/sec");
+          = String.format("%-30s %15s %9s\n",
+          CounterType.MESSAGE.name(),
+          "received", "msgs/sec");
     private static final String OPS_TITLE
-                    = String.format("%-30s %15s %9s %12s\n",
-                                    CounterType.OPERATION.name(),
-                                    "completed", "ops/sec", "failed");
+          = String.format("%-30s %15s %9s %12s\n",
+          CounterType.OPERATION.name(),
+          "completed", "ops/sec", "failed");
 
     private static final String POOLS_TITLE
-                    = String.format(FORMAT_POOLS, "TRANSFERS BY POOL",
-                                    "from", "to", "failed", "size",
-                                    "removed", "failed", "size");
+          = String.format(FORMAT_POOLS, "TRANSFERS BY POOL",
+          "from", "to", "failed", "size",
+          "removed", "failed", "size");
 
     private static final String LASTSTART = "Running since: %s\n";
-    private static final String UPTIME    = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
-    private static final String LASTSWP   = "Last file operation sweep at %s\n";
-    private static final String LASTSWPD  = "Last file operation sweep took %s seconds\n";
-    private static final String LASTCHK   = "Last checkpoint at %s\n";
-    private static final String LASTCHKD  = "Last checkpoint took %s seconds\n";
+    private static final String UPTIME = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
+    private static final String LASTSWP = "Last file operation sweep at %s\n";
+    private static final String LASTSWPD = "Last file operation sweep took %s seconds\n";
+    private static final String LASTCHK = "Last checkpoint at %s\n";
+    private static final String LASTCHKD = "Last checkpoint took %s seconds\n";
     private static final String LASTCHKCT = "Last checkpoint saved %s records\n";
 
-    private static final String[] MSGS      = {
-                    MessageType.CLEAR_CACHE_LOCATION.name(),
-                    MessageType.CORRUPT_FILE.name(),
-                    MessageType.ADD_CACHE_LOCATION.name(),
-                    MessageType.QOS_MODIFIED.name(),
-                    MessageType.POOL_STATUS_DOWN.name(),
-                    MessageType.POOL_STATUS_UP.name() };
+    private static final String[] MSGS = {
+          MessageType.CLEAR_CACHE_LOCATION.name(),
+          MessageType.CORRUPT_FILE.name(),
+          MessageType.ADD_CACHE_LOCATION.name(),
+          MessageType.QOS_MODIFIED.name(),
+          MessageType.POOL_STATUS_DOWN.name(),
+          MessageType.POOL_STATUS_UP.name()};
 
-    private static final String[] OPS       = {
-                    Operation.FILE.name(),
-                    Operation.POOL_SCAN_DOWN.name(),
-                    Operation.POOL_SCAN_ACTIVE.name() };
+    private static final String[] OPS = {
+          Operation.FILE.name(),
+          Operation.POOL_SCAN_DOWN.name(),
+          Operation.POOL_SCAN_ACTIVE.name()};
 
     private static String formatWithPrefix(long count) {
         ByteUnit units = ByteUnit.Type.BINARY.unitsOf(count);
         if (units == BYTES) {
             return String.format("%s", count);
         } else {
-            return String.format("%.2f %s", units.convert((double)count, BYTES),
-                    jedecSymbol().of(units));
+            return String.format("%.2f %s", units.convert((double) count, BYTES),
+                  jedecSymbol().of(units));
         }
     }
 
@@ -155,7 +153,7 @@ public final class OperationStatistics {
         if (last == 0) {
             return "?";
         }
-        double delta = 100*(current - last)/last;
+        double delta = 100 * (current - last) / last;
         return String.format("%.2f%%", delta);
     }
 
@@ -163,10 +161,10 @@ public final class OperationStatistics {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         return String.format("-tasks-%s_%s_%s_%s",
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH)+1,
-                        calendar.get(Calendar.DATE),
-                        calendar.get(Calendar.HOUR_OF_DAY));
+              calendar.get(Calendar.YEAR),
+              calendar.get(Calendar.MONTH) + 1,
+              calendar.get(Calendar.DATE),
+              calendar.get(Calendar.HOUR_OF_DAY));
     }
 
     public enum CounterType {
@@ -180,13 +178,13 @@ public final class OperationStatistics {
     private final Date started = new Date();
 
     private final Map<String, Map<String, AtomicLong>> counterMap
-        = Collections.synchronizedMap(new HashMap<String, Map<String, AtomicLong>>());
+          = Collections.synchronizedMap(new HashMap<String, Map<String, AtomicLong>>());
 
     private final Set<String> pools = new HashSet<>();
 
     private List<String> taskStatsBuffer = new ArrayList<>();
 
-    private long lastCheckpoint         = started.getTime();
+    private long lastCheckpoint = started.getTime();
     private long lastCheckpointDuration = 0;
 
     private long lastFileOpSweep = started.getTime();
@@ -206,18 +204,18 @@ public final class OperationStatistics {
 
     public void getCheckpointInfo(StringBuilder builder) {
         AtomicLong latest = getCounter(CounterType.CHCKPT.name(),
-                                       TagType.CURRENT.name());
+              TagType.CURRENT.name());
         builder.append(String.format(LASTCHK, new Date(lastCheckpoint)));
         builder.append(String.format(LASTCHKD,
-                                     TimeUnit.MILLISECONDS.toSeconds(
-                                                     lastCheckpointDuration)));
+              TimeUnit.MILLISECONDS.toSeconds(
+                    lastCheckpointDuration)));
         builder.append(String.format(LASTCHKCT, latest.get()));
     }
 
     public void getFileOpSweepInfo(StringBuilder info) {
         info.append(String.format(LASTSWP, new Date(lastFileOpSweep)));
         info.append(String.format(LASTSWPD,
-                        TimeUnit.MILLISECONDS.toSeconds(lastFileOpSweepDuration)));
+              TimeUnit.MILLISECONDS.toSeconds(lastFileOpSweepDuration)));
     }
 
     public void increment(String source, String target, Type type, long size) {
@@ -266,11 +264,11 @@ public final class OperationStatistics {
         switch (type) {
             case COPY:
                 count = getPoolCounter(pool, CounterType.CPTGT.name(),
-                                       TagType.FAILED.name());
+                      TagType.FAILED.name());
                 break;
             case REMOVE:
                 count = getPoolCounter(pool, CounterType.RMCT.name(),
-                                       TagType.FAILED.name());
+                      TagType.FAILED.name());
                 break;
             default:
         }
@@ -290,7 +288,7 @@ public final class OperationStatistics {
 
     public void incrementOperationFailed(String type) {
         AtomicLong counter = getCounter(CounterType.OPERATION.name(), type,
-                                        TagType.FAILED.name());
+              TagType.FAILED.name());
         if (counter != null) {
             counter.incrementAndGet();
         }
@@ -332,7 +330,7 @@ public final class OperationStatistics {
              *  Title line should always be there.
              */
             buffer.add(fr.readLine());
-            int end = limit == null ? Integer.MAX_VALUE : limit+1;
+            int end = limit == null ? Integer.MAX_VALUE : limit + 1;
             while (true) {
                 String line = fr.readLine();
                 if (line == null) {
@@ -353,11 +351,11 @@ public final class OperationStatistics {
             }
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to append to statistics file: {}",
-                            e.getMessage());
+                  e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during append to "
-                                            + "statistics file: {}",
-                            e.getMessage());
+                        + "statistics file: {}",
+                  e.getMessage());
         }
 
         StringBuilder builder = new StringBuilder();
@@ -370,7 +368,7 @@ public final class OperationStatistics {
         lastCheckpoint = ended;
         lastCheckpointDuration = duration;
         AtomicLong latest = getCounter(CounterType.CHCKPT.name(),
-                                       TagType.CURRENT.name());
+              TagType.CURRENT.name());
         latest.set(count);
         resetLatestCounts();
     }
@@ -381,15 +379,15 @@ public final class OperationStatistics {
     }
 
     public void recordTaskStatistics(ResilientFileTask task,
-                                     String status,
-                                     FailureType type,
-                                     String parent,
-                                     String source,
-                                     String target) {
+          String status,
+          FailureType type,
+          String parent,
+          String source,
+          String target) {
         if (toFile && task != null) {
             synchronized (this) {
                 taskStatsBuffer.add(task.getFormattedStatistics(status, type,
-                                parent, source, target));
+                      parent, source, target));
             }
         }
     }
@@ -399,19 +397,19 @@ public final class OperationStatistics {
         counterMap.computeIfAbsent(pool, (p) -> {
             Map<String, AtomicLong> categories = new HashMap<>();
             categories.put(CounterType.CPSRC.name() + TagType.TOTAL,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.CPTGT.name() + TagType.TOTAL,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.CPTGT.name() + TagType.FAILED,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.CPBYTES.name() + TagType.TOTAL,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.RMCT.name() + TagType.TOTAL,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.RMCT.name() + TagType.FAILED,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             categories.put(CounterType.RMBYTES.name() + TagType.TOTAL,
-                           new AtomicLong(0));
+                  new AtomicLong(0));
             return categories;
         });
     }
@@ -448,11 +446,11 @@ public final class OperationStatistics {
             return 0L;
         }
 
-        return value/elapsed;
+        return value / elapsed;
     }
 
     private AtomicLong getPoolCounter(String pool, String category,
-                                      String tag) {
+          String tag) {
         return getCounter(pool, category, tag);
     }
 
@@ -486,62 +484,62 @@ public final class OperationStatistics {
         if (!statisticsPath.exists()) {
             try (FileWriter fw = new FileWriter(statisticsPath, true)) {
                 fw.write(String.format(FORMAT_FILE, "CHECKPOINT", "NEWLOC",
-                                "HZ", "CHNG", "FILEOP", "HZ", "CHNG", "FAILED",
-                                "CHCKPTD"));
+                      "HZ", "CHNG", "FILEOP", "HZ", "CHNG", "FAILED",
+                      "CHCKPTD"));
                 fw.flush();
             } catch (FileNotFoundException e) {
                 LOGGER.error("Unable to initialize statistics file: {}",
-                                e.getMessage());
+                      e.getMessage());
             } catch (IOException e) {
                 LOGGER.error("Unrecoverable error during initialization of"
-                                                + " statistics file: {}",
-                                e.getMessage());
+                            + " statistics file: {}",
+                      e.getMessage());
             }
         }
     }
 
     private void printOperationStats() {
-        String[] category = { CounterType.MESSAGE.name(),
-                              CounterType.OPERATION.name(),
-                              CounterType.CHCKPT.name()};
+        String[] category = {CounterType.MESSAGE.name(),
+              CounterType.OPERATION.name(),
+              CounterType.CHCKPT.name()};
 
         String[] type = {MessageType.ADD_CACHE_LOCATION.name(),
-                        Operation.FILE.name()};
+              Operation.FILE.name()};
 
-        String[] tag = { TagType.TOTAL.name(),
-                         TagType.CURRENT.name(),
-                         TagType.LAST.name(),
-                         TagType.FAILED.name()};
+        String[] tag = {TagType.TOTAL.name(),
+              TagType.CURRENT.name(),
+              TagType.LAST.name(),
+              TagType.FAILED.name()};
 
-        long[] received = { getCounter(category[0], type[0], tag[0]).get(),
-                        getCounter(category[1], type[1], tag[0]).get()};
+        long[] received = {getCounter(category[0], type[0], tag[0]).get(),
+              getCounter(category[1], type[1], tag[0]).get()};
 
-        long[] current  = {  getCounter(category[0], type[0], tag[1]).get(),
-                        getCounter(category[1], type[1], tag[1]).get(),
-                        getCounter(category[2], tag[1]).get()};
+        long[] current = {getCounter(category[0], type[0], tag[1]).get(),
+              getCounter(category[1], type[1], tag[1]).get(),
+              getCounter(category[2], tag[1]).get()};
 
-        long[] last     = {  getCounter(category[0], type[0], tag[2]).get(),
-                        getCounter(category[1], type[1], tag[2]).get()};
+        long[] last = {getCounter(category[0], type[0], tag[2]).get(),
+              getCounter(category[1], type[1], tag[2]).get()};
 
-        long failed     =  getCounter(category[1], type[1], tag[3]).get();
+        long failed = getCounter(category[1], type[1], tag[3]).get();
 
         initializeStatisticsFile();  // NOP if file exists
 
         try (FileWriter fw = new FileWriter(statisticsPath, true)) {
             fw.write(String.format(FORMAT_FILE, new Date(lastCheckpoint),
-                            received[0], getRatePerSecond(current[0]),
-                            getRateChangeSinceLast(current[0], last[0]),
-                            received[1], getRatePerSecond(current[1]),
-                            getRateChangeSinceLast(current[1], last[1]), failed,
-                            current[2]));
+                  received[0], getRatePerSecond(current[0]),
+                  getRateChangeSinceLast(current[0], last[0]),
+                  received[1], getRatePerSecond(current[1]),
+                  getRateChangeSinceLast(current[1], last[1]), failed,
+                  current[2]));
             fw.flush();
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to append to operation statistics file: {}",
-                            e.getMessage());
+                  e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during append to operation "
-                                            + "statistics file: {}",
-                            e.getMessage());
+                        + "statistics file: {}",
+                  e.getMessage());
         }
     }
 
@@ -553,7 +551,7 @@ public final class OperationStatistics {
         String[] pools = this.pools.toArray(String[]::new);
         Arrays.sort(pools);
 
-        long[] totals = new long[] { 0, 0, 0, 0, 0, 0, 0 };
+        long[] totals = new long[]{0, 0, 0, 0, 0, 0, 0};
         long[] counts;
 
         for (String pool : pools) {
@@ -564,35 +562,35 @@ public final class OperationStatistics {
             counts = new long[7];
 
             counts[0] = getPoolCounter(pool,
-                                       CounterType.CPSRC.name(),
-                                       TagType.TOTAL.name()).get();
+                  CounterType.CPSRC.name(),
+                  TagType.TOTAL.name()).get();
             counts[1] = getPoolCounter(pool,
-                                       CounterType.CPTGT.name(),
-                                       TagType.TOTAL.name()).get();
+                  CounterType.CPTGT.name(),
+                  TagType.TOTAL.name()).get();
             counts[2] = getPoolCounter(pool,
-                                       CounterType.CPTGT.name(),
-                                       TagType.FAILED.name()).get();
+                  CounterType.CPTGT.name(),
+                  TagType.FAILED.name()).get();
             counts[3] = getPoolCounter(pool,
-                                       CounterType.CPBYTES.name(),
-                                       TagType.TOTAL.name()).get();
+                  CounterType.CPBYTES.name(),
+                  TagType.TOTAL.name()).get();
             counts[4] = getPoolCounter(pool,
-                                       CounterType.RMCT.name(),
-                                       TagType.TOTAL.name()).get();
+                  CounterType.RMCT.name(),
+                  TagType.TOTAL.name()).get();
             counts[5] = getPoolCounter(pool,
-                                       CounterType.RMCT.name(),
-                                       TagType.FAILED.name()).get();
+                  CounterType.RMCT.name(),
+                  TagType.FAILED.name()).get();
             counts[6] = getPoolCounter(pool,
-                                       CounterType.RMBYTES.name(),
-                                       TagType.TOTAL.name()).get();
+                  CounterType.RMBYTES.name(),
+                  TagType.TOTAL.name()).get();
 
             builder.append(String.format(FORMAT_POOLS, pool,
-                                         counts[0],
-                                         counts[1],
-                                         counts[2],
-                                         formatWithPrefix(counts[3]),
-                                         counts[4],
-                                         counts[5],
-                                         formatWithPrefix(counts[6])));
+                  counts[0],
+                  counts[1],
+                  counts[2],
+                  formatWithPrefix(counts[3]),
+                  counts[4],
+                  counts[5],
+                  formatWithPrefix(counts[6])));
 
             for (int i = 0; i < totals.length; i++) {
                 totals[i] += counts[i];
@@ -601,13 +599,13 @@ public final class OperationStatistics {
 
         builder.append("\n");
         builder.append(String.format(FORMAT_POOLS, "TOTALS",
-                                     totals[0],
-                                     totals[1],
-                                     totals[2],
-                                     formatWithPrefix(totals[3]),
-                                     totals[4],
-                                     totals[5],
-                                     formatWithPrefix(totals[6])));
+              totals[0],
+              totals[1],
+              totals[2],
+              formatWithPrefix(totals[3]),
+              totals[4],
+              totals[5],
+              formatWithPrefix(totals[6])));
     }
 
     /**
@@ -631,7 +629,7 @@ public final class OperationStatistics {
         }
 
         try (FileWriter fw = new FileWriter(statisticsPath + getTaskExt(),
-                                            true)) {
+              true)) {
             for (String line : buffer) {
                 fw.write(line);
             }
@@ -639,10 +637,10 @@ public final class OperationStatistics {
             fw.flush();
         } catch (FileNotFoundException e) {
             LOGGER.error("Unable to append to task statistics file: {}",
-                            e.getMessage());
+                  e.getMessage());
         } catch (IOException e) {
             LOGGER.error("Unrecoverable error during append to task "
-                            + "statistics file: {}", e.getMessage());
+                  + "statistics file: {}", e.getMessage());
         }
     }
 
@@ -657,7 +655,7 @@ public final class OperationStatistics {
             received = getCounter(category, t, TagType.TOTAL.name()).get();
             current = getCounter(category, t, TagType.CURRENT.name()).get();
             builder.append(String.format(FORMAT_MSG, t, received,
-                                         getRatePerSecond(current)));
+                  getRatePerSecond(current)));
         }
 
         builder.append("\n");
@@ -669,8 +667,8 @@ public final class OperationStatistics {
             failed = getCounter(category, t, TagType.FAILED.name()).get();
             current = getCounter(category, t, TagType.CURRENT.name()).get();
             builder.append(String.format(FORMAT_OPS, t, received,
-                                         getRatePerSecond(current),
-                                         failed));
+                  getRatePerSecond(current),
+                  failed));
         }
 
         builder.append("\n");
@@ -678,29 +676,29 @@ public final class OperationStatistics {
 
     private void registerCheckpoint() {
         Map<String, AtomicLong> map =
-                        counterMap.computeIfAbsent(CounterType.CHCKPT.name(),
-                                                   (m) -> new HashMap<>());
+              counterMap.computeIfAbsent(CounterType.CHCKPT.name(),
+                    (m) -> new HashMap<>());
         map.computeIfAbsent(TagType.CURRENT.name(), (t) -> new AtomicLong(0));
         map.computeIfAbsent(TagType.LAST.name(), (t) -> new AtomicLong(0));
     }
 
     private void registerMessage(String type) {
         Map<String, AtomicLong> map =
-                        counterMap.computeIfAbsent(CounterType.MESSAGE.name(),
-                                                   (m) -> new HashMap<>());
-        map.computeIfAbsent(type+ TagType.TOTAL.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+ TagType.CURRENT.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+ TagType.LAST.name(), (t) -> new AtomicLong(0));
+              counterMap.computeIfAbsent(CounterType.MESSAGE.name(),
+                    (m) -> new HashMap<>());
+        map.computeIfAbsent(type + TagType.TOTAL.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type + TagType.CURRENT.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type + TagType.LAST.name(), (t) -> new AtomicLong(0));
     }
 
     private void registerOperation(String type) {
         Map<String, AtomicLong> map =
-                        counterMap.computeIfAbsent(CounterType.OPERATION.name(),
-                                                   (m) -> new HashMap<>());
-        map.computeIfAbsent(type+ TagType.TOTAL.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+ TagType.FAILED.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+ TagType.CURRENT.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+ TagType.LAST.name(), (t) -> new AtomicLong(0));
+              counterMap.computeIfAbsent(CounterType.OPERATION.name(),
+                    (m) -> new HashMap<>());
+        map.computeIfAbsent(type + TagType.TOTAL.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type + TagType.FAILED.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type + TagType.CURRENT.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type + TagType.LAST.name(), (t) -> new AtomicLong(0));
     }
 
     private void resetLatestCounts() {

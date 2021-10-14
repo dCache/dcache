@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,12 +18,12 @@ package org.dcache.ftp.client.exception;
 /**
  * thrown by PerformanceMarker, mostly during construction.
  **/
-public class PerfMarkerException extends FTPException
-{
+public class PerfMarkerException extends FTPException {
+
     private static final long serialVersionUID = -2293885018513524380L;
 
     /**
-
+     *
      **/
     public static final int NO_SUCH_PARAMETER = 1;
 
@@ -31,17 +31,18 @@ public class PerfMarkerException extends FTPException
 
     static {
         codeExplained = new String[]
-                {"Unspecified category.",
-                        "Marker does not contain the requested parameter."
-                };
+              {"Unspecified category.",
+                    "Marker does not contain the requested parameter."
+              };
     }
 
     @Override
-    public String getCodeExplanation(int code)
-    {
-        if (codeExplained.length > code)
+    public String getCodeExplanation(int code) {
+        if (codeExplained.length > code) {
             return codeExplained[code];
-        else return "";
+        } else {
+            return "";
+        }
     }
 
 
@@ -52,14 +53,12 @@ public class PerfMarkerException extends FTPException
     //conditions of the error.
     protected String customMessage;
 
-    public PerfMarkerException(int code, String message)
-    {
+    public PerfMarkerException(int code, String message) {
         super(code, message);
         customMessage = message;
     }
 
-    public PerfMarkerException(int code)
-    {
+    public PerfMarkerException(int code) {
         super(code);
     }
 

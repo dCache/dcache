@@ -60,27 +60,24 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-
 import org.dcache.resilience.data.PoolInfoMap;
 
 /**
  * <p>Base class for the constraint discriminator interface.</p>
  *
  * <p>Implementations return a list, possibly ordered, of locations
- *      which qualify, depending upon the semantics of the constraint
- *      checking done.</p>
+ * which qualify, depending upon the semantics of the constraint checking done.</p>
  */
 public abstract class PoolTagConstraintDiscriminator {
+
     protected final Set<String> partitionKeys;
 
     /**
-     * @param onlyOneCopyPer collection of keys (tag names)
-     *                       on whose values the matching and/or exclusion
-     *                       should take place.
+     * @param onlyOneCopyPer collection of keys (tag names) on whose values the matching and/or
+     *                       exclusion should take place.
      */
     protected PoolTagConstraintDiscriminator(Collection<String> onlyOneCopyPer) {
         if (onlyOneCopyPer == null) {
@@ -92,15 +89,14 @@ public abstract class PoolTagConstraintDiscriminator {
 
     /**
      * @param locations current set of locations
-     * @return  a collection of locations which meet the constraint requirements
-     *          based on the presence of pool tag values matching the
-     *          the names of the partition keys.
+     * @return a collection of locations which meet the constraint requirements based on the
+     * presence of pool tag values matching the the names of the partition keys.
      */
     public abstract Collection<String> getCandidateLocations(Collection<String> locations);
 
     /**
-     *  <p>Could be fetched from the pool, the PoolManager, or locally
-     *          (as with a {@link PoolInfoMap} instance).</p>
+     * <p>Could be fetched from the pool, the PoolManager, or locally
+     * (as with a {@link PoolInfoMap} instance).</p>
      */
     protected abstract Map<String, String> getPoolTagsFor(String location);
 }

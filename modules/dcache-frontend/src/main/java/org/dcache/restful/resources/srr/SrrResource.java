@@ -1,18 +1,16 @@
 package org.dcache.restful.resources.srr;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerSubscriber;
 import io.swagger.annotations.Api;
-import org.dcache.cells.CellStub;
-import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.restful.srr.SrrBuilder;
-import org.dcache.restful.srr.SrrRecord;
-import org.springframework.stereotype.Component;
-
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -23,13 +21,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.restful.srr.SrrBuilder;
+import org.dcache.restful.srr.SrrRecord;
+import org.springframework.stereotype.Component;
 
 /**
  * RestFul API to  provide files/folders manipulation operations.
@@ -97,19 +93,20 @@ public class SrrResource {
         // pgroup=qos-disk:/cms,qos-disk:/atlas
 
         Splitter.on(',')
-                .trimResults()
-                .omitEmptyStrings()
-                .splitToList(mapping)
-                .forEach(
-                        s -> {
-                            String[] voMap = s.split(":");
-                            if (voMap.length != 2) {
-                                throw new IllegalArgumentException("Invalid format of poolgroup -> VO mapping");
-                            }
-                            pgroup2vo.computeIfAbsent(voMap[0], k -> new ArrayList<>()).add(voMap[1]);
+              .trimResults()
+              .omitEmptyStrings()
+              .splitToList(mapping)
+              .forEach(
+                    s -> {
+                        String[] voMap = s.split(":");
+                        if (voMap.length != 2) {
+                            throw new IllegalArgumentException(
+                                  "Invalid format of poolgroup -> VO mapping");
                         }
+                        pgroup2vo.computeIfAbsent(voMap[0], k -> new ArrayList<>()).add(voMap[1]);
+                    }
 
-                );
+              );
 
     }
 
@@ -118,28 +115,28 @@ public class SrrResource {
     @Path("/")
     public Response getSrr() throws InterruptedException, CacheException, NoRouteToCellException {
 
-        InetAddress remoteAddress  = InetAddresses.forString(request.getRemoteAddr());
+        InetAddress remoteAddress = InetAddresses.forString(request.getRemoteAddr());
         if (!remoteAddress.isLoopbackAddress()) {
             throw new ForbiddenException();
         }
 
         SrrRecord record = SrrBuilder.builder()
-                .withLoginBroker(loginBrokerSubscriber)
-                .withNamespace(namespaceStub)
-                .withPoolMonitor(remotePoolMonitor)
-                .withSpaceManagerStub(spaceManager)
-                .withSpaceManagerEnaled(spaceReservationEnabled)
-                .withId(id)
-                .withName(name)
-                .withQuality(quality)
-                .withArchitecture(architecture)
-                .withGroupVoMapping(pgroup2vo)
-                .withDoorTag(doorTag)
-                .generate();
+              .withLoginBroker(loginBrokerSubscriber)
+              .withNamespace(namespaceStub)
+              .withPoolMonitor(remotePoolMonitor)
+              .withSpaceManagerStub(spaceManager)
+              .withSpaceManagerEnaled(spaceReservationEnabled)
+              .withId(id)
+              .withName(name)
+              .withQuality(quality)
+              .withArchitecture(architecture)
+              .withGroupVoMapping(pgroup2vo)
+              .withDoorTag(doorTag)
+              .generate();
 
         return Response.ok(record)
-                .header("Link",
-                "<https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json>; rel=\"describedby\"")
-                .build();
+              .header("Link",
+                    "<https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json>; rel=\"describedby\"")
+              .build();
     }
 }

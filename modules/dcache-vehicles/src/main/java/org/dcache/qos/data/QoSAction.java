@@ -60,33 +60,37 @@ documents or software obtained from this server.
 package org.dcache.qos.data;
 
 /**
- *  Indicates what kind of adjustment needs to be done with reference to a
- *  file's QoS status and requirements.
- *  <p/>
- *  </table>
- *   <tr><td>COPY_REPLICA<td></td>the file needs another replica</td></tr>
- *   <tr><td>CACHE_REPLICA<td></td>the file has an excess copy</td></tr>
- *   <tr><td>PERSIST_REPLICA<td></td>the file needs a replica, but has a cached one it can convert</td></tr>
- *   <tr><td>UNSET_PRECIOUS_REPLICA<td></td>the file has a precious replica which is no longer needs to be precious</td></tr>
- *   <tr><td>WAIT_FOR_STAGE<td></td>the file has no accessible replicas, but can be staged</td></tr>
- *   <tr><td>FLUSH<td></td>the file has disk replicas but needs to go to tape</td></tr>
- *   <tr><td>NOTIFY_MISSING<td></td>the file has no known locations</td></tr>
- *   <tr><td>NOTIFY_INACCESSIBLE<td></td>the file is currently unreadable everywhere</td></tr>
- *   <tr><td>NOTIFY_OUT_OF_SYNC<td></td>the locations in namespace and pools do not correspond</td></tr>
- *   <tr><td>MISCONFIGURED_POOL_GROUP<td></td>there are not enough available pools in the required pool group</td></tr>
- *   <tr><td>VOID<td></td>nothing needs to be done</td></tr>
- *   </table>
+ * Indicates what kind of adjustment needs to be done with reference to a file's QoS status and
+ * requirements.
+ * <p/>
+ * </table>
+ * <tr><td>COPY_REPLICA<td></td>the file needs another replica</td></tr>
+ * <tr><td>CACHE_REPLICA<td></td>the file has an excess copy</td></tr>
+ * <tr><td>PERSIST_REPLICA<td></td>the file needs a replica, but has a cached one it can
+ * convert</td></tr>
+ * <tr><td>UNSET_PRECIOUS_REPLICA<td></td>the file has a precious replica which is no longer needs
+ * to be precious</td></tr>
+ * <tr><td>WAIT_FOR_STAGE<td></td>the file has no accessible replicas, but can be staged</td></tr>
+ * <tr><td>FLUSH<td></td>the file has disk replicas but needs to go to tape</td></tr>
+ * <tr><td>NOTIFY_MISSING<td></td>the file has no known locations</td></tr>
+ * <tr><td>NOTIFY_INACCESSIBLE<td></td>the file is currently unreadable everywhere</td></tr>
+ * <tr><td>NOTIFY_OUT_OF_SYNC<td></td>the locations in namespace and pools do not
+ * correspond</td></tr>
+ * <tr><td>MISCONFIGURED_POOL_GROUP<td></td>there are not enough available pools in the required
+ * pool group</td></tr>
+ * <tr><td>VOID<td></td>nothing needs to be done</td></tr>
+ * </table>
  */
 public enum QoSAction {
-  COPY_REPLICA,               // the file needs another replica
-  CACHE_REPLICA,              // the file has an excess copy
-  PERSIST_REPLICA,            // the file needs a replica, but has a cached one it can convert
-  UNSET_PRECIOUS_REPLICA,     // the file has a precious replica which is no longer needs to be precious
-  WAIT_FOR_STAGE,             // the file has no accessible replicas, but can be staged
-  FLUSH,                      // the file has disk replicas but needs to go to tape
-  NOTIFY_MISSING,             // the file has no known locations
-  NOTIFY_INACCESSIBLE,        // the file is currently unreadable everywhere
-  NOTIFY_OUT_OF_SYNC,         // the locations in namespace and pools do not correspond
-  MISCONFIGURED_POOL_GROUP,   // there are not enough available pools in the required pool group
-  VOID                        // nothing needs to be done
+    COPY_REPLICA,               // the file needs another replica
+    CACHE_REPLICA,              // the file has an excess copy
+    PERSIST_REPLICA,            // the file needs a replica, but has a cached one it can convert
+    UNSET_PRECIOUS_REPLICA,     // the file has a precious replica which is no longer needs to be precious
+    WAIT_FOR_STAGE,             // the file has no accessible replicas, but can be staged
+    FLUSH,                      // the file has disk replicas but needs to go to tape
+    NOTIFY_MISSING,             // the file has no known locations
+    NOTIFY_INACCESSIBLE,        // the file is currently unreadable everywhere
+    NOTIFY_OUT_OF_SYNC,         // the locations in namespace and pools do not correspond
+    MISCONFIGURED_POOL_GROUP,   // there are not enough available pools in the required pool group
+    VOID                        // nothing needs to be done
 }

@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.alarms.spi;
 
 import java.util.Map;
-
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 
 /**
@@ -68,10 +67,10 @@ import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
  * to have a number of configuration properties injected.</p>
  */
 public interface StandardLogEntryListener extends LogEntryListener {
+
     /**
-     * @param configuration provides the environment from which
-     *                      the listener should autowire its property
-     *                      fields.
+     * @param configuration provides the environment from which the listener should autowire its
+     *                      property fields.
      */
     void configure(Map<String, String> configuration);
 

@@ -27,35 +27,18 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.Collections2.transform;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.util.concurrent.Futures.catchingAsync;
+import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.RecoverableDataAccessException;
-import org.springframework.dao.TransientDataAccessException;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.Nullable;
-import javax.security.auth.Subject;
-
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
@@ -86,7 +69,6 @@ import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
@@ -97,7 +79,18 @@ import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
-
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
@@ -114,19 +107,21 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Collections2.transform;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.util.concurrent.Futures.catchingAsync;
-import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
-import static java.util.stream.Collectors.toList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.transaction.annotation.Transactional;
 
 public final class SpaceManagerService
-        implements CellCommandListener, CellMessageSender, CellMessageReceiver, Runnable, CellInfoProvider
-{
+      implements CellCommandListener, CellMessageSender, CellMessageReceiver, Runnable,
+      CellInfoProvider {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerService.class);
 
     private long expireSpaceReservationsPeriod;
@@ -158,115 +153,97 @@ public final class SpaceManagerService
     private CellEndpoint endpoint;
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         this.endpoint = endpoint;
     }
 
     @Required
-    public void setServiceAddress(CellAddressCore serviceAddress)
-    {
+    public void setServiceAddress(CellAddressCore serviceAddress) {
         this.serviceAddress = serviceAddress;
     }
 
     @Required
-    public void setPoolManagerHandler(PoolManagerHandlerSubscriber poolManagerHandler)
-    {
+    public void setPoolManagerHandler(PoolManagerHandlerSubscriber poolManagerHandler) {
         this.poolManagerHandler = poolManagerHandler;
     }
 
     @Required
-    public void setPoolManager(CellPath poolManager)
-    {
+    public void setPoolManager(CellPath poolManager) {
         this.poolManager = poolManager;
     }
 
     @Required
-    public void setPnfsHandler(PnfsHandler pnfs)
-    {
+    public void setPnfsHandler(PnfsHandler pnfs) {
         this.pnfs = pnfs;
     }
 
     @Required
-    public void setPoolMonitor(PoolMonitor poolMonitor)
-    {
+    public void setPoolMonitor(PoolMonitor poolMonitor) {
         this.poolMonitor = poolMonitor;
     }
 
     @Required
-    public void setSpaceManagerEnabled(boolean enabled)
-    {
+    public void setSpaceManagerEnabled(boolean enabled) {
         this.isSpaceManagerEnabled = enabled;
     }
 
     @Required
-    public void setExpireSpaceReservationsPeriod(long expireSpaceReservationsPeriod)
-    {
+    public void setExpireSpaceReservationsPeriod(long expireSpaceReservationsPeriod) {
         this.expireSpaceReservationsPeriod = expireSpaceReservationsPeriod;
     }
 
     @Required
-    public void setAllowUnreservedUploadsToLinkGroups(boolean allowUnreservedUploadsToLinkGroups)
-    {
+    public void setAllowUnreservedUploadsToLinkGroups(boolean allowUnreservedUploadsToLinkGroups) {
         this.allowUnreservedUploadsToLinkGroups = allowUnreservedUploadsToLinkGroups;
     }
 
     @Required
-    public void setShouldDeleteStoredFileRecord(boolean shouldDeleteStoredFileRecord)
-    {
+    public void setShouldDeleteStoredFileRecord(boolean shouldDeleteStoredFileRecord) {
         this.shouldDeleteStoredFileRecord = shouldDeleteStoredFileRecord;
     }
 
     @Required
-    public void setShouldReturnFlushedSpaceToReservation(boolean shouldReturnFlushedSpaceToReservation)
-    {
+    public void setShouldReturnFlushedSpaceToReservation(
+          boolean shouldReturnFlushedSpaceToReservation) {
         this.shouldReturnFlushedSpaceToReservation = shouldReturnFlushedSpaceToReservation;
     }
 
     @Required
-    public void setMaxThreads(int threads)
-    {
+    public void setMaxThreads(int threads) {
         this.threads = threads;
     }
 
     @Required
-    public void setExecutor(ExecutorService executor)
-    {
+    public void setExecutor(ExecutorService executor) {
         this.executor = executor;
     }
 
     @Required
-    public void setDatabase(SpaceManagerDatabase db)
-    {
+    public void setDatabase(SpaceManagerDatabase db) {
         this.db = db;
     }
 
     @Required
-    public void setAuthorizationPolicy(SpaceManagerAuthorizationPolicy authorizationPolicy)
-    {
+    public void setAuthorizationPolicy(SpaceManagerAuthorizationPolicy authorizationPolicy) {
         this.authorizationPolicy = authorizationPolicy;
     }
 
     @Required
-    public void setLinkGroupLoader(LinkGroupLoader linkGroupLoader)
-    {
+    public void setLinkGroupLoader(LinkGroupLoader linkGroupLoader) {
         this.linkGroupLoader = linkGroupLoader;
     }
 
     @Required
-    public void setPerishedSpacePurgeDelay(long millis)
-    {
+    public void setPerishedSpacePurgeDelay(long millis) {
         this.perishedSpacePurgeDelay = millis;
     }
 
-    public void start()
-    {
+    public void start() {
         executor = new CDCExecutorServiceDecorator<>(new BoundedExecutor(executor, threads));
         (expireSpaceReservations = new Thread(this, "ExpireThreadReservations")).start();
     }
 
-    public void stop() throws InterruptedException
-    {
+    public void stop() throws InterruptedException {
         try {
             isStopped = true;
             executor.shutdown();
@@ -284,21 +261,19 @@ public final class SpaceManagerService
 
 
     @Override
-    public void getInfo(PrintWriter printWriter)
-    {
+    public void getInfo(PrintWriter printWriter) {
         printWriter.println("isSpaceManagerEnabled=" + isSpaceManagerEnabled);
         printWriter.println("expireSpaceReservationsPeriod="
-                            + expireSpaceReservationsPeriod);
+              + expireSpaceReservationsPeriod);
         printWriter.println("shouldDeleteStoredFileRecord="
-                            + shouldDeleteStoredFileRecord);
+              + shouldDeleteStoredFileRecord);
         printWriter.println("allowUnreservedUploadsToLinkGroups="
-                            + allowUnreservedUploadsToLinkGroups);
+              + allowUnreservedUploadsToLinkGroups);
         printWriter.println("shouldReturnFlushedSpaceToReservation="
-                            + shouldReturnFlushedSpaceToReservation);
+              + shouldReturnFlushedSpaceToReservation);
     }
 
-    private void expireSpaceReservations() throws DataAccessException
-    {
+    private void expireSpaceReservations() throws DataAccessException {
         LOGGER.trace("expireSpaceReservations()...");
 
         /* Recover files from lost notifications. Space manager receives notifications
@@ -313,22 +288,24 @@ public final class SpaceManagerService
          * or some other critical component gets restarted while having active uploads.
          */
         SpaceManagerDatabase.FileCriterion oldTransfers = db.files()
-                .whereStateIsIn(FileState.TRANSFERRING)
-                .whereCreationTimeIsBefore(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1));
+              .whereStateIsIn(FileState.TRANSFERRING)
+              .whereCreationTimeIsBefore(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1));
         final int maximumNumberFilesToLoadAtOnce = 1000;
         for (File file : db.get(oldTransfers, maximumNumberFilesToLoadAtOnce)) {
             try {
                 EnumSet<FileAttribute> attributes =
-                        EnumSet.of(FileAttribute.TYPE,
-                                   FileAttribute.SIZE,
-                                   FileAttribute.LOCATIONS,
-                                   FileAttribute.STORAGEINFO,
-                                   FileAttribute.ACCESS_LATENCY);
-                FileAttributes fileAttributes = pnfs.getFileAttributes(file.getPnfsId(), attributes);
+                      EnumSet.of(FileAttribute.TYPE,
+                            FileAttribute.SIZE,
+                            FileAttribute.LOCATIONS,
+                            FileAttribute.STORAGEINFO,
+                            FileAttribute.ACCESS_LATENCY);
+                FileAttributes fileAttributes = pnfs.getFileAttributes(file.getPnfsId(),
+                      attributes);
                 if (fileAttributes.getFileType() != FileType.REGULAR) {
                     db.removeFile(file.getId());
                 } else if (fileAttributes.getStorageInfo().isStored()) {
-                    boolean isRemovable = !fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE);
+                    boolean isRemovable = !fileAttributes.getAccessLatency()
+                          .equals(AccessLatency.ONLINE);
                     fileFlushed(file.getPnfsId(), fileAttributes.getSize(), isRemovable);
                 } else if (!fileAttributes.getLocations().isEmpty()) {
                     transferFinished(file.getPnfsId(), fileAttributes.getSize());
@@ -337,36 +314,38 @@ public final class SpaceManagerService
                 db.removeFile(file.getId());
             } catch (TransientDataAccessException e) {
                 LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
-                            file, e.getMessage());
+                      file, e.getMessage());
             } catch (DataAccessException e) {
                 LOGGER.error("Data access failure while deleting expired file {}: {}",
-                             file, e.getMessage());
+                      file, e.getMessage());
                 break;
             } catch (TimeoutCacheException e) {
-                LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(), e.getMessage());
+                LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(),
+                      e.getMessage());
                 break;
             } catch (CacheException e) {
-                LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(), e.getMessage());
+                LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(),
+                      e.getMessage());
             }
         }
 
         db.expire(db.spaces()
-                          .whereStateIsIn(SpaceState.RESERVED)
-                          .thatExpireBefore(System.currentTimeMillis()));
+              .whereStateIsIn(SpaceState.RESERVED)
+              .thatExpireBefore(System.currentTimeMillis()));
         db.remove(db.files()
-                          .whereStateIsIn(FileState.STORED, FileState.FLUSHED)
-                          .in(db.spaces()
-                                      .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
-                                      .thatExpireBefore(
-                                              System.currentTimeMillis() - perishedSpacePurgeDelay)));
+              .whereStateIsIn(FileState.STORED, FileState.FLUSHED)
+              .in(db.spaces()
+                    .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
+                    .thatExpireBefore(
+                          System.currentTimeMillis() - perishedSpacePurgeDelay)));
         db.remove(db.spaces()
-                          .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
-                          .thatHaveNoFiles());
+              .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
+              .thatHaveNoFiles());
     }
 
-    private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException
-    {
-        List<Space> spaces = db.get(db.spaces().thatNeverExpire().whereStateIsIn(SpaceState.RESERVED), null);
+    private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException {
+        List<Space> spaces = db.get(
+              db.spaces().thatNeverExpire().whereStateIsIn(SpaceState.RESERVED), null);
         if (msg.isFileCountRequested()) {
             /*
              *  REVISIT: the database schema would support a query like:
@@ -391,107 +370,102 @@ public final class SpaceManagerService
              *  how other metrics are done currently.
              */
             for (Space space : spaces) {
-                long fileCount = db.count(db.files().whereSpaceTokenIs(space.getId()).whereStateIsIn(FileState.STORED));
+                long fileCount = db.count(
+                      db.files().whereSpaceTokenIs(space.getId()).whereStateIsIn(FileState.STORED));
                 space.setNumberOfFiles(fileCount);
             }
         }
         msg.setSpaceTokenSet(spaces);
     }
 
-    private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException
-    {
+    private void getLinkGroups(GetLinkGroupsMessage msg) throws DataAccessException {
         msg.setLinkGroups(db.get(db.linkGroups()));
     }
 
-    private void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws DataAccessException
-    {
+    private void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws DataAccessException {
         msg.setLinkGroupNames(newArrayList(transform(db.get(db.linkGroups()), LinkGroup::getName)));
     }
 
     /**
      * Returns true if message is of a type processed exclusively by SpaceManager
      */
-    private boolean isSpaceManagerMessage(Message message)
-    {
+    private boolean isSpaceManagerMessage(Message message) {
         return message instanceof Reserve
-               || message instanceof GetSpaceTokensMessage
-               || message instanceof GetLinkGroupsMessage
-               || message instanceof GetLinkGroupNamesMessage
-               || message instanceof Release
-               || message instanceof GetSpaceMetaData
-               || message instanceof GetSpaceTokens
-               || message instanceof GetFileSpaceTokensMessage;
+              || message instanceof GetSpaceTokensMessage
+              || message instanceof GetLinkGroupsMessage
+              || message instanceof GetLinkGroupNamesMessage
+              || message instanceof Release
+              || message instanceof GetSpaceMetaData
+              || message instanceof GetSpaceTokens
+              || message instanceof GetFileSpaceTokensMessage;
     }
 
     /**
      * Returns true if message is a notification to which SpaceManager subscribes
      */
-    private boolean isNotificationMessage(Message message)
-    {
+    private boolean isNotificationMessage(Message message) {
         return message instanceof PoolFileFlushedMessage
-               || message instanceof PnfsDeleteEntryNotificationMessage;
+              || message instanceof PnfsDeleteEntryNotificationMessage;
     }
 
     /**
      * Returns true if message is of a type that needs processing by SpaceManager even if
      * SpaceManager is not the intended final destination.
      */
-    private boolean isInterceptedMessage(Message message)
-    {
+    private boolean isInterceptedMessage(Message message) {
         return (message instanceof PoolMgrSelectWritePoolMsg && !message.isReply())
-               || message instanceof DoorTransferFinishedMessage
-               || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey(
-                "LinkGroupId") != null && (!message.isReply() || message.getReturnCode() != 0));
+              || message instanceof DoorTransferFinishedMessage
+              || (message instanceof PoolAcceptFileMessage
+              && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey(
+              "LinkGroupId") != null && (!message.isReply() || message.getReturnCode() != 0));
     }
 
     /**
      * Returns true if message should not be discarded during shutdown.
      */
-    private boolean isImportantMessage(Message message)
-    {
+    private boolean isImportantMessage(Message message) {
         return message.isReply() ||
-               message instanceof PoolFileFlushedMessage ||
-               message instanceof DoorTransferFinishedMessage;
+              message instanceof PoolFileFlushedMessage ||
+              message instanceof DoorTransferFinishedMessage;
     }
 
-    public Reply messageArrived(CellMessage envelope, PoolMgrGetHandler message)
-    {
+    public Reply messageArrived(CellMessage envelope, PoolMgrGetHandler message) {
         if (message.isReply()) {
             return null;
         }
         return new FutureReply<>(forward(envelope, message));
     }
 
-    public Reply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
-    {
+    public Reply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message) {
         if (message.isReply()) {
             return null;
         }
         PoolMgrGetUpdatedHandler messageToForward =
-                new PoolMgrGetUpdatedHandler(SpaceManagerHandler.extractWrappedVersion(message.getVersion()));
+              new PoolMgrGetUpdatedHandler(
+                    SpaceManagerHandler.extractWrappedVersion(message.getVersion()));
         ListenableFuture<PoolMgrGetHandler> result = forward(envelope, messageToForward);
         ListenableFuture<PoolMgrGetHandler> resultWithSilentTimeout =
-                catchingAsync(result, TimeoutCacheException.class, t -> Futures.immediateFuture(null));
+              catchingAsync(result, TimeoutCacheException.class,
+                    t -> Futures.immediateFuture(null));
         return new FutureReply<>(resultWithSilentTimeout);
     }
 
-    protected ListenableFuture<PoolMgrGetHandler> forward(CellMessage envelope, PoolMgrGetHandler message)
-    {
+    protected ListenableFuture<PoolMgrGetHandler> forward(CellMessage envelope,
+          PoolMgrGetHandler message) {
         ListenableFuture<PoolMgrGetHandler> response =
-                poolManagerHandler.sendAsync(endpoint, message, envelope.getTtl() - envelope.getLocalAge());
+              poolManagerHandler.sendAsync(endpoint, message,
+                    envelope.getTtl() - envelope.getLocalAge());
         return CellStub.transform(response, this::decorateHandler);
     }
 
-    private PoolMgrGetHandler decorateHandler(PoolMgrGetHandler message)
-    {
+    private PoolMgrGetHandler decorateHandler(PoolMgrGetHandler message) {
         if (isSpaceManagerEnabled) {
             message.setHandler(new SpaceManagerHandler(serviceAddress, message.getHandler()));
         }
         return message;
     }
 
-    public Reply messageArrived(Message message) throws CacheException
-    {
+    public Reply messageArrived(Message message) throws CacheException {
         if (message.isReply()) {
             return null;
         } else if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
@@ -499,11 +473,9 @@ public final class SpaceManagerService
         } else if (!isSpaceManagerEnabled) {
             throw new CacheException(1, "Space manager is disabled in configuration");
         } else {
-            return new FibonacciBackoffMessageProcessor(executor)
-            {
+            return new FibonacciBackoffMessageProcessor(executor) {
                 @Override
-                public void process() throws DeadlockLoserDataAccessException
-                {
+                public void process() throws DeadlockLoserDataAccessException {
                     if (!isStopped || isImportantMessage(message)) {
                         processMessage(message);
                         if (message.getReplyRequired()) {
@@ -518,26 +490,26 @@ public final class SpaceManagerService
         }
     }
 
-    public Reply messageToForward(Message message)
-    {
-        boolean isEnRouteToDoor = message.isReply() || message instanceof DoorTransferFinishedMessage;
+    public Reply messageToForward(Message message) {
+        boolean isEnRouteToDoor =
+              message.isReply() || message instanceof DoorTransferFinishedMessage;
 
         if (isSpaceManagerEnabled && isInterceptedMessage(message)) {
-            return new FibonacciBackoffMessageProcessor(executor)
-            {
+            return new FibonacciBackoffMessageProcessor(executor) {
                 @Override
-                public void process() throws DeadlockLoserDataAccessException
-                {
+                public void process() throws DeadlockLoserDataAccessException {
                     if (!isStopped || isImportantMessage(message)) {
                         processMessage(message);
                         if (isEnRouteToDoor) {
                             forwardMessage(null);
                         } else if (message.getReturnCode() == 0) {
                             if (message instanceof PoolManagerMessage) {
-                                poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
+                                poolManagerHandler.send(endpoint, envelope,
+                                      (PoolManagerMessage) message);
                             } else if (message instanceof PoolIoFileMessage) {
                                 envelope.addSourceAddress(serviceAddress);
-                                poolManagerHandler.start(endpoint, envelope, (PoolIoFileMessage) message);
+                                poolManagerHandler.start(endpoint, envelope,
+                                      (PoolIoFileMessage) message);
                             } else {
                                 forwardMessage(poolManager);
                             }
@@ -550,17 +522,18 @@ public final class SpaceManagerService
                 }
 
                 @Override
-                protected void notifyShutdown()
-                {
+                protected void notifyShutdown() {
                     if (message instanceof PoolMgrSelectPoolMsg) {
                         // OUT_OF_DATE is an explicit signal to resubmit the request with updated information;
                         // in case of a redundant space manager deployment, the resubmission may go to one of
                         // the other instances.
-                        message.setFailed(CacheException.OUT_OF_DATE, "Space manager is shutting down.");
+                        message.setFailed(CacheException.OUT_OF_DATE,
+                              "Space manager is shutting down.");
                     } else if (isEnRouteToDoor) {
                         // Pass it on as is since space manager will recover from the lost notification eventually
                     } else {
-                        envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
+                        envelope.setMessageObject(new NoRouteToCellException(envelope,
+                              "Space manager is shutting down."));
                     }
                     if (isEnRouteToDoor) {
                         forwardMessage(null);
@@ -573,9 +546,11 @@ public final class SpaceManagerService
             if (isEnRouteToDoor) {
                 return (Reply) (cellEndpoint, envelope) -> cellEndpoint.sendMessage(envelope);
             } else if (message instanceof PoolMgrSelectWritePoolMsg) {
-                return (endpoint, envelope) -> poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
+                return (endpoint, envelope) -> poolManagerHandler.send(endpoint, envelope,
+                      (PoolManagerMessage) message);
             } else if (message instanceof PoolIoFileMessage) {
-                return (endpoint, envelope) -> poolManagerHandler.start(endpoint, envelope, (PoolIoFileMessage) message);
+                return (endpoint, envelope) -> poolManagerHandler.start(endpoint, envelope,
+                      (PoolIoFileMessage) message);
             } else {
                 return (endpoint, envelope) -> {
                     envelope.getDestinationPath().insert(poolManager);
@@ -585,8 +560,7 @@ public final class SpaceManagerService
         }
     }
 
-    private void processMessage(Message message) throws DeadlockLoserDataAccessException
-    {
+    private void processMessage(Message message) throws DeadlockLoserDataAccessException {
         try {
             boolean isSuccessful = false;
             int attempts = 0;
@@ -595,7 +569,8 @@ public final class SpaceManagerService
                     processMessageTransactionally(message);
                     isSuccessful = true;
                 } catch (DeadlockLoserDataAccessException e) {
-                    LOGGER.debug("Transaction lost deadlock race and will be retried: {}", e.getMessage());
+                    LOGGER.debug("Transaction lost deadlock race and will be retried: {}",
+                          e.getMessage());
                     throw e;
                 } catch (TransientDataAccessException | RecoverableDataAccessException e) {
                     if (attempts >= 3) {
@@ -624,25 +599,25 @@ public final class SpaceManagerService
              * these to several pools.
              */
             if ((message instanceof PoolAcceptFileMessage) && !message.isReply()) {
-                LOGGER.info("Ignoring exception due to possibly duplicated PoolAcceptFileMessage: {}",
-                            e.getMessage());
+                LOGGER.info(
+                      "Ignoring exception due to possibly duplicated PoolAcceptFileMessage: {}",
+                      e.getMessage());
             } else {
                 throw e;
             }
         } catch (DataAccessException e) {
             LOGGER.error("Message processing failed: {}", e.toString());
             message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                           "Internal failure during space management");
+                  "Internal failure during space management");
         } catch (RuntimeException e) {
             LOGGER.error("Message processing failed: {}", e.getMessage(), e);
             message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                           "Internal failure during space management");
+                  "Internal failure during space management");
         }
     }
 
     @Transactional(rollbackFor = {SpaceException.class})
-    private void processMessageTransactionally(Message message) throws SpaceException
-    {
+    private void processMessageTransactionally(Message message) throws SpaceException {
         if (message instanceof PoolMgrSelectWritePoolMsg) {
             selectPool((PoolMgrSelectWritePoolMsg) message);
         } else if (message instanceof PoolAcceptFileMessage) {
@@ -676,13 +651,13 @@ public final class SpaceManagerService
             namespaceEntryDeleted((PnfsDeleteEntryNotificationMessage) message);
         } else {
             throw new RuntimeException(
-                    "Unexpected " + message.getClass() + ": Please report this to support@dcache.org");
+                  "Unexpected " + message.getClass()
+                        + ": Please report this to support@dcache.org");
         }
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             while (true) {
                 try {
@@ -704,8 +679,7 @@ public final class SpaceManagerService
     }
 
     private void releaseSpace(Release release)
-            throws DataAccessException, SpaceException
-    {
+          throws DataAccessException, SpaceException {
         LOGGER.trace("releaseSpace({})", release);
 
         long spaceToken = release.getSpaceToken();
@@ -719,7 +693,7 @@ public final class SpaceManagerService
         if (state.isFinal()) {
             /* Stupid way to signal that it isn't found, but there is no other way at the moment. */
             throw new EmptyResultDataAccessException("Space reservation " + spaceToken
-                    + " is " + state.toString().toLowerCase() + ".", 1);
+                  + " is " + state.toString().toLowerCase() + ".", 1);
         }
         Subject subject = release.getSubject();
         authorizationPolicy.checkReleasePermission(subject, space);
@@ -728,20 +702,19 @@ public final class SpaceManagerService
     }
 
     private void reserveSpace(Reserve reserve)
-            throws DataAccessException, SpaceException
-    {
+          throws DataAccessException, SpaceException {
         Space space = reserveSpace(reserve.getSubject(),
-                                   reserve.getLinkgroupName(),
-                                   reserve.getSizeInBytes(),
-                                   reserve.getAccessLatency(),
-                                   reserve.getRetentionPolicy(),
-                                   reserve.getLifetime(),
-                                   reserve.getDescription());
+              reserve.getLinkgroupName(),
+              reserve.getSizeInBytes(),
+              reserve.getAccessLatency(),
+              reserve.getRetentionPolicy(),
+              reserve.getLifetime(),
+              reserve.getDescription());
         reserve.setSpaceToken(space.getId());
     }
 
-    private void transferStarting(PoolAcceptFileMessage message) throws DataAccessException, SpaceException
-    {
+    private void transferStarting(PoolAcceptFileMessage message)
+          throws DataAccessException, SpaceException {
         LOGGER.trace("transferStarting({})", message);
         PnfsId pnfsId = requireNonNull(message.getPnfsId());
         FileAttributes fileAttributes = message.getFileAttributes();
@@ -752,36 +725,37 @@ public final class SpaceManagerService
         if (spaceToken != null) {
             spaceId = Long.parseLong(spaceToken);
         } else {
-            LOGGER.trace("transferStarting: file is not found, no prior reservations for this file");
+            LOGGER.trace(
+                  "transferStarting: file is not found, no prior reservations for this file");
 
             long lifetime = 1000 * 60 * 60;
             String description = null;
 
-            long linkGroupId = Long.parseLong(fileAttributes.getStorageInfo().getKey("LinkGroupId"));
+            long linkGroupId = Long.parseLong(
+                  fileAttributes.getStorageInfo().getKey("LinkGroupId"));
             Space space = db.insertSpace(owner.getVoGroup(),
-                                         owner.getVoRole(),
-                                         fileAttributes.getRetentionPolicy(),
-                                         fileAttributes.getAccessLatency(),
-                                         linkGroupId,
-                                         sizeInBytes,
-                                         lifetime,
-                                         description,
-                                         SpaceState.RESERVED,
-                                         0,
-                                         0);
+                  owner.getVoRole(),
+                  fileAttributes.getRetentionPolicy(),
+                  fileAttributes.getAccessLatency(),
+                  linkGroupId,
+                  sizeInBytes,
+                  lifetime,
+                  description,
+                  SpaceState.RESERVED,
+                  0,
+                  0);
             spaceId = space.getId();
         }
         db.insertFile(spaceId,
-                      owner.getVoGroup(),
-                      owner.getVoRole(),
-                      sizeInBytes,
-                      pnfsId,
-                      FileState.TRANSFERRING);
+              owner.getVoGroup(),
+              owner.getVoRole(),
+              sizeInBytes,
+              pnfsId,
+              FileState.TRANSFERRING);
     }
 
     private void transferStarted(PnfsId pnfsId, boolean success)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         LOGGER.trace("transferStarted({},{})", pnfsId, success);
         if (!success) {
             db.remove(db.files().wherePnfsIdIs(pnfsId).whereStateIsIn(FileState.TRANSFERRING));
@@ -795,8 +769,7 @@ public final class SpaceManagerService
     }
 
     private void transferFinished(DoorTransferFinishedMessage finished)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         if (finished.getReturnCode() == CacheException.FILE_NOT_FOUND) {
             /* File is gone from name space so may as well get rid of it right away.
              */
@@ -808,20 +781,19 @@ public final class SpaceManagerService
 
     @Transactional
     private void transferFinished(PnfsId pnfsId, long size)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         LOGGER.trace("transferFinished({})", pnfsId);
         File f;
         try {
             f = db.selectFileForUpdate(pnfsId);
         } catch (EmptyResultDataAccessException e) {
             LOGGER.trace("failed to find file {}: {}", pnfsId,
-                         e.getMessage());
+                  e.getMessage());
             return;
         }
         if (f.getState() != FileState.TRANSFERRING) {
             LOGGER.trace("transferFinished({}): file state={}",
-                         pnfsId, f.getState());
+                  pnfsId, f.getState());
         } else if (shouldDeleteStoredFileRecord) {
             LOGGER.trace("file transferred, deleting file record");
             db.removeFile(f.getId());
@@ -833,8 +805,7 @@ public final class SpaceManagerService
     }
 
     private void fileFlushed(PoolFileFlushedMessage fileFlushed)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         FileAttributes fileAttributes = fileFlushed.getFileAttributes();
         boolean isRemovable = !fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE);
         fileFlushed(fileFlushed.getPnfsId(), fileAttributes.getSize(), isRemovable);
@@ -842,8 +813,7 @@ public final class SpaceManagerService
 
     @Transactional
     private void fileFlushed(PnfsId pnfsId, long size, boolean isRemovable)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         LOGGER.trace("fileFlushed({})", pnfsId);
         File f;
         try {
@@ -874,23 +844,23 @@ public final class SpaceManagerService
     }
 
     @Transactional
-    private void fileRemoved(PnfsId pnfsId)
-    {
+    private void fileRemoved(PnfsId pnfsId) {
         LOGGER.trace("fileRemoved({})", pnfsId);
         db.remove(db.files().wherePnfsIdIs(pnfsId));
     }
 
     private Space reserveSpace(Subject subject,
-                               String linkgroupName,
-                               long sizeInBytes,
-                               AccessLatency latency,
-                               RetentionPolicy policy,
-                               long lifetime,
-                               String description)
-            throws DataAccessException, SpaceException
-    {
-        LOGGER.trace("reserveSpace(subject={}, linkgroup={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
-                     subject.getPrincipals(), linkgroupName, sizeInBytes, latency, policy, lifetime, description);
+          String linkgroupName,
+          long sizeInBytes,
+          AccessLatency latency,
+          RetentionPolicy policy,
+          long lifetime,
+          String description)
+          throws DataAccessException, SpaceException {
+        LOGGER.trace(
+              "reserveSpace(subject={}, linkgroup={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
+              subject.getPrincipals(), linkgroupName, sizeInBytes, latency, policy, lifetime,
+              description);
 
         if (linkgroupName != null) {
             LinkGroup linkgroup;
@@ -901,36 +871,39 @@ public final class SpaceManagerService
             }
             VOInfo voInfo = authorizationPolicy.checkReservePermission(subject, linkgroup);
             if (!linkgroup.isAllowed(latency)) {
-                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not support AccessLatency " + latency);
+                throw new NoFreeSpaceException(
+                      "linkgroup " + linkgroupName + " does not support AccessLatency " + latency);
             }
             if (!linkgroup.isAllowed(policy)) {
-                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not support RetentionPolicy " + policy);
+                throw new NoFreeSpaceException(
+                      "linkgroup " + linkgroupName + " does not support RetentionPolicy " + policy);
             }
             if (linkgroup.getAvailableSpace() < sizeInBytes) {
-                throw new NoFreeSpaceException("linkgroup " + linkgroupName + " does not have sufficient capacity to reserver " + sizeInBytes + " bytes");
+                throw new NoFreeSpaceException("linkgroup " + linkgroupName
+                      + " does not have sufficient capacity to reserver " + sizeInBytes + " bytes");
             }
             return db.insertSpace(voInfo.getVoGroup(),
-                      voInfo.getVoRole(),
-                      policy,
-                      latency,
-                      linkgroup.getId(),
-                      sizeInBytes,
-                      lifetime,
-                      description,
-                      SpaceState.RESERVED,
-                      0,
-                      0);
+                  voInfo.getVoRole(),
+                  policy,
+                  latency,
+                  linkgroup.getId(),
+                  sizeInBytes,
+                  lifetime,
+                  description,
+                  SpaceState.RESERVED,
+                  0,
+                  0);
         }
 
         List<LinkGroup> linkGroups =
-                db.get(db.linkGroups()
-                               .allowsAccessLatency(latency)
-                               .allowsRetentionPolicy(policy)
-                               .hasAvailable(sizeInBytes)
-                               .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
-                        .stream()
-                        .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
-                        .collect(toList());
+              db.get(db.linkGroups()
+                          .allowsAccessLatency(latency)
+                          .allowsRetentionPolicy(policy)
+                          .hasAvailable(sizeInBytes)
+                          .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
+                    .stream()
+                    .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
+                    .collect(toList());
 
         if (linkGroups.isEmpty()) {
             LOGGER.warn("Failed to find matching linkgroup for reservation request.");
@@ -965,58 +938,58 @@ public final class SpaceManagerService
                 }
                 LOGGER.trace("Chose linkgroup {}", lg);
                 return db.insertSpace(voInfo.getVoGroup(),
-                                      voInfo.getVoRole(),
-                                      policy,
-                                      latency,
-                                      lg.getId(),
-                                      sizeInBytes,
-                                      lifetime,
-                                      description,
-                                      SpaceState.RESERVED,
-                                      0,
-                                      0);
+                      voInfo.getVoRole(),
+                      policy,
+                      latency,
+                      lg.getId(),
+                      sizeInBytes,
+                      lifetime,
+                      description,
+                      SpaceState.RESERVED,
+                      0,
+                      0);
             } catch (SpaceAuthorizationException ignored) {
             }
         }
         LOGGER.warn("Failed to find linkgroup where user is authorized to reserve space.");
-        throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
+        throw new SpaceAuthorizationException(
+              "Failed to find LinkGroup where user is authorized to reserve space.");
     }
 
 
     @Nullable
     private LinkGroup findLinkGroupForWrite(Subject subject, ProtocolInfo protocolInfo,
-                                            FileAttributes fileAttributes, long size)
-            throws DataAccessException, SpaceException
-    {
+          FileAttributes fileAttributes, long size)
+          throws DataAccessException, SpaceException {
         boolean hasIdentity = subject.getPrincipals().stream().anyMatch(p ->
-                p instanceof FQANPrincipal ||
-                p instanceof UserNamePrincipal ||
-                p instanceof GidPrincipal);
+              p instanceof FQANPrincipal ||
+                    p instanceof UserNamePrincipal ||
+                    p instanceof GidPrincipal);
 
         if (!hasIdentity) {
             if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
                 return null;
             }
             throw new SpaceAuthorizationException("Unable to reserve space: " +
-                    "user has no FQAN or username.");
+                  "user has no FQAN or username.");
         }
 
         List<LinkGroup> linkGroups =
-                db.get(db.linkGroups()
-                               .allowsAccessLatency(fileAttributes.getAccessLatency())
-                               .allowsRetentionPolicy(fileAttributes.getRetentionPolicy())
-                               .hasAvailable(size)
-                               .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
-                        .stream()
-                        .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
-                        .collect(toList());
+              db.get(db.linkGroups()
+                          .allowsAccessLatency(fileAttributes.getAccessLatency())
+                          .allowsRetentionPolicy(fileAttributes.getRetentionPolicy())
+                          .hasAvailable(size)
+                          .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
+                    .stream()
+                    .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
+                    .collect(toList());
 
         if (linkGroups.isEmpty()) {
             if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
                 return null;
             }
             throw new NoPoolConfiguredSpaceException("Unable to reserve space: " +
-                    "no linkgroups configured.");
+                  "no linkgroups configured.");
         }
 
         List<String> linkGroupNames = new ArrayList<>();
@@ -1033,12 +1006,12 @@ public final class SpaceManagerService
                 return null;
             }
             throw new SpaceAuthorizationException("Unable to reserve space: " +
-                    "user not authorized to reserve space in any linkgroup.");
+                  "user not authorized to reserve space in any linkgroup.");
         }
 
         String linkGroupName = findLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
         LOGGER.trace("Found {} linkgroups protocolInfo={}, fileAttributes={}",
-                     linkGroups.size(), protocolInfo, fileAttributes);
+              linkGroups.size(), protocolInfo, fileAttributes);
 
         if (linkGroupName == null) {
             if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
@@ -1048,10 +1021,10 @@ public final class SpaceManagerService
             String hostName = hostnameFrom(protocolInfo);
             String protocol = protocolFrom(protocolInfo);
             throw new NoPoolConfiguredSpaceException("Unable to reserve space: " +
-                    "no write link in linkgroups " + linkGroupNames + " for " +
-                    "writing a file with [net=" + hostName + ",protocol=" + protocol +
-                    ",store=" + fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm() +
-                    ",cache=" + nullToEmpty(fileAttributes.getCacheClass()) + "]");
+                  "no write link in linkgroups " + linkGroupNames + " for " +
+                  "writing a file with [net=" + hostName + ",protocol=" + protocol +
+                  ",store=" + fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm() +
+                  ",cache=" + nullToEmpty(fileAttributes.getCacheClass()) + "]");
         }
 
         for (LinkGroup lg : linkGroups) {
@@ -1061,24 +1034,23 @@ public final class SpaceManagerService
         }
 
         throw new IllegalStateException("Unable to reserve space for upload: " +
-                "failed to find linkgroup " + linkGroupName + ".");
+              "failed to find linkgroup " + linkGroupName + ".");
     }
 
     @Nullable
     private String findLinkGroupForWrite(ProtocolInfo protocolInfo, FileAttributes fileAttributes,
-                                               Iterable<String> linkGroups)
-    {
+          Iterable<String> linkGroups) {
         String protocol = protocolFrom(protocolInfo);
         String hostName = hostnameFrom(protocolInfo);
 
         for (String linkGroup : linkGroups) {
             PoolPreferenceLevel[] levels =
-                    poolMonitor.getPoolSelectionUnit().match(PoolSelectionUnit.DirectionType.WRITE,
-                                                             hostName,
-                                                             protocol,
-                                                             fileAttributes,
-                                                             linkGroup,
-                                                             p -> false);
+                  poolMonitor.getPoolSelectionUnit().match(PoolSelectionUnit.DirectionType.WRITE,
+                        hostName,
+                        protocol,
+                        fileAttributes,
+                        linkGroup,
+                        p -> false);
             if (levels.length > 0) {
                 return linkGroup;
             }
@@ -1086,42 +1058,37 @@ public final class SpaceManagerService
         return null;
     }
 
-    private String hostnameFrom(ProtocolInfo info)
-    {
+    private String hostnameFrom(ProtocolInfo info) {
         return (info instanceof IpProtocolInfo)
-                ? ((IpProtocolInfo) info).getSocketAddress().getAddress().getHostAddress()
-                : null;
+              ? ((IpProtocolInfo) info).getSocketAddress().getAddress().getHostAddress()
+              : null;
     }
 
-    private String protocolFrom(ProtocolInfo info)
-    {
+    private String protocolFrom(ProtocolInfo info) {
         return info.getProtocol() + '/' + info.getMajorVersion();
     }
 
-    private String storageFrom(FileAttributes attributes)
-    {
+    private String storageFrom(FileAttributes attributes) {
         return attributes.getStorageClass() + '@' + attributes.getHsm();
     }
 
-    private boolean isWriteableOutsideLinkgroup(ProtocolInfo info, FileAttributes attributes)
-    {
+    private boolean isWriteableOutsideLinkgroup(ProtocolInfo info, FileAttributes attributes) {
         return isWriteableInLinkgroup(info, attributes, null);
     }
 
-    private boolean isWriteableInLinkgroup(ProtocolInfo info, FileAttributes attributes, String linkGroup)
-    {
+    private boolean isWriteableInLinkgroup(ProtocolInfo info, FileAttributes attributes,
+          String linkGroup) {
         String protocol = protocolFrom(info);
         String hostname = hostnameFrom(info);
 
         PoolPreferenceLevel[] levels = poolMonitor.getPoolSelectionUnit().
-                match(PoolSelectionUnit.DirectionType.WRITE, hostname, protocol,
-                        attributes, linkGroup, p -> false);
+              match(PoolSelectionUnit.DirectionType.WRITE, hostname, protocol,
+                    attributes, linkGroup, p -> false);
 
         return levels.length != 0;
     }
 
-    private VOInfo getVoInfo(Subject subject)
-    {
+    private VOInfo getVoInfo(Subject subject) {
         String effectiveGroup;
         String effectiveRole;
         FQAN primaryFqan = Subjects.getPrimaryFqan(subject);
@@ -1142,12 +1109,12 @@ public final class SpaceManagerService
     /**
      * Called upon intercepting PoolMgrSelectWritePoolMsg requests.
      * <p>
-     * Injects the link group name into the request message. Also adds SpaceToken and
-     * LinkGroup flags to StorageInfo. These are accessed when space manager intercepts
-     * the subsequent PoolAcceptFileMessage.
+     * Injects the link group name into the request message. Also adds SpaceToken and LinkGroup
+     * flags to StorageInfo. These are accessed when space manager intercepts the subsequent
+     * PoolAcceptFileMessage.
      */
-    private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool) throws DataAccessException, SpaceException
-    {
+    private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool)
+          throws DataAccessException, SpaceException {
         LOGGER.trace("selectPool({})", selectWritePool);
         FileAttributes fileAttributes = selectWritePool.getFileAttributes();
         ProtocolInfo protocolInfo = selectWritePool.getProtocolInfo();
@@ -1160,19 +1127,20 @@ public final class SpaceManagerService
             try {
                 space = db.getSpace(Long.parseLong(defaultSpaceToken));
             } catch (EmptyResultDataAccessException | NumberFormatException e) {
-                throw new IllegalArgumentException("No such space reservation: " + defaultSpaceToken);
+                throw new IllegalArgumentException(
+                      "No such space reservation: " + defaultSpaceToken);
             }
             LinkGroup linkGroup = db.getLinkGroup(space.getLinkGroupId());
             String linkGroupName = linkGroup.getName();
             if (!isWriteableInLinkgroup(protocolInfo, fileAttributes, linkGroupName)) {
                 // FIXME provide better information for the user
                 throw new NoPoolConfiguredSpaceException("Space reservation "
-                        + defaultSpaceToken + " may not be used for this write "
-                        + "request [net=" + hostnameFrom(protocolInfo)
-                        + ",protocol=" + protocolFrom(protocolInfo)
-                        + ",store=" + storageFrom(fileAttributes)
-                        + ",cache=" + nullToEmpty(fileAttributes.getCacheClass())
-                        + ",linkgroup=" + nullToEmpty(linkGroupName) + "]");
+                      + defaultSpaceToken + " may not be used for this write "
+                      + "request [net=" + hostnameFrom(protocolInfo)
+                      + ",protocol=" + protocolFrom(protocolInfo)
+                      + ",store=" + storageFrom(fileAttributes)
+                      + ",cache=" + nullToEmpty(fileAttributes.getCacheClass())
+                      + ",linkgroup=" + nullToEmpty(linkGroupName) + "]");
             }
             selectWritePool.setLinkGroup(linkGroupName);
 
@@ -1182,13 +1150,14 @@ public final class SpaceManagerService
             if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
                 fileAttributes.setAccessLatency(space.getAccessLatency());
             } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
-                throw new SpaceException("Access latency conflicts with access latency defined by default space reservation.");
+                throw new SpaceException(
+                      "Access latency conflicts with access latency defined by default space reservation.");
             }
             if (!fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
                 fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
             } else if (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy()) {
                 throw new SpaceException(
-                        "Retention policy conflicts with retention policy defined by default space reservation.");
+                      "Retention policy conflicts with retention policy defined by default space reservation.");
             }
 
             if (space.getDescription() != null) {
@@ -1199,27 +1168,28 @@ public final class SpaceManagerService
             LOGGER.trace("Upload outside a reservation, identifying appropriate linkgroup");
 
             LinkGroup linkGroup = findLinkGroupForWrite(subject, protocolInfo,
-                    fileAttributes, selectWritePool.getPreallocated());
+                  fileAttributes, selectWritePool.getPreallocated());
             if (linkGroup != null) {
                 String linkGroupName = linkGroup.getName();
                 selectWritePool.setLinkGroup(linkGroupName);
-                fileAttributes.getStorageInfo().setKey("LinkGroupId", Long.toString(linkGroup.getId()));
+                fileAttributes.getStorageInfo()
+                      .setKey("LinkGroupId", Long.toString(linkGroup.getId()));
                 LOGGER.trace("selectPool: found linkGroup = {}, forwarding message", linkGroupName);
             }
         } else if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
             LOGGER.debug("Upload proceeding outside of any linkgroup.");
         } else {
-            throw new NoPoolConfiguredSpaceException("No write pools configured outside of a linkgroup.");
+            throw new NoPoolConfiguredSpaceException(
+                  "No write pools configured outside of a linkgroup.");
         }
     }
 
-    private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws DataAccessException
-    {
+    private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg)
+          throws DataAccessException {
         fileRemoved(msg.getPnfsId());
     }
 
-    private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException
-    {
+    private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException {
         String[] tokens = gsmd.getSpaceTokens();
         if (tokens == null) {
             throw new IllegalArgumentException("null space tokens");
@@ -1242,14 +1212,13 @@ public final class SpaceManagerService
             } catch (NumberFormatException ignored) {
             } catch (EmptyResultDataAccessException e) {
                 LOGGER.error("failed to find space reservation {}: {}",
-                             tokens[i], e.getMessage());
+                      tokens[i], e.getMessage());
             }
         }
         gsmd.setSpaces(spaces);
     }
 
-    private void getSpaceTokens(GetSpaceTokens gst) throws DataAccessException
-    {
+    private void getSpaceTokens(GetSpaceTokens gst) throws DataAccessException {
         String description = gst.getDescription();
         Subject subject = gst.getSubject();
         Set<Long> spaces = new HashSet<>();
@@ -1257,42 +1226,40 @@ public final class SpaceManagerService
             for (FQAN fqan : Subjects.getFqans(subject)) {
                 String role = fqan.getRole();
                 SpaceManagerDatabase.SpaceCriterion criterion =
-                        db.spaces()
-                                .whereStateIsIn(SpaceState.RESERVED)
-                                .whereGroupIs(fqan.getGroup());
+                      db.spaces()
+                            .whereStateIsIn(SpaceState.RESERVED)
+                            .whereGroupIs(fqan.getGroup());
                 if (!isNullOrEmpty(role)) {
                     criterion.whereRoleIs(role);
                 }
                 spaces.addAll(db.getSpaceTokensOf(criterion));
             }
             spaces.addAll(db.getSpaceTokensOf(
-                    db.spaces()
-                            .whereStateIsIn(SpaceState.RESERVED)
-                            .whereGroupIs(Subjects.getUserName(subject))));
+                  db.spaces()
+                        .whereStateIsIn(SpaceState.RESERVED)
+                        .whereGroupIs(Subjects.getUserName(subject))));
         } else {
             spaces.addAll(db.getSpaceTokensOf(
-                    db.spaces()
-                            .whereStateIsIn(SpaceState.RESERVED)
-                            .whereDescriptionIs(description)));
+                  db.spaces()
+                        .whereStateIsIn(SpaceState.RESERVED)
+                        .whereDescriptionIs(description)));
         }
         gst.setSpaceToken(Longs.toArray(spaces));
     }
 
     private void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens)
-            throws DataAccessException
-    {
+          throws DataAccessException {
         PnfsId pnfsId = getFileTokens.getPnfsId();
         List<File> files = db.get(db.files().wherePnfsIdIs(pnfsId), null);
         getFileTokens.setSpaceToken(Longs.toArray(transform(files, File::getSpaceId)));
     }
 
     /**
-     * Utility runnable that does nothing if a request has exceeded its TTL and
-     * reenqueues the request if processing fails while blocking the thread with
-     * a Fibonacci backoff.
+     * Utility runnable that does nothing if a request has exceeded its TTL and reenqueues the
+     * request if processing fails while blocking the thread with a Fibonacci backoff.
      */
-    private abstract static class FibonacciBackoffMessageProcessor implements Runnable, Reply
-    {
+    private abstract static class FibonacciBackoffMessageProcessor implements Runnable, Reply {
+
         private final Executor executor;
         private long previous = 0;
         private long current = 1;
@@ -1301,13 +1268,11 @@ public final class SpaceManagerService
 
         protected CellEndpoint endpoint;
 
-        public FibonacciBackoffMessageProcessor(Executor executor)
-        {
+        public FibonacciBackoffMessageProcessor(Executor executor) {
             this.executor = executor;
         }
 
-        public CellMessage getEnvelope()
-        {
+        public CellMessage getEnvelope() {
             return envelope;
         }
 
@@ -1316,8 +1281,7 @@ public final class SpaceManagerService
         /**
          * Returns the fibonacci numbers.
          */
-        public long next()
-        {
+        public long next() {
             long next = current + previous;
             previous = current;
             current = next;
@@ -1325,23 +1289,22 @@ public final class SpaceManagerService
         }
 
         @Override
-        public void deliver(CellEndpoint endpoint, CellMessage envelope)
-        {
+        public void deliver(CellEndpoint endpoint, CellMessage envelope) {
             this.endpoint = endpoint;
             this.envelope = envelope;
             executor.execute(this);
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 try {
                     if (envelope.getLocalAge() > envelope.getAdjustedTtl()) {
                         LOGGER.warn(
-                                "Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
-                                envelope.getMessageObject().getClass().getSimpleName(), envelope.getLocalAge(),
-                                envelope.getAdjustedTtl());
+                              "Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                              envelope.getMessageObject().getClass().getSimpleName(),
+                              envelope.getLocalAge(),
+                              envelope.getAdjustedTtl());
                     } else {
                         process();
                     }
@@ -1349,7 +1312,8 @@ public final class SpaceManagerService
                     throw e;
                 } catch (Exception e) {
                     long delay = (long) (Math.random() * next());
-                    LOGGER.info("Request processing failed ({}) and will sleep for {} ms.", e.toString(), delay);
+                    LOGGER.info("Request processing failed ({}) and will sleep for {} ms.",
+                          e.toString(), delay);
                     Thread.sleep(delay);
                     /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
                      * retrying the same operation over and over in a tight loop.
@@ -1361,23 +1325,21 @@ public final class SpaceManagerService
             }
         }
 
-        protected void returnMessage()
-        {
+        protected void returnMessage() {
             envelope.revertDirection();
             endpoint.sendMessage(envelope);
         }
 
-        protected void forwardMessage(CellPath address)
-        {
+        protected void forwardMessage(CellPath address) {
             if (address != null) {
                 envelope.getDestinationPath().insert(address);
             }
             endpoint.sendMessage(envelope);
         }
 
-        protected void notifyShutdown()
-        {
-            envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
+        protected void notifyShutdown() {
+            envelope.setMessageObject(
+                  new NoRouteToCellException(envelope, "Space manager is shutting down."));
             returnMessage();
         }
     }

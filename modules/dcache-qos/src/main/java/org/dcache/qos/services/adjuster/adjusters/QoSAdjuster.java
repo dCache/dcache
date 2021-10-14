@@ -72,35 +72,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Parent class for adjusters. Generates a QOS session id for the remote messaging
- *  to identify events originating here.
+ * Parent class for adjusters. Generates a QOS session id for the remote messaging to identify
+ * events originating here.
  */
 public abstract class QoSAdjuster implements Cancellable {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
-  protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
-  protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-      = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
 
-  protected PnfsId pnfsId;
-  protected FileAttributes attributes;
-  protected QoSAction action;
-  protected QoSAdjustTaskCompletionHandler completionHandler;
+    protected static final Logger LOGGER = LoggerFactory.getLogger(QoSAdjuster.class);
+    protected static final Logger ACTIVITY_LOGGER = LoggerFactory.getLogger("org.dcache.qos-log");
+    protected static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
+          = ImmutableList.of(new StickyRecord("system", StickyRecord.NON_EXPIRING));
 
-  public void adjustQoS(QoSAdjusterTask task) {
-    pnfsId = task.getPnfsId();
-    action = task.getAction();
-    attributes = task.getAttributes();
+    protected PnfsId pnfsId;
+    protected FileAttributes attributes;
+    protected QoSAction action;
+    protected QoSAdjustTaskCompletionHandler completionHandler;
 
-    /*
-     *  Generate the SESSION ID.   This is used by the QoS status endpoint
-     *  (requirements listener or QoS engine) to exclude location updates
-     *  which result from copies or actions initiated here (an optimization
-     *  so as not to resend redundant verification requests).
-     */
-    MessageGuard.setQoSSession();
+    public void adjustQoS(QoSAdjusterTask task) {
+        pnfsId = task.getPnfsId();
+        action = task.getAction();
+        attributes = task.getAttributes();
 
-    runAdjuster(task);
-  }
+        /*
+         *  Generate the SESSION ID.   This is used by the QoS status endpoint
+         *  (requirements listener or QoS engine) to exclude location updates
+         *  which result from copies or actions initiated here (an optimization
+         *  so as not to resend redundant verification requests).
+         */
+        MessageGuard.setQoSSession();
 
-  protected abstract void runAdjuster(QoSAdjusterTask task);
+        runAdjuster(task);
+    }
+
+    protected abstract void runAdjuster(QoSAdjusterTask task);
 }

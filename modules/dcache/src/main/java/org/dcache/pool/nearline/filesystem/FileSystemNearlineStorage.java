@@ -17,8 +17,11 @@
  */
 package org.dcache.pool.nearline.filesystem;
 
-import com.google.common.collect.Iterables;
+import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.collect.Iterables;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.InvalidMessageCacheException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,10 +34,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.InvalidMessageCacheException;
-
 import org.dcache.pool.nearline.AbstractBlockingNearlineStorage;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.RemoveRequest;
@@ -42,60 +41,53 @@ import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
+public abstract class FileSystemNearlineStorage extends AbstractBlockingNearlineStorage {
 
-public abstract class FileSystemNearlineStorage extends AbstractBlockingNearlineStorage
-{
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private Path directory;
 
-    public FileSystemNearlineStorage(String type, String name)
-    {
+    public FileSystemNearlineStorage(String type, String name) {
         super(type, name);
     }
 
     /**
      * Returns a path to the external storage for the give name.
      */
-    private Path getExternalPath(String name)
-    {
+    private Path getExternalPath(String name) {
         return directory.resolve(name);
     }
 
     @Override
-    protected Executor getFlushExecutor()
-    {
+    protected Executor getFlushExecutor() {
         return executor;
     }
 
     @Override
-    protected Executor getStageExecutor()
-    {
+    protected Executor getStageExecutor() {
         return executor;
     }
 
     @Override
-    protected Executor getRemoveExecutor()
-    {
+    protected Executor getRemoveExecutor() {
         return executor;
     }
 
     @Override
-    protected Set<URI> flush(FlushRequest request) throws IOException, URISyntaxException
-    {
+    protected Set<URI> flush(FlushRequest request) throws IOException, URISyntaxException {
         Path file = Paths.get(request.getReplicaUri());
         flush(file, getExternalPath(file.getFileName().toString()));
-        URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(), null, null);
+        URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().toString(),
+              null, null);
         return Collections.singleton(uri);
     }
 
     @Override
-    protected Set<Checksum> stage(StageRequest request) throws CacheException, IOException
-    {
+    protected Set<Checksum> stage(StageRequest request) throws CacheException, IOException {
         FileAttributes fileAttributes = request.getFileAttributes();
         URI location = Iterables.getFirst(getLocations(fileAttributes), null);
         if (location == null) {
-            throw new CacheException(CacheException.BROKEN_ON_TAPE, "File not on nearline storage: " + fileAttributes.getPnfsId());
+            throw new CacheException(CacheException.BROKEN_ON_TAPE,
+                  "File not on nearline storage: " + fileAttributes.getPnfsId());
         }
         String path = location.getPath();
         if (path == null) {
@@ -106,31 +98,31 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     }
 
     @Override
-    public void remove(RemoveRequest request) throws IOException, InvalidMessageCacheException
-    {
+    public void remove(RemoveRequest request) throws IOException, InvalidMessageCacheException {
         String path = request.getUri().getPath();
         if (path == null) {
-            throw new InvalidMessageCacheException("Invalid nearline storage URI: " + request.getUri());
+            throw new InvalidMessageCacheException(
+                  "Invalid nearline storage URI: " + request.getUri());
         }
         remove(getExternalPath(path.substring(1)));
     }
 
     @Override
-    public void configure(Map<String, String> properties) throws IllegalArgumentException
-    {
+    public void configure(Map<String, String> properties) throws IllegalArgumentException {
         String directory = properties.get("directory");
         checkArgument(directory != null, "directory attribute is required");
         this.directory = FileSystems.getDefault().getPath(directory);
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         super.shutdown();
         executor.shutdown();
     }
 
     protected abstract void flush(Path path, Path externalPath) throws IOException;
+
     protected abstract void stage(Path externalPath, Path path) throws IOException;
+
     protected abstract void remove(Path externalPath) throws IOException;
 }

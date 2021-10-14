@@ -62,18 +62,19 @@ package org.dcache.qos.util;
 import diskCacheV111.vehicles.Message;
 
 /**
- *  Defines a component which manages messages when service is in disabled state.
+ * Defines a component which manages messages when service is in disabled state.
  */
 public interface BackloggedMessageHandler {
+
     void initialize();
 
     /**
-     *  @param message received which cannot be handled in the present state of the service.
+     * @param message received which cannot be handled in the present state of the service.
      */
     void saveToBacklog(Message message);
 
     /**
-     *  Action to take when service has be re-enabled.
+     * Action to take when service has be re-enabled.
      */
     void handleBacklog();
 

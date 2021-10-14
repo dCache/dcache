@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +16,11 @@
 package org.dcache.ftp.client;
 
 /**
- * Represents a range of integers.
- * The name reflects the fact that it is used with FTP extended mode restart markers,
- * where it represents a range of transfered bytes.
+ * Represents a range of integers. The name reflects the fact that it is used with FTP extended mode
+ * restart markers, where it represents a range of transfered bytes.
  **/
-public class ByteRange
-{
+public class ByteRange {
+
     /**
      * lower range limit
      **/
@@ -36,22 +35,20 @@ public class ByteRange
      * @param to   upper range limit
      * @throws IllegalArgumentException if to < from
      **/
-    public ByteRange(long from, long to)
-    {
+    public ByteRange(long from, long to) {
         if (to < from) {
             throw new IllegalArgumentException(
-                    "Range upper boundary smaller than lower boundary");
+                  "Range upper boundary smaller than lower boundary");
         }
         this.from = from;
         this.to = to;
     }
 
     /**
-     * @return true if both object logically represent the same range
-     * (even if they are two separate ByteRange instances)
+     * @return true if both object logically represent the same range (even if they are two separate
+     * ByteRange instances)
      **/
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
@@ -63,21 +60,18 @@ public class ByteRange
         }
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         return (int) (this.to + this.from);
     }
 
     /**
      * copying constructor
      */
-    public ByteRange(ByteRange src)
-    {
+    public ByteRange(ByteRange src) {
         this.copy(src);
     }
 
-    private void copy(ByteRange other)
-    {
+    private void copy(ByteRange other) {
         this.from = other.from;
         this.to = other.to;
     }
@@ -89,11 +83,9 @@ public class ByteRange
     public static final int THIS_ABOVE = 5;
 
     /**
-     * If this range can be consolidated with the other one,
-     * modify this range so that it represents the result of merging
-     * this and the other range.
-     * The parameter object remains intact.
-     * Return value indicates what operation has been performed.
+     * If this range can be consolidated with the other one, modify this range so that it represents
+     * the result of merging this and the other range. The parameter object remains intact. Return
+     * value indicates what operation has been performed.
      * <ul>
      * <li> If the two ranges were separate, then this range will remain unchanged.
      * The return value will be THIS_BELOW if this range is below the other
@@ -109,8 +101,7 @@ public class ByteRange
      * one integer between them. For instance, "1-3" and "5-7" are separate
      * but "1-3" and "4-7" are adjacent because merge is possible.
      **/
-    public int merge(final ByteRange other)
-    {
+    public int merge(final ByteRange other) {
     /* notation:
 	     t = this range
 	     o = other range
@@ -175,8 +166,7 @@ public class ByteRange
         return ADJACENT;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return Long.toString(from) + "-" + Long.toString(to);
     }
 }

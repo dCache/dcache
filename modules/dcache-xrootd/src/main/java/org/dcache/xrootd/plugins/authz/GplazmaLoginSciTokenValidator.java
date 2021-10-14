@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.plugins.authz;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import io.netty.channel.ChannelHandlerContext;
@@ -72,47 +75,46 @@ import org.dcache.xrootd.security.TokenValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
-
 /**
- *  Validates SciTokens via Gplazma login strategy.
+ * Validates SciTokens via Gplazma login strategy.
  */
 public class GplazmaLoginSciTokenValidator implements TokenValidator {
-  private static final Logger LOGGER = LoggerFactory.getLogger(GplazmaLoginSciTokenValidator.class);
 
-  /*
-   * Caching should be enabled on the xrootd door by default.
-   */
-  private final LoginStrategy loginStrategy;
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          GplazmaLoginSciTokenValidator.class);
 
-  public GplazmaLoginSciTokenValidator(LoginStrategy loginStrategy) {
-    this.loginStrategy = loginStrategy;
-  }
+    /*
+     * Caching should be enabled on the xrootd door by default.
+     */
+    private final LoginStrategy loginStrategy;
 
-  @Override
-  public void validate(ChannelHandlerContext ctx, String token) throws XrootdException {
-    Subject tokenSubject = new Subject();
-    tokenSubject.getPrivateCredentials().add(new BearerTokenCredential(token));
-
-    LoginReply loginReply;
-
-    try {
-      LOGGER.debug("getting login reply with: {}.", tokenSubject.getPrivateCredentials());
-      loginReply = loginStrategy.login(tokenSubject);
-    } catch (PermissionDeniedCacheException e) {
-      throw new XrootdException(kXR_NotAuthorized, e.toString());
-    } catch (CacheException e) {
-      throw new XrootdException(kXR_ServerError, e.toString());
+    public GplazmaLoginSciTokenValidator(LoginStrategy loginStrategy) {
+        this.loginStrategy = loginStrategy;
     }
 
-    /**
-     *  It is possible the the user is already logged in via a standard
-     *  authentication protocol.  In that case, the XrootdRedirectHandler
-     *  in the door already has stored a Restriction object and user
-     *  metadata.  This needs to be overwritten with the current values.
-     */
-    LOGGER.debug("notifying door of new login reply: {}.", loginReply);
-    ctx.fireUserEventTriggered(new LoginEvent(loginReply));
-  }
+    @Override
+    public void validate(ChannelHandlerContext ctx, String token) throws XrootdException {
+        Subject tokenSubject = new Subject();
+        tokenSubject.getPrivateCredentials().add(new BearerTokenCredential(token));
+
+        LoginReply loginReply;
+
+        try {
+            LOGGER.debug("getting login reply with: {}.", tokenSubject.getPrivateCredentials());
+            loginReply = loginStrategy.login(tokenSubject);
+        } catch (PermissionDeniedCacheException e) {
+            throw new XrootdException(kXR_NotAuthorized, e.toString());
+        } catch (CacheException e) {
+            throw new XrootdException(kXR_ServerError, e.toString());
+        }
+
+        /**
+         *  It is possible the the user is already logged in via a standard
+         *  authentication protocol.  In that case, the XrootdRedirectHandler
+         *  in the door already has stored a Restriction object and user
+         *  metadata.  This needs to be overwritten with the current values.
+         */
+        LOGGER.debug("notifying door of new login reply: {}.", loginReply);
+        ctx.fireUserEventTriggered(new LoginEvent(loginReply));
+    }
 }

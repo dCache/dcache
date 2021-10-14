@@ -25,8 +25,8 @@ import java.net.URI;
 /**
  * Successful response to SrmQueryPutRequest.
  */
-public class SrmQueryPutResponse implements Serializable
-{
+public class SrmQueryPutResponse implements Serializable {
+
     private static final long serialVersionUID = -1978830062605643208L;
 
     private final URI surl;
@@ -35,32 +35,27 @@ public class SrmQueryPutResponse implements Serializable
 
     private final String fileId;
 
-    public SrmQueryPutResponse()
-    {
+    public SrmQueryPutResponse() {
         surl = null;
         requestId = null;
         fileId = null;
     }
 
-    public SrmQueryPutResponse(URI surl, Long requestId, String fileId)
-    {
+    public SrmQueryPutResponse(URI surl, Long requestId, String fileId) {
         this.surl = surl;
         this.requestId = requestId;
         this.fileId = fileId;
     }
 
-    public URI getSurl()
-    {
+    public URI getSurl() {
         return surl;
     }
 
-    public Long getRequestId()
-    {
+    public Long getRequestId() {
         return requestId;
     }
 
-    public String getFileId()
-    {
+    public String getFileId() {
         return fileId;
     }
 }

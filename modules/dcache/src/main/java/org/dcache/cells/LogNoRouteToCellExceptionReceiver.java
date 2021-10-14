@@ -17,30 +17,28 @@
  */
 package org.dcache.cells;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Splitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-
-import static java.util.stream.Collectors.toList;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogNoRouteToCellExceptionReceiver
-    implements CellMessageReceiver
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogNoRouteToCellExceptionReceiver.class);
+      implements CellMessageReceiver {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          LogNoRouteToCellExceptionReceiver.class);
     private List<Class> excludedMessages = Collections.emptyList();
     private List<CellAddressCore> excludedDestinations = Collections.emptyList();
 
-    public void messageArrived(NoRouteToCellException e)
-    {
+    public void messageArrived(NoRouteToCellException e) {
         if (isExcluded(e.getDestinationPath()) || isExcluded(e.getMessageObject())) {
             LOGGER.debug(e.getMessage());
         } else {
@@ -48,28 +46,24 @@ public class LogNoRouteToCellExceptionReceiver
         }
     }
 
-    private boolean isExcluded(CellPath path)
-    {
+    private boolean isExcluded(CellPath path) {
         return excludedDestinations.stream().anyMatch(address -> address.equals(path.getCurrent()));
     }
 
-    private boolean isExcluded(Serializable messageObject)
-    {
+    private boolean isExcluded(Serializable messageObject) {
         return excludedMessages.stream().anyMatch(clazz -> clazz.isInstance(messageObject));
     }
 
-    public void setExcludedMessages(List<Class> excluded)
-    {
+    public void setExcludedMessages(List<Class> excluded) {
         excludedMessages = excluded;
     }
 
-    public void setExcludedDestinations(String excluded)
-    {
+    public void setExcludedDestinations(String excluded) {
         excludedDestinations =
-                Splitter.on(",").omitEmptyStrings()
-                        .splitToList(excluded)
-                        .stream()
-                        .map(CellAddressCore::new)
-                        .collect(toList());
+              Splitter.on(",").omitEmptyStrings()
+                    .splitToList(excluded)
+                    .stream()
+                    .map(CellAddressCore::new)
+                    .collect(toList());
     }
 }

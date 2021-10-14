@@ -23,37 +23,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public class ThroughputFairShareSchedulingStrategy extends DiscriminatingSchedulingStrategy implements SchedulingStrategy
-{
-    private final Map<String,Queue<Long>> jobs = new HashMap<>();
+public class ThroughputFairShareSchedulingStrategy extends
+      DiscriminatingSchedulingStrategy implements SchedulingStrategy {
+
+    private final Map<String, Queue<Long>> jobs = new HashMap<>();
     private List<String> keys = new ArrayList<>();
     private int position;
     private int size;
 
-    public ThroughputFairShareSchedulingStrategy(String discriminator)
-    {
+    public ThroughputFairShareSchedulingStrategy(String discriminator) {
         super(discriminator);
     }
 
     @Override
-    protected synchronized void add(String key, Job job)
-    {
+    protected synchronized void add(String key, Job job) {
         Queue<Long> queue =
-                jobs.computeIfAbsent(key, k -> {
-                    keys.add(k);
-                    return new ArrayDeque<>();
-                });
+              jobs.computeIfAbsent(key, k -> {
+                  keys.add(k);
+                  return new ArrayDeque<>();
+              });
         queue.add(job.getId());
         size++;
     }
 
     @Override
-    public synchronized Long remove()
-    {
+    public synchronized Long remove() {
         if (size == 0) {
             return null;
         }
@@ -71,13 +68,11 @@ public class ThroughputFairShareSchedulingStrategy extends DiscriminatingSchedul
     }
 
     @Override
-    public synchronized int size()
-    {
+    public synchronized int size() {
         return size;
     }
 
-    private void compact()
-    {
+    private void compact() {
         ArrayList<String> newKeys = new ArrayList<>(keys.size());
         for (String key : keys) {
             if (jobs.get(key).isEmpty()) {

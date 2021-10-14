@@ -74,82 +74,82 @@ import org.dcache.qos.services.adjuster.util.QoSAdjusterTask;
 import org.dcache.qos.services.adjuster.util.StaticSinglePoolList;
 
 /**
- *  Attempts to make a single copy of the file.  Uses a migration task which
- *  sends a migration request to the pool's migration module.  While this
- *  effectively relinquishes the task thread, the task state does not
- *  change to completed until it receives a response from the module.
+ * Attempts to make a single copy of the file.  Uses a migration task which sends a migration
+ * request to the pool's migration module.  While this effectively relinquishes the task thread, the
+ * task state does not change to completed until it receives a response from the module.
  */
 public class CopyAdjuster extends QoSAdjuster {
-  protected Task migrationTask;
 
-  CellStub pinManager;
-  CellStub pools;
-  ScheduledExecutorService executorService;
+    protected Task migrationTask;
 
-  @Override
-  public synchronized void cancel(String explanation) {
-    if (migrationTask != null) {
-      migrationTask.cancel(explanation);
-      completionHandler.taskCancelled(migrationTask.getPnfsId());
-    }
-  }
+    CellStub pinManager;
+    CellStub pools;
+    ScheduledExecutorService executorService;
 
-  public void relayMessage(PoolMigrationCopyFinishedMessage message) {
-    migrationTask.messageArrived(message);
-  }
-
-  @Override
-  protected void runAdjuster(QoSAdjusterTask task) {
-    createTask(task.getTargetInfo(), task.getSource());
-    migrationTask.run();
-  }
-
-  protected void createTask(TaskParameters taskParameters, String source) {
-    migrationTask = new Task(taskParameters,
-        completionHandler,
-        source,
-        pnfsId,
-        ReplicaState.CACHED,
-        ONLINE_STICKY_RECORD,
-        Collections.EMPTY_LIST,
-        attributes,
-        attributes.getAccessTime());
-  }
-
-  /**
-   *  Wraps the creation of a migration {@link Task}.  The task is given
-   *  a static single pool list and a degenerate selection strategy,
-   *  since the target has already been selected.
-   */
-  private synchronized void createTask(PoolManagerPoolInformation targetInfo, String source) {
-    LOGGER.debug("Configuring migration task for {}, {}.", pnfsId, action);
-
-    StaticSinglePoolList list = new StaticSinglePoolList(targetInfo);
-
-    TaskParameters taskParameters = new TaskParameters( pools,
-                                                  null,     // PnfsManager cell stub not used
-                                                        pinManager,
-                                                        executorService,
-                                                        new DegenerateSelectionStrategy(),
-                                                        list,
-                                                false,   // eager; update should not happen
-                                             false,   // just move the metadata; not relevant here
-                                false,   // compute checksum on update; should not happen
-                                         false,   // force copy even if pool is not readable
-                                           true,    // maintain atime
-                                                1);      // only one copy per task
-
-    createTask(taskParameters, source);
-
-    if (ACTIVITY_LOGGER.isInfoEnabled()) {
-      List<String> allPools = list.getPools().stream()
-                                             .map(PoolManagerPoolInformation::getName)
-                                             .collect(Collectors.toList());
-      ACTIVITY_LOGGER.info("Initiating migration for {} of {} from {} to"
-              + " pools: {}, offline: {}", action, pnfsId, source, allPools, list.getOfflinePools());
+    @Override
+    public synchronized void cancel(String explanation) {
+        if (migrationTask != null) {
+            migrationTask.cancel(explanation);
+            completionHandler.taskCancelled(migrationTask.getPnfsId());
+        }
     }
 
-    LOGGER.debug("Created migration task for {} of {}: source {}, list {}.",
-        action, pnfsId, source, list);
-  }
+    public void relayMessage(PoolMigrationCopyFinishedMessage message) {
+        migrationTask.messageArrived(message);
+    }
+
+    @Override
+    protected void runAdjuster(QoSAdjusterTask task) {
+        createTask(task.getTargetInfo(), task.getSource());
+        migrationTask.run();
+    }
+
+    protected void createTask(TaskParameters taskParameters, String source) {
+        migrationTask = new Task(taskParameters,
+              completionHandler,
+              source,
+              pnfsId,
+              ReplicaState.CACHED,
+              ONLINE_STICKY_RECORD,
+              Collections.EMPTY_LIST,
+              attributes,
+              attributes.getAccessTime());
+    }
+
+    /**
+     * Wraps the creation of a migration {@link Task}.  The task is given a static single pool list
+     * and a degenerate selection strategy, since the target has already been selected.
+     */
+    private synchronized void createTask(PoolManagerPoolInformation targetInfo, String source) {
+        LOGGER.debug("Configuring migration task for {}, {}.", pnfsId, action);
+
+        StaticSinglePoolList list = new StaticSinglePoolList(targetInfo);
+
+        TaskParameters taskParameters = new TaskParameters(pools,
+              null,     // PnfsManager cell stub not used
+              pinManager,
+              executorService,
+              new DegenerateSelectionStrategy(),
+              list,
+              false,   // eager; update should not happen
+              false,   // just move the metadata; not relevant here
+              false,   // compute checksum on update; should not happen
+              false,   // force copy even if pool is not readable
+              true,    // maintain atime
+              1);      // only one copy per task
+
+        createTask(taskParameters, source);
+
+        if (ACTIVITY_LOGGER.isInfoEnabled()) {
+            List<String> allPools = list.getPools().stream()
+                  .map(PoolManagerPoolInformation::getName)
+                  .collect(Collectors.toList());
+            ACTIVITY_LOGGER.info("Initiating migration for {} of {} from {} to"
+                        + " pools: {}, offline: {}", action, pnfsId, source, allPools,
+                  list.getOfflinePools());
+        }
+
+        LOGGER.debug("Created migration task for {} of {}: source {}, list {}.",
+              action, pnfsId, source, list);
+    }
 }

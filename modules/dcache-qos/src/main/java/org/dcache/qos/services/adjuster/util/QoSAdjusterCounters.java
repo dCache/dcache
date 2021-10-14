@@ -59,6 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.adjuster.util;
 
+import static org.dcache.qos.data.QoSAction.CACHE_REPLICA;
+import static org.dcache.qos.data.QoSAction.COPY_REPLICA;
+import static org.dcache.qos.data.QoSAction.FLUSH;
+import static org.dcache.qos.data.QoSAction.PERSIST_REPLICA;
+import static org.dcache.qos.data.QoSAction.UNSET_PRECIOUS_REPLICA;
+import static org.dcache.qos.data.QoSAction.WAIT_FOR_STAGE;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,229 +74,231 @@ import org.dcache.qos.util.QoSCounter;
 import org.dcache.qos.util.QoSCounterGroup;
 import org.dcache.qos.util.QoSCounters;
 
-import static org.dcache.qos.data.QoSAction.CACHE_REPLICA;
-import static org.dcache.qos.data.QoSAction.COPY_REPLICA;
-import static org.dcache.qos.data.QoSAction.FLUSH;
-import static org.dcache.qos.data.QoSAction.PERSIST_REPLICA;
-import static org.dcache.qos.data.QoSAction.UNSET_PRECIOUS_REPLICA;
-import static org.dcache.qos.data.QoSAction.WAIT_FOR_STAGE;
-
 public final class QoSAdjusterCounters extends QoSCounters {
-  private static final String ACTIONS        = "ACTIONS";
-  private static final String POOLS          = "POOLS";
-  private static final String FORMAT_ACTIONS = "%-26s %12s %12s\n";
-  private static final String FORMAT_DETAILS = "%-28s | %12s %12s | %12s %12s %12s | %12s %12s %12s "
-                                                  + "| %12s %12s\n";
-  private static final String FORMAT_STAT
-      = "%-15s %37s | %15s | %25s %25s | %25s %25s | %9s seconds | %15s\n";
-  private static final String[] ACTIONS_HEADER = {"ACTION", "TOTAL", "FAILED"};
-  private static final String[] DETAILS_HEADER = {"POOL", "TGT", "FAILED", "CPSRC", "CPTGT", "CPBYT",
-                                                  "CACHE", "PERSIST", "UNSETP", "STAGE", "FLUSH"};
-  private static final String[] STATS_HEADER = {"END", "ID", "ACTION", "START", "END",
-                                                "SRC", "TGT", "DURATION", "FAILURE"};
 
-  class QoSAdjustCounter extends QoSCounter {
-    final AtomicLong copySrc = new AtomicLong(0L);
-    final AtomicLong copyTgt = new AtomicLong(0L);
-    final AtomicLong copyByt = new AtomicLong(0L);
-    final AtomicLong cacheTgt = new AtomicLong(0L);
-    final AtomicLong persistTgt = new AtomicLong(0L);
-    final AtomicLong unsetTgt = new AtomicLong(0L);
-    final AtomicLong stageTgt = new AtomicLong(0L);
-    final AtomicLong flushTgt = new AtomicLong(0L);
+    private static final String ACTIONS = "ACTIONS";
+    private static final String POOLS = "POOLS";
+    private static final String FORMAT_ACTIONS = "%-26s %12s %12s\n";
+    private static final String FORMAT_DETAILS =
+          "%-28s | %12s %12s | %12s %12s %12s | %12s %12s %12s "
+                + "| %12s %12s\n";
+    private static final String FORMAT_STAT
+          = "%-15s %37s | %15s | %25s %25s | %25s %25s | %9s seconds | %15s\n";
+    private static final String[] ACTIONS_HEADER = {"ACTION", "TOTAL", "FAILED"};
+    private static final String[] DETAILS_HEADER = {"POOL", "TGT", "FAILED", "CPSRC", "CPTGT",
+          "CPBYT",
+          "CACHE", "PERSIST", "UNSETP", "STAGE", "FLUSH"};
+    private static final String[] STATS_HEADER = {"END", "ID", "ACTION", "START", "END",
+          "SRC", "TGT", "DURATION", "FAILURE"};
 
-    public QoSAdjustCounter(String name) {
-      super(name);
-    }
-  }
+    class QoSAdjustCounter extends QoSCounter {
 
-  class QoSAdjustCounterGroup extends QoSCounterGroup<QoSCounter> {
-    protected QoSAdjustCounterGroup(String name) {
-      super(name);
-    }
+        final AtomicLong copySrc = new AtomicLong(0L);
+        final AtomicLong copyTgt = new AtomicLong(0L);
+        final AtomicLong copyByt = new AtomicLong(0L);
+        final AtomicLong cacheTgt = new AtomicLong(0L);
+        final AtomicLong persistTgt = new AtomicLong(0L);
+        final AtomicLong unsetTgt = new AtomicLong(0L);
+        final AtomicLong stageTgt = new AtomicLong(0L);
+        final AtomicLong flushTgt = new AtomicLong(0L);
 
-    @Override
-    public void format(StringBuilder builder) {
-      getKeys().stream()
-          .forEach(k-> {
-            QoSCounter c = getCounter(k);
-            builder.append(String.format(FORMAT_ACTIONS, k, c.getTotal(), c.getFailed()));
-          });
-    }
-
-    @Override
-    protected QoSCounter createCounter(String key) {
-      return new QoSCounter(key);
-    }
-  }
-
-  class QoSAdjustDetailsCounterGroup extends QoSCounterGroup<QoSAdjustCounter> {
-    protected QoSAdjustDetailsCounterGroup(String name) {
-      super(name);
-    }
-
-    @Override
-    public void format(StringBuilder builder) {
-      getKeys().stream()
-          .forEach(k-> {
-            QoSAdjustCounter c = getCounter(k);
-            builder.append(String.format(FORMAT_DETAILS, k, c.getTotal(), c.getFailed(),
-                c.copySrc.get(), c.copyTgt.get(), formatWithPrefix(c.copyByt.get()),
-                c.cacheTgt.get(), c.persistTgt.get(), c.unsetTgt.get(), c.stageTgt.get(),
-                c.flushTgt.get()));
-          });
-    }
-
-    @Override
-    protected QoSAdjustCounter createCounter(String key) {
-      return new QoSAdjustCounter(key);
-    }
-  }
-
-  @Override
-  public void initialize() {
-    groupMap = new HashMap<>();
-    QoSCounterGroup group = new QoSAdjustCounterGroup(ACTIONS);
-    group.addCounter(COPY_REPLICA.name());
-    group.addCounter(CACHE_REPLICA.name());
-    group.addCounter(PERSIST_REPLICA.name());
-    group.addCounter(UNSET_PRECIOUS_REPLICA.name());
-    group.addCounter(WAIT_FOR_STAGE.name());
-    group.addCounter(FLUSH.name());
-    groupMap.put(ACTIONS, group);
-
-    group = new QoSAdjustDetailsCounterGroup(POOLS);
-    groupMap.put(POOLS, group);
-  }
-
-  @Override
-  public void appendCounts(StringBuilder builder) {
-    builder.append(String.format(FORMAT_ACTIONS, ACTIONS_HEADER));
-    QoSCounterGroup group = groupMap.get(ACTIONS);
-    group.format(builder);
-  }
-
-  @Override
-  public void appendDetails(StringBuilder builder) {
-    builder.append(String.format(FORMAT_DETAILS, DETAILS_HEADER));
-    QoSCounterGroup group = groupMap.get(POOLS);
-    group.format(builder);
-  }
-
-  public void recordTask(QoSAdjusterTask task) {
-    if (task == null) {
-      LOGGER.debug("recordTaskStatistics called with null task");
-      return;
-    }
-
-    boolean failed = task.getException() != null;
-    QoSAction action = task.getAction();
-    QoSCounter actionCounter = groupMap.get(ACTIONS).getCounter(action.name());
-    actionCounter.incrementTotal();
-    if (failed) {
-      actionCounter.incrementFailed();
-    }
-
-    if (toFile) {
-      synchronized(statisticsBuffer) {
-        statisticsBuffer.add(toFormattedString(task));
-      }
-    }
-
-    String target = task.getTarget();
-    if (target == null) {
-      /*
-       *  NB.  This is possible if this is a staging task which was cancelled.
-       */
-      LOGGER.debug("{}, no target", task);
-      return;
-    }
-
-    checkPoolCounters(target);
-    QoSAdjustCounter targetCounter = (QoSAdjustCounter)groupMap.get(POOLS).getCounter(target);
-
-    /*
-     *  Count total and failed only on target pools.
-     */
-    targetCounter.incrementTotal();
-    if (failed) {
-      targetCounter.incrementFailed();
-    }
-
-    switch (action) {
-      case COPY_REPLICA:
-        targetCounter.copyTgt.incrementAndGet();
-        targetCounter.copyByt.addAndGet(task.getAttributes().getSize());
-        String source = task.getSource();
-        if (source == null) {
-          LOGGER.debug("{} no source ... could be a potential bug?", task);
-          return;
+        public QoSAdjustCounter(String name) {
+            super(name);
         }
-        checkPoolCounters(source);
-        QoSAdjustCounter srcCounter = (QoSAdjustCounter)groupMap.get(POOLS).getCounter(source);
-        srcCounter.copySrc.incrementAndGet();
-        break;
-      case UNSET_PRECIOUS_REPLICA:
-        targetCounter.unsetTgt.incrementAndGet();
-        break;
-      case CACHE_REPLICA:
-        targetCounter.cacheTgt.incrementAndGet();
-        break;
-      case PERSIST_REPLICA:
-        targetCounter.persistTgt.incrementAndGet();
-        break;
-      case FLUSH:
-        targetCounter.flushTgt.incrementAndGet();
-        break;
-      case WAIT_FOR_STAGE:
-        targetCounter.stageTgt.incrementAndGet();
-        break;
-      default:
-        LOGGER.debug("{} UNKNOWN ACTION?", task);
-        break;
     }
-  }
 
-  @Override
-  protected String getStatisticsFormat() {
-    return FORMAT_STAT;
-  }
+    class QoSAdjustCounterGroup extends QoSCounterGroup<QoSCounter> {
 
-  @Override
-  protected String[] getStatisticsHeader() {
-    return STATS_HEADER;
-  }
+        protected QoSAdjustCounterGroup(String name) {
+            super(name);
+        }
 
-  private void checkPoolCounters(String pool) {
-    QoSAdjustDetailsCounterGroup group = (QoSAdjustDetailsCounterGroup)groupMap.get(POOLS);
-    if (!group.hasCounter(pool)) {
-      group.addCounter(pool);
+        @Override
+        public void format(StringBuilder builder) {
+            getKeys().stream()
+                  .forEach(k -> {
+                      QoSCounter c = getCounter(k);
+                      builder.append(String.format(FORMAT_ACTIONS, k, c.getTotal(), c.getFailed()));
+                  });
+        }
+
+        @Override
+        protected QoSCounter createCounter(String key) {
+            return new QoSCounter(key);
+        }
     }
-  }
 
-  private String toFormattedString(QoSAdjusterTask task) {
-    String source = task.getSource();
-    String target = task.getTarget();
-    long startTime = task.getStartTime();
-    long endTime = task.getEndTime();
-    Exception exception = task.getException();
-    return String.format(FORMAT_STAT,
-        endTime,
-        task.getPnfsId(),
-        task.getAction(),
-        DATE_FORMATTER.format(Instant.ofEpochMilli(startTime)),
-        DATE_FORMATTER.format(Instant.ofEpochMilli(endTime)),
-        source == null ? "-----" : source,
-        target == null ? "-----" : target,
-        getTimeInSeconds(endTime-startTime),
-        exception == null ? task.getStatus() : task.getStatus() + ": " + exception.toString());
-  }
+    class QoSAdjustDetailsCounterGroup extends QoSCounterGroup<QoSAdjustCounter> {
 
-  private static String getTimeInSeconds(long elapsed) {
-    if (elapsed < 0) {
-      return "-----";
+        protected QoSAdjustDetailsCounterGroup(String name) {
+            super(name);
+        }
+
+        @Override
+        public void format(StringBuilder builder) {
+            getKeys().stream()
+                  .forEach(k -> {
+                      QoSAdjustCounter c = getCounter(k);
+                      builder.append(String.format(FORMAT_DETAILS, k, c.getTotal(), c.getFailed(),
+                            c.copySrc.get(), c.copyTgt.get(), formatWithPrefix(c.copyByt.get()),
+                            c.cacheTgt.get(), c.persistTgt.get(), c.unsetTgt.get(),
+                            c.stageTgt.get(),
+                            c.flushTgt.get()));
+                  });
+        }
+
+        @Override
+        protected QoSAdjustCounter createCounter(String key) {
+            return new QoSAdjustCounter(key);
+        }
     }
-    double delta = ((double)elapsed)/(1000.0);
-    return String.format("%.3f", delta);
-  }
+
+    @Override
+    public void initialize() {
+        groupMap = new HashMap<>();
+        QoSCounterGroup group = new QoSAdjustCounterGroup(ACTIONS);
+        group.addCounter(COPY_REPLICA.name());
+        group.addCounter(CACHE_REPLICA.name());
+        group.addCounter(PERSIST_REPLICA.name());
+        group.addCounter(UNSET_PRECIOUS_REPLICA.name());
+        group.addCounter(WAIT_FOR_STAGE.name());
+        group.addCounter(FLUSH.name());
+        groupMap.put(ACTIONS, group);
+
+        group = new QoSAdjustDetailsCounterGroup(POOLS);
+        groupMap.put(POOLS, group);
+    }
+
+    @Override
+    public void appendCounts(StringBuilder builder) {
+        builder.append(String.format(FORMAT_ACTIONS, ACTIONS_HEADER));
+        QoSCounterGroup group = groupMap.get(ACTIONS);
+        group.format(builder);
+    }
+
+    @Override
+    public void appendDetails(StringBuilder builder) {
+        builder.append(String.format(FORMAT_DETAILS, DETAILS_HEADER));
+        QoSCounterGroup group = groupMap.get(POOLS);
+        group.format(builder);
+    }
+
+    public void recordTask(QoSAdjusterTask task) {
+        if (task == null) {
+            LOGGER.debug("recordTaskStatistics called with null task");
+            return;
+        }
+
+        boolean failed = task.getException() != null;
+        QoSAction action = task.getAction();
+        QoSCounter actionCounter = groupMap.get(ACTIONS).getCounter(action.name());
+        actionCounter.incrementTotal();
+        if (failed) {
+            actionCounter.incrementFailed();
+        }
+
+        if (toFile) {
+            synchronized (statisticsBuffer) {
+                statisticsBuffer.add(toFormattedString(task));
+            }
+        }
+
+        String target = task.getTarget();
+        if (target == null) {
+            /*
+             *  NB.  This is possible if this is a staging task which was cancelled.
+             */
+            LOGGER.debug("{}, no target", task);
+            return;
+        }
+
+        checkPoolCounters(target);
+        QoSAdjustCounter targetCounter = (QoSAdjustCounter) groupMap.get(POOLS).getCounter(target);
+
+        /*
+         *  Count total and failed only on target pools.
+         */
+        targetCounter.incrementTotal();
+        if (failed) {
+            targetCounter.incrementFailed();
+        }
+
+        switch (action) {
+            case COPY_REPLICA:
+                targetCounter.copyTgt.incrementAndGet();
+                targetCounter.copyByt.addAndGet(task.getAttributes().getSize());
+                String source = task.getSource();
+                if (source == null) {
+                    LOGGER.debug("{} no source ... could be a potential bug?", task);
+                    return;
+                }
+                checkPoolCounters(source);
+                QoSAdjustCounter srcCounter = (QoSAdjustCounter) groupMap.get(POOLS)
+                      .getCounter(source);
+                srcCounter.copySrc.incrementAndGet();
+                break;
+            case UNSET_PRECIOUS_REPLICA:
+                targetCounter.unsetTgt.incrementAndGet();
+                break;
+            case CACHE_REPLICA:
+                targetCounter.cacheTgt.incrementAndGet();
+                break;
+            case PERSIST_REPLICA:
+                targetCounter.persistTgt.incrementAndGet();
+                break;
+            case FLUSH:
+                targetCounter.flushTgt.incrementAndGet();
+                break;
+            case WAIT_FOR_STAGE:
+                targetCounter.stageTgt.incrementAndGet();
+                break;
+            default:
+                LOGGER.debug("{} UNKNOWN ACTION?", task);
+                break;
+        }
+    }
+
+    @Override
+    protected String getStatisticsFormat() {
+        return FORMAT_STAT;
+    }
+
+    @Override
+    protected String[] getStatisticsHeader() {
+        return STATS_HEADER;
+    }
+
+    private void checkPoolCounters(String pool) {
+        QoSAdjustDetailsCounterGroup group = (QoSAdjustDetailsCounterGroup) groupMap.get(POOLS);
+        if (!group.hasCounter(pool)) {
+            group.addCounter(pool);
+        }
+    }
+
+    private String toFormattedString(QoSAdjusterTask task) {
+        String source = task.getSource();
+        String target = task.getTarget();
+        long startTime = task.getStartTime();
+        long endTime = task.getEndTime();
+        Exception exception = task.getException();
+        return String.format(FORMAT_STAT,
+              endTime,
+              task.getPnfsId(),
+              task.getAction(),
+              DATE_FORMATTER.format(Instant.ofEpochMilli(startTime)),
+              DATE_FORMATTER.format(Instant.ofEpochMilli(endTime)),
+              source == null ? "-----" : source,
+              target == null ? "-----" : target,
+              getTimeInSeconds(endTime - startTime),
+              exception == null ? task.getStatus()
+                    : task.getStatus() + ": " + exception.toString());
+    }
+
+    private static String getTimeInSeconds(long elapsed) {
+        if (elapsed < 0) {
+            return "-----";
+        }
+        double delta = ((double) elapsed) / (1000.0);
+        return String.format("%.3f", delta);
+    }
 }

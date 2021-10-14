@@ -61,39 +61,37 @@ package org.dcache.restful.providers;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-import javax.validation.constraints.NotNull;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
+import javax.validation.constraints.NotNull;
 import org.dcache.util.InvalidatableItem;
 
 @ApiModel(description = "A selection of results from a semi-persistant snapshot. "
-                                + "Each snapshot has a UUID that identifies it.  The "
-                                + "request that created the snapshot also accepts the uuid as "
-                                + "an argument, allowing successive requests from the same "
-                                + "snapshot with different offset and lengths, providing "
-                                + "support for paging.")
+      + "Each snapshot has a UUID that identifies it.  The "
+      + "request that created the snapshot also accepts the uuid as "
+      + "an argument, allowing successive requests from the same "
+      + "snapshot with different offset and lengths, providing "
+      + "support for paging.")
 public class SnapshotList<T extends InvalidatableItem & Serializable>
-                implements Serializable {
+      implements Serializable {
+
     @ApiModelProperty("  The list of returned data.")
     @NotNull
     private List<T> items = Collections.EMPTY_LIST;
 
     @ApiModelProperty("The original offset requested.  The first element in the "
-                    + "returned list should correspond to "
-                    + "this index in the underlying complete list.")
+          + "returned list should correspond to "
+          + "this index in the underlying complete list.")
     private int currentOffset = 0;
 
     @ApiModelProperty("Should be the currentOffset plus the size of the returned "
-                    + "list if the list has more elements; otherwise -1.")
+          + "list if the list has more elements; otherwise -1.")
     private int nextOffset = 0;
 
     @ApiModelProperty("Identifies the snapshot used to service this request. "
-                    + "May be null only if transfers is empty.")
+          + "May be null only if transfers is empty.")
     private UUID currentToken;
 
     @ApiModelProperty("Timestamp in unix-time when snapshot was created.")

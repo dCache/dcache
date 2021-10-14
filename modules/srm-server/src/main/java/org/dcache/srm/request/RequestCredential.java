@@ -66,26 +66,24 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.security.util.X509Credentials.calculateExpiry;
+
 import com.google.common.collect.MapMaker;
 import eu.emi.security.authn.x509.X509Credential;
-import org.springframework.dao.DataAccessException;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
+import org.springframework.dao.DataAccessException;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.security.util.X509Credentials.calculateExpiry;
+public class RequestCredential {
 
-public class RequestCredential
-{
     private static final ConcurrentMap<Long, RequestCredential> weakRequestCredentialStorage =
-            new MapMaker().weakValues().makeMap();
+          new MapMaker().weakValues().makeMap();
     private static final List<RequestCredentialStorage> requestCredentailStorages = new CopyOnWriteArrayList<>();
 
     private final long id;
@@ -98,13 +96,13 @@ public class RequestCredential
     private X509Credential delegatedCredential;
     private long delegatedCredentialExpiration;
 
-    public static void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage)
-    {
+    public static void registerRequestCredentialStorage(
+          RequestCredentialStorage requestCredentialStorage) {
         requestCredentailStorages.add(requireNonNull(requestCredentialStorage));
     }
 
-    public static RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException
-    {
+    public static RequestCredential getRequestCredential(Long requestCredentialId)
+          throws DataAccessException {
         if (requestCredentialId == null) {
             return null;
         }
@@ -126,8 +124,8 @@ public class RequestCredential
         return null;
     }
 
-    public static RequestCredential newRequestCredential(String credentialName, String role, RequestCredentialStorage storage)
-    {
+    public static RequestCredential newRequestCredential(String credentialName, String role,
+          RequestCredentialStorage storage) {
         synchronized (weakRequestCredentialStorage) {
             for (RequestCredential credential : weakRequestCredentialStorage.values()) {
                 String credName = credential.getCredentialName();
@@ -149,11 +147,12 @@ public class RequestCredential
         }
     }
 
-    /** Creates a new instance of requestCredential */
+    /**
+     * Creates a new instance of requestCredential
+     */
     public RequestCredential(String credentialName,
-                             String role,
-                             RequestCredentialStorage storage)
-    {
+          String role,
+          RequestCredentialStorage storage) {
         this.id = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
         this.credentialName = credentialName;
@@ -161,15 +160,16 @@ public class RequestCredential
         this.storage = storage;
     }
 
-    /** restores a previously stored instance of the requestcredential */
+    /**
+     * restores a previously stored instance of the requestcredential
+     */
     public RequestCredential(Long id,
-                             long creationtime,
-                             String credentialName,
-                             String role,
-                             X509Credential delegatedCredential,
-                             long delegatedCredentialExpiration,
-                             RequestCredentialStorage storage)
-    {
+          long creationtime,
+          String credentialName,
+          String role,
+          X509Credential delegatedCredential,
+          long delegatedCredentialExpiration,
+          RequestCredentialStorage storage) {
         this.id = id;
         this.creationtime = creationtime;
         this.credentialName = credentialName;
@@ -184,10 +184,9 @@ public class RequestCredential
      * Create a new RequestCredential to wrap an existing GSSCredential.
      */
     public RequestCredential(String credentialName,
-                             String role,
-                             X509Credential delegatedCredential,
-                             RequestCredentialStorage storage)
-    {
+          String role,
+          X509Credential delegatedCredential,
+          RequestCredentialStorage storage) {
         this.id = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
         this.credentialName = credentialName;
@@ -197,26 +196,22 @@ public class RequestCredential
         this.storage = storage;
     }
 
-    public synchronized X509Credential getDelegatedCredential()
-    {
+    public synchronized X509Credential getDelegatedCredential() {
         return delegatedCredential;
     }
 
-    public synchronized void keepBestDelegatedCredential(X509Credential credential)
-    {
+    public synchronized void keepBestDelegatedCredential(X509Credential credential) {
         if (credential != null && (this.delegatedCredential == null ||
-                expiryDateFor(credential) > this.delegatedCredentialExpiration)) {
+              expiryDateFor(credential) > this.delegatedCredentialExpiration)) {
             updateCredential(credential);
         }
     }
 
-    private static long expiryDateFor(X509Credential credential)
-    {
+    private static long expiryDateFor(X509Credential credential) {
         return calculateExpiry(credential).map(Instant::toEpochMilli).orElse(0L);
     }
 
-    private void updateCredential(X509Credential credential)
-    {
+    private void updateCredential(X509Credential credential) {
         this.delegatedCredential = credential;
         this.delegatedCredentialExpiration = expiryDateFor(credential);
         this.saved = false;
@@ -227,8 +222,7 @@ public class RequestCredential
      *
      * @return Value of property requestCredentialId.
      */
-    public long getId()
-    {
+    public long getId() {
         return id;
     }
 
@@ -237,21 +231,20 @@ public class RequestCredential
      *
      * @return Value of property credentialName.
      */
-    public String getCredentialName()
-    {
+    public String getCredentialName() {
         return credentialName;
     }
 
     @Override
-    public synchronized String toString()
-    {
+    public synchronized String toString() {
         return "RequestCredential[" + credentialName + "," +
-                ((delegatedCredential == null) ? "nondelegated" : "delegated, remaining lifetime : " + getDelegatedCredentialRemainingLifetime() + " millis") +
-                "  ]";
+              ((delegatedCredential == null) ? "nondelegated"
+                    : "delegated, remaining lifetime : " + getDelegatedCredentialRemainingLifetime()
+                          + " millis") +
+              "  ]";
     }
 
-    public synchronized  void saveCredential()
-    {
+    public synchronized void saveCredential() {
         if (!saved) {
             storage.saveRequestCredential(this);
             saved = true;
@@ -263,8 +256,7 @@ public class RequestCredential
      *
      * @return Value of property role.
      */
-    public String getRole()
-    {
+    public String getRole() {
         return role;
     }
 
@@ -273,8 +265,7 @@ public class RequestCredential
      *
      * @return Value of property delegatedCredentialExpiration.
      */
-    public synchronized long getDelegatedCredentialExpiration()
-    {
+    public synchronized long getDelegatedCredentialExpiration() {
         return delegatedCredentialExpiration;
     }
 
@@ -283,15 +274,15 @@ public class RequestCredential
      *
      * @return Value of property creationtime.
      */
-    public long getCreationtime()
-    {
+    public long getCreationtime() {
         return creationtime;
     }
 
-    /** Returns the remaining lifetime in milliseconds for a credential. */
+    /**
+     * Returns the remaining lifetime in milliseconds for a credential.
+     */
 
-    public synchronized long getDelegatedCredentialRemainingLifetime()
-    {
+    public synchronized long getDelegatedCredentialRemainingLifetime() {
         long lifetime = delegatedCredentialExpiration - System.currentTimeMillis();
         return Math.max(0, lifetime);
     }
@@ -299,15 +290,15 @@ public class RequestCredential
     /**
      * Allow a user to specify an alternative credential to use.
      */
-    public synchronized void acceptAlternative(String description) throws SRMInvalidRequestException
-    {
+    public synchronized void acceptAlternative(String description)
+          throws SRMInvalidRequestException {
         if (description == null) {
             return;
         }
 
         if (!description.startsWith("gridsite:")) {
             throw new SRMInvalidRequestException("Unknown credential type: " +
-                    description);
+                  description);
         }
 
         String idLabel = description.substring(9);
@@ -321,12 +312,12 @@ public class RequestCredential
                 // error as if no credential was found.  This prevents
                 // discovering which other credentials exist.
                 throw new IllegalArgumentException("Unknown credential: " +
-                        credentialName);
+                      credentialName);
             }
 
             if (credential.getDelegatedCredentialRemainingLifetime() == 0) {
                 throw new IllegalArgumentException("Credential " + description +
-                        " has expired");
+                      " has expired");
             }
 
             updateCredential(credential.delegatedCredential);

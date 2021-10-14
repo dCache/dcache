@@ -60,15 +60,16 @@ documents or software obtained from this server.
 package org.dcache.qos.listeners;
 
 public interface QoSPoolScanResponseListener {
+
     /**
-     *   Report completed adjustments or verifications for files residing on a pool.
-     *   Usually successive such updates are to be accumulated by the receiver (they represent
-     *   batches of work). The idea is to give the receiver an indication of how much work has
-     *   been done up to this point.
+     * Report completed adjustments or verifications for files residing on a pool. Usually
+     * successive such updates are to be accumulated by the receiver (they represent batches of
+     * work). The idea is to give the receiver an indication of how much work has been done up to
+     * this point.
      *
-     *   @param pool on which the scan is being done.
-     *   @param succeeded number of requests that were successful; can be a partial count.
-     *   @param failed number of requests that failed; can be a partial count.
+     * @param pool      on which the scan is being done.
+     * @param succeeded number of requests that were successful; can be a partial count.
+     * @param failed    number of requests that failed; can be a partial count.
      */
     void scanRequestUpdated(String pool, int succeeded, int failed);
 }

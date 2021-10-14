@@ -18,55 +18,51 @@
  */
 package org.dcache.mock;
 
+import static org.mockito.Mockito.mock;
+
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import org.mockito.BDDMockito;
 
-import static org.mockito.Mockito.mock;
-
 /**
  * Build a mocked PoolSelectionUnit.
  */
 public class PoolSelectionUnitBuilder {
-  private final Map<String,String> netUnits = new HashMap<>();
-  private final Map<String,String> protocolUnits = new HashMap<>();
 
-  public static PoolSelectionUnitBuilder aPoolSelectionUnit()
-  {
-    return new PoolSelectionUnitBuilder();
-  }
+    private final Map<String, String> netUnits = new HashMap<>();
+    private final Map<String, String> protocolUnits = new HashMap<>();
 
-  private PoolSelectionUnitBuilder()
-  {
-  }
+    public static PoolSelectionUnitBuilder aPoolSelectionUnit() {
+        return new PoolSelectionUnitBuilder();
+    }
 
-  public PoolSelectionUnitBuilder withNetUnit(String name, String ipAddress)
-  {
-    netUnits.put(name, ipAddress);
-    return this;
-  }
+    private PoolSelectionUnitBuilder() {
+    }
 
-  public PoolSelectionUnitBuilder withProtocolUnit(String name, String protocol)
-  {
-    protocolUnits.put(name, protocol);
-    return this;
-  }
+    public PoolSelectionUnitBuilder withNetUnit(String name, String ipAddress) {
+        netUnits.put(name, ipAddress);
+        return this;
+    }
 
-  public PoolSelectionUnit build()
-  {
-    PoolSelectionUnit psu = mock(PoolSelectionUnit.class);
+    public PoolSelectionUnitBuilder withProtocolUnit(String name, String protocol) {
+        protocolUnits.put(name, protocol);
+        return this;
+    }
 
-    netUnits.forEach((n,a) -> {
-      try {
-        BDDMockito.given(psu.getNetIdentifier(a)).willReturn(n);
-      } catch (UnknownHostException e) {
-        throw new RuntimeException(e);
-      }
-    });
-    protocolUnits.forEach((n,p) -> BDDMockito.given(psu.getProtocolUnit(p)).willReturn(n));
+    public PoolSelectionUnit build() {
+        PoolSelectionUnit psu = mock(PoolSelectionUnit.class);
 
-    return psu;
-  }
+        netUnits.forEach((n, a) -> {
+            try {
+                BDDMockito.given(psu.getNetIdentifier(a)).willReturn(n);
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        protocolUnits.forEach((n, p) -> BDDMockito.given(psu.getProtocolUnit(p)).willReturn(n));
+
+        return psu;
+    }
 }

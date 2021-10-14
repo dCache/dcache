@@ -60,41 +60,40 @@ documents or software obtained from this server.
 package org.dcache.restful.util.transfers;
 
 import com.google.common.base.Strings;
-
+import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.UserInfo;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import diskCacheV111.util.TransferInfo;
-import diskCacheV111.util.UserInfo;
-
 /**
  * <p>Provides matching based on globbed patterns for strings, and lists or
- *      single Integer/Long values.</p>
+ * single Integer/Long values.</p>
  *
  * <p>Maintains a count of the total number of matches found (not thread safe).</p>
  */
 public final class TransferFilter {
-    private Pattern  door;
-    private Pattern  domain;
-    private Pattern  prot;
-    private Pattern  path;
-    private Pattern  pnfsId;
-    private Pattern  pool;
-    private Pattern  host;
-    private Pattern  status;
-    private Pattern  state;
-    private Pattern  vomsGroup;
 
-    private List<Long>    seq;
+    private Pattern door;
+    private Pattern domain;
+    private Pattern prot;
+    private Pattern path;
+    private Pattern pnfsId;
+    private Pattern pool;
+    private Pattern host;
+    private Pattern status;
+    private Pattern state;
+    private Pattern vomsGroup;
+
+    private List<Long> seq;
     private List<Integer> uid;
     private List<Integer> gid;
     private List<Integer> proc;
 
-    private Long     before;
-    private Long     after;
+    private Long before;
+    private Long after;
 
-    private long     totalMatched = 0L;
+    private long totalMatched = 0L;
 
     public boolean matches(TransferInfo transferInfo) {
         if (!matches(door, transferInfo.getCellName())) {
@@ -136,17 +135,17 @@ public final class TransferFilter {
         UserInfo userInfo = transferInfo.getUserInfo();
 
         if (!matches(uid, userInfo == null ? null :
-                        emptyStringToNullInteger(userInfo.getUid()))) {
+              emptyStringToNullInteger(userInfo.getUid()))) {
             return false;
         }
 
         if (!matches(gid, userInfo == null ? null :
-                        emptyStringToNullInteger(userInfo.getGid()))) {
+              emptyStringToNullInteger(userInfo.getGid()))) {
             return false;
         }
 
         if (!matches(vomsGroup, userInfo == null ? null :
-                        userInfo.getPrimaryVOMSGroup())) {
+              userInfo.getPrimaryVOMSGroup())) {
             return false;
         }
 
@@ -274,7 +273,7 @@ public final class TransferFilter {
         Iterator<String> iterator = toMatch.iterator();
         builder.append(convertGlobbed(iterator.next()));
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             builder.append("|").append(convertGlobbed(iterator.next()));
         }
 

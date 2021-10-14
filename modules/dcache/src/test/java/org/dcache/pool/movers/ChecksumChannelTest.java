@@ -1,8 +1,21 @@
 package org.dcache.pool.movers;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static com.google.common.collect.Lists.newArrayList;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.longThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,33 +29,25 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static org.dcache.util.ByteUnit.KiB;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.mockito.ArgumentMatchers.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ChecksumChannelTest {
 
 
     private ChecksumChannel chksumChannel;
 
-    private final byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
+    private final byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(
+          StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
     private final Checksum expectedChecksum = ChecksumType.MD5_TYPE.calculate(data);
     private int blocksize = 2;
-    private int blockcount = data.length/blocksize;
+    private int blockcount = data.length / blocksize;
     private ByteBuffer[] buffers = new ByteBuffer[blockcount];
 
     private Path testFile;
@@ -50,12 +55,15 @@ public class ChecksumChannelTest {
     @Before
     public void setUp() throws NoSuchAlgorithmException, IOException {
         testFile = Files.createTempFile("ChecksumChannelTest", ".tmp");
-        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, FileStore.O_RW);
-        chksumChannel = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile,
+              FileStore.O_RW);
+        chksumChannel = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
         chksumChannel._readBackBuffer = ByteBuffer.allocate(2);
         chksumChannel._zerosBuffer = ByteBuffer.allocate(1);
         for (int b = 0; b < blockcount; b++) {
-            buffers[b] = ByteBuffer.wrap(Arrays.copyOfRange(data, b*blocksize, (b+1)*blocksize));
+            buffers[b] = ByteBuffer.wrap(
+                  Arrays.copyOfRange(data, b * blocksize, (b + 1) * blocksize));
         }
     }
 
@@ -67,7 +75,7 @@ public class ChecksumChannelTest {
 
     @Test
     public void shouldSucceedIfWrittenAtOnce() throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap( data );
+        ByteBuffer buffer = ByteBuffer.wrap(data);
 
         chksumChannel.write(buffer, 0);
 
@@ -76,7 +84,7 @@ public class ChecksumChannelTest {
 
     @Test
     public void shouldReturnSameChecksumOnSecondCall() throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap( data );
+        ByteBuffer buffer = ByteBuffer.wrap(data);
 
         chksumChannel.write(buffer, 0);
 
@@ -123,8 +131,8 @@ public class ChecksumChannelTest {
 
     @Test
     public void shouldSucceedIfWrittenInOrderWithMultipleBuffersAndOffset() throws IOException {
-        ByteBuffer[] buffers = new ByteBuffer[blockcount+2];
-        buffers[0] = this.buffers[blockcount-1];
+        ByteBuffer[] buffers = new ByteBuffer[blockcount + 2];
+        buffers[0] = this.buffers[blockcount - 1];
         buffers[blockcount] = this.buffers[0];
         System.arraycopy(this.buffers, 0, buffers, 1, blockcount);
 
@@ -155,29 +163,35 @@ public class ChecksumChannelTest {
     }
 
     @Test
-    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBuffer () throws IOException, NoSuchAlgorithmException {
+    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBuffer()
+          throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0]);
     }
 
     @Test
-    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBufferAndPosition () throws IOException, NoSuchAlgorithmException {
+    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBufferAndPosition()
+          throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0], 0);
     }
 
     @Test
-    public void shouldUpdateChecksumOnlyForWrittenBytesOnIncompleteWritesWithSingleBufferAndPosition () throws IOException, NoSuchAlgorithmException {
+    public void shouldUpdateChecksumOnlyForWrittenBytesOnIncompleteWritesWithSingleBufferAndPosition()
+          throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(1);
         when(mockRepositoryChannel.read(any(), eq(3L))).thenReturn(1);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0], 0);
         csc.write(buffers[1], 1);
@@ -188,25 +202,30 @@ public class ChecksumChannelTest {
     }
 
     @Test
-    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroBytesWritesToChannelWithMultipleBuffers () throws IOException, NoSuchAlgorithmException {
+    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroBytesWritesToChannelWithMultipleBuffers()
+          throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers);
     }
 
     @Test
-    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithMultipleBuffersAndOffset () throws IOException, NoSuchAlgorithmException {
+    public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithMultipleBuffersAndOffset()
+          throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel,
+              EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers, 0, blockcount);
     }
 
     @Test
-    public void shouldUpdateChecksumSynchronizedForMultiThreadedWrites() throws IOException, InterruptedException {
+    public void shouldUpdateChecksumSynchronizedForMultiThreadedWrites()
+          throws IOException, InterruptedException {
 
         class Writer implements Runnable {
 
@@ -233,12 +252,13 @@ public class ChecksumChannelTest {
         int[] blockorder = getRandomPermutationOfBlockOrder();
         List<Thread> writers = newArrayList();
         for (int i = 0; i < blockcount; i++) {
-            writers.add(new Thread(new Writer(chksumChannel, buffers[blockorder[i]], blockorder[i] * blocksize)));
+            writers.add(new Thread(
+                  new Writer(chksumChannel, buffers[blockorder[i]], blockorder[i] * blocksize)));
         }
 
         writers.forEach(Thread::start);
 
-        for (Thread writer: writers) {
+        for (Thread writer : writers) {
             writer.join();
         }
 
@@ -263,9 +283,12 @@ public class ChecksumChannelTest {
         chksumChannel._readBackBuffer = ByteBuffer.allocate(readBackCapacity);
         chksumChannel._channel = mock(FileRepositoryChannel.class);
         when(chksumChannel._channel.write(any(), anyLong())).thenReturn(writeBufferCapacity);
-        when(chksumChannel._channel.read(any(), longThat(l -> l < 0L))).thenThrow(new IllegalArgumentException("Negative Position"));
-        when(chksumChannel._channel.read(any(), longThat(l -> l >=0L))).thenReturn(readBackCapacity);
-        for (long i = writeBuffer.capacity(); i < 2L*Integer.MAX_VALUE; i += writeBufferCapacity) {
+        when(chksumChannel._channel.read(any(), longThat(l -> l < 0L))).thenThrow(
+              new IllegalArgumentException("Negative Position"));
+        when(chksumChannel._channel.read(any(), longThat(l -> l >= 0L))).thenReturn(
+              readBackCapacity);
+        for (long i = writeBuffer.capacity(); i < 2L * Integer.MAX_VALUE;
+              i += writeBufferCapacity) {
             chksumChannel.write(writeBuffer, i);
             writeBuffer.rewind();
         }
@@ -280,8 +303,8 @@ public class ChecksumChannelTest {
         chksumChannel._channel = mock(FileRepositoryChannel.class);
         when(chksumChannel._channel.write(any(), anyLong())).thenReturn(buffers[0].capacity());
         when(chksumChannel._channel.read(any(), anyLong())).thenReturn(2);
-        when(chksumChannel._channel.size()).thenReturn(2L*Integer.MAX_VALUE + 2);
-        chksumChannel.write(buffers[0], 2L*Integer.MAX_VALUE);
+        when(chksumChannel._channel.size()).thenReturn(2L * Integer.MAX_VALUE + 2);
+        chksumChannel.write(buffers[0], 2L * Integer.MAX_VALUE);
         assertThat(chksumChannel.getChecksums(), is(not(empty())));
     }
 
@@ -300,8 +323,11 @@ public class ChecksumChannelTest {
         for (int position = 0; position < bytes.length; position++) {
             if (bytes[position] > 0) {
                 int blockEnd = position;
-                while (blockEnd < bytes.length && bytes[blockEnd] != 0) { blockEnd++; }
-                result.put((long) position, ByteBuffer.wrap(Arrays.copyOfRange(bytes, position, blockEnd)));
+                while (blockEnd < bytes.length && bytes[blockEnd] != 0) {
+                    blockEnd++;
+                }
+                result.put((long) position,
+                      ByteBuffer.wrap(Arrays.copyOfRange(bytes, position, blockEnd)));
                 position = blockEnd;
             }
         }

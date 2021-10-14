@@ -63,10 +63,11 @@ package org.dcache.services.billing.db.data;
  * @author arossi
  */
 public final class PoolToPoolTransfersDaily extends TransferredEntry {
+
     private static final long serialVersionUID = -4753295749740961420L;
 
     public String toString() {
         return "(" + dateString() + "," + count + "," + size + ","
-                        + transferred + ")";
+              + transferred + ")";
     }
 }

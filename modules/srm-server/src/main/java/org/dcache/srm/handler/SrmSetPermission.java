@@ -1,10 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -22,13 +20,13 @@ import org.dcache.srm.v2_2.TPermissionMode;
 import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmSetPermission {
 
-public class SrmSetPermission
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmSetPermission.class);
+          LoggerFactory.getLogger(SrmSetPermission.class);
 
     private static final String ACL_NOT_SUPPORTED = "ACLs are not supported by the dCache SRM";
 
@@ -38,18 +36,16 @@ public class SrmSetPermission
     private SrmSetPermissionResponse response;
 
     public SrmSetPermission(SRMUser user,
-                            SrmSetPermissionRequest request,
-                            AbstractStorageElement storage,
-                            SRM srm,
-                            String clientHost)
-    {
+          SrmSetPermissionRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
     }
 
-    public SrmSetPermissionResponse getResponse()
-    {
+    public SrmSetPermissionResponse getResponse() {
         if (response == null) {
             try {
                 response = srmSetPermission();
@@ -68,8 +64,7 @@ public class SrmSetPermission
     }
 
     private SrmSetPermissionResponse srmSetPermission()
-            throws SRMException
-    {
+          throws SRMException {
         URI surl = URI.create(request.getSURL().toString());
 
         FileMetaData fmd = storage.getFileMetaData(user, surl, false);
@@ -98,34 +93,34 @@ public class SrmSetPermission
         ArrayOfTGroupPermission groupPermissions = request.getArrayOfGroupPermissions();
         if (groupPermissions != null && groupPermissions.getGroupPermissionArray() != null) {
             switch (groupPermissions.getGroupPermissionArray().length) {
-            case 0:
-                break;
-            case 1:
-                TGroupPermission permission = groupPermissions.getGroupPermissionArray()[0];
-                String group = permission.getGroupID();
-                if (!group.equals("-") && !group.equals(fmd.group)) {
-                    /* The dash is a special dCache convention used by our own SRM client to
-                     * indicate that the POSIX group permissions should be updated.
-                     */
+                case 0:
+                    break;
+                case 1:
+                    TGroupPermission permission = groupPermissions.getGroupPermissionArray()[0];
+                    String group = permission.getGroupID();
+                    if (!group.equals("-") && !group.equals(fmd.group)) {
+                        /* The dash is a special dCache convention used by our own SRM client to
+                         * indicate that the POSIX group permissions should be updated.
+                         */
+                        return getFailedResponse(ACL_NOT_SUPPORTED, TStatusCode.SRM_NOT_SUPPORTED);
+                    }
+                    groupMode = permission.getMode();
+                    break;
+                default:
                     return getFailedResponse(ACL_NOT_SUPPORTED, TStatusCode.SRM_NOT_SUPPORTED);
-                }
-                groupMode = permission.getMode();
-                break;
-            default:
-                return getFailedResponse(ACL_NOT_SUPPORTED, TStatusCode.SRM_NOT_SUPPORTED);
             }
         }
 
-        fmd.permMode = toNewPermissions(fmd.permMode, permissionType, ownerMode, groupMode, otherMode);
+        fmd.permMode = toNewPermissions(fmd.permMode, permissionType, ownerMode, groupMode,
+              otherMode);
         storage.setFileMetaData(user, surl, fmd);
 
         return new SrmSetPermissionResponse(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
     }
 
     private static int toNewPermissions(int permissions, TPermissionType permissionType,
-                                        TPermissionMode ownerPermission, TPermissionMode groupPermission,
-                                        TPermissionMode otherPermission)
-    {
+          TPermissionMode ownerPermission, TPermissionMode groupPermission,
+          TPermissionMode otherPermission) {
         int iowner = (permissions >> 6) & 0x7;
         int igroup = (permissions >> 3) & 0x7;
         int iother = permissions & 0x7;
@@ -146,8 +141,7 @@ public class SrmSetPermission
         return ((iowner << 6) | (igroup << 3)) | iother;
     }
 
-    private static int toMode(TPermissionMode newPermissions, int existingMode)
-    {
+    private static int toMode(TPermissionMode newPermissions, int existingMode) {
         /* [ SRM 2.2, 3.1.2 ]
          *
          * g) If TPermissionType is ADD or CHANGE, and TPermissionMode is null, then it
@@ -158,17 +152,16 @@ public class SrmSetPermission
          * permission should not be changed.
          */
         return (newPermissions == null) ? existingMode
-                : PermissionMaskToTPermissionMode.permissionModetoMask(newPermissions);
+              : PermissionMaskToTPermissionMode.permissionModetoMask(newPermissions);
     }
 
 
-    public static final SrmSetPermissionResponse getFailedResponse(String error)
-    {
+    public static final SrmSetPermissionResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmSetPermissionResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmSetPermissionResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         SrmSetPermissionResponse response = new SrmSetPermissionResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, error));
         return response;

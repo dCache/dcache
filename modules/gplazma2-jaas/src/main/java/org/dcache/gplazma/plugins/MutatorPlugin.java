@@ -1,8 +1,7 @@
 package org.dcache.gplazma.plugins;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.filter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -10,18 +9,15 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.filter;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
- * A {@link GPlazmaMappingPlugin} that maps a one principal type to an other one.
- * This is required to convert equivalent principals into principals provided by
- * {@code org.dcache.auth} package.
+ * A {@link GPlazmaMappingPlugin} that maps a one principal type to an other one. This is required
+ * to convert equivalent principals into principals provided by {@code org.dcache.auth} package.
  * NOTICE, this plugin modifies the original set of principals.
  */
 public class MutatorPlugin implements GPlazmaMappingPlugin {
@@ -33,7 +29,8 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
     private final Class<? extends Principal> outPrincipal;
     private Constructor<? extends Principal> outConstructor;
 
-    public MutatorPlugin(Properties properties) throws ClassNotFoundException, NoSuchMethodException {
+    public MutatorPlugin(Properties properties)
+          throws ClassNotFoundException, NoSuchMethodException {
         String inClass = properties.getProperty(IN_OPTION);
         String outClass = properties.getProperty(OUT_OPTION);
 
@@ -56,7 +53,7 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
                 Principal out = outConstructor.newInstance(p.getName());
                 mutated.add(out);
             } catch (IllegalAccessException | IllegalArgumentException |
-                    InstantiationException | InvocationTargetException ignored) {
+                  InstantiationException | InvocationTargetException ignored) {
             }
         }
         principals.addAll(mutated);

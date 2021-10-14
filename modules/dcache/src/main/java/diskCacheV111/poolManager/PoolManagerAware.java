@@ -62,5 +62,6 @@ package diskCacheV111.poolManager;
 import org.dcache.cells.CellStub;
 
 public interface PoolManagerAware {
-  void setPoolManager(CellStub poolManager);
+
+    void setPoolManager(CellStub poolManager);
 }

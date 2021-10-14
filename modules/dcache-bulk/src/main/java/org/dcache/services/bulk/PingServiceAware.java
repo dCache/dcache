@@ -61,13 +61,12 @@ package org.dcache.services.bulk;
 
 import org.dcache.cells.CellStub;
 
-public interface PingServiceAware
-{
+public interface PingServiceAware {
+
     /**
-     *  If a single-target job implements this interface, the handler
-     *  will inject the stub.
-     *  <p>
-     *  Used primarily for testing.
+     * If a single-target job implements this interface, the handler will inject the stub.
+     * <p>
+     * Used primarily for testing.
      */
     void setPingService(CellStub pingService);
 }

@@ -20,7 +20,9 @@ public class PermissionDeniedChimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 6490320916159721100L;
 
-    /** Creates a new instance of PermissionDeniedChimeraFsException */
+    /**
+     * Creates a new instance of PermissionDeniedChimeraFsException
+     */
     public PermissionDeniedChimeraFsException() {
         super();
     }
@@ -29,8 +31,7 @@ public class PermissionDeniedChimeraFsException extends ChimeraFsException {
         super(msg);
     }
 
-    public PermissionDeniedChimeraFsException(String message, Throwable cause)
-    {
+    public PermissionDeniedChimeraFsException(String message, Throwable cause) {
         super(message, cause);
     }
 }

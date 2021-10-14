@@ -65,75 +65,75 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 
 /**
- *  Base command class for the admin interfaces.  Will notify when the service is not initialized.
+ * Base command class for the admin interfaces.  Will notify when the service is not initialized.
  */
 public abstract class InitializerAwareCommand implements Callable<String> {
-  protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
 
-  protected static final String REQUIRE_LIMIT =
-      "The current table contains %s entries; listing them all "
-          + "could cause an out-of-memory error and "
-          + "cause the resilience system to fail and/or "
-          + "restarts; if you wish to proceed "
-          + "with this listing, reissue the command "
-          + "with the explicit option '-limit=%s'";
+    protected static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
 
-  /**
-   *  Represents the maximum on the number of lines that a list command in the admin
-   *  interface can output without displaying a warning and requiring confirmation
-   *  from the user (since it could potentially cause an out-of-memory error and take
-   *  down the admin cell).
-   */
-  protected static final long LS_THRESHOLD = 500000L;
+    protected static final String REQUIRE_LIMIT =
+          "The current table contains %s entries; listing them all "
+                + "could cause an out-of-memory error and "
+                + "cause the resilience system to fail and/or "
+                + "restarts; if you wish to proceed "
+                + "with this listing, reissue the command "
+                + "with the explicit option '-limit=%s'";
 
-  protected static final DateTimeFormatter DATE_FORMATTER
-      = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
+    /**
+     * Represents the maximum on the number of lines that a list command in the admin interface can
+     * output without displaying a warning and requiring confirmation from the user (since it could
+     * potentially cause an out-of-memory error and take down the admin cell).
+     */
+    protected static final long LS_THRESHOLD = 500000L;
 
-  protected static Long getTimestamp(String datetime) {
-    if (datetime == null) {
-      return null;
-    }
-    return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
-  }
+    protected static final DateTimeFormatter DATE_FORMATTER
+          = DateTimeFormatter.ofPattern(FORMAT_STRING).withZone(ZoneId.systemDefault());
 
-  public enum ControlMode {
-    ON,
-    OFF,
-    START,
-    SHUTDOWN,
-    RESET,
-    RUN,
-    INFO
-  }
-
-  public enum SortOrder {
-    ASC, DESC
-  }
-
-  private MapInitializer initializer;
-
-  protected InitializerAwareCommand(MapInitializer initializer) {
-    this.initializer = initializer;
-  }
-
-  @Override
-  public String call() {
-    String error = initializer.getInitError();
-
-    if (error != null) {
-      return error;
+    protected static Long getTimestamp(String datetime) {
+        if (datetime == null) {
+            return null;
+        }
+        return Instant.from(DATE_FORMATTER.parse(datetime)).toEpochMilli();
     }
 
-    if (!initializer.isInitialized()) {
-      return "Service is not yet initialized; use 'show pinboard' to see progress.";
+    public enum ControlMode {
+        ON,
+        OFF,
+        START,
+        SHUTDOWN,
+        RESET,
+        RUN,
+        INFO
     }
 
-    try {
-      return doCall();
-    } catch (Exception e) {
-      return new ExceptionMessage(e).toString();
+    public enum SortOrder {
+        ASC, DESC
     }
-  }
 
-  protected abstract String doCall() throws Exception;
+    private MapInitializer initializer;
+
+    protected InitializerAwareCommand(MapInitializer initializer) {
+        this.initializer = initializer;
+    }
+
+    @Override
+    public String call() {
+        String error = initializer.getInitError();
+
+        if (error != null) {
+            return error;
+        }
+
+        if (!initializer.isInitialized()) {
+            return "Service is not yet initialized; use 'show pinboard' to see progress.";
+        }
+
+        try {
+            return doCall();
+        } catch (Exception e) {
+            return new ExceptionMessage(e).toString();
+        }
+    }
+
+    protected abstract String doCall() throws Exception;
 }

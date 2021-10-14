@@ -17,6 +17,19 @@
  */
 package org.dcache.srm.shell;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.transform;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
+import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.StringMarkup.percentEncode;
+import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
+import static org.dcache.util.TimeUtils.duration;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
@@ -33,14 +46,15 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.ExpandWith;
+import dmg.util.command.GlobExpander;
+import dmg.util.command.Option;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.apache.axis.types.URI;
-import org.apache.axis.types.UnsignedLong;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import gov.fnal.srm.util.ConnectionConfiguration;
+import gov.fnal.srm.util.OptionParser;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +78,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,16 +93,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.ExpandWith;
-import dmg.util.command.GlobExpander;
-import dmg.util.command.Option;
-
-import gov.fnal.srm.util.ConnectionConfiguration;
-import gov.fnal.srm.util.OptionParser;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import org.apache.axis.types.URI;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.commons.stats.RequestCounter;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauge;
@@ -131,37 +138,23 @@ import org.dcache.util.ColumnWriter.DateStyle;
 import org.dcache.util.Glob;
 import org.dcache.util.cli.ShellApplication;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.transform;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
-import static org.dcache.srm.SRMInvalidPathException.checkValidPath;
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.StringMarkup.percentEncode;
-import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
-import static org.dcache.util.TimeUtils.duration;
+public class SrmShell extends ShellApplication {
 
-public class SrmShell extends ShellApplication
-{
     private static final long LS_BLOCK_SIZE = KiB.toBytes(4);
 
     @VisibleForTesting
-    static final Pattern DN_WITH_CAPTURED_CN = Pattern.compile("^(?:/.+?=.+?)+?/CN=(?<cn>[^/=]+)(?:/.+?=[^/]*)*$");
+    static final Pattern DN_WITH_CAPTURED_CN = Pattern.compile(
+          "^(?:/.+?=.+?)+?/CN=(?<cn>[^/=]+)(?:/.+?=[^/]*)*$");
 
-    private static abstract class FilenameComparator<T> implements Comparator<T>
-    {
-        private String stripNonAlphNum(String original)
-        {
+    private static abstract class FilenameComparator<T> implements Comparator<T> {
+
+        private String stripNonAlphNum(String original) {
             int i = CharMatcher.javaLetterOrDigit().indexIn(original);
             return (i > -1) ? original.subSequence(i, original.length()).toString() : original;
         }
 
         @Override
-        public int compare(T o1, T o2)
-        {
+        public int compare(T o1, T o2) {
             String f1 = stripNonAlphNum(getName(o1));
             String f2 = stripNonAlphNum(getName(o2));
             return f1.compareToIgnoreCase(f2);
@@ -171,49 +164,51 @@ public class SrmShell extends ShellApplication
     }
 
     private static final Comparator<File> FILE_COMPARATOR = new FilenameComparator<File>() {
-                @Override
-                public String getName(File item)
-                {
-                    return item.getName();
-                }
-            };
+        @Override
+        public String getName(File item) {
+            return item.getName();
+        }
+    };
 
     private static final Comparator<String> STRING_FILENAME_COMPARATOR = new FilenameComparator<String>() {
-                @Override
-                public String getName(String item)
-                {
-                    return item;
-                }
-            };
+        @Override
+        public String getName(String item) {
+            return item;
+        }
+    };
 
-    private static final Comparator<StatItem<File,TMetaDataPathDetail>> STATITEM_FILE_COMPARATOR = new FilenameComparator<StatItem<File,TMetaDataPathDetail>>() {
-                @Override
-                public String getName(StatItem<File,TMetaDataPathDetail> item)
-                {
-                    return item.getPath().getName();
-                }
-            };
+    private static final Comparator<StatItem<File, TMetaDataPathDetail>> STATITEM_FILE_COMPARATOR = new FilenameComparator<StatItem<File, TMetaDataPathDetail>>() {
+        @Override
+        public String getName(StatItem<File, TMetaDataPathDetail> item) {
+            return item.getPath().getName();
+        }
+    };
 
-    private static final Comparator<StatItem<Path,PosixFileAttributes>> STATITEM_PATH_COMPARATOR = new FilenameComparator<StatItem<Path,PosixFileAttributes>>() {
-                @Override
-                public String getName(StatItem<Path,PosixFileAttributes> item)
-                {
-                    return item.getPath().getFileName().toString();
-                }
-            };
+    private static final Comparator<StatItem<Path, PosixFileAttributes>> STATITEM_PATH_COMPARATOR = new FilenameComparator<StatItem<Path, PosixFileAttributes>>() {
+        @Override
+        public String getName(StatItem<Path, PosixFileAttributes> item) {
+            return item.getPath().getFileName().toString();
+        }
+    };
 
     private final FileSystem lfs = FileSystems.getDefault();
     private final SrmFileSystem fs;
     private final URI home;
-    private final Map<Integer,FileTransfer> ongoingTransfers = new ConcurrentHashMap<>();
-    private final Map<Integer,FileTransfer> completedTransfers = new ConcurrentHashMap<>();
+    private final Map<Integer, FileTransfer> ongoingTransfers = new ConcurrentHashMap<>();
+    private final Map<Integer, FileTransfer> completedTransfers = new ConcurrentHashMap<>();
     private final List<String> notifications = new ArrayList<>();
     private final RequestCounters<Method> counters = new RequestCounters<>("requests");
-    private final RequestExecutionTimeGauges<Method> gauges = new RequestExecutionTimeGauges<>("requests");
+    private final RequestExecutionTimeGauges<Method> gauges = new RequestExecutionTimeGauges<>(
+          "requests");
     private final Args shellArgs;
 
-    private enum PromptType { LOCAL, SRM, SIMPLE };
-    private enum PermissionOperation { SRM_CHECK_PERMISSION, SRM_LS };
+    private enum PromptType {LOCAL, SRM, SIMPLE}
+
+    ;
+
+    private enum PermissionOperation {SRM_CHECK_PERMISSION, SRM_LS}
+
+    ;
 
     private URI pwd;
     private Path lcwd = lfs.getPath(".").toRealPath();
@@ -222,8 +217,7 @@ public class SrmShell extends ShellApplication
     private volatile boolean isClosed;
     private PermissionOperation checkCdPermission = PermissionOperation.SRM_CHECK_PERMISSION;
 
-    private static File getPath(TMetaDataPathDetail metadata)
-    {
+    private static File getPath(TMetaDataPathDetail metadata) {
         File absPath = new File(metadata.getPath());
         try {
             /* Work-around DPM bug that returns paths like '//dpm' or
@@ -237,8 +231,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private void consolePrintln()
-    {
+    private void consolePrintln() {
         try {
             console.println();
         } catch (IOException e) {
@@ -246,8 +239,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private void consolePrintln(CharSequence msg)
-    {
+    private void consolePrintln(CharSequence msg) {
         try {
             console.println(msg);
         } catch (IOException e) {
@@ -255,8 +247,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private void consolePrint(CharSequence msg)
-    {
+    private void consolePrint(CharSequence msg) {
         try {
             console.print(msg);
         } catch (IOException e) {
@@ -264,8 +255,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private void consolePrintColumns(Collection<? extends CharSequence> items)
-    {
+    private void consolePrintColumns(Collection<? extends CharSequence> items) {
         try {
             console.printColumns(items);
         } catch (IOException e) {
@@ -273,8 +263,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    public static void main(String[] arguments) throws Throwable
-    {
+    public static void main(String[] arguments) throws Throwable {
         Args args = new Args(arguments);
         if (args.argc() == 0) {
             System.err.println("Usage: srmfs srm://HOST[:PORT][/DIRECTORY]");
@@ -306,13 +295,11 @@ public class SrmShell extends ShellApplication
     }
 
     /**
-     * A Ctrl-C will bypass the try-with-resource pattern leaving the
-     * {@link Closeable#close} method uncalled.  This method adds a
-     * shutdown hook to call this method as part of the JVM shutdown, which
-     * ensures the method is called at the risk of calling it twice.
+     * A Ctrl-C will bypass the try-with-resource pattern leaving the {@link Closeable#close} method
+     * uncalled.  This method adds a shutdown hook to call this method as part of the JVM shutdown,
+     * which ensures the method is called at the risk of calling it twice.
      */
-    private static void closeOnShutdown(final Closeable closeable)
-    {
+    private static void closeOnShutdown(final Closeable closeable) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -325,8 +312,7 @@ public class SrmShell extends ShellApplication
         });
     }
 
-    public SrmShell(URI uri, Args args) throws Exception
-    {
+    public SrmShell(URI uri, Args args) throws Exception {
         super();
 
         ConnectionConfiguration configuration = new ConnectionConfiguration();
@@ -335,41 +321,43 @@ public class SrmShell extends ShellApplication
         String wsPath;
         java.net.URI srmUrl;
         switch (uri.getScheme()) {
-        case "srm":
-            srmUrl = new java.net.URI(uri.toString());
-            wsPath = null; // auto-detect
-            break;
-        case "httpg":
-            srmUrl = new java.net.URI("srm", null,  uri.getHost(), (uri.getPort() > -1 ? uri.getPort() : -1), "/", null, null);
-            wsPath = uri.getPath();
-            break;
-        default:
-            throw new IllegalArgumentException("Unknown scheme \"" + uri.getScheme() + "\"");
+            case "srm":
+                srmUrl = new java.net.URI(uri.toString());
+                wsPath = null; // auto-detect
+                break;
+            case "httpg":
+                srmUrl = new java.net.URI("srm", null, uri.getHost(),
+                      (uri.getPort() > -1 ? uri.getPort() : -1), "/", null, null);
+                wsPath = uri.getPath();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown scheme \"" + uri.getScheme() + "\"");
         }
 
         X509Credential credential;
         if (configuration.isUseproxy()) {
             credential = configuration.getX509_user_proxy() == null
-                    ? null
-                    : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+                  ? null
+                  : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
-            credential = configuration.getX509_user_key() == null || configuration.getX509_user_cert() == null
-                    ? null
-                    : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+            credential = configuration.getX509_user_key() == null
+                  || configuration.getX509_user_cert() == null
+                  ? null
+                  : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         }
 
         fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class<?>[]{ISRM.class},
-                new SRMClientV2(srmUrl, Optional.ofNullable(credential),
-                        Optional.ofNullable(configuration.getBearerToken()),
-                        configuration.getRetry_timeout(),
-                        configuration.getRetry_num(),
-                        configuration.isDelegate(),
-                        configuration.isFull_delegation(),
-                        configuration.getGss_expected_name(),
-                        wsPath,
-                        configuration.getX509_user_trusted_certificates(),
-                        Transport.GSI),
-                counters, gauges));
+              new SRMClientV2(srmUrl, Optional.ofNullable(credential),
+                    Optional.ofNullable(configuration.getBearerToken()),
+                    configuration.getRetry_timeout(),
+                    configuration.getRetry_num(),
+                    configuration.isDelegate(),
+                    configuration.isFull_delegation(),
+                    configuration.getGss_expected_name(),
+                    wsPath,
+                    configuration.getX509_user_trusted_certificates(),
+                    Transport.GSI),
+              counters, gauges));
         if (credential != null) {
             fs.setCredential(credential);
         }
@@ -378,19 +366,16 @@ public class SrmShell extends ShellApplication
         home = pwd;
     }
 
-    private Args getShellArgs()
-    {
+    private Args getShellArgs() {
         return shellArgs;
     }
 
     @Override
-    protected String getCommandName()
-    {
+    protected String getCommandName() {
         return "srmfs";
     }
 
-    private List<String> extractPendingNotifications()
-    {
+    private List<String> extractPendingNotifications() {
         List<String> messages;
 
         synchronized (notifications) {
@@ -406,8 +391,7 @@ public class SrmShell extends ShellApplication
     }
 
     @Override
-    protected String getPrompt()
-    {
+    protected String getPrompt() {
         StringBuilder prompt = new StringBuilder();
 
         List<String> messages = extractPendingNotifications();
@@ -419,24 +403,23 @@ public class SrmShell extends ShellApplication
         }
 
         switch (promptType) {
-        case SRM:
-            String uri = pwd.toString();
-            if (pwd.getPath().length() > 1) {
-                uri = uri.substring(0, uri.length()-1);
-            }
-            prompt.append(uri).append(' ');
-            break;
-        case LOCAL:
-            prompt.append(lcwd.toString()).append(' ');
-            break;
+            case SRM:
+                String uri = pwd.toString();
+                if (pwd.getPath().length() > 1) {
+                    uri = uri.substring(0, uri.length() - 1);
+                }
+                prompt.append(uri).append(' ');
+                break;
+            case LOCAL:
+                prompt.append(lcwd.toString()).append(' ');
+                break;
         }
         prompt.append("# ");
         return prompt.toString();
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         if (!isClosed) {
             try {
                 fs.close();
@@ -448,8 +431,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    public void awaitTransferCompletion() throws InterruptedException
-    {
+    public void awaitTransferCompletion() throws InterruptedException {
         synchronized (ongoingTransfers) {
             if (!ongoingTransfers.isEmpty()) {
                 consolePrintln("Awaiting transfers to finish (Ctrl-C to abort)");
@@ -465,8 +447,7 @@ public class SrmShell extends ShellApplication
     }
 
     @Nonnull
-    private URI lookup(@Nullable File path) throws URI.MalformedURIException
-    {
+    private URI lookup(@Nullable File path) throws URI.MalformedURIException {
         if (path == null) {
             return pwd;
         } else {
@@ -474,8 +455,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private URI[] lookup(File[] paths) throws URI.MalformedURIException
-    {
+    private URI[] lookup(File[] paths) throws URI.MalformedURIException {
         URI[] surls = new URI[paths.length];
         for (int i = 0; i < surls.length; i++) {
             surls[i] = lookup(paths[i]);
@@ -484,48 +464,49 @@ public class SrmShell extends ShellApplication
     }
 
     @SuppressWarnings("fallthrough")
-    private void cd(String path) throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
-    {
+    private void cd(String path)
+          throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException {
         if (!path.endsWith("/")) {
             path = path + "/";
         }
         URI uri = new URI(pwd, path);
         checkValidPath(fs.stat(uri).getType() == TFileType.DIRECTORY,
-                "Not a directory");
+              "Not a directory");
 
         switch (checkCdPermission) {
-        case SRM_CHECK_PERMISSION:
-            try {
-                TPermissionMode permission = fs.checkPermission(uri);
-                if (permission != TPermissionMode.RWX && permission != TPermissionMode.RX && permission != TPermissionMode.WX && permission != TPermissionMode.X) {
-                    throw new SRMAuthorizationException("Access denied");
+            case SRM_CHECK_PERMISSION:
+                try {
+                    TPermissionMode permission = fs.checkPermission(uri);
+                    if (permission != TPermissionMode.RWX && permission != TPermissionMode.RX
+                          && permission != TPermissionMode.WX && permission != TPermissionMode.X) {
+                        throw new SRMAuthorizationException("Access denied");
+                    }
+                    break;
+                } catch (SRMNotSupportedException e) {
+                    /* StoRM does not support checkPermission:
+                     *
+                     *     https://ggus.eu/index.php?mode=ticket_info&ticket_id=124634
+                     */
+                    notifications.add(
+                          "The CheckPermission operation is not supported, using directory listing instead.");
+                    checkCdPermission = PermissionOperation.SRM_LS;
+                    // fall-through: use srmLs
                 }
-                break;
-            } catch (SRMNotSupportedException e) {
-                /* StoRM does not support checkPermission:
-                 *
-                 *     https://ggus.eu/index.php?mode=ticket_info&ticket_id=124634
-                 */
-                notifications.add("The CheckPermission operation is not supported, using directory listing instead.");
-                checkCdPermission = PermissionOperation.SRM_LS;
-                // fall-through: use srmLs
-            }
-        case SRM_LS:
-            fs.list(uri, false);
+            case SRM_LS:
+                fs.list(uri, false);
         }
 
         pwd = uri;
     }
 
-    private String permissionsFor(PosixFileAttributes attr)
-    {
+    private String permissionsFor(PosixFileAttributes attr) {
         StringBuilder sb = new StringBuilder();
 
         if (attr.isDirectory()) {
             sb.append('d');
-        } else if(attr.isSymbolicLink()) {
+        } else if (attr.isSymbolicLink()) {
             sb.append('l');
-        } else if(attr.isOther()) {
+        } else if (attr.isOther()) {
             sb.append('o');
         } else if (attr.isRegularFile()) {
             sb.append('-');
@@ -547,60 +528,58 @@ public class SrmShell extends ShellApplication
         return sb.toString();
     }
 
-    private String permissionsFor(TMetaDataPathDetail entry)
-    {
+    private String permissionsFor(TMetaDataPathDetail entry) {
         return permissionsFor(entry.getType())
-                + ((entry.getOwnerPermission() == null) ? "???" : permissionsFor(entry.getOwnerPermission().getMode()))
-                + ((entry.getGroupPermission() == null) ? "???" : permissionsFor(entry.getGroupPermission().getMode()))
-                + permissionsFor(entry.getOtherPermission());
+              + ((entry.getOwnerPermission() == null) ? "???"
+              : permissionsFor(entry.getOwnerPermission().getMode()))
+              + ((entry.getGroupPermission() == null) ? "???"
+              : permissionsFor(entry.getGroupPermission().getMode()))
+              + permissionsFor(entry.getOtherPermission());
     }
 
-    private String permissionsFor(TFileType type)
-    {
+    private String permissionsFor(TFileType type) {
         if (type == null) {
             return "?";
         }
         switch (type.getValue()) {
-        case TFileType._DIRECTORY:
-            return "d";
-        case TFileType._LINK:
-            return "l";
-        case TFileType._FILE:
-            return "-";
-        default:
-            throw new IllegalArgumentException(type.getValue());
+            case TFileType._DIRECTORY:
+                return "d";
+            case TFileType._LINK:
+                return "l";
+            case TFileType._FILE:
+                return "-";
+            default:
+                throw new IllegalArgumentException(type.getValue());
         }
     }
 
-    private String permissionsFor(TPermissionMode mode)
-    {
+    private String permissionsFor(TPermissionMode mode) {
         if (mode == null) {
             return "???";
         }
         switch (mode.getValue()) {
-        case TPermissionMode._NONE:
-            return "---";
-        case TPermissionMode._X:
-            return "--x";
-        case TPermissionMode._W:
-            return "-w-";
-        case TPermissionMode._WX:
-            return "-wx";
-        case TPermissionMode._R:
-            return "r--";
-        case TPermissionMode._RX:
-            return "r-x";
-        case TPermissionMode._RW:
-            return "rw-";
-        case TPermissionMode._RWX:
-            return "rwx";
-        default:
-            throw new IllegalArgumentException(mode.getValue());
+            case TPermissionMode._NONE:
+                return "---";
+            case TPermissionMode._X:
+                return "--x";
+            case TPermissionMode._W:
+                return "-w-";
+            case TPermissionMode._WX:
+                return "-wx";
+            case TPermissionMode._R:
+                return "r--";
+            case TPermissionMode._RX:
+                return "r-x";
+            case TPermissionMode._RW:
+                return "rw-";
+            case TPermissionMode._RWX:
+                return "rwx";
+            default:
+                throw new IllegalArgumentException(mode.getValue());
         }
     }
 
-    private void append(PrintWriter writer, TMetaDataSpace space)
-    {
+    private void append(PrintWriter writer, TMetaDataSpace space) {
         Integer lifetimeOfReservedSpace = space.getLifetimeAssigned();
         Integer lifetimeLeft = space.getLifetimeLeft();
         TRetentionPolicyInfo retentionPolicyInfo = space.getRetentionPolicyInfo();
@@ -616,7 +595,8 @@ public class SrmShell extends ShellApplication
             writer.append("Total size        : ").println(sizeOfTotalReservedSpace.longValue());
         }
         if (sizeOfGuaranteedReservedSpace != null) {
-            writer.append("Guaranteed size   : ").println(sizeOfGuaranteedReservedSpace.longValue());
+            writer.append("Guaranteed size   : ")
+                  .println(sizeOfGuaranteedReservedSpace.longValue());
         }
         if (unusedSize != null) {
             writer.append("Unused size       : ").println(unusedSize.longValue());
@@ -638,49 +618,48 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="prompt", hint = "modify prompt",
-                    description = "Modify the prompt to show different information."
-                            + "\n\n"
-                            + "There are three choices of prompt:"
-                            + "\n\n"
-                            + "    local   show the local current working directory,"
-                            + "\n\n"
-                            + "    srm     show the current working SURL,"
-                            + "\n\n"
-                            + "    simple  show only the '#' symbol.")
-    public class PromptCommand implements Callable<Serializable>
-    {
+    @Command(name = "prompt", hint = "modify prompt",
+          description = "Modify the prompt to show different information."
+                + "\n\n"
+                + "There are three choices of prompt:"
+                + "\n\n"
+                + "    local   show the local current working directory,"
+                + "\n\n"
+                + "    srm     show the current working SURL,"
+                + "\n\n"
+                + "    simple  show only the '#' symbol.")
+    public class PromptCommand implements Callable<Serializable> {
+
         @Argument(valueSpec = "local|simple|srm")
         String style;
 
         @Override
-        public Serializable call() throws IllegalArgumentException
-        {
+        public Serializable call() throws IllegalArgumentException {
             switch (style) {
-            case "srm":
-                promptType = PromptType.SRM;
-                break;
-            case "local":
-                promptType = PromptType.LOCAL;
-                break;
-            case "simple":
-                promptType = PromptType.SIMPLE;
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown style \"" + style + "\"");
+                case "srm":
+                    promptType = PromptType.SRM;
+                    break;
+                case "local":
+                    promptType = PromptType.LOCAL;
+                    break;
+                case "simple":
+                    promptType = PromptType.SIMPLE;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown style \"" + style + "\"");
             }
             return null;
         }
     }
 
-    private abstract class AbstractFilesystemExpander implements GlobExpander<String>
-    {
-        abstract protected void expandInto(List<File> matches, File directory, String glob) throws Exception;
+    private abstract class AbstractFilesystemExpander implements GlobExpander<String> {
 
-        protected List<String> expand(Glob argument, File cwd)
-        {
+        abstract protected void expandInto(List<File> matches, File directory, String glob)
+              throws Exception;
+
+        protected List<String> expand(Glob argument, File cwd) {
             String[] elements = argument.toString().split("/");
-            boolean isAbsolute = elements.length > 0 && elements [0].isEmpty();
+            boolean isAbsolute = elements.length > 0 && elements[0].isEmpty();
 
             List<File> expansions = Lists.newArrayList(isAbsolute ? new File("/") : cwd);
 
@@ -736,58 +715,54 @@ public class SrmShell extends ShellApplication
     /**
      * A namespace item with corresponding attributes from stat.
      */
-    protected static class StatItem<P,A>
-    {
+    protected static class StatItem<P, A> {
+
         private final P path;
         private final A attrs;
 
-        public StatItem(P path, A attrs)
-        {
+        public StatItem(P path, A attrs) {
             this.path = path;
             this.attrs = attrs;
         }
 
-        public P getPath()
-        {
+        public P getPath() {
             return path;
         }
 
-        public A getAttributes()
-        {
+        public A getAttributes() {
             return attrs;
         }
     }
 
-    private abstract class AbstractLsCommand<P,A> implements Callable<Serializable>
-    {
-        @Option(name = "time", values = { "modify", "atime", "mtime", "create" },
-                usage = "Show alternative time instead of modification time: "
-                        + "modify/mtime is the last write time, create is the "
-                        + "creation time.")
+    private abstract class AbstractLsCommand<P, A> implements Callable<Serializable> {
+
+        @Option(name = "time", values = {"modify", "atime", "mtime", "create"},
+              usage = "Show alternative time instead of modification time: "
+                    + "modify/mtime is the last write time, create is the "
+                    + "creation time.")
         String time = "mtime";
 
         @Option(name = "l",
-                usage = "List in long format.")
+              usage = "List in long format.")
         boolean verbose;
 
         @Option(name = "h",
-                usage = "Use abbreviated file sizes. The values use decimal "
-                        + "prefixes; for example, 1 kB is 1000 bytes.")
+              usage = "Use abbreviated file sizes. The values use decimal "
+                    + "prefixes; for example, 1 kB is 1000 bytes.")
         boolean abbrev;
 
         @Option(name = "a",
-                usage = "Do not hide files that are normally hidden.")
+              usage = "Do not hide files that are normally hidden.")
         boolean showHidden;
 
         @Option(name = "d",
-                usage = "display information about a directory rather than "
-                        + "listing the contents.")
+              usage = "display information about a directory rather than "
+                    + "listing the contents.")
         boolean directory;
 
-        protected void acceptArguments(String[] items)
-        {
+        protected void acceptArguments(String[] items) {
             List<P> listTodo;
-            List<StatItem<P,A>> statTodo;
+            List<StatItem<P, A>> statTodo;
 
             if (items == null || items.length == 0) {
                 listTodo = Collections.singletonList(getCwd());
@@ -808,7 +783,7 @@ public class SrmShell extends ShellApplication
                     }
                 }
 
-                for (StatItem<P,A> item : statMultiple(statMultipleTodo)) {
+                for (StatItem<P, A> item : statMultiple(statMultipleTodo)) {
                     if (!directory && isDirectory(item.getAttributes())) {
                         listTodo.add(item.getPath());
                     } else {
@@ -843,17 +818,15 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        private void listNames(List<StatItem<P,A>> items)
-        {
+        private void listNames(List<StatItem<P, A>> items) {
             List<String> names = new ArrayList<>(items.size());
-            for (StatItem<P,A> item : items) {
+            for (StatItem<P, A> item : items) {
                 names.add(item.getPath().toString());
             }
             consolePrintColumns(names);
         }
 
-        private void listDirectoryNames(P dir)
-        {
+        private void listDirectoryNames(P dir) {
             try {
                 List<String> filtered = new ArrayList<>();
                 for (String item : lsDirNames(dir)) {
@@ -876,11 +849,10 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        private void listDirectoryStat(P dir)
-        {
+        private void listDirectoryStat(P dir) {
             try {
-                List<StatItem<P,A>> filtered = new ArrayList<>();
-                for (StatItem<P,A> item : lsDirStats(dir)) {
+                List<StatItem<P, A>> filtered = new ArrayList<>();
+                for (StatItem<P, A> item : lsDirStats(dir)) {
                     if (!isHidden(item.getPath()) || showHidden) {
                         filtered.add(item);
                     }
@@ -914,8 +886,7 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        protected void listEntryNames(Iterable<P> entries, boolean isDirectory)
-        {
+        protected void listEntryNames(Iterable<P> entries, boolean isDirectory) {
             List<String> names = new ArrayList<>();
             for (P item : entries) {
                 names.add(isDirectory ? name(item) : item.toString());
@@ -923,13 +894,12 @@ public class SrmShell extends ShellApplication
             consolePrintColumns(names);
         }
 
-        protected void listEntries(Iterable<StatItem<P,A>> entries, boolean isDirectory)
-        {
+        protected void listEntries(Iterable<StatItem<P, A>> entries, boolean isDirectory) {
             assert verbose;
 
             long total = 0;
             ColumnWriter writer = buildColumnWriter();
-            for (StatItem<P,A> item : entries) {
+            for (StatItem<P, A> item : entries) {
                 try {
                     A attrs = item.getAttributes();
                     long size = size(attrs);
@@ -946,35 +916,47 @@ public class SrmShell extends ShellApplication
             }
 
             if (isDirectory) {
-                consolePrintln("total " + total*4);
+                consolePrintln("total " + total * 4);
             }
             consolePrint(writer.toString());
         }
 
         protected abstract P getCwd();
+
         protected abstract P convert(String item);
+
         protected abstract P getParent(P item);
+
         protected abstract P resolveAgainstCwd(P item);
+
         protected abstract boolean isAncestorOrCwd(P path);
+
         protected abstract boolean isHidden(P path);
+
         protected abstract boolean isDirectory(A attrs);
+
         protected abstract String name(P path);
+
         protected abstract ColumnWriter buildColumnWriter();
+
         protected abstract void acceptRow(ColumnWriter writer, P name, A attrs,
-                boolean omitPath) throws Exception;
+              boolean omitPath) throws Exception;
 
         // Return stated items, if item was found. If item is relative then StatItem path is too.
-        protected abstract List<StatItem<P,A>> statMultiple(List<String> items);
+        protected abstract List<StatItem<P, A>> statMultiple(List<String> items);
 
         protected abstract A stat(P absPath) throws Exception;
+
         protected abstract long size(A attr) throws Exception;
 
         // List contents of directories, returned values are simple names
         protected abstract List<String> lsDirNames(P dir) throws Exception;
 
         // if dir is relative, StatCache#getPath is relative
-        protected abstract List<StatItem<P,A>> lsDirStats(P dir) throws Exception;
-        protected abstract void sortStats(List<StatItem<P,A>> contents);
+        protected abstract List<StatItem<P, A>> lsDirStats(P dir) throws Exception;
+
+        protected abstract void sortStats(List<StatItem<P, A>> contents);
+
         protected abstract P getChild(P dir, String name);
     }
 
@@ -982,14 +964,15 @@ public class SrmShell extends ShellApplication
      * Commands for local filesystem manipulation
      */
 
-    private class LocalFilesystemExpander extends AbstractFilesystemExpander
-    {
+    private class LocalFilesystemExpander extends AbstractFilesystemExpander {
+
         @Override
-        protected void expandInto(List<File> matches, File directory, String glob) throws IOException
-        {
+        protected void expandInto(List<File> matches, File directory, String glob)
+              throws IOException {
             // REVISIT: this uses Java's built-in support for glob filters, which
             // is a superset of dCache's Glob class.
-            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory.toPath(), glob)) {
+            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(
+                  directory.toPath(), glob)) {
                 for (Path path : directoryStream) {
                     matches.add(path.toFile());
                 }
@@ -997,37 +980,34 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        public List<String> expand(Glob argument)
-        {
+        public List<String> expand(Glob argument) {
             return expand(argument, lcwd.toFile());
         }
     }
 
-    @Command(name="lpwd", hint = "print local working directory",
-                description = "Print the current working directory.  This "
-                        + "directory is used as a default value for the lls "
-                        + "command and when resolving local relative paths.")
-    public class LpwdCommand implements Callable<Serializable>
-    {
+    @Command(name = "lpwd", hint = "print local working directory",
+          description = "Print the current working directory.  This "
+                + "directory is used as a default value for the lls "
+                + "command and when resolving local relative paths.")
+    public class LpwdCommand implements Callable<Serializable> {
+
         @Override
-        public Serializable call()
-        {
+        public Serializable call() {
             return lcwd.toString();
         }
     }
 
-    @Command(name="lcd", hint = "change local directory",
-                    description = "Change the local directory.  The new path is "
-                            + "used as a default value for lls commands "
-                            + "and to resolve relative (local) paths.")
-    public class LcdCommand implements Callable<Serializable>
-    {
+    @Command(name = "lcd", hint = "change local directory",
+          description = "Change the local directory.  The new path is "
+                + "used as a default value for lls commands "
+                + "and to resolve relative (local) paths.")
+    public class LcdCommand implements Callable<Serializable> {
+
         @Argument
         String path;
 
         @Override
-        public Serializable call() throws IllegalArgumentException, IOException
-        {
+        public Serializable call() throws IllegalArgumentException, IOException {
             Path newPath = lcwd.resolve(path).normalize();
 
             if (!Files.exists(newPath)) {
@@ -1047,64 +1027,59 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lls", hint = "list contents from local filesystem",
-                    description = "List files and directories on the local "
-                            + "filesystem.  The arguments may be glob patters "
-                            + "that are expanded.  The format of the output is "
-                            + "controlled via various options."
-                            + "\n\n"
-                            + "The output is either in short or long format. "
-                            + "Short format lists only the file or directory "
-                            + "names.  Long format shows one file or directory "
-                            + "per line with additional metadata."
-                            + "\n\n"
-                            + "Normally files and directories that start with "
-                            + "a dot are not shown, but the -a option may be "
-                            + "used to see them.  If the -d option is "
-                            + "specified then information about a directory is "
-                            + "shown rather than than showing information about "
-                            + "the content of that directory."
-                            + "\n\n"
-                            + "If long format is used then further options "
-                            + "allow a choice of which timestamp is printed "
-                            + "and whether the file size is shown as a number "
-                            + "of bytes or using decimal (powers of ten)"
-                            + "prefixes.")
-    public class LlsCommand extends AbstractLsCommand<Path,PosixFileAttributes>
-    {
+    @Command(name = "lls", hint = "list contents from local filesystem",
+          description = "List files and directories on the local "
+                + "filesystem.  The arguments may be glob patters "
+                + "that are expanded.  The format of the output is "
+                + "controlled via various options."
+                + "\n\n"
+                + "The output is either in short or long format. "
+                + "Short format lists only the file or directory "
+                + "names.  Long format shows one file or directory "
+                + "per line with additional metadata."
+                + "\n\n"
+                + "Normally files and directories that start with "
+                + "a dot are not shown, but the -a option may be "
+                + "used to see them.  If the -d option is "
+                + "specified then information about a directory is "
+                + "shown rather than than showing information about "
+                + "the content of that directory."
+                + "\n\n"
+                + "If long format is used then further options "
+                + "allow a choice of which timestamp is printed "
+                + "and whether the file size is shown as a number "
+                + "of bytes or using decimal (powers of ten)"
+                + "prefixes.")
+    public class LlsCommand extends AbstractLsCommand<Path, PosixFileAttributes> {
+
         @ExpandWith(LocalFilesystemExpander.class)
-        @Argument(required = false, metaVar="PATH")
+        @Argument(required = false, metaVar = "PATH")
         String[] items;
 
         @Override
-        public Serializable call()
-        {
+        public Serializable call() {
             acceptArguments(items);
             return null;
         }
 
         @Override
-        protected Path getCwd()
-        {
+        protected Path getCwd() {
             return lcwd;
         }
 
         @Override
-        protected Path convert(String item)
-        {
+        protected Path convert(String item) {
             Path abs = lcwd.resolve(item);
             return item.startsWith("/") ? abs : lcwd.relativize(abs);
         }
 
         @Override
-        protected Path resolveAgainstCwd(Path path)
-        {
+        protected Path resolveAgainstCwd(Path path) {
             return lcwd.resolve(path);
         }
 
         @Override
-        protected boolean isHidden(Path path)
-        {
+        protected boolean isHidden(Path path) {
             try {
                 return Files.isHidden(path);
             } catch (IOException e) {
@@ -1113,68 +1088,60 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected boolean isDirectory(PosixFileAttributes attrs)
-        {
+        protected boolean isDirectory(PosixFileAttributes attrs) {
             return attrs.isDirectory();
         }
 
         @Override
-        protected boolean isAncestorOrCwd(Path path)
-        {
+        protected boolean isAncestorOrCwd(Path path) {
             return lcwd.startsWith(lcwd.resolve(path));
         }
 
         @Override
-        protected Path getParent(Path item)
-        {
+        protected Path getParent(Path item) {
             return item.getParent();
         }
 
         @Override
-        protected long size(PosixFileAttributes attr) throws IOException
-        {
+        protected long size(PosixFileAttributes attr) throws IOException {
             return attr.size();
         }
 
         @Override
-        protected String name(Path path)
-        {
+        protected String name(Path path) {
             return path.getFileName().toString();
         }
 
         @Override
-        protected ColumnWriter buildColumnWriter()
-        {
+        protected ColumnWriter buildColumnWriter() {
             Optional<ByteUnit> displayUnit = abbrev
-                    ? Optional.empty()
-                    : Optional.of(ByteUnit.BYTES);
+                  ? Optional.empty()
+                  : Optional.of(ByteUnit.BYTES);
             return new ColumnWriter()
-                    .left("mode")
-                    .space().right("ncount")
-                    .space().left("owner")
-                    .space().left("group")
-                    .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
-                    .space().date("time", DateStyle.LS)
-                    .space().left("name");
+                  .left("mode")
+                  .space().right("ncount")
+                  .space().left("owner")
+                  .space().left("group")
+                  .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
+                  .space().date("time", DateStyle.LS)
+                  .space().left("name");
         }
 
         @Override
         protected void acceptRow(ColumnWriter writer, Path name,
-                PosixFileAttributes attrs, boolean omitPath) throws IOException
-        {
+              PosixFileAttributes attrs, boolean omitPath) throws IOException {
             writer.row()
-                    .value("mode", permissionsFor(attrs))
-                    .value("ncount", Files.getAttribute(resolveAgainstCwd(name), "unix:nlink"))
-                    .value("owner", attrs.owner().getName())
-                    .value("group", attrs.group().getName())
-                    .value("size", attrs.size())
-                    .value("time", new Date(getFileTime(attrs).toMillis()))
-                    .value("name", omitPath ? name.getFileName() : name);
+                  .value("mode", permissionsFor(attrs))
+                  .value("ncount", Files.getAttribute(resolveAgainstCwd(name), "unix:nlink"))
+                  .value("owner", attrs.owner().getName())
+                  .value("group", attrs.group().getName())
+                  .value("size", attrs.size())
+                  .value("time", new Date(getFileTime(attrs).toMillis()))
+                  .value("name", omitPath ? name.getFileName() : name);
         }
 
         @Override
-        protected List<String> lsDirNames(Path dir) throws IOException
-        {
+        protected List<String> lsDirNames(Path dir) throws IOException {
             List<String> names = new ArrayList<>();
 
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(lcwd.resolve(dir))) {
@@ -1187,9 +1154,9 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected List<StatItem<Path,PosixFileAttributes>> lsDirStats(Path dir) throws IOException
-        {
-            List<StatItem<Path,PosixFileAttributes>> statList = new ArrayList<>();
+        protected List<StatItem<Path, PosixFileAttributes>> lsDirStats(Path dir)
+              throws IOException {
+            List<StatItem<Path, PosixFileAttributes>> statList = new ArrayList<>();
 
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(lcwd.resolve(dir))) {
                 for (Path item : stream) {
@@ -1201,29 +1168,25 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected void sortStats(List<StatItem<Path,PosixFileAttributes>> contents)
-        {
+        protected void sortStats(List<StatItem<Path, PosixFileAttributes>> contents) {
             Collections.sort(contents, STATITEM_PATH_COMPARATOR);
         }
 
         @Override
-        protected Path getChild(Path dir, String name)
-        {
+        protected Path getChild(Path dir, String name) {
             return dir.resolve(name);
         }
 
 
         @Override
-        protected PosixFileAttributes stat(Path absPath) throws IOException
-        {
+        protected PosixFileAttributes stat(Path absPath) throws IOException {
             return Files.getFileAttributeView(absPath,
-                    PosixFileAttributeView.class).readAttributes();
+                  PosixFileAttributeView.class).readAttributes();
         }
 
         @Override
-        protected List<StatItem<Path,PosixFileAttributes>> statMultiple(List<String> items)
-        {
-            List<StatItem<Path,PosixFileAttributes>> statItems = new ArrayList<>(items.size());
+        protected List<StatItem<Path, PosixFileAttributes>> statMultiple(List<String> items) {
+            List<StatItem<Path, PosixFileAttributes>> statItems = new ArrayList<>(items.size());
 
             for (String item : items) {
                 Path path = convert(item);
@@ -1239,33 +1202,31 @@ public class SrmShell extends ShellApplication
             return statItems;
         }
 
-        private FileTime getFileTime(PosixFileAttributes attrs)
-        {
+        private FileTime getFileTime(PosixFileAttributes attrs) {
             switch (time) {
-            case "mtime":
-            case "modify":
-                return attrs.lastModifiedTime();
-            case "atime":
-                return attrs.lastAccessTime();
-            case "create":
-                return attrs.creationTime();
+                case "mtime":
+                case "modify":
+                    return attrs.lastModifiedTime();
+                case "atime":
+                    return attrs.lastAccessTime();
+                case "create":
+                    return attrs.creationTime();
             }
             throw new RuntimeException("Unknown time value \"" + time + "\"");
         }
     }
 
-    @Command(name="lrm", hint="remove local files",
-                    description = "Remove one or more files from the local "
-                            + "filesystem.")
-    public class LrmCommand implements Callable<Serializable>
-    {
+    @Command(name = "lrm", hint = "remove local files",
+          description = "Remove one or more files from the local "
+                + "filesystem.")
+    public class LrmCommand implements Callable<Serializable> {
+
         @Argument
         @ExpandWith(LocalFilesystemExpander.class)
         String[] paths;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             for (String path : paths) {
                 Path file = lcwd.resolve(path);
 
@@ -1274,7 +1235,8 @@ public class SrmShell extends ShellApplication
                     continue;
                 }
 
-                if (Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                if (Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes()
+                      .isDirectory()) {
                     console.println("Is directory: " + path);
                     continue;
                 }
@@ -1290,18 +1252,17 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lrmdir", hint="remove local directory",
-                    description = "Remove one or more directories if they are "
-                            + "empty.")
-    public class LrmdirCommand implements Callable<Serializable>
-    {
+    @Command(name = "lrmdir", hint = "remove local directory",
+          description = "Remove one or more directories if they are "
+                + "empty.")
+    public class LrmdirCommand implements Callable<Serializable> {
+
         @Argument
         @ExpandWith(LocalFilesystemExpander.class)
         String[] paths;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             for (String path : paths) {
                 Path file = lcwd.resolve(path);
 
@@ -1309,7 +1270,8 @@ public class SrmShell extends ShellApplication
                     console.println("No such directory: " + path);
                 }
 
-                if (!Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                if (!Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes()
+                      .isDirectory()) {
                     console.println("Not a directory: " + path);
                 }
 
@@ -1326,18 +1288,17 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lmkdir", hint="create local directory",
-            description = "Create one or more new subdirectories.  The parent "
-                    + "directories must already exist.")
-    public class LmkdirCommand implements Callable<Serializable>
-    {
+    @Command(name = "lmkdir", hint = "create local directory",
+          description = "Create one or more new subdirectories.  The parent "
+                + "directories must already exist.")
+    public class LmkdirCommand implements Callable<Serializable> {
+
         @Argument
         @ExpandWith(LocalFilesystemExpander.class)
         String[] paths;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             for (String path : paths) {
                 Path file = lcwd.resolve(path);
 
@@ -1351,7 +1312,8 @@ public class SrmShell extends ShellApplication
                     console.println("Does not exist: " + parent);
                 }
 
-                if (!Files.getFileAttributeView(parent, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                if (!Files.getFileAttributeView(parent, PosixFileAttributeView.class)
+                      .readAttributes().isDirectory()) {
                     console.println("Not a directory: " + parent);
                 }
 
@@ -1365,41 +1327,41 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lmv", hint="move (rename) local files",
-            description = "Rename SOURCE to DEST.  If DEST exists and is a file "
-                    + "then it is replaced, unless the -n option is specified. "
-                    + "If DEST is a directory then the SOURCE is moved into that "
-                    + "directory with the same name, unless -T option is "
-                    + "specified.  The -n option prevents the comment from "
-                    + "overwriting existing data.")
-    public class LmvCommand implements Callable<Serializable>
-    {
-        @Argument(index=0, metaVar="SOURCE")
+    @Command(name = "lmv", hint = "move (rename) local files",
+          description = "Rename SOURCE to DEST.  If DEST exists and is a file "
+                + "then it is replaced, unless the -n option is specified. "
+                + "If DEST is a directory then the SOURCE is moved into that "
+                + "directory with the same name, unless -T option is "
+                + "specified.  The -n option prevents the comment from "
+                + "overwriting existing data.")
+    public class LmvCommand implements Callable<Serializable> {
+
+        @Argument(index = 0, metaVar = "SOURCE")
         String source;
 
-        @Argument(index=1, metaVar="DEST")
+        @Argument(index = 1, metaVar = "DEST")
         String dest;
 
-        @Option(name="n", usage="fail if the target already exists")
+        @Option(name = "n", usage = "fail if the target already exists")
         boolean noClobber;
 
-        @Option(name="T", usage="If DEST is a directory then do not move SOURCE "
-                        + "into DEST; instead, SOURCE will replace DEST.")
+        @Option(name = "T", usage = "If DEST is a directory then do not move SOURCE "
+              + "into DEST; instead, SOURCE will replace DEST.")
         boolean destNormal;
 
         @Override
-        public Serializable call() throws IOException
-        {
+        public Serializable call() throws IOException {
             Path dst = lcwd.resolve(dest);
             Path src = lcwd.resolve(source);
 
-            if (!destNormal && Files.getFileAttributeView(dst, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+            if (!destNormal && Files.getFileAttributeView(dst, PosixFileAttributeView.class)
+                  .readAttributes().isDirectory()) {
                 dst = dst.resolve(src.getFileName());
             }
 
             CopyOption[] options = (noClobber)
-                    ? new CopyOption[0]
-                    : new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
+                  ? new CopyOption[0]
+                  : new CopyOption[]{StandardCopyOption.REPLACE_EXISTING};
             try {
                 Files.move(src, dst, options);
             } catch (FileAlreadyExistsException e) {
@@ -1416,55 +1378,49 @@ public class SrmShell extends ShellApplication
      */
 
     /**
-     * Expand Glob based on SRM filesystem.  Directory listings are cached
-     * for the duration of the command.
+     * Expand Glob based on SRM filesystem.  Directory listings are cached for the duration of the
+     * command.
      */
-    private class SrmFilesystemExpander extends AbstractFilesystemExpander
-    {
+    private class SrmFilesystemExpander extends AbstractFilesystemExpander {
+
         private final boolean verboseList;
 
         private final LoadingCache<URI, TMetaDataPathDetail[]> lsCache = CacheBuilder.newBuilder()
-                .build(new CacheLoader<URI, TMetaDataPathDetail[]>() {
-                    @Override
-                    public TMetaDataPathDetail[] load(URI key) throws Exception
-                    {
-                        TMetaDataPathDetail[] contents = fs.list(key, verboseList);
-                        if (verboseList) {
-                            for (TMetaDataPathDetail item : contents) {
-                                statCache.put(getPath(item), item);
-                            }
-                        }
-                        return contents;
-                    }
-                });
+              .build(new CacheLoader<URI, TMetaDataPathDetail[]>() {
+                  @Override
+                  public TMetaDataPathDetail[] load(URI key) throws Exception {
+                      TMetaDataPathDetail[] contents = fs.list(key, verboseList);
+                      if (verboseList) {
+                          for (TMetaDataPathDetail item : contents) {
+                              statCache.put(getPath(item), item);
+                          }
+                      }
+                      return contents;
+                  }
+              });
 
         private final LoadingCache<File, TMetaDataPathDetail> statCache = CacheBuilder.newBuilder()
-                .build(new CacheLoader<File, TMetaDataPathDetail>() {
-                    @Override
-                    public TMetaDataPathDetail load(File key) throws Exception
-                    {
-                        return fs.stat(asURI(key));
-                    }
-                });
+              .build(new CacheLoader<File, TMetaDataPathDetail>() {
+                  @Override
+                  public TMetaDataPathDetail load(File key) throws Exception {
+                      return fs.stat(asURI(key));
+                  }
+              });
 
 
-        public SrmFilesystemExpander()
-        {
+        public SrmFilesystemExpander() {
             this(false);
         }
 
-        public SrmFilesystemExpander(boolean verboseList)
-        {
+        public SrmFilesystemExpander(boolean verboseList) {
             this.verboseList = verboseList;
         }
 
-        private File resolveAgainstCwd(File path)
-        {
+        private File resolveAgainstCwd(File path) {
             return path.isAbsolute() ? path : new File(pwd.getPath(), path.getPath());
         }
 
-        private String escape(String path)
-        {
+        private String escape(String path) {
             if (path.isEmpty() || path.equals("/")) {
                 return path;
             }
@@ -1477,8 +1433,7 @@ public class SrmShell extends ShellApplication
             return sb.toString();
         }
 
-        private URI asURI(File directory)
-        {
+        private URI asURI(File directory) {
             String absPath = resolveAgainstCwd(directory).getPath();
             String escaped = escape(absPath);
             URI path = new URI(pwd);
@@ -1491,8 +1446,8 @@ public class SrmShell extends ShellApplication
             return path;
         }
 
-        private RuntimeException propagate(ExecutionException e) throws RemoteException, SRMException, InterruptedException
-        {
+        private RuntimeException propagate(ExecutionException e)
+              throws RemoteException, SRMException, InterruptedException {
             Throwable cause = e.getCause();
             Throwables.throwIfInstanceOf(cause, RemoteException.class);
             Throwables.throwIfInstanceOf(cause, SRMException.class);
@@ -1501,8 +1456,7 @@ public class SrmShell extends ShellApplication
         }
 
         protected TMetaDataPathDetail[] list(File directory) throws RemoteException,
-                SRMException, InterruptedException
-        {
+              SRMException, InterruptedException {
             try {
                 return lsCache.get(asURI(directory));
             } catch (ExecutionException e) {
@@ -1510,14 +1464,12 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        protected TMetaDataPathDetail[] listIfPresent(File directory)
-        {
+        protected TMetaDataPathDetail[] listIfPresent(File directory) {
             return lsCache.getIfPresent(asURI(directory));
         }
 
         protected TMetaDataPathDetail stat(File item) throws RemoteException,
-                URI.MalformedURIException, SRMException, InterruptedException
-        {
+              URI.MalformedURIException, SRMException, InterruptedException {
             File absPath = resolveAgainstCwd(item);
             try {
                 return statCache.get(absPath);
@@ -1528,39 +1480,37 @@ public class SrmShell extends ShellApplication
 
         @Override
         protected void expandInto(List<File> matches, File directory, String glob)
-                throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
-        {
+              throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException {
             Pattern pattern = Glob.parseGlobToPattern(glob);
 
             for (TMetaDataPathDetail detail : list(directory)) {
                 File item = getPath(detail);
                 if (!item.getName().startsWith(".") &&
-                        pattern.matcher(item.getName()).matches()) {
+                      pattern.matcher(item.getName()).matches()) {
                     matches.add(item);
                 }
             }
         }
 
         @Override
-        public List<String> expand(Glob argument)
-        {
+        public List<String> expand(Glob argument) {
             return expand(argument, new File(pwd.getPath()));
         }
     }
 
     @Command(name = "cd", hint = "change current directory",
-                    description = "Modify the current working directory within "
-                            + "the SRM endpoint.  This path is used as a default "
-                            + "value for the ls command, and to resolve relative "
-                            + "paths.")
-    public class CdCommand implements Callable<Serializable>
-    {
+          description = "Modify the current working directory within "
+                + "the SRM endpoint.  This path is used as a default "
+                + "value for the ls command, and to resolve relative "
+                + "paths.")
+    public class CdCommand implements Callable<Serializable> {
+
         @Argument(required = false)
         String path;
 
         @Override
-        public Serializable call() throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
-        {
+        public Serializable call()
+              throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException {
             if (path == null) {
                 pwd = home;
             } else {
@@ -1571,55 +1521,50 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "ls", hint = "list directory contents",
-            description = "List the contents of a directory or information "
-                    + "about a file or directory.  Various options modify "
-                    + "which information is provided.")
-    public class LsCommand  extends AbstractLsCommand<File,TMetaDataPathDetail>
-    {
-        private class DelegatingExpander implements GlobExpander<String>
-        {
+          description = "List the contents of a directory or information "
+                + "about a file or directory.  Various options modify "
+                + "which information is provided.")
+    public class LsCommand extends AbstractLsCommand<File, TMetaDataPathDetail> {
+
+        private class DelegatingExpander implements GlobExpander<String> {
+
             @Override
-            public List<String> expand(Glob glob)
-            {
+            public List<String> expand(Glob glob) {
                 return expander.expand(glob);
             }
         }
 
         @Option(name = "full-dn",
-                usage = "If server identifies owner with a Distinguished Name, " +
-                        "show complete value with long format.  By default, " +
-                        "only the first common name (CN) element is shown.")
+              usage = "If server identifies owner with a Distinguished Name, " +
+                    "show complete value with long format.  By default, " +
+                    "only the first common name (CN) element is shown.")
         boolean fullDn;
 
         @ExpandWith(DelegatingExpander.class)
-        @Argument(required = false, metaVar="PATH")
+        @Argument(required = false, metaVar = "PATH")
         String[] items;
 
         SrmFilesystemExpander expander = new SrmFilesystemExpander(true);
 
         @Override
-        public Serializable call()
-        {
+        public Serializable call() {
             acceptArguments(items);
             return null;
         }
 
         @Override
-        protected File getCwd()
-        {
+        protected File getCwd() {
             return new File(pwd.getPath());
         }
 
 
         @Override
-        protected File convert(String item)
-        {
+        protected File convert(String item) {
             return new File(item);
         }
 
         @Override
-        protected File resolveAgainstCwd(File path)
-        {
+        protected File resolveAgainstCwd(File path) {
             if (path.isAbsolute()) {
                 return path;
             } else {
@@ -1634,92 +1579,82 @@ public class SrmShell extends ShellApplication
         }
 
 
-        private String simplifyUserId(String id)
-        {
+        private String simplifyUserId(String id) {
             Matcher m = DN_WITH_CAPTURED_CN.matcher(id);
             return m.matches() ? m.group("cn") : id;
         }
 
         @Override
-        protected File getChild(File dir, String name)
-        {
+        protected File getChild(File dir, String name) {
             return new File(dir, name);
         }
 
         @Override
-        protected boolean isHidden(File path)
-        {
+        protected boolean isHidden(File path) {
             return path.getName().startsWith(".");
         }
 
         @Override
-        protected boolean isDirectory(TMetaDataPathDetail attrs)
-        {
+        protected boolean isDirectory(TMetaDataPathDetail attrs) {
             return attrs.getType() == TFileType.DIRECTORY;
         }
 
         @Override
-        protected boolean isAncestorOrCwd(File path)
-        {
+        protected boolean isAncestorOrCwd(File path) {
             String cwd = pwd.getPath();
             String absPath = resolveAgainstCwd(path).getPath();
             return cwd.startsWith(absPath) || cwd.equals(absPath);
         }
 
         @Override
-        protected File getParent(File item)
-        {
+        protected File getParent(File item) {
             return item.getParentFile();
         }
 
         @Override
-        protected long size(TMetaDataPathDetail attr) throws Exception
-        {
+        protected long size(TMetaDataPathDetail attr) throws Exception {
             UnsignedLong size = attr.getSize();
             return size == null ? 0 : size.longValue();
         }
 
         @Override
-        protected String name(File path)
-        {
+        protected String name(File path) {
             return path.getName();
         }
 
         @Override
-        protected ColumnWriter buildColumnWriter()
-        {
+        protected ColumnWriter buildColumnWriter() {
             Optional<ByteUnit> displayUnit = abbrev
-                    ? Optional.empty()
-                    : Optional.of(ByteUnit.BYTES);
+                  ? Optional.empty()
+                  : Optional.of(ByteUnit.BYTES);
             return new ColumnWriter()
-                    .left("mode")
-                    .space().left("owner")
-                    .space().left("group")
-                    .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
-                    .space().date("time", DateStyle.LS)
-                    .space().left("name");
+                  .left("mode")
+                  .space().left("owner")
+                  .space().left("group")
+                  .space().bytes("size", displayUnit, ByteUnit.Type.DECIMAL)
+                  .space().date("time", DateStyle.LS)
+                  .space().left("name");
         }
 
         @Override
         protected void acceptRow(ColumnWriter writer, File name,
-                TMetaDataPathDetail attr, boolean omitPath) throws Exception
-        {
+              TMetaDataPathDetail attr, boolean omitPath) throws Exception {
             String userId = attr.getOwnerPermission().getUserID();
             writer.row()
-                    .value("mode", permissionsFor(attr))
-                    .value("owner", fullDn ? userId : simplifyUserId(userId))
-                    .value("group", attr.getGroupPermission().getGroupID())
-                    .value("size", (attr.getType() == TFileType.FILE) ? attr.getSize().longValue() : null)
-                    .value("time", getTime(attr).getTime())
-                    .value("name", omitPath ? name.getName() : name);
+                  .value("mode", permissionsFor(attr))
+                  .value("owner", fullDn ? userId : simplifyUserId(userId))
+                  .value("group", attr.getGroupPermission().getGroupID())
+                  .value("size",
+                        (attr.getType() == TFileType.FILE) ? attr.getSize().longValue() : null)
+                  .value("time", getTime(attr).getTime())
+                  .value("name", omitPath ? name.getName() : name);
         }
 
         @Override
-        protected List<StatItem<File,TMetaDataPathDetail>> statMultiple(List<String> items)
-        {
-            List<StatItem<File,TMetaDataPathDetail>> statItems = new ArrayList<>(items.size());
+        protected List<StatItem<File, TMetaDataPathDetail>> statMultiple(List<String> items) {
+            List<StatItem<File, TMetaDataPathDetail>> statItems = new ArrayList<>(items.size());
 
-            Map<File,TMetaDataPathDetail> statCache = buildStatCache(items);
+            Map<File, TMetaDataPathDetail> statCache = buildStatCache(items);
             for (String item : items) {
                 File path = convert(item);
                 File absPath = resolveAgainstCwd(path);
@@ -1743,11 +1678,10 @@ public class SrmShell extends ShellApplication
             return statItems;
         }
 
-        private Map<File,TMetaDataPathDetail> buildStatCache(List<String> items)
-        {
-            Map<File,TMetaDataPathDetail> statCache = new HashMap<>();
+        private Map<File, TMetaDataPathDetail> buildStatCache(List<String> items) {
+            Map<File, TMetaDataPathDetail> statCache = new HashMap<>();
 
-            SetMultimap<File,String> plan = HashMultimap.create();
+            SetMultimap<File, String> plan = HashMultimap.create();
             for (String item : items) {
                 File absPath = resolveAgainstCwd(convert(item));
                 File dir = getParent(absPath);
@@ -1758,7 +1692,7 @@ public class SrmShell extends ShellApplication
 
             for (File dir : plan.keySet()) {
                 Set<String> names = plan.get(dir);
-                for (StatItem<File,TMetaDataPathDetail> s : lsDirStatsIfPresent(dir, names)) {
+                for (StatItem<File, TMetaDataPathDetail> s : lsDirStatsIfPresent(dir, names)) {
                     statCache.put(s.getPath(), s.getAttributes());
                     plan.remove(dir, name(s.getPath()));
                 }
@@ -1767,7 +1701,7 @@ public class SrmShell extends ShellApplication
             try {
                 if (!plan.isEmpty()) {
                     ArrayList<URI> surlList = new ArrayList<>(plan.size());
-                    for (Map.Entry<File,Collection<String>> dirFiles : plan.asMap().entrySet()) {
+                    for (Map.Entry<File, Collection<String>> dirFiles : plan.asMap().entrySet()) {
                         for (String name : dirFiles.getValue()) {
                             File path = new File(dirFiles.getKey() + "/" + name);
                             try {
@@ -1787,7 +1721,7 @@ public class SrmShell extends ShellApplication
                             statCache.put(path, attrs);
                         } else {
                             consolePrintln("Problem with " + path + ": "
-                                    + code + " " + status.getExplanation());
+                                  + code + " " + status.getExplanation());
                         }
                     }
                 }
@@ -1804,15 +1738,15 @@ public class SrmShell extends ShellApplication
             return statCache;
         }
 
-        private List<StatItem<File,TMetaDataPathDetail>> lsDirStatsIfPresent(File dir, Set<String> names)
-        {
+        private List<StatItem<File, TMetaDataPathDetail>> lsDirStatsIfPresent(File dir,
+              Set<String> names) {
             TMetaDataPathDetail[] dirContents = expander.listIfPresent(dir);
 
             if (dirContents == null) {
                 return Collections.emptyList();
             }
 
-            List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>(names.size());
+            List<StatItem<File, TMetaDataPathDetail>> contents = new ArrayList<>(names.size());
             for (TMetaDataPathDetail attrs : dirContents) {
                 File absPath = getPath(attrs);
 
@@ -1829,9 +1763,9 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected List<StatItem<File,TMetaDataPathDetail>> lsDirStats(File dir) throws RemoteException, SRMException, InterruptedException
-        {
-            List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>();
+        protected List<StatItem<File, TMetaDataPathDetail>> lsDirStats(File dir)
+              throws RemoteException, SRMException, InterruptedException {
+            List<StatItem<File, TMetaDataPathDetail>> contents = new ArrayList<>();
             for (TMetaDataPathDetail item : expander.list(dir)) {
                 contents.add(new StatItem<>(getPath(item), item));
             }
@@ -1839,8 +1773,8 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected List<String> lsDirNames(File dir) throws RemoteException, SRMException, InterruptedException
-        {
+        protected List<String> lsDirNames(File dir)
+              throws RemoteException, SRMException, InterruptedException {
             List<String> names = new ArrayList<>();
             for (TMetaDataPathDetail item : expander.list(dir)) {
                 names.add(getPath(item).getName());
@@ -1849,48 +1783,47 @@ public class SrmShell extends ShellApplication
         }
 
         @Override
-        protected void sortStats(List<StatItem<File,TMetaDataPathDetail>> items)
-        {
+        protected void sortStats(List<StatItem<File, TMetaDataPathDetail>> items) {
             Collections.sort(items, STATITEM_FILE_COMPARATOR);
         }
 
         @Override
-        protected TMetaDataPathDetail stat(File item) throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
-        {
+        protected TMetaDataPathDetail stat(File item)
+              throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException {
             return expander.stat(item);
         }
 
-        private Calendar getTime(TMetaDataPathDetail entry)
-        {
+        private Calendar getTime(TMetaDataPathDetail entry) {
             Calendar time;
             switch (this.time) {
-            case "modify":
-            case "mtime":
-                time = entry.getLastModificationTime();
-                break;
-            case "create":
-                time = entry.getCreatedAtTime();
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown time field: " + this.time);
+                case "modify":
+                case "mtime":
+                    time = entry.getLastModificationTime();
+                    break;
+                case "create":
+                    time = entry.getCreatedAtTime();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown time field: " + this.time);
             }
             return time;
         }
     }
 
     @Command(name = "stat", hint = "display file status",
-                    description = "Provide detailed information about a file or "
-                            + "directory.")
-    public class StatCommand implements Callable<String>
-    {
-        private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.FULL);
+          description = "Provide detailed information about a file or "
+                + "directory.")
+    public class StatCommand implements Callable<String> {
+
+        private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
+              DateFormat.FULL);
 
         @Argument(required = false)
         File path;
 
         @Override
-        public String call() throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
-        {
+        public String call()
+              throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException {
             TMetaDataPathDetail detail = fs.stat(lookup(path));
 
             UnsignedLong size = detail.getSize();
@@ -1909,12 +1842,15 @@ public class SrmShell extends ShellApplication
             PrintWriter writer = new PrintWriter(out);
 
             writer.append("      Path: ").println(detail.getPath());
-            writer.append("      Size: ").append(String.format("%,d", size.longValue())).append("      File type: ").append(detail.getType().getValue().toLowerCase()).append("");
+            writer.append("      Size: ").append(String.format("%,d", size.longValue()))
+                  .append("      File type: ").append(detail.getType().getValue().toLowerCase())
+                  .append("");
             if (!isNullOrEmpty(checkSumType) || !isNullOrEmpty(checkSumValue)) {
                 writer.append("  Checksum: ").append(nullToEmpty(checkSumType))
-                        .append("/").println(nullToEmpty(checkSumValue));
+                      .append("/").println(nullToEmpty(checkSumValue));
             }
-            writer.append("    Access: (").append(permissionsFor(detail)).append(")    Uid: (").append(ownerPermission.getUserID());
+            writer.append("    Access: (").append(permissionsFor(detail)).append(")    Uid: (")
+                  .append(ownerPermission.getUserID());
             if (groupPermission != null) {
                 writer.append(")    Gid: (").append(groupPermission.getGroupID());
             }
@@ -1929,7 +1865,7 @@ public class SrmShell extends ShellApplication
                 writer.append(" Retention: ").append(retentionPolicy.getValue().toLowerCase());
                 if (accessLatency != null) {
                     writer.append("     Latency: ").append(
-                            accessLatency.getValue().toLowerCase());
+                          accessLatency.getValue().toLowerCase());
                 }
                 writer.println();
             }
@@ -1956,13 +1892,12 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "ping", hint = "ping server",
-            description = "Test whether the SRM endpoint is responding and "
-                    + "discover the information the server provides.")
-    public class PingCommand implements Callable<String>
-    {
+          description = "Test whether the SRM endpoint is responding and "
+                + "discover the information the server provides.")
+    public class PingCommand implements Callable<String> {
+
         @Override
-        public String call() throws RemoteException, SRMException
-        {
+        public String call() throws RemoteException, SRMException {
             SrmPingResponse response = fs.ping();
 
             StringBuilder sb = new StringBuilder();
@@ -1972,7 +1907,8 @@ public class SrmShell extends ShellApplication
                 TExtraInfo[] extraInfoArray = info.getExtraInfoArray();
                 if (extraInfoArray != null) {
                     for (TExtraInfo extraInfo : extraInfoArray) {
-                        sb.append(extraInfo.getKey()).append(" = ").append(extraInfo.getValue()).append("\n");
+                        sb.append(extraInfo.getKey()).append(" = ").append(extraInfo.getValue())
+                              .append("\n");
                     }
                 }
             }
@@ -1982,56 +1918,55 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "show transfer protocols", hint = "discover supported transfer protocols",
-                    description = "Query the SRM server to discover which "
-                            + "transfer protocols it supports.")
-    public class TransferProtocolsCommand implements Callable<String>
-    {
+          description = "Query the SRM server to discover which "
+                + "transfer protocols it supports.")
+    public class TransferProtocolsCommand implements Callable<String> {
+
         @Override
-        public String call() throws RemoteException, SRMException
-        {
+        public String call() throws RemoteException, SRMException {
             ColumnWriter writer = new ColumnWriter().left("protocol").space().left("extra");
             for (TSupportedTransferProtocol protocol : fs.getTransferProtocols()) {
                 ColumnWriter.TabulatedRow row = writer.row();
                 row.value("protocol", protocol.getTransferProtocol());
                 if (protocol.getAttributes() != null) {
                     row.value("extra",
-                              Joiner.on(",").withKeyValueSeparator("=")
-                                      .join(transform(asList(protocol.getAttributes().getExtraInfoArray()),
-                                                      new ToEntry())));
+                          Joiner.on(",").withKeyValueSeparator("=")
+                                .join(transform(
+                                      asList(protocol.getAttributes().getExtraInfoArray()),
+                                      new ToEntry())));
                 }
             }
             return writer.toString();
         }
 
-        private class ToEntry implements Function<TExtraInfo, Map.Entry<?, ?>>
-        {
+        private class ToEntry implements Function<TExtraInfo, Map.Entry<?, ?>> {
+
             @Override
-            public Map.Entry<?, ?> apply(TExtraInfo info)
-            {
+            public Map.Entry<?, ?> apply(TExtraInfo info) {
                 return Maps.immutableEntry(info.getKey(),
-                                           info.getValue());
+                      info.getValue());
             }
         }
     }
 
     @Command(name = "mkdir", hint = "make directory", description = "Create "
-                    + "one or more subdirectories on the server.  By default, "
-                    + "the parent directories must already exist.  If the -p "
-                    + "option is specified then missing parent directories "
-                    + "are created as necessary.")
-    public class MkdirCommand implements Callable<String>
-    {
+          + "one or more subdirectories on the server.  By default, "
+          + "the parent directories must already exist.  If the -p "
+          + "option is specified then missing parent directories "
+          + "are created as necessary.")
+    public class MkdirCommand implements Callable<String> {
+
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
         File path;
 
         @Option(name = "p", usage = "do not fail if the directory already "
-                        + "exists and create parent directories as necessary.")
+              + "exists and create parent directories as necessary.")
         boolean parent;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
-        {
+        public String call()
+              throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException {
             if (parent) {
                 recursiveMkdir(path);
             } else {
@@ -2040,8 +1975,8 @@ public class SrmShell extends ShellApplication
             return null;
         }
 
-        private void recursiveMkdir(File path) throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
-        {
+        private void recursiveMkdir(File path)
+              throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException {
             URI surl = lookup(path);
             try {
                 fs.mkdir(surl);
@@ -2060,13 +1995,13 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "rmdir", hint = "remove empty directories",
-                    description = "Remove one or more directories that are "
-                            + "empty.  If the -r option is specified then the "
-                            + "removal is recursive, so that the command will "
-                            + "succeed if the target directory and any "
-                            + "subdirectories contain no files.")
-    public class RmdirCommand implements Callable<String>
-    {
+          description = "Remove one or more directories that are "
+                + "empty.  If the -r option is specified then the "
+                + "removal is recursive, so that the command will "
+                + "succeed if the target directory and any "
+                + "subdirectories contain no files.")
+    public class RmdirCommand implements Callable<String> {
+
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
@@ -2075,8 +2010,7 @@ public class SrmShell extends ShellApplication
         boolean recursive;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
-        {
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException {
             for (File path : paths) {
                 try {
                     fs.rmdir(lookup(path), recursive);
@@ -2093,50 +2027,47 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "rm", hint = "remove directory entries",
-                    description = "Remove one or more directory items.  All of "
-                            + "the targets must be non-directory items.")
-    public class RmCommand implements Callable<String>
-    {
+          description = "Remove one or more directory items.  All of "
+                + "the targets must be non-directory items.")
+    public class RmCommand implements Callable<String> {
+
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
-        {
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException {
             SrmRmResponse response = fs.rm(lookup(paths));
             if (response.getReturnStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 return Joiner.on('\n').join(
-                        transform(filter(asList(response.getArrayOfFileStatuses().getStatusArray()),
-                                         new HasFailed()),
-                                  new GetExplanation()));
+                      transform(filter(asList(response.getArrayOfFileStatuses().getStatusArray()),
+                                  new HasFailed()),
+                            new GetExplanation()));
             }
             return null;
         }
 
-        private class HasFailed implements Predicate<TSURLReturnStatus>
-        {
+        private class HasFailed implements Predicate<TSURLReturnStatus> {
+
             @Override
-            public boolean apply(TSURLReturnStatus status)
-            {
+            public boolean apply(TSURLReturnStatus status) {
                 return status.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS;
             }
         }
 
-        private class GetExplanation implements Function<TSURLReturnStatus, Object>
-        {
+        private class GetExplanation implements Function<TSURLReturnStatus, Object> {
+
             @Override
-            public Object apply(TSURLReturnStatus status)
-            {
+            public Object apply(TSURLReturnStatus status) {
                 return status.getSurl().getPath() + ": " + status.getStatus().getExplanation();
             }
         }
     }
 
     @Command(name = "mv", hint = "move (rename) file or directory",
-            description = "Move or rename a file or directory.")
-    public class MvCommand implements Callable<String>
-    {
+          description = "Move or rename a file or directory.")
+    public class MvCommand implements Callable<String> {
+
         @Argument(index = 0)
         File source;
 
@@ -2144,45 +2075,42 @@ public class SrmShell extends ShellApplication
         File dest;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
-        {
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException {
             fs.mv(lookup(source), lookup(dest));
             return null;
         }
     }
 
     @Command(name = "list spaces", hint = "discover space reservations",
-                    description = "Discover the space reservations currently "
-                            + "available to this user.  If description is "
-                            + "supplied then only reservations that were "
-                            + "created with this description are listed; "
-                            + "otherwise all reservations are listed.")
-    public class GetSpaceTokensCommand implements Callable<String>
-    {
+          description = "Discover the space reservations currently "
+                + "available to this user.  If description is "
+                + "supplied then only reservations that were "
+                + "created with this description are listed; "
+                + "otherwise all reservations are listed.")
+    public class GetSpaceTokensCommand implements Callable<String> {
+
         @Argument(required = false, usage = "The description supplied when "
-                        + "creating this reservation.")
+              + "creating this reservation.")
         String description;
 
         @Override
-        public String call() throws RemoteException, IOException, SRMException
-        {
+        public String call() throws RemoteException, IOException, SRMException {
             console.printColumns(asList(fs.getSpaceTokens(description)));
             return null;
         }
     }
 
     @Command(name = "show permissions", hint = "describe permissions on SURL",
-                    description = "Query detailed information about the "
-                            + "permissions of files and directories.")
-    public class ShowPermissionCommand implements Callable<String>
-    {
+          description = "Query detailed information about the "
+                + "permissions of files and directories.")
+    public class ShowPermissionCommand implements Callable<String> {
+
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
-        {
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException {
             TPermissionReturn[] permissions = fs.getPermissions(lookup(paths));
 
             StringWriter out = new StringWriter();
@@ -2200,22 +2128,24 @@ public class SrmShell extends ShellApplication
             return out.toString();
         }
 
-        private void append(PrintWriter writer, String prefix, TPermissionReturn permission)
-        {
+        private void append(PrintWriter writer, String prefix, TPermissionReturn permission) {
             TReturnStatus status = permission.getStatus();
             if (status != null && status.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 writer.append(prefix).println(status.getExplanation());
             } else {
                 if (permission.getOwnerPermission() != null) {
-                    append(writer, prefix, "owner", permission.getOwnerPermission(), permission.getOwner());
+                    append(writer, prefix, "owner", permission.getOwnerPermission(),
+                          permission.getOwner());
                 }
                 if (permission.getArrayOfUserPermissions() != null) {
-                    for (TUserPermission p : permission.getArrayOfUserPermissions().getUserPermissionArray()) {
+                    for (TUserPermission p : permission.getArrayOfUserPermissions()
+                          .getUserPermissionArray()) {
                         append(writer, prefix, "user", p.getMode(), p.getUserID());
                     }
                 }
                 if (permission.getArrayOfGroupPermissions() != null) {
-                    for (TGroupPermission p : permission.getArrayOfGroupPermissions().getGroupPermissionArray()) {
+                    for (TGroupPermission p : permission.getArrayOfGroupPermissions()
+                          .getGroupPermissionArray()) {
                         append(writer, prefix, "group", p.getMode(), p.getGroupID());
                     }
                 }
@@ -2225,26 +2155,26 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        private void append(PrintWriter writer, String prefix, String type, TPermissionMode mode, String name)
-        {
-            writer.append(prefix).append(permissionsFor(mode)).append(' ').append(type).append(' ').println(name == null ? "(unknown)" : name);
+        private void append(PrintWriter writer, String prefix, String type, TPermissionMode mode,
+              String name) {
+            writer.append(prefix).append(permissionsFor(mode)).append(' ').append(type).append(' ')
+                  .println(name == null ? "(unknown)" : name);
         }
     }
 
     @Command(name = "check permissions", hint = "check client permissions on SURLs",
-                    description = "Check the (effective) permissions on files "
-                            + "and directories for the current user.  The result "
-                            + "is a list of operations that this user is "
-                            + "allowed to do.")
-    public class CheckPermissionCommand implements Callable<String>
-    {
+          description = "Check the (effective) permissions on files "
+                + "and directories for the current user.  The result "
+                + "is a list of operations that this user is "
+                + "allowed to do.")
+    public class CheckPermissionCommand implements Callable<String> {
+
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
-        {
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException {
             TSURLPermissionReturn[] permissions = fs.checkPermissions(lookup(paths));
 
             if (permissions.length == 1) {
@@ -2258,9 +2188,10 @@ public class SrmShell extends ShellApplication
                 PrintWriter writer = new PrintWriter(out);
                 for (TSURLPermissionReturn permission : permissions) {
                     writer.append(permissionsFor(permission.getPermission())).append(' ').append(
-                            permission.getSurl().getPath());
+                          permission.getSurl().getPath());
                     if (permission.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                        writer.append(" (").append(permission.getStatus().getExplanation()).append(')');
+                        writer.append(" (").append(permission.getStatus().getExplanation())
+                              .append(')');
                     }
                     writer.println();
                 }
@@ -2270,41 +2201,41 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "reserve space", hint = "create space reservation",
-                    description = "Reserve space into which data may be uploaded. "
-                            + "A space reservation is a promise from the "
-                            + "storage system to accept some amount of data.")
-    public class ReserveSpaceCommand implements Callable<String>
-    {
+          description = "Reserve space into which data may be uploaded. "
+                + "A space reservation is a promise from the "
+                + "storage system to accept some amount of data.")
+    public class ReserveSpaceCommand implements Callable<String> {
+
         @Option(name = "al", required = false,
-                values = { "NEARLINE", "ONLINE" },
-                usage = "The desired access latency of the space reservation. "
-                        + "If not specified then the remote system will use "
-                        + "an implementation-specific strategy to decide which "
-                        + "value is used. The values have the following meaning:"
-                        + "\n\n"
-                        + "    ONLINE    the lowest latency possible."
-                        + "\n\n"
-                        + "    NEARLINE  files can have their latency improved "
-                        + "automatically.")
+              values = {"NEARLINE", "ONLINE"},
+              usage = "The desired access latency of the space reservation. "
+                    + "If not specified then the remote system will use "
+                    + "an implementation-specific strategy to decide which "
+                    + "value is used. The values have the following meaning:"
+                    + "\n\n"
+                    + "    ONLINE    the lowest latency possible."
+                    + "\n\n"
+                    + "    NEARLINE  files can have their latency improved "
+                    + "automatically.")
         String al;
 
         @Option(name = "rp", required = true,
-                values = { "REPLICA", "OUTPUT", "CUSTODIAL" },
-                usage = "The desired retention policy of the space reservation."
-                        + "The values have the following meaning:"
-                        + "\n\n"
-                        + "    REPLICA    highest probability of loss,"
-                        + "\n\n"
-                        + "    OUTPUT     intermediate probability of loss,"
-                        + "\n\n"
-                        + "    CUSTODIAL  lowest probability of loss.")
+              values = {"REPLICA", "OUTPUT", "CUSTODIAL"},
+              usage = "The desired retention policy of the space reservation."
+                    + "The values have the following meaning:"
+                    + "\n\n"
+                    + "    REPLICA    highest probability of loss,"
+                    + "\n\n"
+                    + "    OUTPUT     intermediate probability of loss,"
+                    + "\n\n"
+                    + "    CUSTODIAL  lowest probability of loss.")
         String rp;
 
         @Option(name = "lifetime", usage = "The number of seconds the "
-                        + "reservation should be honoured.  If not specified "
-                        + "then the resulting lifetime is implementation "
-                        + "specific; however, it will be infinite if that is "
-                        + "supported by the SRM service.")
+              + "reservation should be honoured.  If not specified "
+              + "then the resulting lifetime is implementation "
+              + "specific; however, it will be infinite if that is "
+              + "supported by the SRM service.")
         int lifetime = -1;
 
         @Argument(index = 0)
@@ -2314,13 +2245,12 @@ public class SrmShell extends ShellApplication
         String description;
 
         @Override
-        public String call() throws RemoteException, SRMException, InterruptedException
-        {
+        public String call() throws RemoteException, SRMException, InterruptedException {
             TMetaDataSpace space =
-                    fs.reserveSpace(size, description,
-                                    (al == null) ? null : TAccessLatency.fromString(al),
-                                    TRetentionPolicy.fromString(rp),
-                                    lifetime);
+                  fs.reserveSpace(size, description,
+                        (al == null) ? null : TAccessLatency.fromString(al),
+                        TRetentionPolicy.fromString(rp),
+                        lifetime);
             StringWriter out = new StringWriter();
             PrintWriter writer = new PrintWriter(out);
             append(writer, space);
@@ -2329,36 +2259,34 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "release space", hint = "release space reservation",
-                    description = "Release the reserved space from within "
-                            + "storage system.  Once this operation completes "
-                            + "successfully, no further uploads may use the "
-                            + "reservation.  Files that have been uploaded "
-                            + "into the released space reservation are "
-                            + "unaffected by this operation.")
-    public class ReleaseSpaceCommand implements Callable<String>
-    {
+          description = "Release the reserved space from within "
+                + "storage system.  Once this operation completes "
+                + "successfully, no further uploads may use the "
+                + "reservation.  Files that have been uploaded "
+                + "into the released space reservation are "
+                + "unaffected by this operation.")
+    public class ReleaseSpaceCommand implements Callable<String> {
+
         @Argument
         String spaceToken;
 
         @Override
-        public String call() throws RemoteException, SRMException
-        {
+        public String call() throws RemoteException, SRMException {
             fs.releaseSpace(spaceToken);
             return null;
         }
     }
 
     @Command(name = "show space", hint = "show information about a space reservation",
-                    description = "Discover information about a specific space "
-                            + "reservation.")
-    public class SpaceMetaDataCommand implements Callable<String>
-    {
+          description = "Discover information about a specific space "
+                + "reservation.")
+    public class SpaceMetaDataCommand implements Callable<String> {
+
         @Argument
         String spaceToken;
 
         @Override
-        public String call() throws RemoteException, SRMException
-        {
+        public String call() throws RemoteException, SRMException {
             StringWriter out = new StringWriter();
             PrintWriter writer = new PrintWriter(out);
             TMetaDataSpace space = fs.getSpaceMetaData(spaceToken);
@@ -2367,20 +2295,18 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    private int addOngoingTransfer(FileTransfer transfer)
-    {
+    private int addOngoingTransfer(FileTransfer transfer) {
         final int id = nextTransferId++;
 
         synchronized (ongoingTransfers) {
-            ongoingTransfers.put(id,transfer);
+            ongoingTransfers.put(id, transfer);
             ongoingTransfers.notifyAll();
         }
 
         return id;
     }
 
-    private FileTransfer removeOngoingTransfer(int id)
-    {
+    private FileTransfer removeOngoingTransfer(int id) {
         FileTransfer transfer;
 
         synchronized (ongoingTransfers) {
@@ -2392,22 +2318,21 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "get", hint = "download a file",
-                    description = "Download a file from the storage system.  "
-                            + "The remote file path is optional.  If not "
-                            + "specified then a file is created in the current "
-                            + "local working directory with the same name as the"
-                            + "remote file ")
-    public class GetCommand implements Callable<String>
-    {
-        @Argument(index=0, usage="path to the remote file")
+          description = "Download a file from the storage system.  "
+                + "The remote file path is optional.  If not "
+                + "specified then a file is created in the current "
+                + "local working directory with the same name as the"
+                + "remote file ")
+    public class GetCommand implements Callable<String> {
+
+        @Argument(index = 0, usage = "path to the remote file")
         File remote;
 
-        @Argument(index=1, required=false, usage="path of the downloaded file")
+        @Argument(index = 1, required = false, usage = "path of the downloaded file")
         String local;
 
         @Override
-        public String call() throws URI.MalformedURIException
-        {
+        public String call() throws URI.MalformedURIException {
             URI surl = lookup(remote);
             Path target = local == null ? lcwd.resolve(remote.getName()) : lcwd.resolve(local);
 
@@ -2421,8 +2346,7 @@ public class SrmShell extends ShellApplication
 
             Futures.addCallback(transfer, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Void result)
-                {
+                public void onSuccess(Void result) {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");
                     }
@@ -2431,11 +2355,11 @@ public class SrmShell extends ShellApplication
                 }
 
                 @Override
-                public void onFailure(Throwable t)
-                {
+                public void onFailure(Throwable t) {
                     String msg = t.getMessage();
                     synchronized (notifications) {
-                        notifications.add("[" + id + "] Transfer failed: " + msg == null ? t.toString() : msg);
+                        notifications.add(
+                              "[" + id + "] Transfer failed: " + msg == null ? t.toString() : msg);
                     }
                     FileTransfer failedTransfer = removeOngoingTransfer(id);
                     completedTransfers.put(id, failedTransfer);
@@ -2447,21 +2371,20 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "put", hint = "upload a file", description = "Upload a file "
-                    + "into the SRM storage.  The remote argument is optional."
-                    + "If omitted, the file will be uploaded in the current "
-                    + "working directory in the SRM with the same name as the "
-                    + "source.")
-    public class PutCommand implements Callable<String>
-    {
-        @Argument(index=0, usage="path of the file to upload")
+          + "into the SRM storage.  The remote argument is optional."
+          + "If omitted, the file will be uploaded in the current "
+          + "working directory in the SRM with the same name as the "
+          + "source.")
+    public class PutCommand implements Callable<String> {
+
+        @Argument(index = 0, usage = "path of the file to upload")
         String local;
 
-        @Argument(index=1, usage = "path to store the file under", required=false)
+        @Argument(index = 1, usage = "path to store the file under", required = false)
         File remote;
 
         @Override
-        public String call() throws URI.MalformedURIException
-        {
+        public String call() throws URI.MalformedURIException {
             File source = lcwd.resolve(local).toFile();
 
             if (!source.exists()) {
@@ -2488,8 +2411,7 @@ public class SrmShell extends ShellApplication
 
             Futures.addCallback(transfer, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Void result)
-                {
+                public void onSuccess(Void result) {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");
                     }
@@ -2498,8 +2420,7 @@ public class SrmShell extends ShellApplication
                 }
 
                 @Override
-                public void onFailure(Throwable t)
-                {
+                public void onFailure(Throwable t) {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer failed: " + t.toString());
                     }
@@ -2512,30 +2433,28 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "transfer clear", hint="clear completed transfers",
-                    description = "Clear the log of completed and failed "
-                            + "transfers.  Ongoing transfers are unaffected "
-                            + "by this command")
-    public class TransferClearCommand implements Callable<String>
-    {
+    @Command(name = "transfer clear", hint = "clear completed transfers",
+          description = "Clear the log of completed and failed "
+                + "transfers.  Ongoing transfers are unaffected "
+                + "by this command")
+    public class TransferClearCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             completedTransfers.clear();
             return "";
         }
     }
 
     @Command(name = "transfer ls", hint = "show all ongoing transfers",
-                    description = "Show a list of all ongoing transfers.")
-    public class TransferListCommand implements Callable<String>
-    {
-        @Argument(required=false, usage="the ID of a specific transfer")
+          description = "Show a list of all ongoing transfers.")
+    public class TransferListCommand implements Callable<String> {
+
+        @Argument(required = false, usage = "the ID of a specific transfer")
         Integer id;
 
         @Override
-        public String call()
-        {
+        public String call() {
             StringBuilder sb = new StringBuilder();
 
             synchronized (ongoingTransfers) {
@@ -2545,7 +2464,7 @@ public class SrmShell extends ShellApplication
                     } else {
                         if (!ongoingTransfers.isEmpty()) {
                             sb.append("Ongoing transfer:\n");
-                            for (Map.Entry<Integer,FileTransfer> e : ongoingTransfers.entrySet()) {
+                            for (Map.Entry<Integer, FileTransfer> e : ongoingTransfers.entrySet()) {
                                 sb.append("  [").append(e.getKey()).append("] ");
                                 sb.append(e.getValue().getStatus()).append('\n');
                             }
@@ -2555,12 +2474,12 @@ public class SrmShell extends ShellApplication
                                 sb.append('\n');
                             }
                             sb.append("Completed transfers:\n");
-                            for (Map.Entry<Integer,FileTransfer> e : completedTransfers.entrySet()) {
+                            for (Map.Entry<Integer, FileTransfer> e : completedTransfers.entrySet()) {
                                 sb.append("  [").append(e.getKey()).append("] ");
                                 sb.append(e.getValue().getStatus()).append('\n');
                             }
                         }
-                        sb.deleteCharAt(sb.length()-1);
+                        sb.deleteCharAt(sb.length() - 1);
                     }
                 } else {
                     FileTransfer transfer = ongoingTransfers.get(id);
@@ -2579,15 +2498,14 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "transfer cancel", hint = "abort an ongoing transfer",
-                    description = "Stop a queued or active transfer.")
-    public class TransferCancelCommand implements Callable<String>
-    {
-        @Argument(usage="the ID of the transfer")
+          description = "Stop a queued or active transfer.")
+    public class TransferCancelCommand implements Callable<String> {
+
+        @Argument(usage = "the ID of the transfer")
         int id;
 
         @Override
-        public String call()
-        {
+        public String call() {
             FileTransfer transfer = removeOngoingTransfer(id);
             if (transfer == null) {
                 if (completedTransfers.containsKey(id)) {
@@ -2603,25 +2521,24 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "option ls", hint = "show available configuration",
-                    description = "Show the available list of options.")
-    public class OptionLsCommand implements Callable<String>
-    {
-        @Argument(usage="the specific option to query", required=false)
+          description = "Show the available list of options.")
+    public class OptionLsCommand implements Callable<String> {
+
+        @Argument(usage = "the specific option to query", required = false)
         String key;
 
         @Override
-        public String call()
-        {
+        public String call() {
             StringBuilder sb = new StringBuilder();
-            Map<String,String> options = fs.getTransportOptions();
+            Map<String, String> options = fs.getTransportOptions();
 
             if (key == null) {
-                for (Map.Entry<String,String> entry : options.entrySet()) {
+                for (Map.Entry<String, String> entry : options.entrySet()) {
                     sb.append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
                 }
 
                 if (!options.isEmpty()) {
-                    sb.deleteCharAt(sb.length()-1);
+                    sb.deleteCharAt(sb.length() - 1);
                 }
             } else {
                 String value = options.get(key);
@@ -2638,74 +2555,73 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "option set", hint = "alter a configuration setting",
-                    description = "List all the available options.")
-    public class OptionSetCommand implements Callable<String>
-    {
-        @Argument(index=0, usage="the specific option to update")
+          description = "List all the available options.")
+    public class OptionSetCommand implements Callable<String> {
+
+        @Argument(index = 0, usage = "the specific option to update")
         String key;
 
-        @Argument(index=1, usage="the specific option to update")
+        @Argument(index = 1, usage = "the specific option to update")
         String value;
 
         @Override
-        public String call()
-        {
+        public String call() {
             fs.setTransportOption(key, value);
             return "";
         }
     }
 
     @Command(name = "show statistics", hint = "show SRM call statistics",
-                    description = "Show statistics on SRM requests.")
-    public class StatisticsShowCommand implements Callable<String>
-    {
+          description = "Show statistics on SRM requests.")
+    public class StatisticsShowCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             ColumnWriter requests = new ColumnWriter()
-                    .header("Operation").left("operation").space()
-                    .header("Requests").right("requests").space()
-                    .header("Success").right("success").space()
-                    .header("Fail").right("fail").space()
-                    .header("Mean").right("mean")
-                    .header(" ").right("mean-sd")
-                    .header("StdDev").right("sd").space()
-                    .header("Min").right("min").space()
-                    .header("Max").right("max");
+                  .header("Operation").left("operation").space()
+                  .header("Requests").right("requests").space()
+                  .header("Success").right("success").space()
+                  .header("Fail").right("fail").space()
+                  .header("Mean").right("mean")
+                  .header(" ").right("mean-sd")
+                  .header("StdDev").right("sd").space()
+                  .header("Min").right("min").space()
+                  .header("Max").right("max");
 
             for (Method m : counters.keySet()) {
                 RequestCounter c = counters.getCounter(m);
                 RequestExecutionTimeGauge g = gauges.getGauge(m);
                 requests.row().value("operation", m.getName())
-                        .value("requests", c.getTotalRequests())
-                        .value("success", c.getSuccessful())
-                        .value("fail", c.getFailed())
-                        .value("mean", duration((long)Math.floor(g.getAverageExecutionTime()+0.5), MILLISECONDS, SHORT))
-                        .value("mean-sd", "\u00B1")
-                        .value("sd", duration((long)Math.floor(g.getStandardDeviation()+0.5), MILLISECONDS, SHORT))
-                        .value("min", duration(g.getMinExecutionTime(), MILLISECONDS, SHORT))
-                        .value("max", duration(g.getMaxExecutionTime(), MILLISECONDS, SHORT));
+                      .value("requests", c.getTotalRequests())
+                      .value("success", c.getSuccessful())
+                      .value("fail", c.getFailed())
+                      .value("mean", duration((long) Math.floor(g.getAverageExecutionTime() + 0.5),
+                            MILLISECONDS, SHORT))
+                      .value("mean-sd", "\u00B1")
+                      .value("sd", duration((long) Math.floor(g.getStandardDeviation() + 0.5),
+                            MILLISECONDS, SHORT))
+                      .value("min", duration(g.getMinExecutionTime(), MILLISECONDS, SHORT))
+                      .value("max", duration(g.getMaxExecutionTime(), MILLISECONDS, SHORT));
             }
 
             requests.row("");
 
             RequestCounter total = counters.getTotalRequestCounter();
             requests.row().value("operation", "TOTALS")
-                    .value("requests", total.getTotalRequests())
-                    .value("success", total.getSuccessful())
-                    .value("fail", total.getFailed());
+                  .value("requests", total.getTotalRequests())
+                  .value("success", total.getSuccessful())
+                  .value("fail", total.getFailed());
 
             return requests.toString();
         }
     }
 
     @Command(name = "clear statistics", hint = "reset all statistics",
-                    description = "Reset SRM call statistics.")
-    public class StatisticsResetCommand  implements Callable<String>
-    {
+          description = "Reset SRM call statistics.")
+    public class StatisticsResetCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             counters.reset();
             gauges.reset();
             return "";

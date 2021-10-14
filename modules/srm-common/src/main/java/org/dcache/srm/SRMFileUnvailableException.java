@@ -22,32 +22,27 @@ import org.dcache.srm.v2_2.TStatusCode;
 /**
  * The requested file with the SURL is temporarily unavailable.
  */
-public class SRMFileUnvailableException extends SRMException
-{
+public class SRMFileUnvailableException extends SRMException {
+
     private static final long serialVersionUID = -1354387727495296801L;
 
-    public SRMFileUnvailableException()
-    {
+    public SRMFileUnvailableException() {
     }
 
-    public SRMFileUnvailableException(String message)
-    {
+    public SRMFileUnvailableException(String message) {
         super(message);
     }
 
-    public SRMFileUnvailableException(String message, Throwable cause)
-    {
+    public SRMFileUnvailableException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SRMFileUnvailableException(Throwable cause)
-    {
+    public SRMFileUnvailableException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_FILE_UNAVAILABLE;
     }
 }

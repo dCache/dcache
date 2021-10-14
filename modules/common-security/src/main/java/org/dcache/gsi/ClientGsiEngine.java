@@ -17,15 +17,12 @@
  */
 package org.dcache.gsi;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.io.ByteSource;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.proxy.ProxyGenerator;
 import eu.emi.security.authn.x509.proxy.ProxyRequestOptions;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,55 +33,55 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 /**
- * Wrapper for SSLEngine that implements GSI delegation. Only the client side of GSI is
- * supported.
+ * Wrapper for SSLEngine that implements GSI delegation. Only the client side of GSI is supported.
  */
-public class ClientGsiEngine extends InterceptingSSLEngine
-{
+public class ClientGsiEngine extends InterceptingSSLEngine {
+
     public static final char DELEGATION_CHAR = 'D';
     public static final char NO_DELEGATION_CHAR = '0';
 
     private final boolean isDelegationLimited;
     private final X509Credential credential;
 
-    public ClientGsiEngine(SSLEngine delegate, X509Credential credential, boolean isDelegationEnabled, boolean isDelegationLimited)
-    {
+    public ClientGsiEngine(SSLEngine delegate, X509Credential credential,
+          boolean isDelegationEnabled, boolean isDelegationLimited) {
         super(delegate);
         this.isDelegationLimited = isDelegationLimited;
         this.credential = credential;
         if (isDelegationEnabled) {
-            sendThenReceive(ByteBuffer.wrap(new byte[] { DELEGATION_CHAR }), new GotCsr());
+            sendThenReceive(ByteBuffer.wrap(new byte[]{DELEGATION_CHAR}), new GotCsr());
         } else {
             send(ByteBuffer.wrap(new byte[]{NO_DELEGATION_CHAR}));
         }
     }
 
     @Override
-    public void setUseClientMode(boolean isClientMode)
-    {
+    public void setUseClientMode(boolean isClientMode) {
         checkArgument(isClientMode, "Only the client side of GSI is supported by this engine.");
         super.setUseClientMode(isClientMode);
     }
 
-    private class GotCsr implements Callback
-    {
+    private class GotCsr implements Callback {
+
         private ByteSource data;
 
         @Override
-        public void call(ByteBuffer buffer) throws SSLException
-        {
+        public void call(ByteBuffer buffer) throws SSLException {
             // read csr
-            ByteSource chunk = ByteSource.wrap(buffer.array()).slice(buffer.arrayOffset(), buffer.position());
+            ByteSource chunk = ByteSource.wrap(buffer.array())
+                  .slice(buffer.arrayOffset(), buffer.position());
             ByteSource source = (data == null) ? chunk : ByteSource.concat(data, chunk);
             try {
                 PKCS10CertificationRequest csr = new PKCS10CertificationRequest(source.read());
 
                 // generate proxy
-                ProxyRequestOptions options = new ProxyRequestOptions(credential.getCertificateChain(), csr);
+                ProxyRequestOptions options = new ProxyRequestOptions(
+                      credential.getCertificateChain(), csr);
                 options.setLimited(isDelegationLimited);
                 X509Certificate[] chain = ProxyGenerator.generate(options, credential.getKey());
 

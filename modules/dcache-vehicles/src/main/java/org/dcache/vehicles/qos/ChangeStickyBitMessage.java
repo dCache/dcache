@@ -64,6 +64,7 @@ import diskCacheV111.vehicles.Message;
 import java.util.Objects;
 
 public final class ChangeStickyBitMessage extends Message {
+
     private static final long serialVersionUID = -9114794767657001381L;
     private final String pool;
     private final PnfsId pnfsId;
@@ -90,6 +91,6 @@ public final class ChangeStickyBitMessage extends Message {
 
     public String toString() {
         return String.format("%s: (pool %s) (pnfsid %s) (sticky %s) - %s", getMessageName(),
-                        pool, pnfsId, sticky, super.toString());
+              pool, pnfsId, sticky, super.toString());
     }
 }

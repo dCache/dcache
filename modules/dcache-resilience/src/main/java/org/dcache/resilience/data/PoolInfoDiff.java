@@ -62,34 +62,31 @@ package org.dcache.resilience.data;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
-
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.poolManager.StorageUnit;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.poolManager.StorageUnit;
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolV2Mode;
 import org.dcache.poolmanager.PoolMonitor;
 
 /**
  * <p>Container for recording changes to the internal maps based on
- *      a PoolMonitor update.  Records pools, pool groups and storage units
- *      that have been added or removed, and modifications to the pool set of
- *      a pool group, to storage unit constraints, and to the tags, mode and
- *      cost for new or current pools.</p>
+ * a PoolMonitor update.  Records pools, pool groups and storage units that have been added or
+ * removed, and modifications to the pool set of a pool group, to storage unit constraints, and to
+ * the tags, mode and cost for new or current pools.</p>
  *
  * <p>A note on the handling of pool cost:  cost is always updated, but
- *      this is done during the compare phase (under read lock) for pools that
- *      are already present.  Hence the cost map does not figure into the
- *      'empty' diff condition.</p>
+ * this is done during the compare phase (under read lock) for pools that are already present.
+ * Hence the cost map does not figure into the 'empty' diff condition.</p>
  *
  * @see PoolInfoMap#comparePoolInfo(PoolInfoDiff, Set, PoolMonitor)
  */
 public final class PoolInfoDiff {
+
     final Collection<String> newPools = new ArrayList<>();
     final Collection<String> oldPools = new ArrayList<>();
     final Collection<String> uninitPools = new ArrayList<>();
@@ -132,7 +129,7 @@ public final class PoolInfoDiff {
      *  (pool, tags)
      */
     private final Map<String, ImmutableMap<String, String>> tagsChanged
-                    = new HashMap<>();
+          = new HashMap<>();
 
     /*
      *  (pool, cost)
@@ -201,35 +198,35 @@ public final class PoolInfoDiff {
 
     public boolean isEmpty() {
         return newPools.isEmpty() && oldPools.isEmpty() && uninitPools.isEmpty()
-                        && newGroups.isEmpty() && oldGroups.isEmpty()
-                        && newUnits.isEmpty() && oldUnits.isEmpty()
-                        && poolsAdded.isEmpty() && poolsRmved.isEmpty()
-                        && unitsAdded.isEmpty() && unitsRmved.isEmpty()
-                        && constraints.isEmpty() && tagsChanged.isEmpty()
-                        && modeChanged.isEmpty();
+              && newGroups.isEmpty() && oldGroups.isEmpty()
+              && newUnits.isEmpty() && oldUnits.isEmpty()
+              && poolsAdded.isEmpty() && poolsRmved.isEmpty()
+              && unitsAdded.isEmpty() && unitsRmved.isEmpty()
+              && constraints.isEmpty() && tagsChanged.isEmpty()
+              && modeChanged.isEmpty();
     }
 
     public String toString() {
         return String.format("New Pools:            %s\n" +
-                                        "Old Pools:            %s\n" +
-                                        "Uninitialized Pools:  %s\n" +
-                                        "New Groups:           %s\n" +
-                                        "Old Groups:           %s\n" +
-                                        "New Units:            %s\n" +
-                                        "Old Units:            %s\n" +
-                                        "Pools Added:          %s\n" +
-                                        "Pools Removed:        %s\n" +
-                                        "Units Added:          %s\n" +
-                                        "Units Removed:        %s\n" +
-                                        "Constraints changed:  %s\n" +
-                                        "Mode changed:         %s\n" +
-                                        "Tags changed:         %s\n",
-                        newPools, oldPools, uninitPools,
-                        newGroups, oldGroups,
-                        newUnits, oldUnits,
-                        poolsAdded, poolsRmved,
-                        unitsAdded, unitsRmved,
-                        constraints, modeChanged,
-                        tagsChanged);
+                    "Old Pools:            %s\n" +
+                    "Uninitialized Pools:  %s\n" +
+                    "New Groups:           %s\n" +
+                    "Old Groups:           %s\n" +
+                    "New Units:            %s\n" +
+                    "Old Units:            %s\n" +
+                    "Pools Added:          %s\n" +
+                    "Pools Removed:        %s\n" +
+                    "Units Added:          %s\n" +
+                    "Units Removed:        %s\n" +
+                    "Constraints changed:  %s\n" +
+                    "Mode changed:         %s\n" +
+                    "Tags changed:         %s\n",
+              newPools, oldPools, uninitPools,
+              newGroups, oldGroups,
+              newUnits, oldUnits,
+              poolsAdded, poolsRmved,
+              unitsAdded, unitsRmved,
+              constraints, modeChanged,
+              tagsChanged);
     }
 }

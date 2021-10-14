@@ -31,14 +31,14 @@ public class ChimeraFsException extends IOException {
 
     /**
      * Constructs an instance of <code>ChimeraFsException</code> with the specified detail message.
+     *
      * @param msg the detail message.
      */
     public ChimeraFsException(String msg) {
         super(msg);
     }
 
-    public ChimeraFsException(String message, Throwable cause)
-    {
+    public ChimeraFsException(String message, Throwable cause) {
         super(message, cause);
     }
 }

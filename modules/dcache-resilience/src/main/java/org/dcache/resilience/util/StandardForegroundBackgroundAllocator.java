@@ -61,10 +61,10 @@ package org.dcache.resilience.util;
 
 /**
  * <p>The proportion allotted to foreground vs background is based
- *    on the proportion of operations in the queues.</p>
+ * on the proportion of operations in the queues.</p>
  *
  * <p>The maximum allocation percentage places both lower and upper
- *    bounds on the apportioned number of slots per queue.</p>
+ * bounds on the apportioned number of slots per queue.</p>
  *
  * <p>Weighting is done following these rules:
  *    <ol>
@@ -86,14 +86,14 @@ package org.dcache.resilience.util;
  * </p>
  */
 public class StandardForegroundBackgroundAllocator extends
-                ForegroundBackgroundAllocator {
+      ForegroundBackgroundAllocator {
 
     @Override
     public ForegroundBackgroundAllocation allocate(long slots,
-                                                   long occupied,
-                                                   long foreground,
-                                                   long background,
-                                                   double maxAllocation) {
+          long occupied,
+          long foreground,
+          long background,
+          double maxAllocation) {
         long available = slots - occupied;
 
         /*
@@ -127,9 +127,9 @@ public class StandardForegroundBackgroundAllocator extends
          *  or the max allocation weight, whichever is less.  The proportion
          *  is given a lower bound equal to the complement of the maximum.
          */
-        double fgweight  = Math.min(Math.max(fgsize/(fgsize+bgsize),
-                                             1.0-maxAllocation),
-                                    maxAllocation);
+        double fgweight = Math.min(Math.max(fgsize / (fgsize + bgsize),
+                    1.0 - maxAllocation),
+              maxAllocation);
 
         /*
          *  The weighted quota, or the size of the foreground queue, if the

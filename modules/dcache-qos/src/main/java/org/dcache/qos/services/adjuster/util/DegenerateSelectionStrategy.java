@@ -66,13 +66,14 @@ import org.dcache.pool.migration.PoolSelectionStrategy;
 import org.dcache.pool.migration.Task;
 
 /**
- *  Simply returns the single member of the list.
- *  <p/>
- *  The reason for its existence is so that the verification handler can preselect the source
- *  and target pools, but still make use of the migration module {@link Task}, which requires
- *  an implementation of {@link PoolSelectionStrategy} to be provided.
+ * Simply returns the single member of the list.
+ * <p/>
+ * The reason for its existence is so that the verification handler can preselect the source and
+ * target pools, but still make use of the migration module {@link Task}, which requires an
+ * implementation of {@link PoolSelectionStrategy} to be provided.
  */
 public final class DegenerateSelectionStrategy implements PoolSelectionStrategy {
+
     @Nullable
     @Override
     public PoolManagerPoolInformation select(List<PoolManagerPoolInformation> pools) {

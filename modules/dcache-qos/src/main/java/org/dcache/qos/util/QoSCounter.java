@@ -62,52 +62,53 @@ package org.dcache.qos.util;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- *  Base class for recording statistics concerning messages, operations and tasks.
+ * Base class for recording statistics concerning messages, operations and tasks.
  */
 public class QoSCounter {
-  protected final String key;
-  protected final AtomicLong total;
-  protected final AtomicLong failed;
 
-  public QoSCounter(String name) {
-    this.key = name;
-    total = new AtomicLong(0L);
-    failed = new AtomicLong(0L);
-  }
+    protected final String key;
+    protected final AtomicLong total;
+    protected final AtomicLong failed;
 
-  public String key() {
-    return key;
-  }
+    public QoSCounter(String name) {
+        this.key = name;
+        total = new AtomicLong(0L);
+        failed = new AtomicLong(0L);
+    }
 
-  public long getTotal() {
-    return total.get();
-  }
+    public String key() {
+        return key;
+    }
 
-  public long getFailed() {
-    return failed.get();
-  }
+    public long getTotal() {
+        return total.get();
+    }
 
-  public void incrementTotal() {
-    total.incrementAndGet();
-  }
+    public long getFailed() {
+        return failed.get();
+    }
 
-  public void incrementFailed() {
-    failed.incrementAndGet();
-  }
+    public void incrementTotal() {
+        total.incrementAndGet();
+    }
 
-  public void addToTotal(long value) {
-    total.addAndGet(value);
-  }
+    public void incrementFailed() {
+        failed.incrementAndGet();
+    }
 
-  public void addToFailed(long value) {
-    failed.addAndGet(value);
-  }
+    public void addToTotal(long value) {
+        total.addAndGet(value);
+    }
 
-  public void setTotal(long value) {
-    total.set(value);
-  }
+    public void addToFailed(long value) {
+        failed.addAndGet(value);
+    }
 
-  public void setFailed(long value) {
-    failed.set(value);
-  }
+    public void setTotal(long value) {
+        total.set(value);
+    }
+
+    public void setFailed(long value) {
+        failed.set(value);
+    }
 }

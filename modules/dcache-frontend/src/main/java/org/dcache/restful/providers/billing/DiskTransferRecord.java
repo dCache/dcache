@@ -64,15 +64,14 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import org.dcache.services.billing.db.data.TransferRecord;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY)
 @JsonSubTypes({
-                @JsonSubTypes.Type(value = DoorTransferRecord.class, name = "Door"),
+      @JsonSubTypes.Type(value = DoorTransferRecord.class, name = "Door"),
 
-                @JsonSubTypes.Type(value = P2PTransferRecord.class, name = "P2P") }
+      @JsonSubTypes.Type(value = P2PTransferRecord.class, name = "P2P")}
 )
 @ApiModel(description = "Properties pertinent to door and pool-to-pool transfers.")
 public abstract class DiskTransferRecord extends BillingTransferRecord {

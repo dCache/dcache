@@ -66,41 +66,34 @@ documents or software obtained from this server.
 
 package diskCacheV111.srm.dcache;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.util.concurrent.Executor;
-
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.util.concurrent.Executor;
+import javax.security.auth.Subject;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.SrmReserveSpaceCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class SrmReserveSpaceCompanion
-        extends AbstractMessageCallback<Reserve>
-{
+      extends AbstractMessageCallback<Reserve> {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmReserveSpaceCompanion.class);
+          LoggerFactory.getLogger(SrmReserveSpaceCompanion.class);
 
     private final SrmReserveSpaceCallback callback;
 
-    private SrmReserveSpaceCompanion(SrmReserveSpaceCallback callback)
-    {
+    private SrmReserveSpaceCompanion(SrmReserveSpaceCallback callback) {
         this.callback = callback;
     }
 
     @Override
-    public void failure(int rc, Object error)
-    {
+    public void failure(int rc, Object error) {
         LOGGER.error("Space Reservation Failed rc: {} error:{}", rc, String.valueOf(error));
         if (error instanceof NoFreeSpaceException) {
             NoFreeSpaceException nfse = (NoFreeSpaceException) error;
@@ -114,41 +107,39 @@ public final class SrmReserveSpaceCompanion
     }
 
     @Override
-    public void noroute(CellPath path)
-    {
+    public void noroute(CellPath path) {
         LOGGER.error("No route to {}", path);
         callback.internalError("Space manager unavailable");
     }
 
     @Override
-    public void success(Reserve reservationResponse)
-    {
+    public void success(Reserve reservationResponse) {
         callback.success(
-                Long.toString(reservationResponse.getSpaceToken()),
-                reservationResponse.getSizeInBytes());
+              Long.toString(reservationResponse.getSpaceToken()),
+              reservationResponse.getSizeInBytes());
     }
 
     @Override
-    public void timeout(String error)
-    {
+    public void timeout(String error) {
         LOGGER.error(error);
         callback.internalError("Space manager timeout");
     }
 
     public static void reserveSpace(
-            Subject subject,
-            long sizeInBytes,
-            long spaceReservationLifetime,
-            String retentionPolicyString,
-            String accessLatencyString,
-            String description,
-            String linkgroup,
-            SrmReserveSpaceCallback callback,
-            CellStub spaceManagerStub,
-            Executor executor)
-    {
-        LOGGER.trace(" SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
-                subject.getPrincipals(), sizeInBytes, accessLatencyString, retentionPolicyString, spaceReservationLifetime);
+          Subject subject,
+          long sizeInBytes,
+          long spaceReservationLifetime,
+          String retentionPolicyString,
+          String accessLatencyString,
+          String description,
+          String linkgroup,
+          SrmReserveSpaceCallback callback,
+          CellStub spaceManagerStub,
+          Executor executor) {
+        LOGGER.trace(
+              " SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
+              subject.getPrincipals(), sizeInBytes, accessLatencyString, retentionPolicyString,
+              spaceReservationLifetime);
 
         SrmReserveSpaceCompanion companion = new SrmReserveSpaceCompanion(callback);
         AccessLatency accessLatency = null;
@@ -156,7 +147,7 @@ public final class SrmReserveSpaceCompanion
         if (accessLatencyString != null) {
             try {
                 accessLatency =
-                        AccessLatency.getAccessLatency(accessLatencyString);
+                      AccessLatency.getAccessLatency(accessLatencyString);
             } catch (IllegalArgumentException iae) {
                 callback.failed("Invalid access latency");
                 return;
@@ -165,7 +156,7 @@ public final class SrmReserveSpaceCompanion
         if (retentionPolicyString != null) {
             try {
                 retentionPolicy =
-                        RetentionPolicy.getRetentionPolicy(retentionPolicyString);
+                      RetentionPolicy.getRetentionPolicy(retentionPolicyString);
             } catch (IllegalArgumentException iae) {
                 callback.failed("Invalid retention policy");
                 return;
@@ -173,13 +164,13 @@ public final class SrmReserveSpaceCompanion
         }
 
         Reserve reserve =
-                new Reserve(
-                        linkgroup,
-                        sizeInBytes,
-                        retentionPolicy,
-                        accessLatency,
-                        spaceReservationLifetime,
-                        description);
+              new Reserve(
+                    linkgroup,
+                    sizeInBytes,
+                    retentionPolicy,
+                    accessLatency,
+                    spaceReservationLifetime,
+                    description);
         reserve.setSubject(subject);
         CellStub.addCallback(spaceManagerStub.send(reserve), companion, executor);
     }

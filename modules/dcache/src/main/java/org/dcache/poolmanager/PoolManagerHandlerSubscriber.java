@@ -19,61 +19,58 @@
 
 package org.dcache.poolmanager;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.util.concurrent.Futures.catchingAsync;
+import static com.google.common.util.concurrent.Futures.nonCancellationPropagating;
+import static com.google.common.util.concurrent.Futures.transformAsync;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
+
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import javax.annotation.concurrent.GuardedBy;
-
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
-
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.cells.CellStub;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.Futures.*;
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
-import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Client stub for obtaining implementations of PoolManagerHandler.
  *
  * <p>This class allows an implementation of PoolManagerHandler to be obtained from a
- * pool manager asynchronously. Updates to this implementation are fetched
- * transparently and asynchronously until the component is stopped.
+ * pool manager asynchronously. Updates to this implementation are fetched transparently and
+ * asynchronously until the component is stopped.
  *
  * <p>The class implements PoolManagerHandler and passes along calls to the obtained
  * PoolManagerHandler.
  */
 public class PoolManagerHandlerSubscriber
-        implements CellLifeCycleAware, PoolManagerHandler
-{
-    private final static Logger LOGGER = LoggerFactory.getLogger(PoolManagerHandlerSubscriber.class);
+      implements CellLifeCycleAware, PoolManagerHandler {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(
+          PoolManagerHandlerSubscriber.class);
 
     /**
-     * How frequently to poll for updates. Usually updates are propagated immediately by
-     * downstream as a result of a PoolManagerGetUpdatedHandler request, but in case
-     * such a request is lost, it will at most be until the poll period expires before
-     * we resubmit the request.
+     * How frequently to poll for updates. Usually updates are propagated immediately by downstream
+     * as a result of a PoolManagerGetUpdatedHandler request, but in case such a request is lost, it
+     * will at most be until the poll period expires before we resubmit the request.
      */
     private static final int POLLING_PERIOD = 60000;
 
@@ -87,61 +84,59 @@ public class PoolManagerHandlerSubscriber
 
     /**
      * Sets the cell stub used to query the PoolManagerHandler.
+     *
      * @param poolManager
      */
     @Required
-    public void setPoolManager(CellStub poolManager)
-    {
+    public void setPoolManager(CellStub poolManager) {
         this.poolManager = poolManager;
     }
 
     @PostConstruct
-    public synchronized void start()
-    {
-        current = transformAsync(startGate, ignored -> CellStub.transform(query(new PoolMgrGetHandler()), PoolMgrGetHandler::getHandler));
+    public synchronized void start() {
+        current = transformAsync(startGate,
+              ignored -> CellStub.transform(query(new PoolMgrGetHandler()),
+                    PoolMgrGetHandler::getHandler));
 
-        Futures.addCallback(current, new FutureCallback<SerializablePoolManagerHandler>()
-                            {
-                                @Override
-                                public void onSuccess(SerializablePoolManagerHandler handler)
-                                {
-                                    synchronized (PoolManagerHandlerSubscriber.this) {
-                                        try {
-                                            current = Futures.immediateFuture(handler);
-                                            if (!isStopped) {
-                                                ListenableFuture<SerializablePoolManagerHandler> next =
-                                                        CellStub.transform(query(new PoolMgrGetUpdatedHandler(
-                                                                handler.getVersion())), PoolMgrGetHandler::getHandler);
-                                                Futures.addCallback(next, this);
-                                            }
-                                        } catch (Throwable t) {
-                                            current = Futures.immediateFailedFuture(t);
-                                            LOGGER.error("Failure in pool manager handler subscriber. Please report to support@dcache.org.", t);
-                                            throw t;
-                                        }
-                                    }
-                                }
+        Futures.addCallback(current, new FutureCallback<SerializablePoolManagerHandler>() {
+            @Override
+            public void onSuccess(SerializablePoolManagerHandler handler) {
+                synchronized (PoolManagerHandlerSubscriber.this) {
+                    try {
+                        current = Futures.immediateFuture(handler);
+                        if (!isStopped) {
+                            ListenableFuture<SerializablePoolManagerHandler> next =
+                                  CellStub.transform(query(new PoolMgrGetUpdatedHandler(
+                                        handler.getVersion())), PoolMgrGetHandler::getHandler);
+                            Futures.addCallback(next, this);
+                        }
+                    } catch (Throwable t) {
+                        current = Futures.immediateFailedFuture(t);
+                        LOGGER.error(
+                              "Failure in pool manager handler subscriber. Please report to support@dcache.org.",
+                              t);
+                        throw t;
+                    }
+                }
+            }
 
-                                @Override
-                                public void onFailure(Throwable t)
-                                {
-                                    synchronized (PoolManagerHandlerSubscriber.this) {
-                                        current = Futures.immediateFailedFuture(t);
-                                    }
-                                }
-                            });
+            @Override
+            public void onFailure(Throwable t) {
+                synchronized (PoolManagerHandlerSubscriber.this) {
+                    current = Futures.immediateFailedFuture(t);
+                }
+            }
+        });
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         startGate.set(null);
         startGate = null;
     }
 
     @Override
-    public synchronized void beforeStop()
-    {
+    public synchronized void beforeStop() {
         isStopped = true;
         if (current != null) {
             current.cancel(false);
@@ -149,16 +144,14 @@ public class PoolManagerHandlerSubscriber
     }
 
     @GuardedBy("this")
-    private ListenableFuture<PoolMgrGetHandler> query(PoolMgrGetHandler request)
-    {
+    private ListenableFuture<PoolMgrGetHandler> query(PoolMgrGetHandler request) {
         return catchingAsync(poolManager.send(request, POLLING_PERIOD, RETRY_ON_NO_ROUTE_TO_CELL),
-                             TimeoutCacheException.class, t -> retryQuery(request));
+              TimeoutCacheException.class, t -> retryQuery(request));
 
     }
 
     @GuardedBy("this")
-    private ListenableFuture<PoolMgrGetHandler> retryQuery(PoolMgrGetHandler request)
-    {
+    private ListenableFuture<PoolMgrGetHandler> retryQuery(PoolMgrGetHandler request) {
         if (isStopped) {
             throw new CancellationException("Subscriber was stopped.");
         }
@@ -169,45 +162,40 @@ public class PoolManagerHandlerSubscriber
      * Returns the currently cached implementation of PoolManagerHandler.
      *
      * <p>This is returned as a {@link ListenableFuture} since during startup no handler
-     * may be available. In such case the future is not done and calling {@code get}
-     * on it will block.
+     * may be available. In such case the future is not done and calling {@code get} on it will
+     * block.
      *
      * @return A future cached PoolManagerHandler implementation.
      */
-    public synchronized ListenableFuture<SerializablePoolManagerHandler> current()
-    {
+    public synchronized ListenableFuture<SerializablePoolManagerHandler> current() {
         checkState(current != null);
         return nonCancellationPropagating(current);
     }
 
     @Override
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(
-            CellEndpoint endpoint, CellAddressCore address, T msg, long timeout)
-    {
+          CellEndpoint endpoint, CellAddressCore address, T msg, long timeout) {
         return withCurrent(handler -> handler.startAsync(endpoint, address, msg, timeout));
     }
 
     @Override
-    public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg)
-    {
+    public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg) {
         withCurrent(handler -> handler.start(endpoint, envelope, msg), endpoint, envelope, msg);
     }
 
     @Override
-    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg, long timeout)
-    {
+    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint,
+          T msg, long timeout) {
         return withCurrent(handler -> handler.sendAsync(endpoint, msg, timeout));
     }
 
     @Override
-    public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg)
-    {
+    public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg) {
         withCurrent(handler -> handler.send(endpoint, envelope, msg), endpoint, envelope, msg);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         ListenableFuture<SerializablePoolManagerHandler> current = this.current;
         if (current.isDone()) {
             try {
@@ -219,30 +207,27 @@ public class PoolManagerHandlerSubscriber
         return "unavailable";
     }
 
-    private <T extends Message> ListenableFuture<T> withCurrent(AsyncFunction<SerializablePoolManagerHandler, T> f)
-    {
+    private <T extends Message> ListenableFuture<T> withCurrent(
+          AsyncFunction<SerializablePoolManagerHandler, T> f) {
         return transformAsync(current(), f);
     }
 
-    private void withCurrent(Consumer<SerializablePoolManagerHandler> f, CellEndpoint endpoint, CellMessage envelope, Message msg)
-    {
+    private void withCurrent(Consumer<SerializablePoolManagerHandler> f, CellEndpoint endpoint,
+          CellMessage envelope, Message msg) {
         Futures.addCallback(current,
-                            new FutureCallback<SerializablePoolManagerHandler>()
-                            {
-                                @Override
-                                public void onSuccess(@Nullable SerializablePoolManagerHandler handler)
-                                {
-                                    f.accept(handler);
-                                }
+              new FutureCallback<SerializablePoolManagerHandler>() {
+                  @Override
+                  public void onSuccess(@Nullable SerializablePoolManagerHandler handler) {
+                      f.accept(handler);
+                  }
 
-                                @Override
-                                public void onFailure(Throwable t)
-                                {
-                                    msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, t);
-                                    envelope.setMessageObject(msg);
-                                    envelope.revertDirection();
-                                    endpoint.sendMessage(envelope);
-                                }
-                            });
+                  @Override
+                  public void onFailure(Throwable t) {
+                      msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, t);
+                      envelope.setMessageObject(msg);
+                      envelope.revertDirection();
+                      endpoint.sendMessage(envelope);
+                  }
+              });
     }
 }

@@ -100,12 +100,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.apache.axis.types.URI;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-
+import org.apache.axis.types.URI;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
@@ -128,12 +126,12 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMCopyClientV2 extends SRMClient implements Runnable
-{
+public class SRMCopyClientV2 extends SRMClient implements Runnable {
+
     private final java.net.URI from[];
     private final java.net.URI to[];
     private final SrmCopyRequest req = new SrmCopyRequest();
-    private final HashMap<java.net.URI,Integer> pendingSurlsMap = new HashMap<>();
+    private final HashMap<java.net.URI, Integer> pendingSurlsMap = new HashMap<>();
 
     private Thread hook;
     private String requestToken;
@@ -146,9 +144,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
     }
 
     @Override
-    protected java.net.URI getServerUrl()
-    {
-        return configuration.isPushmode() ? from [0] : to [0];
+    protected java.net.URI getServerUrl() {
+        return configuration.isPushmode() ? from[0] : to[0];
     }
 
     @Override
@@ -161,9 +158,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
             int len = from.length;
             TCopyFileRequest copyFileRequests[] = new TCopyFileRequest[len];
 
-            for(int i = 0; i<from.length;++i) {
+            for (int i = 0; i < from.length; ++i) {
                 java.net.URI source = from[i];
-                java.net.URI dest   = to[i];
+                java.net.URI dest = to[i];
                 TCopyFileRequest copyFileRequest = new TCopyFileRequest();
                 copyFileRequest.setSourceSURL(new URI(source.toASCIIString()));
                 copyFileRequest.setTargetSURL(new URI(dest.toASCIIString()));
@@ -171,87 +168,94 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
                 dirOption.setIsSourceADirectory(false);
                 dirOption.setAllLevelRecursive(Boolean.TRUE);
                 copyFileRequest.setDirOption(dirOption);
-                copyFileRequests[i]=copyFileRequest;
+                copyFileRequests[i] = copyFileRequest;
                 pendingSurlsMap.put(from[i], i);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            String storagetype=configuration.getStorageType();
-            if (storagetype!=null) {
-                req.setTargetFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
+            String storagetype = configuration.getStorageType();
+            if (storagetype != null) {
+                req.setTargetFileStorageType(
+                      FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
             req.setUserRequestDescription(configuration.getUserRequestDescription());
             req.setDesiredTotalRequestTime((int) configuration
-                    .getRequestLifetime());
+                  .getRequestLifetime());
             TRetentionPolicy retentionPolicy = configuration.getRetentionPolicy() != null ?
-                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+                  RetentionPolicy.fromString(configuration.getRetentionPolicy())
+                        .toTRetentionPolicy() : null;
             TAccessLatency accessLatency = configuration.getAccessLatency() != null ?
-                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
+                  AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency()
+                  : null;
 
-            if ( (accessLatency!=null) && (retentionPolicy==null)) {
-                throw new IllegalArgumentException("if access latency is specified, "+
-                                                   "then retention policy have to be specified as well");
-            }
-            else if ( retentionPolicy!=null ) {
+            if ((accessLatency != null) && (retentionPolicy == null)) {
+                throw new IllegalArgumentException("if access latency is specified, " +
+                      "then retention policy have to be specified as well");
+            } else if (retentionPolicy != null) {
                 TRetentionPolicyInfo retentionPolicyInfo =
-                    new TRetentionPolicyInfo(retentionPolicy,accessLatency);
+                      new TRetentionPolicyInfo(retentionPolicy, accessLatency);
                 req.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
 
-            if(configuration.getOverwriteMode() != null) {
-                req.setOverwriteOption(OverwriteMode.fromString(configuration.getOverwriteMode()).toTOverwriteMode());
+            if (configuration.getOverwriteMode() != null) {
+                req.setOverwriteOption(OverwriteMode.fromString(configuration.getOverwriteMode())
+                      .toTOverwriteMode());
             }
             req.setArrayOfFileRequests(new ArrayOfTCopyFileRequest(copyFileRequests));
             req.setUserRequestDescription("This is User request description");
-            if(configuration.getSpaceToken() != null) {
+            if (configuration.getSpaceToken() != null) {
                 req.setTargetSpaceToken(configuration.getSpaceToken());
             }
             configuration.getStorageSystemInfo().ifPresent(req::setSourceStorageSystemInfo);
             SrmCopyResponse resp = srm.srmCopy(req);
-            if ( resp == null ) {
+            if (resp == null) {
                 throw new IOException(" null SrmCopyResponse");
             }
-            TReturnStatus rs     = resp.getReturnStatus();
-            requestToken         = resp.getRequestToken();
-            dsay(" srm returned requestToken = "+requestToken);
-            if ( rs == null) {
+            TReturnStatus rs = resp.getReturnStatus();
+            requestToken = resp.getRequestToken();
+            dsay(" srm returned requestToken = " + requestToken);
+            if (rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
             TStatusCode statusCode = rs.getStatusCode();
-            if(statusCode == null) {
+            if (statusCode == null) {
                 throw new IOException(" null status code");
             }
             if (RequestStatusTool.isFailedRequestStatus(rs) &&
-                    (statusCode != TStatusCode.SRM_FAILURE || resp.getArrayOfFileStatuses() == null)) {
+                  (statusCode != TStatusCode.SRM_FAILURE
+                        || resp.getArrayOfFileStatuses() == null)) {
                 String explanation = rs.getExplanation();
                 if (explanation != null) {
-                    throw new IOException("srmCopy submission failed, unexpected or failed status : " +
-                                                  statusCode + " explanation= " + explanation);
+                    throw new IOException(
+                          "srmCopy submission failed, unexpected or failed status : " +
+                                statusCode + " explanation= " + explanation);
                 } else {
-                    throw new IOException("srmCopy submission failed, unexpected or failed status : " + statusCode);
+                    throw new IOException(
+                          "srmCopy submission failed, unexpected or failed status : " + statusCode);
                 }
             }
-            if(resp.getArrayOfFileStatuses() == null) {
-                throw new IOException("srmCopy submission failed, arrayOfFileStatuses is null, status code :"+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+            if (resp.getArrayOfFileStatuses() == null) {
+                throw new IOException(
+                      "srmCopy submission failed, arrayOfFileStatuses is null, status code :" +
+                            rs.getStatusCode() + " explanation=" + rs.getExplanation());
 
             }
             TCopyRequestFileStatus[] arrayOfStatuses =
-                resp.getArrayOfFileStatuses().getStatusArray();
-            if ( arrayOfStatuses.length != len ) {
-                throw new IOException("number of SrmCopyRequestFileStatuses "+
-                        "is SrmRequestStatus is different from exopected "+len+" received "+
-                        arrayOfStatuses.length);
+                  resp.getArrayOfFileStatuses().getStatusArray();
+            if (arrayOfStatuses.length != len) {
+                throw new IOException("number of SrmCopyRequestFileStatuses " +
+                      "is SrmRequestStatus is different from exopected " + len + " received " +
+                      arrayOfStatuses.length);
             }
 
-            while(!pendingSurlsMap.isEmpty()) {
+            while (!pendingSurlsMap.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
                 for (TCopyRequestFileStatus copyRequestFileStatus : arrayOfStatuses) {
                     if (copyRequestFileStatus == null) {
                         throw new IOException(" null file status code");
                     }
                     TReturnStatus fileStatus = copyRequestFileStatus
-                            .getStatus();
+                          .getStatus();
                     if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
@@ -270,42 +274,42 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
                     java.net.URI from_surl_uri = new java.net.URI(from_surl.toString());
                     java.net.URI to_surl_uri = new java.net.URI(to_surl.toString());
                     if (RequestStatusTool
-                            .isFailedFileRequestStatus(fileStatus)) {
+                          .isFailedFileRequestStatus(fileStatus)) {
                         String error = "copy of " + from_surl_uri + " into " + to_surl +
-                                " failed, status = " + fileStatusCode +
-                                " explanation=" + fileStatus.getExplanation();
+                              " failed, status = " + fileStatusCode +
+                              " explanation=" + fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsMap.remove(from_surl_uri);
                         setReportFailed(from[indx], to[indx], error);
 
                     } else if (fileStatusCode == TStatusCode.SRM_SUCCESS ||
-                            fileStatusCode == TStatusCode.SRM_DONE) {
+                          fileStatusCode == TStatusCode.SRM_DONE) {
                         int indx = pendingSurlsMap.remove(from_surl_uri);
                         say(" copying of " + from_surl_uri + " to " + to_surl_uri + " succeeded");
                         setReportSucceeded(from[indx], to[indx]);
                     }
                     if (copyRequestFileStatus.getEstimatedWaitTime() != null &&
-                            copyRequestFileStatus
-                                    .getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            copyRequestFileStatus.getEstimatedWaitTime() >= 1) {
+                          copyRequestFileStatus
+                                .getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                          copyRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = copyRequestFileStatus
-                                .getEstimatedWaitTime();
+                              .getEstimatedWaitTime();
                     }
                 }
-                if ( pendingSurlsMap.isEmpty()) {
+                if (pendingSurlsMap.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
                 }
 
-                if(estimatedWaitInSeconds > 60) {
+                if (estimatedWaitInSeconds > 60) {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
 
-                    say("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    say("sleeping " + estimatedWaitInSeconds + " seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
-                } catch(InterruptedException ie) {
+                } catch (InterruptedException ie) {
                 }
                 //
                 // check our request
@@ -313,77 +317,79 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
                 SrmStatusOfCopyRequestRequest request = new SrmStatusOfCopyRequestRequest();
                 request.setRequestToken(requestToken);
                 request.setAuthorizationID(req.getAuthorizationID());
-                int expectedResponseLength= pendingSurlsMap.size();
-                URI surlArrayOfFromSURLs[]  = new URI[expectedResponseLength];
-                URI surlArrayOfToSURLs[]    = new URI[expectedResponseLength];
+                int expectedResponseLength = pendingSurlsMap.size();
+                URI surlArrayOfFromSURLs[] = new URI[expectedResponseLength];
+                URI surlArrayOfToSURLs[] = new URI[expectedResponseLength];
                 Iterator<Integer> it = pendingSurlsMap.values().iterator();
-                for (int i=0; it.hasNext(); i++) {
+                for (int i = 0; it.hasNext(); i++) {
                     int indx = it.next();
                     TCopyFileRequest copyFileRequest = copyFileRequests[indx];
                     surlArrayOfFromSURLs[i] = copyFileRequest.getSourceSURL();
-                    surlArrayOfToSURLs[i]   = copyFileRequest.getTargetSURL();
+                    surlArrayOfToSURLs[i] = copyFileRequest.getTargetSURL();
                 }
                 request.setArrayOfSourceSURLs(
-                        new ArrayOfAnyURI(surlArrayOfFromSURLs));
+                      new ArrayOfAnyURI(surlArrayOfFromSURLs));
                 request.setArrayOfTargetSURLs(
-                        new ArrayOfAnyURI(surlArrayOfToSURLs));
-                SrmStatusOfCopyRequestResponse copyStatusRequestResponse = srm.srmStatusOfCopyRequest(request);
-                if(copyStatusRequestResponse == null) {
+                      new ArrayOfAnyURI(surlArrayOfToSURLs));
+                SrmStatusOfCopyRequestResponse copyStatusRequestResponse = srm.srmStatusOfCopyRequest(
+                      request);
+                if (copyStatusRequestResponse == null) {
                     throw new IOException(" null copyStatusRequestResponse");
                 }
-                if ( copyStatusRequestResponse.getArrayOfFileStatuses() == null) {
-                    throw new IOException("null SrmStatusOfCopyRequestResponse.getArrayOfFileStatuses()");
+                if (copyStatusRequestResponse.getArrayOfFileStatuses() == null) {
+                    throw new IOException(
+                          "null SrmStatusOfCopyRequestResponse.getArrayOfFileStatuses()");
                 }
 
                 arrayOfStatuses =
-                    copyStatusRequestResponse.getArrayOfFileStatuses().getStatusArray();
+                      copyStatusRequestResponse.getArrayOfFileStatuses().getStatusArray();
 
-                if ( arrayOfStatuses.length != pendingSurlsMap.size() ) {
-                    esay( "incorrect number of arrayOfStatuses "+
-                            "in SrmStatusOfCopyRequestResponse expected "+
-                            expectedResponseLength+" received "+
-                            arrayOfStatuses.length);
+                if (arrayOfStatuses.length != pendingSurlsMap.size()) {
+                    esay("incorrect number of arrayOfStatuses " +
+                          "in SrmStatusOfCopyRequestResponse expected " +
+                          expectedResponseLength + " received " +
+                          arrayOfStatuses.length);
                 }
                 TReturnStatus status = copyStatusRequestResponse.getReturnStatus();
-                if ( status == null ) {
+                if (status == null) {
                     throw new IOException(" null return status");
                 }
                 statusCode = status.getStatusCode();
-                if(statusCode == null) {
+                if (statusCode == null) {
                     throw new IOException(" null status code");
                 }
-                if (RequestStatusTool.isFailedRequestStatus(status)){
-                    String error = "srmCopy update failed, status : "+ statusCode+
-                    " explanation="+status.getExplanation();
+                if (RequestStatusTool.isFailedRequestStatus(status)) {
+                    String error = "srmCopy update failed, status : " + statusCode +
+                          " explanation=" + status.getExplanation();
                     esay(error);
-                    for(int i = 0; i<expectedResponseLength;++i) {
+                    for (int i = 0; i < expectedResponseLength; ++i) {
                         TReturnStatus frstatus = arrayOfStatuses[i].getStatus();
-                        if ( frstatus != null) {
-                            esay("copyFileRequest["+
-                                    arrayOfStatuses[i].getSourceSURL()+
-                                    " , "+arrayOfStatuses[i].getTargetSURL()+
-                                    "] status="+frstatus.getStatusCode()+
-                                    " explanation="+frstatus.getExplanation()
+                        if (frstatus != null) {
+                            esay("copyFileRequest[" +
+                                  arrayOfStatuses[i].getSourceSURL() +
+                                  " , " + arrayOfStatuses[i].getTargetSURL() +
+                                  "] status=" + frstatus.getStatusCode() +
+                                  " explanation=" + frstatus.getExplanation()
                             );
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                pendingSurlsMap.remove(new java.net.URI(arrayOfStatuses[i].getSourceSURL().toString()));
+                                pendingSurlsMap.remove(new java.net.URI(
+                                      arrayOfStatuses[i].getSourceSURL().toString()));
                             }
                         }
                     }
                     throw new IOException(error);
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             try {
                 abortAllPendingFiles();
-            }
-            catch(Exception e1) {
+            } catch (Exception e1) {
                 edsay(e1.toString());
             }
             throw e;
         } finally {
             report.dumpReport();
-            if(!report.everythingAllRight()){
+            if (!report.everythingAllRight()) {
                 report.reportErrors(System.err);
             }
         }
@@ -394,7 +400,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
         try {
             dsay("stopping ");
             abortAllPendingFiles();
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.elog(e.toString());
         }
     }
@@ -403,33 +409,33 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable
         if (pendingSurlsMap.isEmpty()) {
             return;
         }
-        if (requestToken==null) {
+        if (requestToken == null) {
             return;
         }
         java.net.URI[] surl_strings = pendingSurlsMap.keySet()
-                .toArray(new java.net.URI[pendingSurlsMap.size()]);
+              .toArray(new java.net.URI[pendingSurlsMap.size()]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
         URI surlArray[] = new URI[len];
 
-        for(int i=0;i<len;++i){
+        for (int i = 0; i < len; ++i) {
             URI uri =
-                new URI(surl_strings[i].toASCIIString());
-            surlArray[i]=uri;
+                  new URI(surl_strings[i].toASCIIString());
+            surlArray[i] = uri;
         }
         SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
         srmAbortFilesRequest.setRequestToken(requestToken);
         srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
         SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
-        if(srmAbortFilesResponse == null) {
+        if (srmAbortFilesResponse == null) {
             logger.elog(" srmAbortFilesResponse is null");
         } else {
             TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
-            if(returnStatus == null) {
+            if (returnStatus == null) {
                 esay("srmAbortFiles return status is null");
                 return;
             }
-            say("srmAbortFiles status code="+returnStatus.getStatusCode());
+            say("srmAbortFiles status code=" + returnStatus.getStatusCode());
         }
     }
 }

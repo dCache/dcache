@@ -1,15 +1,14 @@
 package org.dcache.services.info.base;
 
+import static org.junit.Assert.fail;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static org.junit.Assert.fail;
-
 /**
- * This Class provides a implementation of the StateUpdateManager interface where
- * all StateUpdate requests are held in a queue and are never processed.
- * The queue of pending StateUpdates can be accessed via a QueuingStateUpdateManager
- * specific method {@link getQueue}.
+ * This Class provides a implementation of the StateUpdateManager interface where all StateUpdate
+ * requests are held in a queue and are never processed. The queue of pending StateUpdates can be
+ * accessed via a QueuingStateUpdateManager specific method {@link getQueue}.
  */
 public class QueuingStateUpdateManager implements StateUpdateManager {
 
@@ -21,14 +20,13 @@ public class QueuingStateUpdateManager implements StateUpdateManager {
     }
 
     @Override
-    public void enqueueUpdate( StateUpdate pendingUpdate) {
-        _queue.add( pendingUpdate);
+    public void enqueueUpdate(StateUpdate pendingUpdate) {
+        _queue.add(pendingUpdate);
     }
 
     @Override
-    public void shutdown()
-    {
-        fail( "QueuingStateUpdateManager.shutdown() not implemented");
+    public void shutdown() {
+        fail("QueuingStateUpdateManager.shutdown() not implemented");
     }
 
     public Queue<StateUpdate> getQueue() {

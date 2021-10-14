@@ -60,27 +60,23 @@ documents or software obtained from this server.
 package org.dcache.vehicles.histograms;
 
 import com.google.common.collect.ImmutableSet;
-
+import diskCacheV111.vehicles.Message;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.vehicles.Message;
-
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.util.histograms.TimeseriesHistogram;
 
 /**
  * <p>Requests for historical (timeseries) data concerning pools.
- * This includes statistical timelines for
- * file lifetime min, max and averages, as well as the counts
- * for active and queued requests over the period of a
- * predetermined window.</p>
+ * This includes statistical timelines for file lifetime min, max and averages, as well as the
+ * counts for active and queued requests over the period of a predetermined window.</p>
  */
 public class PoolTimeseriesRequestMessage extends Message {
-    public static final  Set<TimeseriesType> ALL
-                    = ImmutableSet.copyOf(TimeseriesType.values());
 
-    private static final long                serialVersionUID = 1980528238192896599L;
+    public static final Set<TimeseriesType> ALL
+          = ImmutableSet.copyOf(TimeseriesType.values());
+
+    private static final long serialVersionUID = 1980528238192896599L;
 
     /**
      * <p>Possible timeseries data types.</p>
@@ -102,8 +98,8 @@ public class PoolTimeseriesRequestMessage extends Message {
         QUEUED_STAGE
     }
 
-    private String                                   pool;
-    private Set<TimeseriesType>                      keys;
+    private String pool;
+    private Set<TimeseriesType> keys;
     private Map<TimeseriesType, TimeseriesHistogram> histogramMap;
     private SweeperData sweeperData;
 
@@ -124,7 +120,7 @@ public class PoolTimeseriesRequestMessage extends Message {
     }
 
     public void setHistogramMap(
-                    Map<TimeseriesType, TimeseriesHistogram> histogramMap) {
+          Map<TimeseriesType, TimeseriesHistogram> histogramMap) {
         this.histogramMap = histogramMap;
     }
 

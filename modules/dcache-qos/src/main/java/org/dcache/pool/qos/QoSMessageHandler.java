@@ -59,13 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.qos;
 
-import java.util.Collection;
-import java.util.concurrent.ExecutorService;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
+import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
@@ -76,17 +76,18 @@ import org.dcache.vehicles.qos.ChangeStickyBitMessage;
 import org.dcache.vehicles.qos.ReplicaStatusMessage;
 
 /**
- *  Serves requests to verify records and change the sticky bit on entries from the repository.
+ * Serves requests to verify records and change the sticky bit on entries from the repository.
  */
 public final class QoSMessageHandler implements CellMessageReceiver {
+
     private static final String SYSTEM_OWNER = "system";
 
-    private Repository   repository;
+    private Repository repository;
     private BrokenFileNotifier brokenFileNotifier;
     private ExecutorService executor;
 
     public void initialize() {
-	repository.addListener(brokenFileNotifier);
+        repository.addListener(brokenFileNotifier);
     }
 
     public Reply messageArrived(ChangeStickyBitMessage message) {
@@ -95,7 +96,7 @@ public final class QoSMessageHandler implements CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                repository.setSticky(pnfsId, SYSTEM_OWNER, expiry,true);
+                repository.setSticky(pnfsId, SYSTEM_OWNER, expiry, true);
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -110,7 +111,7 @@ public final class QoSMessageHandler implements CellMessageReceiver {
         executor.execute(() -> {
             try {
                 repository.setState(pnfsId, ReplicaState.CACHED, "QoS has determined that "
-                        + "the replica does not need to remain in the precious state.");
+                      + "the replica does not need to remain in the precious state.");
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -120,8 +121,8 @@ public final class QoSMessageHandler implements CellMessageReceiver {
     }
 
     /**
-     *  Returns whether replica exists, the status of its system sticky flag
-     *  and whether its state allows for reading and removal.
+     * Returns whether replica exists, the status of its system sticky flag and whether its state
+     * allows for reading and removal.
      */
     public Reply messageArrived(ReplicaStatusMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
@@ -131,7 +132,7 @@ public final class QoSMessageHandler implements CellMessageReceiver {
                 CacheEntry entry = repository.getEntry(pnfsId);
                 message.setExists(true);
 
-                switch(entry.getState()) {
+                switch (entry.getState()) {
                     case FROM_CLIENT:
                     case FROM_POOL:
                     case FROM_STORE:
@@ -154,16 +155,16 @@ public final class QoSMessageHandler implements CellMessageReceiver {
                 }
 
                 Collection<StickyRecord> records = entry.getStickyRecords();
-                for (StickyRecord record: records) {
+                for (StickyRecord record : records) {
                     if (record.owner().equals(SYSTEM_OWNER)
-                                    && record.isNonExpiring()) {
+                          && record.isNonExpiring()) {
                         message.setSystemSticky(true);
                         break;
                     }
                 }
 
                 reply.reply(message);
-            } catch (FileNotInCacheException  e) {
+            } catch (FileNotInCacheException e) {
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

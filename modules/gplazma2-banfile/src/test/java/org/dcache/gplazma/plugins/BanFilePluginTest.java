@@ -1,10 +1,7 @@
 package org.dcache.gplazma.plugins;
 
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.AuthenticationException;
-import org.junit.After;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,9 +13,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.junit.After;
+import org.junit.Test;
 
 public class BanFilePluginTest {
 
@@ -92,7 +91,8 @@ public class BanFilePluginTest {
     }
 
     @Test(expected = AuthenticationException.class)
-    public void shouldFailForBannedUserByStandardAlias() throws IOException, AuthenticationException {
+    public void shouldFailForBannedUserByStandardAlias()
+          throws IOException, AuthenticationException {
         givenConfig("ban name:bert");
         plugin.account(Set.of(new LoginNamePrincipal("bert")));
     }
@@ -110,7 +110,8 @@ public class BanFilePluginTest {
     }
 
     @Test(expected = AuthenticationException.class)
-    public void shouldFailForBannedUserByAliasAndBlanks() throws IOException, AuthenticationException {
+    public void shouldFailForBannedUserByAliasAndBlanks()
+          throws IOException, AuthenticationException {
         givenConfig("alias foo=org.dcache.auth.UserNamePrincipal\n   \n  ban foo:bert  ");
         plugin.account(Set.of(new UserNamePrincipal("bert")));
     }
@@ -141,7 +142,8 @@ public class BanFilePluginTest {
     }
 
     @Test
-    public void shouldNotReReadConfigFileIfNotChanged() throws IOException, AuthenticationException, InterruptedException {
+    public void shouldNotReReadConfigFileIfNotChanged()
+          throws IOException, AuthenticationException, InterruptedException {
         givenConfig("ban org.dcache.auth.UserNamePrincipal:bert");
         plugin.account(Set.of(new UserNamePrincipal("ernie")));
         TimeUnit.SECONDS.sleep(1);
@@ -150,21 +152,24 @@ public class BanFilePluginTest {
     }
 
     @Test
-    public void shouldReReadConfigFileIfChanged() throws IOException, AuthenticationException, InterruptedException {
+    public void shouldReReadConfigFileIfChanged()
+          throws IOException, AuthenticationException, InterruptedException {
         givenConfig("ban org.dcache.auth.UserNamePrincipal:bert");
         plugin.account(Set.of(new UserNamePrincipal("ernie")));
 
         TimeUnit.SECONDS.sleep(1);
 
         Files.writeString(configFile, "ban org.dcache.auth.LoginNamePrincipal:bert",
-                StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+              StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING,
+              StandardOpenOption.WRITE);
         plugin.account(Set.of(new UserNamePrincipal("ernie")));
         assertEquals("broken caching", 2, reloadCount.get());
     }
 
     private void givenConfig(String config) throws IOException {
         configFile = Files.createTempFile("dcache.gplazma.ban", "conf");
-        Files.writeString(configFile, config, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        Files.writeString(configFile, config, StandardCharsets.UTF_8,
+              StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 
         Properties properties = new Properties();
         properties.put(BanFilePlugin.BAN_FILE, configFile.toString());

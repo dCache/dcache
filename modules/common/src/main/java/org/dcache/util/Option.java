@@ -10,12 +10,17 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Option
-{
-    String  name();
-    String  description()  default "";
-    String  defaultValue() default "";
-    String  unit()         default "";
-    boolean required()     default false;
-    boolean log()          default true;
+public @interface Option {
+
+    String name();
+
+    String description() default "";
+
+    String defaultValue() default "";
+
+    String unit() default "";
+
+    boolean required() default false;
+
+    boolean log() default true;
 }

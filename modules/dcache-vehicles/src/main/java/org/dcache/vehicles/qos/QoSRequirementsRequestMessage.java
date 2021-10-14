@@ -64,22 +64,23 @@ import org.dcache.qos.data.FileQoSRequirements;
 import org.dcache.qos.data.FileQoSUpdate;
 
 public class QoSRequirementsRequestMessage extends Message {
-  private final FileQoSUpdate update;
-  private FileQoSRequirements requirements;
 
-  public QoSRequirementsRequestMessage(FileQoSUpdate update) {
-    this.update = update;
-  }
+    private final FileQoSUpdate update;
+    private FileQoSRequirements requirements;
 
-  public FileQoSUpdate getUpdate() {
-    return update;
-  }
+    public QoSRequirementsRequestMessage(FileQoSUpdate update) {
+        this.update = update;
+    }
 
-  public FileQoSRequirements getRequirements() {
-    return requirements;
-  }
+    public FileQoSUpdate getUpdate() {
+        return update;
+    }
 
-  public void setRequirements(FileQoSRequirements requirements) {
-    this.requirements = requirements;
-  }
+    public FileQoSRequirements getRequirements() {
+        return requirements;
+    }
+
+    public void setRequirements(FileQoSRequirements requirements) {
+        this.requirements = requirements;
+    }
 }

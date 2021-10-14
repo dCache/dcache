@@ -4,7 +4,6 @@ package org.dcache.acl.unix;
  * Unix Access Mask.
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
 public enum AMUnix {
 
@@ -55,12 +54,11 @@ public enum AMUnix {
     }
 
     /**
-     * @param accessMask
-     *            ACE access bit mask
+     * @param accessMask ACE access bit mask
      * @return Return string representaion of access bit mask
      */
     public static String toUnixString(int accessMask) {
-        if ( accessMask == 0 ) {
+        if (accessMask == 0) {
             return "---";
         }
 
@@ -75,13 +73,12 @@ public enum AMUnix {
     }
 
     /**
-     * @param accessMask
-     *            ACE access bit mask
+     * @param accessMask ACE access bit mask
      * @return Return string representaion of access bit mask
      */
     public static String toString(int accessMask) {
         StringBuilder sb = new StringBuilder();
-        if ( accessMask != 0 ) {
+        if (accessMask != 0) {
             for (AMUnix accessMsk : AMUnix.values()) {
                 if (accessMsk.matches(accessMask)) {
                     sb.append(accessMsk.getAbbreviation());

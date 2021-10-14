@@ -31,15 +31,16 @@ public class DirNotEmptyChimeraFsException extends ChimeraFsException {
     }
 
     /**
-     * Constructs an instance of <code>DirNotEmptyChimeraFsException</code> with the specified detail message.
+     * Constructs an instance of <code>DirNotEmptyChimeraFsException</code> with the specified
+     * detail message.
+     *
      * @param msg the detail message.
      */
     public DirNotEmptyChimeraFsException(String msg) {
         super(msg);
     }
 
-    public DirNotEmptyChimeraFsException(String message, Throwable cause)
-    {
+    public DirNotEmptyChimeraFsException(String message, Throwable cause) {
         super(message, cause);
     }
 }

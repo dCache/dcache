@@ -67,65 +67,69 @@ import org.dcache.qos.data.QoSMessageType;
 /**
  * This is a batched PnfsId request from the scanner.
  * <p/>
- * When the scanner looks at all the files in a given disk location (pool),
- * it groups them in batches of a predetermined size and sends them off to the verifier.
- * The verifier will keep track of which pnfsids it is checking for which location.
+ * When the scanner looks at all the files in a given disk location (pool), it groups them in
+ * batches of a predetermined size and sends them off to the verifier. The verifier will keep track
+ * of which pnfsids it is checking for which location.
  */
 public class QoSScannerVerificationRequest implements Serializable {
-  private static final long serialVersionUID = 5803464448479347602L;
-  private final List<PnfsId> replicas;
-  private final String pool;
 
-  /**
-   * For this message, only the values POOL_STATUS_DOWN or POOL_STATUS_UP pertain.
-   */
-  private final QoSMessageType type;
+    private static final long serialVersionUID = 5803464448479347602L;
+    private final List<PnfsId> replicas;
+    private final String pool;
 
-  /**
-   * These fields are only true when specific changes occur through
-   * the Pool Selection Unit to either a pool group or the requirements on a storage unit.
-   */
-  private final String storageUnit;
-  private final String group;
+    /**
+     * For this message, only the values POOL_STATUS_DOWN or POOL_STATUS_UP pertain.
+     */
+    private final QoSMessageType type;
 
-  /**
-   * True means this is a "forced scan" (from the admin command) or
-   * a periodic one.  This is used largely to indicate whether
-   * more than one action for each pnfsid may be required.
-   */
-  private final boolean forced;
+    /**
+     * These fields are only true when specific changes occur through the Pool Selection Unit to
+     * either a pool group or the requirements on a storage unit.
+     */
+    private final String storageUnit;
+    private final String group;
 
-  public QoSScannerVerificationRequest(String pool,
-                                       List<PnfsId> replicas,
-                                       QoSMessageType type,
-                                       String group,
-                                       String storageUnit,
-                                       boolean forced) {
-    this.pool = pool;
-    this.type = type;
-    this.replicas = replicas;
-    this.group = group;
-    this.storageUnit = storageUnit;
-    this.forced = forced;
-  }
+    /**
+     * True means this is a "forced scan" (from the admin command) or a periodic one.  This is used
+     * largely to indicate whether more than one action for each pnfsid may be required.
+     */
+    private final boolean forced;
 
-  public List<PnfsId> getReplicas() {
-    return replicas;
-  }
+    public QoSScannerVerificationRequest(String pool,
+          List<PnfsId> replicas,
+          QoSMessageType type,
+          String group,
+          String storageUnit,
+          boolean forced) {
+        this.pool = pool;
+        this.type = type;
+        this.replicas = replicas;
+        this.group = group;
+        this.storageUnit = storageUnit;
+        this.forced = forced;
+    }
 
-  public String getPool() {
-    return pool;
-  }
+    public List<PnfsId> getReplicas() {
+        return replicas;
+    }
 
-  public String getGroup() { return group; }
+    public String getPool() {
+        return pool;
+    }
 
-  public String getStorageUnit() {
-    return storageUnit;
-  }
+    public String getGroup() {
+        return group;
+    }
 
-  public QoSMessageType getType() {
-    return type;
-  }
+    public String getStorageUnit() {
+        return storageUnit;
+    }
 
-  public boolean isForced() { return forced; }
+    public QoSMessageType getType() {
+        return type;
+    }
+
+    public boolean isForced() {
+        return forced;
+    }
 }

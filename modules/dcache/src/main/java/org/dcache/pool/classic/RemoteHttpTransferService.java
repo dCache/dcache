@@ -18,83 +18,77 @@
 package org.dcache.pool.classic;
 
 import com.google.common.base.Splitter;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import eu.emi.security.authn.x509.OCSPParametes;
 import eu.emi.security.authn.x509.ProxySupport;
 import eu.emi.security.authn.x509.RevocationParameters;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
-
-import javax.annotation.PostConstruct;
-import javax.net.ssl.X509TrustManager;
-
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
-import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
-
+import javax.annotation.PostConstruct;
+import javax.net.ssl.X509TrustManager;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteHttpDataTransferProtocol;
 import org.dcache.pool.movers.RemoteHttpsDataTransferProtocol;
 import org.dcache.security.trust.AggregateX509TrustManager;
 
-public class RemoteHttpTransferService extends SecureRemoteTransferService
-{
+public class RemoteHttpTransferService extends SecureRemoteTransferService {
+
     private final List<Runnable> onShutdownTasks = new ArrayList<>();
 
     private X509TrustManager trustManager;
 
     @Override
-    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception
-    {
+    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception {
         MoverProtocol moverProtocol;
         if (info instanceof RemoteHttpsDataTransferProtocolInfo) {
             moverProtocol = new RemoteHttpsDataTransferProtocol(getCellEndpoint(),
-                    trustManager, secureRandom);
+                  trustManager, secureRandom);
         } else if (info instanceof RemoteHttpDataTransferProtocolInfo) {
             moverProtocol = new RemoteHttpDataTransferProtocol(getCellEndpoint());
         } else {
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
-                    "Could not create third-party HTTP mover for " + info);
+                  "Could not create third-party HTTP mover for " + info);
         }
         return moverProtocol;
     }
 
     @PostConstruct
-    public void init()
-    {
+    public void init() {
         FileSystem defaultFileSystem = FileSystems.getDefault();
 
-        var trustManagers = Splitter.on(':').omitEmptyStrings().splitToList(getCertificateAuthorityPath()).stream()
-                .map(defaultFileSystem::getPath)
-                .map(this::buildTrustManager)
-                .collect(Collectors.toList());
+        var trustManagers = Splitter.on(':').omitEmptyStrings()
+              .splitToList(getCertificateAuthorityPath()).stream()
+              .map(defaultFileSystem::getPath)
+              .map(this::buildTrustManager)
+              .collect(Collectors.toList());
 
         trustManager = new AggregateX509TrustManager(trustManagers);
     }
 
-    private X509TrustManager buildTrustManager(Path path)
-    {
+    private X509TrustManager buildTrustManager(Path path) {
         var ocspParameters = new OCSPParametes(getOcspCheckingMode());
         var revocationParams = new RevocationParameters(getCrlCheckingMode(), ocspParameters);
         var validatorParams = new ValidatorParams(revocationParams, ProxySupport.ALLOW);
-        long updateInterval = getCertificateAuthorityUpdateIntervalUnit().toMillis(getCertificateAuthorityUpdateInterval());
+        long updateInterval = getCertificateAuthorityUpdateIntervalUnit().toMillis(
+              getCertificateAuthorityUpdateInterval());
         var validator = new OpensslCertChainValidator(path.toString(), true,
-                getNamespaceMode(), updateInterval, validatorParams, false);
+              getNamespaceMode(), updateInterval, validatorParams, false);
         onShutdownTasks.add(validator::dispose);
         return new SSLTrustManager(validator);
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         super.shutdown();
         onShutdownTasks.forEach(Runnable::run);
     }

@@ -59,11 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.db;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ForwardingObject;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -71,50 +69,47 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
-
+import javax.sql.DataSource;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NetworkUtils;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.LoggerFactory;
 
 /**
- * A decorator which allows exception thrown by the connection
- * factory to be marked as alarms.
+ * A decorator which allows exception thrown by the connection factory to be marked as alarms.
  *
  * @author arossi
  */
-public class AlarmEnabledDataSource extends ForwardingObject implements DataSource, Closeable
-{
+public class AlarmEnabledDataSource extends ForwardingObject implements DataSource, Closeable {
+
     private static final org.slf4j.Logger LOGGER =
-                    LoggerFactory.getLogger(DataSource.class);
+          LoggerFactory.getLogger(DataSource.class);
 
     private final DataSource delegate;
     private final String connectorName;
     private final String url;
 
     /**
-     * @param connectorName alarms will be identified by a combination of
-     *        this name, the connection url and the canonical name of
-     *        this client host.
+     * @param connectorName alarms will be identified by a combination of this name, the connection
+     *                      url and the canonical name of this client host.
      */
     public AlarmEnabledDataSource(String url,
-                                  String connectorName,
-                                  DataSource delegate) {
+          String connectorName,
+          DataSource delegate) {
         this.connectorName = requireNonNull(connectorName);
         this.url = requireNonNull(url);
         this.delegate = requireNonNull(delegate);
     }
 
-    /** Accessor for admin shell. */
-    public DataSource getDelegate()
-    {
+    /**
+     * Accessor for admin shell.
+     */
+    public DataSource getDelegate() {
         return delegate();
     }
 
     @Override
-    protected DataSource delegate()
-    {
+    protected DataSource delegate() {
         return delegate;
     }
 
@@ -151,10 +146,10 @@ public class AlarmEnabledDataSource extends ForwardingObject implements DataSour
             return delegate().getConnection();
         } catch (SQLException sql) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
-                                                      url,
-                                                      connectorName,
-                                                      NetworkUtils.getCanonicalHostName()),
-                         "Could not get connection to database", sql);
+                        url,
+                        connectorName,
+                        NetworkUtils.getCanonicalHostName()),
+                  "Could not get connection to database", sql);
             throw sql;
         }
     }
@@ -166,16 +161,16 @@ public class AlarmEnabledDataSource extends ForwardingObject implements DataSour
 
     @Override
     public Connection getConnection(String username, String password)
-                    throws SQLException {
+          throws SQLException {
 
         try {
             return delegate().getConnection(username, password);
         } catch (SQLException sql) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
-                                                      url,
-                                                      connectorName,
-                                                      NetworkUtils.getCanonicalHostName()),
-                         "Could not get connection to database", sql);
+                        url,
+                        connectorName,
+                        NetworkUtils.getCanonicalHostName()),
+                  "Could not get connection to database", sql);
             throw sql;
         }
     }

@@ -61,9 +61,9 @@ package org.dcache.services.billing.db.data;
 
 /**
  * @author arossi
- *
  */
 public final class HSMWritesDaily extends SizeEntry {
+
     private static final long serialVersionUID = -9152834144745076328L;
 
     public String toString() {

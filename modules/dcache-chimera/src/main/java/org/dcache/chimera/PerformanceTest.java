@@ -17,12 +17,25 @@
  */
 package org.dcache.chimera;
 
+import static diskCacheV111.util.AccessLatency.ONLINE;
+import static diskCacheV111.util.RetentionPolicy.REPLICA;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.dcache.namespace.FileAttribute.ACCESS_TIME;
+import static org.dcache.namespace.FileAttribute.CHANGE_TIME;
+import static org.dcache.namespace.FileAttribute.CREATION_TIME;
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.TYPE;
+
 import com.google.common.base.Stopwatch;
 import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -40,11 +53,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
@@ -55,26 +63,21 @@ import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
-
-import static diskCacheV111.util.AccessLatency.ONLINE;
-import static diskCacheV111.util.RetentionPolicy.REPLICA;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.dcache.namespace.FileAttribute.*;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * This utility performs performance tests for various name space
- * lookup operations. The utility is independent of any specific name
- * space provider and can be used with any name space provider
+ * This utility performs performance tests for various name space lookup operations. The utility is
+ * independent of any specific name space provider and can be used with any name space provider
  * providing a factory.
  * <p>
- * The utility can measure pnfsid lookup, file meta data lookup and
- * storage info lookup. It can use a configurable number of threads.
+ * The utility can measure pnfsid lookup, file meta data lookup and storage info lookup. It can use
+ * a configurable number of threads.
  */
-public class PerformanceTest extends Thread
-{
-    private enum Operation
-    {
+public class PerformanceTest extends Thread {
+
+    private enum Operation {
         PATH_TO_PNFS_ID("pathtopnfsid", "Reads the pnfs id of a file"),
         FILE_META_DATA("filemetadata", "Reads the meta data of the file"),
         CREATE_ENTRY("createentry", "Create a new file entry in the pool"),
@@ -94,30 +97,25 @@ public class PerformanceTest extends Thread
         private final String userInput;
         private final String desc;
 
-        Operation(String userInput, String desc)
-        {
+        Operation(String userInput, String desc) {
             this.userInput = userInput;
             this.desc = desc;
         }
 
-        public String getDesc()
-        {
+        public String getDesc() {
             return desc;
         }
 
-        public String getUserInput()
-        {
+        public String getUserInput() {
             return userInput;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "\t" + '-' + userInput + '\t' + desc;
         }
 
-        public static Operation find(String s)
-        {
+        public static Operation find(String s) {
             for (Operation operation : Operation.values()) {
                 if (operation.getUserInput().equals(s)) {
                     return operation;
@@ -135,10 +133,9 @@ public class PerformanceTest extends Thread
     private static final int UID = 0;
     private static final int GID = 0;
     private static final Checksum CHECKSUM =
-            new Checksum(ChecksumType.ADLER32, "123456");
+          new Checksum(ChecksumType.ADLER32, "123456");
 
-    public static List<String> getPaths(String fileName) throws IOException
-    {
+    public static List<String> getPaths(String fileName) throws IOException {
         List<String> toReturn = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             String line;
@@ -150,13 +147,12 @@ public class PerformanceTest extends Thread
         return toReturn;
     }
 
-    public static List<Operation> getOps(Args args)
-    {
-        return args.options().keys().stream().map(Operation::find).filter(Objects::nonNull).collect(toList());
+    public static List<Operation> getOps(Args args) {
+        return args.options().keys().stream().map(Operation::find).filter(Objects::nonNull)
+              .collect(toList());
     }
 
-    public static void main(String arguments[]) throws Exception
-    {
+    public static void main(String arguments[]) throws Exception {
         /* Parse arguments.
          */
         Args args = new Args(arguments);
@@ -166,7 +162,8 @@ public class PerformanceTest extends Thread
                 System.err.print("[-" + aOp.getUserInput() + "] ");
             }
             System.err.println(" <file>");
-            System.err.println("  where <file> contains a list of paths to load and the remaining ");
+            System.err.println(
+                  "  where <file> contains a list of paths to load and the remaining ");
             System.err.println("  parameters are the Chimera connection details.");
             System.err.println("Options:");
             for (Operation aOp : Operation.values()) {
@@ -187,9 +184,9 @@ public class PerformanceTest extends Thread
 
         ops = getOps(args);
         int concurrency =
-                (args.hasOption("threads")) ? Integer.parseInt(args.getOpt("threads")) : 1;
+              (args.hasOption("threads")) ? Integer.parseInt(args.getOpt("threads")) : 1;
         int delay =
-                (args.hasOption("delay")) ? Integer.parseInt(args.getOpt("delay")) : 10;
+              (args.hasOption("delay")) ? Integer.parseInt(args.getOpt("delay")) : 10;
 
         /* Instantiate provider.
          */
@@ -200,7 +197,7 @@ public class PerformanceTest extends Thread
         provider = new ChimeraNameSpaceProvider();
         provider.setAclEnabled(false);
         provider.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,
-                                                                 StorageInfo.DEFAULT_RETENTION_POLICY));
+              StorageInfo.DEFAULT_RETENTION_POLICY));
         provider.setFileSystem(fileSystem);
         provider.setInheritFileOwnership(false);
         provider.setPermissionHandler(new PosixPermissionHandler());
@@ -222,7 +219,7 @@ public class PerformanceTest extends Thread
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         ExecutorService executor = Executors.newCachedThreadPool();
         ScheduledFuture<?> progressTask =
-                scheduler.scheduleAtFixedRate(new ProgressTask(), delay, delay, TimeUnit.SECONDS);
+              scheduler.scheduleAtFixedRate(new ProgressTask(), delay, delay, TimeUnit.SECONDS);
         Stopwatch watch = Stopwatch.createStarted();
         for (int i = 0; i < concurrency; i++) {
             executor.execute(new PerformanceTest());
@@ -241,95 +238,100 @@ public class PerformanceTest extends Thread
         System.out.println(info);
         System.out.println("Number of files  : " + paths.size());
         System.out.println("Number of threads: " + concurrency);
-        System.out.println("Operations       : " + ops.stream().map(Operation::getUserInput).collect(joining(",")));
+        System.out.println("Operations       : " + ops.stream().map(Operation::getUserInput)
+              .collect(joining(",")));
         System.out.println("Total time       : " + watch);
-        System.out.println("Average pr. op   : " + ((double) watch.elapsed(TimeUnit.MICROSECONDS)) / paths.size() + " µs");
-        System.out.println("Frequency        : " + 1000 * paths.size() / watch.elapsed(TimeUnit.MILLISECONDS) + " Hz");
+        System.out.println(
+              "Average pr. op   : " + ((double) watch.elapsed(TimeUnit.MICROSECONDS)) / paths.size()
+                    + " µs");
+        System.out.println(
+              "Frequency        : " + 1000 * paths.size() / watch.elapsed(TimeUnit.MILLISECONDS)
+                    + " Hz");
 
         fileSystem.close();
         dataSource.close();
     }
 
-    private PnfsId getPnfsid(String path) throws CacheException
-    {
+    private PnfsId getPnfsid(String path) throws CacheException {
         return provider.pathToPnfsid(Subjects.ROOT, path, true);
     }
 
-    private void processOperation(Operation aOp, String path)
-    {
+    private void processOperation(Operation aOp, String path) {
         try {
             FileAttributes fileAttributes;
             switch (aOp) {
-            case CREATE_ENTRY:
-                provider.createFile(Subjects.ROOT, path,
-                        FileAttributes.of().uid(UID).gid(GID).mode(0664).build(),
-                        EnumSet.noneOf(FileAttribute.class));
-                break;
-            case PATH_TO_PNFS_ID:
-                getPnfsid(path);
-                break;
-            case FILE_META_DATA:
-                provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                                                      CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME));
-                break;
-            case DELETE_ENTRY:
-                provider.deleteEntry(Subjects.ROOT, EnumSet.allOf(FileType.class),
-                        path, EnumSet.noneOf(FileAttribute.class));
-                break;
-            case PNFS_ID_TO_PATH:
-                provider.pnfsidToPath(Subjects.ROOT, getPnfsid(path));
-                break;
-            case FIND:
-                provider.find(Subjects.ROOT, getPnfsid(path));
-                break;
-            case ADD_CHECKSUM:
-                provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                        FileAttributes.ofChecksum(CHECKSUM),
-                        EnumSet.noneOf(FileAttribute.class));
-                break;
-            case GET_CHECKSUMS:
-                provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
-                break;
-            case SET_FILE_ATTR:
-                provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                        FileAttributes.of().accessLatency(ONLINE).retentionPolicy(REPLICA).build(),
-                        EnumSet.noneOf(FileAttribute.class));
-                break;
-            case GET_FILE_ATTR:
-                provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.allOf(FileAttribute.class));
-                break;
-            case ADD_CACHE_LOC:
-                provider.addCacheLocation(Subjects.ROOT, getPnfsid(path), CACHE_LOCATION);
-                break;
-            case GET_CACHE_LOC:
-                provider.getCacheLocation(Subjects.ROOT, getPnfsid(path));
-                break;
-            case STORAGE_INFO:
-                provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
-                break;
-            case SET_STORAGE_INFO:
-                StorageInfo info = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                                              EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
-                info.setHsm("hsm");
-                info.setKey("store", "test");
-                info.setKey("group", "disk");
-                info.addLocation(URI.create("osm://hsm/?store=test&group=disk&bdif=1234"));
-                provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                        FileAttributes.ofStorageInfo(info), EnumSet.noneOf(FileAttribute.class));
-                break;
-            case MKDIR:
-                provider.createDirectory(Subjects.ROOT, path,
-                        FileAttributes.of().uid(UID).gid(GID).mode(0755).build());
-                break;
-            case RMDIR:
-                provider.deleteEntry(Subjects.ROOT, EnumSet.of(FileType.DIR),
-                        path, EnumSet.noneOf(FileAttribute.class));
-                break;
-            default:
-                break;
+                case CREATE_ENTRY:
+                    provider.createFile(Subjects.ROOT, path,
+                          FileAttributes.of().uid(UID).gid(GID).mode(0664).build(),
+                          EnumSet.noneOf(FileAttribute.class));
+                    break;
+                case PATH_TO_PNFS_ID:
+                    getPnfsid(path);
+                    break;
+                case FILE_META_DATA:
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+                                CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME));
+                    break;
+                case DELETE_ENTRY:
+                    provider.deleteEntry(Subjects.ROOT, EnumSet.allOf(FileType.class),
+                          path, EnumSet.noneOf(FileAttribute.class));
+                    break;
+                case PNFS_ID_TO_PATH:
+                    provider.pnfsidToPath(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case FIND:
+                    provider.find(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case ADD_CHECKSUM:
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          FileAttributes.ofChecksum(CHECKSUM),
+                          EnumSet.noneOf(FileAttribute.class));
+                    break;
+                case GET_CHECKSUMS:
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
+                    break;
+                case SET_FILE_ATTR:
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          FileAttributes.of().accessLatency(ONLINE).retentionPolicy(REPLICA)
+                                .build(),
+                          EnumSet.noneOf(FileAttribute.class));
+                    break;
+                case GET_FILE_ATTR:
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          EnumSet.allOf(FileAttribute.class));
+                    break;
+                case ADD_CACHE_LOC:
+                    provider.addCacheLocation(Subjects.ROOT, getPnfsid(path), CACHE_LOCATION);
+                    break;
+                case GET_CACHE_LOC:
+                    provider.getCacheLocation(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case STORAGE_INFO:
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
+                    break;
+                case SET_STORAGE_INFO:
+                    StorageInfo info = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
+                    info.setHsm("hsm");
+                    info.setKey("store", "test");
+                    info.setKey("group", "disk");
+                    info.addLocation(URI.create("osm://hsm/?store=test&group=disk&bdif=1234"));
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
+                          FileAttributes.ofStorageInfo(info), EnumSet.noneOf(FileAttribute.class));
+                    break;
+                case MKDIR:
+                    provider.createDirectory(Subjects.ROOT, path,
+                          FileAttributes.of().uid(UID).gid(GID).mode(0755).build());
+                    break;
+                case RMDIR:
+                    provider.deleteEntry(Subjects.ROOT, EnumSet.of(FileType.DIR),
+                          path, EnumSet.noneOf(FileAttribute.class));
+                    break;
+                default:
+                    break;
             }
         } catch (CacheException e) {
             System.err.println("Exception " + aOp.getUserInput() + " :" + e.getMessage());
@@ -337,16 +339,14 @@ public class PerformanceTest extends Thread
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         String path;
         while ((path = queue.poll()) != null) {
             processOperation(path);
         }
     }
 
-    private void processOperation(String path)
-    {
+    private void processOperation(String path) {
         tx.execute(status -> {
             for (Operation aOp : ops) {
                 processOperation(aOp, path);
@@ -355,17 +355,17 @@ public class PerformanceTest extends Thread
         });
     }
 
-    private static class ProgressTask implements Runnable
-    {
+    private static class ProgressTask implements Runnable {
+
         long length = queue.size();
         long time = System.currentTimeMillis();
 
         @Override
-        public void run()
-        {
+        public void run() {
             long now = System.currentTimeMillis();
             long currentLength = queue.size();
-            System.out.println(String.format("Files left: %,8d  Throughput: %5d Hz", currentLength,+ 1000 * (length - currentLength) / (now - time)));
+            System.out.println(String.format("Files left: %,8d  Throughput: %5d Hz", currentLength,
+                  +1000 * (length - currentLength) / (now - time)));
         }
     }
 }

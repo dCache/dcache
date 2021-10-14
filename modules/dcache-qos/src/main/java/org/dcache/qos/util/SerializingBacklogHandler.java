@@ -80,14 +80,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  Persists backlogged message to a file.  When reactivated, the file is read back in
- *  and the message sent back to the service. File is deleted after reload.
+ * Persists backlogged message to a file.  When reactivated, the file is read back in and the
+ * message sent back to the service. File is deleted after reload.
  */
 public final class SerializingBacklogHandler implements BackloggedMessageHandler {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializingBacklogHandler.class);
     private static final String MESSAGE_SUFFIX = ".bklg";
 
     abstract class BacklogThread implements Runnable {
+
         private Thread thread;
 
         protected void start() {
@@ -111,6 +113,7 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
     }
 
     class BacklogConsumer extends BacklogThread {
+
         @Override
         public void run() {
             while (!Thread.interrupted()) {
@@ -152,6 +155,7 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
     }
 
     class Reloader extends BacklogThread {
+
         @Override
         public void run() {
             if (!backlogStore.exists()) {
@@ -165,8 +169,8 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
                     notifyReceivers(deserialize(file));
                 } catch (QoSException e) {
                     LOGGER.warn("Deserialization failed for {}: {}; file "
-                            + "is corrupt or incomplete.",
-                        file, e.getMessage());
+                                + "is corrupt or incomplete.",
+                          file, e.getMessage());
                 }
                 file.delete();
             }
@@ -188,10 +192,10 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
 
         consumer = new BacklogConsumer();
         reloader = new Reloader();
-         /*
-          *  Set the max fairly high.  File write should not take
-          *  that long.
-          */
+        /*
+         *  Set the max fairly high.  File write should not take
+         *  that long.
+         */
         queue = new LinkedBlockingDeque<>(1000000);
     }
 
@@ -249,6 +253,6 @@ public final class SerializingBacklogHandler implements BackloggedMessageHandler
     }
 
     private void notifyReceivers(Message message) {
-        messageReceivers.stream().forEach(r->r.accept(message));
+        messageReceivers.stream().forEach(r -> r.accept(message));
     }
 }

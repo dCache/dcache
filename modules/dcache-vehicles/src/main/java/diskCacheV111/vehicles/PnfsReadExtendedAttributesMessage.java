@@ -17,59 +17,50 @@
  */
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.PnfsId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import diskCacheV111.util.PnfsId;
-
 /**
  * Read one or more extended attributes.
  */
-public class PnfsReadExtendedAttributesMessage extends PnfsMessage
-{
-    private final Set<String> _names = new HashSet<>();
-    private final Map<String,byte[]> _values = new HashMap<>();
+public class PnfsReadExtendedAttributesMessage extends PnfsMessage {
 
-    public PnfsReadExtendedAttributesMessage(PnfsId id)
-    {
+    private final Set<String> _names = new HashSet<>();
+    private final Map<String, byte[]> _values = new HashMap<>();
+
+    public PnfsReadExtendedAttributesMessage(PnfsId id) {
         super(id);
     }
 
-    public PnfsReadExtendedAttributesMessage(String path)
-    {
+    public PnfsReadExtendedAttributesMessage(String path) {
         setPnfsPath(path);
     }
 
-    public void addName(String name)
-    {
+    public void addName(String name) {
         _names.add(name);
     }
 
-    public Set<String> getAllNames()
-    {
+    public Set<String> getAllNames() {
         return _names;
     }
 
-    public void clearNames()
-    {
+    public void clearNames() {
         _names.clear();
     }
 
-    public void clear()
-    {
+    public void clear() {
         _names.clear();
         _values.clear();
     }
 
-    public void putValue(String name, byte[] value)
-    {
+    public void putValue(String name, byte[] value) {
         _values.put(name, value);
     }
 
-    public Map<String,byte[]> getAllValues()
-    {
+    public Map<String, byte[]> getAllValues() {
         return _values;
     }
 }

@@ -24,14 +24,14 @@ import java.net.URI;
 
 /**
  * Request SrmManager to aborts uploads or downloads on a particular SURL.
- *
- * The intended use of this message is when a SURL is deleted in one SrmManager and
- * other SRM managers need to be informed about this event.
- *
+ * <p>
+ * The intended use of this message is when a SURL is deleted in one SrmManager and other SRM
+ * managers need to be informed about this event.
+ * <p>
  * Valid responses are SrmAbortTransferResponse and SrmException.
  */
-public class SrmAbortTransfersRequest implements Serializable
-{
+public class SrmAbortTransfersRequest implements Serializable {
+
     private static final long serialVersionUID = -830195258999653147L;
 
     private final URI surl;
@@ -40,29 +40,24 @@ public class SrmAbortTransfersRequest implements Serializable
 
     private boolean isUploadAborted;
 
-    public SrmAbortTransfersRequest(URI surl, String reason)
-    {
+    public SrmAbortTransfersRequest(URI surl, String reason) {
         this.surl = surl;
         this.reason = reason;
     }
 
-    public URI getSurl()
-    {
+    public URI getSurl() {
         return surl;
     }
 
-    public String getReason()
-    {
+    public String getReason() {
         return reason;
     }
 
-    public boolean isUploadAborted()
-    {
+    public boolean isUploadAborted() {
         return isUploadAborted;
     }
 
-    public void setUploadAborted(boolean uploadAborted)
-    {
+    public void setUploadAborted(boolean uploadAborted) {
         isUploadAborted = uploadAborted;
     }
 }

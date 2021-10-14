@@ -1,21 +1,6 @@
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.fusesource.jansi.Ansi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-
 import diskCacheV111.admin.UserAdminShell;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -25,13 +10,24 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.command.Command;
 import org.dcache.util.Strings;
+import org.fusesource.jansi.Ansi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class NoTerminalCommand implements Command, Runnable
-{
+public class NoTerminalCommand implements Command, Runnable {
+
     private static final Logger _logger =
-        LoggerFactory.getLogger(NoTerminalCommand.class);
+          LoggerFactory.getLogger(NoTerminalCommand.class);
     private final UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private BufferedReader _reader;
@@ -39,8 +35,7 @@ public class NoTerminalCommand implements Command, Runnable
     private PrintWriter _writer;
     private Thread _adminShellThread;
 
-    public NoTerminalCommand(UserAdminShell shell)
-    {
+    public NoTerminalCommand(UserAdminShell shell) {
         _userAdminShell = shell;
     }
 
@@ -87,8 +82,7 @@ public class NoTerminalCommand implements Command, Runnable
         }
     }
 
-    private void repl() throws IOException
-    {
+    private void repl() throws IOException {
         Ansi.setEnabled(false);
         while (true) {
             Object error = null;
@@ -108,7 +102,7 @@ public class NoTerminalCommand implements Command, Runnable
                     error = e.toString();
                 } catch (SerializationException e) {
                     error =
-                            "There is a bug here, please report to support@dcache.org";
+                          "There is a bug here, please report to support@dcache.org";
                     _logger.error("This must be a bug, please report to support@dcache.org.", e);
                 } catch (CommandSyntaxException e) {
                     error = e;
@@ -118,21 +112,21 @@ public class NoTerminalCommand implements Command, Runnable
                     break;
                 } catch (CommandPanicException e) {
                     error = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
-                             "); the service log file contains additional information. Please " +
-                             "contact support@dcache.org.";
+                          "); the service log file contains additional information. Please " +
+                          "contact support@dcache.org.";
                 } catch (CommandException e) {
                     error = e.getMessage();
                 } catch (NoRouteToCellException e) {
                     error =
-                            "Cell name does not exist or cell is not started: "
-                            + e.getMessage();
+                          "Cell name does not exist or cell is not started: "
+                                + e.getMessage();
                     _logger.warn("The cell the command was sent to is no "
-                                 + "longer there: {}", e.getMessage());
+                          + "longer there: {}", e.getMessage());
                 } catch (RuntimeException e) {
                     error = String.format("Command '%s' triggered a bug (%s); please" +
-                                           " locate this message in the log file of the admin service and" +
-                                           " send an email to support@dcache.org with this line and the" +
-                                           " following stack-trace", str, e);
+                          " locate this message in the log file of the admin service and" +
+                          " send an email to support@dcache.org with this line and the" +
+                          " following stack-trace", str, e);
                     _logger.error((String) error, e);
                 }
             } catch (InterruptedException e) {

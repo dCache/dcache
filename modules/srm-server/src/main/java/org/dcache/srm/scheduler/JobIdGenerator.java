@@ -7,10 +7,10 @@
 package org.dcache.srm.scheduler;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public interface JobIdGenerator {
+
     long getNextId();
 
     // true long numbers sequence

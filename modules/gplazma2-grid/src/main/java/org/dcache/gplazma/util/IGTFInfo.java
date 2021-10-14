@@ -18,12 +18,14 @@
  */
 package org.dcache.gplazma.util;
 
+import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.gplazma.util.IGTFInfo.Type.POLICY;
+import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,36 +33,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.gplazma.util.IGTFInfo.Type.POLICY;
-import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
- * Represents the information contains within an IGTF .info file; either
- * a profile or a trust-anchor file.  The semantics of this class' fields
- * are defined here:
- *
- *     http://wiki.eugridpma.org/Main/IGTFInfoFile
+ * Represents the information contains within an IGTF .info file; either a profile or a trust-anchor
+ * file.  The semantics of this class' fields are defined here:
+ * <p>
+ * http://wiki.eugridpma.org/Main/IGTFInfoFile
  */
-public class IGTFInfo
-{
+public class IGTFInfo {
+
     public enum Type {
         /**
-         * Information about a policy.  This is typically used to identify
-         * CAs that have been accepted by some grid infrastructure.
+         * Information about a policy.  This is typically used to identify CAs that have been
+         * accepted by some grid infrastructure.
          */
         POLICY,
 
-        /** Information about a specific Certificate Authority. */
+        /**
+         * Information about a specific Certificate Authority.
+         */
         TRUST_ANCHOR
     }
 
     /**
      * The current status of a trust anchor.
      */
-    public static enum Status
-    {
+    public static enum Status {
         DISCONTINUED(false),
         EXPERIMENTAL(false),
         UNACCREDITED(false),
@@ -71,21 +70,19 @@ public class IGTFInfo
 
         private final boolean isAccredited;
 
-        Status(boolean isAccredited)
-        {
+        Status(boolean isAccredited) {
             this.isAccredited = isAccredited;
         }
 
-        public boolean isAccredited()
-        {
+        public boolean isAccredited() {
             return isAccredited;
         }
     }
 
-    private static final Map<String,Status> TO_STATUS;
+    private static final Map<String, Status> TO_STATUS;
 
     static {
-        ImmutableMap.Builder<String,Status> mapping = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Status> mapping = ImmutableMap.builder();
         mapping.put("discontinued", Status.DISCONTINUED);
         mapping.put("experimental", Status.EXPERIMENTAL);
         mapping.put("unaccredited", Status.UNACCREDITED);
@@ -96,7 +93,8 @@ public class IGTFInfo
         TO_STATUS = mapping.build();
     }
 
-    private static final CharMatcher VALID_HEX = CharMatcher.inRange('0', '9').or(CharMatcher.inRange('A', 'F'));
+    private static final CharMatcher VALID_HEX = CharMatcher.inRange('0', '9')
+          .or(CharMatcher.inRange('A', 'F'));
 
     private final Type type;
 
@@ -112,33 +110,28 @@ public class IGTFInfo
     private URI url;
     private BigInteger sha1fp0;
     private ImmutableList<GlobusPrincipal> dns = ImmutableList.of();
-    private Map<String,String> policyRequires = ImmutableMap.of();
+    private Map<String, String> policyRequires = ImmutableMap.of();
     private List<String> trustAnchorRequires = ImmutableList.of();
     private List<String> obsoletes;
     private List<String> problems = null;
 
-    private IGTFInfo(Type type)
-    {
+    private IGTFInfo(Type type) {
         this.type = type;
     }
 
-    public static IGTFInfo.Builder builder(Type type)
-    {
+    public static IGTFInfo.Builder builder(Type type) {
         return new IGTFInfo(type).new Builder();
     }
 
-    public Type getType()
-    {
+    public Type getType() {
         return type;
     }
 
     /**
-     * The name is some non-null string that represents this TrustAnchor
-     * or Policy.  The alias is used, if available, otherwise it is a name
-     * derived from the filename.
+     * The name is some non-null string that represents this TrustAnchor or Policy.  The alias is
+     * used, if available, otherwise it is a name derived from the filename.
      */
-    public String getName()
-    {
+    public String getName() {
         if (alias != null) {
             return alias;
         } else if (name != null) {
@@ -148,78 +141,63 @@ public class IGTFInfo
         throw new IllegalStateException("info file has no alias and filename was not specified");
     }
 
-    public String getAlias()
-    {
+    public String getAlias() {
         return alias;
     }
 
-    public Version getVersion()
-    {
+    public Version getVersion() {
         return version;
     }
 
-    public URI getCAUrl()
-    {
+    public URI getCAUrl() {
         return caUrl;
     }
 
-    public List<URI> getCRLUrls()
-    {
+    public List<URI> getCRLUrls() {
         return crlUrl;
     }
 
-    public URI getPolicyUrl()
-    {
+    public URI getPolicyUrl() {
         return policyUrl;
     }
 
-    public URI getEmail()
-    {
+    public URI getEmail() {
         return email;
     }
 
-    public Status getStatus()
-    {
+    public Status getStatus() {
         return status;
     }
 
-    public URI getUrl()
-    {
+    public URI getUrl() {
         return url;
     }
 
-    public BigInteger getSHA1FP0()
-    {
+    public BigInteger getSHA1FP0() {
         return sha1fp0;
     }
 
-    public GlobusPrincipal getSubjectDN()
-    {
+    public GlobusPrincipal getSubjectDN() {
         return dns.isEmpty() ? null : dns.get(0);
     }
 
-    public List<GlobusPrincipal> getSubjectDNs()
-    {
+    public List<GlobusPrincipal> getSubjectDNs() {
         return dns;
     }
 
-    public Map<String,String> getPolicyRequires()
-    {
+    public Map<String, String> getPolicyRequires() {
         return policyRequires;
     }
 
-    public List<String> getTrustAnchorRequires()
-    {
+    public List<String> getTrustAnchorRequires() {
         return trustAnchorRequires;
     }
 
-    public List<String> getObsoletes()
-    {
+    public List<String> getObsoletes() {
         return obsoletes;
     }
 
-    private void require(boolean isDefined, String name, Type... types)
-    {
+    private void require(boolean isDefined, String name, Type... types) {
         for (Type type : types) {
             if (this.type == type && !isDefined) {
                 if (problems == null) {
@@ -230,8 +208,7 @@ public class IGTFInfo
         }
     }
 
-    private void checkValid() throws ParserException
-    {
+    private void checkValid() throws ParserException {
         require(version != null, "version", POLICY, TRUST_ANCHOR);
         require(!dns.isEmpty(), "subjectdn", POLICY, TRUST_ANCHOR);
         require(!policyRequires.isEmpty(), "requires", POLICY);
@@ -246,41 +223,36 @@ public class IGTFInfo
         }
     }
 
-    public class Builder
-    {
-        private void checkMutable()
-        {
+    public class Builder {
+
+        private void checkMutable() {
             checkState(!IGTFInfo.this.immutable, "IGTFPolicy.Builder#build has been called");
         }
 
-        public void setAlias(String alias)
-        {
+        public void setAlias(String alias) {
             checkMutable();
             IGTFInfo.this.alias = alias;
         }
 
-        public void setFilename(String name)
-        {
+        public void setFilename(String name) {
             checkMutable();
 
             if (name.startsWith("policy-")) {
                 name = name.substring(7);
             }
             if (name.endsWith(".info")) {
-                name = name.substring(0, name.length()-5);
+                name = name.substring(0, name.length() - 5);
             }
 
             IGTFInfo.this.name = name;
         }
 
-        public void setVersion(String version) throws ParserException
-        {
+        public void setVersion(String version) throws ParserException {
             checkMutable();
             IGTFInfo.this.version = new Version(version);
         }
 
-        public void setCAUrl(String url) throws ParserException
-        {
+        public void setCAUrl(String url) throws ParserException {
             checkMutable();
             try {
                 IGTFInfo.this.caUrl = new URI(url);
@@ -289,8 +261,7 @@ public class IGTFInfo
             }
         }
 
-        public void setCRLUrl(String urlList) throws ParserException
-        {
+        public void setCRLUrl(String urlList) throws ParserException {
             checkMutable();
             try {
                 ImmutableList.Builder<URI> urls = ImmutableList.builder();
@@ -303,8 +274,7 @@ public class IGTFInfo
             }
         }
 
-        public void setPolicyUrl(String url) throws ParserException
-        {
+        public void setPolicyUrl(String url) throws ParserException {
             checkMutable();
             try {
                 IGTFInfo.this.policyUrl = new URI(url);
@@ -313,8 +283,7 @@ public class IGTFInfo
             }
         }
 
-        public void setEmail(String address) throws ParserException
-        {
+        public void setEmail(String address) throws ParserException {
             checkMutable();
             try {
                 IGTFInfo.this.email = new URI("mailto:" + address);
@@ -323,8 +292,7 @@ public class IGTFInfo
             }
         }
 
-        public void setStatus(String status) throws ParserException
-        {
+        public void setStatus(String status) throws ParserException {
             checkMutable();
             IGTFInfo.this.status = TO_STATUS.get(status);
             if (IGTFInfo.this.status == null) {
@@ -332,8 +300,7 @@ public class IGTFInfo
             }
         }
 
-        public void setUrl(String url) throws ParserException
-        {
+        public void setUrl(String url) throws ParserException {
             checkMutable();
             try {
                 IGTFInfo.this.url = new URI(url);
@@ -342,8 +309,7 @@ public class IGTFInfo
             }
         }
 
-        public void setSHA1FP0(String value) throws ParserException
-        {
+        public void setSHA1FP0(String value) throws ParserException {
             checkMutable();
             StringBuilder onlyHex = new StringBuilder();
             for (int i = 0; i < value.length(); i++) {
@@ -362,8 +328,7 @@ public class IGTFInfo
             }
         }
 
-        public void setSubjectDN(String value) throws ParserException
-        {
+        public void setSubjectDN(String value) throws ParserException {
             checkMutable();
 
             ImmutableList.Builder<GlobusPrincipal> dns = ImmutableList.builder();
@@ -384,33 +349,30 @@ public class IGTFInfo
             }
         }
 
-        private String checkValidQuotedDn(String value) throws ParserException
-        {
+        private String checkValidQuotedDn(String value) throws ParserException {
             checkMutable();
             checkValid(value.startsWith("\""), "value does not start with '\"'");
             checkValid(value.endsWith("\""), "value does not end with '\"'");
             checkValid(value.length() > 2, "missing quoted content");
-            return value.substring(1, value.length()-1);
+            return value.substring(1, value.length() - 1);
         }
 
-        public void setRequires(String value) throws ParserException
-        {
+        public void setRequires(String value) throws ParserException {
             checkMutable();
             switch (type) {
-            case POLICY:
-                Map<String,String> pr = Splitter.on(',').trimResults().
-                        withKeyValueSeparator(Splitter.on('=').trimResults()).split(value);
-                IGTFInfo.this.policyRequires = ImmutableMap.copyOf(pr);
-                break;
-            case TRUST_ANCHOR:
-                IGTFInfo.this.trustAnchorRequires =
-                        ImmutableList.copyOf(Splitter.on(',').trimResults().split(value));
-                break;
+                case POLICY:
+                    Map<String, String> pr = Splitter.on(',').trimResults().
+                          withKeyValueSeparator(Splitter.on('=').trimResults()).split(value);
+                    IGTFInfo.this.policyRequires = ImmutableMap.copyOf(pr);
+                    break;
+                case TRUST_ANCHOR:
+                    IGTFInfo.this.trustAnchorRequires =
+                          ImmutableList.copyOf(Splitter.on(',').trimResults().split(value));
+                    break;
             }
         }
 
-        public void setObsoletes(String value)
-        {
+        public void setObsoletes(String value) {
             checkMutable();
             ImmutableList.Builder<String> obsoletes = ImmutableList.builder();
             for (String item : Splitter.on(',').trimResults().split(value)) {
@@ -419,16 +381,15 @@ public class IGTFInfo
             IGTFInfo.this.obsoletes = obsoletes.build();
         }
 
-        public IGTFInfo build() throws ParserException
-        {
+        public IGTFInfo build() throws ParserException {
             IGTFInfo.this.immutable = true;
             IGTFInfo.this.checkValid();
             return IGTFInfo.this;
         }
     }
 
-    public static class ParserException extends Exception
-    {
+    public static class ParserException extends Exception {
+
         public ParserException(String message) {
             super(message);
         }
@@ -442,15 +403,14 @@ public class IGTFInfo
         }
     }
 
-    public static class Version
-    {
+    public static class Version {
+
         private final int major;
         private final int minor;
         private final String pkg;
         private final String value;
 
-        public Version(String value) throws ParserException
-        {
+        public Version(String value) throws ParserException {
             this.value = value;
 
             int dot = value.indexOf('.');
@@ -468,11 +428,11 @@ public class IGTFInfo
 
             String minorValue;
             if (dash == -1) {
-                minorValue = value.substring(dot+1);
+                minorValue = value.substring(dot + 1);
                 pkg = null;
             } else {
-                minorValue = value.substring(dot+1, dash);
-                pkg = value.substring(dash+1);
+                minorValue = value.substring(dot + 1, dash);
+                pkg = value.substring(dash + 1);
             }
 
             try {
@@ -482,35 +442,29 @@ public class IGTFInfo
             }
         }
 
-        public String getVersion()
-        {
+        public String getVersion() {
             return value;
         }
 
-        public int getMajor()
-        {
+        public int getMajor() {
             return major;
         }
 
-        public int getMinor()
-        {
+        public int getMinor() {
             return minor;
         }
 
-        public String getPackage()
-        {
+        public String getPackage() {
             return pkg;
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return value.hashCode();
         }
 
         @Override
-        public boolean equals(Object other)
-        {
+        public boolean equals(Object other) {
             if (other == this) {
                 return true;
             }
@@ -521,13 +475,12 @@ public class IGTFInfo
 
             Version v = (Version) other;
             return v.major == this.major &&
-                    v.minor == this.minor &&
-                    Objects.equals(v.pkg, this.pkg);
+                  v.minor == this.minor &&
+                  Objects.equals(v.pkg, this.pkg);
         }
     }
 
-    public static void checkValid(boolean isOK, String message) throws ParserException
-    {
+    public static void checkValid(boolean isOK, String message) throws ParserException {
         if (!isOK) {
             throw new ParserException(message);
         }

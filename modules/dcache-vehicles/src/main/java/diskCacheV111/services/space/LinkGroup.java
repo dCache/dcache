@@ -1,27 +1,27 @@
 package diskCacheV111.services.space;
 
-import java.io.Serializable;
-import java.util.Date;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
+import java.io.Serializable;
+import java.util.Date;
 
-public class LinkGroup implements Serializable{
-        private static final long serialVersionUID = -7606565102712000875L;
-        private long id;
+public class LinkGroup implements Serializable {
+
+    private static final long serialVersionUID = -7606565102712000875L;
+    private long id;
     private String name;
     private long availableSpace;
-    private boolean onlineAllowed ;
-    private boolean nearlineAllowed ;
-    private boolean replicaAllowed ;
+    private boolean onlineAllowed;
+    private boolean nearlineAllowed;
+    private boolean replicaAllowed;
     private boolean outputAllowed;
-    private boolean custodialAllowed ;
+    private boolean custodialAllowed;
     private VOInfo[] vos;
     private long updateTime;
     private long reservedSpace;
 
-    public LinkGroup(){
+    public LinkGroup() {
     }
 
     public long getId() {
@@ -44,7 +44,7 @@ public class LinkGroup implements Serializable{
         return reservedSpace + availableSpace;
     }
 
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(id).append(' ');
         sb.append("Name:").append(name).append(' ');
@@ -61,7 +61,8 @@ public class LinkGroup implements Serializable{
         sb.append("replicaAllowed:").append(replicaAllowed).append(' ');
         sb.append("custodialAllowed:").append(custodialAllowed).append(' ');
         sb.append("outputAllowed:").append(outputAllowed).append(' ');
-        sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append('(').append(updateTime).append(')');
+        sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append('(')
+              .append(updateTime).append(')');
         return sb.toString();
     }
 
@@ -130,8 +131,7 @@ public class LinkGroup implements Serializable{
         this.reservedSpace = reserved;
     }
 
-    public void setAvailableSpace(long availableSpace)
-    {
+    public void setAvailableSpace(long availableSpace) {
         this.availableSpace = availableSpace;
     }
 
@@ -139,16 +139,14 @@ public class LinkGroup implements Serializable{
         return availableSpace;
     }
 
-    public boolean isAllowed(AccessLatency al)
-    {
+    public boolean isAllowed(AccessLatency al) {
         return (al == AccessLatency.NEARLINE && isNearlineAllowed()) ||
-                (al == AccessLatency.ONLINE && isOnlineAllowed());
+              (al == AccessLatency.ONLINE && isOnlineAllowed());
     }
 
-    public boolean isAllowed(RetentionPolicy rp)
-    {
+    public boolean isAllowed(RetentionPolicy rp) {
         return (rp == RetentionPolicy.CUSTODIAL && isCustodialAllowed()) ||
-                (rp == RetentionPolicy.REPLICA && isReplicaAllowed()) ||
-                (rp == RetentionPolicy.OUTPUT && isOutputAllowed());
+              (rp == RetentionPolicy.REPLICA && isReplicaAllowed()) ||
+              (rp == RetentionPolicy.OUTPUT && isOutputAllowed());
     }
 }

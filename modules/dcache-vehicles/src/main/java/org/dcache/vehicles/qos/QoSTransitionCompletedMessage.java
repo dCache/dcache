@@ -66,35 +66,36 @@ import java.io.Serializable;
 import org.dcache.qos.data.QoSAction;
 
 public class QoSTransitionCompletedMessage extends Message {
-  private static final long serialVersionUID = 6256657405487910478L;
 
-  private final PnfsId pnfsId;
-  private final QoSAction action;
+    private static final long serialVersionUID = 6256657405487910478L;
 
-  public QoSTransitionCompletedMessage(PnfsId pnfsId, QoSAction action, Serializable error) {
-    this.pnfsId = pnfsId;
-    this.action = action;
-    if (error != null) {
-      setFailed(CacheException.DEFAULT_ERROR_CODE, error);
+    private final PnfsId pnfsId;
+    private final QoSAction action;
+
+    public QoSTransitionCompletedMessage(PnfsId pnfsId, QoSAction action, Serializable error) {
+        this.pnfsId = pnfsId;
+        this.action = action;
+        if (error != null) {
+            setFailed(CacheException.DEFAULT_ERROR_CODE, error);
+        }
     }
-  }
 
-  public PnfsId getPnfsId() {
-    return pnfsId;
-  }
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
 
-  public QoSAction getAction() {
-    return action;
-  }
+    public QoSAction getAction() {
+        return action;
+    }
 
-  public boolean succeeded() {
-    return getErrorObject() == null;
-  }
+    public boolean succeeded() {
+        return getErrorObject() == null;
+    }
 
-  public String toString() {
-    Serializable error = getErrorObject();
-    return "Action[" + action + "][" + pnfsId + "]"
-        + (error  == null ? " success" : " failed with " + error )
-        + " (" + super.toString() + ")";
-  }
+    public String toString() {
+        Serializable error = getErrorObject();
+        return "Action[" + action + "][" + pnfsId + "]"
+              + (error == null ? " success" : " failed with " + error)
+              + " (" + super.toString() + ")";
+    }
 }

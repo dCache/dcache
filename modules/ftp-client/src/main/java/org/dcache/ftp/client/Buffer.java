@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,14 +16,11 @@
 package org.dcache.ftp.client;
 
 /**
- * Represents a chunk of data cut out of a larger data volume.
- * Buffer is characterized by offset at which it belongs to the
- * larger data volume, and length.
- * The internal data array always starts at 0 and ends at (length -1).
- * Its indexing has nothing to do with offset.
+ * Represents a chunk of data cut out of a larger data volume. Buffer is characterized by offset at
+ * which it belongs to the larger data volume, and length. The internal data array always starts at
+ * 0 and ends at (length -1). Its indexing has nothing to do with offset.
  **/
-public class Buffer
-{
+public class Buffer {
 
     protected final byte[] buf;
     protected final int length;
@@ -33,8 +30,7 @@ public class Buffer
      * @param buf    the data buffer (always starts at 0)
      * @param length length of the data in the buffer
      */
-    public Buffer(byte[] buf, int length)
-    {
+    public Buffer(byte[] buf, int length) {
         this(buf, length, -1);
     }
 
@@ -43,32 +39,26 @@ public class Buffer
      * @param length length of the data in the buffer
      * @param offset offset of the data the buffer was read from.
      */
-    public Buffer(byte[] buf, int length, long offset)
-    {
+    public Buffer(byte[] buf, int length, long offset) {
         this.buf = buf;
         this.length = length;
         this.offset = offset;
     }
 
-    public byte[] getBuffer()
-    {
+    public byte[] getBuffer() {
         return buf;
     }
 
-    public int getLength()
-    {
+    public int getLength() {
         return length;
     }
 
     /**
-     * Returns offset of the data the buffer was read from.
-     * Value -1 indicates that offset is not supported.
-     * For instance, this will happen if the buffer represents
-     * a chunk of data read off the data channel in the stream
-     * mode.
+     * Returns offset of the data the buffer was read from. Value -1 indicates that offset is not
+     * supported. For instance, this will happen if the buffer represents a chunk of data read off
+     * the data channel in the stream mode.
      */
-    public long getOffset()
-    {
+    public long getOffset() {
         return offset;
     }
 

@@ -67,17 +67,18 @@ import org.dcache.qos.listeners.QoSActionCompletedListener;
 import org.dcache.vehicles.qos.QoSActionCompleteMessage;
 
 /**
- *  Use this client when communicating with a remote requirements engine.
+ * Use this client when communicating with a remote requirements engine.
  */
 public final class RemoteQoSActionCompletedClient implements QoSActionCompletedListener {
-  private CellStub requirementsService;
 
-  @Override
-  public void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
-    requirementsService.send(new QoSActionCompleteMessage(pnfsId, action, error));
-  }
+    private CellStub requirementsService;
 
-  public void setRequirementsService(CellStub requirementsService) {
-    this.requirementsService = requirementsService;
-  }
+    @Override
+    public void fileQoSActionCompleted(PnfsId pnfsId, QoSAction action, Serializable error) {
+        requirementsService.send(new QoSActionCompleteMessage(pnfsId, action, error));
+    }
+
+    public void setRequirementsService(CellStub requirementsService) {
+        this.requirementsService = requirementsService;
+    }
 }

@@ -1,12 +1,8 @@
 package org.dcache.gplazma.loader;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -16,14 +12,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
 
 public class XmlParserTests {
+
     private static final DocumentBuilderFactory BUILDER_FACTORY =
-            DocumentBuilderFactory.newInstance();
+          DocumentBuilderFactory.newInstance();
 
     private Document _emptyDocument;
     private PluginXmlGenerator _pluginXml;
@@ -41,33 +41,34 @@ public class XmlParserTests {
     public void testEmpty() {
         // Note: as the XML is not well-formed, the support library generates
         // output on stderr. It's unclear how to suppress this.
-        parseAndGetPlugins( _emptyDocument);
-        assertEquals( "check plugins empty", _plugins, Collections.emptySet());
+        parseAndGetPlugins(_emptyDocument);
+        assertEquals("check plugins empty", _plugins, Collections.emptySet());
     }
 
     @Test
     public void testBrokenXml() {
         // Note: as the XML is not well-formed, the support library generates
         // output on stderr. It's unclear how to suppress this.
-        parseAndGetPlugins( "<plugins>");
-        assertEquals( "check plugins empty", _plugins, Collections.emptySet());
+        parseAndGetPlugins("<plugins>");
+        assertEquals("check plugins empty", _plugins, Collections.emptySet());
     }
 
     @Test
     public void testXmlWithExtraField() {
-        parseAndGetPlugins( "<plugins><plugin><class>org.dcache.gplazma.loader.XmlParserTests$DummyPlugin</class><name>test</name><fruit>banana</fruit></plugin></plugins>");
+        parseAndGetPlugins(
+              "<plugins><plugin><class>org.dcache.gplazma.loader.XmlParserTests$DummyPlugin</class><name>test</name><fruit>banana</fruit></plugin></plugins>");
 
-        assertEquals( "check plugin count", 1, _plugins.size());
+        assertEquals("check plugin count", 1, _plugins.size());
         PluginMetadata plugin = _plugins.iterator().next();
 
-        assertPluginMetadata( plugin, Collections.singleton( "test"),
-                DummyPlugin.class, "test", null);
+        assertPluginMetadata(plugin, Collections.singleton("test"),
+              DummyPlugin.class, "test", null);
     }
 
     @Test
     public void testOnlyRoot() {
         parseAndGetPlugins();
-        assertEquals( "check plugins empty", _plugins, Collections.emptySet());
+        assertEquals("check plugins empty", _plugins, Collections.emptySet());
     }
 
     @Test
@@ -76,88 +77,88 @@ public class XmlParserTests {
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugins empty", _plugins, Collections.emptySet());
+        assertEquals("check plugins empty", _plugins, Collections.emptySet());
     }
 
     @Test
     public void testPluginsAndValidPluginWithSingleName() {
         String pluginName = "foo";
-        Set<String> names = Collections.singleton( pluginName);
-        _pluginXml.addPlugin( names, DummyPlugin.class);
+        Set<String> names = Collections.singleton(pluginName);
+        _pluginXml.addPlugin(names, DummyPlugin.class);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 1, _plugins.size());
+        assertEquals("check plugin count", 1, _plugins.size());
 
         PluginMetadata plugin = _plugins.iterator().next();
 
-        assertPluginMetadata( plugin, names, DummyPlugin.class, pluginName,
-                null);
+        assertPluginMetadata(plugin, names, DummyPlugin.class, pluginName,
+              null);
     }
 
     @Test
     public void testPluginsAndValidPluginWithMultipleNames() {
         String pluginShortestName = "foo";
         Set<String> names =
-                new HashSet<>( Arrays.asList( pluginShortestName,
-                        "foo-o-matic", "original-foo"));
+              new HashSet<>(Arrays.asList(pluginShortestName,
+                    "foo-o-matic", "original-foo"));
 
-        _pluginXml.addPlugin( names, DummyPlugin.class);
+        _pluginXml.addPlugin(names, DummyPlugin.class);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 1, _plugins.size());
+        assertEquals("check plugin count", 1, _plugins.size());
 
         PluginMetadata plugin = _plugins.iterator().next();
 
-        assertPluginMetadata( plugin, names, DummyPlugin.class,
-                pluginShortestName, null);
+        assertPluginMetadata(plugin, names, DummyPlugin.class,
+              pluginShortestName, null);
     }
 
     @Test
     public void testPluginsAndTwoValidPlugins() {
         String plugin1Name = "foo";
-        Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        _pluginXml.addPlugin( plugin1Names, DummyPlugin.class);
+        Set<String> plugin1Names = Collections.singleton(plugin1Name);
+        _pluginXml.addPlugin(plugin1Names, DummyPlugin.class);
 
         String plugin2Name = "bar";
-        Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        _pluginXml.addPlugin( plugin2Names, AnotherDummyPlugin.class);
+        Set<String> plugin2Names = Collections.singleton(plugin2Name);
+        _pluginXml.addPlugin(plugin2Names, AnotherDummyPlugin.class);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 2, _plugins.size());
+        assertEquals("check plugin count", 2, _plugins.size());
 
         Map<String, PluginMetadata> results =
-                new HashMap<>();
-        for( PluginMetadata plugin : _plugins) {
-            results.put( plugin.getShortestName(), plugin);
+              new HashMap<>();
+        for (PluginMetadata plugin : _plugins) {
+            results.put(plugin.getShortestName(), plugin);
         }
 
-        PluginMetadata plugin1Result = results.get( plugin1Name);
-        assertPluginMetadata( plugin1Result, plugin1Names, DummyPlugin.class,
-                plugin1Name, null);
+        PluginMetadata plugin1Result = results.get(plugin1Name);
+        assertPluginMetadata(plugin1Result, plugin1Names, DummyPlugin.class,
+              plugin1Name, null);
 
-        PluginMetadata plugin2Result = results.get( plugin2Name);
-        assertPluginMetadata( plugin2Result, plugin2Names,
-                AnotherDummyPlugin.class, plugin2Name, null);
+        PluginMetadata plugin2Result = results.get(plugin2Name);
+        assertPluginMetadata(plugin2Result, plugin2Names,
+              AnotherDummyPlugin.class, plugin2Name, null);
     }
 
     @Test
     public void testPluginWithDefaultControl() {
         String pluginName = "foo";
-        Set<String> names = Collections.singleton( pluginName);
+        Set<String> names = Collections.singleton(pluginName);
         String defaultControl = "required";
-        _pluginXml.addPlugin( names, DummyPlugin.class.getName(), defaultControl);
+        _pluginXml.addPlugin(names, DummyPlugin.class.getName(), defaultControl);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 1, _plugins.size());
+        assertEquals("check plugin count", 1, _plugins.size());
 
         PluginMetadata plugin = _plugins.iterator().next();
 
-        assertPluginMetadata( plugin, names, DummyPlugin.class, pluginName,
-                defaultControl);
+        assertPluginMetadata(plugin, names, DummyPlugin.class, pluginName,
+              defaultControl);
     }
 
     @Test
@@ -165,16 +166,16 @@ public class XmlParserTests {
         String className = DummyPlugin.class.getName();
 
         String plugin1Name = "foo";
-        Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        _pluginXml.addPlugin( plugin1Names, className);
+        Set<String> plugin1Names = Collections.singleton(plugin1Name);
+        _pluginXml.addPlugin(plugin1Names, className);
 
         String plugin2Name = "bar";
-        Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        _pluginXml.addPlugin( plugin2Names, className);
+        Set<String> plugin2Names = Collections.singleton(plugin2Name);
+        _pluginXml.addPlugin(plugin2Names, className);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 0, _plugins.size());
+        assertEquals("check plugin count", 0, _plugins.size());
     }
 
     @Test
@@ -182,20 +183,20 @@ public class XmlParserTests {
         String className = DummyPlugin.class.getName();
 
         String plugin1Name = "foo";
-        Set<String> plugin1Names = Collections.singleton( plugin1Name);
-        _pluginXml.addPlugin( plugin1Names, className);
+        Set<String> plugin1Names = Collections.singleton(plugin1Name);
+        _pluginXml.addPlugin(plugin1Names, className);
 
         String plugin2Name = "bar";
-        Set<String> plugin2Names = Collections.singleton( plugin2Name);
-        _pluginXml.addPlugin( plugin2Names, className);
+        Set<String> plugin2Names = Collections.singleton(plugin2Name);
+        _pluginXml.addPlugin(plugin2Names, className);
 
         String plugin3Name = "baz";
-        Set<String> plugin3Names = Collections.singleton( plugin3Name);
-        _pluginXml.addPlugin( plugin3Names, className);
+        Set<String> plugin3Names = Collections.singleton(plugin3Name);
+        _pluginXml.addPlugin(plugin3Names, className);
 
         parseAndGetPlugins();
 
-        assertEquals( "check plugin count", 0, _plugins.size());
+        assertEquals("check plugin count", 0, _plugins.size());
     }
 
     @Test
@@ -203,37 +204,37 @@ public class XmlParserTests {
         String class1Name = DummyPlugin.class.getName();
         String class2Name = AnotherDummyPlugin.class.getName();
 
-        String xmlData = String.format(  "<plugins><plugin>"
-                                       + "<name>test</name>"
-                                       + "<class>%s</class>"
-                                       + "<class>%s</class>"
-                                       + "</plugin></plugins>",
-                                       class1Name, class2Name);
-        parseAndGetPlugins( xmlData);
+        String xmlData = String.format("<plugins><plugin>"
+                    + "<name>test</name>"
+                    + "<class>%s</class>"
+                    + "<class>%s</class>"
+                    + "</plugin></plugins>",
+              class1Name, class2Name);
+        parseAndGetPlugins(xmlData);
 
-        assertEquals( "check plugin count", 0, _plugins.size());
+        assertEquals("check plugin count", 0, _plugins.size());
     }
 
     /*
      * COMPOUND ASSERTIONS
      */
 
-    private void assertPluginMetadata( PluginMetadata plugin,
-                                       Set<String> assignedNames,
-                                       Class<?> expectedClass,
-                                       String expectedShortestName,
-                                       String expectedDefaultControl) {
-        assertNotNull( plugin);
-        assertTrue( plugin.isValid());
+    private void assertPluginMetadata(PluginMetadata plugin,
+          Set<String> assignedNames,
+          Class<?> expectedClass,
+          String expectedShortestName,
+          String expectedDefaultControl) {
+        assertNotNull(plugin);
+        assertTrue(plugin.isValid());
 
         // We always add the class name to the list of names
-        Set<String> expectedNames = new HashSet<>( assignedNames);
-        expectedNames.add( expectedClass.getName());
+        Set<String> expectedNames = new HashSet<>(assignedNames);
+        expectedNames.add(expectedClass.getName());
 
-        assertEquals( expectedNames, plugin.getPluginNames());
-        assertEquals( expectedClass, plugin.getPluginClass());
-        assertEquals( expectedShortestName, plugin.getShortestName());
-        assertEquals( expectedDefaultControl, plugin.getDefaultControl());
+        assertEquals(expectedNames, plugin.getPluginNames());
+        assertEquals(expectedClass, plugin.getPluginClass());
+        assertEquals(expectedShortestName, plugin.getShortestName());
+        assertEquals(expectedDefaultControl, plugin.getDefaultControl());
     }
 
     /*
@@ -243,17 +244,17 @@ public class XmlParserTests {
 
     private void parseAndGetPlugins() {
         String xmlData = _pluginXml.toString();
-        parseAndGetPlugins( xmlData);
+        parseAndGetPlugins(xmlData);
     }
 
-    private void parseAndGetPlugins( Document document) {
-        String xmlData = PluginXmlGenerator.documentAsString( document);
-        parseAndGetPlugins( xmlData);
+    private void parseAndGetPlugins(Document document) {
+        String xmlData = PluginXmlGenerator.documentAsString(document);
+        parseAndGetPlugins(xmlData);
     }
 
-    private void parseAndGetPlugins( String xmlData) {
-        Reader xmlSrc = new StringReader( xmlData);
-        XmlParser parser = new XmlParser( xmlSrc);
+    private void parseAndGetPlugins(String xmlData) {
+        Reader xmlSrc = new StringReader(xmlData);
+        XmlParser parser = new XmlParser(xmlSrc);
         parser.parse();
         _plugins = parser.getPlugins();
     }

@@ -59,17 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
+import diskCacheV111.poolManager.PoolPreferenceLevel;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolPreferenceLevel;
-
 @ApiModel(description = "Candidate pools for some operation.")
 public final class PreferenceResult implements Serializable {
+
     private static final long serialVersionUID = -6647894964723072329L;
 
     @ApiModelProperty("The selected pools.")
@@ -89,8 +88,8 @@ public final class PreferenceResult implements Serializable {
     }
 
     public List<String> getPools() {
-        return pools == null? null :
-                        pools.stream().sorted().collect(Collectors.toList());
+        return pools == null ? null :
+              pools.stream().sorted().collect(Collectors.toList());
     }
 
     public String getTag() {

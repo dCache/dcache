@@ -67,10 +67,11 @@ import diskCacheV111.vehicles.Message;
  * <p>For retrieving info for a single pnfsid.</p>
  */
 public class CacheEntryInfoMessage extends Message {
+
     private static final long serialVersionUID = 8646754291987332148L;
     private CacheRepositoryEntryInfo info;
-    private String                   repositoryListing;
-    private PnfsId                   pnfsId;
+    private String repositoryListing;
+    private PnfsId pnfsId;
 
     public CacheEntryInfoMessage() {
     }

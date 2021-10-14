@@ -60,10 +60,10 @@ documents or software obtained from this server.
 package org.dcache.auth;
 
 /**
- *  For wrapped components which need to do a login as part of their logic.
+ * For wrapped components which need to do a login as part of their logic.
  */
-public interface LoginStrategyAware
-{
+public interface LoginStrategyAware {
+
     /**
      * @param loginStrategy
      */

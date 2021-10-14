@@ -76,6 +76,7 @@ import org.dcache.services.history.pools.PoolListingService;
  * pool data.</p>
  */
 public interface PoolInfoService extends PoolListingService {
+
     /**
      * <p>Request for reposistory listing info for a replica on a pool.</p>
      *
@@ -87,8 +88,8 @@ public interface PoolInfoService extends PoolListingService {
 
     /**
      * <p>Request for extended cell info for the pool, including
-     * pool cost, tags, migration jobs, file lifetime, repository stats
-     * and other such details concerning the state of the pool.</p>
+     * pool cost, tags, migration jobs, file lifetime, repository stats and other such details
+     * concerning the state of the pool.</p>
      *
      * @param name of the pool
      * @param info data should be added to this instance
@@ -99,8 +100,8 @@ public interface PoolInfoService extends PoolListingService {
      * <p>Request for histogram data concerning file lifetime.</p>
      * <p>
      * <p>Five histograms are attached:  COUNT, MAX, AVG, MIN, STDDEV; the
-     * latter four are time series, the first represents the current
-     * lifetimes binned by number of days.</p>
+     * latter four are time series, the first represents the current lifetimes binned by number of
+     * days.</p>
      *
      * @param name of the pool
      * @param info data should be added to this instance
@@ -111,8 +112,8 @@ public interface PoolInfoService extends PoolListingService {
      * <p>Request for aggregate histogram data concerning file lifetime.</p>
      *
      * <p>Five histograms are attached:  COUNT, MAX, AVG, MIN, STDDEV; the
-     * latter four are time series, the first represents the current
-     * lifetimes binned by number of days.</p>
+     * latter four are time series, the first represents the current lifetimes binned by number of
+     * days.</p>
      *
      * @param name of the pool group
      * @param info data should be added to this instance
@@ -122,23 +123,23 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the FLUSH/STORE processes on the pool.</p>
      *
-     * @param pool      of the pool
-     * @param offset    specifying the index at which to begin
-     * @param limit     maximum number of alarms to include
-     * @param pnfsid    filter
-     * @param state     filter
+     * @param pool         of the pool
+     * @param offset       specifying the index at which to begin
+     * @param limit        maximum number of alarms to include
+     * @param pnfsid       filter
+     * @param state        filter
      * @param storageClass filter
-     * @param sort      List of fields on which to sort
+     * @param sort         List of fields on which to sort
      * @return list of flushes/stores, both active and queued.
      */
     PagedList<NearlineData> getFlush(String pool,
-                                     int offset,
-                                     int limit,
-                                     String pnfsid,
-                                     String state,
-                                     String storageClass,
-                                     String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException;
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException;
 
     /**
      * <p>Request cell info for all pools in the named group.</p>
@@ -167,7 +168,7 @@ public interface PoolInfoService extends PoolListingService {
 
     /**
      * <p>Request space info for storage units linked to this pool group,
-     *    aggregated over the pools in the group.</p>
+     * aggregated over the pools in the group.</p>
      *
      * @param name of the pool group
      * @param info info data should be added to this instance
@@ -177,60 +178,59 @@ public interface PoolInfoService extends PoolListingService {
     /**
      * <p>Request for a list of all the MOVER processes on the pool.</p>
      *
-     * @param pool      of the pool
-     * @param offset    specifying the index at which to begin
-     * @param limit     maximum number of alarms to include
-     * @param pnfsid    filter
-     * @param queue     filter
-     * @param state     filter
-     * @param mode      filter
-     * @param door      filter
+     * @param pool         of the pool
+     * @param offset       specifying the index at which to begin
+     * @param limit        maximum number of alarms to include
+     * @param pnfsid       filter
+     * @param queue        filter
+     * @param state        filter
+     * @param mode         filter
+     * @param door         filter
      * @param storageClass filter
-     * @param sort      List of fields on which to sort
+     * @param sort         List of fields on which to sort
      * @return list of movers, both active and queued.
      */
     PagedList<MoverData> getMovers(String pool,
-                                   int offset,
-                                   int limit,
-                                   String pnfsid,
-                                   String queue,
-                                   String state,
-                                   String mode,
-                                   String door,
-                                   String storageClass,
-                                   String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException;
+          int offset,
+          int limit,
+          String pnfsid,
+          String queue,
+          String state,
+          String mode,
+          String door,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the P2P processes on the pool.</p>
      *
-     * @param pool      of the pool
-     * @param offset    specifying the index at which to begin
-     * @param limit     maximum number of alarms to include
-     * @param pnfsid    filter
-     * @param queue     filter
-     * @param state     filter
+     * @param pool         of the pool
+     * @param offset       specifying the index at which to begin
+     * @param limit        maximum number of alarms to include
+     * @param pnfsid       filter
+     * @param queue        filter
+     * @param state        filter
      * @param storageClass filter
-     * @param sort      List of fields on which to sort
-     * @return list of movers, both active and queued,
-     *          for both p2p source/server and p2p client/mover.
+     * @param sort         List of fields on which to sort
+     * @return list of movers, both active and queued, for both p2p source/server and p2p
+     * client/mover.
      */
     PagedList<MoverData> getP2p(String pool,
-                                int offset,
-                                int limit,
-                                String pnfsid,
-                                String queue,
-                                String state,
-                                String storageClass,
-                                String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException;
+          int offset,
+          int limit,
+          String pnfsid,
+          String queue,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for histogram data concerning queues.</p>
      *
      * <p>EIGHT histograms are attached:  for each of MOVERS, P2PS,
-     * STORES [FLUSH] and RESTORES [STAGE], a timeseries for ACTIVE
-     * and QUEUED is included.</p>
+     * STORES [FLUSH] and RESTORES [STAGE], a timeseries for ACTIVE and QUEUED is included.</p>
      *
      * @param name of the pool
      * @param info data should be added to this instance
@@ -241,8 +241,7 @@ public interface PoolInfoService extends PoolListingService {
      * <p>Request for aggregated histogram data concerning queues.</p>
      *
      * <p>EIGHT histograms are attached:  for each of MOVERS, P2PS,
-     * STORES [FLUSH] and RESTORES [STAGE], a timeseries for ACTIVE
-     * and QUEUED is included.</p>
+     * STORES [FLUSH] and RESTORES [STAGE], a timeseries for ACTIVE and QUEUED is included.</p>
      *
      * @param name of the pool group
      * @param info data should be added to this instance
@@ -254,51 +253,52 @@ public interface PoolInfoService extends PoolListingService {
      *
      * <p>Two arrays are returned, </p>
      *
-     * @param pool      of the pool
-     * @param offset    specifying the index at which to begin
-     * @param limit     maximum number of alarms to include
-     * @param pnfsid    filter
-     * @param state     filter
-     * @param storageClass  filter
-     * @param sort      List of fields on which to sort
+     * @param pool         of the pool
+     * @param offset       specifying the index at which to begin
+     * @param limit        maximum number of alarms to include
+     * @param pnfsid       filter
+     * @param state        filter
+     * @param storageClass filter
+     * @param sort         List of fields on which to sort
      * @return list of removes, both active and queued.
      */
     PagedList<NearlineData> getRemove(String pool,
-                                      int offset,
-                                      int limit,
-                                      String pnfsid,
-                                      String state,
-                                      String storageClass,
-                                      String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException;
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException;
 
     /**
      * <p>Request for a list of all the STAGE/RESTORE processes on the pool.</p>
      *
-     * @param pool      of the pool
-     * @param offset    specifying the index at which to begin
-     * @param limit     maximum number of alarms to include
-     * @param pnfsid    filter
-     * @param state     filter
-     * @param storageClass  filter
-     * @param sort      List of fields on which to sort
+     * @param pool         of the pool
+     * @param offset       specifying the index at which to begin
+     * @param limit        maximum number of alarms to include
+     * @param pnfsid       filter
+     * @param state        filter
+     * @param storageClass filter
+     * @param sort         List of fields on which to sort
      * @return list of stages/restores, both active and queued.
      */
     PagedList<NearlineData> getStage(String pool,
-                                     int offset,
-                                     int limit,
-                                     String pnfsid,
-                                     String state,
-                                     String storageClass,
-                                     String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException;
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException;
 
     /**
      * <p>Remap by parsing the storage unit keys for the storage group segment and
-     *    rebuilding the map with those.</p>
+     * rebuilding the map with those.</p>
      *
      * @param byUnit original map
      * @return new map
      */
-    Map<String, StorageUnitSpaceStatistics> mapToStorageClass(Map<String, StorageUnitSpaceStatistics> byUnit);
+    Map<String, StorageUnitSpaceStatistics> mapToStorageClass(
+          Map<String, StorageUnitSpaceStatistics> byUnit);
 }

@@ -63,26 +63,27 @@ import org.dcache.resilience.data.MessageType;
 
 /**
  * <p>Simple struct to use during pool scan; shared between handlers, task and
- *    namespace access.</p>
+ * namespace access.</p>
  */
 public final class ScanSummary {
+
     public static final Integer ALL_UNITS = -1;
 
-    private final String          pool;
-    private final MessageType     type;
-    private final Integer         group;
-    private final Integer         storageUnit;
-    private final boolean         forced;
+    private final String pool;
+    private final MessageType type;
+    private final Integer group;
+    private final Integer storageUnit;
+    private final boolean forced;
 
-    private int     files;
+    private int files;
 
-    private volatile boolean cancelled  = false;
+    private volatile boolean cancelled = false;
 
     public ScanSummary(String pool,
-                       MessageType type,
-                       Integer group,
-                       Integer storageUnit,
-                       boolean forced) {
+          MessageType type,
+          Integer group,
+          Integer storageUnit,
+          boolean forced) {
         this.pool = pool;
         this.type = type;
         this.group = group;
@@ -119,7 +120,9 @@ public final class ScanSummary {
         return cancelled;
     }
 
-    public boolean isForced() { return forced; }
+    public boolean isForced() {
+        return forced;
+    }
 
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;

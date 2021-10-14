@@ -1,38 +1,33 @@
 package org.dcache.cells;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.Reply;
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.Message;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.Reply;
-
 import org.dcache.util.CacheExceptionFactory;
 
 /**
  * Encapsulates a Message reply.
- *
- * Similar to dmg.cells.nucleus.DelayedReply, except that MessageReply
- * knows about the dCache Message base class, and that the reply call
- * is non-blocking. The latter means one can safely send the reply
- * from the message delivery thread.
+ * <p>
+ * Similar to dmg.cells.nucleus.DelayedReply, except that MessageReply knows about the dCache
+ * Message base class, and that the reply call is non-blocking. The latter means one can safely send
+ * the reply from the message delivery thread.
  */
 public class MessageReply<T extends Message>
-    implements Reply, Future<T>
-{
+      implements Reply, Future<T> {
+
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
     private T _msg;
 
     @Override
-    public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
-    {
+    public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope) {
         if (endpoint == null || envelope == null) {
             throw new NullPointerException("Arguments must not be null");
         }
@@ -43,13 +38,11 @@ public class MessageReply<T extends Message>
         }
     }
 
-    public boolean isValidIn(long delay)
-    {
+    public boolean isValidIn(long delay) {
         return (_envelope == null || delay <= _envelope.getTtl() - _envelope.getLocalAge());
     }
 
-    public void fail(T msg, Throwable e)
-    {
+    public void fail(T msg, Throwable e) {
         if (e instanceof CacheException) {
             CacheException ce = (CacheException) e;
             fail(msg, ce.getRc(), ce.getMessage());
@@ -60,14 +53,12 @@ public class MessageReply<T extends Message>
         }
     }
 
-    public void fail(T msg, int rc, Serializable e)
-    {
+    public void fail(T msg, int rc, Serializable e) {
         msg.setFailed(rc, e);
         reply(msg);
     }
 
-    public synchronized void reply(T msg)
-    {
+    public synchronized void reply(T msg) {
         _msg = msg;
         _msg.setReply();
         if (_envelope != null) {
@@ -76,22 +67,19 @@ public class MessageReply<T extends Message>
         notifyAll();
     }
 
-    protected synchronized void send()
-    {
+    protected synchronized void send() {
         _envelope.revertDirection();
         _envelope.setMessageObject(_msg);
         _endpoint.sendMessage(_envelope);
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning)
-    {
+    public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
     }
 
     private synchronized T get(T msg)
-        throws ExecutionException
-    {
+          throws ExecutionException {
         if (msg.getReturnCode() != 0) {
             Exception e;
             Object o = msg.getErrorObject();
@@ -99,7 +87,7 @@ public class MessageReply<T extends Message>
                 e = (Exception) o;
             } else {
                 e = CacheExceptionFactory.exceptionOf(msg.getReturnCode(),
-                                                      String.valueOf(o));
+                      String.valueOf(o));
             }
             throw new ExecutionException(e.getMessage(), e);
         }
@@ -108,8 +96,7 @@ public class MessageReply<T extends Message>
 
     @Override
     public synchronized T get()
-        throws InterruptedException, ExecutionException
-    {
+          throws InterruptedException, ExecutionException {
         while (_msg == null) {
             wait();
         }
@@ -118,10 +105,9 @@ public class MessageReply<T extends Message>
 
     @Override
     public synchronized T get(long timeout, TimeUnit unit)
-        throws InterruptedException, ExecutionException, TimeoutException
-    {
+          throws InterruptedException, ExecutionException, TimeoutException {
         long expirationTime =
-            System.currentTimeMillis() + unit.toMillis(timeout);
+              System.currentTimeMillis() + unit.toMillis(timeout);
         while (_msg == null) {
             long timeLeft = expirationTime - System.currentTimeMillis();
             if (timeLeft <= 0) {
@@ -133,14 +119,12 @@ public class MessageReply<T extends Message>
     }
 
     @Override
-    public boolean isCancelled()
-    {
+    public boolean isCancelled() {
         return false;
     }
 
     @Override
-    public synchronized boolean isDone()
-    {
+    public synchronized boolean isDone() {
         return (_msg != null);
     }
 }

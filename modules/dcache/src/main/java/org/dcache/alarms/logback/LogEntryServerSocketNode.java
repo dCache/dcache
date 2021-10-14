@@ -79,9 +79,7 @@ COPYRIGHT STATUS:
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.CDC;
 import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -90,17 +88,15 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
-
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.alarms.Alarm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Reads {@link ILoggingEvent} objects sent from a remote client using Sockets
- * (TCP). These events are passed directly to the {@link LogEntryHandler},
- * bypassing the logger tree.
+ * Reads {@link ILoggingEvent} objects sent from a remote client using Sockets (TCP). These events
+ * are passed directly to the {@link LogEntryHandler}, bypassing the logger tree.
  * <p>
- *
+ * <p>
  * This class has been adapted from {@link ch.qos.logback.classic.net.SocketNode}.
  *
  * @author Ceki G&uuml;lc&uuml;
@@ -109,8 +105,9 @@ import org.dcache.alarms.Alarm;
  * @author arossi
  */
 final class LogEntryServerSocketNode implements Runnable {
+
     private static final Logger LOGGER
-        = LoggerFactory.getLogger(LogEntryServerSocketNode.class);
+          = LoggerFactory.getLogger(LogEntryServerSocketNode.class);
 
     private final ObjectInputStream ois;
     private final Socket socket;
@@ -120,7 +117,7 @@ final class LogEntryServerSocketNode implements Runnable {
     private volatile boolean running = false;
 
     LogEntryServerSocketNode(LogEntryServer socketServer, Socket socket)
-                    throws IOException  {
+          throws IOException {
         this.server = socketServer;
         this.socket = socket;
         hostName = socket.getInetAddress().getCanonicalHostName();
@@ -146,7 +143,7 @@ final class LogEntryServerSocketNode implements Runnable {
             LOGGER.trace("Benign Socket error ({}).", e.getMessage());
         } catch (IOException e) {
             LOGGER.debug("Error on socket node {}: {}, cause: {}.",
-                            this, e.getMessage(), e.getCause());
+                  this, e.getMessage(), e.getCause());
         } catch (Exception e) {
             LOGGER.error("Unexpected exception.", e);
         }
@@ -159,8 +156,8 @@ final class LogEntryServerSocketNode implements Runnable {
     @Override
     public String toString() {
         return this.getClass().getSimpleName()
-                        + ": " + socket.getRemoteSocketAddress().toString()
-                        + " (" + hostName + ")";
+              + ": " + socket.getRemoteSocketAddress().toString()
+              + " (" + hostName + ")";
     }
 
     void close() {
@@ -170,7 +167,7 @@ final class LogEntryServerSocketNode implements Runnable {
                 ois.close();
             } catch (IOException e) {
                 LOGGER.debug("Could not close connection: {}, cause: {}.",
-                                e.getMessage(), e.getCause());
+                      e.getMessage(), e.getCause());
             }
         }
     }

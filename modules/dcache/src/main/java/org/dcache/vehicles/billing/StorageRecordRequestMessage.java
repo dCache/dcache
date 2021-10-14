@@ -60,30 +60,29 @@ documents or software obtained from this server.
 package org.dcache.vehicles.billing;
 
 import com.google.common.base.Strings;
+import diskCacheV111.util.PnfsId;
 import java.util.Date;
 import java.util.function.Predicate;
-
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.services.billing.db.data.StorageRecord;
 
 /**
  * <p>Requests store/flush or restore/stage records for a given pnfsId.</p>
  */
 public final class StorageRecordRequestMessage
-                extends RecordRequestMessage<StorageRecord> {
+      extends RecordRequestMessage<StorageRecord> {
+
     private static final long serialVersionUID = 2916996557348049159L;
 
     private final String pool;
 
     public StorageRecordRequestMessage(PnfsId pnfsId,
-                                       Date before,
-                                       Date after,
-                                       Type type,
-                                       String pool,
-                                       int limit,
-                                       int offset,
-                                       String sort) {
+          Date before,
+          Date after,
+          Type type,
+          String pool,
+          int limit,
+          int offset,
+          String sort) {
         super(pnfsId, before, after, type, limit, offset, sort);
         this.pool = pool;
     }
@@ -91,7 +90,7 @@ public final class StorageRecordRequestMessage
     @Override
     public Predicate<StorageRecord> filter() {
         return (record) -> pool == null
-                        || Strings.nullToEmpty(record.getCellName())
-                                  .contains(pool);
+              || Strings.nullToEmpty(record.getCellName())
+              .contains(pool);
     }
 }

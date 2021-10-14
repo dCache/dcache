@@ -17,73 +17,63 @@
  */
 package org.dcache.pool.movers;
 
-import java.net.InetSocketAddress;
-import java.util.List;
-
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.net.InetSocketAddress;
+import java.util.List;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
  * A Mover implementation based on the MoverProtocol interface.
  */
-public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtocolMover>
-{
+public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtocolMover> {
+
     /**
      * mover implementation suitable for this transfer
      */
     protected final MoverProtocol _moverProtocol;
 
-    public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                    TransferService<MoverProtocolMover> transferService,
-                    MoverProtocol moverProtocol)
-    {
+    public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+          CellPath pathToDoor,
+          TransferService<MoverProtocolMover> transferService,
+          MoverProtocol moverProtocol) {
         super(handle, message, pathToDoor, transferService);
         _moverProtocol = moverProtocol;
     }
 
     @Override
-    public long getTransferTime()
-    {
+    public long getTransferTime() {
         return _moverProtocol.getTransferTime();
     }
 
     @Override
-    public long getBytesTransferred()
-    {
+    public long getBytesTransferred() {
         return _moverProtocol.getBytesTransferred();
     }
 
     @Override
-    public long getLastTransferred()
-    {
+    public long getLastTransferred() {
         return _moverProtocol.getLastTransferred();
     }
 
-    public MoverProtocol getMover()
-    {
+    public MoverProtocol getMover() {
         return _moverProtocol;
     }
 
     @Override
-    protected String getStatus()
-    {
+    protected String getStatus() {
         return _moverProtocol.toString();
     }
 
     @Override
-    public List<InetSocketAddress> remoteConnections()
-    {
+    public List<InetSocketAddress> remoteConnections() {
         return _moverProtocol.remoteConnections();
     }
 
     @Override
-    public Long getBytesExpected()
-    {
+    public Long getBytesExpected() {
         return _moverProtocol.getBytesExpected();
     }
 }

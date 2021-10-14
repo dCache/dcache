@@ -70,12 +70,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  Container for recording changes based on a PoolMonitor update. Records pools, pool
- *  groups and storage units that have been added or removed, and modifications to the pool
- *  set of a pool group, to storage unit constraints, and to the mode or tags for new or
- *  current pools.
+ * Container for recording changes based on a PoolMonitor update. Records pools, pool groups and
+ * storage units that have been added or removed, and modifications to the pool set of a pool group,
+ * to storage unit constraints, and to the mode or tags for new or current pools.
  */
 public final class PoolOpDiff {
+
     final Collection<String> newPools = new ArrayList<>();
     final Collection<String> oldPools = new ArrayList<>();
     final Collection<String> uninitPools = new ArrayList<>();
@@ -115,13 +115,15 @@ public final class PoolOpDiff {
      *  (pool, tags)
      */
     private final Map<String, ImmutableMap<String, String>> tagsChanged
-                    = new HashMap<>();
+          = new HashMap<>();
 
     public Collection<String> getConstraintsChanged() {
         return constraintsChanged;
     }
 
-    public Collection<String> getMarkerChanged() { return markerChanged; }
+    public Collection<String> getMarkerChanged() {
+        return markerChanged;
+    }
 
     public Map<String, PoolV2Mode> getModeChanged() {
         return modeChanged;
@@ -177,35 +179,35 @@ public final class PoolOpDiff {
 
     public boolean isEmpty() {
         return newPools.isEmpty() && oldPools.isEmpty() && uninitPools.isEmpty()
-                        && newGroups.isEmpty() && oldGroups.isEmpty()
-                        && newUnits.isEmpty() && oldUnits.isEmpty()
-                        && poolsAdded.isEmpty() && poolsRmved.isEmpty()
-                        && unitsAdded.isEmpty() && unitsRmved.isEmpty()
-                        && constraintsChanged.isEmpty() && tagsChanged.isEmpty()
-                        && modeChanged.isEmpty();
+              && newGroups.isEmpty() && oldGroups.isEmpty()
+              && newUnits.isEmpty() && oldUnits.isEmpty()
+              && poolsAdded.isEmpty() && poolsRmved.isEmpty()
+              && unitsAdded.isEmpty() && unitsRmved.isEmpty()
+              && constraintsChanged.isEmpty() && tagsChanged.isEmpty()
+              && modeChanged.isEmpty();
     }
 
     public String toString() {
         return String.format("New Pools:            %s\n" +
-                                        "Old Pools:            %s\n" +
-                                        "Uninitialized Pools:  %s\n" +
-                                        "New Groups:           %s\n" +
-                                        "Old Groups:           %s\n" +
-                                        "New Units:            %s\n" +
-                                        "Old Units:            %s\n" +
-                                        "Pools Added:          %s\n" +
-                                        "Pools Removed:        %s\n" +
-                                        "Units Added:          %s\n" +
-                                        "Units Removed:        %s\n" +
-                                        "Constraints changed:  %s\n" +
-                                        "Mode changed:         %s\n" +
-                                        "Tags changed:         %s\n",
-                        newPools, oldPools, uninitPools,
-                        newGroups, oldGroups,
-                        newUnits, oldUnits,
-                        poolsAdded, poolsRmved,
-                        unitsAdded, unitsRmved,
-                        constraintsChanged, modeChanged,
-                        tagsChanged);
+                    "Old Pools:            %s\n" +
+                    "Uninitialized Pools:  %s\n" +
+                    "New Groups:           %s\n" +
+                    "Old Groups:           %s\n" +
+                    "New Units:            %s\n" +
+                    "Old Units:            %s\n" +
+                    "Pools Added:          %s\n" +
+                    "Pools Removed:        %s\n" +
+                    "Units Added:          %s\n" +
+                    "Units Removed:        %s\n" +
+                    "Constraints changed:  %s\n" +
+                    "Mode changed:         %s\n" +
+                    "Tags changed:         %s\n",
+              newPools, oldPools, uninitPools,
+              newGroups, oldGroups,
+              newUnits, oldUnits,
+              poolsAdded, poolsRmved,
+              unitsAdded, unitsRmved,
+              constraintsChanged, modeChanged,
+              tagsChanged);
     }
 }

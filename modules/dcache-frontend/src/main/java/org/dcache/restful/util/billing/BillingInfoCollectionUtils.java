@@ -59,11 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.billing;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
 import org.dcache.util.histograms.TimeFrame;
@@ -73,13 +74,12 @@ import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * <p>Provides methods for generating and transforming messages to be
  * sent to the dCache billing service.</p>
  */
 public final class BillingInfoCollectionUtils {
+
     /**
      * Configures the boundaries and interval.
      */
@@ -191,8 +191,7 @@ public final class BillingInfoCollectionUtils {
      * </tr>
      * </table>
      *
-     * @return the full set of messages (60) to be sent to gather all
-     * the time series data.
+     * @return the full set of messages (60) to be sent to gather all the time series data.
      */
     public static List<BillingDataRequestMessage> generateMessages() {
         List<BillingDataRequestMessage> messages = new ArrayList<>();
@@ -270,23 +269,23 @@ public final class BillingInfoCollectionUtils {
 
     public static BillingDataGrid getDataGrid() {
         BillingDataGrid billingDataGrid
-                        = new BillingDataGrid(new HashMap<String,
-                        BillingDataGridEntry>());
+              = new BillingDataGrid(new HashMap<String,
+              BillingDataGridEntry>());
         generateMessages().stream()
-                          .map(BillingInfoCollectionUtils::transform)
-                          .forEach((e) -> billingDataGrid.getDataGrid()
-                                                         .put(e.toString(), e));
+              .map(BillingInfoCollectionUtils::transform)
+              .forEach((e) -> billingDataGrid.getDataGrid()
+                    .put(e.toString(), e));
         return billingDataGrid;
     }
 
     public static String getKey(BillingDataRequestMessage message) {
         return new BillingDataGridEntry(message.getType(),
-                                        message.getDataType(),
-                                        message.getTimeFrame()).toString();
+              message.getDataType(),
+              message.getTimeFrame()).toString();
     }
 
     private static BillingDataGridEntry transform(
-                    BillingDataRequestMessage request) {
+          BillingDataRequestMessage request) {
         SeriesDataType dataType = request.getDataType();
         requireNonNull(dataType);
         SeriesType type = request.getType();
@@ -294,8 +293,8 @@ public final class BillingInfoCollectionUtils {
         TimeFrame timeFrame = request.getTimeFrame();
         requireNonNull(timeFrame);
         return new BillingDataGridEntry(type,
-                                        dataType,
-                                        timeFrame);
+              dataType,
+              timeFrame);
     }
 
     private BillingInfoCollectionUtils() {

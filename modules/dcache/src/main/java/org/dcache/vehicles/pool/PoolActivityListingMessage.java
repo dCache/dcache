@@ -59,22 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.pool;
 
+import diskCacheV111.vehicles.Message;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.vehicles.Message;
-
 import org.dcache.util.FieldSort;
 
 /**
  * <p>Base class for pool activity requests.</p>
  */
 public abstract class PoolActivityListingMessage<D extends Comparable<D> & Serializable>
-                extends Message {
+      extends Message {
+
     private static final long serialVersionUID = -6021595324569227526L;
 
     protected final String pnfsid;
@@ -82,15 +81,15 @@ public abstract class PoolActivityListingMessage<D extends Comparable<D> & Seria
     protected final String storageClass;
 
     private final String sort;
-    private final int    offset;
-    private final int    limit;
+    private final int offset;
+    private final int limit;
 
     private List<D> data;
-    private int     total;
+    private int total;
 
     protected PoolActivityListingMessage(int offset, int limit, String pnfsid,
-                                         String state, String storageClass,
-                                         String sort) {
+          String state, String storageClass,
+          String sort) {
         this.offset = offset;
         this.limit = limit;
         this.pnfsid = pnfsid;
@@ -129,8 +128,8 @@ public abstract class PoolActivityListingMessage<D extends Comparable<D> & Seria
         }
 
         return Arrays.stream(sort.split(","))
-                     .map(FieldSort::new)
-                     .collect(Collectors.toList());
+              .map(FieldSort::new)
+              .collect(Collectors.toList());
     }
 
     public abstract Predicate<D> filter();

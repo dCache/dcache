@@ -64,36 +64,35 @@ import org.dcache.qos.data.PoolQoSStatus;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
 
 /**
- *  Internal interface used by map and task.
+ * Internal interface used by map and task.
  */
 public interface PoolOpHandler {
+
     /**
-     * @return  service to which to submit the scan task.
+     * @return service to which to submit the scan task.
      */
     ExecutorService getTaskService();
 
-  /**
-   * Called in response to an admin command to re-include the pool in
-     * status changes and scanning.
+    /**
+     * Called in response to an admin command to re-include the pool in status changes and
+     * scanning.
      *
      * @param pool to include.
      */
     void handlePoolInclusion(String pool);
 
     /**
-     * Called in response to an admin command to exclude the pool form
-     * status changes and scanning.
+     * Called in response to an admin command to exclude the pool form status changes and scanning.
      *
      * @param pool to include.
      */
     void handlePoolExclusion(String pool);
 
     /**
-     * Called in response to an admin command to cancel the current scan.
-     * Also may be called if the status of the pool has changed and
-     * a scan is currently in progress.
+     * Called in response to an admin command to cancel the current scan. Also may be called if the
+     * status of the pool has changed and a scan is currently in progress.
      *
-     * @param pool whose scan should be cancelled.
+     * @param pool   whose scan should be cancelled.
      * @param status of the pool which may have changed.
      */
     void handlePoolScanCancelled(String pool, PoolQoSStatus status);

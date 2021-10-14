@@ -15,16 +15,12 @@
  */
 package org.dcache.ftp.client.extended;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.DataSource;
@@ -38,7 +34,6 @@ import org.dcache.ftp.client.Session;
 import org.dcache.ftp.client.dc.EBlockImageDCWriter;
 import org.dcache.ftp.client.dc.EBlockParallelTransferContext;
 import org.dcache.ftp.client.dc.ManagedSocketBox;
-import org.dcache.ftp.client.dc.SocketBox;
 import org.dcache.ftp.client.dc.SocketOperator;
 import org.dcache.ftp.client.dc.SocketPool;
 import org.dcache.ftp.client.dc.StripeContextManager;
@@ -50,12 +45,13 @@ import org.dcache.ftp.client.vanilla.FTPControlChannel;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class GridFTPServerFacade extends FTPServerFacade
-{
+public class GridFTPServerFacade extends FTPServerFacade {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(GridFTPServerFacade.class);
+          LoggerFactory.getLogger(GridFTPServerFacade.class);
 
     // utility alias to session
     protected GridFTPSession gSession = null;
@@ -67,8 +63,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     // manager)
     protected StripeContextManager stripeRetrContextManager = null;
 
-    public GridFTPServerFacade(FTPControlChannel remoteControlChannel)
-    {
+    public GridFTPServerFacade(FTPControlChannel remoteControlChannel) {
         super(remoteControlChannel);
         gSession = new GridFTPSession();
         session = gSession;
@@ -78,29 +73,25 @@ public class GridFTPServerFacade extends FTPServerFacade
         transferThreadManager = createTransferThreadManager();
     }
 
-    public void setDataChannelProtection(int protection)
-    {
+    public void setDataChannelProtection(int protection) {
         gSession.dataChannelProtection = protection;
     }
 
-    public void setDataChannelAuthentication(DataChannelAuthentication authentication)
-    {
+    public void setDataChannelAuthentication(DataChannelAuthentication authentication) {
         gSession.dataChannelAuthentication = authentication;
     }
 
     @Override
-    public void setOptions(Options opts)
-    {
+    public void setOptions(Options opts) {
         if (opts instanceof RetrieveOptions) {
             gSession.parallel =
-                    ((RetrieveOptions) opts).getStartingParallelism();
+                  ((RetrieveOptions) opts).getStartingParallelism();
             logger.debug("parallelism set to {}", gSession.parallel);
         }
     }
 
     @Override
-    protected void transferAbort()
-    {
+    protected void transferAbort() {
         if (session.serverMode == Session.SERVER_PASSIVE) {
             unblockServer();
             transferThreadManager.stopTaskThread();
@@ -108,11 +99,10 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     /**
-     * All sockets opened when this server was active
-     * should send a special EBlock header before closing.
+     * All sockets opened when this server was active should send a special EBlock header before
+     * closing.
      */
-    private void closeOutgoingSockets() throws ClientException
-    {
+    private void closeOutgoingSockets() throws ClientException {
 
         SocketOperator op = (sb) -> {
             if (((ManagedSocketBox) sb).isReusable()) {
@@ -120,7 +110,7 @@ public class GridFTPServerFacade extends FTPServerFacade
                 if (s != null) {
                     // write the closing Eblock and close the socket
                     EBlockImageDCWriter.close(
-                            new DataOutputStream(s.getOutputStream()));
+                          new DataOutputStream(s.getOutputStream()));
                 }
             }
         };
@@ -131,7 +121,7 @@ public class GridFTPServerFacade extends FTPServerFacade
             // ignore - sometimes server might close the socket
         } catch (Exception e) {
             ClientException ce =
-                    new ClientException(ClientException.SOCKET_OP_FAILED);
+                  new ClientException(ClientException.SOCKET_OP_FAILED);
             ce.setRootCause(e);
             throw ce;
         }
@@ -139,8 +129,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
     @Override
     public void setActive(HostPort hp)
-            throws UnknownHostException, ClientException, IOException
-    {
+          throws UnknownHostException, ClientException, IOException {
         if (logger.isDebugEnabled()) {
             logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
         }
@@ -160,8 +149,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     public void setStripedActive(HostPortList hpl)
-            throws UnknownHostException, IOException
-    {
+          throws UnknownHostException, IOException {
         if (hpl == null) {
             throw new IllegalArgumentException("null HostPortList");
         }
@@ -174,7 +162,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
         //create context manager that will be used by retrieve()
         this.stripeRetrContextManager =
-                new StripeContextManager(stripes, socketPool, this);
+              new StripeContextManager(stripes, socketPool, this);
 
         int pathes = gSession.parallel;
         gSession.serverMode = GridFTPSession.SERVER_EACT;
@@ -186,22 +174,19 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     @Override
-    public HostPort setPassive(PortRange range, int queue) throws IOException
-    {
+    public HostPort setPassive(PortRange range, int queue) throws IOException {
         // remove existing sockets, if any
         socketPool.flush();
 
         return super.setPassive(range, queue);
     }
 
-    public HostPortList setStripedPassive() throws IOException
-    {
+    public HostPortList setStripedPassive() throws IOException {
         return setStripedPassive(new PortRange(0), DEFAULT_QUEUE);
     }
 
     public HostPortList setStripedPassive(PortRange range, int queue)
-            throws IOException
-    {
+          throws IOException {
 
         // remove existing sockets, if any
         socketPool.flush();
@@ -215,7 +200,8 @@ public class GridFTPServerFacade extends FTPServerFacade
         gSession.serverMode = GridFTPSession.SERVER_EPAS;
         gSession.serverAddressList = new HostPortList();
 
-        String address = NetworkUtils.getLocalAddress(InetAddress.getByName(remoteControlChannel.getHost())).getHostAddress();
+        String address = NetworkUtils.getLocalAddress(
+              InetAddress.getByName(remoteControlChannel.getHost())).getHostAddress();
         int localPort = serverSocket.getLocalPort();
 
         HostPort hp = null;
@@ -229,21 +215,19 @@ public class GridFTPServerFacade extends FTPServerFacade
         gSession.serverAddressList.add(hp);
 
         logger.debug("started single striped passive server at port {}",
-                     gSession.serverAddressList.get(0).getPort());
+              gSession.serverAddressList.get(0).getPort());
 
         return gSession.serverAddressList;
     }
 
     /**
-     * Store the data from the data channel to the data sink.
-     * Does not block.
-     * If operation fails, exception might be thrown via local control channel.
+     * Store the data from the data channel to the data sink. Does not block. If operation fails,
+     * exception might be thrown via local control channel.
      *
      * @param sink source of data
      **/
     @Override
-    public void store(DataSink sink)
-    {
+    public void store(DataSink sink) {
         try {
 
             localControlChannel.resetReplyCount();
@@ -253,35 +237,35 @@ public class GridFTPServerFacade extends FTPServerFacade
                 // no EBLOCK
                 //
                 EBlockParallelTransferContext context =
-                        (EBlockParallelTransferContext) createTransferContext();
+                      (EBlockParallelTransferContext) createTransferContext();
                 context.setEodsTotal(0);
 
                 if (session.serverMode == Session.SERVER_PASSIVE) {
                     transferThreadManager.passiveConnect(
-                            sink,
-                            context,
-                            1,
-                            serverSocket);
+                          sink,
+                          context,
+                          1,
+                          serverSocket);
 
                 } else {
                     //1 non reusable connection
                     transferThreadManager.startTransfer(
-                            sink,
-                            context,
-                            1,
-                            ManagedSocketBox.NON_REUSABLE);
+                          sink,
+                          context,
+                          1,
+                          ManagedSocketBox.NON_REUSABLE);
                 }
 
             } else if (
-                    session.serverMode != GridFTPSession.SERVER_EPAS
-                    && session.serverMode != GridFTPSession.SERVER_PASSIVE) {
+                  session.serverMode != GridFTPSession.SERVER_EPAS
+                        && session.serverMode != GridFTPSession.SERVER_PASSIVE) {
                 //
                 // EBLOCK, local server not passive
                 //
                 exceptionToControlChannel(
-                        new DataChannelException(
-                                DataChannelException.BAD_SERVER_MODE),
-                        "refusing to store with active mode");
+                      new DataChannelException(
+                            DataChannelException.BAD_SERVER_MODE),
+                      "refusing to store with active mode");
             } else {
                 //
                 // EBLOCK, local server passive
@@ -290,7 +274,7 @@ public class GridFTPServerFacade extends FTPServerFacade
                 // data channels will
                 // share this transfer context
                 EBlockParallelTransferContext context =
-                        (EBlockParallelTransferContext) createTransferContext();
+                      (EBlockParallelTransferContext) createTransferContext();
 
                 // we are the passive side, so we don't really get to decide
                 // how many connections will be used
@@ -301,21 +285,21 @@ public class GridFTPServerFacade extends FTPServerFacade
                 }
 
                 logger.debug("will reuse {}  connections and start {}  new ones.",
-                        willReuseConnections,
-                        needNewConnections);
+                      willReuseConnections,
+                      needNewConnections);
 
                 transferThreadManager.startTransfer(
-                        sink,
-                        context,
-                        willReuseConnections,
-                        ManagedSocketBox.REUSABLE);
+                      sink,
+                      context,
+                      willReuseConnections,
+                      ManagedSocketBox.REUSABLE);
 
                 if (needNewConnections > 0) {
                     transferThreadManager.passiveConnect(
-                            sink,
-                            context,
-                            needNewConnections,
-                            serverSocket);
+                          sink,
+                          context,
+                          needNewConnections,
+                          serverSocket);
                 }
             }
         } catch (Exception e) {
@@ -324,15 +308,13 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     /**
-     * Retrieve the data from the data source and write to the data channel.
-     * This method does not block.
-     * If operation fails, exception might be thrown via local control channel.
+     * Retrieve the data from the data source and write to the data channel. This method does not
+     * block. If operation fails, exception might be thrown via local control channel.
      *
      * @param source source of data
      **/
     @Override
-    public void retrieve(DataSource source)
-    {
+    public void retrieve(DataSource source) {
         try {
             localControlChannel.resetReplyCount();
 
@@ -343,7 +325,7 @@ public class GridFTPServerFacade extends FTPServerFacade
                 //
 
                 EBlockParallelTransferContext context =
-                        (EBlockParallelTransferContext) createTransferContext();
+                      (EBlockParallelTransferContext) createTransferContext();
                 context.setEodsTotal(0);
 
                 logger.debug("starting outgoing transfer without mode E");
@@ -354,10 +336,10 @@ public class GridFTPServerFacade extends FTPServerFacade
                 } else {
 
                     transferThreadManager.startTransfer(
-                            source,
-                            context,
-                            1,
-                            ManagedSocketBox.NON_REUSABLE);
+                          source,
+                          context,
+                          1,
+                          ManagedSocketBox.NON_REUSABLE);
                 }
 
             } else if (session.serverMode == Session.SERVER_ACTIVE) {
@@ -368,7 +350,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
                 // data channels will share this transfer context
                 EBlockParallelTransferContext context =
-                        (EBlockParallelTransferContext) createTransferContext();
+                      (EBlockParallelTransferContext) createTransferContext();
 
                 int total = gSession.parallel;
                 //we should send as many EODS as there are parallel streams
@@ -379,24 +361,25 @@ public class GridFTPServerFacade extends FTPServerFacade
                 int willCloseConnections = (free > total) ? free - total : 0;
                 int needNewConnections = (total > free) ? total - free : 0;
 
-                logger.debug("will reuse {} connections, start {}  new ones, and close {}", willReuseConnections,
-                             needNewConnections, willCloseConnections);
+                logger.debug("will reuse {} connections, start {}  new ones, and close {}",
+                      willReuseConnections,
+                      needNewConnections, willCloseConnections);
 
                 if (needNewConnections > 0) {
                     transferThreadManager.activeConnect(this.remoteServerAddress,
-                                                        needNewConnections);
+                          needNewConnections);
                 }
 
                 if (willCloseConnections > 0) {
                     transferThreadManager.activeClose(context,
-                                                      willCloseConnections);
+                          willCloseConnections);
                 }
 
                 transferThreadManager.startTransfer(
-                        source,
-                        context,
-                        willReuseConnections + needNewConnections,
-                        ManagedSocketBox.REUSABLE);
+                      source,
+                      context,
+                      willReuseConnections + needNewConnections,
+                      ManagedSocketBox.REUSABLE);
 
             } else if (session.serverMode == GridFTPSession.SERVER_EACT) {
 
@@ -413,14 +396,14 @@ public class GridFTPServerFacade extends FTPServerFacade
                 for (int stripe = 0; stripe < stripes; stripe++) {
 
                     EBlockParallelTransferContext context =
-                            stripeRetrContextManager.getStripeContext(stripe);
+                          stripeRetrContextManager.getStripeContext(stripe);
                     context.setEodsTotal(gSession.parallel);
 
                     transferThreadManager.startTransfer(
-                            source,
-                            context,
-                            gSession.parallel,
-                            ManagedSocketBox.REUSABLE);
+                          source,
+                          context,
+                          gSession.parallel,
+                          ManagedSocketBox.REUSABLE);
 
                 }
 
@@ -431,7 +414,7 @@ public class GridFTPServerFacade extends FTPServerFacade
                 //
 
                 throw new DataChannelException(
-                        DataChannelException.BAD_SERVER_MODE);
+                      DataChannelException.BAD_SERVER_MODE);
             }
         } catch (Exception e) {
             exceptionToControlChannel(e, "ocurred during retrieve()");
@@ -440,8 +423,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
     //override
     @Override
-    public void abort() throws IOException
-    {
+    public void abort() throws IOException {
         super.abort();
         if (socketPool != null) {
             socketPool.flush();
@@ -450,8 +432,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
     //override
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         super.close();
         if (transferThreadManager != null) {
             transferThreadManager.close();
@@ -459,21 +440,19 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     @Override
-    protected TransferContext createTransferContext()
-    {
+    protected TransferContext createTransferContext() {
         EBlockParallelTransferContext context =
-                new EBlockParallelTransferContext();
+              new EBlockParallelTransferContext();
         context.setSocketPool(socketPool);
         context.setTransferThreadManager(this.transferThreadManager);
         return context;
     }
 
-    public TransferThreadManager createTransferThreadManager()
-    {
+    public TransferThreadManager createTransferThreadManager() {
         return new TransferThreadManager(socketPool,
-                                         this,
-                                         localControlChannel,
-                                         gSession);
+              this,
+              localControlChannel,
+              gSession);
     }
 
 }

@@ -59,18 +59,17 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import org.junit.Test;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import org.dcache.util.NonReindexableList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
+import java.util.List;
+import java.util.NoSuchElementException;
+import org.dcache.util.NonReindexableList;
+import org.junit.Test;
+
 public final class NonReindexableListTest {
+
     private List<String> testList;
 
     @Test

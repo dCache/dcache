@@ -64,12 +64,12 @@ import org.dcache.services.bulk.job.BulkJobKey;
 
 public class UnpinJob extends PinManagerJob {
 
-  public UnpinJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
-    super(key, parentKey, activity);
-  }
+    public UnpinJob(BulkJobKey key, BulkJobKey parentKey, String activity) {
+        super(key, parentKey, activity);
+    }
 
-  @Override
-  protected void doRun() {
-    sendToPinManager(new PinManagerUnpinMessage(attributes.getPnfsId()));
-  }
+    @Override
+    protected void doRun() {
+        sendToPinManager(new PinManagerUnpinMessage(attributes.getPnfsId()));
+    }
 }

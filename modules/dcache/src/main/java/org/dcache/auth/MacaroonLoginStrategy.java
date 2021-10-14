@@ -17,22 +17,18 @@
  */
 package org.dcache.auth;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
 
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.DenyActivityRestriction;
 import org.dcache.auth.attributes.Expiry;
 import org.dcache.auth.attributes.HomeDirectory;
@@ -41,29 +37,27 @@ import org.dcache.auth.attributes.MaxUploadSize;
 import org.dcache.auth.attributes.PrefixRestriction;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.macaroons.InvalidMacaroonException;
-import org.dcache.macaroons.MacaroonProcessor;
 import org.dcache.macaroons.MacaroonContext;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.dcache.macaroons.MacaroonProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This LoginStrategy processes requests containing a BearerTokenCredential,
- * stored as a private credential, that is a macaroon.
+ * This LoginStrategy processes requests containing a BearerTokenCredential, stored as a private
+ * credential, that is a macaroon.
  */
-public class MacaroonLoginStrategy implements LoginStrategy
-{
+public class MacaroonLoginStrategy implements LoginStrategy {
+
     private static final Logger LOG = LoggerFactory.getLogger(MacaroonLoginStrategy.class);
 
     private final MacaroonProcessor processor;
 
-    public MacaroonLoginStrategy(MacaroonProcessor processor)
-    {
+    public MacaroonLoginStrategy(MacaroonProcessor processor) {
         this.processor = processor;
     }
 
     @Override
-    public LoginReply login(Subject subject) throws CacheException
-    {
+    public LoginReply login(Subject subject) throws CacheException {
         LOG.debug("Login attempted: {}", subject);
         Origin origin = extractClientIP(subject);
         String macaroon = extractCredential(subject);
@@ -78,7 +72,8 @@ public class MacaroonLoginStrategy implements LoginStrategy
             attributes.add(new RootDirectory(context.getRoot().orElse(FsPath.ROOT)));
             context.getExpiry().map(Expiry::new).ifPresent(attributes::add);
             context.getPath().map(PrefixRestriction::new).ifPresent(attributes::add);
-            context.getAllowedActivities().map(EnumSet::complementOf).map(DenyActivityRestriction::new).ifPresent(attributes::add);
+            context.getAllowedActivities().map(EnumSet::complementOf)
+                  .map(DenyActivityRestriction::new).ifPresent(attributes::add);
             context.getMaxUpload().ifPresent(s -> attributes.add(new MaxUploadSize(s)));
 
             Set<Principal> principals = reply.getSubject().getPrincipals();
@@ -95,8 +90,7 @@ public class MacaroonLoginStrategy implements LoginStrategy
         }
     }
 
-    private Collection<GidPrincipal> asGidPrincipals(long[] gids)
-    {
+    private Collection<GidPrincipal> asGidPrincipals(long[] gids) {
         Set<GidPrincipal> principals = new HashSet<>();
         boolean isFirst = true;
         for (long gid : gids) {
@@ -106,16 +100,15 @@ public class MacaroonLoginStrategy implements LoginStrategy
         return principals;
     }
 
-    private Origin extractClientIP(Subject subject)
-    {
+    private Origin extractClientIP(Subject subject) {
         Origin origin = Subjects.getOrigin(subject);
         checkArgument(origin != null, "Missing origin");
         return origin;
     }
 
-    private String extractCredential(Subject subject) throws CacheException
-    {
-        Set<BearerTokenCredential> credentials = subject.getPrivateCredentials(BearerTokenCredential.class);
+    private String extractCredential(Subject subject) throws CacheException {
+        Set<BearerTokenCredential> credentials = subject.getPrivateCredentials(
+              BearerTokenCredential.class);
 
         checkArgument(!credentials.isEmpty(), "No macaroons supplied");
         checkArgument(credentials.size() == 1, "3rd party macaroons currently not supported");
@@ -128,14 +121,12 @@ public class MacaroonLoginStrategy implements LoginStrategy
     }
 
     @Override
-    public Principal map(Principal principal) throws CacheException
-    {
+    public Principal map(Principal principal) throws CacheException {
         return null;
     }
 
     @Override
-    public Set<Principal> reverseMap(Principal principal) throws CacheException
-    {
+    public Set<Principal> reverseMap(Principal principal) throws CacheException {
         return Collections.emptySet();
     }
 }
