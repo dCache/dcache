@@ -22,19 +22,18 @@ import diskCacheV111.util.PnfsId;
 /**
  * An Allocator that forwards all calls to some other Allocator.
  */
-public abstract class ForwardingAllocator implements Allocator
-{
+public abstract class ForwardingAllocator implements Allocator {
+
     protected abstract Allocator getAllocator();
 
     @Override
-    public void allocate(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException, InterruptedException, OutOfDiskException
-    {
+    public void allocate(PnfsId id, long size)
+          throws IllegalStateException, IllegalArgumentException, InterruptedException, OutOfDiskException {
         getAllocator().allocate(id, size);
     }
 
     @Override
-    public void free(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException
-    {
+    public void free(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException {
         getAllocator().free(id, size);
     }
 }

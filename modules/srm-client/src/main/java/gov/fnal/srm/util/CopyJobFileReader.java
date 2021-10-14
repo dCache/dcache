@@ -81,17 +81,20 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class CopyJobFileReader {
-    private String[] sources ;
+
+    private String[] sources;
     private String[] destinations;
     private int size;
-    /** Creates a new instance of CopyJobFileReader */
+
+    /**
+     * Creates a new instance of CopyJobFileReader
+     */
     public CopyJobFileReader(String file) throws IOException {
         FileInputStream fin = new FileInputStream(file);
-        Set<String[]> src_dest_set= new HashSet<>();
+        Set<String[]> src_dest_set = new HashSet<>();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(fin))) {
             String origline;
             int line_num = 0;
@@ -104,7 +107,7 @@ public class CopyJobFileReader {
                 StringTokenizer st = new StringTokenizer(line);
                 if (st.countTokens() != 2) {
                     throw new IOException("File format is incorect, line #" +
-                            line_num + ": " + origline);
+                          line_num + ": " + origline);
                 }
                 String source = st.nextToken();
                 String dest = st.nextToken();
@@ -119,7 +122,7 @@ public class CopyJobFileReader {
         src_dest_set.toArray(src_dest_array);
         sources = new String[size];
         destinations = new String[size];
-        for(int i = 0 ; i < size; ++i) {
+        for (int i = 0; i < size; ++i) {
             sources[i] = src_dest_array[i][0];
             destinations[i] = src_dest_array[i][1];
         }
@@ -129,41 +132,44 @@ public class CopyJobFileReader {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("# copy job file \n");
-        for(int i = 0 ; i < size; ++i) {
-            sb.append( sources[i]).append(' ').append( destinations[i]).append('\n');
+        for (int i = 0; i < size; ++i) {
+            sb.append(sources[i]).append(' ').append(destinations[i]).append('\n');
         }
         return sb.toString();
     }
 
-    /** Getter for property sources.
-     * @return Value of property sources.
+    /**
+     * Getter for property sources.
      *
+     * @return Value of property sources.
      */
     public String[] getSources() {
         return this.sources;
     }
 
 
-    /** Getter for property destinations.
-     * @return Value of property destinations.
+    /**
+     * Getter for property destinations.
      *
+     * @return Value of property destinations.
      */
     public String[] getDestinations() {
         return this.destinations;
     }
 
-    /** Getter for property size.
-     * @return Value of property size.
+    /**
+     * Getter for property size.
      *
+     * @return Value of property size.
      */
     public int size() {
         return size;
     }
 
     public static final void main(String[] args) throws IOException {
-        if(args == null || args.length != 1) {
+        if (args == null || args.length != 1) {
             System.err.println(
-            "Usage: java gov.fnal.srm.util.CopyJobFileReader <file>");
+                  "Usage: java gov.fnal.srm.util.CopyJobFileReader <file>");
             System.exit(1);
         }
         System.out.println(new CopyJobFileReader(args[0]).toString());

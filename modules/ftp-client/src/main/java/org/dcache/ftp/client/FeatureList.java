@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,14 +15,14 @@
  */
 package org.dcache.ftp.client;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * Represents features supported by server (as returned by FEAT command).
- * Use the static members of this class to refer to well known feature names.
- * Example: check if the server supports PARALLEL feature:
+ * Represents features supported by server (as returned by FEAT command). Use the static members of
+ * this class to refer to well known feature names. Example: check if the server supports PARALLEL
+ * feature:
  * <pre>
  * FeatureList fl = new FeatureList(client.getFeatureList());
  * if (fl.contains(FeatureList.PARALLEL)) {
@@ -31,8 +31,7 @@ import java.util.StringTokenizer;
  * </pre>
  **/
 
-public class FeatureList
-{
+public class FeatureList {
 
     /**
      * RFC 2389 specified the following syntax for FEAT responce
@@ -46,18 +45,16 @@ public class FeatureList
      *  feature-label   = 1*VCHAR
      *  feature-parms   = 1*TCHAR
      * </pre>
-     * Feature class represence each individual feature and contain two fields
-     * required label and optional parms
+     * Feature class represence each individual feature and contain two fields required label and
+     * optional parms
      */
-    public static final class Feature
-    {
+    public static final class Feature {
 
         private final String label;
 
         private final String parms;
 
-        private Feature(String label)
-        {
+        private Feature(String label) {
 
             if (label == null) {
                 throw new NullPointerException("label is null");
@@ -68,8 +65,7 @@ public class FeatureList
 
         }
 
-        private Feature(String label, String parms)
-        {
+        private Feature(String label, String parms) {
 
             if (label == null) {
                 throw new NullPointerException("label is null");
@@ -83,8 +79,7 @@ public class FeatureList
         /**
          * @return the name
          */
-        public String getLabel()
-        {
+        public String getLabel() {
 
             return label;
 
@@ -93,16 +88,14 @@ public class FeatureList
         /**
          * @return the qualifiers, null if no qualifiers
          */
-        public String getParms()
-        {
+        public String getParms() {
 
             return parms;
 
         }
 
         @Override
-        public boolean equals(Object obj)
-        {
+        public boolean equals(Object obj) {
 
             if (!(obj instanceof Feature)) {
                 return false;
@@ -138,12 +131,11 @@ public class FeatureList
 
     protected final List<Feature> features = new ArrayList();
 
-    public FeatureList(String featReplyMsg)
-    {
+    public FeatureList(String featReplyMsg) {
 
         StringTokenizer responseTokenizer
-                = new StringTokenizer(featReplyMsg,
-                                      System.getProperty("line.separator"));
+              = new StringTokenizer(featReplyMsg,
+              System.getProperty("line.separator"));
 
         // ignore the first part of the message
         if (responseTokenizer.hasMoreElements()) {
@@ -168,8 +160,7 @@ public class FeatureList
         }
     }
 
-    public boolean contains(String label)
-    {
+    public boolean contains(String label) {
 
         if (label == null) {
             throw new IllegalArgumentException("label is null");
@@ -206,16 +197,14 @@ public class FeatureList
     }
 
     /**
-     * Get all features that have label equal to the argument
-     * Note that  RFC 2389 does not require a feature with a
-     * given label to appear only once
+     * Get all features that have label equal to the argument Note that  RFC 2389 does not require a
+     * feature with a given label to appear only once
      *
      * @param label
-     * @return List of found features with given label in the same order
-     * as they were given to us by the server
+     * @return List of found features with given label in the same order as they were given to us by
+     * the server
      */
-    public List<Feature> getFeature(String label)
-    {
+    public List<Feature> getFeature(String label) {
 
         if (label == null) {
             throw new IllegalArgumentException("feature label is null");

@@ -8,13 +8,13 @@ import java.util.Arrays;
 
 public class DCapProrocolChallenge {
 
-	private final int _sessionID;
-	private final byte[] _challenge;
+    private final int _sessionID;
+    private final byte[] _challenge;
 
-	public DCapProrocolChallenge(int session, byte[] challenge) {
-		_sessionID = session;
-		_challenge = challenge;
-	}
+    public DCapProrocolChallenge(int session, byte[] challenge) {
+        _sessionID = session;
+        _challenge = challenge;
+    }
 
     /*
      *
@@ -27,18 +27,18 @@ public class DCapProrocolChallenge {
     @Override
     public boolean equals(Object other) {
 
-        if( other == this) {
+        if (other == this) {
             return true;
         }
 
-        if ( !(other instanceof DCapProrocolChallenge)) {
+        if (!(other instanceof DCapProrocolChallenge)) {
             return false;
         }
 
         DCapProrocolChallenge otherChallenge = (DCapProrocolChallenge) other;
 
         return _sessionID == otherChallenge.session() &&
-            Arrays.equals(_challenge, otherChallenge.challenge());
+              Arrays.equals(_challenge, otherChallenge.challenge());
     }
 
     @Override
@@ -46,8 +46,13 @@ public class DCapProrocolChallenge {
         return Arrays.hashCode(_challenge);
     }
 
-	public int session() { return _sessionID; }
-	public byte[] challenge() { return _challenge; }
+    public int session() {
+        return _sessionID;
+    }
+
+    public byte[] challenge() {
+        return _challenge;
+    }
 
     @Override
     public String toString() {

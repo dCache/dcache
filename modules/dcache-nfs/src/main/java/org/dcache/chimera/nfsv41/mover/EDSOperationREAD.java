@@ -1,11 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.NfsIoException;
@@ -18,6 +14,8 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
@@ -27,11 +25,11 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
     private static final ThreadLocal<ByteBuffer> BUFFERS = new ThreadLocal<ByteBuffer>() {
         @Override
         protected ByteBuffer initialValue() {
-            return  ByteBuffer.allocateDirect((int)NFSv4Defaults.NFS4_MAXIOBUFFERSIZE);
+            return ByteBuffer.allocateDirect((int) NFSv4Defaults.NFS4_MAXIOBUFFERSIZE);
         }
     };
 
-     private final NFSv4MoverHandler _moverHandler;
+    private final NFSv4MoverHandler _moverHandler;
 
     public EDSOperationREAD(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
         super(args, nfs_opnum4.OP_READ);
@@ -48,13 +46,14 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             int count = _args.opread.count.value;
 
             NfsMover mover = _moverHandler.getOrCreateMover(context.getRemoteSocketAddress(),
-                    _args.opread.stateid, context.currentInode().toNfsHandle());
-            if(mover == null) {
+                  _args.opread.stateid, context.currentInode().toNfsHandle());
+            if (mover == null) {
                 /*
                  * return IO error instead of BadStateidException to avoid state recovery.
                  * The client will fall back to IO through MDS.
                  */
-                throw new NfsIoException("No mover associated with given stateid: " + _args.opread.stateid);
+                throw new NfsIoException(
+                      "No mover associated with given stateid: " + _args.opread.stateid);
             }
             mover.attachSession(context.getSession());
 
@@ -69,19 +68,20 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             res.resok4 = new READ4resok();
             bb.flip();
             res.resok4.data = bb;
-            if( bytesRead == -1 || offset + bytesRead == fc.size() ) {
+            if (bytesRead == -1 || offset + bytesRead == fc.size()) {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: {}@{} read, {} requested.", bytesRead, offset, _args.opread.count.value);
+            _log.debug("MOVER: {}@{} read, {} requested.", bytesRead, offset,
+                  _args.opread.count.value);
 
-        }catch(ChimeraNFSException he) {
+        } catch (ChimeraNFSException he) {
             res.status = he.getStatus();
             _log.debug(he.getMessage());
-        }catch(IOException ioe) {
+        } catch (IOException ioe) {
             _log.error("DSREAD: ", ioe);
             res.status = nfsstat.NFSERR_IO;
-        }catch(Exception e) {
+        } catch (Exception e) {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }

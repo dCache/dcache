@@ -64,15 +64,16 @@ import java.io.Serializable;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.nearline.NearlineStorageHandler} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.nearline.NearlineStorageHandler} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class StorageHandlerData implements Serializable {
+
     private static final long serialVersionUID = -8358860515553038804L;
     private String label;
-    private Long    restoreTimeoutInSeconds;
-    private Long    storeTimeoutInSeconds;
-    private Long    removeTimeoutInSeconds;
+    private Long restoreTimeoutInSeconds;
+    private Long storeTimeoutInSeconds;
+    private Long removeTimeoutInSeconds;
     private Integer activeStores;
     private Integer queuedStores;
     private Integer activeRestores;

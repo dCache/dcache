@@ -62,11 +62,6 @@ package org.dcache.gplazma.plugins;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.gson.GsonBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -74,23 +69,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.Glob;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>In-memory version of the VO Group map file.  Loads once, and thereafter
- * anytime the timestamp of lastModified has changed.  Timestamp is
- * checked on each get().</p>
+ * anytime the timestamp of lastModified has changed.  Timestamp is checked on each get().</p>
  */
 public class FileBackedVOGroupMap {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(FileBackedVOGroupMap.class);
+          = LoggerFactory.getLogger(FileBackedVOGroupMap.class);
 
     private final Map<String, VOGroupEntry> cache = new HashMap<>();
     /**
-     * the vo group map file may contain wildcard FQAN match patterns,
-     * allow second cache for these for efficiency
+     * the vo group map file may contain wildcard FQAN match patterns, allow second cache for these
+     * for efficiency
      */
     private final Map<Glob, VOGroupEntry> globCache = new HashMap<>();
     private final File file;
@@ -109,22 +106,22 @@ public class FileBackedVOGroupMap {
         entry = cache.get(fqan);
         if (entry == null) {
             entry = globCache.entrySet()
-                    .stream()
-                    .filter(e -> e.getKey().matches(fqan))
-                    .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElse(null);
+                  .stream()
+                  .filter(e -> e.getKey().matches(fqan))
+                  .map(Map.Entry::getValue)
+                  .findFirst()
+                  .orElse(null);
         }
         if (entry == null) {
             throw new AuthenticationException("No VO group entry matching FQAN: "
-                                              + fqan);
+                  + fqan);
         } else {
             return entry;
         }
     }
 
     @VisibleForTesting
-    synchronized long  getReloadCount() {
+    synchronized long getReloadCount() {
         return reloadCount;
     }
 
@@ -132,16 +129,16 @@ public class FileBackedVOGroupMap {
     private void checkFile() {
         if (!file.exists() || !file.canRead()) {
             LOGGER.error("RELOAD FAILED: Could not read {}.",
-                         file.getAbsolutePath());
+                  file.getAbsolutePath());
         } else if (lastModified < file.lastModified()) {
             cache.clear();
             globCache.clear();
             GsonBuilder builder = new GsonBuilder();
             try (FileReader reader = new FileReader(file)) {
                 VOGroupEntry[] info = builder.create()
-                                             .fromJson(reader,
-                                                       VOGroupEntry[].class);
-                for (VOGroupEntry e: info) {
+                      .fromJson(reader,
+                            VOGroupEntry[].class);
+                for (VOGroupEntry e : info) {
                     Glob glob = new Glob(e.getFqan());
                     if (glob.isGlob()) {
                         globCache.put(glob, e);
@@ -153,7 +150,7 @@ public class FileBackedVOGroupMap {
                 ++reloadCount;
             } catch (IOException e) {
                 LOGGER.error("There was a problem deserializing {}: {}, {}",
-                             file, e.getMessage(), Throwables.getRootCause(e));
+                      file, e.getMessage(), Throwables.getRootCause(e));
             }
         }
     }

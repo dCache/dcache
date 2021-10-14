@@ -1,6 +1,9 @@
 package org.dcache.util;
 
-import com.google.common.base.Function;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static java.util.Arrays.asList;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -10,43 +13,33 @@ import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
-import static java.util.Arrays.asList;
-
 /**
  * Argument parser.
- *
- * Supports single and multi character options, although both start
- * with a single hyphen. Options may have an optional value using the
- * equal sign to separate key and value.
- *
- * Supports single and double quoted valus and uses backslash as an
- * escape symbol.
- *
- * An optional double hyphen argument separator separates options from
- * arguments. Any argument following the separator will not be
- * interpreted as an option.
- *
- * Option and argument order is preserved with some limitations:
- * Option and argument interleaving is not preserved. Repeated options
- * are preserved, including the order of their values, however all
+ * <p>
+ * Supports single and multi character options, although both start with a single hyphen. Options
+ * may have an optional value using the equal sign to separate key and value.
+ * <p>
+ * Supports single and double quoted valus and uses backslash as an escape symbol.
+ * <p>
+ * An optional double hyphen argument separator separates options from arguments. Any argument
+ * following the separator will not be interpreted as an option.
+ * <p>
+ * Option and argument order is preserved with some limitations: Option and argument interleaving is
+ * not preserved. Repeated options are preserved, including the order of their values, however all
  * values appear at the place of the first use of that option.
  */
-public class Args implements Serializable
-{
+public class Args implements Serializable {
+
     private static final long serialVersionUID = 4389995682226525641L;
-    private final ImmutableListMultimap<String,String> _options;
+    private final ImmutableListMultimap<String, String> _options;
     private final String _oneChar;
     private ImmutableList<String> _arguments;
 
-    public Args(CharSequence args)
-    {
+    public Args(CharSequence args) {
         Scanner scanner = new Scanner();
         scanner.scan(args, false);
         _options = scanner.options.build();
@@ -54,13 +47,11 @@ public class Args implements Serializable
         _oneChar = scanner.oneChar.toString();
     }
 
-    public Args(String[] args)
-    {
+    public Args(String[] args) {
         this(asList(args));
     }
 
-    public Args(Iterable<String> args)
-    {
+    public Args(Iterable<String> args) {
         Scanner scanner = new Scanner();
         for (String arg : args) {
             if (arg.isEmpty()) {
@@ -74,23 +65,20 @@ public class Args implements Serializable
         _oneChar = scanner.oneChar.toString();
     }
 
-    public Args(Args in)
-    {
+    public Args(Args in) {
         _arguments = in._arguments;
         _options = in._options;
         _oneChar = in._oneChar;
     }
 
     private Args(ImmutableList<String> arguments,
-            ImmutableListMultimap<String,String> options, String oneChar)
-    {
+          ImmutableListMultimap<String, String> options, String oneChar) {
         _arguments = arguments;
         _options = options;
         _oneChar = oneChar;
     }
 
-    public static CharSequence quote(String raw)
-    {
+    public static CharSequence quote(String raw) {
         if (raw.isEmpty()) {
             return "''";
         } else {
@@ -100,36 +88,30 @@ public class Args implements Serializable
         }
     }
 
-    public Args removeOptions(String... names)
-    {
-        ListMultimap<String,String> view =
-                Multimaps.filterKeys(_options, not(in(asList(names))));
+    public Args removeOptions(String... names) {
+        ListMultimap<String, String> view =
+              Multimaps.filterKeys(_options, not(in(asList(names))));
 
         return new Args(_arguments, ImmutableListMultimap.copyOf(view), _oneChar);
     }
 
-    public boolean isOneCharOption(char c)
-    {
+    public boolean isOneCharOption(char c) {
         return _oneChar.indexOf(c) > -1;
     }
 
-    public int argc()
-    {
+    public int argc() {
         return _arguments.size();
     }
 
-    public int optc()
-    {
+    public int optc() {
         return _options.size();
     }
 
-    public String getOpt(String name)
-    {
+    public String getOpt(String name) {
         return getOption(name);
     }
 
-    public double getDoubleOption(String name)
-    {
+    public double getDoubleOption(String name) {
         String option = getOption(name);
 
         if (option == null) {
@@ -139,8 +121,7 @@ public class Args implements Serializable
         return Double.parseDouble(option);
     }
 
-    public double getDoubleOption(String name, double defaultValue)
-    {
+    public double getDoubleOption(String name, double defaultValue) {
         String option = getOption(name);
 
         if (option == null) {
@@ -152,8 +133,7 @@ public class Args implements Serializable
         }
     }
 
-    public int getIntOption(String name)
-    {
+    public int getIntOption(String name) {
         String option = getOption(name);
 
         if (option == null) {
@@ -163,8 +143,7 @@ public class Args implements Serializable
         return Integer.parseInt(option);
     }
 
-    public int getIntOption(String name, int defaultValue)
-    {
+    public int getIntOption(String name, int defaultValue) {
         String option = getOption(name);
 
         if (option == null) {
@@ -176,8 +155,7 @@ public class Args implements Serializable
         }
     }
 
-    public long getLongOption(String name)
-    {
+    public long getLongOption(String name) {
         String option = getOption(name);
 
         if (option == null) {
@@ -187,8 +165,7 @@ public class Args implements Serializable
         return Long.parseLong(option);
     }
 
-    public long getLongOption(String name, long defaultValue)
-    {
+    public long getLongOption(String name, long defaultValue) {
         String option = getOption(name);
 
         if (option == null) {
@@ -200,19 +177,16 @@ public class Args implements Serializable
         }
     }
 
-    public boolean getBooleanOption(String name)
-    {
+    public boolean getBooleanOption(String name) {
         return getBooleanOption(name, false);
     }
 
-    public boolean getBooleanOption(String name, boolean defaultValue)
-    {
+    public boolean getBooleanOption(String name, boolean defaultValue) {
         String option = getOption(name);
         return (option == null) ? defaultValue : (option.isEmpty() || Boolean.parseBoolean(option));
     }
 
-    public String getOption(String name)
-    {
+    public String getOption(String name) {
         ImmutableList<String> values = _options.get(name);
         return values.isEmpty() ? null : values.get(values.size() - 1);
     }
@@ -222,61 +196,51 @@ public class Args implements Serializable
         return values.isEmpty() ? defaultValue : values.get(values.size() - 1);
     }
 
-    public boolean hasOption(String name)
-    {
+    public boolean hasOption(String name) {
         return !_options.get(name).isEmpty();
     }
 
-    public ImmutableList<String> getOptions(String name)
-    {
+    public ImmutableList<String> getOptions(String name) {
         return _options.get(name);
     }
 
-    public String argv(int i)
-    {
+    public String argv(int i) {
         return (i < _arguments.size()) ? _arguments.get(i) : null;
     }
 
-    public ImmutableList<String> getArguments()
-    {
+    public ImmutableList<String> getArguments() {
         return _arguments;
     }
 
-    public String optv(int i)
-    {
+    public String optv(int i) {
         ImmutableMultiset<String> keys = _options.keys();
         return (i < keys.size()) ? keys.asList().get(i) : null;
     }
 
-    public void shift()
-    {
+    public void shift() {
         if (!_arguments.isEmpty()) {
             _arguments = _arguments.subList(1, _arguments.size());
         }
     }
 
-    public void shift(int n)
-    {
+    public void shift(int n) {
         _arguments = _arguments.subList(Math.min(n, _arguments.size()), _arguments.size());
     }
 
-    public ImmutableListMultimap<String,String> options()
-    {
+    public ImmutableListMultimap<String, String> options() {
         return _options;
     }
 
-    public ImmutableMap<String,String> optionsAsMap()
-    {
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
-        for (Map.Entry<String,String> e: _options.entries()) {
+    public ImmutableMap<String, String> optionsAsMap() {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        for (Map.Entry<String, String> e : _options.entries()) {
             builder.put(e.getKey(), e.getValue());
         }
         return builder.build();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -286,51 +250,48 @@ public class Args implements Serializable
 
         Args args = (Args) other;
         return args._options.equals(_options)
-            && args._arguments.equals(_arguments)
-            && args._oneChar.equals(_oneChar);
+              && args._arguments.equals(_arguments)
+              && args._oneChar.equals(_oneChar);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hashCode(_options, _arguments);
     }
 
-    private static void quote(String in, StringBuilder out)
-    {
+    private static void quote(String in, StringBuilder out) {
         for (int i = 0; i < in.length(); i++) {
             switch (in.charAt(i)) {
-            case '\\':
-                out.append("\\\\");
-                break;
-            case '"':
-                out.append("\\\"");
-                break;
-            case '\'':
-                out.append("\\'");
-                break;
-            case '=':
-                out.append("\\=");
-                break;
-            case '-':
-                out.append("\\-");
-                break;
-            case ' ':
-                out.append("\\ ");
-                break;
-            default:
-                out.append(in.charAt(i));
-                break;
+                case '\\':
+                    out.append("\\\\");
+                    break;
+                case '"':
+                    out.append("\\\"");
+                    break;
+                case '\'':
+                    out.append("\\'");
+                    break;
+                case '=':
+                    out.append("\\=");
+                    break;
+                case '-':
+                    out.append("\\-");
+                    break;
+                case ' ':
+                    out.append("\\ ");
+                    break;
+                default:
+                    out.append(in.charAt(i));
+                    break;
             }
         }
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder s = new StringBuilder();
 
-        for (Map.Entry<String,String> e: _options.entries()) {
+        for (Map.Entry<String, String> e : _options.entries()) {
             String key = e.getKey();
             String value = e.getValue();
             s.append('-');
@@ -351,8 +312,7 @@ public class Args implements Serializable
         return s.toString();
     }
 
-    public String getInfo()
-    {
+    public String getInfo() {
         StringBuilder sb = new StringBuilder();
 
         sb.append("Positional :\n");
@@ -361,7 +321,7 @@ public class Args implements Serializable
         }
         sb.append("Options :\n");
 
-        for (Map.Entry<String,String> option: _options.entries()) {
+        for (Map.Entry<String, String> option : _options.entries()) {
             sb.append(option.getKey());
             if (option.getValue() != null) {
                 sb.append(" -> ").append(option.getValue());
@@ -372,35 +332,32 @@ public class Args implements Serializable
         return sb.toString();
     }
 
-   public static void main( String [] args )
-   {
-      if( args.length < 1 ){
-         System.err.println( "Usage : ... <parseString>" ) ;
-         System.exit(4);
-      }
-      Args lineArgs;
-      if( args.length == 1 ) {
-          lineArgs = new Args(args[0]);
-      } else {
-          lineArgs = new Args(args);
-      }
-      System.out.print( lineArgs.getInfo() ) ;
-      System.out.println( "pvr="+lineArgs.getOpt( "pvr" ) ) ;
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("Usage : ... <parseString>");
+            System.exit(4);
+        }
+        Args lineArgs;
+        if (args.length == 1) {
+            lineArgs = new Args(args[0]);
+        } else {
+            lineArgs = new Args(args);
+        }
+        System.out.print(lineArgs.getInfo());
+        System.out.println("pvr=" + lineArgs.getOpt("pvr"));
 
-   }
+    }
 
     /**
-     * Scanner for parsing strings of white space separated
-     * words. Characters may be escaped with a backslash and character
-     * sequences may be quoted. Options begin with an unescaped dash.
-
-     * A -- signals the end of options and disables further option
-     * processing.  Any arguments after the -- are treated as regular
-     * arguments.
+     * Scanner for parsing strings of white space separated words. Characters may be escaped with a
+     * backslash and character sequences may be quoted. Options begin with an unescaped dash.
+     * <p>
+     * A -- signals the end of options and disables further option processing.  Any arguments after
+     * the -- are treated as regular arguments.
      */
-    private static class Scanner
-    {
-        final ImmutableListMultimap.Builder<String,String> options = new ImmutableListMultimap.Builder<>();
+    private static class Scanner {
+
+        final ImmutableListMultimap.Builder<String, String> options = new ImmutableListMultimap.Builder<>();
         final ImmutableList.Builder<String> arguments = new ImmutableList.Builder<>();
         final StringBuilder oneChar = new StringBuilder();
 
@@ -409,41 +366,34 @@ public class Args implements Serializable
         private boolean isAtEndOfOptions;
         private boolean shouldIgnoreWhitespace;
 
-        public Scanner()
-        {
+        public Scanner() {
         }
 
-        private char peek()
-        {
+        private char peek() {
             return isEof() ? (char) 0 : line.charAt(position);
         }
 
-        private char readChar()
-        {
+        private char readChar() {
             char c = peek();
             position++;
             return c;
         }
 
-        private boolean isEof()
-        {
+        private boolean isEof() {
             return (position >= line.length());
         }
 
-        private boolean isWhitespace()
-        {
+        private boolean isWhitespace() {
             return !shouldIgnoreWhitespace && Character.isWhitespace(peek());
         }
 
-        private void scanWhitespace()
-        {
+        private void scanWhitespace() {
             while (isWhitespace()) {
                 readChar();
             }
         }
 
-        public void scan(CharSequence line, boolean shouldIgnoreWhitespace)
-        {
+        public void scan(CharSequence line, boolean shouldIgnoreWhitespace) {
             this.line = line;
             this.shouldIgnoreWhitespace = shouldIgnoreWhitespace;
             position = 0;
@@ -472,12 +422,10 @@ public class Args implements Serializable
         }
 
         /**
-         * Scans an option key. An option key is terminated by an
-         * unescaped white space character or - for non-empty keys -
-         * by an unescaped equal sign.
+         * Scans an option key. An option key is terminated by an unescaped white space character or
+         * - for non-empty keys - by an unescaped equal sign.
          */
-        private String scanKey()
-        {
+        private String scanKey() {
             StringBuilder key = new StringBuilder();
             do {
                 scanWordElement(key);
@@ -486,12 +434,10 @@ public class Args implements Serializable
         }
 
         /**
-         * Scans the next word. A word is a sequence of non-white
-         * space characters and escaped or quoted white space
-         * characters. The unescaped and unquoted word is returned.
+         * Scans the next word. A word is a sequence of non-white space characters and escaped or
+         * quoted white space characters. The unescaped and unquoted word is returned.
          */
-        private String scanWord()
-        {
+        private String scanWord() {
             StringBuilder word = new StringBuilder();
             while (!isEof() && !isWhitespace()) {
                 scanWordElement(word);
@@ -500,36 +446,34 @@ public class Args implements Serializable
         }
 
         /**
-         * Scans the next element of a word. Elements of a word are
-         * non-white space characters, escaped characters and quoted
-         * strings. The unescaped and unquoted element is added to word.
+         * Scans the next element of a word. Elements of a word are non-white space characters,
+         * escaped characters and quoted strings. The unescaped and unquoted element is added to
+         * word.
          */
-        private void scanWordElement(StringBuilder word)
-        {
+        private void scanWordElement(StringBuilder word) {
             if (!isEof() && !isWhitespace()) {
                 switch (peek()) {
-                case '\'':
-                    scanSingleQuotedString(word);
-                    break;
-                case '"':
-                    scanDoubleQuotedString(word);
-                    break;
-                case '\\':
-                    scanEscapedCharacter(word);
-                    break;
-                default:
-                    word.append(readChar());
-                    break;
+                    case '\'':
+                        scanSingleQuotedString(word);
+                        break;
+                    case '"':
+                        scanDoubleQuotedString(word);
+                        break;
+                    case '\\':
+                        scanEscapedCharacter(word);
+                        break;
+                    default:
+                        word.append(readChar());
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a single quoted string. Escaped characters are not
-         * recognized. The unquoted string is added to word.
+         * Scans a single quoted string. Escaped characters are not recognized. The unquoted string
+         * is added to word.
          */
-        private void scanSingleQuotedString(StringBuilder word)
-        {
+        private void scanSingleQuotedString(StringBuilder word) {
             if (readChar() != '\'') {
                 throw new IllegalStateException("Parse failure");
             }
@@ -537,47 +481,44 @@ public class Args implements Serializable
             while (!isEof()) {
                 char c = readChar();
                 switch (c) {
-                case '\'':
-                    return;
-                default:
-                    word.append(c);
-                    break;
+                    case '\'':
+                        return;
+                    default:
+                        word.append(c);
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a double quoted string. Escaped characters are
-         * recognized. The unquoted and unescaped string is added to
-         * word.
+         * Scans a double quoted string. Escaped characters are recognized. The unquoted and
+         * unescaped string is added to word.
          */
-        private void scanDoubleQuotedString(StringBuilder word)
-        {
+        private void scanDoubleQuotedString(StringBuilder word) {
             if (readChar() != '"') {
                 throw new IllegalStateException("Parse failure");
             }
 
             while (!isEof()) {
                 switch (peek()) {
-                case '\\':
-                    scanEscapedCharacter(word);
-                    break;
-                case '"':
-                    readChar();
-                    return;
-                default:
-                    word.append(readChar());
-                    break;
+                    case '\\':
+                        scanEscapedCharacter(word);
+                        break;
+                    case '"':
+                        readChar();
+                        return;
+                    default:
+                        word.append(readChar());
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a backslash escaped character. The escaped character
-         * without the escape symbol is added to word.
+         * Scans a backslash escaped character. The escaped character without the escape symbol is
+         * added to word.
          */
-        private void scanEscapedCharacter(StringBuilder word)
-        {
+        private void scanEscapedCharacter(StringBuilder word) {
             if (readChar() != '\\') {
                 throw new IllegalStateException("Parse failure");
             }
@@ -585,17 +526,17 @@ public class Args implements Serializable
             if (!isEof()) {
                 char c = readChar();
                 switch (c) {
-                case '\'':
-                case '"':
-                case ' ':
-                case '-':
-                case '=':
-                case '\\':
-                    word.append(c);
-                    break;
-                default:
-                    word.append('\\').append(c);
-                    break;
+                    case '\'':
+                    case '"':
+                    case ' ':
+                    case '-':
+                    case '=':
+                    case '\\':
+                        word.append(c);
+                        break;
+                    default:
+                        word.append('\\').append(c);
+                        break;
                 }
             }
         }

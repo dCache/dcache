@@ -17,21 +17,18 @@
  */
 package diskCacheV111.srm;
 
-import javax.annotation.Nonnull;
-
 import diskCacheV111.srm.dcache.DcacheUser;
-
+import javax.annotation.Nonnull;
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.strategy.UserDiscriminator;
 
-public class VoJobDiscriminator extends UserDiscriminator
-{
+public class VoJobDiscriminator extends UserDiscriminator {
+
     @Nonnull
     @Override
-    protected String getDiscriminatingValue(SRMUser user)
-    {
+    protected String getDiscriminatingValue(SRMUser user) {
         FQAN fqan = Subjects.getPrimaryFqan(((DcacheUser) user).getSubject());
         if (fqan == null) {
             return "";
@@ -43,8 +40,7 @@ public class VoJobDiscriminator extends UserDiscriminator
 
     @Nonnull
     @Override
-    public String getKey()
-    {
+    public String getKey() {
         return "vo";
     }
 }

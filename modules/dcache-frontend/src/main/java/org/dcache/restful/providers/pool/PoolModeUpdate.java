@@ -59,15 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.pool;
 
+import diskCacheV111.pools.PoolV2Mode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
-
-import diskCacheV111.pools.PoolV2Mode;
 
 @ApiModel(description = "Information for modifying the mode of a given pool.")
 public class PoolModeUpdate implements Serializable {
+
     private static final long serialVersionUID = 4199793636351366103L;
 
     @ApiModelProperty("Change pool mode to 'disabled strict'.")
@@ -110,6 +109,6 @@ public class PoolModeUpdate implements Serializable {
     }
 
     public void setStrict(Boolean strict) {
-        this.strict = strict == null ? false: strict;
+        this.strict = strict == null ? false : strict;
     }
 }

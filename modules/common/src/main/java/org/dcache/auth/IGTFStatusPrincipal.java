@@ -18,26 +18,25 @@
  */
 package org.dcache.auth;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
- * A principal that represents the user authenticated with a certificate
- * authority that has some specific IGTF status.  The status is defined in
- * that certificate authority's .info file.
+ * A principal that represents the user authenticated with a certificate authority that has some
+ * specific IGTF status.  The status is defined in that certificate authority's .info file.
+ *
  * @since 3.1
  */
-public class IGTFStatusPrincipal implements Principal
-{
+public class IGTFStatusPrincipal implements Principal {
+
     private final String _name;
     private final boolean _isAccredited;
     private final LoA _loa;
 
-    public IGTFStatusPrincipal(String name, boolean accredited, Optional<LoA> loa)
-    {
+    public IGTFStatusPrincipal(String name, boolean accredited, Optional<LoA> loa) {
         checkArgument(!name.isEmpty());
         _name = name;
         _isAccredited = accredited;
@@ -45,34 +44,30 @@ public class IGTFStatusPrincipal implements Principal
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
-    public boolean isAccredited()
-    {
+    public boolean isAccredited() {
         return _isAccredited;
     }
 
     /**
      * The LoA corresponding to this status.
+     *
      * @return
      */
-    public Optional<LoA> getLoA()
-    {
+    public Optional<LoA> getLoA() {
         return Optional.ofNullable(_loa);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hash(_name, _loa) ^ (_isAccredited ? 1 : 0);
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -81,14 +76,14 @@ public class IGTFStatusPrincipal implements Principal
             return false;
         }
 
-        IGTFStatusPrincipal that = ((IGTFStatusPrincipal)other);
+        IGTFStatusPrincipal that = ((IGTFStatusPrincipal) other);
 
-        return _name.equals(that._name) && _isAccredited == that._isAccredited && Objects.equals(_loa, that._loa);
+        return _name.equals(that._name) && _isAccredited == that._isAccredited && Objects.equals(
+              _loa, that._loa);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("IGTFStatus[");
         if (_isAccredited) {

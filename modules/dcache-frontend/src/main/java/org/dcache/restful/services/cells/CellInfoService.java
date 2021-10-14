@@ -63,9 +63,10 @@ import org.dcache.cells.json.CellData;
 
 /**
  * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * cell data.</p>
  */
 public interface CellInfoService {
+
     /**
      * @return array of all current known cell addresses (= cell@domain).
      */
@@ -73,8 +74,7 @@ public interface CellInfoService {
 
     /**
      * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
+     * @return JSON object containing cell data corresponding to {@link dmg.cells.nucleus.CellInfo}.
      */
     CellData getCellData(String address);
 }

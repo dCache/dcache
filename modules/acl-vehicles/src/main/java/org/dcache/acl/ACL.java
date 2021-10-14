@@ -1,20 +1,17 @@
 package org.dcache.acl;
 
 import com.google.common.collect.ImmutableList;
-
 import java.io.Serializable;
 import java.util.List;
-
 import org.dcache.acl.enums.RsType;
 
 /**
  * An access control list (ACL) is an array of access control entries (ACE).
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
-public class ACL implements Serializable
-{
+public class ACL implements Serializable {
+
     private static final long serialVersionUID = -1883807712749350105L;
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
@@ -35,12 +32,9 @@ public class ACL implements Serializable
     private final List<ACE> _list;
 
     /**
-     * @param rsId
-     *            Resource Identifier
-     * @param rsType
-     *            Resource Type
-     * @param list
-     *            List of ACEs
+     * @param rsId   Resource Identifier
+     * @param rsType Resource Type
+     * @param list   List of ACEs
      */
     public ACL(RsType rsType, List<ACE> list) {
         _rsType = rsType;
@@ -89,8 +83,7 @@ public class ACL implements Serializable
      * GROUP@:+l:f
      *
      * @return ACL in extra format
-     * @throws ACLException
-     *             if ACE cannot be represented in extra format
+     * @throws ACLException if ACE cannot be represented in extra format
      */
     public String toExtraFormat() throws ACLException {
         StringBuilder sb = new StringBuilder();

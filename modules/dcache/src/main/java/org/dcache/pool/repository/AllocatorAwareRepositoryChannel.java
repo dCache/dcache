@@ -17,9 +17,12 @@
  */
 package org.dcache.pool.repository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static org.dcache.util.ByteUnit.MiB;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.Buffer;
@@ -28,20 +31,14 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.util.Exceptions;
-
-import static org.dcache.util.ByteUnit.MiB;
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * An implementation of RepositoryChannel that takes care of space
- * allocation. Space must be allocated before it is consumed on the
- * disk. Any over allocation will be adjusted on {@link #close}.
+ * An implementation of RepositoryChannel that takes care of space allocation. Space must be
+ * allocated before it is consumed on the disk. Any over allocation will be adjusted on {@link
+ * #close}.
  */
 public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel {
 
@@ -66,7 +63,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     private final Object positionLock = new Object();
 
     public AllocatorAwareRepositoryChannel(RepositoryChannel inner,
-            Repository repository, PnfsId id, Allocator allocator) throws IOException {
+          Repository repository, PnfsId id, Allocator allocator) throws IOException {
         this.repository = repository;
         this.inner = inner;
         this.allocator = allocator;
@@ -87,9 +84,11 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
             synchronized (allocationLock) {
                 long length = replicaSize();
                 LOGGER.debug("Adjusting allocation: allocated: {}, file size: {}",
-                        allocated, length);
+                      allocated, length);
                 if (length > allocated) {
-                    LOGGER.error("BUG detected! Under allocation detected: expected {}, current: {}.", length, allocated);
+                    LOGGER.error(
+                          "BUG detected! Under allocation detected: expected {}, current: {}.",
+                          length, allocated);
                     try {
                         allocator.allocate(id, length - allocated);
                     } catch (InterruptedException e) {
@@ -101,7 +100,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
                          * Should only happen during shutdown, so no harm done.
                          */
                         LOGGER.warn("Failed to adjust space reservation because "
-                                + "the operation was interrupted. The pool is now over allocated.");
+                              + "the operation was interrupted. The pool is now over allocated.");
                         Thread.currentThread().interrupt();
                     }
                 } else if (length < allocated) {
@@ -110,19 +109,18 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
             }
         } catch (CacheException e) {
             LOGGER.error("Failed to discover replica size after transfer: {}.  Pool capacity"
-                    + " is no longer accurate. YOU SHOULD RESTART THE POOL NOW.",
-                    Exceptions.messageOrClassName(e));
+                        + " is no longer accurate. YOU SHOULD RESTART THE POOL NOW.",
+                  Exceptions.messageOrClassName(e));
         } catch (InterruptedException e) {
             LOGGER.warn("Interrupted while determining replica size.  Pool"
-                    + " capacity is no longer accurate.  YOU SHOULD RESTART THE"
-                    + " POOL NOW.");
+                  + " capacity is no longer accurate.  YOU SHOULD RESTART THE"
+                  + " POOL NOW.");
             Thread.currentThread().interrupt();
         }
         super.close();
     }
 
-    private long replicaSize() throws CacheException, InterruptedException
-    {
+    private long replicaSize() throws CacheException, InterruptedException {
         try {
             return size();
         } catch (ClosedChannelException e) {
@@ -136,21 +134,21 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        synchronized(positionLock) {
+        synchronized (positionLock) {
             return super.read(dst);
         }
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
-        synchronized(positionLock) {
+        synchronized (positionLock) {
             return super.read(dsts);
         }
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        synchronized(positionLock) {
+        synchronized (positionLock) {
             return delegate().read(dsts, offset, length);
         }
     }
@@ -164,10 +162,10 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
 
         long byteToWrite = Stream.of(srcs)
-                .skip(offset)
-                .mapToLong(Buffer::remaining)
-                .limit(length)
-                .sum();
+              .skip(offset)
+              .mapToLong(Buffer::remaining)
+              .limit(length)
+              .sum();
 
         synchronized (positionLock) {
             preallocate(position() + byteToWrite);
@@ -177,7 +175,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
 
     @Override
     public SeekableByteChannel truncate(long size) throws IOException {
-        synchronized(positionLock) {
+        synchronized (positionLock) {
             preallocate(size);
             return super.truncate(size);
         }
@@ -207,7 +205,8 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         preallocate(position + count);
         return super.transferFrom(src, position, count);
     }
@@ -234,8 +233,7 @@ public class AllocatorAwareRepositoryChannel extends ForwardingRepositoryChannel
         }
     }
 
-    private long allocate(long minRequired) throws InterruptedException, OutOfDiskException
-    {
+    private long allocate(long minRequired) throws InterruptedException, OutOfDiskException {
         long delta = Math.max(minRequired, SPACE_INC);
         try {
             allocator.allocate(id, delta);

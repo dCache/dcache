@@ -60,35 +60,31 @@ documents or software obtained from this server.
 package org.dcache.alarms.dao;
 
 import java.util.Collection;
-
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
- * Interface for the logger to store entries, and to serve
- * {@link LogEntry}-based front-ends. The {@link #update(Collection)} and
- * {@link #remove(Collection)} methods assume in-memory selection of alarm
- * entries to be deleted or modified.
+ * Interface for the logger to store entries, and to serve {@link LogEntry}-based front-ends. The
+ * {@link #update(Collection)} and {@link #remove(Collection)} methods assume in-memory selection of
+ * alarm entries to be deleted or modified.
  */
 public interface LogEntryDAO {
+
     /**
-     * It is assumed that any filtering beyond what the DAO filter takes
-     * will be done in memory.
+     * It is assumed that any filtering beyond what the DAO filter takes will be done in memory.
      */
     Collection<LogEntry> get(AlarmDAOFilter filter);
 
     void initialize();
 
     /**
-     * Indicate whether the DAO layer is actually "live" (that is, connected
-     * to a real data store).
+     * Indicate whether the DAO layer is actually "live" (that is, connected to a real data store).
      */
     boolean isConnected();
 
     /**
-     * It is the responsibility of the implementation to handle duplicates; in
-     * most cases this will involve a check for key equivalence and a subsequent
-     * update instead of insert.
+     * It is the responsibility of the implementation to handle duplicates; in most cases this will
+     * involve a check for key equivalence and a subsequent update instead of insert.
      */
     void put(LogEntry alarm);
 
@@ -100,10 +96,10 @@ public interface LogEntryDAO {
     void shutdown();
 
     /**
-     * The only properties which can be updated through this method are
-     * {@link LogEntry#setClosed(Boolean)} and {@link LogEntry#setNotes(String)}.
-     * {@link LogEntry#setReceived(Integer)} should only be called by an
-     * initializer (e.g., upon object dehydration, deserialization, etc.).
+     * The only properties which can be updated through this method are {@link
+     * LogEntry#setClosed(Boolean)} and {@link LogEntry#setNotes(String)}. {@link
+     * LogEntry#setReceived(Integer)} should only be called by an initializer (e.g., upon object
+     * dehydration, deserialization, etc.).
      *
      * @return number of entries updated
      */

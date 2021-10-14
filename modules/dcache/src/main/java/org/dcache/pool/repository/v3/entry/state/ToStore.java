@@ -20,9 +20,9 @@ public class ToStore {
 
 
     public String stringValue() {
-        if(_isSet) {
+        if (_isSet) {
             return "to_store";
-        }else{
+        } else {
             return "";
         }
     }

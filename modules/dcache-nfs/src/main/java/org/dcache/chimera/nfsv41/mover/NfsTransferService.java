@@ -1,11 +1,18 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.collect.Sets;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -22,30 +29,15 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellPath;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
+import java.util.concurrent.Callable;
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
-import org.dcache.nfs.v4.xdr.verifier4;
+import org.dcache.oncrpc4j.rpc.IoStrategy;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
@@ -54,8 +46,10 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.dcache.oncrpc4j.rpc.IoStrategy;
-import org.dcache.oncrpc4j.rpc.OncRpcException;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -63,8 +57,9 @@ import org.dcache.oncrpc4j.rpc.OncRpcException;
  * @since 1.9.11
  */
 public class NfsTransferService
-        implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider, CellIdentityAware
-{
+      implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider,
+      CellIdentityAware {
+
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;
     private boolean _withGss;
@@ -86,8 +81,7 @@ public class NfsTransferService
     private CellAddressCore _cellAddress;
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         _cellAddress = address;
     }
 
@@ -98,7 +92,8 @@ public class NfsTransferService
         int maxTcpPort = _maxTcpPort;
 
         try {
-            List<String> lines = Files.readAllLines(_tcpPortFile.toPath(), StandardCharsets.US_ASCII);
+            List<String> lines = Files.readAllLines(_tcpPortFile.toPath(),
+                  StandardCharsets.US_ASCII);
             if (!lines.isEmpty()) {
                 String line = lines.get(0);
 
@@ -125,7 +120,8 @@ public class NfsTransferService
             retry--;
             portRange = new PortRange(minTcpPort, maxTcpPort);
             try {
-                _nfsIO = new NFSv4MoverHandler(this, portRange, _ioStrategy, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
+                _nfsIO = new NFSv4MoverHandler(this, portRange, _ioStrategy, _withGss,
+                      _cellAddress.getCellName(), _door, _bootVerifier);
                 bound = true;
             } catch (BindException e) {
                 bindException = e;
@@ -135,13 +131,16 @@ public class NfsTransferService
         } while (!bound && retry > 0);
 
         if (!bound) {
-            throw new BindException("Can't bind to a port within the rage: " + portRange + " : " + bindException);
+            throw new BindException(
+                  "Can't bind to a port within the rage: " + portRange + " : " + bindException);
         }
-        _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+        _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(),
+              _nfsIO.getLocalAddress().getPort());
 
         // if we had a port range, then store selected port for the next time.
         if (minTcpPort != maxTcpPort) {
-            byte[] outputBytes = Integer.toString(_nfsIO.getLocalAddress().getPort()).getBytes(StandardCharsets.US_ASCII);
+            byte[] outputBytes = Integer.toString(_nfsIO.getLocalAddress().getPort())
+                  .getBytes(StandardCharsets.US_ASCII);
             Files.write(_tcpPortFile.toPath(), outputBytes);
         }
 
@@ -202,19 +201,21 @@ public class NfsTransferService
     }
 
     @Override
-    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
-    {
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+          CellPath pathToDoor) throws CacheException {
         return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<? extends OpenOption> getChannelCreateOptions() {
-        return Sets.newHashSet(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
+        return Sets.newHashSet(StandardOpenOption.CREATE,
+              Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
     }
 
     @Override
-    public Cancellable executeMover(final NfsMover mover, final CompletionHandler<Void, Void> completionHandler) {
+    public Cancellable executeMover(final NfsMover mover,
+          final CompletionHandler<Void, Void> completionHandler) {
         try {
 
             final Cancellable cancellableMover = mover.enable(completionHandler);
@@ -232,16 +233,17 @@ public class NfsTransferService
 
     public void notifyDoorWithRedirect(NfsMover mover) throws SocketException {
         CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
-        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
+        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
+              .stateId();
         final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
         _door.notify(directDoorPath,
-                new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses, legacyStateId,
-                        _bootVerifier));
+              new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), _localSocketAddresses,
+                    legacyStateId,
+                    _bootVerifier));
     }
 
     @Override
-    public void closeMover(NfsMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
+    public void closeMover(NfsMover mover, CompletionHandler<Void, Void> completionHandler) {
         _postTransferService.execute(mover, completionHandler);
     }
 
@@ -254,7 +256,8 @@ public class NfsTransferService
     }
 
     private InetSocketAddress[] localSocketAddresses(Collection<InetAddress> addresses, int port) {
-        return addresses.stream().map(address -> new InetSocketAddress(address, port)).toArray(InetSocketAddress[]::new);
+        return addresses.stream().map(address -> new InetSocketAddress(address, port))
+              .toArray(InetSocketAddress[]::new);
     }
 
     // REVISIT: remove when RHEL6 is dead (November 30, 2020)
@@ -264,8 +267,9 @@ public class NfsTransferService
         if (_sortMultipathList) {
 
             InetSocketAddress preferredInterface = new InetSocketAddress(
-                    NetworkUtils.getLocalAddress(mover.getProtocolInfo().getSocketAddress().getAddress()),
-                    _nfsIO.getLocalAddress().getPort());
+                  NetworkUtils.getLocalAddress(
+                        mover.getProtocolInfo().getSocketAddress().getAddress()),
+                  _nfsIO.getLocalAddress().getPort());
 
             addressesToUse = _localSocketAddresses.clone();
             // go through all addresses and swap preferred address with the first entry.
@@ -288,24 +292,25 @@ public class NfsTransferService
     }
 
     @Command(name = "nfs stats",
-             hint = "show nfs requests statistics",
-             description = "Displays statistics kept about NFS Client and Server activity. " +
-                     "Prints average/min/max execution time in ns, for example, for the following operations:\n" +
-                     "\tACCESS - Check Access Rights determines the access rights a user has " +
-                     "for an object,\n " +
-                     "EXCHANGE_ID - operation used by the client to register a particular " +
-                     "client owner with the server,\n"+
-                     "\tCREATE_SESSION - used by the client to create new session objects on " +
-                     "the server.\n"+
-                     "If the optional argument \"c\" is specified statistics is reset.")
-    public class NfsStatsCommand implements Callable<String>
-    {
+          hint = "show nfs requests statistics",
+          description = "Displays statistics kept about NFS Client and Server activity. " +
+                "Prints average/min/max execution time in ns, for example, for the following operations:\n"
+                +
+                "\tACCESS - Check Access Rights determines the access rights a user has " +
+                "for an object,\n " +
+                "EXCHANGE_ID - operation used by the client to register a particular " +
+                "client owner with the server,\n" +
+                "\tCREATE_SESSION - used by the client to create new session objects on " +
+                "the server.\n" +
+                "If the optional argument \"c\" is specified statistics is reset.")
+    public class NfsStatsCommand implements Callable<String> {
+
         @Option(name = "c",
-                usage = "Clears current statistics values.")
+              usage = "Clears current statistics values.")
         boolean clearStats;
+
         @Override
-        public String call()
-        {
+        public String call() {
             RequestExecutionTimeGauges<String> gauges = _nfsIO.getStatistics();
             StringBuilder sb = new StringBuilder();
             sb.append("Stats:").append("\n").append(gauges.toString("ns"));
@@ -318,25 +323,24 @@ public class NfsTransferService
     }
 
     @Command(name = "nfs sessions",
-             hint = "show nfs sessions",
-             description = "Displays unique session identifier, maximum slot id" +
-                           " and the highest used slot id for the list of sessions created by client.")
-    public class NfsSessionsCommand implements Callable<String>
-    {
+          hint = "show nfs sessions",
+          description = "Displays unique session identifier, maximum slot id" +
+                " and the highest used slot id for the list of sessions created by client.")
+    public class NfsSessionsCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             StringBuilder sb = new StringBuilder();
             for (NFS4Client client : _nfsIO.getNFSServer().getStateHandler().getClients()) {
                 sb.append(client).append('\n');
                 for (NFSv41Session session : client.sessions()) {
                     sb.append("  ")
-                            .append(session)
-                            .append(" slots (max/used): ")
-                            .append(session.getHighestSlot())
-                            .append('/')
-                            .append(session.getHighestUsedSlot())
-                            .append('\n');
+                          .append(session)
+                          .append(" slots (max/used): ")
+                          .append(session.getHighestSlot())
+                          .append('/')
+                          .append(session.getHighestUsedSlot())
+                          .append('\n');
                 }
             }
             return sb.toString();

@@ -17,16 +17,17 @@
  */
 package org.dcache.dss;
 
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.toArray;
+import static java.util.Arrays.asList;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,7 +35,9 @@ import java.security.cert.CertificateFactory;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.ssl.CanlContextFactory;
@@ -42,14 +45,8 @@ import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.toArray;
-import static java.util.Arrays.asList;
+public class ServerGsiEngineDssContextFactory implements DssContextFactory {
 
-public class ServerGsiEngineDssContextFactory implements DssContextFactory
-{
     private static final String SERVICE_KEY = "service_key";
     private static final String SERVICE_CERT = "service_cert";
     private static final String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
@@ -66,30 +63,27 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
     private final Callable<SSLContext> factory;
     private final KeyPairCache keyPairCache;
 
-    public ServerGsiEngineDssContextFactory(String args) throws Exception
-    {
+    public ServerGsiEngineDssContextFactory(String args) throws Exception {
         this(new Args(args));
     }
 
-    public ServerGsiEngineDssContextFactory(Args arguments) throws Exception
-    {
+    public ServerGsiEngineDssContextFactory(Args arguments) throws Exception {
         this(new File(arguments.getOption(SERVICE_KEY)),
-             new File(arguments.getOption(SERVICE_CERT)),
-             new File(arguments.getOption(SERVICE_TRUSTED_CERTS)),
-             Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)),
-             NamespaceCheckingMode.valueOf(arguments.getOption(NAMESPACE_MODE)),
-             CrlCheckingMode.valueOf(arguments.getOption(CRL_MODE)),
-             OCSPCheckingMode.valueOf(arguments.getOption(OCSP_MODE)),
-             arguments.getLongOption(KEY_CACHE_LIFETIME),
-             TimeUnit.valueOf(arguments.getOption(KEY_CACHE_LIFETIME_UNIT)));
+              new File(arguments.getOption(SERVICE_CERT)),
+              new File(arguments.getOption(SERVICE_TRUSTED_CERTS)),
+              Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)),
+              NamespaceCheckingMode.valueOf(arguments.getOption(NAMESPACE_MODE)),
+              CrlCheckingMode.valueOf(arguments.getOption(CRL_MODE)),
+              OCSPCheckingMode.valueOf(arguments.getOption(OCSP_MODE)),
+              arguments.getLongOption(KEY_CACHE_LIFETIME),
+              TimeUnit.valueOf(arguments.getOption(KEY_CACHE_LIFETIME_UNIT)));
     }
 
     public ServerGsiEngineDssContextFactory(File serverKeyPath, File serverCertificatePath,
-                                            File certificateAuthorityPath, String[] bannedCiphers,
-                                            NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
-                                            OCSPCheckingMode ocspMode, long keyCacheLifetime,
-                                            TimeUnit keyCacheLifetimeUnit) throws Exception
-    {
+          File certificateAuthorityPath, String[] bannedCiphers,
+          NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
+          OCSPCheckingMode ocspMode, long keyCacheLifetime,
+          TimeUnit keyCacheLifetimeUnit) throws Exception {
         cf = CertificateFactories.newX509CertificateFactory();
 
         this.bannedCiphers = ImmutableSet.copyOf(bannedCiphers);
@@ -97,27 +91,31 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
         keyPairCache = new KeyPairCache(keyCacheLifetime, keyCacheLifetimeUnit);
 
         factory = CanlContextFactory.custom()
-                .withCertificateAuthorityPath(certificateAuthorityPath.toPath())
-                .withCrlCheckingMode(crlMode)
-                .withOcspCheckingMode(ocspMode)
-                .withNamespaceMode(namespaceMode)
-                .withLazy(false)
-                .withKeyPath(serverKeyPath.toPath())
-                .withCertificatePath(serverCertificatePath.toPath())
-                .buildWithCaching();
+              .withCertificateAuthorityPath(certificateAuthorityPath.toPath())
+              .withCrlCheckingMode(crlMode)
+              .withOcspCheckingMode(ocspMode)
+              .withNamespaceMode(namespaceMode)
+              .withLazy(false)
+              .withKeyPath(serverKeyPath.toPath())
+              .withCertificatePath(serverCertificatePath.toPath())
+              .buildWithCaching();
         factory.call(); // Fail fast in case of config errors
     }
 
     @Override
-    public DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
-            throws IOException
-    {
+    public DssContext create(InetSocketAddress remoteSocketAddress,
+          InetSocketAddress localSocketAddress)
+          throws IOException {
         try {
             SSLEngine delegate = factory.call().createSSLEngine(remoteSocketAddress.getHostString(),
-                                                                 remoteSocketAddress.getPort());
+                  remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
-            String[] cipherSuites = toArray(filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))), String.class);
-            String[] protocols = toArray(filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))), String.class);
+            String[] cipherSuites = toArray(
+                  filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))),
+                  String.class);
+            String[] protocols = toArray(
+                  filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))),
+                  String.class);
             sslParameters.setCipherSuites(cipherSuites);
             sslParameters.setProtocols(protocols);
             sslParameters.setWantClientAuth(true);

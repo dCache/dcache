@@ -9,18 +9,19 @@ public class PoolManagerMessage extends Message {
 
     private static final long serialVersionUID = 4607229352454456613L;
 
-    public PoolManagerMessage(){
+    public PoolManagerMessage() {
         super();
     }
-    public PoolManagerMessage(boolean replyNeeded){
+
+    public PoolManagerMessage(boolean replyNeeded) {
         super(replyNeeded);
     }
 
     /**
-     * Returns {@code true} if this message of a given pnfsid must be sent to the
-     * same instance of PoolManager.
-     * @return {@code true} if PoolManager affinity is required, otherwise
-     * {@code false}.
+     * Returns {@code true} if this message of a given pnfsid must be sent to the same instance of
+     * PoolManager.
+     *
+     * @return {@code true} if PoolManager affinity is required, otherwise {@code false}.
      */
     public boolean requiresAffinity() {
         /*

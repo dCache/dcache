@@ -1,11 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -18,13 +15,14 @@ import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
 import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
-import static java.util.Objects.requireNonNull;
+public class SrmGetRequestTokens {
 
-public class SrmGetRequestTokens
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmGetRequestTokens.class);
+          LoggerFactory.getLogger(SrmGetRequestTokens.class);
 
     private final SRM srm;
     private final SrmGetRequestTokensRequest request;
@@ -32,18 +30,16 @@ public class SrmGetRequestTokens
     private SrmGetRequestTokensResponse response;
 
     public SrmGetRequestTokens(SRMUser user,
-                               SrmGetRequestTokensRequest request,
-                               AbstractStorageElement storage,
-                               SRM srm,
-                               String clientHost)
-    {
+          SrmGetRequestTokensRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.srm = requireNonNull(srm);
     }
 
-    public SrmGetRequestTokensResponse getResponse()
-    {
+    public SrmGetRequestTokensResponse getResponse() {
         if (response == null) {
             try {
                 response = srmGetRequestTokens();
@@ -59,20 +55,19 @@ public class SrmGetRequestTokens
         return response;
     }
 
-    private String[] getRequestTokens(SRMUser user,String description)
-            throws SRMException
-    {
+    private String[] getRequestTokens(SRMUser user, String description)
+          throws SRMException {
         try {
             Set<Long> tokens = srm.getBringOnlineRequestIds(user,
-                                                            description);
+                  description);
             tokens.addAll(srm.getGetRequestIds(user,
-                                               description));
+                  description));
             tokens.addAll(srm.getPutRequestIds(user,
-                                               description));
+                  description));
             tokens.addAll(srm.getCopyRequestIds(user,
-                                                description));
+                  description));
             tokens.addAll(srm.getLsRequestIds(user,
-                                              description));
+                  description));
             Long[] tokenLongs = tokens.toArray(Long[]::new);
             String[] tokenStrings = new String[tokenLongs.length];
             for (int i = 0; i < tokenLongs.length; ++i) {
@@ -85,30 +80,28 @@ public class SrmGetRequestTokens
     }
 
     private SrmGetRequestTokensResponse srmGetRequestTokens()
-            throws SRMException
-    {
+          throws SRMException {
         String description = request.getUserRequestDescription();
         String[] requestTokens = getRequestTokens(user, description);
         if (requestTokens.length == 0) {
             throw new SRMInvalidRequestException("No such requests");
         }
         TRequestTokenReturn[] requestTokenReturns =
-                new TRequestTokenReturn[requestTokens.length];
+              new TRequestTokenReturn[requestTokens.length];
         for (int i = 0; i < requestTokens.length; ++i) {
             requestTokenReturns[i] = new TRequestTokenReturn(requestTokens[i], null);
         }
         return new SrmGetRequestTokensResponse(
-                new TReturnStatus(TStatusCode.SRM_SUCCESS, null),
-                new ArrayOfTRequestTokenReturn(requestTokenReturns));
+              new TReturnStatus(TStatusCode.SRM_SUCCESS, null),
+              new ArrayOfTRequestTokenReturn(requestTokenReturns));
     }
 
-    public static final SrmGetRequestTokensResponse getFailedResponse(String text)
-    {
+    public static final SrmGetRequestTokensResponse getFailedResponse(String text) {
         return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmGetRequestTokensResponse getFailedResponse(String text, TStatusCode statusCode)
-    {
+    public static final SrmGetRequestTokensResponse getFailedResponse(String text,
+          TStatusCode statusCode) {
         SrmGetRequestTokensResponse response = new SrmGetRequestTokensResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;

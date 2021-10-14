@@ -17,95 +17,84 @@
  */
 package org.dcache.util;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class NoTrailingWhitespacePrintWriterTests
-{
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+public class NoTrailingWhitespacePrintWriterTests {
+
     PrintWriter writer;
     StringWriter result;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         result = new StringWriter();
         writer = new NoTrailingWhitespacePrintWriter(result);
     }
 
     @Test
-    public void shouldAppendNoWS()
-    {
+    public void shouldAppendNoWS() {
         writer.append("HELLO");
 
         assertThat(result.toString(), is(equalTo("HELLO")));
     }
 
     @Test
-    public void shouldAppendTrailingWS()
-    {
+    public void shouldAppendTrailingWS() {
         writer.append("HELLO ");
 
         assertThat(result.toString(), is(equalTo("HELLO")));
     }
 
     @Test
-    public void shouldNotAppendOnlyWS()
-    {
+    public void shouldNotAppendOnlyWS() {
         writer.append(" ");
 
         assertThat(result.toString(), is(equalTo("")));
     }
 
     @Test
-    public void shouldAppendTrailingWSAfterAppend()
-    {
+    public void shouldAppendTrailingWSAfterAppend() {
         writer.append("HELLO ").append("WORLD");
 
         assertThat(result.toString(), is(equalTo("HELLO WORLD")));
     }
 
     @Test
-    public void shouldAppendOnlyWSAfterAppend()
-    {
+    public void shouldAppendOnlyWSAfterAppend() {
         writer.append(" ").append("HELLO");
 
         assertThat(result.toString(), is(equalTo(" HELLO")));
     }
 
     @Test
-    public void shouldPrintNoWS()
-    {
+    public void shouldPrintNoWS() {
         writer.print("HELLO");
 
         assertThat(result.toString(), is(equalTo("HELLO")));
     }
 
     @Test
-    public void shouldPrintTrailingWS()
-    {
+    public void shouldPrintTrailingWS() {
         writer.print("HELLO ");
 
         assertThat(result.toString(), is(equalTo("HELLO")));
     }
 
     @Test
-    public void shouldNotPrintOnlyWS()
-    {
+    public void shouldNotPrintOnlyWS() {
         writer.print(" ");
 
         assertThat(result.toString(), is(equalTo("")));
     }
 
     @Test
-    public void shouldPrintTrailingWSAfterPrint()
-    {
+    public void shouldPrintTrailingWSAfterPrint() {
         writer.print("HELLO ");
         writer.print("WORLD");
 
@@ -113,8 +102,7 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldPrintOnlyWSAfterPrint()
-    {
+    public void shouldPrintOnlyWSAfterPrint() {
         writer.print(" ");
         writer.append("HELLO");
 
@@ -122,8 +110,7 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldSkipWSBeforePrintln()
-    {
+    public void shouldSkipWSBeforePrintln() {
         writer.append("HELLO ");
         writer.println();
         writer.print("WORLD");
@@ -132,8 +119,7 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldPrintCharSkipTrailingWS()
-    {
+    public void shouldPrintCharSkipTrailingWS() {
         writer.print('H');
         writer.print(' ');
 
@@ -141,8 +127,7 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldPrintCharIncludeNonTrailingWS()
-    {
+    public void shouldPrintCharIncludeNonTrailingWS() {
         writer.print('H');
         writer.print(' ');
         writer.print('W');
@@ -151,16 +136,14 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldPrintCharArraySkipTrailingWS()
-    {
+    public void shouldPrintCharArraySkipTrailingWS() {
         writer.print("H ".toCharArray());
 
         assertThat(result.toString(), is(equalTo("H")));
     }
 
     @Test
-    public void shouldPrintCharArrayIncludeTrailingWSWithFollowingText()
-    {
+    public void shouldPrintCharArrayIncludeTrailingWSWithFollowingText() {
         writer.print("H ".toCharArray());
         writer.print("W");
 
@@ -168,16 +151,14 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldOmitOnlyWSCharArray()
-    {
+    public void shouldOmitOnlyWSCharArray() {
         writer.print(" ".toCharArray());
 
         assertThat(result.toString(), is(equalTo("")));
     }
 
     @Test
-    public void shouldPrintOnlyWSCharArrayWithFollowingText()
-    {
+    public void shouldPrintOnlyWSCharArrayWithFollowingText() {
         writer.print(" ".toCharArray());
         writer.print("W");
 
@@ -185,32 +166,28 @@ public class NoTrailingWhitespacePrintWriterTests
     }
 
     @Test
-    public void shouldPrintCharArrayIncludeNonTrailingWS()
-    {
+    public void shouldPrintCharArrayIncludeNonTrailingWS() {
         writer.print("H W".toCharArray());
 
         assertThat(result.toString(), is(equalTo("H W")));
     }
 
     @Test
-    public void shouldAppendPartialStringWithZeroOffset()
-    {
+    public void shouldAppendPartialStringWithZeroOffset() {
         writer.write("HELLO", 0, 4);
 
         assertThat(result.toString(), is(equalTo("HELL")));
     }
 
     @Test
-    public void shouldAppendPartialStringWithNonZeroOffset()
-    {
+    public void shouldAppendPartialStringWithNonZeroOffset() {
         writer.write("HELLO", 1, 3);
 
         assertThat(result.toString(), is(equalTo("ELL")));
     }
 
     @Test
-    public void shouldAppendPartialStringWithNonZeroOffsetRemainingString()
-    {
+    public void shouldAppendPartialStringWithNonZeroOffsetRemainingString() {
         writer.write("HELLO", 1, 4);
 
         assertThat(result.toString(), is(equalTo("ELLO")));

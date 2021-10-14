@@ -68,6 +68,7 @@ import org.dcache.resilience.db.ScanSummary;
  * <p>Implements the handling of pool scan task termination.</p>
  */
 public class PoolTaskCompletionHandler {
+
     private PoolOperationMap map;
 
     public void childTerminated(String pool, PnfsId pnfsId) {

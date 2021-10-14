@@ -18,18 +18,17 @@
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 package org.dcache.chimera.nfs.v4.xdr;
-import com.google.common.io.BaseEncoding;
 
+import com.google.common.io.BaseEncoding;
+import java.io.Serializable;
 import java.util.Arrays;
 
-import java.io.Serializable;
-
-public class stateid4 implements  Serializable {
+public class stateid4 implements Serializable {
 
     static final long serialVersionUID = -6677150504723505919L;
 
     public uint32_t seqid;
-    public byte [] other;
+    public byte[] other;
 
     public stateid4(byte[] other, int seq) {
         this.other = other;
@@ -43,8 +42,12 @@ public class stateid4 implements  Serializable {
     @Override
     public boolean equals(Object obj) {
 
-        if( obj == this) return true;
-        if( !(obj instanceof stateid4) ) return false;
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof stateid4)) {
+            return false;
+        }
 
         final stateid4 other_id = (stateid4) obj;
 

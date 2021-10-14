@@ -59,20 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.queue;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.junit.Before;
-import org.junit.Test;
-
+import diskCacheV111.util.PnfsHandler;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-
-import diskCacheV111.util.PnfsHandler;
-
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.services.bulk.BulkRequest;
@@ -91,17 +97,14 @@ import org.dcache.services.bulk.job.SingleTargetJob;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.memory.InMemoryBulkRequestStore;
 import org.dcache.services.bulk.util.BulkServiceStatistics;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+public class BulkServiceQueueTest {
 
-public class BulkServiceQueueTest
-{
-    class PlaceholderJob extends SingleTargetJob
-    {
-        public PlaceholderJob() throws Exception
-        {
+    class PlaceholderJob extends SingleTargetJob {
+
+        public PlaceholderJob() throws Exception {
             super(BulkJobKey.newKey(request.getId()),
                   BulkJobKey.newKey(request.getId()),
                   "test");
@@ -109,32 +112,28 @@ public class BulkServiceQueueTest
         }
 
         @Override
-        protected void doRun()
-        {
+        protected void doRun() {
         }
     }
 
-    BulkServiceQueue             queue;
-    BulkRequestStore             store;
-    BulkSubmissionHandler        submissionHandler;
+    BulkServiceQueue queue;
+    BulkRequestStore store;
+    BulkSubmissionHandler submissionHandler;
     BulkRequestCompletionHandler completionHandler;
-    BulkJobCompletionHandler     jobCompletionHandler;
-    BulkRequest                  request;
-    BulkRequestJob               requestJob;
+    BulkJobCompletionHandler jobCompletionHandler;
+    BulkRequest request;
+    BulkRequestJob requestJob;
 
     @Before
-    public void setUp()
-    {
-        queue = new BulkServiceQueue()
-        {
-            public void initialize()
-            {
-                maxRequests=1;
+    public void setUp() {
+        queue = new BulkServiceQueue() {
+            public void initialize() {
+                maxRequests = 1;
                 submitted = new LinkedHashMap<>();
                 runningQueue = new ArrayDeque<>();
                 waitingQueue = new HashSet<>();
                 readyQueue = TreeMultimap.create(requestStore.getStatusComparator(),
-                                                 Ordering.natural());
+                      Ordering.natural());
                 jobProcessor = new NextJobProcessor();
                 postProcessor = new JobPostProcessor();
                 sweeper = new TerminalSweeper();
@@ -155,8 +154,7 @@ public class BulkServiceQueueTest
 
     @Test
     public void shouldCallSubmitRequestAndUpdateToStartedOnNewRequest()
-                    throws Exception
-    {
+          throws Exception {
         givenMaxRunningJobs(1);
         givenReceptionOfNewRequest();
         afterQueueSweep();
@@ -167,8 +165,7 @@ public class BulkServiceQueueTest
 
     @Test
     public void shouldNotCallSubmitRequestWithMaxQueueSizeOnNewRequest()
-                    throws Exception
-    {
+          throws Exception {
         givenMaxRunningJobs(1);
         givenRunningRequest();
         givenReceptionOfNewRequest();
@@ -181,8 +178,7 @@ public class BulkServiceQueueTest
 
     @Test
     public void shouldStartRequestJobWhenSpaceAvailable()
-                    throws Exception
-    {
+          throws Exception {
         givenMaxRunningJobs(1);
         givenReceptionOfNewRequest();
         givenSubmissionOfNewRequestJob();
@@ -198,8 +194,7 @@ public class BulkServiceQueueTest
 
     @Test
     public void shouldPutRequestJobOnReadyQueueWhenNoSpaceAvailable()
-        throws Exception
-    {
+          throws Exception {
         givenMaxRunningJobs(1);
         givenReceptionOfNewRequest();
         givenSubmissionOfNewRequestJob();
@@ -212,8 +207,7 @@ public class BulkServiceQueueTest
 
     @Test
     public void shouldPromoteRequestJobFromReadyQueueWhenAvailable()
-                    throws Exception
-    {
+          throws Exception {
         givenMaxRunningJobs(1);
         givenReceptionOfNewRequest();
         givenSubmissionOfNewRequestJob();
@@ -231,8 +225,7 @@ public class BulkServiceQueueTest
     }
 
     @Test
-    public void shouldRemoveRequestJobWhenCompleted() throws Exception
-    {
+    public void shouldRemoveRequestJobWhenCompleted() throws Exception {
         givenReceptionOfNewRequest();
         givenSubmissionOfNewRequestJob();
         afterQueueSweep();
@@ -244,8 +237,7 @@ public class BulkServiceQueueTest
     }
 
     @Test
-    public void shouldProcessRequestWhenCompleted() throws Exception
-    {
+    public void shouldProcessRequestWhenCompleted() throws Exception {
         givenReceptionOfNewRequest();
         givenSubmissionOfNewRequestJob();
         afterQueueSweep();
@@ -257,9 +249,7 @@ public class BulkServiceQueueTest
     }
 
     @Test
-    public void shouldCallTargetCompletedWhenRunningJobsComplete() throws Exception
-
-    {
+    public void shouldCallTargetCompletedWhenRunningJobsComplete() throws Exception {
         givenMaxRunningJobs(3);
         givenReceptionOfNewRequest();
         givenSubmissionOfJobs(3);
@@ -273,9 +263,7 @@ public class BulkServiceQueueTest
     }
 
     @Test
-    public void shouldProcessReadyJobsAsRunningJobsComplete() throws Exception
-
-    {
+    public void shouldProcessReadyJobsAsRunningJobsComplete() throws Exception {
         givenMaxRunningJobs(3);
         givenReceptionOfNewRequest();
         givenSubmissionOfJobs(10);
@@ -301,16 +289,14 @@ public class BulkServiceQueueTest
         assertThatReadyQueueSizeIs(0);
     }
 
-    private void afterQueueSweep() throws Exception
-    {
+    private void afterQueueSweep() throws Exception {
         queue.jobProcessor.doRun();
         queue.postProcessor.doRun(true);
         queue.sweeper.doRun();
     }
 
     private void afterRequestCompletedHasBeenCalled()
-                    throws Exception
-    {
+          throws Exception {
         /*
          *  Because the handler is a mock, we need to do its work
          *  here so that we can test the active running count.
@@ -318,89 +304,73 @@ public class BulkServiceQueueTest
         store.update(request.getId(), Status.COMPLETED);
     }
 
-    private void assertThatJobIsOnReadyQueue(String id)
-    {
+    private void assertThatJobIsOnReadyQueue(String id) {
         assertNotNull(queue.readyQueue.get(id));
     }
 
-    private void assertThatJobIsOnRunningQueue(BulkJob job)
-    {
+    private void assertThatJobIsOnRunningQueue(BulkJob job) {
         assertTrue(queue.runningQueue.contains(job));
     }
 
-    private void assertThatJobIsNotOnSubmittedQueue(String id)
-    {
+    private void assertThatJobIsNotOnSubmittedQueue(String id) {
         assertNull(queue.submitted.get(id));
     }
 
-    private void assertThatJobIsOnSubmittedQueue(String id)
-    {
+    private void assertThatJobIsOnSubmittedQueue(String id) {
         assertNotNull(queue.submitted.get(id));
     }
 
-    private void assertThatJobStateIs(BulkJob job, BulkJob.State state)
-    {
+    private void assertThatJobStateIs(BulkJob job, BulkJob.State state) {
         assertEquals(state, job.getState());
     }
 
-    private void assertThatReadyQueueSizeIs(int size)
-    {
+    private void assertThatReadyQueueSizeIs(int size) {
         assertEquals(size, queue.readyQueue.size());
     }
 
     private void assertThatRequestStatusIs(BulkRequestStatus.Status status)
-                    throws Exception
-    {
+          throws Exception {
         assertEquals(store.getStatus(request.getId()).get().getStatus(),
-                     status);
+              status);
     }
 
     private void assertThatRequestTargetCompletedHasBeenCalled(int times)
-                    throws Exception
-    {
+          throws Exception {
         verify(completionHandler, times(times)).requestTargetCompleted(any(BulkJob.class));
     }
 
     private void assertThatRequestTargetCompletedHasNotBeenCalled()
-                    throws Exception
-    {
+          throws Exception {
         verify(completionHandler, never()).requestTargetCompleted(any(BulkJob.class));
     }
 
     private void assertThatRunningJobsEquals(int running)
-                    throws Exception
-    {
+          throws Exception {
         assertEquals(running, queue.runningQueue.size());
     }
 
     private void assertThatRunningRequestsEquals(int running)
-                    throws Exception
-    {
+          throws Exception {
         assertEquals(running, queue.activeRequests());
     }
 
-    private void assertThatSubmitRequestHasBeenCalled() throws Exception
-    {
+    private void assertThatSubmitRequestHasBeenCalled() throws Exception {
         verify(submissionHandler).submitRequest(any(BulkRequest.class));
     }
 
-    private void assertThatSubmitRequestHasNotBeenCalled() throws Exception
-    {
+    private void assertThatSubmitRequestHasNotBeenCalled() throws Exception {
         verify(submissionHandler, never()).submitRequest(any(BulkRequest.class));
     }
 
-    private void  assertThatSubmittedQueueIsEmpty() throws Exception
-    {
+    private void assertThatSubmittedQueueIsEmpty() throws Exception {
         assertTrue(queue.submitted.isEmpty());
     }
 
-    private void givenMaxRunningJobs(int maxjobs)
-    {
+    private void givenMaxRunningJobs(int maxjobs) {
         queue.setMaxRunningJobs(maxjobs);
     }
 
-    private void givenReceptionOfNewRequest() throws Exception
-    {
+    private void givenReceptionOfNewRequest() throws Exception {
         request = new BulkRequest();
         request.setExpandDirectories(Depth.NONE);
         request.setActivity("test");
@@ -410,23 +380,20 @@ public class BulkServiceQueueTest
         store.store(Subjects.ROOT, Restrictions.none(), request, null);
     }
 
-    private void givenRunningJobsEquals(int running) throws Exception
-    {
+    private void givenRunningJobsEquals(int running) throws Exception {
         for (int j = 0; j < running; ++j) {
             queue.runningQueue.add(new PlaceholderJob());
         }
     }
 
-    private void givenQueuedJobsEquals(int running) throws Exception
-    {
+    private void givenQueuedJobsEquals(int running) throws Exception {
         for (int j = 0; j < running; ++j) {
             queue.readyQueue.put(request.getId(), new PlaceholderJob());
             queue.waitingQueue.add(new PlaceholderJob());
         }
     }
 
-    private void givenRunningRequest() throws Exception
-    {
+    private void givenRunningRequest() throws Exception {
         BulkRequest previous = new BulkRequest();
         previous.setExpandDirectories(Depth.NONE);
         previous.setActivity("test");
@@ -439,35 +406,30 @@ public class BulkServiceQueueTest
         store.update(previous.getId(), Status.STARTED);
     }
 
-    private void givenSubmissionOfJobs(int number) throws Exception
-    {
+    private void givenSubmissionOfJobs(int number) throws Exception {
         for (int j = 0; j < number; ++j) {
             queue.submit(new PlaceholderJob());
         }
     }
 
-    private void givenSubmissionOfNewRequestJob() throws Exception
-    {
+    private void givenSubmissionOfNewRequestJob() throws Exception {
         requestJob = new BulkRequestJob(BulkJobKey.newKey(request.getId()),
-                                        request,
-                                        TargetType.FILE);
+              request,
+              TargetType.FILE);
         requestJob.setCompletionHandler(jobCompletionHandler);
         requestJob.setNamespaceHandler(mock(PnfsHandler.class));
         queue.submit(requestJob);
     }
 
-    private void whenRequestCompletes() throws Exception
-    {
+    private void whenRequestCompletes() throws Exception {
         when(jobCompletionHandler.isRequestCompleted()).thenReturn(true);
     }
 
-    private void whenRunningJobsHaveCompleted()
-    {
+    private void whenRunningJobsHaveCompleted() {
         queue.runningQueue.stream().forEach(j -> j.setState(State.COMPLETED));
     }
 
-    private void whenRunningRequestJobCompletes()
-    {
+    private void whenRunningRequestJobCompletes() {
         requestJob.setState(State.COMPLETED);
     }
 }

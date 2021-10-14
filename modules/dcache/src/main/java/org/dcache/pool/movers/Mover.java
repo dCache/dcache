@@ -17,22 +17,17 @@
  */
 package org.dcache.pool.movers;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.security.auth.Subject;
-
-import java.net.InetAddress;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellPath;
 import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellPath;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -43,13 +38,12 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * A Mover is the part of a file transfer that runs on a Pool.
  * <p/>
- * An implementation of this interface is the sole representation of the transfer
- * on the pool.
+ * An implementation of this interface is the sole representation of the transfer on the pool.
  * <p/>
  * The interface is not to be confused with the legacy MoverProtocol interface.
  */
-public interface Mover<T extends ProtocolInfo>
-{
+public interface Mover<T extends ProtocolInfo> {
+
     /**
      * Provides attributes of the file being transferred.
      */
@@ -79,10 +73,9 @@ public interface Mover<T extends ProtocolInfo>
 
     /**
      * Set transfer status.
-     *
-     * The provided status and error message will be sent to billing and to
-     * the door. Only the first error status set is kept. Any subsequent
-     * errors are suppressed.
+     * <p>
+     * The provided status and error message will be sent to billing and to the door. Only the first
+     * error status set is kept. Any subsequent errors are suppressed.
      */
     void setTransferStatus(int errorCode, String errorMessage);
 
@@ -122,16 +115,15 @@ public interface Mover<T extends ProtocolInfo>
     ReplicaDescriptor getIoHandle();
 
     /**
-     * Provide the channel used for the transfer.  If no channel has been opened
-     * then the returned value is empty.
+     * Provide the channel used for the transfer.  If no channel has been opened then the returned
+     * value is empty.
      */
     Optional<RepositoryChannel> getChannel();
 
 
     /**
-     * Get set of options specifying how the file is opened. The READ
-     * and WRITE options determine if the file should be opened for
-     * reading and/or writing.
+     * Get set of options specifying how the file is opened. The READ and WRITE options determine if
+     * the file should be opened for reading and/or writing.
      */
     Set<? extends OpenOption> getIoMode();
 
@@ -168,41 +160,37 @@ public interface Mover<T extends ProtocolInfo>
     String getTransferPath();
 
     /**
-     * Initiates the actual transfer phase. The operation is asynchronous. Completion
-     * is signaled through the <code>completionHandler</code>.
+     * Initiates the actual transfer phase. The operation is asynchronous. Completion is signaled
+     * through the <code>completionHandler</code>.
      */
     Cancellable execute(CompletionHandler<Void, Void> completionHandler);
 
     /**
-     * Releases any resources held by the mover. Since closing a mover triggers
-     * a fair amount of post processing, this operation is asynchronous. Completion
-     * is signaled through the <code>completionHandler</code>.
-     *
-     * A mover can and must be closed even if <code>execute</code> was not called
-     * or failed.
+     * Releases any resources held by the mover. Since closing a mover triggers a fair amount of
+     * post processing, this operation is asynchronous. Completion is signaled through the
+     * <code>completionHandler</code>.
+     * <p>
+     * A mover can and must be closed even if <code>execute</code> was not called or failed.
      */
     void close(CompletionHandler<Void, Void> completionHandler);
 
     /**
-     * Provide a list of the IP address and port number of all currently active
-     * TCP connections.  An empty list indicates that there is current no
-     * established connections.  The mover may order the connections in some
-     * protocol-specific fashion.  A mover that is unable to provide connection
-     * information should return null.
+     * Provide a list of the IP address and port number of all currently active TCP connections.  An
+     * empty list indicates that there is current no established connections.  The mover may order
+     * the connections in some protocol-specific fashion.  A mover that is unable to provide
+     * connection information should return null.
      */
     @Nullable
-    default List<InetSocketAddress> remoteConnections()
-    {
+    default List<InetSocketAddress> remoteConnections() {
         return null;
     }
 
     /**
-     * Provide the expected total number of bytes transferred for this
-     * transfer, if known.  Returns null if this value is unknown.
+     * Provide the expected total number of bytes transferred for this transfer, if known.  Returns
+     * null if this value is unknown.
      */
     @Nullable
-    default Long getBytesExpected()
-    {
+    default Long getBytesExpected() {
         return null;
     }
 }

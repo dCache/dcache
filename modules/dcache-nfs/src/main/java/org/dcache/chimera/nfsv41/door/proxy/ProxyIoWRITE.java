@@ -1,13 +1,8 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
 import com.google.common.io.BaseEncoding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import org.dcache.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
@@ -25,6 +20,9 @@ import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
+import org.dcache.util.NDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
@@ -59,22 +57,24 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             stateid4 stateid = _args.opwrite.stateid;
 
             VirtualFileSystem.WriteResult writeResult;
-	    if (Stateids.isStateLess(stateid)) {
+            if (Stateids.isStateLess(stateid)) {
 
-		/*
-		 * As there was no open, we have to check  permissions.
-		 */
-		if (context.getFs().access(inode, nfs4_prot.ACCESS4_MODIFY | nfs4_prot.ACCESS4_EXTEND ) == 0) {
-		    throw new AccessException();
-		}
+                /*
+                 * As there was no open, we have to check  permissions.
+                 */
+                if (context.getFs()
+                      .access(inode, nfs4_prot.ACCESS4_MODIFY | nfs4_prot.ACCESS4_EXTEND) == 0) {
+                    throw new AccessException();
+                }
 
-		/*
-		 * use try-with-resource as wee need to close adapter on each request
-		 */
-		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, stateid, context, true)) {
-		    writeResult = oneUseProxyIoAdapter.write(data, offset);
-		}
-	    } else {
+                /*
+                 * use try-with-resource as wee need to close adapter on each request
+                 */
+                try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode,
+                      stateid, context, true)) {
+                    writeResult = oneUseProxyIoAdapter.write(data, offset);
+                }
+            } else {
 
                 /**
                  * NOTICE, we check for minor version here, even if 4.1 requests
@@ -91,9 +91,10 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
                      */
                     context.getStateHandler().updateClientLeaseTime(stateid);
                 }
-		ProxyIoAdapter proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid, context, true);
-		writeResult = proxyIoAdapter.write(data, offset);
-	    }
+                ProxyIoAdapter proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid,
+                      context, true);
+                writeResult = proxyIoAdapter.write(data, offset);
+            }
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
@@ -106,11 +107,11 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
         } catch (ChimeraNFSException e) {
             // NFS server will handle them
             throw e;
-        }catch(IOException ioe) {
+        } catch (IOException ioe) {
             _log.error("DSWRITE: {}", ioe.getMessage());
             proxyIoFactory.shutdownAdapter(_args.opwrite.stateid);
             res.status = nfsstat.NFSERR_IO;
-        }catch(Exception e) {
+        } catch (Exception e) {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         } finally {

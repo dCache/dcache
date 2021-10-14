@@ -1,14 +1,8 @@
 package org.dcache.tests.poolmanager;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -18,16 +12,18 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
-
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 
 public class PoolSelectionUnitTest {
@@ -42,186 +38,179 @@ public class PoolSelectionUnitTest {
         // storage units
 
         _ci.command(new Args("psu create unit -store  h1:u1@osm"));
-        _ci.command( new Args("psu create unit -store  h1:u2@osm" )  );
+        _ci.command(new Args("psu create unit -store  h1:u2@osm"));
 
-        _ci.command( new Args("psu create unit -store  zeus:u1@osm" )  );
-        _ci.command( new Args("psu create unit -store  zeus:u2@osm" )  );
+        _ci.command(new Args("psu create unit -store  zeus:u1@osm"));
+        _ci.command(new Args("psu create unit -store  zeus:u2@osm"));
 
-        _ci.command( new Args("psu create unit -store  flc:u1@osm" )  );
-        _ci.command( new Args("psu create unit -store  flc:u2@osm" )  );
+        _ci.command(new Args("psu create unit -store  flc:u1@osm"));
+        _ci.command(new Args("psu create unit -store  flc:u2@osm"));
 
-        _ci.command( new Args("psu create unit -store  hermes:u1@osm" )  );
-        _ci.command( new Args("psu create unit -store  hermes:u2@osm" )  );
+        _ci.command(new Args("psu create unit -store  hermes:u1@osm"));
+        _ci.command(new Args("psu create unit -store  hermes:u2@osm"));
 
-        _ci.command( new Args("psu create unit -store  herab:u1@osm" )  );
-        _ci.command( new Args("psu create unit -store  herab:u2@osm" )  );
+        _ci.command(new Args("psu create unit -store  herab:u1@osm"));
+        _ci.command(new Args("psu create unit -store  herab:u2@osm"));
 
-        _ci.command( new Args("psu create unit -store  *@*" )  );
+        _ci.command(new Args("psu create unit -store  *@*"));
 
         // store unit groups
 
-        _ci.command( new Args("psu create ugroup all-h1" )  );
-        _ci.command( new Args("psu create ugroup all-zeus" )  );
-        _ci.command( new Args("psu create ugroup all-flc" )  );
-        _ci.command( new Args("psu create ugroup all-hermes" )  );
-        _ci.command( new Args("psu create ugroup all-herab" )  );
-        _ci.command( new Args("psu create ugroup all-hera" )  );
-        _ci.command( new Args("psu create ugroup all" )  );
+        _ci.command(new Args("psu create ugroup all-h1"));
+        _ci.command(new Args("psu create ugroup all-zeus"));
+        _ci.command(new Args("psu create ugroup all-flc"));
+        _ci.command(new Args("psu create ugroup all-hermes"));
+        _ci.command(new Args("psu create ugroup all-herab"));
+        _ci.command(new Args("psu create ugroup all-hera"));
+        _ci.command(new Args("psu create ugroup all"));
 
         // populate ugroups
 
-        _ci.command( new Args("psu addto ugroup all-h1 h1:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-h1 h1:u2@osm" )  );
+        _ci.command(new Args("psu addto ugroup all-h1 h1:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-h1 h1:u2@osm"));
 
-        _ci.command( new Args("psu addto ugroup all-h1 zeus:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-h1 zeus:u2@osm" )  );
+        _ci.command(new Args("psu addto ugroup all-h1 zeus:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-h1 zeus:u2@osm"));
 
-        _ci.command( new Args("psu addto ugroup all-h1 flc:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-h1 flc:u2@osm" )  );
+        _ci.command(new Args("psu addto ugroup all-h1 flc:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-h1 flc:u2@osm"));
 
-        _ci.command( new Args("psu addto ugroup all-h1 hermes:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-h1 hermes:u2@osm" )  );
+        _ci.command(new Args("psu addto ugroup all-h1 hermes:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-h1 hermes:u2@osm"));
 
-        _ci.command( new Args("psu addto ugroup all-h1 herab:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-h1 herab:u2@osm" )  );
+        _ci.command(new Args("psu addto ugroup all-h1 herab:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-h1 herab:u2@osm"));
 
-        _ci.command( new Args("psu addto ugroup all h1:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all h1:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all zeus:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all zeus:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all flc:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all flc:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all hermes:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all hermes:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all herab:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all herab:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all *@*" )  );
+        _ci.command(new Args("psu addto ugroup all h1:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all h1:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all zeus:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all zeus:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all flc:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all flc:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all hermes:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all hermes:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all herab:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all herab:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all *@*"));
 
-        _ci.command( new Args("psu addto ugroup all-hera h1:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera h1:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera zeus:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera zeus:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera hermes:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera hermes:u2@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera herab:u1@osm" )  );
-        _ci.command( new Args("psu addto ugroup all-hera herab:u2@osm" )  );
-
-
+        _ci.command(new Args("psu addto ugroup all-hera h1:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera h1:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera zeus:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera zeus:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera hermes:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera hermes:u2@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera herab:u1@osm"));
+        _ci.command(new Args("psu addto ugroup all-hera herab:u2@osm"));
 
         // network
-        _ci.command( new Args("psu create unit -net    131.169.0.0/255.255.0.0" )  );
-        _ci.command( new Args("psu create unit -net    0.0.0.0/0.0.0.0" )  );
-        _ci.command( new Args("psu create unit -net    2001:638:700::0/48") );
-        _ci.command( new Args("psu create unit -net    ::/0" ) );
+        _ci.command(new Args("psu create unit -net    131.169.0.0/255.255.0.0"));
+        _ci.command(new Args("psu create unit -net    0.0.0.0/0.0.0.0"));
+        _ci.command(new Args("psu create unit -net    2001:638:700::0/48"));
+        _ci.command(new Args("psu create unit -net    ::/0"));
 
         // net groups
-        _ci.command( new Args("psu create ugroup intern" )  );
-        _ci.command( new Args("psu create ugroup extern" )  );
+        _ci.command(new Args("psu create ugroup intern"));
+        _ci.command(new Args("psu create ugroup extern"));
 
         // populate net groups
-        _ci.command( new Args("psu addto ugroup intern 131.169.0.0/255.255.0.0" )  );
-        _ci.command( new Args("psu addto ugroup extern 0.0.0.0/0.0.0.0" )  );
-        _ci.command( new Args("psu addto ugroup intern 2001:638:700::0/48") );
-        _ci.command( new Args("psu addto ugroup extern ::/0" ) );
+        _ci.command(new Args("psu addto ugroup intern 131.169.0.0/255.255.0.0"));
+        _ci.command(new Args("psu addto ugroup extern 0.0.0.0/0.0.0.0"));
+        _ci.command(new Args("psu addto ugroup intern 2001:638:700::0/48"));
+        _ci.command(new Args("psu addto ugroup extern ::/0"));
 
         // pools
-        _ci.command( new Args("psu create pool h1-read" )  );
+        _ci.command(new Args("psu create pool h1-read"));
         _psu.getPool("h1-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool h1-write" )  );
+        _ci.command(new Args("psu create pool h1-write"));
         _psu.getPool("h1-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
-        _ci.command( new Args("psu create pool zeus-read" )  );
+        _ci.command(new Args("psu create pool zeus-read"));
         _psu.getPool("zeus-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool zeus-write" )  );
+        _ci.command(new Args("psu create pool zeus-write"));
         _psu.getPool("zeus-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
-        _ci.command( new Args("psu create pool flc-read" )  );
+        _ci.command(new Args("psu create pool flc-read"));
         _psu.getPool("flc-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool flc-write" )  );
+        _ci.command(new Args("psu create pool flc-write"));
         _psu.getPool("flc-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
-
-        _ci.command( new Args("psu create pool hermes-read" )  );
+        _ci.command(new Args("psu create pool hermes-read"));
         _psu.getPool("hermes-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool hermes-write" )  );
+        _ci.command(new Args("psu create pool hermes-write"));
         _psu.getPool("hermes-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
-
-        _ci.command( new Args("psu create pool herab-read" )  );
+        _ci.command(new Args("psu create pool herab-read"));
         _psu.getPool("herab-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool herab-write" )  );
+        _ci.command(new Args("psu create pool herab-write"));
         _psu.getPool("herab-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
 
-        _ci.command( new Args("psu create pool default-read" )  );
+        _ci.command(new Args("psu create pool default-read"));
         _psu.getPool("default-read").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-        _ci.command( new Args("psu create pool default-write" )  );
+        _ci.command(new Args("psu create pool default-write"));
         _psu.getPool("default-write").setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
-
 
         // pool groups
 
-        _ci.command( new Args("psu create pgroup h1-read-pools" )  );
-        _ci.command( new Args("psu create pgroup h1-write-pools" )  );
+        _ci.command(new Args("psu create pgroup h1-read-pools"));
+        _ci.command(new Args("psu create pgroup h1-write-pools"));
 
-        _ci.command( new Args("psu create pgroup zeus-read-pools" )  );
-        _ci.command( new Args("psu create pgroup zeus-write-pools" )  );
+        _ci.command(new Args("psu create pgroup zeus-read-pools"));
+        _ci.command(new Args("psu create pgroup zeus-write-pools"));
 
-        _ci.command( new Args("psu create pgroup flc-read-pools" )  );
-        _ci.command( new Args("psu create pgroup flc-write-pools" )  );
+        _ci.command(new Args("psu create pgroup flc-read-pools"));
+        _ci.command(new Args("psu create pgroup flc-write-pools"));
 
-        _ci.command( new Args("psu create pgroup hermes-read-pools" )  );
-        _ci.command( new Args("psu create pgroup hermes-write-pools" )  );
+        _ci.command(new Args("psu create pgroup hermes-read-pools"));
+        _ci.command(new Args("psu create pgroup hermes-write-pools"));
 
-        _ci.command( new Args("psu create pgroup herab-read-pools" )  );
-        _ci.command( new Args("psu create pgroup herab-write-pools" )  );
+        _ci.command(new Args("psu create pgroup herab-read-pools"));
+        _ci.command(new Args("psu create pgroup herab-write-pools"));
 
-        _ci.command( new Args("psu create pgroup default-read-pools" )  );
-        _ci.command( new Args("psu create pgroup default-write-pools" )  );
+        _ci.command(new Args("psu create pgroup default-read-pools"));
+        _ci.command(new Args("psu create pgroup default-write-pools"));
 
         // Populate pool groups
 
-        _ci.command( new Args("psu addto pgroup h1-read-pools h1-read" )  );
-        _ci.command( new Args("psu addto pgroup h1-write-pools h1-write" )  );
+        _ci.command(new Args("psu addto pgroup h1-read-pools h1-read"));
+        _ci.command(new Args("psu addto pgroup h1-write-pools h1-write"));
 
-        _ci.command( new Args("psu addto pgroup zeus-read-pools zeus-read" )  );
-        _ci.command( new Args("psu addto pgroup zeus-write-pools zeus-write" )  );
+        _ci.command(new Args("psu addto pgroup zeus-read-pools zeus-read"));
+        _ci.command(new Args("psu addto pgroup zeus-write-pools zeus-write"));
 
-        _ci.command( new Args("psu addto pgroup flc-read-pools flc-read" )  );
-        _ci.command( new Args("psu addto pgroup flc-write-pools flc-write" )  );
+        _ci.command(new Args("psu addto pgroup flc-read-pools flc-read"));
+        _ci.command(new Args("psu addto pgroup flc-write-pools flc-write"));
 
-        _ci.command( new Args("psu addto pgroup hermes-read-pools hermes-read" )  );
-        _ci.command( new Args("psu addto pgroup hermes-write-pools hermes-write" )  );
+        _ci.command(new Args("psu addto pgroup hermes-read-pools hermes-read"));
+        _ci.command(new Args("psu addto pgroup hermes-write-pools hermes-write"));
 
-        _ci.command( new Args("psu addto pgroup herab-read-pools herab-read" )  );
-        _ci.command( new Args("psu addto pgroup herab-write-pools herab-write" )  );
+        _ci.command(new Args("psu addto pgroup herab-read-pools herab-read"));
+        _ci.command(new Args("psu addto pgroup herab-write-pools herab-write"));
 
-        _ci.command( new Args("psu addto pgroup default-read-pools default-read" )  );
-        _ci.command( new Args("psu addto pgroup default-write-pools default-write" )  );
-
+        _ci.command(new Args("psu addto pgroup default-read-pools default-read"));
+        _ci.command(new Args("psu addto pgroup default-write-pools default-write"));
 
         // links
 
-        _ci.command( new Args("psu create link h1-read-link all-h1 intern" )  );
-        _ci.command( new Args("psu create link h1-write-link all-h1 intern" )  );
+        _ci.command(new Args("psu create link h1-read-link all-h1 intern"));
+        _ci.command(new Args("psu create link h1-write-link all-h1 intern"));
 
-        _ci.command( new Args("psu create link zeus-read-link all-zeus intern" )  );
-        _ci.command( new Args("psu create link zeus-write-link all-zeus intern" )  );
+        _ci.command(new Args("psu create link zeus-read-link all-zeus intern"));
+        _ci.command(new Args("psu create link zeus-write-link all-zeus intern"));
 
-        _ci.command( new Args("psu create link flc-read-link all-flc intern" )  );
-        _ci.command( new Args("psu create link flc-write-link all-flc intern" )  );
+        _ci.command(new Args("psu create link flc-read-link all-flc intern"));
+        _ci.command(new Args("psu create link flc-write-link all-flc intern"));
 
-        _ci.command( new Args("psu create link hermes-read-link all-hermes intern" )  );
-        _ci.command( new Args("psu create link hermes-write-link all-hermes intern" )  );
+        _ci.command(new Args("psu create link hermes-read-link all-hermes intern"));
+        _ci.command(new Args("psu create link hermes-write-link all-hermes intern"));
 
-        _ci.command( new Args("psu create link herab-read-link all-herab intern" )  );
-        _ci.command( new Args("psu create link herab-write-link all-herab intern" )  );
+        _ci.command(new Args("psu create link herab-read-link all-herab intern"));
+        _ci.command(new Args("psu create link herab-write-link all-herab intern"));
 
-        _ci.command( new Args("psu create link default-read-link-in all intern" )  );
-        _ci.command( new Args("psu create link default-write-link-in all intern" )  );
+        _ci.command(new Args("psu create link default-read-link-in all intern"));
+        _ci.command(new Args("psu create link default-write-link-in all intern"));
 
-        _ci.command( new Args("psu create link default-read-link-ex all extern" )  );
-        _ci.command( new Args("psu create link default-write-link-ex all extern" )  );
-
+        _ci.command(new Args("psu create link default-read-link-ex all extern"));
+        _ci.command(new Args("psu create link default-write-link-ex all extern"));
 
         // link preferences
         /*
@@ -231,44 +220,57 @@ public class PoolSelectionUnitTest {
          * 	fallback: default-pools
          */
 
-        _ci.command( new Args("psu set link h1-read-link         -readpref=20 -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link zeus-read-link       -readpref=20 -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link flc-read-link        -readpref=20 -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link hermes-read-link     -readpref=20 -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link herab-read-link      -readpref=20 -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link default-read-link-in -readpref=1  -writepref=0 -cachepref=20" )  );
-        _ci.command( new Args("psu set link default-read-link-ex -readpref=1  -writepref=0 -cachepref=20" )  );
+        _ci.command(new Args(
+              "psu set link h1-read-link         -readpref=20 -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link zeus-read-link       -readpref=20 -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link flc-read-link        -readpref=20 -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link hermes-read-link     -readpref=20 -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link herab-read-link      -readpref=20 -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link default-read-link-in -readpref=1  -writepref=0 -cachepref=20"));
+        _ci.command(new Args(
+              "psu set link default-read-link-ex -readpref=1  -writepref=0 -cachepref=20"));
 
-        _ci.command( new Args("psu set link h1-write-link         -writepref=20 -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link zeus-write-link       -writepref=20 -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link flc-write-link        -writepref=20 -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link hermes-write-link     -writepref=20 -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link herab-write-link      -writepref=20 -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link default-write-link-in -writepref=1  -readpref=0 -cachepref=0" )  );
-        _ci.command( new Args("psu set link default-write-link-ex -writepref=1  -readpref=0 -cachepref=0" )  );
-
+        _ci.command(new Args(
+              "psu set link h1-write-link         -writepref=20 -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link zeus-write-link       -writepref=20 -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link flc-write-link        -writepref=20 -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link hermes-write-link     -writepref=20 -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link herab-write-link      -writepref=20 -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link default-write-link-in -writepref=1  -readpref=0 -cachepref=0"));
+        _ci.command(new Args(
+              "psu set link default-write-link-ex -writepref=1  -readpref=0 -cachepref=0"));
 
         // assign pool groups to links
-        _ci.command( new Args("psu addto link h1-read-link h1-read-pools" )  );
-        _ci.command( new Args("psu addto link h1-write-link h1-write-pools" )  );
+        _ci.command(new Args("psu addto link h1-read-link h1-read-pools"));
+        _ci.command(new Args("psu addto link h1-write-link h1-write-pools"));
 
-        _ci.command( new Args("psu addto link zeus-read-link zeus-read-pools" )  );
-        _ci.command( new Args("psu addto link zeus-write-link zeus-write-pools" )  );
+        _ci.command(new Args("psu addto link zeus-read-link zeus-read-pools"));
+        _ci.command(new Args("psu addto link zeus-write-link zeus-write-pools"));
 
-        _ci.command( new Args("psu addto link flc-read-link flc-read-pools" )  );
-        _ci.command( new Args("psu addto link flc-write-link flc-write-pools" )  );
+        _ci.command(new Args("psu addto link flc-read-link flc-read-pools"));
+        _ci.command(new Args("psu addto link flc-write-link flc-write-pools"));
 
-        _ci.command( new Args("psu addto link hermes-read-link hermes-read-pools" )  );
-        _ci.command( new Args("psu addto link hermes-write-link hermes-write-pools" )  );
+        _ci.command(new Args("psu addto link hermes-read-link hermes-read-pools"));
+        _ci.command(new Args("psu addto link hermes-write-link hermes-write-pools"));
 
-        _ci.command( new Args("psu addto link herab-read-link herab-read-pools" )  );
-        _ci.command( new Args("psu addto link herab-write-link herab-write-pools" )  );
+        _ci.command(new Args("psu addto link herab-read-link herab-read-pools"));
+        _ci.command(new Args("psu addto link herab-write-link herab-write-pools"));
 
-        _ci.command( new Args("psu addto link default-read-link-ex default-read-pools" )  );
-        _ci.command( new Args("psu addto link default-write-link-ex default-write-pools" )  );
+        _ci.command(new Args("psu addto link default-read-link-ex default-read-pools"));
+        _ci.command(new Args("psu addto link default-write-link-ex default-write-pools"));
 
-        _ci.command( new Args("psu addto link default-read-link-in default-read-pools" )  );
-        _ci.command( new Args("psu addto link default-write-link-in default-write-pools" )  );
+        _ci.command(new Args("psu addto link default-read-link-in default-read-pools"));
+        _ci.command(new Args("psu addto link default-write-link-in default-write-pools"));
 
 
     }
@@ -279,26 +281,24 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAllPoolsOffline() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive off");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
-
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         int found = 0;
         for (PoolPreferenceLevel level : preference) {
             found += level.getPoolList().size();
         }
 
-        assertEquals(0,  found );
+        assertEquals(0, found);
 
     }
 
@@ -308,22 +308,22 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAnyRead() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
         assertEquals("Only default read pool is allowed", 1, preference[0].getPoolList().size());
-        assertEquals("Only default read pool is allowed (default-read)", "default-read", preference[0].getPoolList().get(0));
+        assertEquals("Only default read pool is allowed (default-read)", "default-read",
+              preference[0].getPoolList().get(0));
     }
 
 
@@ -333,22 +333,22 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAnyWrite() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.WRITE,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.WRITE,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
         assertEquals("Only default write pool is allowed", 1, preference[0].getPoolList().size());
-        assertEquals("Only default write pool is allowed (default-read)", "default-write", preference[0].getPoolList().get(0));
+        assertEquals("Only default write pool is allowed (default-read)", "default-write",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -357,22 +357,23 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1Write() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.WRITE,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.WRITE,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
+        assertEquals("H1 write link and default write link have to be triggered", 2,
+              preference.length);
         assertEquals("Only h1 write pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 write pool with attracion 0 (h1-write)", "h1-write", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 write pool with attracion 0 (h1-write)", "h1-write",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -381,22 +382,23 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1Read() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
+        assertEquals("H1 read link and default read link have to be triggered", 2,
+              preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -405,25 +407,27 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1ReadFallback() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
-
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
-        assertEquals("No h1 pool when it's disabled with attracion 0", 0, preference[0].getPoolList().size());
-        assertEquals("Only default read pool with attracion 0", 1, preference[1].getPoolList().size());
-        assertEquals("Only default read pool with attracion 0 (default-read)", "default-read", preference[1].getPoolList().get(0));
+        assertEquals("H1 read link and default read link have to be triggered", 2,
+              preference.length);
+        assertEquals("No h1 pool when it's disabled with attracion 0", 0,
+              preference[0].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0", 1,
+              preference[1].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0 (default-read)", "default-read",
+              preference[1].getPoolList().get(0));
     }
 
 
@@ -459,25 +463,24 @@ public class PoolSelectionUnitTest {
     @Test
     public void testSelectPoolByLinkGroup() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
-        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link"));
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
-
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      "h1-link-group", // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              "h1-link-group", // linkGroup
+              defaultExclude);
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -486,32 +489,32 @@ public class PoolSelectionUnitTest {
     @Test
     public void testSelectStagePoolByLinkGroup() throws Exception {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
-        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link"));
 
-        StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
-        storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:u1");
+        storageInfo.addLocation(new URI("osm://osm/?store=h1&bfid=1234"));
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(storageInfo, fileAttributes);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
 
-        _psu.getPool("h1-read").setHsmInstances( supportedHSM );
+        _psu.getPool("h1-read").setHsmInstances(supportedHSM);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.CACHE,  // operation
-                                                      "131.169.214.149", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      "h1-link-group", // linkGroup
-                                                      defaultExclude);
+              DirectionType.CACHE,  // operation
+              "131.169.214.149", // net unit
+              null,  // protocol
+              fileAttributes,
+              "h1-link-group", // linkGroup
+              defaultExclude);
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
         assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
 
@@ -528,16 +531,16 @@ public class PoolSelectionUnitTest {
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference =
-            _psu.match(DirectionType.P2P,  // operation
-                       "131.169.214.149", // net unit
-                       null,  // protocol
-                       fileAttributes,
-                       null,
-                       defaultExclude); // linkGroup
+              _psu.match(DirectionType.P2P,  // operation
+                    "131.169.214.149", // net unit
+                    null,  // protocol
+                    fileAttributes,
+                    null,
+                    defaultExclude); // linkGroup
 
         List<String> pools = new ArrayList<>();
-        for(PoolPreferenceLevel level: preference) {
-            pools.addAll( level.getPoolList() );
+        for (PoolPreferenceLevel level : preference) {
+            pools.addAll(level.getPoolList());
         }
         assertEquals("More than expected pools selected", 1, pools.size());
         assertEquals("Unexpected pool selected", "default-read", pools.get(0));
@@ -550,26 +553,24 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAllPoolsOfflineIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive off");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
-
+              DirectionType.READ,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         int found = 0;
         for (PoolPreferenceLevel level : preference) {
             found += level.getPoolList().size();
         }
 
-        assertEquals(0,  found );
+        assertEquals(0, found);
 
     }
 
@@ -579,22 +580,22 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAnyReadIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         assertEquals("Only default read link have to be triggered", 1, preference.length);
         assertEquals("Only default read pool is allowed", 1, preference[0].getPoolList().size());
-        assertEquals("Only default read pool is allowed (default-read)", "default-read", preference[0].getPoolList().get(0));
+        assertEquals("Only default read pool is allowed (default-read)", "default-read",
+              preference[0].getPoolList().get(0));
     }
 
 
@@ -604,22 +605,22 @@ public class PoolSelectionUnitTest {
     @Test
     public void testAnyWriteIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.WRITE,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.WRITE,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
         assertEquals("Only default write link have to be triggered", 1, preference.length);
         assertEquals("Only default write pool is allowed", 1, preference[0].getPoolList().size());
-        assertEquals("Only default write pool is allowed (default-read)", "default-write", preference[0].getPoolList().get(0));
+        assertEquals("Only default write pool is allowed (default-read)", "default-write",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -628,22 +629,23 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1WriteIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.WRITE,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.WRITE,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 write link and default write link have to be triggered", 2, preference.length);
+        assertEquals("H1 write link and default write link have to be triggered", 2,
+              preference.length);
         assertEquals("Only h1 write pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 write pool with attracion 0 (h1-write)", "h1-write", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 write pool with attracion 0 (h1-write)", "h1-write",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -652,22 +654,23 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1ReadIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
+        assertEquals("H1 read link and default read link have to be triggered", 2,
+              preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -676,25 +679,27 @@ public class PoolSelectionUnitTest {
     @Test
     public void testH1ReadFallbackIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
-
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      null, // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              null, // linkGroup
+              defaultExclude);
 
-        assertEquals("H1 read link and default read link have to be triggered", 2, preference.length);
-        assertEquals("No h1 pool when it's disabled with attracion 0", 0, preference[0].getPoolList().size());
-        assertEquals("Only default read pool with attracion 0", 1, preference[1].getPoolList().size());
-        assertEquals("Only default read pool with attracion 0 (default-read)", "default-read", preference[1].getPoolList().get(0));
+        assertEquals("H1 read link and default read link have to be triggered", 2,
+              preference.length);
+        assertEquals("No h1 pool when it's disabled with attracion 0", 0,
+              preference[0].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0", 1,
+              preference[1].getPoolList().size());
+        assertEquals("Only default read pool with attracion 0 (default-read)", "default-read",
+              preference[1].getPoolList().get(0));
     }
 
 
@@ -704,25 +709,24 @@ public class PoolSelectionUnitTest {
     @Test
     public void testSelectPoolByLinkGroupIPv6() throws CommandException {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
-        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link"));
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
-
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.READ,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      "h1-link-group", // linkGroup
-                                                      defaultExclude);
+              DirectionType.READ,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              "h1-link-group", // linkGroup
+              defaultExclude);
 
         assertEquals("Only h1 read link have to be triggered", 1, preference.length);
         assertEquals("Only h1 read pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
     /*
@@ -731,32 +735,32 @@ public class PoolSelectionUnitTest {
     @Test
     public void testSelectStagePoolByLinkGroupIPv6() throws Exception {
 
-
         _ci.command("psu set allpoolsactive on");
         _ci.command(new Args("psu create linkGroup h1-link-group"));
-        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link"));
 
-        StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
-        storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:u1");
+        storageInfo.addLocation(new URI("osm://osm/?store=h1&bfid=1234"));
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(storageInfo, fileAttributes);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
 
-        _psu.getPool("h1-read").setHsmInstances( supportedHSM );
+        _psu.getPool("h1-read").setHsmInstances(supportedHSM);
 
         PoolPreferenceLevel[] preference = _psu.match(
-                                                      DirectionType.CACHE,  // operation
-                                                      "2001:638:700::f00:ba", // net unit
-                                                      null,  // protocol
-                                                      fileAttributes,
-                                                      "h1-link-group", // linkGroup
-                                                      defaultExclude);
+              DirectionType.CACHE,  // operation
+              "2001:638:700::f00:ba", // net unit
+              null,  // protocol
+              fileAttributes,
+              "h1-link-group", // linkGroup
+              defaultExclude);
 
         assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
         assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
-        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read",
+              preference[0].getPoolList().get(0));
     }
 
 
@@ -773,16 +777,16 @@ public class PoolSelectionUnitTest {
         StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference =
-            _psu.match(DirectionType.P2P,  // operation
-                       "2001:638:700::f00:ba", // net unit
-                       null,  // protocol
-                       fileAttributes,
-                       null, // linkGroup
-                       defaultExclude);
+              _psu.match(DirectionType.P2P,  // operation
+                    "2001:638:700::f00:ba", // net unit
+                    null,  // protocol
+                    fileAttributes,
+                    null, // linkGroup
+                    defaultExclude);
 
         List<String> pools = new ArrayList<>();
-        for(PoolPreferenceLevel level: preference) {
-            pools.addAll( level.getPoolList() );
+        for (PoolPreferenceLevel level : preference) {
+            pools.addAll(level.getPoolList());
         }
         assertEquals("More than expected pools selected", 1, pools.size());
         assertEquals("Unexpected pool selected", "default-read", pools.get(0));
@@ -792,7 +796,7 @@ public class PoolSelectionUnitTest {
     @Test
     public void testActive() throws CommandException {
 
-        _ci.command( new Args("psu set active -on h1-read"  )  );
+        _ci.command(new Args("psu set active -on h1-read"));
         SelectionPool pool = _psu.getPool("h1-read");
 
         assertNotNull("Null pool received", pool);
@@ -802,8 +806,7 @@ public class PoolSelectionUnitTest {
 
     @Test
     public void testRestrictedIPAddressExampleFromBook()
-        throws CommandException
-    {
+          throws CommandException {
         PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
         CommandInterpreter ci = new CommandInterpreter(psu);
 
@@ -817,7 +820,7 @@ public class PoolSelectionUnitTest {
         ci.command(new Args("psu addto pgroup read-pools read-pool"));
         ci.command(new Args("psu addto pgroup write-pools write-pool"));
 
-        ci.command(new Args("psu create unit -net 111.111.111.0/255.255.255.0") );
+        ci.command(new Args("psu create unit -net 111.111.111.0/255.255.255.0"));
         ci.command(new Args("psu create ugroup allnet-cond"));
         ci.command(new Args("psu addto ugroup allnet-cond 111.111.111.0/255.255.255.0"));
         ci.command(new Args("psu create unit -net 111.111.111.201/255.255.255.255"));
@@ -841,12 +844,12 @@ public class PoolSelectionUnitTest {
         FileAttributes fileAttributes = new FileAttributes();
         StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
         PoolPreferenceLevel[] preference =
-            psu.match(DirectionType.READ,  // operation
-                      "111.111.111.201", // net unit
-                      null,  // protocol
-                      fileAttributes,
-                      null, // linkGroup
-                      defaultExclude);
+              psu.match(DirectionType.READ,  // operation
+                    "111.111.111.201", // net unit
+                    null,  // protocol
+                    fileAttributes,
+                    null, // linkGroup
+                    defaultExclude);
         assertEquals(0, preference.length);
-   }
+    }
 }

@@ -63,11 +63,11 @@ import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
 
 /**
  * <p>Used to gather timeseries data from the pools. These include
- *    request statistics and file lifetime statistics over a rotating
- *    window.</p>
+ * request statistics and file lifetime statistics over a rotating window.</p>
  */
 public class PoolLiveDataCollector extends
-                PoolInfoCollector<PoolLiveDataForHistoriesMessage> {
+      PoolInfoCollector<PoolLiveDataForHistoriesMessage> {
+
     @Override
     protected PoolLiveDataForHistoriesMessage newMessage(long timestamp) {
         return new PoolLiveDataForHistoriesMessage();

@@ -20,28 +20,24 @@ package org.dcache.webdav.transfer;
 import io.milton.http.Response.Status;
 
 /**
- * A generic error response indicating a terminal problem processing the
- * request.
+ * A generic error response indicating a terminal problem processing the request.
  */
-public class ErrorResponseException extends Exception
-{
+public class ErrorResponseException extends Exception {
+
     private static final long serialVersionUID = 1L;
     private final Status _status;
 
-    public ErrorResponseException(Status status)
-    {
+    public ErrorResponseException(Status status) {
         super(status.text);
         _status = status;
     }
 
-    public ErrorResponseException(Status status, String message)
-    {
+    public ErrorResponseException(Status status, String message) {
         super(message);
         _status = status;
     }
 
-    public Status getStatus()
-    {
+    public Status getStatus() {
         return _status;
     }
 }

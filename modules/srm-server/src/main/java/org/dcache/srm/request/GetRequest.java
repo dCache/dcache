@@ -74,18 +74,13 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
+import javax.annotation.Nonnull;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -101,27 +96,31 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * @author  timur
  */
 public final class GetRequest extends ContainerRequest<GetFileRequest> {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(GetRequest.class);
-    /** array of protocols supported by client or server (copy) */
+          LoggerFactory.getLogger(GetRequest.class);
+    /**
+     * array of protocols supported by client or server (copy)
+     */
     protected final String[] protocols;
     private final boolean isStagingAllowed;
 
     public GetRequest(@Nonnull String srmId, SRMUser user, URI[] surls,
-            String[] protocols, long lifetime, long max_update_period,
-            String description, String client_host, boolean isStagingAllowed)
-    {
+          String[] protocols, long lifetime, long max_update_period,
+          String description, String client_host, boolean isStagingAllowed) {
         super(srmId, user, max_update_period, lifetime, description, client_host,
               id -> {
                   ImmutableList.Builder<GetFileRequest> requests = ImmutableList.builder();
                   Stream.of(surls).distinct()
-                          .map(surl -> new GetFileRequest(id, surl, lifetime))
-                          .forEachOrdered(requests::add);
+                        .map(surl -> new GetFileRequest(id, surl, lifetime))
+                        .forEachOrdered(requests::add);
                   return requests.build();
               });
         this.protocols = Arrays.copyOf(protocols, protocols.length);
@@ -132,43 +131,40 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
      * restore constructor
      */
     public GetRequest(@Nonnull String srmId, long id, Long nextJobId,
-            long creationTime, long lifetime, int stateId, SRMUser user,
-            String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
-            long lastStateTransitionTime, JobHistory[] jobHistoryArray,
-            ImmutableList<GetFileRequest> fileRequests, int retryDeltaTime,
-            boolean should_updateretryDeltaTime, String description,
-            String client_host, String statusCodeString, List<String> protocols)
-    {
+          long creationTime, long lifetime, int stateId, SRMUser user,
+          String scheduelerId, long schedulerTimeStamp, int numberOfRetries,
+          long lastStateTransitionTime, JobHistory[] jobHistoryArray,
+          ImmutableList<GetFileRequest> fileRequests, int retryDeltaTime,
+          boolean should_updateretryDeltaTime, String description,
+          String client_host, String statusCodeString, List<String> protocols) {
         super(srmId, id, nextJobId, creationTime, lifetime, stateId, user,
-                scheduelerId, schedulerTimeStamp, numberOfRetries,
-                lastStateTransitionTime, jobHistoryArray, fileRequests,
-                retryDeltaTime, should_updateretryDeltaTime, description,
-                client_host, statusCodeString);
+              scheduelerId, schedulerTimeStamp, numberOfRetries,
+              lastStateTransitionTime, jobHistoryArray, fileRequests,
+              retryDeltaTime, should_updateretryDeltaTime, description,
+              client_host, statusCodeString);
         this.protocols = protocols.toArray(String[]::new);
         this.isStagingAllowed = true; // FIXME record this value in the database.
     }
 
     @Nonnull
     @Override
-    public GetFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException
-    {
+    public GetFileRequest getFileRequestBySurl(URI surl) throws SRMFileRequestNotFoundException {
         for (GetFileRequest request : getFileRequests()) {
             if (request.getSurl().equals(surl)) {
                 return request;
             }
         }
-        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException(
+              "file request for surl =" + surl + " is not found");
     }
 
     @Override
-    public Class<? extends Job> getSchedulerType()
-    {
+    public Class<? extends Job> getSchedulerType() {
         return GetFileRequest.class;
     }
 
     @Override
-    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition
-    {
+    public void scheduleWith(Scheduler scheduler) throws IllegalStateTransition {
         // save this request in request storage unconditionally
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
@@ -180,16 +176,13 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
-    {
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs) {
         // Nothing to do.
     }
 
     /**
-     * storage.PrepareToGet() is given this callbacks
-     * implementation
-     * it will call the method of GetCallbacks to indicate
-     * progress
+     * storage.PrepareToGet() is given this callbacks implementation it will call the method of
+     * GetCallbacks to indicate progress
      */
 
     @Override
@@ -197,8 +190,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         if (newState.isFinal()) {
             LOGGER.debug("Get request state changed to {}.", newState);
             for (GetFileRequest request : getFileRequests()) {
@@ -232,14 +224,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     /**
-     * Waits for up to timeout milliseconds for the request to reach a
-     * non-queued state and then returns the current
-     * SrmPrepareToGetResponse for this GetRequest.
+     * Waits for up to timeout milliseconds for the request to reach a non-queued state and then
+     * returns the current SrmPrepareToGetResponse for this GetRequest.
      */
     public final SrmPrepareToGetResponse
-        getSrmPrepareToGetResponse(long timeout)
-            throws InterruptedException, SRMInvalidRequestException
-    {
+    getSrmPrepareToGetResponse(long timeout)
+          throws InterruptedException, SRMInvalidRequestException {
         /* To avoid a race condition between us querying the current
          * response and us waiting for a state change notification,
          * the notification scheme is counter based. This guarantees
@@ -253,8 +243,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         int counter = _stateChangeCounter.get();
         tryToReady();
         SrmPrepareToGetResponse response = getSrmPrepareToGetResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
-               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(
+              new Date())
+              && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             tryToReady();
             response = getSrmPrepareToGetResponse();
@@ -265,25 +256,24 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     private final SrmPrepareToGetResponse getSrmPrepareToGetResponse()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
-        response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(getArrayOfTGetRequestFileStatus()));
+        response.setArrayOfFileStatuses(
+              new ArrayOfTGetRequestFileStatus(getArrayOfTGetRequestFileStatus()));
         response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
     public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         return getSrmStatusOfGetRequestResponse(null);
     }
 
-    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(org.apache.axis.types.URI[] surls)
-            throws SRMInvalidRequestException
-    {
+    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(
+          org.apache.axis.types.URI[] surls)
+          throws SRMInvalidRequestException {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         response.setReturnStatus(getTReturnStatus());
 
@@ -308,21 +298,20 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         TGetRequestFileStatus[] getFileStatuses;
         List<GetFileRequest> fileRequests = getFileRequests();
         int len = fileRequests.size();
         getFileStatuses = new TGetRequestFileStatus[len];
-        for(int i = 0; i < len; ++i) {
+        for (int i = 0; i < len; ++i) {
             getFileStatuses[i] = fileRequests.get(i).getTGetRequestFileStatus();
         }
         return getFileStatuses;
     }
 
-    private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(org.apache.axis.types.URI[] surls)
-            throws SRMInvalidRequestException
-    {
+    private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(
+          org.apache.axis.types.URI[] surls)
+          throws SRMInvalidRequestException {
         if (surls == null) {
             return getArrayOfTGetRequestFileStatus();
         }
@@ -330,10 +319,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         TGetRequestFileStatus[] getFileStatuses = new TGetRequestFileStatus[len];
         for (int i = 0; i < len; ++i) {
             try {
-                getFileStatuses[i] = getFileRequestBySurl(URI.create(surls[i].toString())).getTGetRequestFileStatus();
+                getFileStatuses[i] = getFileRequestBySurl(
+                      URI.create(surls[i].toString())).getTGetRequestFileStatus();
             } catch (SRMFileRequestNotFoundException e) {
                 TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
-                fileStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "No such file request associated with request token"));
+                fileStatus.setStatus(new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
+                      "No such file request associated with request token"));
                 fileStatus.setSourceSURL(surls[i]);
                 getFileStatuses[i] = fileStatus;
             }
@@ -347,8 +338,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     public TSURLReturnStatus[] release()
-            throws SRMInternalErrorException
-    {
+          throws SRMInternalErrorException {
         int len = getNumOfFileRequest();
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
         LOGGER.debug("releaseFiles, releasing all {} files", len);
@@ -360,7 +350,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                 surl = new org.apache.axis.types.URI(fr.getSurlString());
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
                 throw new RuntimeException("Failed to convert Java URI to Axis URI. " +
-                        "Please report this to support@dcache.org: " + e.getMessage(), e);
+                      "Please report this to support@dcache.org: " + e.getMessage(), e);
             }
             surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release());
         }
@@ -369,8 +359,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     public TSURLReturnStatus[] releaseFiles(org.apache.axis.types.URI[] surls)
-            throws SRMInternalErrorException
-    {
+          throws SRMInternalErrorException {
         SRMUser user = getUser();
         int len = surls.length;
         TSURLReturnStatus[] surlReturnStatuses = new TSURLReturnStatus[len];
@@ -384,7 +373,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             } catch (SRMFileRequestNotFoundException e) {
                 String requestToken = String.valueOf(getId());
                 TReturnStatus status = BringOnlineFileRequest.unpinBySURLandRequestToken(
-                        getStorage(), user, requestToken, uri);
+                      getStorage(), user, requestToken, uri);
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, status);
             }
         }

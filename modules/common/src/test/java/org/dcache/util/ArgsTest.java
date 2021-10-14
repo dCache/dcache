@@ -1,12 +1,14 @@
 package org.dcache.util;
 
-import org.junit.Test;
-
-import java.util.NoSuchElementException;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.util.NoSuchElementException;
+import org.junit.Test;
 
 public class ArgsTest {
 
@@ -33,9 +35,9 @@ public class ArgsTest {
     @Test
     public void testNoArgs() {
 
-        Args args =  new Args("");
+        Args args = new Args("");
 
-        assertEquals("Invalid number of arguments", 0, args.argc() );
+        assertEquals("Invalid number of arguments", 0, args.argc());
 
     }
 
@@ -43,9 +45,9 @@ public class ArgsTest {
     @Test
     public void testWithArgs() {
 
-        Args args =  new Args("arg1 aarg2 arg3 arg4 arg5");
+        Args args = new Args("arg1 aarg2 arg3 arg4 arg5");
 
-        assertEquals("Invalid number of arguments", 5, args.argc() );
+        assertEquals("Invalid number of arguments", 5, args.argc());
 
     }
 
@@ -53,10 +55,10 @@ public class ArgsTest {
     @Test
     public void testWithOps() {
 
-        Args args =  new Args("-opt1 -opt2 -opt3");
+        Args args = new Args("-opt1 -opt2 -opt3");
 
-        assertEquals("Invalid number of arguments", 0, args.argc() );
-        assertEquals("Invalid number of options", 3, args.options().size() );
+        assertEquals("Invalid number of arguments", 0, args.argc());
+        assertEquals("Invalid number of options", 3, args.options().size());
 
     }
 
@@ -64,10 +66,10 @@ public class ArgsTest {
     @Test
     public void testWithOpsArgs() {
 
-        Args args =  new Args("-opt1 -opt2 -opt3 arg1 aarg2 arg3 arg4 arg5");
+        Args args = new Args("-opt1 -opt2 -opt3 arg1 aarg2 arg3 arg4 arg5");
 
-        assertEquals("Invalid number of arguments", 5, args.argc() );
-        assertEquals("Invalid number of options", 3, args.options().size() );
+        assertEquals("Invalid number of arguments", 5, args.argc());
+        assertEquals("Invalid number of options", 3, args.options().size());
 
     }
 
@@ -86,15 +88,14 @@ public class ArgsTest {
     @Test
     public void testDoubleOpts() {
 
-        Args args =  new Args("-opt1 -opt2 -opt3 -opt4=opt4-1 -opt4=opt4-2");
+        Args args = new Args("-opt1 -opt2 -opt3 -opt4=opt4-1 -opt4=opt4-2");
 
-        assertEquals("Invalid number of arguments", 0, args.argc() );
-        assertEquals("Invalid number of options", 5, args.options().size() );
+        assertEquals("Invalid number of arguments", 0, args.argc());
+        assertEquals("Invalid number of options", 5, args.options().size());
     }
 
     @Test
-    public void testLocationManager()
-    {
+    public void testLocationManager() {
         Args args = new Args("do -serial=118 * nl d:dCacheDomain c:dCacheDomain");
         assertEquals(5, args.argc());
         assertEquals(1, args.optc());
@@ -111,8 +112,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteArgument()
-    {
+    public void testDoubleQuoteArgument() {
         Args args = new Args("-foo \"bar\"");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -127,8 +127,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteArgumentWithEscape()
-    {
+    public void testDoubleQuoteArgumentWithEscape() {
         Args args = new Args("-foo \"b\\\"a\\\"r\"");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -143,8 +142,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteArgumentWithSingleQuote()
-    {
+    public void testDoubleQuoteArgumentWithSingleQuote() {
         Args args = new Args("-foo \"bar''\"");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -159,8 +157,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteInsideArgument()
-    {
+    public void testDoubleQuoteInsideArgument() {
         Args args = new Args("-foo b\"a\"r");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -175,8 +172,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteOption()
-    {
+    public void testDoubleQuoteOption() {
         Args args = new Args("\"-foo\" bar");
         assertEquals(2, args.argc());
         assertEquals("-foo", args.argv(0));
@@ -190,8 +186,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDoubleQuoteOptionValue()
-    {
+    public void testDoubleQuoteOptionValue() {
         Args args = new Args("-foo=\"bar bar\"");
         assertEquals(0, args.argc());
         assertEquals(1, args.optc());
@@ -205,8 +200,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteArgument()
-    {
+    public void testSingleQuoteArgument() {
         Args args = new Args("-foo 'bar'");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -221,8 +215,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteArgumentWithEscape()
-    {
+    public void testSingleQuoteArgumentWithEscape() {
         Args args = new Args("-foo 'b\\\"a\\\"r'");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -237,8 +230,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteArgumentWithDoubleQuote()
-    {
+    public void testSingleQuoteArgumentWithDoubleQuote() {
         Args args = new Args("-foo 'bar\"\"'");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -253,8 +245,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteInsideArgument()
-    {
+    public void testSingleQuoteInsideArgument() {
         Args args = new Args("-foo b'a'r");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -269,8 +260,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteOption()
-    {
+    public void testSingleQuoteOption() {
         Args args = new Args("'-foo' bar");
         assertEquals(2, args.argc());
         assertEquals(0, args.optc());
@@ -285,8 +275,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testSingleQuoteOptionValue()
-    {
+    public void testSingleQuoteOptionValue() {
         Args args = new Args("-foo='bar bar'");
         assertEquals(0, args.argc());
         assertEquals(1, args.optc());
@@ -300,8 +289,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEscapedOption()
-    {
+    public void testEscapedOption() {
         Args args = new Args("\\-foo");
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
@@ -314,8 +302,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEscapedSpaceOption()
-    {
+    public void testEscapedSpaceOption() {
         Args args = new Args("-foo=bar\\ bar");
         assertEquals(0, args.argc());
         assertEquals(1, args.optc());
@@ -329,8 +316,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEscapedSpaceArgument()
-    {
+    public void testEscapedSpaceArgument() {
         Args args = new Args("bar\\ bar");
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
@@ -339,8 +325,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEscapedBackslash()
-    {
+    public void testEscapedBackslash() {
         Args args = new Args("bar\\\\bar");
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
@@ -349,8 +334,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testTrailingEscape()
-    {
+    public void testTrailingEscape() {
         Args args = new Args("bar\\");
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
@@ -359,8 +343,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEmptyOptionKey()
-    {
+    public void testEmptyOptionKey() {
         Args args = new Args("-");
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
@@ -369,8 +352,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testTrailingHyphen()
-    {
+    public void testTrailingHyphen() {
         Args args = new Args("aa bb -");
         assertEquals(3, args.argc());
         assertEquals(0, args.optc());
@@ -383,8 +365,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testOptionKeyStartingWithAssignment()
-    {
+    public void testOptionKeyStartingWithAssignment() {
         Args args = new Args("-=bar");
         assertEquals(0, args.argc());
         assertEquals(1, args.optc());
@@ -400,8 +381,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEndOfOptions()
-    {
+    public void testEndOfOptions() {
         Args args = new Args("-foo -- -bar");
         assertEquals(1, args.argc());
         assertEquals(1, args.optc());
@@ -418,8 +398,7 @@ public class ArgsTest {
     }
 
     @Test
-    public void testEscapedEndOfOptions()
-    {
+    public void testEscapedEndOfOptions() {
         Args args = new Args("-foo \\-- -bar");
         assertEquals(1, args.argc());
         assertEquals(2, args.optc());
@@ -437,143 +416,133 @@ public class ArgsTest {
     }
 
     @Test
-    public void testIntOption()
-    {
+    public void testIntOption() {
         String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_INT_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_INT_VALUE;
         Args args = new Args(argsString);
 
         int parseResult = args.getIntOption(PROPERTY_INT_KEY);
         assertEquals("Parsing of integer option does not match expected result.",
-                     PROPERTY_INT_EXPECTED,
-                     parseResult);
+              PROPERTY_INT_EXPECTED,
+              parseResult);
     }
 
     @Test
-    public void testLongOption()
-    {
+    public void testLongOption() {
         String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
 
         Args args = new Args(argsString);
 
         long parseResult = args.getLongOption(PROPERTY_LONG_KEY);
         assertEquals("Parsing of long option does not match expected result.",
-                     PROPERTY_LONG_EXPECTED,
-                     parseResult);
+              PROPERTY_LONG_EXPECTED,
+              parseResult);
     }
 
     @Test
     public void testDoubleOption() {
         String argsString = PROPERTY_PREFIX + PROPERTY_DOUBLE_KEY
-                        + PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_DOUBLE_VALUE;
+              + PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_DOUBLE_VALUE;
 
         Args args = new Args(argsString);
 
         double parseResult = args.getDoubleOption(PROPERTY_DOUBLE_KEY);
         assertEquals("Parsing of double option does not match expected result.",
-                        PROPERTY_DOUBLE_EXPECTED, parseResult, 0.0);
+              PROPERTY_DOUBLE_EXPECTED, parseResult, 0.0);
     }
 
     @Test
-    public void testNumericAndNonNumericOptions()
-    {
+    public void testNumericAndNonNumericOptions() {
         String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE +
-                            PROPERTY_SEPARATOR + PROPERTY_PREFIX +
-                            PROPERTY_INT_KEY + PROPERTY_KEY_VALUE_SEPARATOR +
-                            PROPERTY_INT_VALUE + PROPERTY_SEPARATOR +
-                            PROPERTY_PREFIX + PROPERTY_LONG_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE +
+              PROPERTY_SEPARATOR + PROPERTY_PREFIX +
+              PROPERTY_INT_KEY + PROPERTY_KEY_VALUE_SEPARATOR +
+              PROPERTY_INT_VALUE + PROPERTY_SEPARATOR +
+              PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
 
         Args args = new Args(argsString);
 
         String parsedString = args.getOpt(PROPERTY_STRING_KEY);
         assertEquals("Parsing of string option does not match expected result.",
-                     PROPERTY_STRING_EXPECTED,
-                     parsedString);
+              PROPERTY_STRING_EXPECTED,
+              parsedString);
 
         int parsedInt = args.getIntOption(PROPERTY_INT_KEY);
         assertEquals("Parsing of string option does not match expected result.",
-                     PROPERTY_INT_EXPECTED,
-                     parsedInt);
+              PROPERTY_INT_EXPECTED,
+              parsedInt);
 
         long parsedLong = args.getLongOption(PROPERTY_LONG_KEY);
         assertEquals("Parsing of string option does not match expected result.",
-                     PROPERTY_LONG_EXPECTED,
-                     parsedLong);
+              PROPERTY_LONG_EXPECTED,
+              parsedLong);
     }
 
     @Test
-    public void testEmptyStringValue()
-    {
+    public void testEmptyStringValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR;
+              PROPERTY_KEY_VALUE_SEPARATOR;
 
         Args args = new Args(argsString);
 
         String parsedString = args.getOpt(PROPERTY_STRING_KEY);
         assertEquals("Parsing of string option does not match expected result.",
-                     "",
-                     parsedString);
+              "",
+              parsedString);
     }
 
-    @Test(expected=NumberFormatException.class)
-    public void testNonNumericIntValue()
-    {
+    @Test(expected = NumberFormatException.class)
+    public void testNonNumericIntValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
 
         Args args = new Args(argsString);
         args.getIntOption(PROPERTY_INT_KEY);
     }
 
-    @Test(expected=NumberFormatException.class)
-    public void testIntOverflow()
-    {
+    @Test(expected = NumberFormatException.class)
+    public void testIntOverflow() {
         String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
 
         Args args = new Args(argsString);
         args.getIntOption(PROPERTY_INT_KEY);
     }
 
-    @Test(expected=NumberFormatException.class)
-    public void testNonNumericLongValue()
-    {
+    @Test(expected = NumberFormatException.class)
+    public void testNonNumericLongValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
 
         Args args = new Args(argsString);
         args.getIntOption(PROPERTY_LONG_KEY);
     }
 
-    @Test(expected=NoSuchElementException.class)
-    public void testUndefinedIntValue()
-    {
+    @Test(expected = NoSuchElementException.class)
+    public void testUndefinedIntValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
 
         Args args = new Args(argsString);
         args.getIntOption(PROPERTY_STRING_KEY);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testMissingIntValue()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testMissingIntValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR;
+              PROPERTY_KEY_VALUE_SEPARATOR;
 
         Args args = new Args(argsString);
 
         args.getIntOption(PROPERTY_INT_KEY, PROPERTY_INT_EXPECTED);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testMissingLongValue()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testMissingLongValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR;
+              PROPERTY_KEY_VALUE_SEPARATOR;
 
         Args args = new Args(argsString);
 
@@ -581,83 +550,75 @@ public class ArgsTest {
     }
 
     @Test
-    public void testDefaultIntValue()
-    {
+    public void testDefaultIntValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
 
         Args args = new Args(argsString);
 
         int parsedInt = args.getIntOption(PROPERTY_INT_KEY,
-                                          PROPERTY_INT_EXPECTED);
+              PROPERTY_INT_EXPECTED);
 
         assertEquals("Parsing of integer does not match expected result.",
-                     PROPERTY_INT_EXPECTED,
-                     parsedInt);
+              PROPERTY_INT_EXPECTED,
+              parsedInt);
     }
 
     @Test
-    public void testDefaultLongValue()
-    {
+    public void testDefaultLongValue() {
         String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
-                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+              PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
 
         Args args = new Args(argsString);
 
         long parsedLong = args.getLongOption(PROPERTY_LONG_KEY,
-                                             PROPERTY_LONG_EXPECTED);
+              PROPERTY_LONG_EXPECTED);
 
         assertEquals("Parsing of long does not match expected result.",
-                     PROPERTY_LONG_EXPECTED,
-                     parsedLong);
+              PROPERTY_LONG_EXPECTED,
+              parsedLong);
     }
 
     @Test
-    public void testArgumentWithWhitespace()
-    {
+    public void testArgumentWithWhitespace() {
         String arg1 = "first argument contains space";
         String arg2 = "second";
-        Args args = new Args(new String[] {arg1, arg2});
+        Args args = new Args(new String[]{arg1, arg2});
         assertEquals(2, args.argc());
         assertEquals(arg1, args.argv(0));
         assertEquals(arg2, args.argv(1));
     }
 
     @Test
-    public void testParsingToStringOutputWithEqualsArgument()
-    {
+    public void testParsingToStringOutputWithEqualsArgument() {
         Args original = new Args("bar=baz");
         Args parsed = new Args(original.toString());
         assertThat(parsed, is(equalTo(original)));
     }
 
     @Test
-    public void testParsingToStringOutputWithEqualsOptionKey()
-    {
+    public void testParsingToStringOutputWithEqualsOptionKey() {
         Args original = new Args("-foo\\=bar=baz");
         Args parsed = new Args(original.toString());
         assertThat(parsed, is(equalTo(original)));
     }
 
     @Test
-    public void testParsingToStringOutputWithEqualsOptionValue()
-    {
+    public void testParsingToStringOutputWithEqualsOptionValue() {
         Args original = new Args("-foo=bar=baz");
         Args parsed = new Args(original.toString());
         assertThat(parsed, is(equalTo(original)));
     }
 
     @Test
-    public void testParsingToStringOutputWithDashArgument()
-    {
+    public void testParsingToStringOutputWithDashArgument() {
         Args original = new Args("\\-foo");
         Args parsed = new Args(original.toString());
         assertThat(parsed, is(equalTo(original)));
     }
 
     @Test
-    public void testParsingToStringOutputWithEmptyArgument()
-    {
+    public void testParsingToStringOutputWithEmptyArgument() {
         Args original = new Args("\"\"");
         Args parsed = new Args(original.toString());
         assertThat(parsed, is(equalTo(original)));

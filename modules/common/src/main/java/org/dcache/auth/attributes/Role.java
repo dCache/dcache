@@ -20,33 +20,28 @@ package org.dcache.auth.attributes;
 import java.io.Serializable;
 
 /**
- * Some users have the ability to log into dCache so that dCache has behaves
- * differently, depending on exactly how they have logged in.  For example, a
- * user that is also a dCache admin can choose whether they wish to
- * authenticate as a normal dCache user, or as a user with admin privileges.
- * The presence of Role LoginAttribute captures these differences.
- * A user may have zero or more roles, with the presence of roles potentially
- * adjusting how dCache behaves to user requests.
+ * Some users have the ability to log into dCache so that dCache has behaves differently, depending
+ * on exactly how they have logged in.  For example, a user that is also a dCache admin can choose
+ * whether they wish to authenticate as a normal dCache user, or as a user with admin privileges.
+ * The presence of Role LoginAttribute captures these differences. A user may have zero or more
+ * roles, with the presence of roles potentially adjusting how dCache behaves to user requests.
  */
-public class Role implements LoginAttribute, Serializable
-{
+public class Role implements LoginAttribute, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final String _name;
 
-    public Role(String name)
-    {
+    public Role(String name) {
         _name = name;
     }
 
-    public String getRole()
-    {
+    public String getRole() {
         return _name;
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -58,14 +53,12 @@ public class Role implements LoginAttribute, Serializable
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _name.hashCode();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Role[" + _name + ']';
     }
 }

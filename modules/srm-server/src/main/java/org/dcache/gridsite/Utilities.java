@@ -22,36 +22,32 @@ import org.dcache.delegation.gridsite2.DelegationException;
 /**
  * Common utility methods.
  */
-public class Utilities
-{
-    private Utilities()
-    {
+public class Utilities {
+
+    private Utilities() {
         // prevent instantiation
     }
 
     /**
-     * Useful method for checking a condition is valid and throwing a
-     * DelegationException if not.
+     * Useful method for checking a condition is valid and throwing a DelegationException if not.
      */
     public static void assertThat(boolean isValid, String message)
-            throws DelegationException
-    {
-        if(!isValid) {
+          throws DelegationException {
+        if (!isValid) {
             throw new DelegationException(message);
         }
     }
 
     /**
-     * Useful method for checking a condition is held and throwing a
-     * DelegationException if the condition isn't held.  The message is appended
-     * with a phrase to identity the DN and the delegation-ID.
+     * Useful method for checking a condition is held and throwing a DelegationException if the
+     * condition isn't held.  The message is appended with a phrase to identity the DN and the
+     * delegation-ID.
      */
     public static void assertThat(boolean isValid, String message,
-            DelegationIdentity id) throws DelegationException
-    {
-        if(!isValid) {
+          DelegationIdentity id) throws DelegationException {
+        if (!isValid) {
             throw new DelegationException(message + " for " + id.getDn() +
-                    " with id " + id.getDelegationId());
+                  " with id " + id.getDelegationId());
         }
     }
 }

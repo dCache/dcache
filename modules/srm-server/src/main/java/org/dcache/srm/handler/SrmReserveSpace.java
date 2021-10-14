@@ -1,14 +1,14 @@
 package org.dcache.srm.handler;
 
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -26,15 +26,13 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+public class SrmReserveSpace {
 
-public class SrmReserveSpace
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmReserveSpace.class);
+          LoggerFactory.getLogger(SrmReserveSpace.class);
 
     private final SrmReserveSpaceRequest request;
     private final SRMUser user;
@@ -44,11 +42,10 @@ public class SrmReserveSpace
     private final SRM srm;
 
     public SrmReserveSpace(SRMUser user,
-                           SrmReserveSpaceRequest request,
-                           AbstractStorageElement storage,
-                           SRM srm,
-                           String clientHost)
-    {
+          SrmReserveSpaceRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.configuration = requireNonNull(srm.getConfiguration());
@@ -56,8 +53,7 @@ public class SrmReserveSpace
         this.srm = requireNonNull(srm);
     }
 
-    public SrmReserveSpaceResponse getResponse()
-    {
+    public SrmReserveSpaceResponse getResponse() {
         if (response == null) {
             try {
                 response = reserveSpace();
@@ -74,8 +70,7 @@ public class SrmReserveSpace
     }
 
     private SrmReserveSpaceResponse reserveSpace()
-            throws SRMException
-    {
+          throws SRMException {
         TRetentionPolicyInfo retentionPolicyInfo = request.getRetentionPolicyInfo();
         if (retentionPolicyInfo == null) {
             throw new SRMInvalidRequestException("retentionPolicyInfo is missing");
@@ -87,25 +82,26 @@ public class SrmReserveSpace
         TAccessLatency accessLatency = retentionPolicyInfo.getAccessLatency();
         UnsignedLong size = request.getDesiredSizeOfGuaranteedSpace();
         String userSpaceTokenDescription = request.getUserSpaceTokenDescription();
-        long lifetime = getDesiredLifetimeOfReservedSpace(request, configuration.getDefaultSpaceLifetime());
+        long lifetime = getDesiredLifetimeOfReservedSpace(request,
+              configuration.getDefaultSpaceLifetime());
         long requestLifetime = getRequestLifetime(lifetime);
-        Map<String,String> extraInfo = request.getStorageSystemInfo() == null
-                ? Collections.emptyMap()
-                : asMap(request.getStorageSystemInfo().getExtraInfoArray());
+        Map<String, String> extraInfo = request.getStorageSystemInfo() == null
+              ? Collections.emptyMap()
+              : asMap(request.getStorageSystemInfo().getExtraInfoArray());
         try {
             ReserveSpaceRequest reserveRequest =
-                    new ReserveSpaceRequest(
-                            srm.getSrmId(),
-                            user,
-                            requestLifetime,
-                            configuration.getReserveSpaceMaxPollPeriod(),
-                            size.longValue(),
-                            lifetime,
-                            retentionPolicy,
-                            accessLatency,
-                            userSpaceTokenDescription,
-                            client_host,
-                            extraInfo);
+                  new ReserveSpaceRequest(
+                        srm.getSrmId(),
+                        user,
+                        requestLifetime,
+                        configuration.getReserveSpaceMaxPollPeriod(),
+                        size.longValue(),
+                        lifetime,
+                        retentionPolicy,
+                        accessLatency,
+                        userSpaceTokenDescription,
+                        client_host,
+                        extraInfo);
             reserveRequest.applyJdc();
             srm.acceptNewJob(reserveRequest);
             return reserveRequest.getSrmReserveSpaceResponse();
@@ -115,18 +111,16 @@ public class SrmReserveSpace
         }
     }
 
-    private Map<String,String> asMap(TExtraInfo[] extraInfo)
-    {
+    private Map<String, String> asMap(TExtraInfo[] extraInfo) {
         if (extraInfo == null || extraInfo.length == 0) {
             return Collections.emptyMap();
         }
 
         return Arrays.stream(extraInfo)
-                .collect(Collectors.toMap(TExtraInfo::getKey, TExtraInfo::getValue));
+              .collect(Collectors.toMap(TExtraInfo::getKey, TExtraInfo::getValue));
     }
 
-    private static long getRequestLifetime(long lifetime)
-    {
+    private static long getRequestLifetime(long lifetime) {
         //make reserve request lifetime no longer than 24 hours
         //request lifetime is different from space reservation lifetime
         if (lifetime == -1 || lifetime > DAYS.toMillis(1)) {
@@ -136,9 +130,9 @@ public class SrmReserveSpace
         }
     }
 
-    private static long getDesiredLifetimeOfReservedSpace(SrmReserveSpaceRequest request, long defaultLifetime)
-            throws SRMInvalidRequestException
-    {
+    private static long getDesiredLifetimeOfReservedSpace(SrmReserveSpaceRequest request,
+          long defaultLifetime)
+          throws SRMInvalidRequestException {
         Integer desiredLifetimeOfReservedSpace = request.getDesiredLifetimeOfReservedSpace();
         long lifetime;
         if (desiredLifetimeOfReservedSpace == null) {
@@ -148,18 +142,18 @@ public class SrmReserveSpace
         } else if (desiredLifetimeOfReservedSpace > 0) {
             lifetime = SECONDS.toMillis(desiredLifetimeOfReservedSpace);
         } else {
-            throw new SRMInvalidRequestException("Invalid lifetime: " + desiredLifetimeOfReservedSpace);
+            throw new SRMInvalidRequestException(
+                  "Invalid lifetime: " + desiredLifetimeOfReservedSpace);
         }
         return lifetime;
     }
 
-    public static final SrmReserveSpaceResponse getFailedResponse(String text)
-    {
+    public static final SrmReserveSpaceResponse getFailedResponse(String text) {
         return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmReserveSpaceResponse getFailedResponse(String text, TStatusCode statusCode)
-    {
+    public static final SrmReserveSpaceResponse getFailedResponse(String text,
+          TStatusCode statusCode) {
         SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;

@@ -1,15 +1,18 @@
 package dmg.util.logback;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import ch.qos.logback.classic.Level;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import static org.junit.Assert.*;
+public class FilterThresholdSetTest {
 
-public class FilterThresholdSetTest
-{
     private final static String APPENDER1 = "appender1";
     private final static String APPENDER2 = "appender2";
     private final static String APPENDER3 = "appender3";
@@ -25,21 +28,18 @@ public class FilterThresholdSetTest
     private FilterThresholdSet _inherited;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         _root = new FilterThresholdSet();
         _inherited = new FilterThresholdSet(_root);
     }
 
-    @Test(expected=NullPointerException.class)
-    public void testAddFilterNull()
-    {
+    @Test(expected = NullPointerException.class)
+    public void testAddFilterNull() {
         _root.addAppender(null);
     }
 
     @Test
-    public void testAddGetFilters()
-    {
+    public void testAddGetFilters() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         assertTrue(_root.getAppenders().contains(APPENDER1));
@@ -48,8 +48,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testAddGetFiltersInherited()
-    {
+    public void testAddGetFiltersInherited() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _inherited.addAppender(APPENDER3);
@@ -64,8 +63,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testAddHasFilters()
-    {
+    public void testAddHasFilters() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         assertTrue(_root.hasAppender(APPENDER1));
@@ -73,8 +71,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testAddHasFiltersInherited()
-    {
+    public void testAddHasFiltersInherited() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _inherited.addAppender(APPENDER3);
@@ -85,33 +82,28 @@ public class FilterThresholdSetTest
         assertTrue(_inherited.hasAppender(APPENDER3));
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testSetThresholdWithUndefinedFilter()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetThresholdWithUndefinedFilter() {
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
     }
 
-    @Test(expected=NullPointerException.class)
-    public void testSetThresholdWithNull1()
-    {
+    @Test(expected = NullPointerException.class)
+    public void testSetThresholdWithNull1() {
         _root.setThreshold(null, APPENDER1, LEVEL1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testSetThresholdWithNull2()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetThresholdWithNull2() {
         _root.setThreshold(LOGGER, null, LEVEL1);
     }
 
-    @Test(expected=NullPointerException.class)
-    public void testSetThresholdWithNull3()
-    {
+    @Test(expected = NullPointerException.class)
+    public void testSetThresholdWithNull3() {
         _root.setThreshold(LOGGER, APPENDER1, null);
     }
 
     @Test
-    public void testSetThreshold()
-    {
+    public void testSetThreshold() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
@@ -121,8 +113,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testRemove()
-    {
+    public void testRemove() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
@@ -133,8 +124,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testClear()
-    {
+    public void testClear() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
@@ -147,8 +137,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testGetInheritedMap()
-    {
+    public void testGetInheritedMap() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
@@ -168,8 +157,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testInheritance1()
-    {
+    public void testInheritance1() {
         _root.addAppender(APPENDER1);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
 
@@ -186,8 +174,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testInheritance2()
-    {
+    public void testInheritance2() {
         _root.addAppender(APPENDER1);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
         _root.setThreshold(CHILD, APPENDER1, LEVEL2);
@@ -204,8 +191,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testInheritance3()
-    {
+    public void testInheritance3() {
         _root.addAppender(APPENDER1);
         _root.setThreshold(LOGGER, APPENDER1, LEVEL1);
         _inherited.setThreshold(CHILD, APPENDER1, LEVEL3);
@@ -222,8 +208,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testInheritance4()
-    {
+    public void testInheritance4() {
         _root.addAppender(APPENDER1);
         _root.setThreshold(CHILD, APPENDER1, LEVEL1);
         _inherited.setThreshold(LOGGER, APPENDER1, LEVEL3);
@@ -241,8 +226,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testMinimumThreshold1()
-    {
+    public void testMinimumThreshold1() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(CHILD, APPENDER1, LEVEL2);
@@ -261,8 +245,7 @@ public class FilterThresholdSetTest
     }
 
     @Test
-    public void testMinimumThreshold2()
-    {
+    public void testMinimumThreshold2() {
         _root.addAppender(APPENDER1);
         _root.addAppender(APPENDER2);
         _root.setThreshold(CHILD, APPENDER1, LEVEL2);
@@ -281,12 +264,9 @@ public class FilterThresholdSetTest
         assertEquals(LEVEL1, _inherited.getThreshold(getLogger(CHILD)));
     }
 
-    private Logger getLogger(LoggerName loggerName)
-    {
-        return new NOPLogger()
-        {
-            public String getName()
-            {
+    private Logger getLogger(LoggerName loggerName) {
+        return new NOPLogger() {
+            public String getName() {
                 return loggerName.toString();
             }
         };

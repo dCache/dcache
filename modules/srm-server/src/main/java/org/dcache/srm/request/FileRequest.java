@@ -74,11 +74,7 @@ package org.dcache.srm.request;
 
 
 import com.google.common.reflect.TypeToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -91,25 +87,28 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.v2_2.TReturnStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
- * A FileRequest is used by ContainerRequest (and its subclasses) to represent
- * the individual files that form this request.  For example if the user issues
- * an srmLs operation then the corresponding LsRequest object will contain zero
- * or more LsFileRequest objects (a subclass of FileRequest), one for each file
- * in the srmLs operation.
+ * A FileRequest is used by ContainerRequest (and its subclasses) to represent the individual files
+ * that form this request.  For example if the user issues an srmLs operation then the corresponding
+ * LsRequest object will contain zero or more LsFileRequest objects (a subclass of FileRequest), one
+ * for each file in the srmLs operation.
  */
 public abstract class FileRequest<R extends ContainerRequest> extends Job {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(FileRequest.class);
+          LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
     // for get and put it means that file turl
     // is not available yet
     //for copy - file is being copied
 
     @SuppressWarnings("unchecked")
-    private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {}.getRawType();
+    private final Class<R> containerRequestType = (Class<R>) new TypeToken<R>(getClass()) {
+    }.getRawType();
 
     //request which contains this fileRequest (which is different from request number)
     private final long requestId;
@@ -119,41 +118,43 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     private transient QOSTicket qosTicket;
 
-    /** Creates new FileRequest */
+    /**
+     * Creates new FileRequest
+     */
     protected FileRequest(long requestId,
-                          long lifetime)
-    {
+          long lifetime) {
         super(lifetime);
         this.requestId = requestId;
         LOGGER.debug("created");
     }
 
-    /** this constructor is used for restoring the previously
-     * saved FileRequest from persitance storage
+    /**
+     * this constructor is used for restoring the previously saved FileRequest from persitance
+     * storage
      */
 
 
     protected FileRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,long lifetime,
-    int stateId,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    long requestId,
-    String statusCodeString) {
+          long id,
+          Long nextJobId,
+          long creationTime, long lifetime,
+          int stateId,
+          String scheduelerId,
+          long schedulerTimeStamp,
+          int numberOfRetries,
+          long lastStateTransitionTime,
+          JobHistory[] jobHistoryArray,
+          long requestId,
+          String statusCodeString) {
         super(id,
-        nextJobId,
-        creationTime,  lifetime,
-        stateId,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray, statusCodeString);
+              nextJobId,
+              creationTime, lifetime,
+              stateId,
+              scheduelerId,
+              schedulerTimeStamp,
+              numberOfRetries,
+              lastStateTransitionTime,
+              jobHistoryArray, statusCodeString);
         this.requestId = requestId;
         LOGGER.debug("restored");
 
@@ -172,8 +173,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         super.processStateChange(newState, description);
 
         // Notify container *after* this job's state is fully updated.
@@ -184,8 +184,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         }
     }
 
-    public void abort(String reason) throws IllegalStateTransition, SRMException
-    {
+    public void abort(String reason) throws IllegalStateTransition, SRMException {
         wlock();
         try {
             /* [ SRM 2.2, 5.12.2 ]
@@ -216,12 +215,13 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return getContainerRequest().getUser();
     }
 
-    public R getContainerRequest() throws SRMInvalidRequestException  {
+    public R getContainerRequest() throws SRMInvalidRequestException {
         return Job.getJob(requestId, containerRequestType);
     }
 
     /**
      * Getter for property requestId.
+     *
      * @return Value of property requestId.
      */
     public long getRequestId() {
@@ -238,22 +238,19 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     public abstract boolean isTouchingSurl(URI surl);
 
-   /**
-     * @param newLifetime  new lifetime in millis
-     *  -1 stands for infinite lifetime
-     * @return int lifetime left in millis
-     *    -1 stands for infinite lifetime
+    /**
+     * @param newLifetime new lifetime in millis -1 stands for infinite lifetime
+     * @return int lifetime left in millis -1 stands for infinite lifetime
      */
 
-    public abstract long extendLifetime(long newLifetime) throws SRMException ;
+    public abstract long extendLifetime(long newLifetime) throws SRMException;
 
-    protected void reassessLifetime(long fileSize)
-    {
+    protected void reassessLifetime(long fileSize) {
         long currentLifetime = getLifetime();
 
         Configuration config = SRM.getSRM().getConfiguration();
         long newLifetime = Lifetimes.calculateRequestLifetimeWithWorkaround(currentLifetime,
-                fileSize, config.getMaximumClientAssumedBandwidth(), config.getGetLifetime());
+              fileSize, config.getMaximumClientAssumedBandwidth(), config.getGetLifetime());
         try {
             if (newLifetime > currentLifetime) {
                 extendLifetime(newLifetime);
@@ -264,18 +261,17 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     @Override
-    public JDC applyJdc()
-    {
+    public JDC applyJdc() {
         JDC current = jdc.apply();
         JDC.appendToSession(String.valueOf(requestId) + ':' + String.valueOf(getId()));
         return current;
     }
 
-     /**
+    /**
      * @return the storage
      */
     protected final AbstractStorageElement getStorage() {
-        if(storage == null) {
+        if (storage == null) {
             storage = SRM.getSRM().getStorage();
         }
         return storage;

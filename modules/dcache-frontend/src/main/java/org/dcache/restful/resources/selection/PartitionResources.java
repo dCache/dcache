@@ -62,21 +62,18 @@ package org.dcache.restful.resources.selection;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
-import org.springframework.stereotype.Component;
-
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Partition;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -88,19 +85,20 @@ import org.dcache.restful.providers.selection.Partition;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/partitions")
 public final class PartitionResources {
+
     @Inject
     private PoolMonitor poolMonitor;
 
 
     @GET
     @ApiOperation("Get information about all partitions."
-                    + " Results sorted lexicographically by partition name.")
+          + " Results sorted lexicographically by partition name.")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Partition> getPartitions() {
         return poolMonitor.getPartitionManager().getPartitions().entrySet()
-                          .stream()
-                          .sorted(Comparator.comparing(Entry::getKey))
-                          .map(Partition::new)
-                          .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(Entry::getKey))
+              .map(Partition::new)
+              .collect(Collectors.toList());
     }
 }

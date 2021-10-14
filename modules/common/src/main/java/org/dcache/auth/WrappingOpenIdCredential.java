@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 public class WrappingOpenIdCredential implements OpenIdCredential {
+
     protected OpenIdCredential credential;
 
     public WrappingOpenIdCredential(OpenIdCredential credential) {

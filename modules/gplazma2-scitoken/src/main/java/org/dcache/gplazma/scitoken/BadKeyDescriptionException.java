@@ -20,10 +20,9 @@ package org.dcache.gplazma.scitoken;
 /**
  * Indicates the JSON key description could not be parsed.
  */
-public class BadKeyDescriptionException extends Exception
-{
-    public BadKeyDescriptionException(String message)
-    {
+public class BadKeyDescriptionException extends Exception {
+
+    public BadKeyDescriptionException(String message) {
         super(message);
     }
 }

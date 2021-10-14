@@ -20,23 +20,20 @@ package org.dcache.pool.nearline.tar;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 
-public class TarNearlineStorageProvider implements NearlineStorageProvider
-{
+public class TarNearlineStorageProvider implements NearlineStorageProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "tar";
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Bundles files into tar archives (not ready for production).";
     }
 
     @Override
-    public NearlineStorage createNearlineStorage(String type, String name)
-    {
+    public NearlineStorage createNearlineStorage(String type, String name) {
         return new TarNearlineStorage(type, name);
     }
 }

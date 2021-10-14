@@ -1,29 +1,28 @@
 package org.dcache.util;
 
-import org.junit.Test;
-
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class CryptoTest
-{
+import org.junit.Test;
+
+public class CryptoTest {
+
     @Test
-    public void testGetBannedCipherSuitesFromConfigurationValueWithEmptyString()
-    {
+    public void testGetBannedCipherSuitesFromConfigurationValueWithEmptyString() {
         assertThat(Crypto.getBannedCipherSuitesFromConfigurationValue(""), is(emptyArray()));
     }
 
     @Test
-    public void testGetBannedCipherSuitesFromConfigurationValueWithSingleValue()
-    {
+    public void testGetBannedCipherSuitesFromConfigurationValueWithSingleValue() {
         assertThat(Crypto.getBannedCipherSuitesFromConfigurationValue("DISABLE_EC"),
-                is(arrayContainingInAnyOrder(Crypto.EC_CIPHERS.toArray())));
+              is(arrayContainingInAnyOrder(Crypto.EC_CIPHERS.toArray())));
     }
 
     @Test
-    public void testGetBannedCipherSuitesFromConfigurationValueWithWhiteSpace()
-    {
+    public void testGetBannedCipherSuitesFromConfigurationValueWithWhiteSpace() {
         assertThat(Crypto.getBannedCipherSuitesFromConfigurationValue("   DISABLE_EC   "),
-                is(arrayContainingInAnyOrder(Crypto.EC_CIPHERS.toArray())));
+              is(arrayContainingInAnyOrder(Crypto.EC_CIPHERS.toArray())));
     }
 }

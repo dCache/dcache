@@ -6,7 +6,6 @@ package org.dcache.srm.qos.lambdastation;
 
 import java.io.StringWriter;
 import java.util.StringTokenizer;
-
 import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.util.ShellCommandExecuter;
 
@@ -20,13 +19,13 @@ public class LambdaStationTicket implements QOSTicket {
     public String SrcSite;    //src site ID: "Fermilab"
     public String SrcClient;  // src client ID "CMS-SRM"
     public String SrcIP;      // src IP list in CIDR format: "131.225.207.0/25,
-                                   // 131.225.207.133, 131.225.207,134"
+    // 131.225.207.133, 131.225.207,134"
     public String SrcPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
 
     public String DstSite;    //src site ID: "Caltech"
     public String DstClient;  // src client ID "CMS-SRM"
     public String DstIP;      // src IP list in CIDR format: "131.225.207.0/25,
-                                   // 131.225.207.133, 131.225.207,134"
+    // 131.225.207.133, 131.225.207,134"
     public String DstPort;    // list of ports: "tcp eq 25, tcp range 5000-6000, udp le 3200"
 
     public String LocalPath;  // StarLight10G
@@ -56,24 +55,25 @@ public class LambdaStationTicket implements QOSTicket {
     public Long bytes;// Jay
 
 
-    public LambdaStationTicket(){
+    public LambdaStationTicket() {
 
     }
-    public LambdaStationTicket(String credentialSubject){
+
+    public LambdaStationTicket(String credentialSubject) {
         this.credentialSubject = credentialSubject;
     }
 
 
     public LambdaStationTicket(
-            String credentialSubject,
-            long bytes,
-            String srcURL,
-            String srcClient,
-            String srcPorts,
-            String dstURL,
-            String dstClient,
-            String dstPorts,
-            LambdaStationMap map){
+          String credentialSubject,
+          long bytes,
+          String srcURL,
+          String srcClient,
+          String srcPorts,
+          String dstURL,
+          String dstClient,
+          String dstPorts,
+          LambdaStationMap map) {
         this.credentialSubject = credentialSubject;
         SrcSite = map.getName(srcURL);
         SrcClient = srcClient;
@@ -87,12 +87,12 @@ public class LambdaStationTicket implements QOSTicket {
     }
 
     public LambdaStationTicket(
-            String credentialSubject,
-            String srcURL,
-            String srcClient,
-            String dstURL,
-            String dstClient,
-            LambdaStationMap map){
+          String credentialSubject,
+          String srcURL,
+          String srcClient,
+          String dstURL,
+          String dstClient,
+          LambdaStationMap map) {
 
         this.credentialSubject = credentialSubject;
         SrcSite = map.getName(srcURL);
@@ -101,28 +101,29 @@ public class LambdaStationTicket implements QOSTicket {
         DstClient = dstClient;
         srcEnabled = map.enabled(srcURL);
         dstEnabled = map.enabled(dstURL);
-   }
+    }
+
     public LambdaStationTicket(
-            String credentialSubject,
-            String srcURL,
-            String srcClient,
-            String dstURL,
-            String dstClient,
-	    int TravelTime,
-            LambdaStationMap map){
+          String credentialSubject,
+          String srcURL,
+          String srcClient,
+          String dstURL,
+          String dstClient,
+          int TravelTime,
+          LambdaStationMap map) {
 
         this.credentialSubject = credentialSubject;
         SrcSite = map.getName(srcURL);
         SrcClient = srcClient;
         DstSite = map.getName(dstURL);
         DstClient = dstClient;
-	this.TravelTime = Integer.toString(TravelTime);
+        this.TravelTime = Integer.toString(TravelTime);
         srcEnabled = map.enabled(srcURL);
         dstEnabled = map.enabled(dstURL);
-   }
+    }
 
 
-    public void OpenTicket(String script){
+    public void OpenTicket(String script) {
         /* This command is specialized to use ost2
          All options are optional to overwrite defaults
  Options are:
@@ -149,148 +150,154 @@ public class LambdaStationTicket implements QOSTicket {
         else {
             if (script != null) {
                 c = script;
-            }
-            else {
+            } else {
                 say("AM: NO LS COMMAND");
                 return;
             }
 
         }
-        if (!(srcEnabled&dstEnabled)) {
+        if (!(srcEnabled & dstEnabled)) {
             return;
         }
         String[] cmd = new String[2];
-	cmd[0] = c;
+        cmd[0] = c;
         String arguments = "";
         if (SrcSite != null) {
-            arguments = (arguments+"--srcSite "+SrcSite+" ");
+            arguments = (arguments + "--srcSite " + SrcSite + " ");
         }
         if (SrcClient != null) {
             //arguments = (arguments+"--srcClient "+SrcClient+" ");
         }
         if (DstSite != null) {
-            arguments = (arguments+"--dstSite "+DstSite+" ");
+            arguments = (arguments + "--dstSite " + DstSite + " ");
         }
         if (DstClient != null) {
             //arguments = (arguments+"--dstClient "+DstClient+" ");
         }
-	if (TravelTime != null) {
-	        arguments = (arguments+"--travelTime "+TravelTime+" ");
-	}
+        if (TravelTime != null) {
+            arguments = (arguments + "--travelTime " + TravelTime + " ");
+        }
 
         // Add more if needed
-	cmd[1] = "'"+arguments+"'";
-	say("ARGS="+arguments);
+        cmd[1] = "'" + arguments + "'";
+        say("ARGS=" + arguments);
         StringWriter shell_out = new StringWriter();
         StringWriter shell_err = new StringWriter();
 
-        int return_code = ShellCommandExecuter.execute(cmd,shell_out, shell_err);
-	// Do not check return code
+        int return_code = ShellCommandExecuter.execute(cmd, shell_out, shell_err);
+        // Do not check return code
         //say("lambda output:");
         //say(shell_out.getBuffer().toString());
-	//say("lambda error output:");
-	//say(shell_err.getBuffer().toString());
-	//System.out.println("lambda stdout:"+shell_out.getBuffer().toString());
-	StringTokenizer responseTokenizer
-	    = new StringTokenizer(shell_out.getBuffer().toString(), ":");
-	//say("Tokens "+responseTokenizer.countTokens());
-	while ( responseTokenizer.hasMoreElements() ) {
-	    String tok = (String) responseTokenizer.nextElement();
-	    if (tok.equals("OK")) {
-		// skip "new"
-		tok = (String) responseTokenizer.nextElement();
-		// next token is a return value
-		tok = (String) responseTokenizer.nextElement();
-		StringTokenizer valTokenizer =
-		    new StringTokenizer(tok, ",");
-		String tok1 = (String) valTokenizer.nextElement();
-		if (tok1 != null) {
-		    localTicketID = Integer.parseInt(tok1);
-		}
-		else {
-		    break;
-		}
-		tok1 = (String) valTokenizer.nextElement();
-		if (tok1 != null) {
-		    remoteTicketID = Integer.parseInt(tok1);
-		}
-		else {
-		    break;
-		}
-		tok1 = (String) valTokenizer.nextElement();
-		tok1 = tok1.trim();
-		if (tok1 != null) {
-		    actualEndTime = Long.parseLong(tok1);
-		}
-		break;
-	    }
-	    else if (tok.equals("ERROR")) {
-		say("Lambda Station returned Error: "+shell_out.getBuffer().toString());
-		break;
-	    }
+        //say("lambda error output:");
+        //say(shell_err.getBuffer().toString());
+        //System.out.println("lambda stdout:"+shell_out.getBuffer().toString());
+        StringTokenizer responseTokenizer
+              = new StringTokenizer(shell_out.getBuffer().toString(), ":");
+        //say("Tokens "+responseTokenizer.countTokens());
+        while (responseTokenizer.hasMoreElements()) {
+            String tok = (String) responseTokenizer.nextElement();
+            if (tok.equals("OK")) {
+                // skip "new"
+                tok = (String) responseTokenizer.nextElement();
+                // next token is a return value
+                tok = (String) responseTokenizer.nextElement();
+                StringTokenizer valTokenizer =
+                      new StringTokenizer(tok, ",");
+                String tok1 = (String) valTokenizer.nextElement();
+                if (tok1 != null) {
+                    localTicketID = Integer.parseInt(tok1);
+                } else {
+                    break;
+                }
+                tok1 = (String) valTokenizer.nextElement();
+                if (tok1 != null) {
+                    remoteTicketID = Integer.parseInt(tok1);
+                } else {
+                    break;
+                }
+                tok1 = (String) valTokenizer.nextElement();
+                tok1 = tok1.trim();
+                if (tok1 != null) {
+                    actualEndTime = Long.parseLong(tok1);
+                }
+                break;
+            } else if (tok.equals("ERROR")) {
+                say("Lambda Station returned Error: " + shell_out.getBuffer().toString());
+                break;
+            }
 
         }
     }
 
-    public String getLambdaStationId(){
-         return LambdaStationId;
+    public String getLambdaStationId() {
+        return LambdaStationId;
     }
-    public void setLambdaStationId(String lambdaStationId){
+
+    public void setLambdaStationId(String lambdaStationId) {
         this.LambdaStationId = lambdaStationId;
-     }
+    }
 
-    public String toString(){
+    public String toString() {
 
-        return ("SrcSite="+SrcSite+" SrcClient="+SrcClient+" SrcIP="+SrcIP+
-                " SrcPort="+SrcPort+" DstSite="+DstSite+" DstClient="+DstClient+
-                " DstIP="+DstIP+" DstPort="+DstPort+" LocalPath="+LocalPath+
-                " RemotePath="+RemotePath+" OutBW="+OutBW+" InBW="+InBW+
-                " DSCPrqOut="+DSCPrqOut+" DSCPrqIn="+DSCPrqIn+" BoardTime="+BoardTime+" TravelTime="+TravelTime+
-                " StartTime="+StartTime+" EndTime="+EndTime+" DSCPin="+DSCPin+" DSCPout="+DSCPout+
-		" credentialSubject="+credentialSubject+" localTicketID="+localTicketID+
-		" remoteTicketID="+remoteTicketID+" actualEndTime="+actualEndTime);
+        return ("SrcSite=" + SrcSite + " SrcClient=" + SrcClient + " SrcIP=" + SrcIP +
+              " SrcPort=" + SrcPort + " DstSite=" + DstSite + " DstClient=" + DstClient +
+              " DstIP=" + DstIP + " DstPort=" + DstPort + " LocalPath=" + LocalPath +
+              " RemotePath=" + RemotePath + " OutBW=" + OutBW + " InBW=" + InBW +
+              " DSCPrqOut=" + DSCPrqOut + " DSCPrqIn=" + DSCPrqIn + " BoardTime=" + BoardTime
+              + " TravelTime=" + TravelTime +
+              " StartTime=" + StartTime + " EndTime=" + EndTime + " DSCPin=" + DSCPin + " DSCPout="
+              + DSCPout +
+              " credentialSubject=" + credentialSubject + " localTicketID=" + localTicketID +
+              " remoteTicketID=" + remoteTicketID + " actualEndTime=" + actualEndTime);
 
     }
 
     public void say(String words) {
-        System.out.println("LS_Ticket: "+words);
+        System.out.println("LS_Ticket: " + words);
     }
 
 
     /**
-     *
      * @return credentialSubject
      */
     public String getCredentialSubject() {
         return credentialSubject;
     }
+
     public int getLocalTicketID() {
         return localTicketID;
     }
+
     public void setLocalTicketID(int ID) {
         localTicketID = ID;
     }
+
     public int getRemoteTicketID() {
         return remoteTicketID;
     }
+
     public void setRemoteTicketID(int ID) {
         localTicketID = ID;
     }
+
     public long getActualEndTime() {
         return actualEndTime;
     }
+
     public boolean srcEnabled() {
-	return this.srcEnabled;
+        return this.srcEnabled;
     }
+
     public boolean dstEnabled() {
-	return this.dstEnabled;
+        return this.dstEnabled;
     }
+
     public long getStartTime() {
-	long l = 0;
-	if (this.StartTime != null) {
-	    l = Long.parseLong(this.StartTime.trim());
-	}
-	return l;
+        long l = 0;
+        if (this.StartTime != null) {
+            l = Long.parseLong(this.StartTime.trim());
+        }
+        return l;
     }
 
 }

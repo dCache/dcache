@@ -65,6 +65,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  * <p>Wraps the future so that round-trip time can be computed.</p>
  */
 public class ListenableFutureWrapper<D> {
+
     private String key;
     private Long sent;
     private ListenableFuture<D> future;

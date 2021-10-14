@@ -19,21 +19,18 @@
 package org.dcache.restful.events.streams.inotify;
 
 import com.google.common.io.BaseEncoding;
-
 import diskCacheV111.util.PnfsId;
 
 /**
- * A class that holds information used to build the URL that identifies
- * a selection.
+ * A class that holds information used to build the URL that identifies a selection.
  */
-public class WatchIdentity
-{
+public class WatchIdentity {
+
     private final String channelId;
     private final String selectionId;
     private final PnfsId pnfsid;
 
-    public WatchIdentity(String channelId, PnfsId pnfsid)
-    {
+    public WatchIdentity(String channelId, PnfsId pnfsid) {
         this.pnfsid = pnfsid;
         this.channelId = channelId;
 
@@ -44,30 +41,25 @@ public class WatchIdentity
         this.selectionId = BaseEncoding.base64Url().omitPadding().encode(rawValue);
     }
 
-    public String channelId()
-    {
+    public String channelId() {
         return channelId;
     }
 
-    public String selectionId()
-    {
+    public String selectionId() {
         return selectionId;
     }
 
-    public PnfsId pnfsid()
-    {
+    public PnfsId pnfsid() {
         return pnfsid;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return channelId.hashCode() ^ selectionId.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -75,6 +67,7 @@ public class WatchIdentity
             return false;
         }
         WatchIdentity otherIdentity = (WatchIdentity) other;
-        return otherIdentity.channelId.equals(channelId) && otherIdentity.selectionId.equals(selectionId);
+        return otherIdentity.channelId.equals(channelId) && otherIdentity.selectionId.equals(
+              selectionId);
     }
 }

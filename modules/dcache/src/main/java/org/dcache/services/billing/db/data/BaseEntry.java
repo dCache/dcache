@@ -71,6 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author arossi
  */
 public abstract class BaseEntry implements IHistogramData {
+
     private static final long serialVersionUID = 8049290695381767576L;
 
     public static final String COUNT = "count";
@@ -112,7 +113,7 @@ public abstract class BaseEntry implements IHistogramData {
 
     protected String dateString() {
         DateFormat formatter = new SimpleDateFormat(
-                        PnfsBaseInfo.DATE_FORMAT);
+              PnfsBaseInfo.DATE_FORMAT);
         return formatter.format(date);
     }
 }

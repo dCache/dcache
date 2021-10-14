@@ -60,40 +60,37 @@ documents or software obtained from this server.
 package org.dcache.util.collector.pools;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellPath;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import diskCacheV111.vehicles.Message;
-import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.json.PoolData;
 import org.dcache.services.history.pools.PoolListingService;
 import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.util.collector.ListenableFutureWrapper;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * <p>This collector provides a thin layer on top of cell adapter
- *    functionality.  It is mainly responsible for sending messages and returning
- *    message reply futures.  The principal collect method scatter/gathers
- *    requests to all the pools.</p>
+ * functionality.  It is mainly responsible for sending messages and returning message reply
+ * futures.  The principal collect method scatter/gathers requests to all the pools.</p>
  */
 public abstract class PoolInfoCollector<T extends Message> extends
-                CellMessagingCollector<Map<String, ListenableFutureWrapper<T>>> {
+      CellMessagingCollector<Map<String, ListenableFutureWrapper<T>>> {
+
     private PoolListingService service;
 
     /**
      * <p>This is the method used to collect cachable data which
      * the service will transform, update, cache and persist.</p>
      *
-     * @return a map of Futures which can be used to
-     * fetch the {@link PoolData}.
+     * @return a map of Futures which can be used to fetch the {@link PoolData}.
      * @throws InterruptedException
      */
     @Override
     public Map<String, ListenableFutureWrapper<T>> collectData()
-                    throws InterruptedException {
+          throws InterruptedException {
         if (service == null) {
             return Collections.EMPTY_MAP;
         }
@@ -119,7 +116,7 @@ public abstract class PoolInfoCollector<T extends Message> extends
      * @return Futures which can be used to wait for the returned message.
      */
     public <T extends Message> ListenableFutureWrapper<T> sendRequestToPool(String pool,
-                                                                     T message) {
+          T message) {
         ListenableFuture<T> future = stub.send(new CellPath(pool), message);
         ListenableFutureWrapper<T> wrapper = new ListenableFutureWrapper<>();
         wrapper.setFuture(future);

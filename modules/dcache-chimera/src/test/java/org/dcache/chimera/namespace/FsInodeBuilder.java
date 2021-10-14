@@ -17,33 +17,30 @@
  */
 package org.dcache.chimera.namespace;
 
+import static org.mockito.Mockito.mock;
+
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 
-import static org.mockito.Mockito.mock;
-
 /**
- * A builder class for creating FsInode objects.  The built objects are real,
- * but the FileSystemProvider is mocked.
+ * A builder class for creating FsInode objects.  The built objects are real, but the
+ * FileSystemProvider is mocked.
  */
-public class FsInodeBuilder
-{
+public class FsInodeBuilder {
+
     private final FileSystemProvider fsProvider = mock(FileSystemProvider.class);
     private long ino = 0;
 
-    public static FsInodeBuilder aFile()
-    {
+    public static FsInodeBuilder aFile() {
         return new FsInodeBuilder();
     }
 
-    public FsInodeBuilder withInode(long id)
-    {
+    public FsInodeBuilder withInode(long id) {
         ino = id;
         return this;
     }
 
-    public FsInode build()
-    {
+    public FsInode build() {
         return new FsInode(fsProvider, ino);
     }
 }

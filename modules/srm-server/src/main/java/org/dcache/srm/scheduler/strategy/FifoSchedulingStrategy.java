@@ -19,29 +19,25 @@ package org.dcache.srm.scheduler.strategy;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public class FifoSchedulingStrategy implements SchedulingStrategy
-{
+public class FifoSchedulingStrategy implements SchedulingStrategy {
+
     private final Queue<Long> queue = new ArrayDeque<>();
 
     @Override
-    public synchronized void add(Job job)
-    {
+    public synchronized void add(Job job) {
         queue.add(job.getId());
     }
 
     @Override
-    public synchronized Long remove()
-    {
+    public synchronized Long remove() {
         return queue.poll();
     }
 
     @Override
-    public synchronized int size()
-    {
+    public synchronized int size() {
         return queue.size();
     }
 }

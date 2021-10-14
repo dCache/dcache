@@ -2,16 +2,15 @@ package org.dcache.srm.request;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
-
 import org.dcache.srm.v2_2.TRetentionPolicy;
 
 public enum RetentionPolicy {
-    REPLICA             (TRetentionPolicy.REPLICA),
-    OUTPUT              (TRetentionPolicy.OUTPUT),
-    CUSTODIAL           (TRetentionPolicy.CUSTODIAL);
+    REPLICA(TRetentionPolicy.REPLICA),
+    OUTPUT(TRetentionPolicy.OUTPUT),
+    CUSTODIAL(TRetentionPolicy.CUSTODIAL);
 
     private final TRetentionPolicy _policy;
-    private static final ImmutableMap<TRetentionPolicy,RetentionPolicy> MAP;
+    private static final ImmutableMap<TRetentionPolicy, RetentionPolicy> MAP;
     private static final String ERROR_MESSAGE;
 
     RetentionPolicy(TRetentionPolicy policy) {
@@ -27,11 +26,11 @@ public enum RetentionPolicy {
         sb.append("Unknown RetentionPolicy: \"%s\".");
         sb.append(" Supported values :");
 
-        Builder<TRetentionPolicy,RetentionPolicy> builder =
-            new Builder<>();
+        Builder<TRetentionPolicy, RetentionPolicy> builder =
+              new Builder<>();
         for (RetentionPolicy value : values()) {
-                builder.put(value._policy,value);
-                sb.append(" \"").append(value._policy).append("\"");
+            builder.put(value._policy, value);
+            sb.append(" \"").append(value._policy).append("\"");
         }
         MAP = builder.build();
         ERROR_MESSAGE = sb.toString();
@@ -39,27 +38,25 @@ public enum RetentionPolicy {
 
 
     public static RetentionPolicy fromTRetentionPolicy(TRetentionPolicy policy) {
-        if ( policy == null ) {
+        if (policy == null) {
             return null;
-        }
-        else {
+        } else {
             return MAP.get(policy);
         }
     }
 
     /**
-     *  this function provides wrapper of TRetentionPolicy.fromString
-     *  so that user gets better error handling
+     * this function provides wrapper of TRetentionPolicy.fromString so that user gets better error
+     * handling
      */
     public static RetentionPolicy fromString(String txt)
-            throws IllegalArgumentException  {
-            try {
-                TRetentionPolicy policy = TRetentionPolicy.fromString(txt);
-                return fromTRetentionPolicy(policy);
-            }
-            catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(String.format(ERROR_MESSAGE,
-                                                                 txt));
-            }
+          throws IllegalArgumentException {
+        try {
+            TRetentionPolicy policy = TRetentionPolicy.fromString(txt);
+            return fromTRetentionPolicy(policy);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.format(ERROR_MESSAGE,
+                  txt));
+        }
     }
 }

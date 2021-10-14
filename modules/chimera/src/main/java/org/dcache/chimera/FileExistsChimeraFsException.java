@@ -20,7 +20,9 @@ public class FileExistsChimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 7401509959112681879L;
 
-    /** Creates a new instance of FileExistsChimeraFsException */
+    /**
+     * Creates a new instance of FileExistsChimeraFsException
+     */
     public FileExistsChimeraFsException() {
         super();
     }

@@ -1,24 +1,21 @@
 package org.dcache.gplazma.strategies;
 
-import com.google.common.util.concurrent.AbstractService;
+import static java.util.Objects.requireNonNull;
 
+import com.google.common.util.concurrent.AbstractService;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * This class wraps a GPlazmaPlugin instance and controls the lifecycle calls to the
- * plugin.
+ * This class wraps a GPlazmaPlugin instance and controls the lifecycle calls to the plugin.
  */
-public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractService
-{
+public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractService {
+
     private final T _plugin;
     private final ConfigurationItemControl _control;
     private final String _name;
 
-    public GPlazmaPluginService(T plugin, String name, ConfigurationItemControl control)
-    {
+    public GPlazmaPluginService(T plugin, String name, ConfigurationItemControl control) {
         requireNonNull(plugin, "plugin is null");
         requireNonNull(control, "control is null");
         requireNonNull(name, "name is null");
@@ -29,8 +26,7 @@ public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractServi
     }
 
     @Override
-    protected void doStart()
-    {
+    protected void doStart() {
         try {
             _plugin.start();
             notifyStarted();
@@ -40,8 +36,7 @@ public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractServi
     }
 
     @Override
-    protected void doStop()
-    {
+    protected void doStop() {
         try {
             _plugin.stop();
             notifyStopped();
@@ -53,36 +48,31 @@ public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractServi
     /**
      * @return the plugin
      */
-    public T getPlugin()
-    {
+    public T getPlugin() {
         return _plugin;
     }
 
     /**
      * Obtain the name used to configure which plugin to load.
      */
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
     /**
      * @return the control
      */
-    public ConfigurationItemControl getControl()
-    {
+    public ConfigurationItemControl getControl() {
         return _control;
     }
 
     @Override
-    public String toString()
-    {
-        return "GPlazmaPluginElement["+_plugin+","+_control+"]";
+    public String toString() {
+        return "GPlazmaPluginElement[" + _plugin + "," + _control + "]";
     }
 
     @Override
-    public boolean equals(Object anObject)
-    {
+    public boolean equals(Object anObject) {
         if (anObject == null) {
             return false;
         }
@@ -92,14 +82,13 @@ public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractServi
         }
 
         GPlazmaPluginService<?> aPluginElement =
-            (GPlazmaPluginService<?>) anObject;
+              (GPlazmaPluginService<?>) anObject;
         return (_plugin.equals(aPluginElement._plugin) &&
-                _control.equals(aPluginElement._control));
+              _control.equals(aPluginElement._control));
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _plugin.hashCode() ^ _control.hashCode();
     }
 }

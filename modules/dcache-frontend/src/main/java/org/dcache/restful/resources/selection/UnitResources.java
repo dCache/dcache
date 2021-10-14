@@ -59,30 +59,24 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.selection;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.Authorization;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Unit;
 import org.dcache.restful.providers.selection.UnitGroup;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -94,34 +88,35 @@ import org.dcache.restful.providers.selection.UnitGroup;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/units")
 public final class UnitResources {
+
     @Inject
     private PoolMonitor poolMonitor;
 
     @GET
     @ApiOperation("List all units."
-                    + " Results sorted lexicographically by unit name.")
+          + " Results sorted lexicographically by unit name.")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Unit> getUnits() {
         return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
-                          .stream()
-                          .sorted(Comparator.comparing(SelectionUnit::getName))
-                          .map(Unit::new)
-                          .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionUnit::getName))
+              .map(Unit::new)
+              .collect(Collectors.toList());
     }
 
 
     @GET
     @ApiOperation("List all unitgroups."
-                    + " Results sorted lexicographically by unit group name.")
+          + " Results sorted lexicographically by unit group name.")
     @Path("/groups")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UnitGroup> getUnitGroups() {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
-                          .stream()
-                          .sorted(Comparator.comparing(SelectionUnitGroup::getName))
-                          .map((g) -> new UnitGroup(g, psu))
-                          .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionUnitGroup::getName))
+              .map((g) -> new UnitGroup(g, psu))
+              .collect(Collectors.toList());
     }
 }

@@ -17,22 +17,18 @@
  */
 package diskCacheV111.srm;
 
-import javax.annotation.Nonnull;
-
-import java.util.NoSuchElementException;
-
 import diskCacheV111.srm.dcache.DcacheUser;
-
+import java.util.NoSuchElementException;
+import javax.annotation.Nonnull;
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.strategy.UserDiscriminator;
 
-public class PrimaryGidJobDiscriminator extends UserDiscriminator
-{
+public class PrimaryGidJobDiscriminator extends UserDiscriminator {
+
     @Nonnull
     @Override
-    protected String getDiscriminatingValue(SRMUser user)
-    {
+    protected String getDiscriminatingValue(SRMUser user) {
         try {
             return String.valueOf(Subjects.getPrimaryGid(((DcacheUser) user).getSubject()));
         } catch (NoSuchElementException e) {
@@ -42,8 +38,7 @@ public class PrimaryGidJobDiscriminator extends UserDiscriminator
 
     @Nonnull
     @Override
-    public String getKey()
-    {
+    public String getKey() {
         return "gid";
     }
 }

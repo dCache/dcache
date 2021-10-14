@@ -1,21 +1,26 @@
 package org.dcache.pool.repository;
 
+import static org.dcache.pool.repository.AllocatorAwareRepositoryChannel.SPACE_INC;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-
-import diskCacheV111.util.PnfsId;
-
-import static org.mockito.Mockito.*;
-import static org.dcache.pool.repository.AllocatorAwareRepositoryChannel.SPACE_INC;
 
 /**
  *
  */
 public class AllocatorAwareRepositoryChannelTest {
+
     private static final PnfsId ID = new PnfsId("000000000000000000000000000000000000");
 
     private RepositoryChannel inner;
@@ -29,7 +34,7 @@ public class AllocatorAwareRepositoryChannelTest {
         allocator = mock(Allocator.class);
         repository = mock(Repository.class);
         allocatorChannel = new AllocatorAwareRepositoryChannel(inner, repository,
-                ID, allocator);
+              ID, allocator);
     }
 
     @Test

@@ -24,30 +24,37 @@ import org.apache.axis.client.Call;
 
 /**
  * Axis Transport that supports the HttpClientSender handler.
- *
- * In contrast to the handler, the transport is instantiated per connection and
- * can maintain state between calls.
+ * <p>
+ * In contrast to the handler, the transport is instantiated per connection and can maintain state
+ * between calls.
  */
-public class HttpClientTransport extends org.apache.axis.client.Transport
-{
+public class HttpClientTransport extends org.apache.axis.client.Transport {
+
     public static final String DEFAULT_TRANSPORT_NAME = "httpclient";
 
     public static final String TRANSPORT_HTTP_CONTEXT = "transport.http.context";
     public static final String TRANSPORT_HTTP_CREDENTIALS = "transport.http.credentials";
     public static final String TRANSPORT_HTTP_DELEGATION = "transport.http.delegation";
 
-    public enum Delegation
-    {
-        /** Skip the delegation handshake entirely - i.e. plain TLS. */
+    public enum Delegation {
+        /**
+         * Skip the delegation handshake entirely - i.e. plain TLS.
+         */
         SKIP,
 
-        /** Perform a delegation handshake, but do not delegate. */
+        /**
+         * Perform a delegation handshake, but do not delegate.
+         */
         NONE,
 
-        /** Delegate credentials, but generate a limited proxy. */
+        /**
+         * Delegate credentials, but generate a limited proxy.
+         */
         LIMITED,
 
-        /** Delegate credentials with a full impersonation proxy. */
+        /**
+         * Delegate credentials with a full impersonation proxy.
+         */
         FULL
     }
 
@@ -55,8 +62,7 @@ public class HttpClientTransport extends org.apache.axis.client.Transport
 
     private Object context;
 
-    public HttpClientTransport()
-    {
+    public HttpClientTransport() {
         transportName = DEFAULT_TRANSPORT_NAME;
         action = null;
     }
@@ -64,8 +70,7 @@ public class HttpClientTransport extends org.apache.axis.client.Transport
     /**
      * helper constructor
      */
-    public HttpClientTransport(String url, String action)
-    {
+    public HttpClientTransport(String url, String action) {
         transportName = DEFAULT_TRANSPORT_NAME;
         this.url = url;
         this.action = action;
@@ -73,14 +78,14 @@ public class HttpClientTransport extends org.apache.axis.client.Transport
 
     /**
      * Set up any transport-specific derived properties in the message context.
-     * @param mc the context to set up
-     * @param call the call (unused?)
+     *
+     * @param mc     the context to set up
+     * @param call   the call (unused?)
      * @param engine the engine containing the registries
      * @throws AxisFault if service cannot be found
      */
     public void setupMessageContextImpl(MessageContext mc, Call call, AxisEngine engine)
-            throws AxisFault
-    {
+          throws AxisFault {
         if (action != null) {
             mc.setUseSOAPAction(true);
             mc.setSOAPActionURI(action);
@@ -99,8 +104,7 @@ public class HttpClientTransport extends org.apache.axis.client.Transport
         }
     }
 
-    public void processReturnedMessageContext(MessageContext context)
-    {
+    public void processReturnedMessageContext(MessageContext context) {
         this.context = context.getProperty(TRANSPORT_HTTP_CONTEXT);
     }
 }

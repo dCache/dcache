@@ -17,82 +17,70 @@
  */
 package org.dcache.macaroons;
 
-import java.time.Instant;
-import java.util.EnumSet;
+import static java.util.Arrays.asList;
 
 import diskCacheV111.util.FsPath;
-
+import java.time.Instant;
+import java.util.EnumSet;
 import org.dcache.auth.attributes.Activity;
-
-import static java.util.Arrays.asList;
 
 /**
  * Fluent class to support writing shorter and easier-to-read unit-test.
  */
-public class MacaroonContextBuilder
-{
+public class MacaroonContextBuilder {
+
     private final MacaroonContext context = new MacaroonContext();
 
-    public static MacaroonContextBuilder macaroonContext()
-    {
+    public static MacaroonContextBuilder macaroonContext() {
         return new MacaroonContextBuilder();
     }
 
-    public MacaroonContext build()
-    {
+    public MacaroonContext build() {
         return context;
     }
 
-    public MacaroonContextBuilder withUid(long id)
-    {
+    public MacaroonContextBuilder withUid(long id) {
         context.setUid(id);
         return this;
     }
 
-    public MacaroonContextBuilder withGid(long... ids)
-    {
+    public MacaroonContextBuilder withGid(long... ids) {
         context.setGids(ids);
         return this;
     }
 
-    public MacaroonContextBuilder withUsername(String name)
-    {
+    public MacaroonContextBuilder withUsername(String name) {
         context.setUsername(name);
         return this;
     }
 
-    public MacaroonContextBuilder withRoot(String path)
-    {
+    public MacaroonContextBuilder withRoot(String path) {
         context.setRoot(FsPath.create(path));
         return this;
     }
 
-    public MacaroonContextBuilder withPath(String path)
-    {
+    public MacaroonContextBuilder withPath(String path) {
         context.setPath(FsPath.create(path));
         return this;
     }
 
-    public MacaroonContextBuilder withHome(String path)
-    {
+    public MacaroonContextBuilder withHome(String path) {
         context.setHome(FsPath.create(path));
         return this;
     }
 
-    public MacaroonContextBuilder withAllowedActivities(Activity... activities) throws InvalidCaveatException
-    {
+    public MacaroonContextBuilder withAllowedActivities(Activity... activities)
+          throws InvalidCaveatException {
         context.updateAllowedActivities(EnumSet.copyOf(asList(activities)));
         return this;
     }
 
-    public MacaroonContextBuilder withExpiry(Instant expiry)
-    {
+    public MacaroonContextBuilder withExpiry(Instant expiry) {
         context.updateExpiry(expiry);
         return this;
     }
 
-    public MacaroonContextBuilder withMaxUpload(long value) throws InvalidCaveatException
-    {
+    public MacaroonContextBuilder withMaxUpload(long value) throws InvalidCaveatException {
         context.updateMaxUpload(value);
         return this;
     }

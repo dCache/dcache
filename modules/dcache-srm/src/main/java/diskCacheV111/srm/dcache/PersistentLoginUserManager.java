@@ -17,10 +17,9 @@
  */
 package diskCacheV111.srm.dcache;
 
-import com.google.common.base.Throwables;
-
-import javax.security.auth.Subject;
-import javax.sql.DataSource;
+import static diskCacheV111.srm.dcache.CanonicalizingByteArrayStore.Token;
+import static java.util.Collections.emptySet;
+import static java.util.Comparator.comparing;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,61 +30,54 @@ import java.security.Principal;
 import java.security.cert.CertPath;
 import java.util.HashSet;
 import java.util.Set;
-
+import javax.security.auth.Subject;
+import javax.sql.DataSource;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.srm.SRMUser;
 
-import static diskCacheV111.srm.dcache.CanonicalizingByteArrayStore.Token;
-import static java.util.Collections.emptySet;
-import static java.util.Comparator.comparing;
-
 /**
- * An SRM user manager that delegates authorization and user mapping to a {@code LoginStrategy}
- * and persists the serialized login to a database.
- *
- * Since not all principals can be accurately represented as a string, this user manager
- * relies on Java object serialization to obtain a reversible encoding of both principals
- * and login attributes. This is the primary downside of this user manager, as Java object
- * serialization is not a good candidate for long term persistence.
- *
- * Also, the Origin principal is written to the database too which means the same user
- * submitting requests from two different client nodes will get two different request IDs.
+ * An SRM user manager that delegates authorization and user mapping to a {@code LoginStrategy} and
+ * persists the serialized login to a database.
+ * <p>
+ * Since not all principals can be accurately represented as a string, this user manager relies on
+ * Java object serialization to obtain a reversible encoding of both principals and login
+ * attributes. This is the primary downside of this user manager, as Java object serialization is
+ * not a good candidate for long term persistence.
+ * <p>
+ * Also, the Origin principal is written to the database too which means the same user submitting
+ * requests from two different client nodes will get two different request IDs.
  */
-public class PersistentLoginUserManager extends DcacheUserManager
-{
+public class PersistentLoginUserManager extends DcacheUserManager {
+
     private static final String TYPE = "Login";
 
-    public PersistentLoginUserManager(LoginStrategy loginStrategy, DataSource dataSource)
-    {
+    public PersistentLoginUserManager(LoginStrategy loginStrategy, DataSource dataSource) {
         super(loginStrategy, dataSource, TYPE);
     }
 
     @Override
-    protected byte[] encode(CertPath path, LoginReply reply)
-    {
+    protected byte[] encode(CertPath path, LoginReply reply) {
         return encode(reply);
     }
 
     @Override
-    protected SRMUser decode(String clientHost, Token token, byte[] encoded)
-    {
+    protected SRMUser decode(String clientHost, Token token, byte[] encoded) {
         return new DcacheUser(token, decode(encoded));
     }
 
-    private byte[] encode(LoginReply reply)
-    {
+    private byte[] encode(LoginReply reply) {
         /* Sort principals and login attributes to generate a more consistent representation.
          */
         Principal[] principals =
-                reply.getSubject().getPrincipals().stream()
-                        .sorted(comparing(Principal::toString))
-                        .toArray(Principal[]::new);
+              reply.getSubject().getPrincipals().stream()
+                    .sorted(comparing(Principal::toString))
+                    .toArray(Principal[]::new);
         LoginAttribute[] attributes =
-                reply.getLoginAttributes().stream()
-                        .sorted(comparing(LoginAttribute::toString))
-                        .toArray(LoginAttribute[]::new);
+              reply.getLoginAttributes().stream()
+                    .sorted(comparing(LoginAttribute::toString))
+                    .toArray(LoginAttribute[]::new);
 
         ByteArrayOutputStream encoded = new ByteArrayOutputStream(512);
         try (ObjectOutputStream out = new ObjectOutputStream(encoded)) {
@@ -103,8 +95,7 @@ public class PersistentLoginUserManager extends DcacheUserManager
         return encoded.toByteArray();
     }
 
-    private LoginReply decode(byte[] encoded)
-    {
+    private LoginReply decode(byte[] encoded) {
         Set<Principal> principals = new HashSet<>();
         Set<LoginAttribute> attributes = new HashSet<>();
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(encoded))) {

@@ -59,21 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.server.command.Command;
-import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
-import org.apache.sshd.server.session.ServerSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.List;
-
 import diskCacheV111.admin.UserAdminShell;
-
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -84,23 +70,31 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.List;
+import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.ExitCallback;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.session.ServerSession;
 import org.dcache.cells.CellStub;
-import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.Strings;
+import org.dcache.util.list.ListDirectoryHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Implementation of Command interface that allows
- * direct command execution in admin server. Executes
- * list of commands:
- *    ssh -p PORT user@example.org "command1;command2;command3"
+ * Implementation of Command interface that allows direct command execution in admin server.
+ * Executes list of commands: ssh -p PORT user@example.org "command1;command2;command3"
  *
  * @author litvinse
  */
-public class DirectCommand implements Command, Runnable, SessionAware
-{
+public class DirectCommand implements Command, Runnable, SessionAware {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(DirectCommand.class);
+          LoggerFactory.getLogger(DirectCommand.class);
 
     private ExitCallback exitCallback;
     private PrintWriter errorWriter;
@@ -111,13 +105,12 @@ public class DirectCommand implements Command, Runnable, SessionAware
     private String sessionId;
 
     DirectCommand(List<String> commands,
-                  CellEndpoint endpoint,
-                  CellStub poolManager,
-                  CellStub pnfsManager,
-                  CellStub acm,
-                  String prompt,
-                  ListDirectoryHandler list)
-    {
+          CellEndpoint endpoint,
+          CellStub poolManager,
+          CellStub pnfsManager,
+          CellStub acm,
+          String prompt,
+          ListDirectoryHandler list) {
         this.commands = commands;
         shell = new UserAdminShell(prompt);
         shell.setCellEndpoint(endpoint);
@@ -197,20 +190,20 @@ public class DirectCommand implements Command, Runnable, SessionAware
                 break;
             } catch (CommandPanicException e) {
                 error = String.format("Command '%s' triggered a bug (%s);"
-                        + "the service log file contains additional information. Please "
-                        + "contact support@dcache.org.", command, e.getTargetException());
+                      + "the service log file contains additional information. Please "
+                      + "contact support@dcache.org.", command, e.getTargetException());
             } catch (CommandException e) {
                 error = e.getMessage();
             } catch (NoRouteToCellException e) {
                 error = "Cell name does not exist or cell is not started: "
-                        + e.getMessage();
+                      + e.getMessage();
                 LOGGER.warn("Command cannot be executed in the cell, cell is gone {}",
-                        e.getMessage());
+                      e.getMessage());
             } catch (RuntimeException e) {
                 error = String.format("Command '%s' triggered a bug (%s); please"
-                        + " locate this message in the log file of the admin service and"
-                        + " send an email to support@dcache.org with this line and the"
-                        + " following stack-trace", command, e);
+                      + " locate this message in the log file of the admin service and"
+                      + " send an email to support@dcache.org with this line and the"
+                      + " following stack-trace", command, e);
                 LOGGER.error((String) error, e);
             } catch (Exception e) {
                 error = e.getMessage();
@@ -232,8 +225,7 @@ public class DirectCommand implements Command, Runnable, SessionAware
     }
 
     @Override
-    public void setSession(ServerSession session)
-    {
+    public void setSession(ServerSession session) {
         sessionId = Sessions.connectionId(session);
         shell.setSession(sessionId);
     }

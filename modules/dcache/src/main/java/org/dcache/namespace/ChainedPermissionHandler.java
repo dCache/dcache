@@ -1,6 +1,8 @@
 package org.dcache.namespace;
 
-import javax.security.auth.Subject;
+import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import static org.dcache.acl.enums.AccessType.ACCESS_DENIED;
+import static org.dcache.acl.enums.AccessType.ACCESS_UNDEFINED;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,60 +10,50 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-
+import javax.security.auth.Subject;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.acl.enums.AccessType.*;
-
 /**
- * PermissionHandler which delegates calls to a chain of permission
- * handler. For each policy decision, the permission handler delegates
- * the call to each chained permission handler until the first one
- * which returns a result different from ACCESS_UNDEFINED. That result
- * will be returned. If all chained permission handlers return
- * ACCESS_UNDEFINED, then this permission handler also returns
- * ACCESS_UNDEFINED.
+ * PermissionHandler which delegates calls to a chain of permission handler. For each policy
+ * decision, the permission handler delegates the call to each chained permission handler until the
+ * first one which returns a result different from ACCESS_UNDEFINED. That result will be returned.
+ * If all chained permission handlers return ACCESS_UNDEFINED, then this permission handler also
+ * returns ACCESS_UNDEFINED.
  */
-public class ChainedPermissionHandler implements PermissionHandler
-{
-    private final List<PermissionHandler> _chain =
-            new ArrayList<>();
+public class ChainedPermissionHandler implements PermissionHandler {
 
-    public ChainedPermissionHandler()
-    {
+    private final List<PermissionHandler> _chain =
+          new ArrayList<>();
+
+    public ChainedPermissionHandler() {
     }
 
-    public ChainedPermissionHandler(List<PermissionHandler> chain)
-    {
+    public ChainedPermissionHandler(List<PermissionHandler> chain) {
         _chain.addAll(chain);
     }
 
-    public ChainedPermissionHandler(PermissionHandler ... chain)
-    {
+    public ChainedPermissionHandler(PermissionHandler... chain) {
         _chain.addAll(Arrays.asList(chain));
     }
 
-    public void setChain(List<PermissionHandler> chain)
-    {
+    public void setChain(List<PermissionHandler> chain) {
         _chain.clear();
         _chain.addAll(chain);
     }
 
     @Override
-    public Set<FileAttribute> getRequiredAttributes()
-    {
+    public Set<FileAttribute> getRequiredAttributes() {
         Set<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
-        for (PermissionHandler handler: _chain) {
+        for (PermissionHandler handler : _chain) {
             attributes.addAll(handler.getRequiredAttributes());
         }
         return attributes;
     }
 
     @Override
-    public AccessType canReadFile(Subject subject, FileAttributes attr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canReadFile(Subject subject, FileAttributes attr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canReadFile(subject, attr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -71,9 +63,8 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canWriteFile(Subject subject, FileAttributes attr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canWriteFile(Subject subject, FileAttributes attr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canWriteFile(subject, attr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -83,9 +74,8 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canCreateSubDir(subject, parentAttr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -95,9 +85,8 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canCreateFile(Subject subject, FileAttributes parentAttr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canCreateFile(subject, parentAttr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -108,12 +97,11 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canDeleteFile(Subject subject,
-                                    FileAttributes parentAttr,
-                                    FileAttributes childAttr)
-    {
-        for (PermissionHandler handler: _chain) {
+          FileAttributes parentAttr,
+          FileAttributes childAttr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canDeleteFile(subject, parentAttr,
-                                                   childAttr);
+                  childAttr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
             }
@@ -123,12 +111,11 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canDeleteDir(Subject subject,
-                                   FileAttributes parentAttr,
-                                   FileAttributes childAttr)
-    {
-        for (PermissionHandler handler: _chain) {
+          FileAttributes parentAttr,
+          FileAttributes childAttr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canDeleteDir(subject, parentAttr,
-                                                  childAttr);
+                  childAttr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
             }
@@ -138,13 +125,12 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canRename(Subject subject,
-                                FileAttributes existingParentAttr,
-                                FileAttributes newParentAttr,
-                                boolean isDirectory)
-    {
-        for (PermissionHandler handler: _chain) {
+          FileAttributes existingParentAttr,
+          FileAttributes newParentAttr,
+          boolean isDirectory) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canRename(subject, existingParentAttr,
-                                               newParentAttr, isDirectory);
+                  newParentAttr, isDirectory);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
             }
@@ -153,9 +139,8 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canListDir(Subject subject, FileAttributes attr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canListDir(Subject subject, FileAttributes attr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canListDir(subject, attr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -165,9 +150,8 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     @Override
-    public AccessType canLookup(Subject subject, FileAttributes attr)
-    {
-        for (PermissionHandler handler: _chain) {
+    public AccessType canLookup(Subject subject, FileAttributes attr) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canLookup(subject, attr);
             if (res != AccessType.ACCESS_UNDEFINED) {
                 return res;
@@ -177,43 +161,41 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     private AccessType canSetAttribute(Subject subject,
-                                       FileAttributes currentAttributes,
-                                       FileAttributes desiredAttributes)
-    {
+          FileAttributes currentAttributes,
+          FileAttributes desiredAttributes) {
         assert desiredAttributes.getDefinedAttributes().size() == 1;
 
-        for (PermissionHandler handler: _chain) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canSetAttributes(subject,
-                                                      currentAttributes,
-                                                      desiredAttributes);
+                  currentAttributes,
+                  desiredAttributes);
             switch (res) {
-            case ACCESS_DENIED:
-                return ACCESS_DENIED;
-            case ACCESS_ALLOWED:
-                return ACCESS_ALLOWED;
-            case ACCESS_UNDEFINED:
-                break;
+                case ACCESS_DENIED:
+                    return ACCESS_DENIED;
+                case ACCESS_ALLOWED:
+                    return ACCESS_ALLOWED;
+                case ACCESS_UNDEFINED:
+                    break;
             }
         }
         return ACCESS_UNDEFINED;
     }
 
     private AccessType canGetAttribute(Subject subject,
-                                       FileAttributes attrs,
-                                       FileAttribute attribute)
-    {
+          FileAttributes attrs,
+          FileAttribute attribute) {
         Set<FileAttribute> set = Collections.singleton(attribute);
-        for (PermissionHandler handler: _chain) {
+        for (PermissionHandler handler : _chain) {
             AccessType res = handler.canGetAttributes(subject,
-                                                      attrs,
-                                                      set);
+                  attrs,
+                  set);
             switch (res) {
-            case ACCESS_DENIED:
-                return ACCESS_DENIED;
-            case ACCESS_ALLOWED:
-                return ACCESS_ALLOWED;
-            case ACCESS_UNDEFINED:
-                break;
+                case ACCESS_DENIED:
+                    return ACCESS_DENIED;
+                case ACCESS_ALLOWED:
+                    return ACCESS_ALLOWED;
+                case ACCESS_UNDEFINED:
+                    break;
             }
         }
         return ACCESS_UNDEFINED;
@@ -221,23 +203,22 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes currentAttributes,
-                                       FileAttributes desiredAttributes)
-    {
+          FileAttributes currentAttributes,
+          FileAttributes desiredAttributes) {
         boolean allAllowed = true;
-        for (FileAttribute attribute: desiredAttributes.getDefinedAttributes()) {
+        for (FileAttribute attribute : desiredAttributes.getDefinedAttributes()) {
             FileAttributes singleAttribute = desiredAttributes.clone();
             singleAttribute.retain(attribute);
             AccessType res = canSetAttribute(subject, currentAttributes,
-                    singleAttribute);
+                  singleAttribute);
             switch (res) {
-            case ACCESS_DENIED:
-                return ACCESS_DENIED;
-            case ACCESS_UNDEFINED:
-                allAllowed = false;
-                break;
-            case ACCESS_ALLOWED:
-                break;
+                case ACCESS_DENIED:
+                    return ACCESS_DENIED;
+                case ACCESS_UNDEFINED:
+                    allAllowed = false;
+                    break;
+                case ACCESS_ALLOWED:
+                    break;
             }
         }
         return allAllowed ? ACCESS_ALLOWED : ACCESS_UNDEFINED;
@@ -245,21 +226,20 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canGetAttributes(Subject subject,
-                                       FileAttributes attrs,
-                                       Set<FileAttribute> attributes)
-    {
+          FileAttributes attrs,
+          Set<FileAttribute> attributes) {
         boolean allAllowed = true;
-        for (FileAttribute attribute: attributes) {
+        for (FileAttribute attribute : attributes) {
             AccessType res =
-                canGetAttribute(subject, attrs, attribute);
+                  canGetAttribute(subject, attrs, attribute);
             switch (res) {
-            case ACCESS_DENIED:
-                return ACCESS_DENIED;
-            case ACCESS_UNDEFINED:
-                allAllowed = false;
-                break;
-            case ACCESS_ALLOWED:
-                break;
+                case ACCESS_DENIED:
+                    return ACCESS_DENIED;
+                case ACCESS_UNDEFINED:
+                    allAllowed = false;
+                    break;
+                case ACCESS_ALLOWED:
+                    break;
             }
         }
         return allAllowed ? ACCESS_ALLOWED : ACCESS_UNDEFINED;

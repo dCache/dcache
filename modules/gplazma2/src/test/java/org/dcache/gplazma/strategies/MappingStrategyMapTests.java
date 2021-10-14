@@ -1,15 +1,17 @@
 package org.dcache.gplazma.strategies;
 
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
+import static org.junit.Assert.assertNotNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
@@ -18,114 +20,128 @@ import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
 import org.dcache.gplazma.monitor.IgnoringLoginMonitor;
 import org.dcache.gplazma.monitor.LoginMonitor;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- *
  * @author timur
  */
-public class MappingStrategyMapTests
-{
+public class MappingStrategyMapTests {
+
     private static final String DefaultStrategyFactory =
-            "org.dcache.gplazma.strategies.DefaultStrategyFactory";
+          "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
 
     private static final LoginMonitor IGNORING_LOGIN_MONITOR =
-            new IgnoringLoginMonitor();
+          new IgnoringLoginMonitor();
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> emptyList =
-            Lists.newArrayList();
+          Lists.newArrayList();
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> oneDoNothingPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(), "nothing",
+                      REQUIRED)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successRequiredPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(), "nothing",
+                      REQUIRED),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", REQUIRED)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successOptionalPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",OPTIONAL)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(), "nothing",
+                      OPTIONAL),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", OPTIONAL)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successRequisitePlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUISITE)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(), "nothing",
+                      REQUISITE),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", REQUISITE)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successSufficientPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(), "nothing",
+                      SUFFICIENT),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", SUFFICIENT)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> failedPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", REQUIRED),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(
+                      new ThrowAuthenticationExceptionStrategy(), "throw-auth", REQUIRED)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testOptionalFailingPlugins =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", REQUIRED),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(
+                      new ThrowAuthenticationExceptionStrategy(), "throw-auth", OPTIONAL)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testRequesitePlugins1 =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(
+                      new ThrowTestAuthenticationExceptionStrategy(), "throw-test-auth", REQUISITE),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),
+                      "throw-run", REQUIRED)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testRequesitePlugins2 =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(
+                      new ThrowTestAuthenticationExceptionStrategy(), "throw-test-auth", REQUIRED),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(
+                      new ThrowAuthenticationExceptionStrategy(), "throw-auth", REQUISITE),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),
+                      "throw-run", REQUIRED)
+          );
 
     private List<GPlazmaPluginService<GPlazmaMappingPlugin>> sufficientPluginFollowedByFailedArray =
-        ImmutableList.of(
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT),
-            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
-        );
+          ImmutableList.of(
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),
+                      "always", SUFFICIENT),
+                new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),
+                      "throw-run", REQUIRED)
+          );
 
     @Before
-    public void setup() throws FactoryConfigurationException
-    {
+    public void setup() throws FactoryConfigurationException {
         strategyFactory = StrategyFactory.getInstance(DefaultStrategyFactory);
     }
 
 
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory()
-            throws FactoryConfigurationException
-    {
+          throws FactoryConfigurationException {
         StrategyFactory factory =
-                StrategyFactory.getInstance();
+              StrategyFactory.getInstance();
         assertNotNull(factory);
         AccountStrategy authStrategy = factory.newAccountStrategy();
         assertNotNull(authStrategy);
     }
 
     /**
-     * This is expected to pass as we don't require
-     * gPlazma mapping to produce Root or Home directory
-     * attributes.
+     * This is expected to pass as we don't require gPlazma mapping to produce Root or Home
+     * directory attributes.
      */
     @Test
-    public void testEmptyConfig() throws AuthenticationException
-    {
+    public void testEmptyConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(emptyList);
         Set<Principal> principals = Sets.newHashSet();
@@ -133,26 +149,23 @@ public class MappingStrategyMapTests
     }
 
     /**
-     * This is expected to pass as we don't require
-     * gPlazma mapping to produce Root or Home directory
-     * attributes.
+     * This is expected to pass as we don't require gPlazma mapping to produce Root or Home
+     * directory attributes.
      */
     @Test
-    public void testDoNothingOneElementConfig() throws AuthenticationException
-    {
+    public void testDoNothingOneElementConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(oneDoNothingPlugins);
         Set<Principal> principals = Sets.newHashSet();
         strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
-    @Test (expected=AuthenticationException.class)
-    public void testFailedConfig() throws AuthenticationException
-    {
+    @Test(expected = AuthenticationException.class)
+    public void testFailedConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(failedPlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -160,10 +173,9 @@ public class MappingStrategyMapTests
     }
 
     @Test
-    public void testRequiredConfig() throws AuthenticationException
-    {
+    public void testRequiredConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequiredPlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -171,10 +183,9 @@ public class MappingStrategyMapTests
     }
 
     @Test
-    public void testRequisiteConfig() throws AuthenticationException
-    {
+    public void testRequisiteConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successRequisitePlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -182,10 +193,9 @@ public class MappingStrategyMapTests
     }
 
     @Test
-    public void testOptionalConfig() throws AuthenticationException
-    {
+    public void testOptionalConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successOptionalPlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -193,10 +203,9 @@ public class MappingStrategyMapTests
     }
 
     @Test
-    public void testSufficientConfig() throws AuthenticationException
-    {
+    public void testSufficientConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(successSufficientPlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -204,15 +213,15 @@ public class MappingStrategyMapTests
     }
 
     /**
-     * in this case the first sufficient plugin should suceed and the second plugin
-     * that throws RuntimeException should be never called
+     * in this case the first sufficient plugin should suceed and the second plugin that throws
+     * RuntimeException should be never called
+     *
      * @throws AuthenticationException
      */
     @Test
-    public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException
-    {
+    public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         Set<Principal> principals = Sets.newHashSet();
@@ -220,15 +229,14 @@ public class MappingStrategyMapTests
     }
 
     /**
-     * Failing plugin is optional in testOptionalPlugins
-     * So overall authenticate should succeed
+     * Failing plugin is optional in testOptionalPlugins So overall authenticate should succeed
+     *
      * @throws AuthenticationException
      */
     @Test
-    public void testOptionalFailingConfig() throws AuthenticationException
-    {
+    public void testOptionalFailingConfig() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testOptionalFailingPlugins);
         Set<Principal> principals = Sets.newHashSet();
@@ -236,16 +244,15 @@ public class MappingStrategyMapTests
     }
 
     /**
-     * The exception thrown by first required plugin is
-     * thrown when the requisite plugin failure is encountered
-     * Third plugin should not be executed.
+     * The exception thrown by first required plugin is thrown when the requisite plugin failure is
+     * encountered Third plugin should not be executed.
+     *
      * @throws AuthenticationException
      */
-    @Test(expected=TestAuthenticationException.class)
-    public void testRequesiteConfig1() throws AuthenticationException
-    {
+    @Test(expected = TestAuthenticationException.class)
+    public void testRequesiteConfig1() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins1);
         Set<Principal> principals = Sets.newHashSet();
@@ -253,38 +260,35 @@ public class MappingStrategyMapTests
     }
 
     /**
-     * The exception thrown by first required plugin is
-     * thrown when the requisite plugin failure is encountered
-     * Third plugin should not be executed.
+     * The exception thrown by first required plugin is thrown when the requisite plugin failure is
+     * encountered Third plugin should not be executed.
+     *
      * @throws org.dcache.gplazma.TestAuthenticationException
      */
-    @Test(expected=TestAuthenticationException.class)
-    public void testRequesiteConfig2() throws AuthenticationException
-    {
+    @Test(expected = TestAuthenticationException.class)
+    public void testRequesiteConfig2() throws AuthenticationException {
         MappingStrategy strategy =
-                strategyFactory.newMappingStrategy();
+              strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
         strategy.setPlugins(testRequesitePlugins2);
         Set<Principal> principals = Sets.newHashSet();
         strategy.map(IGNORING_LOGIN_MONITOR, principals);
     }
 
-    private static final class DoNotingStrategy implements GPlazmaMappingPlugin
-    {
+    private static final class DoNotingStrategy implements GPlazmaMappingPlugin {
+
         @Override
         public void map(Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
         }
     }
 
     private static final class AlwaysMapToCompleteSetStrategy
-            implements GPlazmaMappingPlugin
-    {
+          implements GPlazmaMappingPlugin {
+
         @Override
         public void map(Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             UidPrincipal uid = new UidPrincipal(1L);
             GidPrincipal gid = new GidPrincipal(1L, true);
             UserNamePrincipal userName = new UserNamePrincipal("user");
@@ -295,44 +299,40 @@ public class MappingStrategyMapTests
     }
 
     private static final class ThrowAuthenticationExceptionStrategy
-            implements GPlazmaMappingPlugin
-    {
+          implements GPlazmaMappingPlugin {
+
         @Override
         public void map(Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             throw new AuthenticationException("I always fail");
         }
     }
 
     private static final class ThrowTestAuthenticationExceptionStrategy
-            implements GPlazmaMappingPlugin
-    {
+          implements GPlazmaMappingPlugin {
+
         @Override
         public void map(Set<Principal> principal)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
         }
     }
 
     private static final class ThrowRuntimeExceptionStrategy
-            implements GPlazmaMappingPlugin
-    {
+          implements GPlazmaMappingPlugin {
+
         @Override
         public void map(Set<Principal> principals)
-                throws AuthenticationException
-        {
+              throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
         }
     }
 
-    private static final class TestAuthenticationException extends AuthenticationException
-    {
+    private static final class TestAuthenticationException extends AuthenticationException {
+
         static final long serialVersionUID = -5227474403084419369L;
 
-        public TestAuthenticationException(String message)
-        {
+        public TestAuthenticationException(String message) {
             super(message);
         }
     }

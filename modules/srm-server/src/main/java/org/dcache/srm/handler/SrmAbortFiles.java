@@ -1,8 +1,10 @@
 package org.dcache.srm.handler;
 
+import static java.util.Objects.requireNonNull;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
@@ -22,28 +24,23 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+public class SrmAbortFiles {
 
-public class SrmAbortFiles
-{
     private final SrmAbortFilesRequest request;
     private final SRMUser user;
     private SrmAbortFilesResponse response;
 
     public SrmAbortFiles(
-            SRMUser user,
-            SrmAbortFilesRequest request,
-            AbstractStorageElement storage,
-            SRM srm,
-            String clientHost)
-    {
+          SRMUser user,
+          SrmAbortFilesRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.user = user;
         this.request = requireNonNull(request);
     }
 
-    public SrmAbortFilesResponse getResponse()
-    {
+    public SrmAbortFilesResponse getResponse() {
         if (response == null) {
             try {
                 response = abortFiles();
@@ -55,13 +52,13 @@ public class SrmAbortFiles
     }
 
     private SrmAbortFilesResponse abortFiles()
-            throws SRMInvalidRequestException, SRMAuthorizationException
-    {
+          throws SRMInvalidRequestException, SRMAuthorizationException {
         ContainerRequest<?> requestToAbort =
-                Request.getRequest(this.request.getRequestToken(), ContainerRequest.class);
+              Request.getRequest(this.request.getRequestToken(), ContainerRequest.class);
         try (JDC ignored = requestToAbort.applyJdc()) {
             if (!user.hasAccessTo(requestToAbort)) {
-                throw new SRMAuthorizationException("User is not the owner of request " + request.getRequestToken() + ".");
+                throw new SRMAuthorizationException(
+                      "User is not the owner of request " + request.getRequestToken() + ".");
             }
 
             org.apache.axis.types.URI[] surls = getSurls();
@@ -75,26 +72,25 @@ public class SrmAbortFiles
             requestToAbort.updateStatus();
 
             return new SrmAbortFilesResponse(
-                    getSummaryReturnStatus(surlReturnStatusArray),
-                    new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
+                  getSummaryReturnStatus(surlReturnStatusArray),
+                  new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
         }
     }
 
-    private TReturnStatus abortSurl(ContainerRequest<?> request, org.apache.axis.types.URI surl)
-    {
+    private TReturnStatus abortSurl(ContainerRequest<?> request, org.apache.axis.types.URI surl) {
         try {
-            request.getFileRequestBySurl(new URI(surl.toString())).abort("File request aborted by client.");
+            request.getFileRequestBySurl(new URI(surl.toString()))
+                  .abort("File request aborted by client.");
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (SRMFileRequestNotFoundException | URISyntaxException e) {
             return new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
-                    "SURL does match any existing file request associated with the request token");
+                  "SURL does match any existing file request associated with the request token");
         } catch (SRMException | IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
         }
     }
 
-    private org.apache.axis.types.URI[] getSurls() throws SRMInvalidRequestException
-    {
+    private org.apache.axis.types.URI[] getSurls() throws SRMInvalidRequestException {
         ArrayOfAnyURI arrayOfSURLs = request.getArrayOfSURLs();
         if (arrayOfSURLs == null || arrayOfSURLs.getUrlArray().length == 0) {
             throw new SRMInvalidRequestException("Request contains no SURL");
@@ -102,14 +98,12 @@ public class SrmAbortFiles
         return arrayOfSURLs.getUrlArray();
     }
 
-    public static SrmAbortFilesResponse getFailedResponse(String error)
-    {
+    public static SrmAbortFilesResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
     public static SrmAbortFilesResponse getFailedResponse(String error,
-                                                          TStatusCode statusCode)
-    {
+          TStatusCode statusCode) {
         SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
         srmAbortFilesResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmAbortFilesResponse;

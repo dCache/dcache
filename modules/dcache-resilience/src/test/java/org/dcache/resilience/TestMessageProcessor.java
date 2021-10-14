@@ -62,5 +62,6 @@ package org.dcache.resilience;
 import diskCacheV111.vehicles.Message;
 
 public interface TestMessageProcessor<T extends Message> {
+
     void processMessage(T message) throws Exception;
 }

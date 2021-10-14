@@ -19,81 +19,68 @@ package org.dcache.auth.attributes;
 
 
 import com.google.common.base.Joiner;
-
+import diskCacheV111.util.FsPath;
 import java.util.EnumSet;
 
-import diskCacheV111.util.FsPath;
-
 /**
- * A Restriction that allows a user to perform only activity from the
- * supplied set of activities.
+ * A Restriction that allows a user to perform only activity from the supplied set of activities.
  */
-public class DenyActivityRestriction implements Restriction
-{
+public class DenyActivityRestriction implements Restriction {
+
     private static final long serialVersionUID = 1L;
 
     private final EnumSet<Activity> denied;
 
-    public static DenyActivityRestriction restrictAllActivity()
-    {
+    public static DenyActivityRestriction restrictAllActivity() {
         return new DenyActivityRestriction(EnumSet.allOf(Activity.class));
     }
 
-    public static DenyActivityRestriction restrictNoActivity()
-    {
+    public static DenyActivityRestriction restrictNoActivity() {
         return new DenyActivityRestriction(EnumSet.noneOf(Activity.class));
     }
 
-    public DenyActivityRestriction(Activity... denied)
-    {
+    public DenyActivityRestriction(Activity... denied) {
         this.denied = (denied.length > 0)
-                      ? EnumSet.of(denied[0], denied)
-                      : EnumSet.noneOf(Activity.class);
+              ? EnumSet.of(denied[0], denied)
+              : EnumSet.noneOf(Activity.class);
     }
 
-    public DenyActivityRestriction(EnumSet<Activity> denied)
-    {
+    public DenyActivityRestriction(EnumSet<Activity> denied) {
         this.denied = denied;
     }
 
-    public EnumSet<Activity> getDenied()
-    {
+    public EnumSet<Activity> getDenied() {
         return EnumSet.copyOf(denied);
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath path)
-    {
+    public boolean isRestricted(Activity activity, FsPath path) {
         return denied.contains(activity);
     }
 
     @Override
-    public boolean isRestricted(Activity activity, FsPath directory, String name)
-    {
+    public boolean isRestricted(Activity activity, FsPath directory, String name) {
         return denied.contains(activity);
     }
 
     @Override
-    public boolean hasUnrestrictedChild(Activity activity, FsPath parent)
-    {
+    public boolean hasUnrestrictedChild(Activity activity, FsPath parent) {
         return !denied.contains(activity);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return denied.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
-        return other instanceof DenyActivityRestriction && denied.equals(((DenyActivityRestriction) other).denied);
+    public boolean equals(Object other) {
+        return other instanceof DenyActivityRestriction && denied.equals(
+              ((DenyActivityRestriction) other).denied);
     }
 
     @Override
-    public boolean isSubsumedBy(Restriction other)
-    {
+    public boolean isSubsumedBy(Restriction other) {
         if (!(other instanceof DenyActivityRestriction)) {
             return false;
         }
@@ -104,8 +91,7 @@ public class DenyActivityRestriction implements Restriction
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         if (denied.isEmpty()) {
             return "Unrestricted";
         }

@@ -1,12 +1,6 @@
 package org.dcache.cells;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-
 import diskCacheV111.vehicles.Message;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -14,13 +8,16 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.command.Command;
-
+import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 public class MessageProcessingMonitor
-    implements CellCommandListener, CellMessageSender
-{
+      implements CellCommandListener, CellMessageSender {
+
     /**
      * Request counters used to count message processing.
      */
@@ -34,37 +31,31 @@ public class MessageProcessingMonitor
     private CellEndpoint _endpoint;
 
     /**
-     * If true then message processing will be monitored and
-     * administrative commands to query the monitoring results are
-     * activated.
+     * If true then message processing will be monitored and administrative commands to query the
+     * monitoring results are activated.
      */
     private boolean _enabled;
 
-    public MessageProcessingMonitor()
-    {
+    public MessageProcessingMonitor() {
         _counters = new RequestCounters<>("Messages");
         _gauges = new RequestExecutionTimeGauges<>("Messages");
         _enabled = false;
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         _endpoint = endpoint;
     }
 
-    public void setEnabled(boolean enabled)
-    {
+    public void setEnabled(boolean enabled) {
         _enabled = enabled;
     }
 
-    public boolean isEnabled()
-    {
+    public boolean isEnabled() {
         return _enabled;
     }
 
-    public CellEndpoint getReplyCellEndpoint(CellMessage envelope)
-    {
+    public CellEndpoint getReplyCellEndpoint(CellMessage envelope) {
         if (_enabled) {
             Class<? extends Serializable> type = envelope.getMessageObject().getClass();
             return new MonitoringReplyCellEndpoint(type);
@@ -74,48 +65,44 @@ public class MessageProcessingMonitor
     }
 
     @Command(name = "monitoring enable", hint = "gather message handling statistics",
-             description="Gather some basic statistics on whether sent messages " +
-                     "were successful and how long they took to process.")
-    public class MonitoringEnableCommand implements Callable<String>
-    {
+          description = "Gather some basic statistics on whether sent messages " +
+                "were successful and how long they took to process.")
+    public class MonitoringEnableCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             _enabled = true;
             return "";
         }
     }
 
     @Command(name = "monitoring disable", hint = "disable message monitoring",
-             description = "Stops gathering of message handling statistics.")
-    public class MonitoringDisableCommand implements Callable<String>
-    {
+          description = "Stops gathering of message handling statistics.")
+    public class MonitoringDisableCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             _enabled = false;
             return "";
         }
     }
 
     @Command(name = "monitoring info", hint = "display message monitoring information",
-             description = "Provides information about message processing.")
-    public class MonitoringInfoCommand implements Callable<String>
-    {
+          description = "Provides information about message processing.")
+    public class MonitoringInfoCommand implements Callable<String> {
+
         @Override
-        public String call()
-        {
+        public String call() {
             return _counters.toString() + "\n\n" + _gauges.toString();
         }
     }
 
-    public class MonitoringReplyCellEndpoint implements CellEndpoint
-    {
+    public class MonitoringReplyCellEndpoint implements CellEndpoint {
+
         private final Class<? extends Serializable> _type;
         private final long _startTime;
 
-        public MonitoringReplyCellEndpoint(Class<? extends Serializable> type)
-        {
+        public MonitoringReplyCellEndpoint(Class<? extends Serializable> type) {
             _startTime = System.currentTimeMillis();
             _type = type;
             _counters.incrementRequests(_type);
@@ -123,8 +110,7 @@ public class MessageProcessingMonitor
 
         @Override
         public void sendMessage(CellMessage envelope, SendFlag... flags)
-            throws SerializationException
-        {
+              throws SerializationException {
             boolean success = false;
             try {
                 _endpoint.sendMessage(envelope, flags);
@@ -133,7 +119,7 @@ public class MessageProcessingMonitor
                 _gauges.update(_type, System.currentTimeMillis() - _startTime);
                 Object o = envelope.getMessageObject();
                 if (!success || o instanceof Exception ||
-                    (o instanceof Message) && ((Message) o).getReturnCode() != 0) {
+                      (o instanceof Message) && ((Message) o).getReturnCode() != 0) {
                     _counters.incrementFailed(_type);
                 }
             }
@@ -141,14 +127,12 @@ public class MessageProcessingMonitor
 
         @Override
         public void sendMessage(CellMessage envelope, CellMessageAnswerable callback,
-                                Executor executor, long timeout, SendFlag... flags)
-        {
+              Executor executor, long timeout, SendFlag... flags) {
             throw new UnsupportedOperationException("Cannot use callback for reply");
         }
 
         @Override
-        public Map<String,Object> getDomainContext()
-        {
+        public Map<String, Object> getDomainContext() {
             return _endpoint.getDomainContext();
         }
     }

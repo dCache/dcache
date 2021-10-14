@@ -19,19 +19,18 @@ package org.dcache.pool.nearline.spi;
 
 /**
  * Factory of NearlineStorage.
- *
+ * <p>
  * This is the entry point for providers of nearline storage.
  */
-public interface NearlineStorageProvider
-{
+public interface NearlineStorageProvider {
+
     /**
      * Returns a name uniquely identifying this provider.
-     *
-     * The name is used by the dCache administrator to refer to the provider. This
-     * is not the same as the HSM instance name: The instance names identifies a
-     * particular nearline storage, while the provider is merely a driver to
-     * access a nearline storage. As such, the same provider can be used to access
-     * several instances, and the same instance could possibly be accessed by
+     * <p>
+     * The name is used by the dCache administrator to refer to the provider. This is not the same
+     * as the HSM instance name: The instance names identifies a particular nearline storage, while
+     * the provider is merely a driver to access a nearline storage. As such, the same provider can
+     * be used to access several instances, and the same instance could possibly be accessed by
      * different providers.
      *
      * @return a string identifying the provider.
@@ -47,15 +46,15 @@ public interface NearlineStorageProvider
 
     /**
      * Creates a new nearline storage instance.
-     *
+     * <p>
      * The new instance is identified by a unique instance name.
-     *
+     * <p>
      * Nearline storages in dCache have a type. The type essentially identifies the meta data schema
      * of the nearline storage and must be supported by the dCache name space provider.
-     *
-     * When a file is written to the nearline storage, the location is represented by a URI. The scheme
-     * component of the URI is the nearline storage type, while the authority component is the nearline
-     * storage instance name.
+     * <p>
+     * When a file is written to the nearline storage, the location is represented by a URI. The
+     * scheme component of the URI is the nearline storage type, while the authority component is
+     * the nearline storage instance name.
      *
      * @param type a dCache nearline storage type.
      * @param name an instance name uniquely identifying the instance.

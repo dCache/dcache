@@ -22,25 +22,24 @@ import static org.dcache.util.Exceptions.genericCheck;
 /**
  * Indicates that one of the supplied caveats is somehow invalid.
  */
-public class InvalidCaveatException extends Exception
-{
+public class InvalidCaveatException extends Exception {
+
     /**
      * A utility method similar to Guava check* methods.
      */
-    public static void checkCaveat(boolean isOK, String format, Object...args)
-            throws InvalidCaveatException
-    {
+    public static void checkCaveat(boolean isOK, String format, Object... args)
+          throws InvalidCaveatException {
         genericCheck(isOK, InvalidCaveatException::new, format, args);
     }
 
     /**
-     * Wrap some existing exception with an InvalidCaveatException.  The
-     * supplied message is appended with information taken from the
-     * cause
+     * Wrap some existing exception with an InvalidCaveatException.  The supplied message is
+     * appended with information taken from the cause
      */
     public static InvalidCaveatException wrap(String message, Exception cause) {
         if (cause.getMessage() == null) {
-            return new InvalidCaveatException(message + ": " + cause.getClass().getSimpleName(), cause);
+            return new InvalidCaveatException(message + ": " + cause.getClass().getSimpleName(),
+                  cause);
         } else {
             return new InvalidCaveatException(message + ": " + cause.getMessage(), cause);
         }

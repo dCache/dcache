@@ -17,6 +17,23 @@
  */
 package org.dcache.xrootd.pool;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.UUID_PREFIX;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgMissing;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgTooLong;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NoSpace;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotFile;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qcksum;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Qconfig;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_Unsupported;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_error;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_login;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_posc;
+
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -85,23 +102,20 @@ import org.dcache.xrootd.util.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
-
 /**
- * XrootdPoolRequestHandler is an xrootd request processor on the pool
- * side - it receives xrootd requests messages from the client.
- *
- * Upon an open request it retrieves a mover channel from
- * XrootdPoolNettyServer and passes all subsequent client requests on
- * to a file descriptor wrapping the mover channel.
- *
- * Synchronisation is currently not ensured by the handler; it relies
- * on the synchronization by the underlying channel execution handler.
+ * XrootdPoolRequestHandler is an xrootd request processor on the pool side - it receives xrootd
+ * requests messages from the client.
+ * <p>
+ * Upon an open request it retrieves a mover channel from XrootdPoolNettyServer and passes all
+ * subsequent client requests on to a file descriptor wrapping the mover channel.
+ * <p>
+ * Synchronisation is currently not ensured by the handler; it relies on the synchronization by the
+ * underlying channel execution handler.
  */
-public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
-{
+public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
+          LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
 
     public static final int DEFAULT_FILESTATUS_FLAGS = 0;
     private static final int DEFAULT_FILESTATUS_ID = 0;
@@ -110,23 +124,24 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     private static final int MAX_JAVA_ARRAY = Integer.MAX_VALUE - 5;
     private static final int READV_HEADER_LENGTH = 24;
     private static final int READV_ELEMENT_LENGTH = 12;
-    private static final int READV_IOV_MAX = (MAX_JAVA_ARRAY - READV_HEADER_LENGTH) / READV_ELEMENT_LENGTH;
+    private static final int READV_IOV_MAX =
+          (MAX_JAVA_ARRAY - READV_HEADER_LENGTH) / READV_ELEMENT_LENGTH;
 
     /**
      * Store file descriptors of open files.
      */
     private final List<FileDescriptor> _descriptors =
-            Collections.synchronizedList(new ArrayList<>());
+          Collections.synchronizedList(new ArrayList<>());
 
     /**
-     * Use for timeout handling - a handler is always newly instantiated in
-     * the Netty ChannelPipeline, so okay to store stateful information.
+     * Use for timeout handling - a handler is always newly instantiated in the Netty
+     * ChannelPipeline, so okay to store stateful information.
      */
     private boolean _hasOpenedFiles;
 
     /**
-     * Address of the door. Enables us to redirect the client back if an
-     * operation should better be performed at the door.
+     * Address of the door. Enables us to redirect the client back if an operation should better be
+     * performed at the door.
      */
     private InetSocketAddress _redirectingDoor;
 
@@ -143,20 +158,18 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * Custom entries for kXR_Qconfig requests.
      */
-    private final Map<String,String> _queryConfig;
+    private final Map<String, String> _queryConfig;
 
     public XrootdPoolRequestHandler(XrootdTransferService server,
-                                    int maxFrameSize,
-                                    Map<String, String> queryConfig)
-    {
+          int maxFrameSize,
+          Map<String, String> queryConfig) {
         _server = server;
         _maxFrameSize = maxFrameSize;
         _queryConfig = queryConfig;
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
-    {
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.ALL_IDLE) {
@@ -169,21 +182,20 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx)
-    {
+    public void channelInactive(ChannelHandlerContext ctx) {
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
                 if (descriptor instanceof TpcWriteDescriptor) {
-                    ((TpcWriteDescriptor)descriptor).shutDown();
+                    ((TpcWriteDescriptor) descriptor).shutDown();
                 }
 
                 if (descriptor.isPersistOnSuccessfulClose()) {
                     descriptor.getChannel().release(new FileCorruptedCacheException(
-                            "File was opened with Persist On Successful Close and not closed."));
+                          "File was opened with Persist On Successful Close and not closed."));
                 } else if (descriptor.getChannel().getIoMode().contains(StandardOpenOption.WRITE)) {
                     descriptor.getChannel().release(new CacheException(
-                            "Client disconnected without closing file."));
+                          "Client disconnected without closing file."));
                 } else if (!descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)) {
                     descriptor.getChannel().release();
                 } else {
@@ -197,15 +209,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                      */
                     _server.scheduleReconnectTimerForMover(descriptor);
                     _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
-                        ctx.channel(), descriptor.getChannel().getMoverUuid());
+                          ctx.channel(), descriptor.getChannel().getMoverUuid());
                 }
             }
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
-    {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t) {
         if (t instanceof ClosedChannelException) {
             _log.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
@@ -213,11 +224,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 if (descriptor != null) {
                     if (descriptor.isPersistOnSuccessfulClose()) {
                         descriptor.getChannel().release(new FileCorruptedCacheException(
-                                "File was opened with Persist On Successful Close and client was "
+                              "File was opened with Persist On Successful Close and client was "
                                     + "disconnected due to an error: " +
-                                t.getMessage(), t));
-                    } else if (!(descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)
-                                 && t instanceof IOException)) {
+                                    t.getMessage(), t));
+                    } else if (!(
+                          descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)
+                                && t instanceof IOException)) {
                         descriptor.getChannel().release(t);
                     } else {
                         /*
@@ -228,13 +240,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                          *  (the stall could present itself eventually as a broken pipe exception).
                          */
                         _server.scheduleReconnectTimerForMover(descriptor);
-                        _log.debug("{} exceptionCaught ({}), starting timer for reconnect with mover {}.",
-                            ctx.channel(), t.toString(), descriptor.getChannel().getMoverUuid());
+                        _log.debug(
+                              "{} exceptionCaught ({}), starting timer for reconnect with mover {}.",
+                              ctx.channel(), t.toString(), descriptor.getChannel().getMoverUuid());
                     }
 
                     if (descriptor instanceof TpcWriteDescriptor) {
-                        ((TpcWriteDescriptor)descriptor).fireDelayedSync(kXR_error,
-                                                                         t.getMessage());
+                        ((TpcWriteDescriptor) descriptor).fireDelayedSync(kXR_error,
+                              t.getMessage());
                     }
                 }
             }
@@ -249,8 +262,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
     @Override
     protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
-                    throws XrootdException
-    {
+          throws XrootdException {
         XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
 
         /*
@@ -274,9 +286,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
          */
         if (tlsSessionInfo.serverUsesTls()) {
             boolean startedTLS = tlsSessionInfo.serverTransitionedToTLS(kXR_login,
-                                                                        ctx);
+                  ctx);
             _log.debug("kXR_login, server has now transitioned to tls? {}.",
-                       startedTLS);
+                  startedTLS);
             sec = "";
         } else if (signingPolicy.isSigningOn() && signingPolicy.isForceSigning()) {
             /*
@@ -288,9 +300,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
              */
             sec = "&P=unix";
             ctx.pipeline().addAfter("decoder",
-                                        "sigverDecoder",
-                                        new XrootdSigverDecoder(signingPolicy,
-                                                                null));
+                  "sigverDecoder",
+                  new XrootdSigverDecoder(signingPolicy,
+                        null));
             ctx.pipeline().remove("decoder");
             _log.debug("swapped decoder for sigverDecoder.");
         } else {
@@ -306,8 +318,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
     @Override
     protected XrootdResponse<AuthenticationRequest> doOnAuthentication(ChannelHandlerContext ctx,
-                                                                       AuthenticationRequest msg)
-    {
+          AuthenticationRequest msg) {
         /**
          *  Should only receive this request if signed hash verification is
          *  on (e.g., using UNIX protocol).
@@ -316,42 +327,39 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     /**
-     * Obtains the right mover channel using an opaque token in the
-     * request. The mover channel is wrapped by a file descriptor. The
-     * file descriptor is stored for subsequent access.
-     *
-     * In the case that this is a write request as destination in a third party
-     * copy, a third-party client is started.  The client issues login, open and
-     * read requests to the source server, and writes the responses
-     * to the file descriptor.
-     *
-     * The third-party client also sends a sync response back to the client
-     * when the transfer has completed.
+     * Obtains the right mover channel using an opaque token in the request. The mover channel is
+     * wrapped by a file descriptor. The file descriptor is stored for subsequent access.
+     * <p>
+     * In the case that this is a write request as destination in a third party copy, a third-party
+     * client is started.  The client issues login, open and read requests to the source server, and
+     * writes the responses to the file descriptor.
+     * <p>
+     * The third-party client also sends a sync response back to the client when the transfer has
+     * completed.
      */
     @Override
     protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx,
-                                                   OpenRequest msg)
-        throws XrootdException
-    {
+          OpenRequest msg)
+          throws XrootdException {
         try {
             Map<String, String> opaqueMap = getOpaqueMap(msg.getOpaque());
             UUID uuid = getUuid(opaqueMap);
             if (uuid == null) {
                 _log.info("Request to open {} contains no UUID.", msg.getPath());
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the "
-                    + UUID_PREFIX + " property.");
+                      + UUID_PREFIX + " property.");
             }
 
             enforceClientTlsIfDestinationRequiresItForTpc(opaqueMap);
 
             NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file
-                = _server.openFile(uuid, false);
+                  = _server.openFile(uuid, false);
             if (file == null) {
                 _log.info("No mover found for {} with UUID {}.", msg.getPath(), uuid);
                 return redirectToDoor(ctx, msg, () ->
                 {
                     throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX
-                        + " is no longer valid.");
+                          + " is no longer valid.");
                 });
             }
 
@@ -370,8 +378,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     throw new XrootdException(kXR_Unsupported, "File exists.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
                     boolean posc = (msg.getOptions() & kXR_posc) == kXR_posc ||
-                        file.getProtocolInfo().getFlags()
-                            .contains(XrootdProtocolInfo.Flags.POSC);
+                          file.getProtocolInfo().getFlags()
+                                .contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
                         _log.debug("Request to open {} is as third-party destination.", msg);
 
@@ -379,10 +387,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                         tpcInfo.setDelegatedProxy(file.getProtocolInfo().getDelegatedCredential());
 
                         descriptor = new TpcWriteDescriptor(file, posc, ctx,
-                            _server,
-                            opaqueMap.get("org.dcache.xrootd.client"),
-                            tpcInfo,
-                            tlsSessionInfo);
+                              _server,
+                              opaqueMap.get("org.dcache.xrootd.client"),
+                              tpcInfo,
+                              tlsSessionInfo);
                     } else {
                         descriptor = new WriteDescriptor(file, posc);
                     }
@@ -407,13 +415,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             }
         } catch (ParseException e) {
             throw new XrootdException(kXR_ArgInvalid, e.getMessage());
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
     }
 
-    private UUID getUuid(Map<String, String> opaque)  throws XrootdException
-    {
+    private UUID getUuid(Map<String, String> opaque) throws XrootdException {
         String uuidString = opaque.get(XrootdProtocol.UUID_PREFIX);
         if (uuidString == null) {
             return null;
@@ -425,31 +432,29 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         } catch (IllegalArgumentException e) {
             _log.warn("Failed to parse UUID {}: {}", opaque, e.getMessage());
             throw new XrootdException(kXR_ArgInvalid,
-                                      "Cannot parse " + uuidString + ": " + e.getMessage());
+                  "Cannot parse " + uuidString + ": " + e.getMessage());
         }
         return uuid;
     }
 
-    private  Map<String,String> getOpaqueMap(String opaque) throws XrootdException
-    {
-        Map<String,String> map;
+    private Map<String, String> getOpaqueMap(String opaque) throws XrootdException {
+        Map<String, String> map;
         try {
             map = OpaqueStringParser.getOpaqueMap(opaque);
         } catch (ParseException e) {
             _log.warn("Could not parse the opaque information {}: {}",
-                      opaque, e.getMessage());
+                  opaque, e.getMessage());
             throw new XrootdException(kXR_ArgInvalid,
-                                      "Cannot parse opaque data: " + e.getMessage());
+                  "Cannot parse opaque data: " + e.getMessage());
         }
 
         return map;
     }
 
     /**
-     * In third-party requests where dCache is the destination, the client
-     * may ask for a size update.  This can be provided by checking
-     * channel size.
-     *
+     * In third-party requests where dCache is the destination, the client may ask for a size
+     * update.  This can be provided by checking channel size.
+     * <p>
      * Otherwise, stat is not supported on the pool and should be issued to the door.
      *
      * @param ctx Received from the netty pipeline
@@ -457,92 +462,86 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     @Override
     protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest msg)
-            throws XrootdException
-    {
+          throws XrootdException {
         switch (msg.getTarget()) {
-        case PATH:
-            _log.debug("Request to stat {}; redirecting to door.", msg);
-            return redirectToDoor(ctx, msg);
+            case PATH:
+                _log.debug("Request to stat {}; redirecting to door.", msg);
+                return redirectToDoor(ctx, msg);
 
-        case FHANDLE:
-            int fd = msg.getFhandle();
+            case FHANDLE:
+                int fd = msg.getFhandle();
 
-            if (!isValidFileDescriptor(fd)) {
-                _log.warn("Could not find a file descriptor for handle {}", fd);
-                throw new XrootdException(kXR_FileNotOpen,
-                                          "The file handle does not refer to an open " +
-                                          "file.");
-            }
-
-            FileDescriptor descriptor = _descriptors.get(fd);
-            if (descriptor instanceof TpcWriteDescriptor) {
-                _log.debug("Request to stat {} is for third-party transfer.", msg);
-                return ((TpcWriteDescriptor)descriptor).handleStat(msg);
-            } else {
-                try {
-                    _log.debug("Request to stat open file fhandle={}", fd);
-                    return new StatResponse(msg, stat(descriptor.getChannel()));
-                } catch (IOException e) {
-                    throw new XrootdException(kXR_IOError, e.getMessage());
+                if (!isValidFileDescriptor(fd)) {
+                    _log.warn("Could not find a file descriptor for handle {}", fd);
+                    throw new XrootdException(kXR_FileNotOpen,
+                          "The file handle does not refer to an open " +
+                                "file.");
                 }
-            }
 
-        default:
-            throw new XrootdException(kXR_NotFile, "Unexpected stat target");
+                FileDescriptor descriptor = _descriptors.get(fd);
+                if (descriptor instanceof TpcWriteDescriptor) {
+                    _log.debug("Request to stat {} is for third-party transfer.", msg);
+                    return ((TpcWriteDescriptor) descriptor).handleStat(msg);
+                } else {
+                    try {
+                        _log.debug("Request to stat open file fhandle={}", fd);
+                        return new StatResponse(msg, stat(descriptor.getChannel()));
+                    } catch (IOException e) {
+                        throw new XrootdException(kXR_IOError, e.getMessage());
+                    }
+                }
+
+            default:
+                throw new XrootdException(kXR_NotFile, "Unexpected stat target");
         }
     }
 
     @Override
-    protected XrootdResponse<DirListRequest> doOnDirList(ChannelHandlerContext ctx, DirListRequest msg)
-        throws XrootdException
-    {
+    protected XrootdResponse<DirListRequest> doOnDirList(ChannelHandlerContext ctx,
+          DirListRequest msg)
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
     @Override
     protected XrootdResponse<MvRequest> doOnMv(ChannelHandlerContext ctx, MvRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
     @Override
     protected XrootdResponse<RmRequest> doOnRm(ChannelHandlerContext ctx, RmRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
     @Override
     protected XrootdResponse<RmDirRequest> doOnRmDir(ChannelHandlerContext ctx, RmDirRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
     @Override
     protected XrootdResponse<MkDirRequest> doOnMkDir(ChannelHandlerContext ctx, MkDirRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
     @Override
     protected XrootdResponse<StatxRequest> doOnStatx(ChannelHandlerContext ctx, StatxRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         return redirectToDoor(ctx, msg);
     }
 
-    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx, R msg)
-        throws XrootdException
-    {
+    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx,
+          R msg)
+          throws XrootdException {
         return redirectToDoor(ctx, msg, () -> unsupported(ctx, msg));
     }
 
-    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx, R msg, Callable<XrootdResponse<R>> onError)
-        throws XrootdException
-    {
+    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx,
+          R msg, Callable<XrootdResponse<R>> onError)
+          throws XrootdException {
         if (_redirectingDoor == null) {
             try {
                 return onError.call();
@@ -554,31 +553,29 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             }
         } else {
             return new RedirectResponse<>(msg,
-                                          _redirectingDoor.getHostName(),
-                                          _redirectingDoor.getPort());
+                  _redirectingDoor.getHostName(),
+                  _redirectingDoor.getPort());
         }
     }
 
 
     /**
-     * Lookup the file descriptor and obtain a Reader from it. The
-     * Reader will be placed in a queue from which it is taken when
-     * sending data to the client.
+     * Lookup the file descriptor and obtain a Reader from it. The Reader will be placed in a queue
+     * from which it is taken when sending data to the client.
      *
      * @param ctx Received from the netty pipeline
      * @param msg The actual request
      */
     @Override
     protected Object doOnRead(ChannelHandlerContext ctx, ReadRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
             _log.warn("Could not find a file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
-                                      "The file handle does not refer to an open " +
-                                      "file.");
+                  "The file handle does not refer to an open " +
+                        "file.");
         }
 
         if (msg.bytesToRead() == 0) {
@@ -589,9 +586,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     /**
-     * Vector reads consist of several embedded read requests, which
-     * can even contain different file handles. All the descriptors
-     * for the file handles are looked up and passed to a vector
+     * Vector reads consist of several embedded read requests, which can even contain different file
+     * handles. All the descriptors for the file handles are looked up and passed to a vector
      * reader.
      *
      * @param ctx received from the netty pipeline
@@ -599,8 +595,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     @Override
     protected Object doOnReadV(ChannelHandlerContext ctx, ReadVRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         EmbeddedReadRequest[] list = msg.getReadRequestList();
 
         if (list == null || list.length == 0) {
@@ -613,50 +608,49 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             if (!isValidFileDescriptor(fd)) {
                 _log.warn("Could not find file descriptor for handle {}", fd);
                 throw new XrootdException(kXR_FileNotOpen,
-                                          "Descriptor for the embedded read request "
-                                          + "does not refer to an open file.");
+                      "Descriptor for the embedded read request "
+                            + "does not refer to an open file.");
             }
 
             int totalBytesToRead = req.BytesToRead() +
-                ReadVResponse.READ_LIST_HEADER_SIZE;
+                  ReadVResponse.READ_LIST_HEADER_SIZE;
 
             if (totalBytesToRead > _maxFrameSize) {
                 _log.warn("Vector read of {} bytes requested, exceeds " +
-                          "maximum frame size of {} bytes!", totalBytesToRead,
-                          _maxFrameSize);
+                            "maximum frame size of {} bytes!", totalBytesToRead,
+                      _maxFrameSize);
                 throw new XrootdException(kXR_ArgTooLong, "Single readv transfer is too large.");
             }
         }
 
-        return new ChunkedFileDescriptorReadvResponse(msg, _maxFrameSize, new ArrayList<>(_descriptors));
+        return new ChunkedFileDescriptorReadvResponse(msg, _maxFrameSize,
+              new ArrayList<>(_descriptors));
     }
 
     /**
-     * Lookup the file descriptor and delegate message processing to
-     * it.
+     * Lookup the file descriptor and delegate message processing to it.
      *
      * @param ctx received from the netty pipeline
      * @param msg the actual request
      */
     @Override
     protected XrootdResponse<WriteRequest> doOnWrite(ChannelHandlerContext ctx, WriteRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         int fd = msg.getFileHandle();
 
         if ((!isValidFileDescriptor(fd))) {
             _log.warn("No file descriptor for file handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
-                                      "The file descriptor does not refer to " +
-                                      "an open file.");
+                  "The file descriptor does not refer to " +
+                        "an open file.");
         }
 
         FileDescriptor descriptor = _descriptors.get(fd);
         if (!(descriptor instanceof WriteDescriptor)) {
             _log.warn("File descriptor for handle {} is read-only, user " +
-                              "tried to write.", fd);
+                  "tried to write.", fd);
             throw new XrootdException(kXR_FileNotOpen,
-                                      "Tried to write on read only file.");
+                  "Tried to write on read only file.");
         }
 
         try {
@@ -665,7 +659,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             throw new XrootdException(kXR_NoSpace, e.getMessage());
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
-                    "The file was forcefully closed by the server.");
+                  "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -680,15 +674,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     @Override
     protected XrootdResponse<SyncRequest> doOnSync(ChannelHandlerContext ctx, SyncRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
             _log.warn("Could not find file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
-                                      "The file descriptor does not refer to an " +
-                                      "open file.");
+                  "The file descriptor does not refer to an " +
+                        "open file.");
         }
 
         FileDescriptor descriptor = _descriptors.get(fd);
@@ -697,13 +690,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             return descriptor.sync(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
-                    "The file was forcefully closed by the server.");
+                  "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         } catch (InterruptedException e) {
             throw new XrootdException(kXR_ServerError,
-                                      "The server was interrupted; sync "
-                                                      + "could not complete.");
+                  "The server was interrupted; sync "
+                        + "could not complete.");
         }
     }
 
@@ -715,15 +708,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     @Override
     protected XrootdResponse<CloseRequest> doOnClose(ChannelHandlerContext ctx, CloseRequest msg)
-        throws XrootdException
-    {
+          throws XrootdException {
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
             _log.warn("Could not find file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
-                             "The file descriptor does not refer to an " +
-                             "open file.");
+                  "The file descriptor does not refer to an " +
+                        "open file.");
         }
 
         /*
@@ -757,7 +749,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
          *  all references to the mover.
          */
         NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel
-                        = _descriptors.get(fd).getChannel();
+              = _descriptors.get(fd).getChannel();
 
         /*
          *  Stop any timer in case this is a reconnect.
@@ -773,10 +765,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 if (cause instanceof CacheException) {
-                    int rc = ((CacheException)cause).getRc();
+                    int rc = ((CacheException) cause).getRc();
                     respond(ctx, withError(msg,
-                                           CacheExceptionMapper.xrootdErrorCode(rc),
-                                           cause.getMessage()));
+                          CacheExceptionMapper.xrootdErrorCode(rc),
+                          cause.getMessage()));
                 } else if (cause instanceof IOException) {
                     respond(ctx, withError(msg, kXR_IOError, cause.getMessage()));
                 } else {
@@ -791,111 +783,111 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected XrootdResponse<QueryRequest> doOnQuery(ChannelHandlerContext ctx, QueryRequest msg) throws XrootdException
-    {
+    protected XrootdResponse<QueryRequest> doOnQuery(ChannelHandlerContext ctx, QueryRequest msg)
+          throws XrootdException {
         switch (msg.getReqcode()) {
-        case kXR_Qconfig:
-            StringBuilder s = new StringBuilder();
-            for (String name: msg.getArgs().split(" ")) {
-                switch (name) {
-                case "bind_max":
-                    s.append(0);
-                    break;
-                case "readv_ior_max":
-                    s.append(_maxFrameSize - ReadVResponse.READ_LIST_HEADER_SIZE);
-                    break;
-                case "readv_iov_max":
-                    s.append(READV_IOV_MAX);
-                    break;
-                case "version":
-                    s.append("dCache ").append(Version.of(XrootdPoolRequestHandler.class).getVersion());
-                    break;
-                case "tpc":
-                    /**
-                     * Indicate support for third-party copy by responding
-                     * with the protocol version.
-                     */
-                    s.append(XrootdProtocol.TPC_VERSION);
-                    break;
-                case "tpcdlg":
-                    s.append("gsi");
-                    break;
-                default:
-                    s.append(_queryConfig.getOrDefault(name, name));
-                    break;
+            case kXR_Qconfig:
+                StringBuilder s = new StringBuilder();
+                for (String name : msg.getArgs().split(" ")) {
+                    switch (name) {
+                        case "bind_max":
+                            s.append(0);
+                            break;
+                        case "readv_ior_max":
+                            s.append(_maxFrameSize - ReadVResponse.READ_LIST_HEADER_SIZE);
+                            break;
+                        case "readv_iov_max":
+                            s.append(READV_IOV_MAX);
+                            break;
+                        case "version":
+                            s.append("dCache ")
+                                  .append(Version.of(XrootdPoolRequestHandler.class).getVersion());
+                            break;
+                        case "tpc":
+                            /**
+                             * Indicate support for third-party copy by responding
+                             * with the protocol version.
+                             */
+                            s.append(XrootdProtocol.TPC_VERSION);
+                            break;
+                        case "tpcdlg":
+                            s.append("gsi");
+                            break;
+                        default:
+                            s.append(_queryConfig.getOrDefault(name, name));
+                            break;
+                    }
+                    s.append('\n');
                 }
-                s.append('\n');
-            }
-            return new QueryResponse(msg, s.toString());
-        case kXR_Qcksum:
-            String opaque = msg.getOpaque();
-            if (opaque == null) {
-                return redirectToDoor(ctx, msg);
-            }
-            UUID uuid = getUuid(getOpaqueMap(opaque));
-            if (uuid == null) {
-                /* The spec isn't clear about whether the path includes the opaque information or not.
-                 * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the
-                 * file attributes in the pool.
-                 */
-                return redirectToDoor(ctx, msg);
-            }
-            FileAttributes attributes = _server.getFileAttributes(uuid);
-            if (attributes == null) {
-                return redirectToDoor(ctx, msg);
-            }
-            if (attributes.isUndefined(FileAttribute.CHECKSUM)) {
-                throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
-            }
-            return selectChecksum(new ChecksumInfo(msg.getPath(), opaque),
-                                  attributes.getChecksums(),
-                                  msg);
-        default:
-            return unsupported(ctx, msg);
+                return new QueryResponse(msg, s.toString());
+            case kXR_Qcksum:
+                String opaque = msg.getOpaque();
+                if (opaque == null) {
+                    return redirectToDoor(ctx, msg);
+                }
+                UUID uuid = getUuid(getOpaqueMap(opaque));
+                if (uuid == null) {
+                    /* The spec isn't clear about whether the path includes the opaque information or not.
+                     * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the
+                     * file attributes in the pool.
+                     */
+                    return redirectToDoor(ctx, msg);
+                }
+                FileAttributes attributes = _server.getFileAttributes(uuid);
+                if (attributes == null) {
+                    return redirectToDoor(ctx, msg);
+                }
+                if (attributes.isUndefined(FileAttribute.CHECKSUM)) {
+                    throw new XrootdException(kXR_Unsupported,
+                          "No checksum available for this file.");
+                }
+                return selectChecksum(new ChecksumInfo(msg.getPath(), opaque),
+                      attributes.getChecksums(),
+                      msg);
+            default:
+                return unsupported(ctx, msg);
         }
     }
 
     @Override
-    protected Object doOnEndSession(ChannelHandlerContext ctx, EndSessionRequest request) throws XrootdException
-    {
+    protected Object doOnEndSession(ChannelHandlerContext ctx, EndSessionRequest request)
+          throws XrootdException {
         return withOk(request);
     }
 
     /**
      * Gets the number of an unused file descriptor.
+     *
      * @return Number of an unused file descriptor.
      */
-    private int getUnusedFileDescriptor()
-    {
-       for (int i = 0; i < _descriptors.size(); i++) {
-           if (_descriptors.get(i) == null) {
-               return i;
-           }
-       }
+    private int getUnusedFileDescriptor() {
+        for (int i = 0; i < _descriptors.size(); i++) {
+            if (_descriptors.get(i) == null) {
+                return i;
+            }
+        }
 
-       _descriptors.add(null);
-       return _descriptors.size() - 1;
+        _descriptors.add(null);
+        return _descriptors.size() - 1;
     }
 
     /**
-     * Test if the file descriptor actually refers to a file descriptor that
-     * is contained in the descriptor list
+     * Test if the file descriptor actually refers to a file descriptor that is contained in the
+     * descriptor list
+     *
      * @param fd file descriptor number
-     * @return true, if the descriptor number refers to a descriptor in the
-     *               list, false otherwise
+     * @return true, if the descriptor number refers to a descriptor in the list, false otherwise
      */
-    private boolean isValidFileDescriptor(int fd)
-    {
+    private boolean isValidFileDescriptor(int fd) {
         return fd >= 0 && fd < _descriptors.size() &&
-            _descriptors.get(fd) != null;
+              _descriptors.get(fd) != null;
     }
 
     private FileStatus stat(RepositoryChannel file)
-        throws IOException
-    {
+          throws IOException {
         return new FileStatus(DEFAULT_FILESTATUS_ID,
-                              file.size(),
-                              DEFAULT_FILESTATUS_FLAGS,
-                              DEFAULT_FILESTATUS_MODTIME);
+              file.size(),
+              DEFAULT_FILESTATUS_FLAGS,
+              DEFAULT_FILESTATUS_MODTIME);
     }
 }

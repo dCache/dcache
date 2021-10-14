@@ -18,35 +18,30 @@
 package org.dcache.ftp.door;
 
 import com.google.common.cache.LoadingCache;
-
-import java.net.InetSocketAddress;
-import java.util.Optional;
-import java.util.concurrent.Executor;
-
 import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.doors.NettyLineBasedInterpreterFactory;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.ConfigurationException;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.LineWriter;
-
+import java.net.InetSocketAddress;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
-public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreterFactory
-{
+public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreterFactory {
+
     protected final FtpDoorSettings settings = new FtpDoorSettings();
 
     protected abstract AbstractFtpDoorV1 createInterpreter() throws Exception;
 
     @Override
-    public void configure(Args args) throws ConfigurationException
-    {
+    public void configure(Args args) throws ConfigurationException {
         OptionParser options = new OptionParser(args);
         options.inject(settings);
         options.inject(this);
@@ -54,13 +49,13 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-                                       InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
-                                       LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler,
-                                       IdentityResolverFactory idResolverFactory,
-                                       LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
-                                       LoadingCache<String,Optional<Space>> spaceLookupCache)
-            throws Exception
-    {
+          InetSocketAddress remoteAddress, InetSocketAddress proxyAddress,
+          InetSocketAddress localAddress,
+          LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler,
+          IdentityResolverFactory idResolverFactory,
+          LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
+          LoadingCache<String, Optional<Space>> spaceLookupCache)
+          throws Exception {
         AbstractFtpDoorV1 interpreter = createInterpreter();
         interpreter.setSettings(settings);
         interpreter.setWriter(writer);

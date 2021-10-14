@@ -18,32 +18,28 @@
  */
 package org.dcache.gplazma.oidc;
 
-import com.google.common.base.Strings;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import org.dcache.util.Args;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.dcache.util.Args;
+
 /**
- * An OpenID-Connect Identity Provider.  An identity provider is a service that
- * the admin has chosen to trust in authenticating users via the OpenID-Connect
- * protocol.  This class holds the configuration information about a provider.
+ * An OpenID-Connect Identity Provider.  An identity provider is a service that the admin has chosen
+ * to trust in authenticating users via the OpenID-Connect protocol.  This class holds the
+ * configuration information about a provider.
  * <p>
- * Each OIDC identity provider is assigned a name by the admin, which is used
- * typically when referring to the service in log messages.
+ * Each OIDC identity provider is assigned a name by the admin, which is used typically when
+ * referring to the service in log messages.
  */
-public class IdentityProvider
-{
+public class IdentityProvider {
+
     private final String name;
     private final URI issuer;
     private final URI configuration;
 
-    public IdentityProvider(String name, String description)
-    {
+    public IdentityProvider(String name, String description) {
         this.name = requireNonNull(name);
         checkArgument(!name.isEmpty(), "Empty name not allowed");
 
@@ -53,46 +49,42 @@ public class IdentityProvider
         try {
             issuer = new URI(endpoint);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid endpoint " + endpoint + ": " + e.getMessage());
+            throw new IllegalArgumentException(
+                  "Invalid endpoint " + endpoint + ": " + e.getMessage());
         }
-        configuration = issuer.resolve(withTrailingSlash(issuer.getPath()) + ".well-known/openid-configuration");
+        configuration = issuer.resolve(
+              withTrailingSlash(issuer.getPath()) + ".well-known/openid-configuration");
     }
 
-    private static String withTrailingSlash(String path)
-    {
+    private static String withTrailingSlash(String path) {
         return path.endsWith("/") ? path : (path + "/");
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public URI getIssuerEndpoint()
-    {
+    public URI getIssuerEndpoint() {
         return issuer;
     }
 
     /**
-     * The URI of the discovery endpoint.  This URL is defined in
-     * "OpenID Connect Discovery" section 4:
-     *
-     *     https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+     * The URI of the discovery endpoint.  This URL is defined in "OpenID Connect Discovery" section
+     * 4:
+     * <p>
+     * https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
      */
-    public URI getConfigurationEndpoint()
-    {
+    public URI getConfigurationEndpoint() {
         return configuration;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return name.hashCode() ^ issuer.hashCode();
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -106,8 +98,7 @@ public class IdentityProvider
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return name + "[" + issuer.toASCIIString() + "]";
     }
 }

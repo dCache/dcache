@@ -17,19 +17,26 @@
  */
 package dmg.cells.nucleus;
 
-import java.io.*;
-
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 /**
- * The class contains methods for serializing and deserializing
- * objects to/from a byte array representation. It uses
- * the native Java Object Serialization.
+ * The class contains methods for serializing and deserializing objects to/from a byte array
+ * representation. It uses the native Java Object Serialization.
  */
 public final class MsgSerializerJos {
+
     private static final int INITIAL_BUFFER_SIZE = 256;
 
-    private MsgSerializerJos() {}
+    private MsgSerializerJos() {
+    }
 
     public static byte[] encode(Object message) {
         checkState(message != null, "Unencoded message payload is null.");
@@ -38,9 +45,11 @@ public final class MsgSerializerJos {
             out.writeObject(message);
         } catch (InvalidClassException e) {
             throw new SerializationException("Failed to serialize object: "
-                    + e + "(this is usually a bug)", e);
+                  + e + "(this is usually a bug)", e);
         } catch (NotSerializableException e) {
-            throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
+            throw new SerializationException(
+                  "Failed to serialize object because the object is not serializable (this is usually a bug)",
+                  e);
         } catch (IOException e) {
             throw new SerializationException("Failed to serialize object: " + e, e);
         }
@@ -50,11 +59,14 @@ public final class MsgSerializerJos {
 
     public static Object decode(byte[] messageStream) {
         checkState(messageStream != null, "Encoded message payload is null.");
-        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(messageStream))) {
+        try (ObjectInputStream stream = new ObjectInputStream(
+              new ByteArrayInputStream(messageStream))) {
             Object decoded = stream.readObject();
             return decoded;
         } catch (ClassNotFoundException e) {
-            throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
+            throw new SerializationException(
+                  "Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?",
+                  e);
         } catch (IOException e) {
             throw new SerializationException("Failed to deserialize object: " + e, e);
         }

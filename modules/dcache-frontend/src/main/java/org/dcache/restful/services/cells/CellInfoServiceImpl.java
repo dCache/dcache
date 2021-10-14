@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.cells;
 
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.util.command.Command;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.util.command.Command;
-
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
@@ -81,20 +79,23 @@ import org.dcache.util.collector.ListenableFutureWrapper;
  * <p>Responsible for serving up data from the cache.</p>
  */
 public class CellInfoServiceImpl extends
-                CellDataCollectingService<Map<String, ListenableFutureWrapper<CellInfo>>, CellInfoCollector>
-                implements CellInfoService, CellMessageReceiver {
+      CellDataCollectingService<Map<String, ListenableFutureWrapper<CellInfo>>, CellInfoCollector>
+      implements CellInfoService, CellMessageReceiver {
+
     @Command(name = "cells set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "queries for cell information.")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "queries for cell information.")
     class CellsSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "cells refresh",
-                    hint = "Query for current cell info of well-known services",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query for current cell info of well-known services",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class CellsRefreshCommand extends RefreshCommand {
+
         @Override
         public String call() {
             processor.cancel();
@@ -103,22 +104,23 @@ public class CellInfoServiceImpl extends
     }
 
     @Command(name = "cells ls",
-                     hint = "List cell info",
-                     description = "Displays a list of info for all "
-                                     + "current well-known services.")
+          hint = "List cell info",
+          description = "Displays a list of info for all "
+                + "current well-known services.")
     class CellsLsCommand implements Callable<String> {
+
         @Override
         public String call() throws Exception {
             return Arrays.stream(getAddresses())
-                         .map(CellInfoServiceImpl.this::getCellData)
-                         .sorted(Comparator.comparing(CellData::getCellName))
-                         .map(CellData::toString)
-                         .collect(Collectors.joining("\n"));
+                  .map(CellInfoServiceImpl.this::getCellData)
+                  .sorted(Comparator.comparing(CellData::getCellName))
+                  .map(CellData::toString)
+                  .collect(Collectors.joining("\n"));
         }
     }
 
     private final ReadWriteData<String, CellData> cache
-                    = new ReadWriteData<>(true);
+          = new ReadWriteData<>(true);
 
     private String[] currentKnownCells = new String[0];
 
@@ -152,7 +154,7 @@ public class CellInfoServiceImpl extends
 
     /**
      * <p>Callback invoked by processor when it has completed
-     *    the update.</p>
+     * the update.</p>
      *
      * @param next updated data.
      */
@@ -162,7 +164,7 @@ public class CellInfoServiceImpl extends
 
     /**
      * <p>Delegates processing to the processor.  Refreshes the list of
-     *    known cells.</p>
+     * known cells.</p>
      */
     @Override
     protected void update(Map<String, ListenableFutureWrapper<CellInfo>> data) {
@@ -174,13 +176,13 @@ public class CellInfoServiceImpl extends
             }
         } catch (IllegalStateException e) {
             LOGGER.info("Processing cycle has overlapped; you may wish to "
-                                        + "increase the interval between "
-                                        + "collections, which is currently "
-                                        + "set to {} {}.",
-                        timeout, timeoutUnit);
+                        + "increase the interval between "
+                        + "collections, which is currently "
+                        + "set to {} {}.",
+                  timeout, timeoutUnit);
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Processing failed for the current cycle: {}.",
-                        e.getMessage());
+                  e.getMessage());
         }
     }
 }

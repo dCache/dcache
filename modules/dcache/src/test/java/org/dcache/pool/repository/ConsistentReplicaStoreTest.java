@@ -1,45 +1,50 @@
 package org.dcache.pool.repository;
 
+import static diskCacheV111.util.AccessLatency.NEARLINE;
+import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
+import static org.dcache.pool.repository.ReplicaState.BROKEN;
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.FROM_CLIENT;
+import static org.dcache.pool.repository.ReplicaState.FROM_STORE;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.never;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.verifyNoMoreInteractions;
+
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.OSMStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.file.FileSystem;
+import java.util.EnumSet;
+import org.dcache.cells.CellStub;
+import org.dcache.pool.classic.ALRPReplicaStatePolicy;
+import org.dcache.tests.repository.ReplicaStoreHelper;
+import org.dcache.vehicles.FileAttributes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
-import java.nio.ByteBuffer;
-import java.util.EnumSet;
+public class ConsistentReplicaStoreTest {
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
-import org.dcache.cells.CellStub;
-import org.dcache.pool.classic.ALRPReplicaStatePolicy;
-import org.dcache.tests.repository.ReplicaStoreHelper;
-import org.dcache.vehicles.FileAttributes;
-
-import static diskCacheV111.util.AccessLatency.NEARLINE;
-import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
-import static org.dcache.pool.repository.ReplicaState.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.*;
-
-public class ConsistentReplicaStoreTest
-{
     private final static String POOL = "test-pool";
     private final static PnfsId PNFSID =
-        new PnfsId("000000000000000000000000000000000001");
+          new PnfsId("000000000000000000000000000000000001");
 
     private final static StorageInfo STORAGE_INFO = new OSMStorageInfo("h1", "rawd");
 
@@ -55,8 +60,7 @@ public class ConsistentReplicaStoreTest
     private CellStub _broadcast;
 
     @Before
-    public void setup() throws Exception
-    {
+    public void setup() throws Exception {
         _pnfs = mock(PnfsHandler.class);
         _broadcast = mock(CellStub.class);
 
@@ -64,26 +68,25 @@ public class ConsistentReplicaStoreTest
         _fileStore = new FlatFileStore(fileSystem.getPath("/"));
         _replicaStore = new ReplicaStoreHelper(_fileStore);
         _consistentReplicaStore =
-            new ConsistentReplicaStore(_pnfs, null, _replicaStore,
-                                       new ALRPReplicaStatePolicy());
+              new ConsistentReplicaStore(_pnfs, null, _replicaStore,
+                    new ALRPReplicaStatePolicy());
         _consistentReplicaStore.setPoolName(POOL);
     }
 
     private void givenStoreHasFileOfSize(PnfsId pnfsId, long size)
-            throws IOException
-    {
+          throws IOException {
         _fileStore.create(pnfsId);
         try (RepositoryChannel channel = _fileStore.openDataChannel(pnfsId, FileStore.O_RW)) {
-            ByteBuffer buf = ByteBuffer.allocate((int)size);
+            ByteBuffer buf = ByteBuffer.allocate((int) size);
             buf.limit(buf.capacity());
             channel.write(buf);
         }
     }
 
     private void givenReplicaStoreHas(ReplicaState state, FileAttributes attributes)
-        throws DuplicateEntryException, CacheException
-    {
-        ReplicaRecord entry = _replicaStore.create(attributes.getPnfsId(), EnumSet.noneOf(Repository.OpenFlags.class));
+          throws DuplicateEntryException, CacheException {
+        ReplicaRecord entry = _replicaStore.create(attributes.getPnfsId(),
+              EnumSet.noneOf(Repository.OpenFlags.class));
         entry.update("preparing for test", r -> {
             r.setState(state);
             r.setFileAttributes(attributes);
@@ -93,16 +96,15 @@ public class ConsistentReplicaStoreTest
 
     @Test
     public void shouldMarkNonTransientReplicasWithWrongSizeAsBroken()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica with one file size
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the meta data indicates a different size, but is
         // otherwise in a valid non-transient state
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).size(20).
-                storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
-                retentionPolicy(CUSTODIAL).build();
+              storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
+              retentionPolicy(CUSTODIAL).build();
         givenReplicaStoreHas(CACHED, info);
 
         // and given that the name space provides the same storage info
@@ -119,21 +121,20 @@ public class ConsistentReplicaStoreTest
 
         // and no attributes are updated in the name space
         verify(_pnfs, never())
-            .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+              .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
         verify(_pnfs, never())
-            .clearCacheLocation(PNFSID);
+              .clearCacheLocation(PNFSID);
     }
 
     @Test
     public void shouldRegisterFileSizeAndLocationOnIncompleteUpload()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is an incomplete upload
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).storageInfo(STORAGE_INFO).
-                accessLatency(NEARLINE).retentionPolicy(CUSTODIAL).build();
+              accessLatency(NEARLINE).retentionPolicy(CUSTODIAL).build();
         givenReplicaStoreHas(FROM_CLIENT, info);
 
         // and given the name space entry exists without any size
@@ -148,7 +149,7 @@ public class ConsistentReplicaStoreTest
         // and the correct file size and location is registered in
         // the name space
         ArgumentCaptor<FileAttributes> captor =
-            ArgumentCaptor.forClass(FileAttributes.class);
+              ArgumentCaptor.forClass(FileAttributes.class);
         verify(_pnfs).setFileAttributes(eq(PNFSID), captor.capture());
         assertThat(captor.getValue().getSize(), is(17L));
         assertThat(captor.getValue().getLocations(), hasItem(POOL));
@@ -159,21 +160,20 @@ public class ConsistentReplicaStoreTest
 
     @Test
     public void shouldDeleteIncompleteReplicasWithNoNameSpaceEntry()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is in an incomplete upload
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).size(0).
-                storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
-                retentionPolicy(CUSTODIAL).build();
+              storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
+              retentionPolicy(CUSTODIAL).build();
 
         givenReplicaStoreHas(FROM_CLIENT, info);
 
         // and given the name space entry does not exist
         given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-            .willThrow(new FileNotFoundCacheException("No such file"));
+              .willThrow(new FileNotFoundCacheException("No such file"));
 
         // when reading the meta data record
         ReplicaRecord record = _consistentReplicaStore.get(PNFSID);
@@ -187,19 +187,18 @@ public class ConsistentReplicaStoreTest
 
         // and the name space entry is not touched
         verify(_pnfs, never())
-            .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+              .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
     }
 
     @Test
     public void shouldDeleteBrokenReplicasWithNoNameSpaceEntry()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica with no meta data
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the name space entry does not exist
         given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-            .willThrow(new FileNotFoundCacheException("No such file"));
+              .willThrow(new FileNotFoundCacheException("No such file"));
 
         // when reading the meta data record
         ReplicaRecord record = _consistentReplicaStore.get(PNFSID);
@@ -216,19 +215,18 @@ public class ConsistentReplicaStoreTest
 
         // and the name space entry is not touched
         verify(_pnfs, never())
-            .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+              .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
     }
 
     @Test
     public void shouldRecoverBrokenEntries()
-            throws Exception
-    {
+          throws Exception {
         // Given a replica
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is marked broken
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).storageInfo(STORAGE_INFO).
-                accessLatency(NEARLINE).retentionPolicy(CUSTODIAL).build();
+              accessLatency(NEARLINE).retentionPolicy(CUSTODIAL).build();
 
         givenReplicaStoreHas(BROKEN, info);
 
@@ -240,12 +238,12 @@ public class ConsistentReplicaStoreTest
 
         // then the correct size is set in storage info
         assertThat(_replicaStore.get(PNFSID).getFileAttributes().getSize(),
-                   is(17L));
+              is(17L));
 
         // and the correct file size and location is registered in
         // the name space
         ArgumentCaptor<FileAttributes> captor =
-                ArgumentCaptor.forClass(FileAttributes.class);
+              ArgumentCaptor.forClass(FileAttributes.class);
         verify(_pnfs).setFileAttributes(eq(PNFSID), captor.capture());
         assertThat(captor.getValue().getSize(), is(17L));
         assertThat(captor.getValue().getLocations(), hasItem(POOL));
@@ -256,8 +254,7 @@ public class ConsistentReplicaStoreTest
 
     @Test
     public void shouldDeleteIncompleteRestores()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica with one file size
         givenStoreHasFileOfSize(PNFSID, 17);
 
@@ -265,8 +262,8 @@ public class ConsistentReplicaStoreTest
         // being restored from tape and is supposed to have a
         // different file size,
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).size(20).
-                storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
-                retentionPolicy(CUSTODIAL).build();
+              storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
+              retentionPolicy(CUSTODIAL).build();
 
         givenReplicaStoreHas(FROM_STORE, info);
 
@@ -285,20 +282,19 @@ public class ConsistentReplicaStoreTest
 
         // and the name space entry is not touched
         verify(_pnfs, never())
-            .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+              .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
     }
 
     @Test
     public void shouldMarkMissingEntriesWithWrongSizeAsBroken()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica with missing meta data
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the name space entry reports a different size
         FileAttributes info = FileAttributes.of().pnfsId(PNFSID).size(20).
-                storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
-                retentionPolicy(CUSTODIAL).build();
+              storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
+              retentionPolicy(CUSTODIAL).build();
         given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet())).willReturn(info);
 
         // when reading the meta data record
@@ -309,20 +305,19 @@ public class ConsistentReplicaStoreTest
 
         // and the name space entry is untouched
         verify(_pnfs, never())
-            .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
+              .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
     }
 
     @Test
     public void shouldNotTalkToNameSpaceForIntactEntries()
-        throws Exception
-    {
+          throws Exception {
         // Given a replica
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica has intact meta data
         givenReplicaStoreHas(CACHED, FileAttributes.of().pnfsId(PNFSID).size(17).
-                storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
-                retentionPolicy(CUSTODIAL).build());
+              storageInfo(STORAGE_INFO).accessLatency(NEARLINE).
+              retentionPolicy(CUSTODIAL).build());
 
         // when reading the meta data record
         ReplicaRecord record = _consistentReplicaStore.get(PNFSID);
@@ -332,8 +327,7 @@ public class ConsistentReplicaStoreTest
     }
 
     @Test
-    public void shouldSilentlyIgnoreRemoveOfNonExistingReplicas() throws CacheException
-    {
+    public void shouldSilentlyIgnoreRemoveOfNonExistingReplicas() throws CacheException {
         _consistentReplicaStore.remove(PNFSID);
     }
 }

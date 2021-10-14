@@ -17,29 +17,28 @@
  */
 package org.dcache.srm.shell;
 
-import org.junit.Test;
-
-import java.util.regex.Matcher;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-public class SrmShellTest
-{
+import java.util.regex.Matcher;
+import org.junit.Test;
+
+public class SrmShellTest {
+
     @Test
-    public void shouldMatchSimpleDN()
-    {
-        Matcher m = SrmShell.DN_WITH_CAPTURED_CN.matcher("/C=UK/O=eScience/OU=Glasgow/L=Compserv/CN=graeme stewart");
+    public void shouldMatchSimpleDN() {
+        Matcher m = SrmShell.DN_WITH_CAPTURED_CN.matcher(
+              "/C=UK/O=eScience/OU=Glasgow/L=Compserv/CN=graeme stewart");
 
         assertThat(m.matches(), is(equalTo(true)));
         assertThat(m.group("cn"), is(equalTo("graeme stewart")));
     }
 
     @Test
-    public void shouldMatchMoreAwkwardDN()
-    {
-        Matcher m = SrmShell.DN_WITH_CAPTURED_CN.matcher("/C=IT/O=INFN/OU=Personal Certificate/L=Pisa/CN=Flavia Donno/Email=flavia.donno@pi.infn.it");
+    public void shouldMatchMoreAwkwardDN() {
+        Matcher m = SrmShell.DN_WITH_CAPTURED_CN.matcher(
+              "/C=IT/O=INFN/OU=Personal Certificate/L=Pisa/CN=Flavia Donno/Email=flavia.donno@pi.infn.it");
 
         assertThat(m.matches(), is(equalTo(true)));
         assertThat(m.group("cn"), is(equalTo("Flavia Donno")));

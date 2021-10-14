@@ -1,30 +1,28 @@
 package dmg.cells.services.login;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
+import static java.util.Objects.requireNonNull;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
-
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
 import org.dcache.util.Args;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Reflection based LoginCellFactory for LoginCells with ternary constructors.
  */
-public class LegacyWithArgsLoginCellFactory extends StreamEngineLoginCellFactory
-{
+public class LegacyWithArgsLoginCellFactory extends StreamEngineLoginCellFactory {
+
     private final Constructor<? extends CellAdapter> _loginConstructor;
     private final Args _args;
     private final String _cellName;
 
-    public LegacyWithArgsLoginCellFactory(Constructor<? extends CellAdapter> loginConstructor, Args args,
-                                          CellEndpoint parentEndpoint, String cellName)
-    {
+    public LegacyWithArgsLoginCellFactory(Constructor<? extends CellAdapter> loginConstructor,
+          Args args,
+          CellEndpoint parentEndpoint, String cellName) {
         super(args, parentEndpoint);
         this._cellName = requireNonNull(cellName);
         this._args = requireNonNull(args);
@@ -33,10 +31,10 @@ public class LegacyWithArgsLoginCellFactory extends StreamEngineLoginCellFactory
 
     @Override
     public Cell newCell(StreamEngine engine, String userName)
-            throws InvocationTargetException
-    {
+          throws InvocationTargetException {
         try {
-            CellAdapter cell = _loginConstructor.newInstance(_cellName + '-' + userName + '*', engine, new Args(_args));
+            CellAdapter cell = _loginConstructor.newInstance(_cellName + '-' + userName + '*',
+                  engine, new Args(_args));
             cell.start().get();
             return cell;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -47,20 +45,17 @@ public class LegacyWithArgsLoginCellFactory extends StreamEngineLoginCellFactory
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _loginConstructor.getDeclaringClass().getName();
     }
 
     @Override
-    protected void doStart()
-    {
+    protected void doStart() {
         notifyStarted();
     }
 
     @Override
-    protected void doStop()
-    {
+    protected void doStop() {
         notifyStopped();
     }
 }

@@ -18,82 +18,71 @@
  */
 package diskCacheV111.namespace;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.Range;
-import com.google.common.escape.Escaper;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.UrlEscapers;
-import org.apache.curator.shaded.com.google.common.hash.Hashing;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.security.auth.Subject;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.dcache.namespace.events.EventType;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.security.auth.Subject;
+import org.apache.curator.shaded.com.google.common.hash.Hashing;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
+import org.dcache.namespace.events.EventType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
-
-import static java.util.Objects.requireNonNull;
-import static org.dcache.namespace.FileAttribute.ACCESS_TIME;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
- * An implementation of NameSpaceProvider that wraps some other instance of
- * NameSpaceProvider and sends inotify-like events.
+ * An implementation of NameSpaceProvider that wraps some other instance of NameSpaceProvider and
+ * sends inotify-like events.
  */
-public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
-{
+public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(MonitoringNameSpaceProvider.class);
 
     private static final EnumSet<FileAttribute> PNFSID = EnumSet.of(FileAttribute.PNFSID);
     private static final EnumSet<FileAttribute> FILETYPE = EnumSet.of(FileAttribute.TYPE);
-    private static final EnumSet<FileAttribute> PNFSID_FILETYPE = EnumSet.of(FileAttribute.PNFSID, FileAttribute.TYPE);
+    private static final EnumSet<FileAttribute> PNFSID_FILETYPE = EnumSet.of(FileAttribute.PNFSID,
+          FileAttribute.TYPE);
     private static final EnumSet<FileAttribute> SIGNIFICANT_UPDATES =
-            EnumSet.complementOf(EnumSet.of(FileAttribute.ACCESS_TIME));
+          EnumSet.complementOf(EnumSet.of(FileAttribute.ACCESS_TIME));
 
     private NameSpaceProvider delegate;
     private EventReceiver eventReceiver;
 
     @Required
-    public void setNameSpaceProvider(NameSpaceProvider namespace)
-    {
+    public void setNameSpaceProvider(NameSpaceProvider namespace) {
         delegate = requireNonNull(namespace);
     }
 
     @Required
-    public void setEventReceiver(EventReceiver receiver)
-    {
+    public void setEventReceiver(EventReceiver receiver) {
         eventReceiver = requireNonNull(receiver);
     }
 
     @Override
-    protected NameSpaceProvider delegate()
-    {
+    protected NameSpaceProvider delegate() {
         return delegate;
     }
 
-    private Optional<Link> findParent(String path)
-    {
+    private Optional<Link> findParent(String path) {
         try {
             FsPath fsPath = FsPath.create(path);
             PnfsId parent = super.pathToPnfsid(Subjects.ROOT, fsPath.parent().toString(), true);
@@ -106,8 +95,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return Optional.empty();
     }
 
-    private Collection<Link> find(String path)
-    {
+    private Collection<Link> find(String path) {
         try {
             return find(super.pathToPnfsid(Subjects.ROOT, path, true));
         } catch (FileNotFoundCacheException e) {
@@ -118,8 +106,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return Collections.emptyList();
     }
 
-    private Collection<Link> find(PnfsId target)
-    {
+    private Collection<Link> find(PnfsId target) {
         try {
             return super.find(Subjects.ROOT, target);
         } catch (FileNotFoundCacheException e) {
@@ -130,8 +117,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return Collections.emptyList();
     }
 
-    private static Set<FileAttribute> union(Set<FileAttribute> first, Set<FileAttribute> second)
-    {
+    private static Set<FileAttribute> union(Set<FileAttribute> first, Set<FileAttribute> second) {
         if (first.containsAll(second)) {
             return first;
         }
@@ -145,18 +131,16 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return combined;
     }
 
-    private void notifyParents(PnfsId target, EventType event, FileType type)
-    {
+    private void notifyParents(PnfsId target, EventType event, FileType type) {
         find(target).forEach(l -> eventReceiver.notifyChildEvent(event,
-                l.getParent(), l.getName(), type));
+              l.getParent(), l.getName(), type));
     }
 
     @Override
     public FileAttributes setFileAttributes(Subject subject, PnfsId target,
-            FileAttributes attr, Set<FileAttribute> fetch) throws CacheException
-    {
+          FileAttributes attr, Set<FileAttribute> fetch) throws CacheException {
         FileAttributes returnAttr = super.setFileAttributes(subject, target, attr,
-                union(fetch,FILETYPE));
+              union(fetch, FILETYPE));
 
         if (!attr.isUndefined(SIGNIFICANT_UPDATES)) {
             FileType type = returnAttr.getFileType();
@@ -168,18 +152,16 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         return returnAttr;
     }
 
-    private String serialiseLink(PnfsId id, String name)
-    {
+    private String serialiseLink(PnfsId id, String name) {
         return id + " " + UrlEscapers.urlFragmentEscaper().escape(name);
     }
 
     @Override
     public FileAttributes createFile(Subject subject, String path,
-            FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
-            throws CacheException
-    {
+          FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
+          throws CacheException {
         FileAttributes ret = super.createFile(subject, path, assignAttributes,
-                union(requestAttributes, PNFSID));
+              union(requestAttributes, PNFSID));
 
         notifyParents(ret.getPnfsId(), EventType.IN_CREATE, FileType.REGULAR);
 
@@ -195,8 +177,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
     @Override
     public FileAttributes getFileAttributes(Subject subject, PnfsId id,
-            Set<FileAttribute> requestAttributes) throws CacheException
-    {
+          Set<FileAttribute> requestAttributes) throws CacheException {
         FileAttributes ret = super.getFileAttributes(subject, id, requestAttributes);
 
         // REVISIT: we only need to do this if this getFileAttributes is for
@@ -208,8 +189,8 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
             // is different from Linux.
             try {
                 String links = super.find(Subjects.ROOT, id).stream()
-                        .map(l -> serialiseLink(l.getParent(), l.getName()))
-                        .collect(Collectors.joining("#"));
+                      .map(l -> serialiseLink(l.getParent(), l.getName()))
+                      .collect(Collectors.joining("#"));
                 ret.getStorageInfo().setKey("links", links);
             } catch (FileNotFoundCacheException e) {
                 // Simply indicates that the target is the root directory
@@ -226,8 +207,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
     @Override
     public PnfsId createDirectory(Subject subject, String path,
-            FileAttributes attributes) throws CacheException
-    {
+          FileAttributes attributes) throws CacheException {
         PnfsId id = super.createDirectory(subject, path, attributes);
 
         notifyParents(id, EventType.IN_CREATE, FileType.DIR);
@@ -236,34 +216,31 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
     }
 
     /**
-     * A ListHandler implementation that wraps some other ListHandler and
-     * instruments the directory listing for events.
+     * A ListHandler implementation that wraps some other ListHandler and instruments the directory
+     * listing for events.
      */
-    private class MonitoringListHandler implements ListHandler
-    {
+    private class MonitoringListHandler implements ListHandler {
+
         private final ListHandler inner;
         private final PnfsId target;
         private final Collection<Link> links;
         private boolean sentOpen;
 
-        public MonitoringListHandler(ListHandler inner, PnfsId target, Collection<Link> links)
-        {
+        public MonitoringListHandler(ListHandler inner, PnfsId target, Collection<Link> links) {
             this.inner = inner;
             this.target = target;
             this.links = links;
         }
 
-        private void notify(EventType type)
-        {
+        private void notify(EventType type) {
             if (target != null) {
                 eventReceiver.notifySelfEvent(type, target, FileType.DIR);
             }
             links.forEach(l -> eventReceiver.notifyChildEvent(type,
-                    l.getParent(), l.getName(), FileType.DIR));
+                  l.getParent(), l.getName(), FileType.DIR));
         }
 
-        private void notifyOpen()
-        {
+        private void notifyOpen() {
             if (!sentOpen) {
                 notify(EventType.IN_OPEN);
                 sentOpen = true;
@@ -271,8 +248,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
         }
 
         @Override
-        public void addEntry(String name, FileAttributes attrs) throws CacheException
-        {
+        public void addEntry(String name, FileAttributes attrs) throws CacheException {
             /*
              * To avoid sending OPEN event if there is a problem with the
              * request (e.g., user does not have permission to read the
@@ -283,8 +259,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
             inner.addEntry(name, attrs);
         }
 
-        public void sendClose()
-        {
+        public void sendClose() {
             notifyOpen();
             notify(EventType.IN_CLOSE_NOWRITE);
         }
@@ -292,8 +267,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
     @Override
     public void list(Subject subject, String path, Glob glob, Range<Integer> range,
-            Set<FileAttribute> attrs, ListHandler handler) throws CacheException
-    {
+          Set<FileAttribute> attrs, ListHandler handler) throws CacheException {
         PnfsId target;
         Collection<Link> links;
         try {
@@ -312,8 +286,7 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
     @Override
     public PnfsId createSymLink(Subject subject, String path, String dest,
-            FileAttributes attributes) throws CacheException
-    {
+          FileAttributes attributes) throws CacheException {
         PnfsId id = super.createSymLink(subject, path, dest, attributes);
 
         notifyParents(id, EventType.IN_CREATE, FileType.LINK);
@@ -323,13 +296,13 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
     @Override
     public void rename(Subject subject, PnfsId target, String sourcePath,
-            String destinationPath, boolean overwrite) throws CacheException
-    {
+          String destinationPath, boolean overwrite) throws CacheException {
         Optional<Link> sourceParent = findParent(sourcePath);
 
         PnfsId resolvedTarget = null;
         try {
-            resolvedTarget = target == null ? super.pathToPnfsid(Subjects.ROOT, sourcePath, true) : target;
+            resolvedTarget =
+                  target == null ? super.pathToPnfsid(Subjects.ROOT, sourcePath, true) : target;
         } catch (FileNotFoundCacheException e) {
         } catch (CacheException e) {
             LOGGER.error("Failed to resolve path {}: {}", sourcePath, e.toString());
@@ -344,118 +317,114 @@ public class MonitoringNameSpaceProvider extends ForwardingNameSpaceProvider
 
         // The cookie is a unique identifier for this move operation.
         byte[] cookieBytes = Hashing.murmur3_128().newHasher()
-                .putString(resolvedTarget.toString(), StandardCharsets.UTF_8)
-                .putString(sourcePath, StandardCharsets.UTF_8)
-                .putString(destinationPath, StandardCharsets.UTF_8)
-                .putLong(System.currentTimeMillis()) // FIXME replace with generation ID
-                .hash().asBytes();
+              .putString(resolvedTarget.toString(), StandardCharsets.UTF_8)
+              .putString(sourcePath, StandardCharsets.UTF_8)
+              .putString(destinationPath, StandardCharsets.UTF_8)
+              .putLong(System.currentTimeMillis()) // FIXME replace with generation ID
+              .hash().asBytes();
         String cookie = BaseEncoding.base64().omitPadding().encode(cookieBytes);
 
         Optional<Link> destinationParent = findParent(destinationPath);
 
-        FileType type = super.getFileAttributes(Subjects.ROOT, resolvedTarget, FILETYPE).getFileType();
+        FileType type = super.getFileAttributes(Subjects.ROOT, resolvedTarget, FILETYPE)
+              .getFileType();
         eventReceiver.notifySelfEvent(EventType.IN_MOVE_SELF, resolvedTarget, type);
         sourceParent.ifPresent(l -> eventReceiver.notifyMovedEvent(EventType.IN_MOVED_FROM,
-                l.getParent(), l.getName(), cookie, type));
+              l.getParent(), l.getName(), cookie, type));
         destinationParent.ifPresent(l -> eventReceiver.notifyMovedEvent(EventType.IN_MOVED_TO,
-                l.getParent(), l.getName(), cookie, type));
+              l.getParent(), l.getName(), cookie, type));
     }
 
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId target, Set<FileAttribute> attr) throws CacheException
-    {
+          PnfsId target, Set<FileAttribute> attr) throws CacheException {
         Collection<Link> locations = find(target);
 
         FileAttributes attributes = super.deleteEntry(subject, allowed, target,
-                union(attr, FILETYPE));
+              union(attr, FILETYPE));
 
         eventReceiver.notifySelfEvent(EventType.IN_DELETE_SELF, target, attributes.getFileType());
         locations.forEach(l -> eventReceiver.notifyChildEvent(EventType.IN_DELETE,
-                l.getParent(), l.getName(), attributes.getFileType()));
+              l.getParent(), l.getName(), attributes.getFileType()));
 
         return attributes;
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            String path, Set<FileAttribute> attr) throws CacheException
-    {
+          String path, Set<FileAttribute> attr) throws CacheException {
         Collection<Link> links = find(path);
 
         FileAttributes attributes = super.deleteEntry(subject, allowed, path,
-                union(attr, PNFSID_FILETYPE));
+              union(attr, PNFSID_FILETYPE));
 
         eventReceiver.notifySelfEvent(EventType.IN_DELETE_SELF,
-                attributes.getPnfsId(), attributes.getFileType());
+              attributes.getPnfsId(), attributes.getFileType());
         links.forEach(l -> eventReceiver.notifyChildEvent(EventType.IN_DELETE,
-                l.getParent(), l.getName(), attributes.getFileType()));
+              l.getParent(), l.getName(), attributes.getFileType()));
 
         return attributes;
     }
 
     @Override
     public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
-            PnfsId target, String path, Set<FileAttribute> attr)
-            throws CacheException
-    {
+          PnfsId target, String path, Set<FileAttribute> attr)
+          throws CacheException {
         Collection<Link> links = find(target);
 
         FileAttributes attributes = super.deleteEntry(subject, allowed,
-                target, path, union(attr, FILETYPE));
+              target, path, union(attr, FILETYPE));
 
         eventReceiver.notifySelfEvent(EventType.IN_DELETE_SELF, target, attributes.getFileType());
         links.forEach(l -> eventReceiver.notifyChildEvent(EventType.IN_DELETE,
-                l.getParent(), l.getName(), attributes.getFileType()));
+              l.getParent(), l.getName(), attributes.getFileType()));
 
         return attributes;
     }
 
     @Override
     public void addCacheLocation(Subject subject, PnfsId target,
-            String cacheLocation) throws CacheException
-    {
+          String cacheLocation) throws CacheException {
         Collection<Link> links = find(target);
 
         super.addCacheLocation(subject, target, cacheLocation);
 
         eventReceiver.notifySelfEvent(EventType.IN_ATTRIB, target, FileType.REGULAR);
         links.forEach(l -> eventReceiver.notifyChildEvent(EventType.IN_ATTRIB,
-                l.getParent(), l.getName(), FileType.REGULAR));
+              l.getParent(), l.getName(), FileType.REGULAR));
     }
 
     @Override
     public void clearCacheLocation(Subject subject, PnfsId target,
-            String cacheLocation, boolean removeIfLast) throws CacheException
-    {
+          String cacheLocation, boolean removeIfLast) throws CacheException {
         Collection<Link> links = find(target);
 
         super.clearCacheLocation(subject, target, cacheLocation, removeIfLast);
 
         eventReceiver.notifySelfEvent(EventType.IN_ATTRIB, target, FileType.REGULAR);
         links.forEach(l -> eventReceiver.notifyChildEvent(EventType.IN_ATTRIB,
-                l.getParent(), l.getName(), FileType.REGULAR));
+              l.getParent(), l.getName(), FileType.REGULAR));
     }
 
     @Override
     public FileAttributes commitUpload(Subject subject, FsPath uploadPath,
-            FsPath path, Set<CreateOption> options, Set<FileAttribute> fetch)
-            throws CacheException
-    {
-        FileAttributes attr = super.commitUpload(subject, uploadPath, path, options, union(fetch, PNFSID));
+          FsPath path, Set<CreateOption> options, Set<FileAttribute> fetch)
+          throws CacheException {
+        FileAttributes attr = super.commitUpload(subject, uploadPath, path, options,
+              union(fetch, PNFSID));
 
         byte[] cookieBytes = Hashing.murmur3_128().newHasher()
-                .putString(attr.getPnfsId().toString(), StandardCharsets.UTF_8)
-                .putString(uploadPath.toString(), StandardCharsets.UTF_8)
-                .putString(path.toString(), StandardCharsets.UTF_8)
-                .putLong(System.currentTimeMillis()) // FIXME replace with generation ID
-                .hash().asBytes();
+              .putString(attr.getPnfsId().toString(), StandardCharsets.UTF_8)
+              .putString(uploadPath.toString(), StandardCharsets.UTF_8)
+              .putString(path.toString(), StandardCharsets.UTF_8)
+              .putLong(System.currentTimeMillis()) // FIXME replace with generation ID
+              .hash().asBytes();
         String cookie = BaseEncoding.base64().omitPadding().encode(cookieBytes);
 
         find(attr.getPnfsId()).forEach(l ->
-                eventReceiver.notifyMovedEvent(EventType.IN_MOVED_TO, l.getParent(),
-                        l.getName(), cookie, FileType.REGULAR));
+              eventReceiver.notifyMovedEvent(EventType.IN_MOVED_TO, l.getParent(),
+                    l.getName(), cookie, FileType.REGULAR));
         return attr;
     }
 }

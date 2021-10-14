@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client.vanilla;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -29,23 +26,22 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-
 import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
- * Represents FTP Protocol Interpreter. Encapsulates
- * control channel communication.
+ * Represents FTP Protocol Interpreter. Encapsulates control channel communication.
  * <p>
  * </p>
  */
-public class FTPControlChannel extends BasicClientControlChannel
-{
+public class FTPControlChannel extends BasicClientControlChannel {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(FTPControlChannel.class);
+          LoggerFactory.getLogger(FTPControlChannel.class);
 
     public static final String CRLF = "\r\n";
 
@@ -67,59 +63,49 @@ public class FTPControlChannel extends BasicClientControlChannel
 
     private Reply lastReply;
 
-    public FTPControlChannel(String host, int port)
-    {
+    public FTPControlChannel(String host, int port) {
         this.host = host;
         this.port = port;
         this.ipv6 = (this.host.indexOf(':') != -1);
     }
 
-    public String getHost()
-    {
+    public String getHost() {
         return this.host;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return this.port;
     }
 
-    public boolean isIPv6()
-    {
+    public boolean isIPv6() {
         return this.ipv6;
     }
 
     // not intended to be public. you can set streams in the constructor.
-    protected void setInputStream(InputStream in)
-    {
+    protected void setInputStream(InputStream in) {
         rawFtpIn = in;
         ftpIn = new BufferedReader(new InputStreamReader(rawFtpIn));
     }
 
-    protected void setOutputStream(OutputStream out)
-    {
+    protected void setOutputStream(OutputStream out) {
         ftpOut = out;
     }
 
     /**
-     * opens the connection and returns after it is ready for communication.
-     * Before returning, it intercepts the initial server reply(-ies),
-     * and not positive, throws UnexpectedReplyCodeException.
-     * After returning, there should be no more queued replies on the line.
+     * opens the connection and returns after it is ready for communication. Before returning, it
+     * intercepts the initial server reply(-ies), and not positive, throws
+     * UnexpectedReplyCodeException. After returning, there should be no more queued replies on the
+     * line.
      * <p>
      * Here's the sequence for connection establishment (rfc959):
      * <PRE>
-     * 120
-     * 220
-     * 220
-     * 421
+     * 120 220 220 421
      * </PRE>
      *
      * @throws IOException     on I/O error
      * @throws ServerException on negative or faulty server reply
      **/
-    public void open() throws IOException, ServerException
-    {
+    public void open() throws IOException, ServerException {
 
         if (hasBeenOpened()) {
             throw new IOException("Attempt to open an already opened connection");
@@ -138,16 +124,16 @@ public class FTPControlChannel extends BasicClientControlChannel
             while (!found) {
                 try {
                     logger.debug("opening control channel to {} : {}",
-                                 allIPs[i], port);
+                          allIPs[i], port);
                     InetSocketAddress isa =
-                            new InetSocketAddress(allIPs[i], port);
+                          new InetSocketAddress(allIPs[i], port);
 
                     socket = new Socket();
                     socket.connect(isa);
                     found = true;
                 } catch (IOException ioEx) {
                     logger.debug("failed connecting to {} : {}:{}",
-                                 allIPs[i], port, ioEx.toString());
+                          allIPs[i], port, ioEx.toString());
                     i++;
                     if (i == allIPs.length) {
                         if (firstPass) {
@@ -174,15 +160,14 @@ public class FTPControlChannel extends BasicClientControlChannel
 
     //intercepts the initial replies 
     //(that the server sends after opening control ch.)
-    protected void readInitialReplies() throws IOException, ServerException
-    {
+    protected void readInitialReplies() throws IOException, ServerException {
         Reply reply = null;
         try {
             reply = read();
         } catch (FTPReplyParseException rpe) {
             throw ServerException.embedFTPReplyParseException(
-                    rpe,
-                    "Received faulty initial reply");
+                  rpe,
+                  "Received faulty initial reply");
         }
 
         if (Reply.isPositivePreliminary(reply)) {
@@ -190,47 +175,47 @@ public class FTPControlChannel extends BasicClientControlChannel
                 reply = read();
             } catch (FTPReplyParseException rpe) {
                 throw ServerException.embedFTPReplyParseException(
-                        rpe,
-                        "Received faulty second reply");
+                      rpe,
+                      "Received faulty second reply");
             }
         }
 
         if (!Reply.isPositiveCompletion(reply)) {
             close();
             throw ServerException.embedUnexpectedReplyCodeException(
-                    new UnexpectedReplyCodeException(reply),
-                    "Server refused connection.");
+                  new UnexpectedReplyCodeException(reply),
+                  "Server refused connection.");
         }
     }
 
     /**
      * Returns the last reply received from the server.
      */
-    public Reply getLastReply()
-    {
+    public Reply getLastReply() {
         return lastReply;
     }
 
     /**
      * Closes the control channel
      */
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         logger.debug("ftp socket closed");
-        if (ftpIn != null)
+        if (ftpIn != null) {
             ftpIn.close();
-        if (ftpOut != null)
+        }
+        if (ftpOut != null) {
             ftpOut.close();
-        if (socket != null)
+        }
+        if (socket != null) {
             socket.close();
+        }
 
         hasBeenOpened = false;
     }
 
     private int checkSocketDone(Flag aborted, int ioDelay, int maxWait)
-            throws ServerException,
-            IOException, InterruptedException
-    {
+          throws ServerException,
+          IOException, InterruptedException {
         int oldTOValue = this.socket.getSoTimeout();
         int c = -10;
         int time = 0;
@@ -278,14 +263,12 @@ public class FTPControlChannel extends BasicClientControlChannel
      * and only check conditions (1) and (3).
      *
      * @param maxWait timeout in miliseconds
-     * @param ioDelay frequency of polling the control channel
-     *                and checking the conditions
+     * @param ioDelay frequency of polling the control channel and checking the conditions
      * @param aborted flag indicating wait aborted.
      **/
     @Override
     public void waitFor(Flag aborted, int ioDelay, int maxWait) throws ServerException,
-            IOException, InterruptedException
-    {
+          IOException, InterruptedException {
 
         int oldTimeout = this.socket.getSoTimeout();
 
@@ -339,8 +322,7 @@ public class FTPControlChannel extends BasicClientControlChannel
      **/
     @Override
     public Reply read()
-            throws ServerException, IOException, FTPReplyParseException, EOFException
-    {
+          throws ServerException, IOException, FTPReplyParseException, EOFException {
 
         Reply reply = new Reply(ftpIn);
         //System.out.println("FTP IN string "+reply.toString());
@@ -352,20 +334,17 @@ public class FTPControlChannel extends BasicClientControlChannel
     }
 
     @Override
-    public void abortTransfer()
-    {
+    public void abortTransfer() {
     }
 
     /**
-     * Sends the command over the control channel.
-     * Do not wait for reply.
+     * Sends the command over the control channel. Do not wait for reply.
      *
      * @param cmd FTP command
      * @throws java.io.IOException on I/O error
      */
     public void write(Command cmd)
-            throws IOException, IllegalArgumentException
-    {
+          throws IOException, IllegalArgumentException {
         //we delete the initial reply when the first command is sent
         if (cmd == null) {
             throw new IllegalArgumentException("null argument: cmd");
@@ -378,11 +357,9 @@ public class FTPControlChannel extends BasicClientControlChannel
     }
 
     /**
-     * Write the command to the control channel,
-     * block until reply arrives and return the reply.
-     * Before calling this method make sure that no old replies are
-     * waiting on the control channel. Otherwise the reply returned
-     * may not be the reply to this command.
+     * Write the command to the control channel, block until reply arrives and return the reply.
+     * Before calling this method make sure that no old replies are waiting on the control channel.
+     * Otherwise the reply returned may not be the reply to this command.
      *
      * @param cmd FTP command
      * @return the first reply that waits in the control channel
@@ -390,8 +367,7 @@ public class FTPControlChannel extends BasicClientControlChannel
      * @throws FTPReplyParseException on bad reply format
      **/
     public Reply exchange(Command cmd)
-            throws ServerException, IOException, FTPReplyParseException
-    {
+          throws ServerException, IOException, FTPReplyParseException {
         // send the command
         write(cmd);
         // get the reply
@@ -399,28 +375,23 @@ public class FTPControlChannel extends BasicClientControlChannel
     }
 
     /**
-     * Write the command to the control channel,
-     * block until reply arrives and check if the command
-     * completed successfully (reply code 200).
-     * If so, return the reply, otherwise throw exception.
-     * Before calling this method make sure that no old replies are
-     * waiting on the control channel. Otherwise the reply returned
-     * may not be the reply to this command.
+     * Write the command to the control channel, block until reply arrives and check if the command
+     * completed successfully (reply code 200). If so, return the reply, otherwise throw exception.
+     * Before calling this method make sure that no old replies are waiting on the control channel.
+     * Otherwise the reply returned may not be the reply to this command.
      *
      * @param cmd FTP command
      * @return the first reply that waits in the control channel
      * @throws java.io.IOException          on I/O error
      * @throws FTPReplyParseException       on bad reply format
-     * @throws UnexpectedReplyCodeException if reply is not a positive
-     *                                      completion reply (code 200)
+     * @throws UnexpectedReplyCodeException if reply is not a positive completion reply (code 200)
      **/
     public Reply execute(Command cmd)
-            throws
-            ServerException,
-            IOException,
-            FTPReplyParseException,
-            UnexpectedReplyCodeException
-    {
+          throws
+          ServerException,
+          IOException,
+          FTPReplyParseException,
+          UnexpectedReplyCodeException {
 
         Reply reply = exchange(cmd);
         // check for positive reply
@@ -430,23 +401,19 @@ public class FTPControlChannel extends BasicClientControlChannel
         return reply;
     }
 
-    public InetSocketAddress getLocalAddress()
-    {
+    public InetSocketAddress getLocalAddress() {
         return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 
-    public InetSocketAddress getRemoteAddress()
-    {
+    public InetSocketAddress getRemoteAddress() {
         return (InetSocketAddress) socket.getRemoteSocketAddress();
     }
 
-    protected boolean hasBeenOpened()
-    {
+    protected boolean hasBeenOpened() {
         return hasBeenOpened;
     }
 
-    protected boolean haveStreams()
-    {
+    protected boolean haveStreams() {
         return (ftpIn != null && ftpOut != null);
     }
 

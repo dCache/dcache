@@ -1,9 +1,9 @@
 package diskCacheV111.util;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 public class VOInfoTests {
 
@@ -30,60 +30,60 @@ public class VOInfoTests {
     public void testMatchForFqanStringWithGroupNoRole() {
         VOInfo test = new VOInfo(FQAN_NO_ROLE);
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
 
         // NB we currently require an empty role to be treat as a wildcard.
         // This is to work-around a bug elsewhere.
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForFqanStringWithGroupAndRole() {
         VOInfo test = new VOInfo(FQAN_WITH_ROLE);
 
-        assertFalse( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertFalse( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForFqanStringWithGroupAndWildcardRole() {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_ROLE);
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertTrue( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForFqanStringWithWildcardGroupAndNoRole() {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_VO_AND_NO_ROLE);
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
 
         // NB we currently require an empty role to be treat as a wildcard.
         // This is to work-around a bug elsewhere.
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
 
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForFqanStringWithWildcardGroupAndWildcardRole() {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_VO_AND_WILDCARD_ROLE);
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertTrue( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, ""));
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, ""));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, OTHER_ROLE_NAME));
     }
 
 
@@ -96,56 +96,56 @@ public class VOInfoTests {
     public void testMatchForTwoStringsWithGroupNoRole() {
         VOInfo test = new VOInfo(FQAN_NO_ROLE, "");
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertFalse( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertFalse( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertFalse(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForTwoStringsWithGroupAndRole() {
         VOInfo test = new VOInfo(FQAN_NO_ROLE, ROLE_NAME);
 
-        assertFalse( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertFalse( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForTwoStringsWithGroupAndWildcardRole() {
         VOInfo test = new VOInfo(FQAN_NO_ROLE, "*");
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertTrue( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertFalse(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForTwoStringsWithWildcardGroupAndNoRole() {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_VO_AND_NO_ROLE, "");
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertFalse( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertFalse( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertFalse(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertFalse(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, ""));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, ""));
     }
 
     @Test
     public void testMatchForTwoStringsWithWildcardGroupAndWildcardRole() {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_VO_AND_NO_ROLE, "*");
 
-        assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertTrue( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, ""));
+        assertTrue(test.match(FQAN_NO_ROLE, ROLE_NAME));
+        assertTrue(test.match(FQAN_NO_ROLE, OTHER_ROLE_NAME));
 
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, ""));
-        assertTrue( test.match( OTHER_FQAN_NO_ROLE, OTHER_ROLE_NAME));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, ""));
+        assertTrue(test.match(OTHER_FQAN_NO_ROLE, OTHER_ROLE_NAME));
     }
 
     /*
@@ -156,32 +156,32 @@ public class VOInfoTests {
     public void testMatchForTwoStringsWithSelectiveMatch() {
         VOInfo test = new VOInfo("gr*", "r*le");
 
-        assertTrue( test.match( "group", "role"));
-        assertTrue( test.match( "group", "ridicule"));
-        assertTrue( test.match( "grudgingly", "ridicule"));
+        assertTrue(test.match("group", "role"));
+        assertTrue(test.match("group", "ridicule"));
+        assertTrue(test.match("grudgingly", "ridicule"));
     }
 
     @Test
     public void testMatchForTwoStringsWithWildGroupAndWrongRole() {
         VOInfo test = new VOInfo("*", "r*ule");
 
-        assertTrue( test.match( "group", "rule"));
-        assertTrue( test.match( "group", "ridicule"));
-        assertFalse( test.match( "group", "role"));
+        assertTrue(test.match("group", "rule"));
+        assertTrue(test.match("group", "ridicule"));
+        assertFalse(test.match("group", "role"));
     }
 
 
     @Test
     public void testMatchForTwoStringsWithGroupAndNullRole() {
-        VOInfo test = new VOInfo( VO_NAME, null);
+        VOInfo test = new VOInfo(VO_NAME, null);
 
-        assertTrue( test.match( VO_NAME, null));
-        assertTrue( test.match( VO_NAME, ROLE_NAME));
-        assertTrue( test.match( VO_NAME, OTHER_ROLE_NAME));
+        assertTrue(test.match(VO_NAME, null));
+        assertTrue(test.match(VO_NAME, ROLE_NAME));
+        assertTrue(test.match(VO_NAME, OTHER_ROLE_NAME));
 
-        assertFalse( test.match( OTHER_VO_NAME, null));
-        assertFalse( test.match( OTHER_VO_NAME, ROLE_NAME));
-        assertFalse( test.match( OTHER_VO_NAME, OTHER_ROLE_NAME));
+        assertFalse(test.match(OTHER_VO_NAME, null));
+        assertFalse(test.match(OTHER_VO_NAME, ROLE_NAME));
+        assertFalse(test.match(OTHER_VO_NAME, OTHER_ROLE_NAME));
     }
 
 }

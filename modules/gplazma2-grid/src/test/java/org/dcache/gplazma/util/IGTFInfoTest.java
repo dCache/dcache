@@ -18,38 +18,37 @@
  */
 package org.dcache.gplazma.util;
 
+import static org.dcache.gplazma.util.IGTFInfo.Type.POLICY;
+import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.net.URI;
+import org.dcache.gplazma.util.IGTFInfo.Status;
+import org.dcache.gplazma.util.IGTFInfo.Version;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import static org.hamcrest.Matchers.*;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.URI;
-
-import org.dcache.gplazma.util.IGTFInfo.Status;
-import org.dcache.gplazma.util.IGTFInfo.Version;
-
-import static org.dcache.gplazma.util.IGTFInfo.Type.POLICY;
-import static org.dcache.gplazma.util.IGTFInfo.Type.TRUST_ANCHOR;
-import static org.junit.Assert.*;
-
-public class IGTFInfoTest
-{
+public class IGTFInfoTest {
 
     @Before
-    public void setup()
-    {
+    public void setup() {
     }
 
     @Test
-    public void shouldBuildMinimumValidProfile() throws Exception
-    {
+    public void shouldBuildMinimumValidProfile() throws Exception {
         IGTFInfo.Builder builder = IGTFInfo.builder(POLICY);
         builder.setVersion("1.78-1");
         builder.setRequires("TestService = 1.78-1");
         builder.setSubjectDN("\"/DC=org/DC=example/DC=test-ca/CN=Test CA\", " +
-                "\"/DC=org/DC=example/DC=test-ca/CN=Other CA\"");
+              "\"/DC=org/DC=example/DC=test-ca/CN=Other CA\"");
         IGTFInfo policy = builder.build();
 
         assertThat(policy.getAlias(), is(equalTo(null)));
@@ -62,22 +61,21 @@ public class IGTFInfoTest
         assertThat(policy.getSHA1FP0(), is(equalTo(null)));
         assertThat(policy.getStatus(), is(equalTo(null)));
         assertThat(policy.getSubjectDNs(), hasItems(
-                new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"),
-                new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Other CA")));
+              new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"),
+              new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Other CA")));
         assertThat(policy.getUrl(), is(equalTo(null)));
         assertThat(policy.getVersion(), is(equalTo(new Version("1.78-1"))));
     }
 
     @Test
-    public void shouldBuildFullValidProfile() throws Exception
-    {
+    public void shouldBuildFullValidProfile() throws Exception {
         IGTFInfo.Builder builder = IGTFInfo.builder(POLICY);
         builder.setAlias("ca-policy-test");
         builder.setEmail("test-ca@example.org");
         builder.setObsoletes("AIST, APAC");
         builder.setRequires("TestService = 1.78-1, TestOther = 2.89-3");
         builder.setSubjectDN("\"/DC=org/DC=example/DC=test-ca/CN=Test CA\", " +
-                "\"/DC=org/DC=example/DC=test-ca/CN=Other CA\"");
+              "\"/DC=org/DC=example/DC=test-ca/CN=Other CA\"");
         builder.setUrl("http://www.test-ca.example.org");
         builder.setVersion("1.78-1");
         IGTFInfo policy = builder.build();
@@ -89,20 +87,19 @@ public class IGTFInfoTest
         assertThat(policy.getObsoletes(), hasItems("AIST", "APAC"));
         assertThat(policy.getPolicyUrl(), is(equalTo(null)));
         assertThat(policy.getPolicyRequires(), allOf(
-                hasEntry("TestService", "1.78-1"),
-                hasEntry("TestOther", "2.89-3")));
+              hasEntry("TestService", "1.78-1"),
+              hasEntry("TestOther", "2.89-3")));
         assertThat(policy.getSHA1FP0(), is(equalTo(null)));
         assertThat(policy.getStatus(), is(equalTo(null)));
         assertThat(policy.getSubjectDNs(), hasItems(
-                new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"),
-                new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Other CA")));
+              new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"),
+              new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Other CA")));
         assertThat(policy.getUrl(), is(equalTo(URI.create("http://www.test-ca.example.org"))));
         assertThat(policy.getVersion(), is(equalTo(new Version("1.78-1"))));
     }
 
     @Test
-    public void shouldBuildMinimumValidTrustAnchor() throws Exception
-    {
+    public void shouldBuildMinimumValidTrustAnchor() throws Exception {
         IGTFInfo.Builder builder = IGTFInfo.builder(TRUST_ANCHOR);
         builder.setAlias("ca-policy-test");
         builder.setVersion("1.78-1");
@@ -122,7 +119,7 @@ public class IGTFInfoTest
         assertThat(policy.getSHA1FP0(), is(equalTo(null)));
         assertThat(policy.getStatus(), is(equalTo(Status.EXPERIMENTAL)));
         assertThat(policy.getSubjectDN(),
-                is(equalTo(new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"))));
+              is(equalTo(new GlobusPrincipal("/DC=org/DC=example/DC=test-ca/CN=Test CA"))));
         assertThat(policy.getUrl(), is(equalTo(null)));
         assertThat(policy.getVersion(), is(equalTo(new Version("1.78-1"))));
     }

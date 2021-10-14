@@ -1,20 +1,23 @@
 package org.dcache.auth;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- *  Testcase for the KAuthFile class
+ * Testcase for the KAuthFile class
  */
-public class KAuthFileTests
-{
+public class KAuthFileTests {
+
     public static final String VERSION_21_FILENAME = "sample21.kpwd";
 
     public static final int PASSWD_ENTRY_ID = 0;
@@ -52,35 +55,31 @@ public class KAuthFileTests
     KAuthFile _sample21;
 
     @Before
-    public void setUp() throws IOException
-    {
+    public void setUp() throws IOException {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         InputStream in = loader.getResourceAsStream(VERSION_21_FILENAME);
         _sample21 = new KAuthFile(in);
     }
 
     @Test
-    public void testSimplePwdEntry()
-    {
+    public void testSimplePwdEntry() {
         assertHasPwduser(_sample21);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testDcuseraddWithNoArgs()
-    {
+    @Test(expected = IllegalArgumentException.class)
+    public void testDcuseraddWithNoArgs() {
         KAuthFile.Arguments args = KAuthFile.parseArgs(new String[]{""}, null);
         _sample21.dcuseradd(args);
     }
 
     @Test
-    public void testDcuseraddAddsPasswordEntry()
-    {
+    public void testDcuseraddAddsPasswordEntry() {
         KAuthFile.Arguments args = KAuthFile.parseArgs(new String[]{
-            "dcuseradd", "/path/to/file", NEWUSER_USER,
-            "-u", Integer.toString(NEWUSER_UID),
-            "-g", Integer.toString(NEWUSER_GID),
-            "-w", "read-write", "-h", NEWUSER_HOME, "-r", NEWUSER_ROOT,
-            "-p", NEWUSER_PASSWORD_PLAINTEXT}, null);
+              "dcuseradd", "/path/to/file", NEWUSER_USER,
+              "-u", Integer.toString(NEWUSER_UID),
+              "-g", Integer.toString(NEWUSER_GID),
+              "-w", "read-write", "-h", NEWUSER_HOME, "-r", NEWUSER_ROOT,
+              "-p", NEWUSER_PASSWORD_PLAINTEXT}, null);
 
         _sample21.dcuseradd(args);
 
@@ -93,33 +92,30 @@ public class KAuthFileTests
         assertHasNewuser(newFile);
     }
 
-    public void assertHasPwduser(KAuthFile file)
-    {
+    public void assertHasPwduser(KAuthFile file) {
         UserPwdRecord record = file.getUserPwdRecord(PWDUSER_USER);
 
         assertPasswdEntry(record, PWDUSER_USER, PWDUSER_ROOT, PWDUSER_FSROOT,
-                PWDUSER_HOME, PWDUSER_PASSWORD_HASH, PWDUSER_UID, PWDUSER_GID,
-                false);
+              PWDUSER_HOME, PWDUSER_PASSWORD_HASH, PWDUSER_UID, PWDUSER_GID,
+              false);
 
         assertTrue(record.passwordIsValid(PWDUSER_PASSWORD_PLAINTEXT));
         assertFalse(record.passwordIsValid(NEWUSER_PASSWORD_PLAINTEXT));
     }
 
-    public void assertHasNewuser(KAuthFile file)
-    {
+    public void assertHasNewuser(KAuthFile file) {
         UserPwdRecord newuser = file.getUserPwdRecord(NEWUSER_USER);
         assertPasswdEntry(newuser, NEWUSER_USER, NEWUSER_ROOT, NEWUSER_ROOT,
-                NEWUSER_HOME, NEWUSER_PASSWORD_HASH, NEWUSER_UID, NEWUSER_GID,
-                false);
+              NEWUSER_HOME, NEWUSER_PASSWORD_HASH, NEWUSER_UID, NEWUSER_GID,
+              false);
 
         assertTrue(newuser.passwordIsValid(NEWUSER_PASSWORD_PLAINTEXT));
         assertFalse(newuser.passwordIsValid(PWDUSER_PASSWORD_PLAINTEXT));
     }
 
     public void assertPasswdEntry(UserPwdRecord record, String user, String root,
-            String fsroot, String home, String hash, int uid, int gid,
-            boolean isReadOnly)
-    {
+          String fsroot, String home, String hash, int uid, int gid,
+          boolean isReadOnly) {
         assertNotNull(record);
         assertNull(record.DN);
         assertFalse(record.isDisabled());
@@ -139,16 +135,15 @@ public class KAuthFileTests
     }
 
     /**
-     * Simulate writing contents of KAuthFile to a file via KAuthFile#save
-     * and creating a new KAuthFile from parsing the resulting file.
+     * Simulate writing contents of KAuthFile to a file via KAuthFile#save and creating a new
+     * KAuthFile from parsing the resulting file.
+     * <p>
+     * NB.  This method relies on KAuthFile#toString returning the contents of the file.
      *
-     * NB.  This method relies on KAuthFile#toString returning the contents
-     * of the file.
      * @param in an existing KAuthFile
      * @return the result of parsing the existing KAuthFile's serialised form
      */
-    private KAuthFile saveAndParse(KAuthFile in)
-    {
+    private KAuthFile saveAndParse(KAuthFile in) {
         String contents = in.toString();
         byte[] bytes = contents.getBytes(StandardCharsets.UTF_8);
         InputStream input = new ByteArrayInputStream(bytes);

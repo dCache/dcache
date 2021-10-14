@@ -60,7 +60,12 @@ documents or software obtained from this server.
 package org.dcache.resilience.admin;
 
 import com.google.common.collect.ImmutableSet;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -89,15 +94,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
-
 import org.dcache.resilience.data.FileCancelFilter;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
@@ -119,22 +115,23 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * <p>Collects all admin shell commands for convenience.  See further individual
- *      command annotations for details.</p>
+ * command annotations for details.</p>
  */
 
 public final class ResilienceCommands implements CellCommandListener {
+
     static final String INACCESSIBLE_PREFIX = "inaccessible_files-";
-    static final String CONTAINED_IN        = "contained-in-";
+    static final String CONTAINED_IN = "contained-in-";
 
     private static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
 
     private static final String REQUIRE_LIMIT =
-                    "The current table contains %s entries; listing them all "
-                                    + "could cause an out-of-memory error and "
-                                    + "cause the resilience system to fail and/or "
-                                    + "restarts; if you wish to proceed "
-                                    + "with this listing, reissue the command "
-                                    + "with the explicit option '-limit=%s'";
+          "The current table contains %s entries; listing them all "
+                + "could cause an out-of-memory error and "
+                + "cause the resilience system to fail and/or "
+                + "restarts; if you wish to proceed "
+                + "with this listing, reissue the command "
+                + "with the explicit option '-limit=%s'";
 
     private static final long LS_THRESHOLD = 500000L;
 
@@ -153,6 +150,7 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     abstract class ResilienceCommand implements Callable<String> {
+
         @Override
         public String call() {
             String error = initializer.getInitError();
@@ -163,9 +161,9 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (!initializer.isInitialized()) {
                 return "Resilience is not yet initialized; "
-                                + "use 'show pinboard' to see progress, or "
-                                + "'enable' to re-initialize "
-                                + "if previously disabled.";
+                      + "use 'show pinboard' to see progress, or "
+                      + "'enable' to re-initialize "
+                      + "if previously disabled.";
             }
 
             try {
@@ -179,15 +177,16 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     abstract class PoolOpActivateCommand extends ResilienceCommand {
+
         @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
-                        usage = "Apply only on operations matching this "
-                                        + "pool status.")
+              valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
+              usage = "Apply only on operations matching this "
+                    + "pool status.")
         String status;
 
         @Argument(required = false,
-                        usage = "Apply only to pools matching "
-                                        + "this regular expression.")
+              usage = "Apply only to pools matching "
+                    + "this regular expression.")
         String pools;
 
         private final boolean activate;
@@ -202,16 +201,17 @@ public final class ResilienceCommands implements CellCommandListener {
             filter.setPools(pools);
             filter.setPoolStatus(status);
             return String.format(
-                            "Issued command to %s pool operations.",
-                            poolOperationMap.setIncluded(filter, activate));
+                  "Issued command to %s pool operations.",
+                  poolOperationMap.setIncluded(filter, activate));
         }
     }
 
     class FutureWrapper {
-        final Date      timestamp;
-        final UUID      key;
-        final String    type;
-        final String    fileName;
+
+        final Date timestamp;
+        final UUID key;
+        final String type;
+        final String fileName;
         final Future<?> future;
 
         FutureWrapper(String type, String fileName, Future<?> future) {
@@ -228,21 +228,21 @@ public final class ResilienceCommands implements CellCommandListener {
 
         public String toString() {
             String state = future.isCancelled() ? "CANCELLED" :
-                            future.isDone() ? "DONE": "RUNNING";
+                  future.isDone() ? "DONE" : "RUNNING";
             return String.format("%-36s %32s %20s, file name: %20s (%s)",
-                                 timestamp, key, type, fileName, state);
+                  timestamp, key, type, fileName, state);
         }
     }
 
     @Command(name = "async cmd cancel",
-                    hint = "cancel running scans/queries",
-                    description = "Interrupts the execution of scans or "
-                                    + "queries launched asynchronously "
-                                    + "(see async cmd ls).")
-
+          hint = "cancel running scans/queries",
+          description = "Interrupts the execution of scans or "
+                + "queries launched asynchronously "
+                + "(see async cmd ls).")
     class AsyncCmdCancelCommand extends ResilienceCommand {
+
         @Argument(usage = "Comma-delimited list of UUIDs "
-                        + "for the jobs to cancel, or '*' for all jobs.")
+              + "for the jobs to cancel, or '*' for all jobs.")
         String ids;
 
         @Override
@@ -255,7 +255,7 @@ public final class ResilienceCommands implements CellCommandListener {
                 toMatch = futureMap.keySet();
             } else {
                 toMatch = Arrays.stream(ids.split(","))
-                                .collect(Collectors.toSet());
+                      .collect(Collectors.toSet());
             }
 
             toMatch.forEach(id -> {
@@ -264,15 +264,15 @@ public final class ResilienceCommands implements CellCommandListener {
                     if (wrapper.isRunning()) {
                         wrapper.future.cancel(true);
                         builder.append("Cancelled job for ")
-                               .append(id).append("\n");
+                              .append(id).append("\n");
                     } else {
                         builder.append("Job for ")
-                               .append(id).append(" already finished")
-                               .append("\n");
+                              .append(id).append(" already finished")
+                              .append("\n");
                     }
                 } else {
                     builder.append("No job for ")
-                           .append(id).append("\n");
+                          .append(id).append("\n");
                 }
             });
 
@@ -281,21 +281,21 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "async cmd cleanup",
-                    hint = "remove future entries and/or file",
-                    description = "If the job has completed, removes "
-                                    + "the map entry for the future and/or file.")
-
+          hint = "remove future entries and/or file",
+          description = "If the job has completed, removes "
+                + "the map entry for the future and/or file.")
     class AsyncCmdCleanupCommand extends ResilienceCommand {
+
         @Option(name = "entry",
-                        usage = "remove entry from map.")
+              usage = "remove entry from map.")
         Boolean entry = true;
 
         @Option(name = "file",
-                        usage = "delete file.")
+              usage = "delete file.")
         Boolean file = false;
 
         @Argument(usage = "Comma-delimited list of UUIDs "
-                        + "for the jobs to clean up, or '*' for all finished jobs.")
+              + "for the jobs to clean up, or '*' for all finished jobs.")
         String ids;
 
         @Override
@@ -309,35 +309,35 @@ public final class ResilienceCommands implements CellCommandListener {
                 toMatch = new HashSet<>(futureMap.keySet());
             } else {
                 toMatch = Arrays.stream(ids.split(","))
-                                .collect(Collectors.toSet());
+                      .collect(Collectors.toSet());
             }
 
             toMatch.stream().forEach(id -> {
                 FutureWrapper wrapper = futureMap.get(id);
                 if (wrapper.isRunning()) {
                     builder.append("job for ")
-                           .append(id).append(" is still running\n");
+                          .append(id).append(" is still running\n");
 
                 } else {
                     if (entry) {
                         futureMap.remove(id);
                         builder.append("entry for ")
-                               .append(id).append(" removed\n");
+                              .append(id).append(" removed\n");
                     }
 
                     if (file) {
                         File file = new File(resilienceDir, wrapper.fileName);
                         if (!file.exists()) {
                             builder.append("file for ")
-                                   .append(id).append(": ")
-                                   .append(wrapper.fileName)
-                                   .append(" NOT FOUND\n");
+                                  .append(id).append(": ")
+                                  .append(wrapper.fileName)
+                                  .append(" NOT FOUND\n");
                         } else {
                             file.delete();
                             builder.append("file for ")
-                                   .append(id).append(": ")
-                                   .append(wrapper.fileName)
-                                   .append(" deleted\n");
+                                  .append(id).append(": ")
+                                  .append(wrapper.fileName)
+                                  .append(" deleted\n");
                         }
                     }
                 }
@@ -348,40 +348,42 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "async cmd ls",
-                    hint = "print out a list of running scans/queries",
-                    description = "When executing asynchronously either "
-                                    + "the inaccessible file "
-                                    + "scan or the contained-in query, a future "
-                                    + "is stored along with identifying "
-                                    + "information and path of the file "
-                                    + "to which the results will be printed; "
-                                    + "this command lists them all.")
+          hint = "print out a list of running scans/queries",
+          description = "When executing asynchronously either "
+                + "the inaccessible file "
+                + "scan or the contained-in query, a future "
+                + "is stored along with identifying "
+                + "information and path of the file "
+                + "to which the results will be printed; "
+                + "this command lists them all.")
     class AsyncCmdListCommand extends ResilienceCommand {
+
         @Override
         protected String doCall() throws Exception {
             return String.join("\n",
-                               futureMap.values()
-                                        .stream()
-                                        .map(FutureWrapper::toString)
-                                        .sorted()
-                                        .collect(Collectors.toList()));
+                  futureMap.values()
+                        .stream()
+                        .map(FutureWrapper::toString)
+                        .sorted()
+                        .collect(Collectors.toList()));
         }
     }
 
     @Command(name = "async cmd results",
-                    hint = "print to screen asynchronous query/scan results",
-                    description = "Reads the file to which the results have "
-                                    + "been written.  Only 10,000 lines max "
-                                    + "can be read at one time; if the count "
-                                    + "exceeds 10,000, use the 'from' option "
-                                    + "to read the following 10,000.")
+          hint = "print to screen asynchronous query/scan results",
+          description = "Reads the file to which the results have "
+                + "been written.  Only 10,000 lines max "
+                + "can be read at one time; if the count "
+                + "exceeds 10,000, use the 'from' option "
+                + "to read the following 10,000.")
     class AsyncCmdResultsCommand extends ResilienceCommand {
+
         @Option(name = "count",
-                        usage = "Print only the number of lines in the file.")
+              usage = "Print only the number of lines in the file.")
         Boolean count = false;
 
         @Option(name = "from",
-                        usage = "Starting line index.")
+              usage = "Starting line index.")
         Integer from = 0;
 
         @Argument(usage = "Name of file to read and print.")
@@ -403,7 +405,7 @@ public final class ResilienceCommands implements CellCommandListener {
                     }
                     return "" + i + "\n";
                 } else {
-                    for ( ; i < from; ++i) {
+                    for (; i < from; ++i) {
                         // skip the first 'from' lines
                         if (null == reader.readLine()) {
                             return "No more lines after " + i;
@@ -423,7 +425,7 @@ public final class ResilienceCommands implements CellCommandListener {
                     ++i;
 
                     int end = from + 10000;
-                    for ( ; i < end; ++i) {
+                    for (; i < end; ++i) {
                         line = reader.readLine();
                         if (line == null) {
                             break;
@@ -441,21 +443,22 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "diag",
-                    hint = "print diagnostic statistics",
-                    description = "Lists the total number of messages received  "
-                                    + "and operations performed since last start "
-                                    + "of the resilience system.  Rate/sec is "
-                                    + "sampled over the interval since the last "
-                                    + "checkpoint. These values for new "
-                                    + "location messages and file "
-                                    + "operations are recorded "
-                                    + "to a stastistics file located in the "
-                                    + "resilience home directory, and which "
-                                    + "can be displayed using the history option")
+          hint = "print diagnostic statistics",
+          description = "Lists the total number of messages received  "
+                + "and operations performed since last start "
+                + "of the resilience system.  Rate/sec is "
+                + "sampled over the interval since the last "
+                + "checkpoint. These values for new "
+                + "location messages and file "
+                + "operations are recorded "
+                + "to a stastistics file located in the "
+                + "resilience home directory, and which "
+                + "can be displayed using the history option")
     class DiagCommand extends ResilienceCommand {
+
         @Argument(required = false,
-                  usage = "Include pools matching this regular expression; "
-                                  + "default prints only summary info.")
+              usage = "Include pools matching this regular expression; "
+                    + "default prints only summary info.")
         String pools;
 
         @Override
@@ -465,26 +468,27 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "diag history",
-                    hint = "print diagnostic history",
-                    description = "Reads in the contents of the diagnostic "
-                                    + "history file recording periodic statistics "
-                                    + "(see diag command).")
+          hint = "print diagnostic history",
+          description = "Reads in the contents of the diagnostic "
+                + "history file recording periodic statistics "
+                + "(see diag command).")
     class DiagHistoryCommand extends ResilienceCommand {
+
         @Option(name = "limit",
-                        usage = "Display up to this number of lines "
-                                        + "(default is 24 * 60).")
+              usage = "Display up to this number of lines "
+                    + "(default is 24 * 60).")
         Integer limit = 24 * 60;
 
         @Option(name = "order",
-                        valueSpec = "asc|desc",
-                        usage = "Display lines in ascending (default) or "
-                                        + "descending order by timestamp.")
+              valueSpec = "asc|desc",
+              usage = "Display lines in ascending (default) or "
+                    + "descending order by timestamp.")
         String order = "asc";
 
         @Option(name = "enable",
-                        usage = "Turn the recording of statistics "
-                                        + "to file on or off. "
-                                        + "Recording to file is off by default.")
+              usage = "Turn the recording of statistics "
+                    + "to file on or off. "
+                    + "Recording to file is off by default.")
         Boolean enable = null;
 
         protected String doCall() throws Exception {
@@ -499,28 +503,29 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "disable",
-                    hint = "turn off replication handling",
-                    description = "Prevents messages from being processed by "
-                                    + "the replication system (this is useful  "
-                                    + "for instance if rebalance is run on "
-                                    + "a resilient group). "
-                                    + "To disable all internal operations, use "
-                                    + "the 'strict' argument to this command; "
-                                    + "this option will also cancel all pool and "
-                                    + "file operations.")
+          hint = "turn off replication handling",
+          description = "Prevents messages from being processed by "
+                + "the replication system (this is useful  "
+                + "for instance if rebalance is run on "
+                + "a resilient group). "
+                + "To disable all internal operations, use "
+                + "the 'strict' argument to this command; "
+                + "this option will also cancel all pool and "
+                + "file operations.")
     class DisableCommand extends ResilienceCommand {
-        @Option(name="drop",
-                        valueSpec = "true|false",
-                        usage = "If true, do not store backlogged messages "
-                                        + "(only valid without the 'strict' "
-                                        + "argument); false by default.")
+
+        @Option(name = "drop",
+              valueSpec = "true|false",
+              usage = "If true, do not store backlogged messages "
+                    + "(only valid without the 'strict' "
+                    + "argument); false by default.")
         Boolean drop = false;
 
         @Argument(required = false,
-                        valueSpec = "strict",
-                        usage = "Whether to shutdown all operations "
-                                        + "(without this argument, only "
-                                        + "incoming messages are blocked).")
+              valueSpec = "strict",
+              usage = "Whether to shutdown all operations "
+                    + "(without this argument, only "
+                    + "incoming messages are blocked).")
         String strict;
 
         @Override
@@ -530,9 +535,9 @@ public final class ResilienceCommands implements CellCommandListener {
                     return "Unrecognized argument '" + strict + "'.";
                 }
 
-                synchronized(futureMap) {
+                synchronized (futureMap) {
                     for (Iterator<Entry<String, FutureWrapper>> it
-                                    = futureMap.entrySet().iterator(); it.hasNext(); ) {
+                          = futureMap.entrySet().iterator(); it.hasNext(); ) {
                         Entry<String, FutureWrapper> entry = it.next();
                         entry.getValue().future.cancel(true);
                         it.remove();
@@ -549,10 +554,10 @@ public final class ResilienceCommands implements CellCommandListener {
                 messageGuard.disable(drop);
                 if (drop) {
                     return "Processing of incoming messages has been disabled; "
-                                    + "backlogged messages will be dropped.";
+                          + "backlogged messages will be dropped.";
                 }
                 return "Processing of incoming messages has been disabled; "
-                                + "backlogged messages will be stored.";
+                      + "backlogged messages will be stored.";
             }
 
             return "Resilience already disabled.";
@@ -560,12 +565,13 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "enable",
-                    hint = "turn on replication handling",
-                    description = "Allows messages to be processed by "
-                                    + "the replication system. Will also "
-                                    + "(re-)enable all internal operations if they "
-                                    + "are not running.  Executed asynchronously.")
-    class EnableCommand implements Callable<String>  {
+          hint = "turn on replication handling",
+          description = "Allows messages to be processed by "
+                + "the replication system. Will also "
+                + "(re-)enable all internal operations if they "
+                + "are not running.  Executed asynchronously.")
+    class EnableCommand implements Callable<String> {
+
         @Override
         public String call() {
             if (!messageGuard.isEnabled()) {
@@ -576,12 +582,12 @@ public final class ResilienceCommands implements CellCommandListener {
                 }
 
                 return "Resilience system has been re-enabled "
-                                + "and map reinitialization/reload started.";
+                      + "and map reinitialization/reload started.";
             }
 
             if (initializer.initialize()) {
                 return "Resilience system has been re-enabled "
-                                + "and map reinitialization/reload started.";
+                      + "and map reinitialization/reload started.";
             }
 
             return "Resilience is already enabled.";
@@ -589,15 +595,16 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "file check",
-                    hint = "launch an operation to adjust replicas for "
-                                    + "one or more pnfsids",
-                    description = "For each pnfsid, runs a check to see that "
-                                    + "the number of replicas is properly "
-                                    + "constrained, creating new copies or "
-                                    + "removing redundant ones as necessary.")
+          hint = "launch an operation to adjust replicas for "
+                + "one or more pnfsids",
+          description = "For each pnfsid, runs a check to see that "
+                + "the number of replicas is properly "
+                + "constrained, creating new copies or "
+                + "removing redundant ones as necessary.")
     class FileCheckCommand extends ResilienceCommand {
+
         @Argument(usage = "Comma-delimited list of pnfsids "
-                                        + "for which to run the adjustment.")
+              + "for which to run the adjustment.")
         String pnfsids;
 
         @Override
@@ -607,54 +614,55 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "file ctrl",
-                    hint = "control checkpointing or "
-                                    + "handling of file operations",
-                    description = "Runs checkpointing, resets checkpoint "
-                                    + "properties, resets operation properties, "
-                                    + "turn processing of operations on or off "
-                                    + "(start/shutdown), or displays info relevant "
-                                    + "to operation processing and checkpointing.")
+          hint = "control checkpointing or "
+                + "handling of file operations",
+          description = "Runs checkpointing, resets checkpoint "
+                + "properties, resets operation properties, "
+                + "turn processing of operations on or off "
+                + "(start/shutdown), or displays info relevant "
+                + "to operation processing and checkpointing.")
     class FileControlCommand extends ResilienceCommand {
+
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
-                        required = false,
-                        usage = "off = turn checkpointing off; "
-                                        + "on = turn checkpointing on; "
-                                        + "info = information (default); "
-                                        + "reset = reset properties; "
-                                        + "start = (re)start processing of file operations; "
-                                        + "shutdown = stop all processing of file operations; "
-                                        + "run = checkpoint to disk immediately." )
+              required = false,
+              usage = "off = turn checkpointing off; "
+                    + "on = turn checkpointing on; "
+                    + "info = information (default); "
+                    + "reset = reset properties; "
+                    + "start = (re)start processing of file operations; "
+                    + "shutdown = stop all processing of file operations; "
+                    + "run = checkpoint to disk immediately.")
         String arg = "INFO";
 
         @Option(name = "checkpoint",
-                        usage = "With reset mode (one of checkpoint|sweep|delay). "
-                                        + "Interval length between checkpointing "
-                                        + "of the file operation data.")
+              usage = "With reset mode (one of checkpoint|sweep|delay). "
+                    + "Interval length between checkpointing "
+                    + "of the file operation data.")
         Long checkpoint;
 
         @Option(name = "sweep",
-                        usage = "With reset mode (one of checkpoint|sweep|delay). "
-                                        + "Minimal interval between sweeps of "
-                                        + "the file operations.")
+              usage = "With reset mode (one of checkpoint|sweep|delay). "
+                    + "Minimal interval between sweeps of "
+                    + "the file operations.")
         Long sweep;
 
         @Option(name = "delay",
-                        usage = "With reset mode (one of checkpoint|sweep|delay). "
-                                        + "Delay before actual execution of a task "
-                                        + "which has been set to the running state.")
+              usage = "With reset mode (one of checkpoint|sweep|delay). "
+                    + "Delay before actual execution of a task "
+                    + "which has been set to the running state.")
         Long delay;
 
         @Option(name = "unit",
-                        valueSpec = "SECONDS|MINUTES|HOURS",
-                        usage = "Checkpoint, sweep or delay interval unit.")
+              valueSpec = "SECONDS|MINUTES|HOURS",
+              usage = "Checkpoint, sweep or delay interval unit.")
         TimeUnit unit;
 
         @Option(name = "retries",
-                        usage = "Maximum number of retries on a failed operation.")
+              usage = "Maximum number of retries on a failed operation.")
         Integer retries;
 
         @Option(name = "file",
-                        usage = "Alternate (full) path for checkpoint file.")
+              usage = "Alternate (full) path for checkpoint file.")
         String file;
 
         @Override
@@ -671,7 +679,7 @@ public final class ResilienceCommands implements CellCommandListener {
                         fileOperationMap.reload();
                     }).start();
                     return "Consumer initialization "
-                                    + "and reload of checkpoint file started.";
+                          + "and reload of checkpoint file started.";
                 case SHUTDOWN:
                     if (!fileOperationMap.isRunning()) {
                         return "Consumer is not running.";
@@ -737,20 +745,20 @@ public final class ResilienceCommands implements CellCommandListener {
         private String infoMessage() {
             StringBuilder info = new StringBuilder();
             info.append(String.format("maximum concurrent operations %s.\n"
-                                            + "maximum retries on failure %s\n",
-                                      fileOperationMap.getMaxRunning(),
-                                      fileOperationMap.getMaxRetries()));
+                        + "maximum retries on failure %s\n",
+                  fileOperationMap.getMaxRunning(),
+                  fileOperationMap.getMaxRetries()));
             info.append(String.format("sweep interval %s %s\n",
-                                      fileOperationMap.getTimeout(),
-                                      fileOperationMap.getTimeoutUnit()));
+                  fileOperationMap.getTimeout(),
+                  fileOperationMap.getTimeoutUnit()));
             info.append(String.format("checkpoint interval %s %s\n"
-                                            + "checkpoint file path %s\n",
-                                      fileOperationMap.getCheckpointExpiry(),
-                                      fileOperationMap.getCheckpointExpiryUnit(),
-                                      fileOperationMap.getCheckpointFilePath()));
+                        + "checkpoint file path %s\n",
+                  fileOperationMap.getCheckpointExpiry(),
+                  fileOperationMap.getCheckpointExpiryUnit(),
+                  fileOperationMap.getCheckpointFilePath()));
             info.append(String.format("task launch delay %s %s\n",
-                                      fileOperationHandler.getLaunchDelay(),
-                                      fileOperationHandler.getLaunchDelayUnit()));
+                  fileOperationHandler.getLaunchDelay(),
+                  fileOperationHandler.getLaunchDelayUnit()));
             counters.getFileOpSweepInfo(info);
             counters.getCheckpointInfo(info);
             return info.toString();
@@ -758,75 +766,76 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "file cancel",
-                    hint = "cancel file operations",
-                    description = "Scans the file table and cancels "
-                                    + "operations matching the filter "
-                                    + "parameters.")
+          hint = "cancel file operations",
+          description = "Scans the file table and cancels "
+                + "operations matching the filter "
+                + "parameters.")
     class FileOpCancelCommand extends ResilienceCommand {
+
         @Option(name = "state",
-                        valueSpec = "WAITING|RUNNING",
-                        separator = ",",
-                        usage = "Cancel operations for files matching this "
-                                        + "comma-delimited set of operation states; "
-                                        + "default is both.")
+              valueSpec = "WAITING|RUNNING",
+              separator = ",",
+              usage = "Cancel operations for files matching this "
+                    + "comma-delimited set of operation states; "
+                    + "default is both.")
         String[] state;
 
         @Option(name = "forceRemoval",
-                        usage = "Remove all waiting operations for this match "
-                                        + "after cancellation of the running tasks. "
-                                        + "(Default is false; this option is "
-                                        + "redundant if the state includes WAITING.)")
+              usage = "Remove all waiting operations for this match "
+                    + "after cancellation of the running tasks. "
+                    + "(Default is false; this option is "
+                    + "redundant if the state includes WAITING.)")
         boolean forceRemoval = false;
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Option(name = "retentionPolicy",
-                        valueSpec = "REPLICA|CUSTODIAL ",
-                        usage = "Cancel only operations for files with this "
-                                        + "policy.")
+              valueSpec = "REPLICA|CUSTODIAL ",
+              usage = "Cancel only operations for files with this "
+                    + "policy.")
         String retentionPolicy;
 
         @Option(name = "storageUnit",
-                        usage = "Cancel only operations for files with this "
-                                        + "storage unit/group.")
+              usage = "Cancel only operations for files with this "
+                    + "storage unit/group.")
         String storageUnit;
 
         @Option(name = "opCount",
-                        usage = "Cancel only operations with this operation count.")
+              usage = "Cancel only operations with this operation count.")
         Integer opCount;
 
         @Option(name = "parent",
-                        usage = "Cancel only operations with this parent pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a parent pool.")
+              usage = "Cancel only operations with this parent pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a parent pool.")
         String parent;
 
         @Option(name = "source",
-                        usage = "Cancel only operations with this source pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a source pool.")
+              usage = "Cancel only operations with this source pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a source pool.")
         String source;
 
         @Option(name = "target",
-                        usage = "Cancel only operations with this target pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a target pool.")
+              usage = "Cancel only operations with this target pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a target pool.")
         String target;
 
         @Argument(required = false,
-                        usage = "Cancel operations for this comma-delimited "
-                                        + "list of pnfsids "
-                                        + "(use '*' to cancel all operations).")
+              usage = "Cancel operations for this comma-delimited "
+                    + "list of pnfsids "
+                    + "(use '*' to cancel all operations).")
         String pnfsids;
 
         @Override
@@ -853,7 +862,7 @@ public final class ResilienceCommands implements CellCommandListener {
                  */
                 if (filter.isUndefined() && state == null) {
                     return "Please set at least one option or "
-                                    + "argument other than 'forceRemoval'.";
+                          + "argument other than 'forceRemoval'.";
                 }
 
                 if (filter.isSimplePnfsMatch()) {
@@ -878,27 +887,28 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "history",
-                    hint = "display a history of the most recent terminated "
-                                    + "file operations",
-                    description = "When file operations complete or are aborted, "
-                                    + "their string representations are added "
-                                    + "to a circular buffer whose capacity is set "
-                                    + "by the property "
-                                    + "'resilience.limits.file.operation-history'.")
+          hint = "display a history of the most recent terminated "
+                + "file operations",
+          description = "When file operations complete or are aborted, "
+                + "their string representations are added "
+                + "to a circular buffer whose capacity is set "
+                + "by the property "
+                + "'resilience.limits.file.operation-history'.")
     class FileOpHistoryCommand extends ResilienceCommand {
+
         @Argument(required = false,
-                        valueSpec = "errors",
-                        usage = "Display just the failures.")
+              valueSpec = "errors",
+              usage = "Display just the failures.")
         String errors;
 
         @Option(name = "limit",
-                        usage = "Display up to this number of entries.")
+              usage = "Display up to this number of entries.")
         Integer limit;
 
         @Option(name = "order",
-                        valueSpec = "ASC|DESC",
-                        usage = "Display entries in ascending (default) or "
-                                        + "descending order of arrival.")
+              valueSpec = "ASC|DESC",
+              usage = "Display entries in ascending (default) or "
+                    + "descending order of arrival.")
         String order = "ASC";
 
         @Override
@@ -906,7 +916,7 @@ public final class ResilienceCommands implements CellCommandListener {
             boolean failed = false;
             if (errors != null) {
                 if (!"errors".equals(errors)) {
-                    return  "Optional argument must be 'errors'";
+                    return "Optional argument must be 'errors'";
                 }
                 failed = true;
             }
@@ -929,79 +939,80 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "file ls",
-                    hint = "list entries in the file operation table",
-                    description = "Scans the table and returns operations  "
-                                    + "matching the filter parameters.")
+          hint = "list entries in the file operation table",
+          description = "Scans the table and returns operations  "
+                + "matching the filter parameters.")
     class FileOpLsCommand extends ResilienceCommand {
+
         @Option(name = "retentionPolicy",
-                        valueSpec = "REPLICA|CUSTODIAL",
-                        usage = "List only operations for files with this "
-                                        + "policy.")
+              valueSpec = "REPLICA|CUSTODIAL",
+              usage = "List only operations for files with this "
+                    + "policy.")
         String retentionPolicy;
 
         @Option(name = "storageUnit",
-                        usage = "List only operations for files with this "
-                                        + "storage unit/group.")
+              usage = "List only operations for files with this "
+                    + "storage unit/group.")
         String storageUnit;
 
         @Option(name = "state",
-                        valueSpec = "WAITING|RUNNING",
-                        separator = ",",
-                        usage = "List only operations for files matching this "
-                                        + "comma-delimited set of operation states; "
-                                        + "default is both.")
+              valueSpec = "WAITING|RUNNING",
+              separator = ",",
+              usage = "List only operations for files matching this "
+                    + "comma-delimited set of operation states; "
+                    + "default is both.")
         String[] state = {"WAITING", "RUNNING"};
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Option(name = "opCount",
-                        usage = "List only operations with this operation count.")
+              usage = "List only operations with this operation count.")
         Integer opCount;
 
         @Option(name = "parent",
-                        usage = "List only operations with this parent pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a parent pool.")
+              usage = "List only operations with this parent pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a parent pool.")
         String parent;
 
         @Option(name = "source",
-                        usage = "List only operations with this source pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a source pool.")
+              usage = "List only operations with this source pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a source pool.")
         String source;
 
         @Option(name = "target",
-                        usage = "List only operations with this target pool name; "
-                                        + "use the option with no value to match only "
-                                        + "operations without a target pool.")
+              usage = "List only operations with this target pool name; "
+                    + "use the option with no value to match only "
+                    + "operations without a target pool.")
         String target;
 
         @Option(name = "limit",
-                        usage = "Maximum number of rows to list.  This "
-                                        + "option becomes required when "
-                                        + "the operation queues reach "
-                                        + LS_THRESHOLD + "; be aware that "
-                                        + "listing more than this number of "
-                                        + "rows may provoke an out of memory "
-                                        + "error for the domain.")
+              usage = "Maximum number of rows to list.  This "
+                    + "option becomes required when "
+                    + "the operation queues reach "
+                    + LS_THRESHOLD + "; be aware that "
+                    + "listing more than this number of "
+                    + "rows may provoke an out of memory "
+                    + "error for the domain.")
         Integer limit;
 
         @Argument(required = false,
-                        usage = "List only activities for this comma-delimited "
-                                        + "list of pnfsids. No argument lists all "
-                                        + "operations; use '$' to return just "
-                                        + "the number of entries; '$@' to "
-                                        + "return the op counts by pool.")
+              usage = "List only activities for this comma-delimited "
+                    + "list of pnfsids. No argument lists all "
+                    + "operations; use '$' to return just "
+                    + "the number of entries; '$@' to "
+                    + "return the op counts by pool.")
         String pnfsids;
 
         @Override
@@ -1024,7 +1035,7 @@ public final class ResilienceCommands implements CellCommandListener {
                 filter.setPnfsIds(pnfsids);
             } else {
                 StringBuilder builder =
-                                pnfsids.contains("@") ? new StringBuilder() : null;
+                      pnfsids.contains("@") ? new StringBuilder() : null;
                 long total = fileOperationMap.count(filter, builder);
 
                 if (builder == null) {
@@ -1032,21 +1043,21 @@ public final class ResilienceCommands implements CellCommandListener {
                 }
 
                 return String.format("%s matching operations."
-                                + "\n\nOperation counts per pool:\n%s",
-                                total, builder.toString());
+                            + "\n\nOperation counts per pool:\n%s",
+                      total, builder.toString());
             }
 
             if (filter.isSimplePnfsMatch()) {
                 FileOperation op = fileOperationMap.getOperation(new PnfsId(pnfsids));
                 if (op == null) {
                     return String.format("No operation currently registered for %s.",
-                                    pnfsids);
+                          pnfsids);
                 }
                 return op.toString() + "\n";
             }
 
             long size = fileOperationMap.size();
-            int limitValue = (int)size;
+            int limitValue = (int) size;
 
             if (limit == null) {
                 if (stateSet.contains("WAITING") && size >= LS_THRESHOLD) {
@@ -1061,16 +1072,17 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "retry errors",
-                    hint = "launch operations to adjust replicas for "
-                                    + "all pnfsids currently appearing in "
-                                    + "the history errors list",
-                    description = "For each pnfsid, runs a check to see that "
-                                    + "the number of replicas is properly "
-                                    + "constrained, creating new copies or "
-                                    + "removing redundant ones as necessary. "
-                                    + "NOTE: running this command also "
-                                    + "clears the current errors list.")
+          hint = "launch operations to adjust replicas for "
+                + "all pnfsids currently appearing in "
+                + "the history errors list",
+          description = "For each pnfsid, runs a check to see that "
+                + "the number of replicas is properly "
+                + "constrained, creating new copies or "
+                + "removing redundant ones as necessary. "
+                + "NOTE: running this command also "
+                + "clears the current errors list.")
     class FileRetryCommand extends ResilienceCommand {
+
         @Override
         protected String doCall() throws Exception {
             return runFileChecks(history.getErrorPnfsids());
@@ -1078,24 +1090,25 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "contained in",
-                    hint = "count or list pnfsids which have replicas only on "
-                                + "the pools in the list",
-                     description = "Issues a query to the "
-                                + "namespace to determine which files on the "
-                                + "indicated pools have all their replicas only "
-                                + "on those pools; non-resilient pools are not"
-                                + "checked for other copies. Results are written "
-                                + "to a file in resilience home named '"
-                                     + CONTAINED_IN
-                                + "' + timestamp.  Executed asynchronously. Use "
-                                + "'async cmd ls' to see all running jobs, "
-                                + "'async cmd cancel' to cancel,  "
-                                + "'async cmd results' to read the results "
-                                + "back from the file, and 'async cmd cleanup' "
-                                + "to delete the entry and/or file.")
+          hint = "count or list pnfsids which have replicas only on "
+                + "the pools in the list",
+          description = "Issues a query to the "
+                + "namespace to determine which files on the "
+                + "indicated pools have all their replicas only "
+                + "on those pools; non-resilient pools are not"
+                + "checked for other copies. Results are written "
+                + "to a file in resilience home named '"
+                + CONTAINED_IN
+                + "' + timestamp.  Executed asynchronously. Use "
+                + "'async cmd ls' to see all running jobs, "
+                + "'async cmd cancel' to cancel,  "
+                + "'async cmd results' to read the results "
+                + "back from the file, and 'async cmd cleanup' "
+                + "to delete the entry and/or file.")
     class ContainedInCommand extends ResilienceCommand {
+
         @Argument(usage = "A regular expression "
-                        + "for pools to be included in the group.")
+              + "for pools to be included in the group.")
         String poolExpression;
 
         @Override
@@ -1104,10 +1117,10 @@ public final class ResilienceCommands implements CellCommandListener {
                 StringBuilder builder = new StringBuilder();
                 Pattern pattern = Pattern.compile(poolExpression);
                 List<String> locations =
-                                poolInfoMap.getResilientPools()
-                                           .stream()
-                                           .filter((pool) -> pattern.matcher(pool).find())
-                                           .collect(Collectors.toList());
+                      poolInfoMap.getResilientPools()
+                            .stream()
+                            .filter((pool) -> pattern.matcher(pool).find())
+                            .collect(Collectors.toList());
                 execAsync(locations, builder);
                 return builder.toString();
             } catch (Exception e) {
@@ -1115,16 +1128,16 @@ public final class ResilienceCommands implements CellCommandListener {
             }
         }
 
-        private void execAsync(List<String>locations, StringBuilder builder) {
+        private void execAsync(List<String> locations, StringBuilder builder) {
             String fileName = CONTAINED_IN + System.currentTimeMillis();
 
             Function<PrintWriter, Void> function = printWriter -> {
                 try {
                     namespaceAccess.printContainedInFiles(locations,
-                                                          printWriter);
+                          printWriter);
                 } catch (CacheException e) {
                     printWriter.println("error during printContainedInFiles: "
-                                                        + e.toString());
+                          + e.toString());
                 } catch (InterruptedException e) {
                     printWriter.println("printContainedInFiles was interrupted.");
                 }
@@ -1136,21 +1149,22 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "inaccessible",
-                    hint = "list pnfsids for a pool which "
-                                    + "currently have no readable locations",
-                    description = "Issues a query to the "
-                                    + "namespace to scan the pool, "
-                                    + "checking locations of each file with online "
-                                    + "access latency; results are written to a  "
-                                    + "file in resilience home named '"
-                                    + INACCESSIBLE_PREFIX
-                                    + "' + pool. Executed asynchronously. Use "
-                                    + "'async cmd ls' to see all running jobs, "
-                                    + "'async cmd cancel' to cancel,  "
-                                    + "'async cmd results' to read the results "
-                                    + "back from the file, and 'async cmd cleanup' "
-                                    + "to delete the entry and/or file.")
+          hint = "list pnfsids for a pool which "
+                + "currently have no readable locations",
+          description = "Issues a query to the "
+                + "namespace to scan the pool, "
+                + "checking locations of each file with online "
+                + "access latency; results are written to a  "
+                + "file in resilience home named '"
+                + INACCESSIBLE_PREFIX
+                + "' + pool. Executed asynchronously. Use "
+                + "'async cmd ls' to see all running jobs, "
+                + "'async cmd cancel' to cancel,  "
+                + "'async cmd results' to read the results "
+                + "back from the file, and 'async cmd cleanup' "
+                + "to delete the entry and/or file.")
     class InaccessibleFilesCommand extends ResilienceCommand {
+
         @Argument(usage = "A regular expression for pool names.")
         String poolExpression;
 
@@ -1160,11 +1174,11 @@ public final class ResilienceCommands implements CellCommandListener {
                 StringBuilder builder = new StringBuilder();
                 Pattern pattern = Pattern.compile(poolExpression);
                 poolInfoMap.getResilientPools()
-                           .stream()
-                           .filter((pool) -> pattern.matcher(pool).find())
-                           .forEach((pool) -> execAsync(pool, builder));
+                      .stream()
+                      .filter((pool) -> pattern.matcher(pool).find())
+                      .forEach((pool) -> execAsync(pool, builder));
                 builder.insert(0, "Writing inaccessible pnfsids "
-                                + "to the following files:\n\n");
+                      + "to the following files:\n\n");
                 return builder.toString();
             } catch (Exception e) {
                 return new ExceptionMessage(e).toString();
@@ -1176,11 +1190,11 @@ public final class ResilienceCommands implements CellCommandListener {
             Function<PrintWriter, Void> function = printWriter -> {
                 try {
                     namespaceAccess.printInaccessibleFiles(pool,
-                                                           poolInfoMap,
-                                                           printWriter);
+                          poolInfoMap,
+                          printWriter);
                 } catch (CacheException e) {
                     printWriter.println("error during 'printInaccessibleFiles: "
-                                                        + e.toString());
+                          + e.toString());
                 } catch (InterruptedException e) {
                     printWriter.println("'printInaccessibleFiles was interrupted.");
                 }
@@ -1191,52 +1205,53 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "pool ctrl",
-                    hint= "control the periodic check of active resilient pools "
-                                    + "or processing of pool state changes",
-                    description = "Activates, deactivates, or resets the periodic  "
-                                    + "checking of active pools; turns all pool  "
-                                    + "state handling on or off (start/shutdown).")
+          hint = "control the periodic check of active resilient pools "
+                + "or processing of pool state changes",
+          description = "Activates, deactivates, or resets the periodic  "
+                + "checking of active pools; turns all pool  "
+                + "state handling on or off (start/shutdown).")
     class PoolControlCommand extends ResilienceCommand {
+
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
-                        required = false,
-                        usage = "off = turn scanning off; on = turn scanning on; "
-                                        + "shutdown = turn off all pool operations; "
-                                        + "start = setIncluded all pool operations; "
-                                        + "info = show status of watchdog and scan window (default); "
-                                        + "reset = reset properties; "
-                                        + "run = interrupt current wait and do a sweep." )
+              required = false,
+              usage = "off = turn scanning off; on = turn scanning on; "
+                    + "shutdown = turn off all pool operations; "
+                    + "start = setIncluded all pool operations; "
+                    + "info = show status of watchdog and scan window (default); "
+                    + "reset = reset properties; "
+                    + "run = interrupt current wait and do a sweep.")
         String operation = "INFO";
 
         @Option(name = "window",
-                        usage = "With reset mode (one of window|sweep|down|restart). "
-                                        + "Amount of time which must pass since "
-                                        + "the last scan of a pool for it to be "
-                                        + "scanned again.")
+              usage = "With reset mode (one of window|sweep|down|restart). "
+                    + "Amount of time which must pass since "
+                    + "the last scan of a pool for it to be "
+                    + "scanned again.")
         Integer window;
 
         @Option(name = "sweep",
-                        usage = "With reset mode (one of window|sweep|down|restart). "
-                                        + "How often a sweep of the pool "
-                                        + "operations is made.")
+              usage = "With reset mode (one of window|sweep|down|restart). "
+                    + "How often a sweep of the pool "
+                    + "operations is made.")
         Integer sweep;
 
         @Option(name = "down",
-                        usage = "With reset mode (one of window|sweep|down|restart). "
-                                        + "Minimum grace period between reception "
-                                        + "of a pool down update and scan of  "
-                                        + "the given pool.")
+              usage = "With reset mode (one of window|sweep|down|restart). "
+                    + "Minimum grace period between reception "
+                    + "of a pool down update and scan of  "
+                    + "the given pool.")
         Integer down;
 
         @Option(name = "restart",
-                        usage = "With reset mode (one of window|sweep|down|restart). "
-                                        + "Minimum grace period between reception "
-                                        + "of a pool restart update and scan of  "
-                                        + "the given pool.")
+              usage = "With reset mode (one of window|sweep|down|restart). "
+                    + "Minimum grace period between reception "
+                    + "of a pool restart update and scan of  "
+                    + "the given pool.")
         Integer restart;
 
         @Option(name = "unit",
-                        valueSpec = "SECONDS|MINUTES|HOURS|DAYS",
-                        usage = "For the sweep/window/down/restart options.")
+              valueSpec = "SECONDS|MINUTES|HOURS|DAYS",
+              usage = "For the sweep/window/down/restart options.")
         TimeUnit unit;
 
         @Override
@@ -1316,59 +1331,60 @@ public final class ResilienceCommands implements CellCommandListener {
 
         private String infoMessage() {
             return String.format("down grace period %s %s\n"
-                                            + "restart grace period %s %s\n"
-                                            + "maximum concurrent operations %s\n"
-                                            + "scan window set to %s %s\n"
-                                            + "period set to %s %s\n",
-                            poolOperationMap.getDownGracePeriod(),
-                            poolOperationMap.getDownGracePeriodUnit(),
-                            poolOperationMap.getRestartGracePeriod(),
-                            poolOperationMap.getRestartGracePeriodUnit(),
-                            poolOperationMap.getMaxConcurrentRunning(),
-                            poolOperationMap.getScanWindow(),
-                            poolOperationMap.getScanWindowUnit(),
-                            poolOperationMap.getTimeout(),
-                            poolOperationMap.getTimeoutUnit());
+                        + "restart grace period %s %s\n"
+                        + "maximum concurrent operations %s\n"
+                        + "scan window set to %s %s\n"
+                        + "period set to %s %s\n",
+                  poolOperationMap.getDownGracePeriod(),
+                  poolOperationMap.getDownGracePeriodUnit(),
+                  poolOperationMap.getRestartGracePeriod(),
+                  poolOperationMap.getRestartGracePeriodUnit(),
+                  poolOperationMap.getMaxConcurrentRunning(),
+                  poolOperationMap.getScanWindow(),
+                  poolOperationMap.getScanWindowUnit(),
+                  poolOperationMap.getTimeout(),
+                  poolOperationMap.getTimeoutUnit());
         }
     }
 
     @Command(name = "pool group info",
-                    hint = "list the storage units linked to a pool group "
-                                    + "and confirm resilience constraints "
-                                    + "can be met by the member pools",
-                    description = "Lists name, key and storage units linked to "
-                                    + "the pool group. Tries to satisfy the "
-                                    + "constraints on replica count and "
-                                    + "exclusivity tags for all the storage "
-                                    + "units in the pool group by attempting "
-                                    + "to assign the required number "
-                                    + "of locations for a hypothetical file "
-                                    + "belonging to each unit.")
+          hint = "list the storage units linked to a pool group "
+                + "and confirm resilience constraints "
+                + "can be met by the member pools",
+          description = "Lists name, key and storage units linked to "
+                + "the pool group. Tries to satisfy the "
+                + "constraints on replica count and "
+                + "exclusivity tags for all the storage "
+                + "units in the pool group by attempting "
+                + "to assign the required number "
+                + "of locations for a hypothetical file "
+                + "belonging to each unit.")
     class PoolGroupInfoCommand extends ResilienceCommand {
+
         @Option(name = "key",
-                        usage = "List pool group info for this group key.")
+              usage = "List pool group info for this group key.")
         Integer key;
 
         @Option(name = "showUnits",
-                        usage = "List storage units linked to this group.")
+              usage = "List storage units linked to this group.")
         boolean showUnits = false;
 
         @Option(name = "verify",
-                        usage = "Run the verification procedure for "
-                                        + "the units in the group "
-                                        + "(default is false).")
+              usage = "Run the verification procedure for "
+                    + "the units in the group "
+                    + "(default is false).")
         boolean verify = false;
 
         @Argument(required = false,
-                        usage = "Name of the resilient pool group "
-                                        + "(default is false).")
+              usage = "Name of the resilient pool group "
+                    + "(default is false).")
         String name;
 
         @Override
         protected String doCall() throws Exception {
             if (name == null && key == null) {
                 return "Please provide either the name or "
-                                + "the key of the pool group.";
+                      + "the key of the pool group.";
             }
 
             try {
@@ -1377,7 +1393,7 @@ public final class ResilienceCommands implements CellCommandListener {
                 } else {
                     key = poolInfoMap.getGroupIndex(name);
                 }
-            } catch (NoSuchElementException | IndexOutOfBoundsException e ) {
+            } catch (NoSuchElementException | IndexOutOfBoundsException e) {
                 if (name == null) {
                     return String.format("No pool group with key = %s.", key);
                 }
@@ -1386,7 +1402,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (!poolInfoMap.isResilientGroup(key)) {
                 return String.format("%s (%s) is not a resilient group.",
-                                     name, key);
+                      name, key);
             }
 
             StringBuilder builder = new StringBuilder();
@@ -1395,20 +1411,20 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (showUnits) {
                 poolInfoMap.getStorageUnitsFor(name).stream()
-                           .map(poolInfoMap::getUnit)
-                           .forEach((u) -> builder.append("    ")
-                                                  .append(u).append("\n"));
+                      .map(poolInfoMap::getUnit)
+                      .forEach((u) -> builder.append("    ")
+                            .append(u).append("\n"));
             }
 
             if (verify) {
                 try {
                     poolInfoMap.verifyConstraints(key);
                     builder.append("As configured, member pools can satisfy "
-                                                   + "resilience constraints.");
+                          + "resilience constraints.");
                 } catch (NoSuchElementException | IllegalStateException e) {
                     builder.append("As configured, member pools cannot satisfy "
-                                                   + "resilience constraints: ")
-                           .append(new ExceptionMessage(e));
+                                + "resilience constraints: ")
+                          .append(new ExceptionMessage(e));
                 }
             }
 
@@ -1417,38 +1433,39 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "pool info",
-                    hint = "list tags and mode for a pool or pools",
-                    description = "Lists pool key, name, mode, "
-                                        + "status, tags and last update time.")
+          hint = "list tags and mode for a pool or pools",
+          description = "Lists pool key, name, mode, "
+                + "status, tags and last update time.")
     class PoolInfoCommand extends ResilienceCommand {
+
         @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
-                        separator = ",",
-                        usage = "List only information for pools matching this "
-                                        + "comma-delimited set of pool states.")
+              valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
+              separator = ",",
+              usage = "List only information for pools matching this "
+                    + "comma-delimited set of pool states.")
         String[] status = {"DOWN", "READ_ONLY", "ENABLED", "UNINITIALIZED"};
 
         @Option(name = "keys",
-                        separator = ",",
-                        usage = "List only information for pools matching this "
-                                        + "comma-delimited set of pool keys.")
+              separator = ",",
+              usage = "List only information for pools matching this "
+                    + "comma-delimited set of pool keys.")
         Integer[] keys;
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Argument(required = false,
-                        usage = "Regular expression to match pool "
-                                        + "names; no argument matches all pools.")
+              usage = "Regular expression to match pool "
+                    + "names; no argument matches all pools.")
         String pools;
 
         @Override
@@ -1469,61 +1486,62 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "pool cancel",
-                    hint = "cancel pool operations",
-                    description = "Scans the pool table and cancels "
-                                    + "operations matching the filter parameters; "
-                                    + "if 'includeChildren' is true, also "
-                                    + "scans the file table.")
+          hint = "cancel pool operations",
+          description = "Scans the pool table and cancels "
+                + "operations matching the filter parameters; "
+                + "if 'includeChildren' is true, also "
+                + "scans the file table.")
     class PoolOpCancelCommand extends ResilienceCommand {
+
         @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED",
-                        usage = "Cancel only operations on pools matching this "
-                                        + "pool status.")
+              valueSpec = "DOWN|READ_ONLY|ENABLED",
+              usage = "Cancel only operations on pools matching this "
+                    + "pool status.")
         String status;
 
         @Option(name = "state",
-                        valueSpec = "WAITING|RUNNING",
-                        separator = ",",
-                        usage = "Cancel only operations on pools matching this "
-                                        + "comma-delimited set of operation states.")
+              valueSpec = "WAITING|RUNNING",
+              separator = ",",
+              usage = "Cancel only operations on pools matching this "
+                    + "comma-delimited set of operation states.")
         String[] state;
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations on pools whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations on pools whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations on pools whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations on pools whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Option(name = "lastScanBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations on pools whose scan "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations on pools whose scan "
+                    + "update was before this date-time.")
         String lastScanBefore;
 
         @Option(name = "lastScanAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Cancel only operations on pools whose scan "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Cancel only operations on pools whose scan "
+                    + "update was after this date-time.")
         String lastScanAfter;
 
         @Option(name = "includeChildren",
-                        usage = "Cancel file operations whose parents match "
-                                        + "the pool pattern.  Note that this "
-                                        + "option automatically sets 'forceRemoval' "
-                                        + "to true on the child operation cancel. "
-                                        + "Default is false.")
+              usage = "Cancel file operations whose parents match "
+                    + "the pool pattern.  Note that this "
+                    + "option automatically sets 'forceRemoval' "
+                    + "to true on the child operation cancel. "
+                    + "Default is false.")
         boolean includeChildren = false;
 
         @Argument(required = false,
-                        valueSpec = "regular expression",
-                        usage = "Cancel only operations on pools matching this "
-                                        + "expression.")
+              valueSpec = "regular expression",
+              usage = "Cancel only operations on pools matching this "
+                    + "expression.")
         String pools;
 
         @Override
@@ -1543,7 +1561,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (filter.isUndefined() && state == null) {
                 return "Please set at least one option or argument "
-                                + "other than 'includeChildren'.";
+                      + "other than 'includeChildren'.";
             }
 
             if (state == null) {
@@ -1555,8 +1573,8 @@ public final class ResilienceCommands implements CellCommandListener {
             StringBuilder sb = new StringBuilder();
 
             sb.append("Issued cancel command to ")
-                            .append(poolOperationMap.cancel(filter))
-                            .append(" pool operations.");
+                  .append(poolOperationMap.cancel(filter))
+                  .append(" pool operations.");
 
             if (includeChildren) {
                 fileOperationMap.cancel(filter);
@@ -1568,80 +1586,83 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "pool exclude",
-                    hint = "exclude pool operations",
-                    description = "Scans the pool table and excludes "
-                                    + "operations for the matching pools; "
-                                    + "exclusion will cancel any running "
-                                    + "operations.  The pool will not be included "
-                                    + "in periodic, forced, or status-change "
-                                    + "scans; locations on it are still considered "
-                                    + "valid regarding replica count, but "
-                                    + "cannot be used as copy sources.")
+          hint = "exclude pool operations",
+          description = "Scans the pool table and excludes "
+                + "operations for the matching pools; "
+                + "exclusion will cancel any running "
+                + "operations.  The pool will not be included "
+                + "in periodic, forced, or status-change "
+                + "scans; locations on it are still considered "
+                + "valid regarding replica count, but "
+                + "cannot be used as copy sources.")
     class PoolOpExcludeCommand extends PoolOpActivateCommand {
+
         PoolOpExcludeCommand() {
             super(false);
         }
     }
 
     @Command(name = "pool include",
-                    hint = "include pool operations",
-                    description = "Scans the pool table and includes "
-                                    + "operations for the matching pools; "
-                                    + "include will only affect pool operations "
-                                    + "that are currently excluded.")
+          hint = "include pool operations",
+          description = "Scans the pool table and includes "
+                + "operations for the matching pools; "
+                + "include will only affect pool operations "
+                + "that are currently excluded.")
     class PoolOpIncludeCommand extends PoolOpActivateCommand {
+
         PoolOpIncludeCommand() {
             super(true);
         }
     }
 
     @Command(name = "pool ls", hint = "list entries in the pool operation table",
-                    description = "Scans the table and returns "
-                        + "operations matching the filter parameters.")
+          description = "Scans the table and returns "
+                + "operations matching the filter parameters.")
     class PoolOpLsCommand extends ResilienceCommand {
+
         @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
-                        usage = "List only operations on pools matching this "
-                                        + "pool status.")
+              valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
+              usage = "List only operations on pools matching this "
+                    + "pool status.")
         String status;
 
         @Option(name = "state",
-                        valueSpec = "IDLE|WAITING|RUNNING|FAILED|CANCELED"
-                                        + "|EXCLUDED|INACTIVE",
-                        separator = ",",
-                        usage = "List only operations on pools matching this "
-                                        + "comma-delimited set of operation states "
-                                        + "(default is everything).")
+              valueSpec = "IDLE|WAITING|RUNNING|FAILED|CANCELED"
+                    + "|EXCLUDED|INACTIVE",
+              separator = ",",
+              usage = "List only operations on pools matching this "
+                    + "comma-delimited set of operation states "
+                    + "(default is everything).")
         String[] state = {"IDLE", "WAITING", "RUNNING", "FAILED",
-                          "CANCELED", "EXCLUDED", "INACTIVE"};
+              "CANCELED", "EXCLUDED", "INACTIVE"};
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations on pools whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations on pools whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations on pools whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations on pools whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Option(name = "lastScanBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations on pools whose scan "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations on pools whose scan "
+                    + "update was before this date-time.")
         String lastScanBefore;
 
         @Option(name = "lastScanAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "List only operations on pools whose scan "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "List only operations on pools whose scan "
+                    + "update was after this date-time.")
         String lastScanAfter;
 
         @Argument(required = false,
-                        usage = "List only operations on pools matching this "
-                                        + "regular expression.")
+              usage = "List only operations on pools matching this "
+                    + "regular expression.")
         String pools;
 
         @Override
@@ -1660,50 +1681,51 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     @Command(name = "pool scan",
-                    hint = "launch a scan of one or more pools",
-                    description = "A check will be initiated to see that the "
-                                        + "number of replicas on the pool is "
-                                        + "properly constrained, creating new "
-                                        + "copies or removing redundant ones "
-                                        + "as necessary. Note: will not override "
-                                        + "a currently running operation; matching "
-                                        + "operations in the waiting state will "
-                                        + "be guaranteed to run at the next  "
-                                        + "available slot opening.")
+          hint = "launch a scan of one or more pools",
+          description = "A check will be initiated to see that the "
+                + "number of replicas on the pool is "
+                + "properly constrained, creating new "
+                + "copies or removing redundant ones "
+                + "as necessary. Note: will not override "
+                + "a currently running operation; matching "
+                + "operations in the waiting state will "
+                + "be guaranteed to run at the next  "
+                + "available slot opening.")
     class PoolScanCommand extends ResilienceCommand {
+
         @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED",
-                        usage = "Scan only pools matching this "
-                                        + "pool status.")
+              valueSpec = "DOWN|READ_ONLY|ENABLED",
+              usage = "Scan only pools matching this "
+                    + "pool status.")
         String status;
 
         @Option(name = "lastUpdateBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Scan only pools whose last "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Scan only pools whose last "
+                    + "update was before this date-time.")
         String lastUpdateBefore;
 
         @Option(name = "lastUpdateAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Scan only pools whose last "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Scan only pools whose last "
+                    + "update was after this date-time.")
         String lastUpdateAfter;
 
         @Option(name = "lastScanBefore",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Scan only pools whose scan "
-                                        + "update was before this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Scan only pools whose scan "
+                    + "update was before this date-time.")
         String lastScanBefore;
 
         @Option(name = "lastScanAfter",
-                        valueSpec = FORMAT_STRING,
-                        usage = "Scan only pools whose scan "
-                                        + "update was after this date-time.")
+              valueSpec = FORMAT_STRING,
+              usage = "Scan only pools whose scan "
+                    + "update was after this date-time.")
         String lastScanAfter;
 
         @Argument(usage = "Regular expression for pool(s) on which to "
-                                        + "conduct the adjustment of "
-                                        + "all files.")
+              + "conduct the adjustment of "
+              + "all files.")
         String pools;
 
         @Override
@@ -1738,14 +1760,13 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     /**
-     * Used for potentially long database queries.  Executing them
-     * synchronously can bind the command interpreter.  We store
-     * the future in case of cancellation or listing.
+     * Used for potentially long database queries.  Executing them synchronously can bind the
+     * command interpreter.  We store the future in case of cancellation or listing.
      */
     private final Map<String, FutureWrapper> futureMap
-                    = Collections.synchronizedMap(new HashMap<>());
+          = Collections.synchronizedMap(new HashMap<>());
 
-    private ExecutorService      executor;
+    private ExecutorService executor;
     private PoolInfoMap poolInfoMap;
     private MessageGuard messageGuard;
     private MapInitializer initializer;
@@ -1755,7 +1776,7 @@ public final class ResilienceCommands implements CellCommandListener {
     private NamespaceAccess namespaceAccess;
     private OperationStatistics counters;
     private OperationHistory history;
-    private String               resilienceDir;
+    private String resilienceDir;
 
     public void setCounters(OperationStatistics counters) {
         this.counters = counters;
@@ -1782,7 +1803,7 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     public void setFileOperationHandler(
-                    FileOperationHandler fileOperationHandler) {
+          FileOperationHandler fileOperationHandler) {
         this.fileOperationHandler = fileOperationHandler;
     }
 
@@ -1803,14 +1824,14 @@ public final class ResilienceCommands implements CellCommandListener {
     }
 
     private void handleAsync(String fileName,
-                             String type,
-                             Function<PrintWriter, Void> function,
-                             StringBuilder builder) {
+          String type,
+          Function<PrintWriter, Void> function,
+          StringBuilder builder) {
         File file = new File(resilienceDir, fileName);
 
         Future<?> future = executor.submit(() -> {
             try (PrintWriter pw = new PrintWriter(
-                            new FileWriter(file, false))) {
+                  new FileWriter(file, false))) {
                 try {
                     function.apply(pw);
                 } catch (RuntimeException e) {
@@ -1823,8 +1844,8 @@ public final class ResilienceCommands implements CellCommandListener {
         });
 
         FutureWrapper wrapper = new FutureWrapper(type,
-                                                  fileName,
-                                                  future);
+              fileName,
+              future);
 
         futureMap.put(wrapper.key.toString(), wrapper);
         builder.append(wrapper).append("\n");
@@ -1833,15 +1854,15 @@ public final class ResilienceCommands implements CellCommandListener {
     private String runFileChecks(List<String> list) {
         StringBuilder reply = new StringBuilder();
         int successful = 0;
-        for (String pnfsid: list) {
+        for (String pnfsid : list) {
             try {
                 PnfsId pnfsId = new PnfsId(pnfsid);
                 FileAttributes attr
-                                = namespaceAccess.getRequiredAttributes(pnfsId);
+                      = namespaceAccess.getRequiredAttributes(pnfsId);
                 int sunit = poolInfoMap.getStorageUnitIndex(attr);
 
                 if (!poolInfoMap.getStorageUnitConstraints(sunit)
-                                .isResilient()) {
+                      .isResilient()) {
                     reply.append(pnfsid).append(" not a resilient file.\n");
                     continue;
                 }
@@ -1853,19 +1874,19 @@ public final class ResilienceCommands implements CellCommandListener {
                 }
                 String pool = it.next();
                 FileUpdate update
-                                = new FileUpdate(pnfsId, pool,
-                                                 MessageType.ADD_CACHE_LOCATION,
-                                                 true);
+                      = new FileUpdate(pnfsId, pool,
+                      MessageType.ADD_CACHE_LOCATION,
+                      true);
                 fileOperationHandler.handleLocationUpdate(update);
                 ++successful;
-            } catch (NoSuchElementException| CacheException e) {
+            } catch (NoSuchElementException | CacheException e) {
                 reply.append(pnfsid).append(" ").append(e.getMessage()).append("\n");
             }
         }
 
         reply.append("Replica checks started for ")
-             .append(successful)
-             .append(" files.\n");
+              .append(successful)
+              .append(" files.\n");
 
         return reply.toString();
     }

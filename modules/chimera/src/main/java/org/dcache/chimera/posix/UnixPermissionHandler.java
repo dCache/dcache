@@ -66,11 +66,10 @@ public class UnixPermissionHandler implements AclHandler {
         int resourceGid = ((UnixAcl) acl).getGroup();
         int resourcePermissions = ((UnixAcl) acl).getPermission();
 
-
-
         if (LOGGER.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder("ACL request : ");
-            sb.append("user=").append(((UnixUser) user).getUID()).append(':').append(((UnixUser) user).getGID());
+            sb.append("user=").append(((UnixUser) user).getUID()).append(':')
+                  .append(((UnixUser) user).getGID());
             sb.append(' ');
             sb.append("file=").append(resourceUid).append(':').append(resourceGid);
             sb.append(' ');
@@ -155,7 +154,8 @@ public class UnixPermissionHandler implements AclHandler {
                         }
                         break;
                     case ACL_LOOKUP:
-                        isAllowed = isAllowed(acl, user, ACL_READ) && isAllowed(acl, user, ACL_EXECUTE);
+                        isAllowed =
+                              isAllowed(acl, user, ACL_READ) && isAllowed(acl, user, ACL_EXECUTE);
                         break;
                     case ACL_ADMINISTER:
                         isAllowed = (resourceUid == userUid);

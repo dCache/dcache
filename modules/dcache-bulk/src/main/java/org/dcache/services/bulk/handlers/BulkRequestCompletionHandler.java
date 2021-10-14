@@ -62,38 +62,34 @@ package org.dcache.services.bulk.handlers;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.BulkJob;
 
-public interface BulkRequestCompletionHandler
-{
+public interface BulkRequestCompletionHandler {
+
     /**
-     * Should respond to an external message to cancel
-     * the entire request.
+     * Should respond to an external message to cancel the entire request.
      *
      * @param requestId unique identifier
      */
     void requestCancelled(String requestId) throws BulkServiceException;
 
     /**
-     * Called internally when an individual target has been
-     * cancelled.   This will usually also involve a status
-     * update to the request.
+     * Called internally when an individual target has been cancelled.   This will usually also
+     * involve a status update to the request.
      *
      * @param job associated with the target
      */
     void requestTargetCancelled(BulkJob job) throws BulkServiceException;
 
     /**
-     * Called internally when an individual target has
-     * completed.  This will usually also involve a status
-     * update to the request.
+     * Called internally when an individual target has completed.  This will usually also involve a
+     * status update to the request.
      *
      * @param job associated with the target
      */
     void requestTargetCompleted(BulkJob job) throws BulkServiceException;
 
     /**
-     * Called internally when an individual target has
-     * failed.  This will usually also involve a status
-     * update to the request.
+     * Called internally when an individual target has failed.  This will usually also involve a
+     * status update to the request.
      *
      * @param job associated with the target
      */

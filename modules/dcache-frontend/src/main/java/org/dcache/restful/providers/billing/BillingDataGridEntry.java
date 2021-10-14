@@ -59,37 +59,36 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.billing;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.util.histograms.TimeFrame.BinType;
 import org.dcache.util.histograms.TimeFrame.Type;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
 import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
-import static java.util.Objects.requireNonNull;
-
 
 @ApiModel(description = "Defines a possible grid entry based on four enumerations:  "
-                                + "type, series type, series data type and bin type.")
+      + "type, series type, series data type and bin type.")
 public final class BillingDataGridEntry {
 
     @ApiModelProperty(value = "Type of time series",
-                    allowableValues = "READ, WRITE, P2P, STORE, RESTORE, CONNECTION, CACHED")
+          allowableValues = "READ, WRITE, P2P, STORE, RESTORE, CONNECTION, CACHED")
     private SeriesType type;
 
     @ApiModelProperty(value = "Type of data represented",
-                    allowableValues = "BYTES, COUNT, AVGSECS, MAXSECS, MINSECS, HITS, MISSES")
+          allowableValues = "BYTES, COUNT, AVGSECS, MAXSECS, MINSECS, HITS, MISSES")
     private SeriesDataType dataType;
 
     @ApiModelProperty(value = "Type of histogram bin (unit of the time frame)",
-                    allowableValues = "HOUR, DAY, WEEK, MONTH")
+          allowableValues = "HOUR, DAY, WEEK, MONTH")
     private BinType binType;
 
     @ApiModelProperty(value = "Extent of the time frame",
-                    allowableValues = "DAY, WEEK, MONTH, YEAR")
+          allowableValues = "DAY, WEEK, MONTH, YEAR")
     private Type range;
 
     public BillingDataGridEntry() {
@@ -97,12 +96,12 @@ public final class BillingDataGridEntry {
 
     public BillingDataGridEntry(String toParse) {
         requireNonNull(toParse,
-                                   "String value cannot be null.");
+              "String value cannot be null.");
 
         String[] parts = toParse.split("_");
 
         Preconditions.checkArgument(parts.length == 4,
-                                    "String value must have 4 parts.");
+              "String value must have 4 parts.");
 
         type = SeriesType.valueOf(parts[0].toUpperCase());
         dataType = SeriesDataType.valueOf(parts[1].toUpperCase());
@@ -111,17 +110,17 @@ public final class BillingDataGridEntry {
     }
 
     public BillingDataGridEntry(SeriesType type,
-                                SeriesDataType dataType,
-                                TimeFrame timeFrame) {
+          SeriesDataType dataType,
+          TimeFrame timeFrame) {
         requireNonNull(type, "Series type cannot be null.");
         requireNonNull(dataType,
-                                   "Series data type cannot be null.");
+              "Series data type cannot be null.");
         requireNonNull(timeFrame,
-                                   "TimeFrame cannot be null.");
+              "TimeFrame cannot be null.");
         requireNonNull(timeFrame.getTimebin(),
-                                   "Bin type  cannot be null.");
+              "Bin type  cannot be null.");
         requireNonNull(timeFrame.getTimeframe(),
-                                   "Range type cannot be null.");
+              "Range type cannot be null.");
         this.type = type;
         this.dataType = dataType;
         this.binType = timeFrame.getTimebin();

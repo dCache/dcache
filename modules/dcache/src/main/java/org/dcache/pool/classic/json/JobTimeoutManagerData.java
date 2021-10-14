@@ -65,10 +65,11 @@ import java.util.Map;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.classic.JobTimeoutManager} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.classic.JobTimeoutManager} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class JobTimeoutManagerData implements Serializable {
+
     private static final long serialVersionUID = -2248638939281761062L;
     private String label;
     private Map<String, String> queueInfo;
@@ -84,8 +85,8 @@ public class JobTimeoutManagerData implements Serializable {
     public void print(PrintWriter pw) {
         if (queueInfo != null) {
             queueInfo.entrySet().stream()
-                     .forEach((e) -> pw.println("  " + e.getKey() + " "
-                                                                + e.getValue()));
+                  .forEach((e) -> pw.println("  " + e.getKey() + " "
+                        + e.getValue()));
         }
     }
 

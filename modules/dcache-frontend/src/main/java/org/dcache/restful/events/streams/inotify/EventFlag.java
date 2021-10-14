@@ -19,13 +19,11 @@
 package org.dcache.restful.events.streams.inotify;
 
 /**
- * Possible flags used when generating inotify responses.  A single inotify
- * event may return multiple of these; although, the only flag that is returned
- * in combination is IN_ISDIR, which is returned in combination with one of the
- * "event type" flags.
+ * Possible flags used when generating inotify responses.  A single inotify event may return
+ * multiple of these; although, the only flag that is returned in combination is IN_ISDIR, which is
+ * returned in combination with one of the "event type" flags.
  */
-public enum EventFlag
-{
+public enum EventFlag {
     // Event type: only (at most) one of these.
     IN_ACCESS,
     IN_ATTRIB,

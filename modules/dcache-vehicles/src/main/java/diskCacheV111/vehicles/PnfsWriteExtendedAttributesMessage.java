@@ -17,69 +17,60 @@
  */
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.PnfsId;
 import java.util.HashMap;
 import java.util.Map;
-
-import diskCacheV111.util.PnfsId;
 
 /**
  * Write one or more extended attributes.
  */
-public class PnfsWriteExtendedAttributesMessage extends PnfsMessage
-{
+public class PnfsWriteExtendedAttributesMessage extends PnfsMessage {
+
     public enum Mode {
         /**
-         * Create a new extended attribute.  Fails with
-         * AttributeExistsCacheException if the attribute already exists.
+         * Create a new extended attribute.  Fails with AttributeExistsCacheException if the
+         * attribute already exists.
          */
         CREATE,
 
         /**
-         * Replace an existing extended attribute.  Fails with
-         * NoAttributeCacheException if the attribute does not already
-         * exist.
+         * Replace an existing extended attribute.  Fails with NoAttributeCacheException if the
+         * attribute does not already exist.
          */
         MODIFY,
 
         /**
-         * Create a new extended attribute, or replace the value if the
-         * attribute exists.
+         * Create a new extended attribute, or replace the value if the attribute exists.
          */
         EITHER;
     }
 
     private final Mode _mode;
-    private final Map<String,byte[]> _values = new HashMap<>();
+    private final Map<String, byte[]> _values = new HashMap<>();
 
-    public PnfsWriteExtendedAttributesMessage(String path, Mode mode)
-    {
+    public PnfsWriteExtendedAttributesMessage(String path, Mode mode) {
         setPnfsPath(path);
         _mode = mode;
     }
 
-    public PnfsWriteExtendedAttributesMessage(PnfsId id, Mode mode)
-    {
+    public PnfsWriteExtendedAttributesMessage(PnfsId id, Mode mode) {
         super(id);
         _mode = mode;
     }
 
-    public Mode getMode()
-    {
+    public Mode getMode() {
         return _mode;
     }
 
-    public void putValue(String name, byte[] value)
-    {
+    public void putValue(String name, byte[] value) {
         _values.put(name, value);
     }
 
-    public Map<String,byte[]> getAllValues()
-    {
+    public Map<String, byte[]> getAllValues() {
         return _values;
     }
 
-    public void clearValues()
-    {
+    public void clearValues() {
         _values.clear();
     }
 }

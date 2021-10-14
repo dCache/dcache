@@ -59,61 +59,52 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import org.slf4j.MDC;
-
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.StartEvent;
-
 import org.dcache.cells.UniversalSpringCell;
+import org.slf4j.MDC;
 
 /**
- * This wrapper adds an MDC property to the root thread
- * in order to identify logging statements emanating from this
- * cell.  This is necessary in order to avoid cycles caused
- * by resending the event to the cell via the socket appender.
- * Hence a corresponding filter which blocks events with
+ * This wrapper adds an MDC property to the root thread in order to identify logging statements
+ * emanating from this cell.  This is necessary in order to avoid cycles caused by resending the
+ * event to the cell via the socket appender. Hence a corresponding filter which blocks events with
  * this property should be added to that appender in the logback.xml.
  *
  * @author arossi
  */
-public final class LogServerCell extends UniversalSpringCell
-{
+public final class LogServerCell extends UniversalSpringCell {
+
     public LogServerCell(String cellName, String arguments) {
         super(cellName, arguments);
     }
 
     @Override
-    public void prepareStartup(StartEvent event) throws Exception
-    {
+    public void prepareStartup(StartEvent event) throws Exception {
         MDC.put(AlarmFilter.ALARMS_INTERNAL, AlarmFilter.ALARMS_INTERNAL);
         super.prepareStartup(event);
     }
 
     @Override
-    public void postStartup(StartEvent event)
-    {
+    public void postStartup(StartEvent event) {
         MDC.put(AlarmFilter.ALARMS_INTERNAL, AlarmFilter.ALARMS_INTERNAL);
         super.postStartup(event);
     }
 
     @Override
-    public void messageArrived(MessageEvent event)
-    {
+    public void messageArrived(MessageEvent event) {
         MDC.put(AlarmFilter.ALARMS_INTERNAL, AlarmFilter.ALARMS_INTERNAL);
         super.messageArrived(event);
     }
 
     @Override
-    public void prepareRemoval(KillEvent event)
-    {
+    public void prepareRemoval(KillEvent event) {
         MDC.put(AlarmFilter.ALARMS_INTERNAL, AlarmFilter.ALARMS_INTERNAL);
         super.prepareRemoval(event);
     }
 
     @Override
-    public void postRemoval(KillEvent event)
-    {
+    public void postRemoval(KillEvent event) {
         MDC.put(AlarmFilter.ALARMS_INTERNAL, AlarmFilter.ALARMS_INTERNAL);
         super.postRemoval(event);
     }

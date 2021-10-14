@@ -18,7 +18,9 @@
  */
 package org.dcache.auth;
 
-import org.junit.Test;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,29 +28,29 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Base64;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.*;
+public class LoAPrincipalTest {
 
-public class LoAPrincipalTest
-{
-    /** Base64 encoded serialisation of LoAPrincipal(LoA.IGTF_LOA_CEDER). */
+    /**
+     * Base64 encoded serialisation of LoAPrincipal(LoA.IGTF_LOA_CEDER).
+     */
     private static final String SERIALIZED_IGTF_LOA_CEDER =
-            "rO0ABXNyABxvcmcuZGNhY2hlLmF1dGguTG9BUHJpbmNpcGFsAAAAAAAAAAECAAFM"
-            + "AARfbG9hdAAVTG9yZy9kY2FjaGUvYXV0aC9Mb0E7eHB+cgATb3JnLmRjYWNoZS"
-            + "5hdXRoLkxvQQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAAS"
-            + "AAB4cHQADklHVEZfTE9BX0NFREVS";
+          "rO0ABXNyABxvcmcuZGNhY2hlLmF1dGguTG9BUHJpbmNpcGFsAAAAAAAAAAECAAFM"
+                + "AARfbG9hdAAVTG9yZy9kY2FjaGUvYXV0aC9Mb0E7eHB+cgATb3JnLmRjYWNoZS"
+                + "5hdXRoLkxvQQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAAS"
+                + "AAB4cHQADklHVEZfTE9BX0NFREVS";
 
-    /** Base64 encoded serialisation of LoAPrincipal(LoA.IGTF_LOA_CEDAR). */
+    /**
+     * Base64 encoded serialisation of LoAPrincipal(LoA.IGTF_LOA_CEDAR).
+     */
     private static final String SERIALIZED_IGTF_LOA_CEDAR =
-            "rO0ABXNyABxvcmcuZGNhY2hlLmF1dGguTG9BUHJpbmNpcGFsAAAAAAAAAAECAAFM"
-            + "AARfbG9hdAAVTG9yZy9kY2FjaGUvYXV0aC9Mb0E7eHB+cgATb3JnLmRjYWNoZS"
-            + "5hdXRoLkxvQQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAAS"
-            + "AAB4cHQADklHVEZfTE9BX0NFREFS";
+          "rO0ABXNyABxvcmcuZGNhY2hlLmF1dGguTG9BUHJpbmNpcGFsAAAAAAAAAAECAAFM"
+                + "AARfbG9hdAAVTG9yZy9kY2FjaGUvYXV0aC9Mb0E7eHB+cgATb3JnLmRjYWNoZS"
+                + "5hdXRoLkxvQQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAAS"
+                + "AAB4cHQADklHVEZfTE9BX0NFREFS";
 
-    private byte[] serialise(Object target) throws IOException
-    {
+    private byte[] serialise(Object target) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(bytes);
         out.writeObject(target);
@@ -57,36 +59,32 @@ public class LoAPrincipalTest
     }
 
     private <T> T deserialise(byte[] data, Class<T> expectedType)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         ByteArrayInputStream bytes = new ByteArrayInputStream(data);
         ObjectInputStream in = new ObjectInputStream(bytes);
         Object rawObject = in.readObject();
         return expectedType.cast(rawObject);
     }
 
-    private String serialiseToString(Object target) throws IOException
-    {
+    private String serialiseToString(Object target) throws IOException {
         byte[] data = serialise(target);
         return Base64.getEncoder().withoutPadding().encodeToString(data);
     }
 
     private <T> T deserialiseFromString(String data, Class<T> expectedType)
-            throws IOException, ClassNotFoundException
-    {
+          throws IOException, ClassNotFoundException {
         byte[] rawData = Base64.getDecoder().decode(data);
         return deserialise(rawData, expectedType);
     }
 
-    private LoAPrincipal serialiseRoundTrip(LoAPrincipal in) throws IOException, ClassNotFoundException
-    {
+    private LoAPrincipal serialiseRoundTrip(LoAPrincipal in)
+          throws IOException, ClassNotFoundException {
         byte[] data = serialise(in);
         return deserialise(data, LoAPrincipal.class);
     }
 
     @Test
-    public void shouldRoundTripClassic() throws Exception
-    {
+    public void shouldRoundTripClassic() throws Exception {
         LoAPrincipal classic = new LoAPrincipal(LoA.IGTF_AP_CLASSIC);
 
         LoAPrincipal roundTripClassic = serialiseRoundTrip(classic);
@@ -95,8 +93,7 @@ public class LoAPrincipalTest
     }
 
     @Test
-    public void shouldRoundTripCedar() throws Exception
-    {
+    public void shouldRoundTripCedar() throws Exception {
         LoAPrincipal cedar = new LoAPrincipal(LoA.IGTF_LOA_CEDAR);
 
         LoAPrincipal roundTripClassic = serialiseRoundTrip(cedar);
@@ -105,8 +102,7 @@ public class LoAPrincipalTest
     }
 
     @Test
-    public void shouldRoundTripCederAsCedar() throws Exception
-    {
+    public void shouldRoundTripCederAsCedar() throws Exception {
         LoAPrincipal ceder = new LoAPrincipal(LoA.IGTF_LOA_CEDER);
 
         LoAPrincipal roundTrip = serialiseRoundTrip(ceder);
@@ -116,33 +112,31 @@ public class LoAPrincipalTest
     }
 
     @Test
-    public void shouldSerialiseCedarAsCedar() throws Exception
-    {
+    public void shouldSerialiseCedarAsCedar() throws Exception {
         String serialised = serialiseToString(new LoAPrincipal(LoA.IGTF_LOA_CEDAR));
 
         assertThat(serialised, equalTo(SERIALIZED_IGTF_LOA_CEDAR));
     }
 
     @Test
-    public void shouldSerialiseCederAsCedar() throws Exception
-    {
+    public void shouldSerialiseCederAsCedar() throws Exception {
         String serialised = serialiseToString(new LoAPrincipal(LoA.IGTF_LOA_CEDER));
 
         assertThat(serialised, equalTo(SERIALIZED_IGTF_LOA_CEDAR));
     }
 
     @Test
-    public void shouldDeserialiseCedarAsCedar() throws Exception
-    {
-        LoAPrincipal deserialisedPrincipal = deserialiseFromString(SERIALIZED_IGTF_LOA_CEDAR, LoAPrincipal.class);
+    public void shouldDeserialiseCedarAsCedar() throws Exception {
+        LoAPrincipal deserialisedPrincipal = deserialiseFromString(SERIALIZED_IGTF_LOA_CEDAR,
+              LoAPrincipal.class);
 
         assertThat(deserialisedPrincipal, equalTo(new LoAPrincipal(LoA.IGTF_LOA_CEDAR)));
     }
 
     @Test
-    public void shouldDeserialiseCederAsCedar() throws Exception
-    {
-        LoAPrincipal deserialisedPrincipal = deserialiseFromString(SERIALIZED_IGTF_LOA_CEDER, LoAPrincipal.class);
+    public void shouldDeserialiseCederAsCedar() throws Exception {
+        LoAPrincipal deserialisedPrincipal = deserialiseFromString(SERIALIZED_IGTF_LOA_CEDER,
+              LoAPrincipal.class);
 
         assertThat(deserialisedPrincipal, equalTo(new LoAPrincipal(LoA.IGTF_LOA_CEDAR)));
     }

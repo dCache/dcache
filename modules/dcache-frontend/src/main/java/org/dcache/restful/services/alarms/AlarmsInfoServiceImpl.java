@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.alarms;
 
+import diskCacheV111.util.CacheException;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -68,10 +71,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.util.alarms.AlarmsCollector;
@@ -89,56 +88,59 @@ import org.dcache.vehicles.alarms.AlarmsUpdateMessage;
  * implementing the fetch, update and delete methods.</p>
  *
  * <p>All synchronization is done on the object reference rather
- * than the main map and snapshot cache, in order to
- * allow the cache to be rebuilt.</p>
+ * than the main map and snapshot cache, in order to allow the cache to be rebuilt.</p>
  */
 public final class AlarmsInfoServiceImpl extends
-                CellDataCollectingService<AlarmMappingRequestMessage, AlarmsCollector>
-                implements AlarmsInfoService {
+      CellDataCollectingService<AlarmMappingRequestMessage, AlarmsCollector>
+      implements AlarmsInfoService {
+
     @Command(name = "alarms set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "retrieval of alarm information")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "retrieval of alarm information")
     class AlarmsSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "alarms refresh",
-                    hint = "Query for alarms",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query for alarms",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class AlarmsRefreshCommand extends RefreshCommand {
+
     }
 
     @Command(name = "alarms ls",
-                    hint = "List alarms",
-                    description = "Requests a list of alarms optionally "
-                                    + "filtered by date time, type, and limit.")
+          hint = "List alarms",
+          description = "Requests a list of alarms optionally "
+                + "filtered by date time, type, and limit.")
     class AlarmsLsCommand implements Callable<String> {
+
         @Option(name = "before",
-                        valueSpec = DATETIME_FORMAT,
-                        usage = "List only alarms whose start time "
-                                        + "was before this date-time.")
+              valueSpec = DATETIME_FORMAT,
+              usage = "List only alarms whose start time "
+                    + "was before this date-time.")
         String before;
 
         @Option(name = "after",
-                        valueSpec = DATETIME_FORMAT,
-                        usage = "List only alarms whose start time "
-                                        + "was after this date-time.")
+              valueSpec = DATETIME_FORMAT,
+              usage = "List only alarms whose start time "
+                    + "was after this date-time.")
         String after;
 
         @Option(name = "type",
-                        usage = "List only alarms of this type; "
-                                        + "default is all.")
+              usage = "List only alarms of this type; "
+                    + "default is all.")
         String type;
 
         @Option(name = "offset",
-                        usage = "List alarms starting at this index of the result; "
-                                        + "default is 0.")
+              usage = "List alarms starting at this index of the result; "
+                    + "default is 0.")
         Long offset = 0L;
 
         @Option(name = "limit",
-                        usage = "List at most this number of alarms; "
-                                        + "default is all.")
+              usage = "List at most this number of alarms; "
+                    + "default is all.")
         Long limit = Long.MAX_VALUE;
 
         @Override
@@ -157,24 +159,24 @@ public final class AlarmsInfoServiceImpl extends
             }
 
             List<LogEntry> snapshot = get(offset,
-                                          limit,
-                                          afterInMs,
-                                          beforeInMs,
-                                          null,
-                                          type,
-                                          null,
-                                          null,
-                                          null,
-                                          null,
-                                          null,
-                                          null);
+                  limit,
+                  afterInMs,
+                  beforeInMs,
+                  null,
+                  type,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null,
+                  null);
 
             StringBuilder builder = new StringBuilder();
             snapshot.stream()
-                    .forEach((e) -> builder.append(e).append("\n"));
+                  .forEach((e) -> builder.append(e).append("\n"));
 
             builder.insert(0, "TOTAL TRANSFERS : "
-                            + snapshot.size() + "\n\n");
+                  + snapshot.size() + "\n\n");
             return builder.toString();
         }
     }
@@ -186,7 +188,7 @@ public final class AlarmsInfoServiceImpl extends
 
     @Override
     public void delete(List<LogEntry> entries)
-                    throws CacheException, InterruptedException {
+          throws CacheException, InterruptedException {
         AlarmsDeleteMessage message = new AlarmsDeleteMessage();
         message.setToDelete(entries);
         collector.sendRequestToAlarmService(message);
@@ -194,18 +196,18 @@ public final class AlarmsInfoServiceImpl extends
 
     @Override
     public List<LogEntry> get(Long offset,
-                              Long limit,
-                              Long after,
-                              Long before,
-                              Boolean includeClosed,
-                              String severity,
-                              String type,
-                              String host,
-                              String domain,
-                              String service,
-                              String info,
-                              String sort)
-                    throws CacheException, InterruptedException {
+          Long limit,
+          Long after,
+          Long before,
+          Boolean includeClosed,
+          String severity,
+          String type,
+          String host,
+          String domain,
+          String service,
+          String info,
+          String sort)
+          throws CacheException, InterruptedException {
         AlarmsRequestMessage message = new AlarmsRequestMessage();
         message.setOffset(offset);
         message.setLimit(limit);
@@ -220,8 +222,8 @@ public final class AlarmsInfoServiceImpl extends
         message.setInfo(info);
         if (sort != null) {
             message.setSort(Arrays.stream(sort.split(","))
-                                  .map(FieldSort::new)
-                                  .collect(Collectors.toList()));
+                  .map(FieldSort::new)
+                  .collect(Collectors.toList()));
         }
         message = collector.sendRequestToAlarmService(message);
         return message.getAlarms();
@@ -233,7 +235,7 @@ public final class AlarmsInfoServiceImpl extends
     }
 
     public void update(List<LogEntry> entries)
-                    throws CacheException, InterruptedException {
+          throws CacheException, InterruptedException {
         AlarmsUpdateMessage message = new AlarmsUpdateMessage();
         message.setToUpdate(entries);
         collector.sendRequestToAlarmService(message);

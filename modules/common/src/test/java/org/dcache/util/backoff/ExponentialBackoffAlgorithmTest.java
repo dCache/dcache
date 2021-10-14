@@ -59,12 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.util.backoff;
 
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+
+import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 
 /**
  * Simple consistency tests for the {@link ExponentialBackoffAlgorithm} class.
@@ -76,7 +75,7 @@ public class ExponentialBackoffAlgorithmTest {
     private long finalDelay;
     private long maxDelay;
     private ExponentialBackoffAlgorithmFactory factory
-        = new ExponentialBackoffAlgorithmFactory();
+          = new ExponentialBackoffAlgorithmFactory();
     private IBackoffAlgorithm algorithm;
 
     @Test
@@ -114,7 +113,7 @@ public class ExponentialBackoffAlgorithmTest {
         givenMaxValueOf(5);
         afterAttempts(8);
         assertThat(TimeUnit.MILLISECONDS.toSeconds(finalDelay) < maxDelay,
-                        is(true));
+              is(true));
     }
 
     @Test
@@ -124,7 +123,7 @@ public class ExponentialBackoffAlgorithmTest {
         givenMaxValueOf(5);
         afterAttempts(9);
         assertThat(TimeUnit.MILLISECONDS.toSeconds(finalDelay) == maxDelay,
-                        is(true));
+              is(true));
     }
 
     @Test

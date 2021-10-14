@@ -59,21 +59,29 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
+import static org.dcache.services.bulk.BulkRequest.Depth.ALL;
+import static org.dcache.services.bulk.BulkRequest.Depth.TARGETS;
+import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
+import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
+import static org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType.BREADTH_FIRST;
+import static org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType.DEPTH_FIRST;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.junit.Before;
-import org.junit.Test;
-
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PnfsMessage;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsMessage;
-
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.InodeId;
@@ -90,76 +98,59 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.dcache.namespace.FileType.DIR;
-import static org.dcache.namespace.FileType.REGULAR;
-import static org.dcache.services.bulk.BulkRequest.Depth.ALL;
-import static org.dcache.services.bulk.BulkRequest.Depth.TARGETS;
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
-import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.FILE;
-import static org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType.BREADTH_FIRST;
-import static org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType.DEPTH_FIRST;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+public class BulkMultipleTargetJobTest implements SignalAware {
 
-public class BulkMultipleTargetJobTest implements SignalAware
-{
-    private static PnfsId nextPnfsId()
-    {
+    private static PnfsId nextPnfsId() {
         return new PnfsId(InodeId.newID(0));
     }
 
-    class TestPnfsHandler extends PnfsHandler
-    {
-        public TestPnfsHandler()
-        {
+    class TestPnfsHandler extends PnfsHandler {
+
+        public TestPnfsHandler() {
             super((CellStub) null);
         }
 
-        public long getPnfsTimeout()
-        {
+        public long getPnfsTimeout() {
             return 0L;
         }
 
-        public void send(PnfsMessage msg)
-        {
+        public void send(PnfsMessage msg) {
             if (msg instanceof PnfsListDirectoryMessage) {
                 PnfsListDirectoryMessage listMessage
-                                = (PnfsListDirectoryMessage) msg;
+                      = (PnfsListDirectoryMessage) msg;
                 fileTree.get(listMessage.getFsPath().name())
-                        .stream()
-                        .forEach(de -> listMessage.addEntry(de.getName(),
-                                                            de.getFileAttributes()));
+                      .stream()
+                      .forEach(de -> listMessage.addEntry(de.getName(),
+                            de.getFileAttributes()));
                 listMessage.setSucceeded(1);
                 listMessage.setReply();
                 listDirectoryHandler.messageArrived(listMessage);
             }
         }
 
-        public FileAttributes getFileAttributes(String path, Set<FileAttribute> attr)
-        {
+        public FileAttributes getFileAttributes(String path, Set<FileAttribute> attr) {
             return attributesMap.get(new File(path).getName());
         }
     }
 
     Multimap<String, DirectoryEntry> fileTree;
-    Map<String, FileAttributes>      attributesMap;
-    TestPnfsHandler                  pnfsHandler;
-    ListDirectoryHandler             listDirectoryHandler;
-    BulkSubmissionHandler            submissionHandler;
-    BulkJobCompletionHandler         completionHandler;
+    Map<String, FileAttributes> attributesMap;
+    TestPnfsHandler pnfsHandler;
+    ListDirectoryHandler listDirectoryHandler;
+    BulkSubmissionHandler submissionHandler;
+    BulkJobCompletionHandler completionHandler;
 
-    BulkRequest        request;
-    BulkJobKey         requestKey;
+    BulkRequest request;
+    BulkJobKey requestKey;
     TargetExpansionJob targetExpansionJob;
-    BulkRequestJob     requestJob;
+    BulkRequestJob requestJob;
 
     @Test
     public void requestJobShouldSubmitOneExpansionJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", ALL);
         givenRequestJobOfType(FILE);
         whenRequestJobRuns();
@@ -168,8 +159,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void requestJobAllShouldSubmitTwoExpansionJobs()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("['pnfs', 'pnfs/fs']", ALL);
         givenRequestJobOfType(FILE);
         whenRequestJobRuns();
@@ -178,15 +168,14 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void requestJobShouldSubmitSixSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("['pnfs/fs/scratch/scratch-file-1', "
-                                                       + "'pnfs/fs/scratch/scratch-file-2',"
-                                                       + "'pnfs/fs/scratch/scratch-file-3',"
-                                                       + "'pnfs/fs/scratch/scratch-file-4',"
-                                                       + "'pnfs/fs/scratch/scratch-file-5',"
-                                                       + "'pnfs/fs/scratch/scratch-file-6']",
-                                       Depth.NONE);
+                    + "'pnfs/fs/scratch/scratch-file-2',"
+                    + "'pnfs/fs/scratch/scratch-file-3',"
+                    + "'pnfs/fs/scratch/scratch-file-4',"
+                    + "'pnfs/fs/scratch/scratch-file-5',"
+                    + "'pnfs/fs/scratch/scratch-file-6']",
+              Depth.NONE);
         givenRequestJobOfType(FILE);
         whenRequestJobRuns();
         assertThatSingleTargetSubmitWasCalled(6);
@@ -194,8 +183,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void requestJobTargetsShouldSubmitTwoExpansionJobs()
-                    throws Exception
-    {
+          throws Exception {
         /*
          * The request job is like the expansion job in that it defers
          * treating directories as actual targets in the directory is also
@@ -210,8 +198,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void requestJobShouldSubmitTwoSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("['pnfs', 'pnfs/fs']", Depth.NONE);
         givenRequestJobOfType(TargetType.DIR);
         whenRequestJobRuns();
@@ -220,8 +207,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitTargetExpansionJobOnce()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", ALL);
         givenExpansionWith("pnfs", BREADTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -230,8 +216,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitTargetExpansionJobOnce()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", ALL);
         givenExpansionWith("pnfs", DEPTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -244,18 +229,16 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitNoExpansionJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("pnfs", BREADTH_FIRST, FILE);
         whenExpansionJobRuns();
-        assertThatExpansionSubmitWasCalled( 0);
+        assertThatExpansionSubmitWasCalled(0);
     }
 
     @Test
     public void depthFirstExpansionShouldSubmitNoExpansionJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("pnfs", DEPTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -264,8 +247,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitTargetExpansionJobTwice()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", ALL);
         givenExpansionWith("test", BREADTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -274,8 +256,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitSingleTargetJobTwice()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", BREADTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -284,8 +265,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitSingleTargetJobTwice()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", DEPTH_FIRST, FILE);
         whenExpansionJobRuns();
@@ -294,8 +274,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitSelfAndChildAsSingleTargetJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", BREADTH_FIRST, TargetType.DIR);
         whenExpansionJobRuns();
@@ -304,8 +283,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitOnlySelfAsSingleTargetJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("scratch", BREADTH_FIRST, TargetType.DIR);
         whenExpansionJobRuns();
@@ -314,8 +292,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitSelfAndChildAsSingleTargetJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", DEPTH_FIRST, TargetType.DIR);
         whenExpansionJobRuns();
@@ -324,8 +301,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitOnlySelfAsSingleTargetJob()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("scratch", DEPTH_FIRST, TargetType.DIR);
         whenExpansionJobRuns();
@@ -334,8 +310,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitFourSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", BREADTH_FIRST, BOTH);
         whenExpansionJobRuns();
@@ -344,8 +319,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitFourSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         givenRequestWithTargetAndDepth("pnfs", TARGETS);
         givenExpansionWith("test-child-2", DEPTH_FIRST, BOTH);
         whenExpansionJobRuns();
@@ -354,8 +328,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitThirteenSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         /*
          * Because the mocked submission handler does not add children
          * to the completion handler, depth-first should walk the entire
@@ -369,8 +342,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void depthFirstExpansionShouldSubmitSevenSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         /*
          * Because the mocked submission handler does not add children
          * to the completion handler, depth-first should walk the entire
@@ -384,8 +356,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
 
     @Test
     public void breadthFirstExpansionShouldSubmitSelfAndFileSingleTargetJobs()
-                    throws Exception
-    {
+          throws Exception {
         /*
          *  Because a directory is treated "up front" as a target in
          *  breadth-first, and this is deferred (done by the new
@@ -400,8 +371,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
     }
 
     @Before
-    public void setup() throws Exception
-    {
+    public void setup() throws Exception {
         fileTree = HashMultimap.create();
         attributesMap = new HashMap<>();
         loadEntries();
@@ -412,38 +382,33 @@ public class BulkMultipleTargetJobTest implements SignalAware
     }
 
     @Override
-    public void signal()
-    {
+    public void signal() {
         // NOP
     }
 
     @Override
-    public int countSignals()
-    {
+    public int countSignals() {
         return 0;
     }
 
     private void assertThatExpansionSubmitWasCalled(int times)
-                    throws Exception
-    {
+          throws Exception {
         verify(submissionHandler, times(times))
-                        .submitTargetExpansionJob(any(String.class),
-                                                  any(FileAttributes.class),
-                                                  any(MultipleTargetJob.class));
+              .submitTargetExpansionJob(any(String.class),
+                    any(FileAttributes.class),
+                    any(MultipleTargetJob.class));
     }
 
     private void assertThatSingleTargetSubmitWasCalled(int times)
-        throws Exception
-    {
+          throws Exception {
         verify(submissionHandler, times(times))
-                        .submitSingleTargetJob(any(String.class),
-                                               any(BulkJobKey.class),
-                                               any(),
-                                               any(MultipleTargetJob.class));
+              .submitSingleTargetJob(any(String.class),
+                    any(BulkJobKey.class),
+                    any(),
+                    any(MultipleTargetJob.class));
     }
 
-    private void add(String dir, String name, FileType type)
-    {
+    private void add(String dir, String name, FileType type) {
         FileAttributes attr = new FileAttributes();
         attr.setFileType(type);
         attr.setPnfsId(nextPnfsId());
@@ -453,16 +418,15 @@ public class BulkMultipleTargetJobTest implements SignalAware
     }
 
     private void givenExpansionWith(String target,
-                                    ExpansionType expansionType,
-                                    TargetType targetType)
-                    throws Exception
-    {
+          ExpansionType expansionType,
+          TargetType targetType)
+          throws Exception {
         targetExpansionJob = new TargetExpansionJob(
-                        BulkJobKey.newKey(requestKey.getRequestId()),
-                        requestKey,
-                        request,
-                        targetType,
-                        expansionType);
+              BulkJobKey.newKey(requestKey.getRequestId()),
+              requestKey,
+              request,
+              targetType,
+              expansionType);
         targetExpansionJob.setTarget(target);
         targetExpansionJob.setRestriction(Restrictions.none());
         targetExpansionJob.setSubmissionHandler(submissionHandler);
@@ -470,8 +434,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
         targetExpansionJob.setCompletionHandler(completionHandler);
     }
 
-    private void givenRequestJobOfType(TargetType targetType) throws Exception
-    {
+    private void givenRequestJobOfType(TargetType targetType) throws Exception {
         requestJob = new BulkRequestJob(requestKey, request, targetType);
         requestJob.setNamespaceHandler(pnfsHandler);
         requestJob.setCompletionHandler(completionHandler);
@@ -480,8 +443,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
     }
 
     private void givenRequestWithTargetAndDepth(String target, Depth depth)
-                    throws Exception
-    {
+          throws Exception {
         request = new BulkRequest();
         request.setExpandDirectories(depth);
         request.setTarget(target);
@@ -491,8 +453,7 @@ public class BulkMultipleTargetJobTest implements SignalAware
         requestKey = BulkJobKey.newKey(request.getId());
     }
 
-    private void loadEntries()
-    {
+    private void loadEntries() {
         FileAttributes attr = new FileAttributes();
         attr.setFileType(FileType.DIR);
         attr.setPnfsId(nextPnfsId());
@@ -518,13 +479,11 @@ public class BulkMultipleTargetJobTest implements SignalAware
         add("test-child-2", "test-child-2-empty", DIR);
     }
 
-    private void whenExpansionJobRuns()
-    {
+    private void whenExpansionJobRuns() {
         targetExpansionJob.run();
     }
 
-    private void whenRequestJobRuns()
-    {
+    private void whenRequestJobRuns() {
         requestJob.run();
     }
 }

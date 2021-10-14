@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,38 +17,34 @@ package org.dcache.ftp.client.dc;
 
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GridFTPTransferSinkThread extends TransferSinkThread
-{
+public class GridFTPTransferSinkThread extends TransferSinkThread {
 
     protected static final Logger logger =
-            LoggerFactory.getLogger(GridFTPTransferSinkThread.class);
+          LoggerFactory.getLogger(GridFTPTransferSinkThread.class);
 
     // utility alias to context
     protected EBlockParallelTransferContext eContext;
 
     public GridFTPTransferSinkThread(
-            AbstractDataChannel dataChannel,
-            SocketBox socketBox,
-            DataSink sink,
-            BasicServerControlChannel localControlChannel,
-            EBlockParallelTransferContext context)
-            throws Exception
-    {
+          AbstractDataChannel dataChannel,
+          SocketBox socketBox,
+          DataSink sink,
+          BasicServerControlChannel localControlChannel,
+          EBlockParallelTransferContext context)
+          throws Exception {
         super(dataChannel, socketBox, sink, localControlChannel, context);
         this.eContext = context;
     }
 
     @Override
-    protected void startup()
-    {
+    protected void startup() {
 
         //update manager's thread count
         TransferThreadManager threadManager =
-                eContext.getTransferThreadManager();
+              eContext.getTransferThreadManager();
         threadManager.transferThreadStarting();
 
         //send initial reply only if nothing has yet been sent
@@ -61,11 +57,10 @@ public class GridFTPTransferSinkThread extends TransferSinkThread
     }
 
     @Override
-    protected void shutdown(Object quitToken) throws java.io.IOException
-    {
+    protected void shutdown(Object quitToken) throws java.io.IOException {
 
         SocketPool pool =
-                ((EBlockParallelTransferContext) context).getSocketPool();
+              ((EBlockParallelTransferContext) context).getSocketPool();
 
         if (((ManagedSocketBox) socketBox).isReusable()) {
             // we're in EBLOCK mode, so reader is EBlockImageDCReader
@@ -102,7 +97,7 @@ public class GridFTPTransferSinkThread extends TransferSinkThread
 
         //update manager's thread count
         TransferThreadManager threadManager =
-                eContext.getTransferThreadManager();
+              eContext.getTransferThreadManager();
         threadManager.transferThreadTerminating();
 
     }

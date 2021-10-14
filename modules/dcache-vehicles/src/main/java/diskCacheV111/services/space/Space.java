@@ -1,13 +1,13 @@
 package diskCacheV111.services.space;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.OptionalLong;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-
 public class Space implements Serializable {
+
     private static final long serialVersionUID = -1935368561781812540L;
     private final long id;
     private String voGroup;
@@ -25,20 +25,19 @@ public class Space implements Serializable {
     private Long numberOfFiles;
 
     public Space(
-            long id,
-            String voGroup,
-            String voRole,
-            RetentionPolicy retentionPolicy,
-            AccessLatency accessLatency,
-            long linkGroupId,
-            long sizeInBytes,
-            long creationTime,
-            Long expirationTime,
-            String description,
-            SpaceState state,
-	        long used,
-            long allocated)
-    {
+          long id,
+          String voGroup,
+          String voRole,
+          RetentionPolicy retentionPolicy,
+          AccessLatency accessLatency,
+          long linkGroupId,
+          long sizeInBytes,
+          long creationTime,
+          Long expirationTime,
+          String description,
+          SpaceState state,
+          long used,
+          long allocated) {
         this.id = id;
         this.voGroup = voGroup;
         this.voRole = voRole;
@@ -74,7 +73,8 @@ public class Space implements Serializable {
         long usedSpace = getUsedSizeInBytes() + getAllocatedSpaceInBytes();
         if (sizeInBytes < usedSpace) {
             throw new IllegalStateException(
-                    "Cannot downsize space reservation below " + usedSpace + " bytes, release files first.");
+                  "Cannot downsize space reservation below " + usedSpace
+                        + " bytes, release files first.");
         }
         this.sizeInBytes = sizeInBytes;
     }
@@ -102,10 +102,11 @@ public class Space implements Serializable {
     public void setState(SpaceState state) {
         if (this.state.isFinal()) {
             throw new IllegalStateException(
-                    "Change from " + this.state + " to " + state + " is not allowed.");
+                  "Change from " + this.state + " to " + state + " is not allowed.");
         }
         this.state = state;
     }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(id).append(' ');
@@ -116,8 +117,10 @@ public class Space implements Serializable {
         sb.append("linkGroupId:").append(linkGroupId).append(' ');
         sb.append("size:").append(sizeInBytes).append(' ');
         sb.append("created:").append(new Date(creationTime)).append(' ');
-        sb.append("lifetime:").append(expirationTime == null ? -1 : expirationTime - creationTime).append("ms ");
-        sb.append("expiration:").append(expirationTime == null ? "NEVER" : new Date(expirationTime)).append(' ');
+        sb.append("lifetime:").append(expirationTime == null ? -1 : expirationTime - creationTime)
+              .append("ms ");
+        sb.append("expiration:").append(expirationTime == null ? "NEVER" : new Date(expirationTime))
+              .append(' ');
         sb.append("description:").append(description).append(' ');
         sb.append("state:").append(state).append(' ');
         sb.append("used:").append(usedSizeInBytes).append(' ');
@@ -166,26 +169,23 @@ public class Space implements Serializable {
         return allocatedSpaceInBytes;
     }
 
-	public long getAvailableSpaceInBytes() {
-		return sizeInBytes-usedSizeInBytes-allocatedSpaceInBytes;
-	}
+    public long getAvailableSpaceInBytes() {
+        return sizeInBytes - usedSizeInBytes - allocatedSpaceInBytes;
+    }
 
     public Long getExpirationTime() {
         return expirationTime;
     }
 
-    public void setExpirationTime(Long expirationTime)
-    {
+    public void setExpirationTime(Long expirationTime) {
         this.expirationTime = expirationTime;
     }
 
-    public void setNumberOfFiles(long count)
-    {
+    public void setNumberOfFiles(long count) {
         numberOfFiles = count;
     }
 
-    public OptionalLong getNumberofFiles()
-    {
+    public OptionalLong getNumberofFiles() {
         return numberOfFiles == null ? OptionalLong.empty() : OptionalLong.of(numberOfFiles);
     }
 }

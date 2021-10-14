@@ -19,30 +19,25 @@ package diskCacheV111.namespace;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.auth.Subjects;
 
 /**
- * Utility class to represent command arguments that may be
- * either a PNFS ID or a path.
+ * Utility class to represent command arguments that may be either a PNFS ID or a path.
  */
-public class PnfsIdOrPath
-{
+public class PnfsIdOrPath {
+
     private final String s;
 
-    private PnfsIdOrPath(String s)
-    {
+    private PnfsIdOrPath(String s) {
         this.s = s;
     }
 
     public PnfsId toPnfsId(NameSpaceProvider provider)
-            throws CacheException
-    {
+          throws CacheException {
         return PnfsId.isValid(s) ? new PnfsId(s) : provider.pathToPnfsid(Subjects.ROOT, s, true);
     }
 
-    public static PnfsIdOrPath valueOf(String s)
-    {
+    public static PnfsIdOrPath valueOf(String s) {
         return new PnfsIdOrPath(s);
     }
 }

@@ -1,25 +1,23 @@
 package diskCacheV111.util;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
-public class DiskSpaceTest
-{
+import org.junit.Test;
+
+public class DiskSpaceTest {
+
     private final static long TEBI = (1L << 40);
     private final static long GIBI = (1L << 30);
     private final static long MEBI = (1L << 20);
     private final static long KIBI = (1L << 10);
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNegativeValue()
-    {
+    public void testNegativeValue() {
         new DiskSpace("-1");
     }
 
     @Test
-    public void testParsing()
-    {
+    public void testParsing() {
         assertEquals(0, new DiskSpace("0").longValue());
         assertEquals(1, new DiskSpace("1").longValue());
 
@@ -45,8 +43,7 @@ public class DiskSpaceTest
     }
 
     @Test
-    public void testToString()
-    {
+    public void testToString() {
         assertEquals("0", DiskSpace.toUnitString(0));
         assertEquals("1", DiskSpace.toUnitString(1));
         assertEquals("1k", DiskSpace.toUnitString(KIBI));

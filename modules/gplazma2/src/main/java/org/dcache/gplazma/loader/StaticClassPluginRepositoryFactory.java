@@ -1,21 +1,18 @@
 package org.dcache.gplazma.loader;
 
 import java.util.Collection;
-
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
- * This class is a {@link PluginRepositoryFactory} that creates a
- * {@link PluginRepository} based on the list of plugin classes passed to the
- * constructor. It is meant mainly as demonstration code and for
- * unit-testing.
+ * This class is a {@link PluginRepositoryFactory} that creates a {@link PluginRepository} based on
+ * the list of plugin classes passed to the constructor. It is meant mainly as demonstration code
+ * and for unit-testing.
  * <p>
- * The plugin name is the simple name of the class implementing this plugin,
- * so a GPlazma plugin class <tt>org.example.foo.BarPlugin</tt> is registered
- * with the name <tt>BarPlugin</tt>.
+ * The plugin name is the simple name of the class implementing this plugin, so a GPlazma plugin
+ * class <tt>org.example.foo.BarPlugin</tt> is registered with the name <tt>BarPlugin</tt>.
  */
 public class StaticClassPluginRepositoryFactory implements
-        PluginRepositoryFactory {
+      PluginRepositoryFactory {
 
     private final Collection<Class<? extends GPlazmaPlugin>> _pluginClasses;
 
@@ -27,14 +24,14 @@ public class StaticClassPluginRepositoryFactory implements
     public PluginRepository newRepository() {
         PluginRepository repository = new PluginRepository();
 
-        for( Class<? extends GPlazmaPlugin> pluginClass : _pluginClasses) {
+        for (Class<? extends GPlazmaPlugin> pluginClass : _pluginClasses) {
             PluginMetadata pluginMetadata = new PluginMetadata();
 
-            String pluginName = getNameFromClass( pluginClass);
-            pluginMetadata.addName( pluginName);
-            pluginMetadata.setPluginClass( pluginClass);
+            String pluginName = getNameFromClass(pluginClass);
+            pluginMetadata.addName(pluginName);
+            pluginMetadata.setPluginClass(pluginClass);
 
-            repository.addPlugin( pluginMetadata);
+            repository.addPlugin(pluginMetadata);
         }
 
         return repository;

@@ -18,10 +18,9 @@
 package dmg.cells.nucleus;
 
 /**
- * A class that implements this interface needs to know in which cell it is
- * running.
+ * A class that implements this interface needs to know in which cell it is running.
  */
-public interface CellIdentityAware
-{
+public interface CellIdentityAware {
+
     void setCellAddress(CellAddressCore address);
 }

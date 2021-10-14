@@ -20,15 +20,14 @@ package org.apache.zookeeper.server;
 /**
  * This class contains various work-arounds for bugs in ZooKeeper.
  */
-public class PatchedZooKeeperServer extends ZooKeeperServer
-{
+public class PatchedZooKeeperServer extends ZooKeeperServer {
+
     // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
     // and https://issues.apache.org/jira/browse/ZOOKEEPER-2812
     @Override
     public void createSessionTracker() {
         sessionTracker = new SessionTrackerImpl(this, getZKDatabase().getSessionWithTimeOuts(),
-                                                tickTime, 1, getZooKeeperServerListener())
-        {
+              tickTime, 1, getZooKeeperServerListener()) {
             @Override
             public void shutdown() {
                 super.shutdown();

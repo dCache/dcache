@@ -1,6 +1,16 @@
 package org.dcache.webdav;
 
+import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
+
 import com.google.common.collect.ImmutableSet;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.SpaceException;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.http.LockInfo;
@@ -12,7 +22,6 @@ import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.property.PropertySource.PropertyMetaData;
-import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.CollectionResource;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
@@ -22,11 +31,6 @@ import io.milton.resource.MultiNamespaceCustomPropertyResource;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.namespace.QName;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,49 +42,40 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import diskCacheV111.services.space.Space;
-import diskCacheV111.services.space.SpaceException;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.NotFileCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
+import javax.xml.namespace.QName;
 import org.dcache.vehicles.FileAttributes;
-
-import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Exposes dCache directories as resources in the Milton WebDAV
- * framework.
+ * Exposes dCache directories as resources in the Milton WebDAV framework.
  */
 public class DcacheDirectoryResource
-    extends DcacheResource
-    implements PutableResource, GetableResource, DeletableResource,
-               MakeCollectionableResource, LockingCollectionResource,
-               MultiNamespaceCustomPropertyResource
-{
+      extends DcacheResource
+      implements PutableResource, GetableResource, DeletableResource,
+      MakeCollectionableResource, LockingCollectionResource,
+      MultiNamespaceCustomPropertyResource {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DcacheDirectoryResource.class);
 
     private static final String DAV_NAMESPACE_URI = "DAV:";
 
-    private static final QName QUOTA_AVAILABLE = new QName(DAV_NAMESPACE_URI, "quota-available-bytes");
+    private static final QName QUOTA_AVAILABLE = new QName(DAV_NAMESPACE_URI,
+          "quota-available-bytes");
     private static final QName QUOTA_USED = new QName(DAV_NAMESPACE_URI, "quota-used-bytes");
-    private static final ImmutableSet<QName> QUOTA_PROPERTIES = ImmutableSet.of(QUOTA_AVAILABLE, QUOTA_USED);
+    private static final ImmutableSet<QName> QUOTA_PROPERTIES = ImmutableSet.of(QUOTA_AVAILABLE,
+          QUOTA_USED);
 
-    private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY, Long.class);
+    private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY,
+          Long.class);
 
     public DcacheDirectoryResource(DcacheResourceFactory factory,
-                                   FsPath path, FileAttributes attributes)
-    {
+          FsPath path, FileAttributes attributes) {
         super(factory, path, attributes);
     }
 
     @Override
-    public String checkRedirect(Request request)
-    {
+    public String checkRedirect(Request request) {
         String url = request.getAbsoluteUrl();
         if (request.getMethod() == Request.Method.GET && !url.endsWith("/")) {
             String query = ServletRequest.getRequest().getQueryString();
@@ -90,15 +85,13 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public Resource child(String childName)
-    {
+    public Resource child(String childName) {
         FsPath fchild = _path.child(childName);
         return _factory.getResource(fchild);
     }
 
     @Override
-    public List<? extends Resource> getChildren()
-    {
+    public List<? extends Resource> getChildren() {
         try {
             return _factory.list(_path);
         } catch (FileNotFoundCacheException e) {
@@ -121,9 +114,8 @@ public class DcacheDirectoryResource
 
     @Override
     public Resource createNew(String newName, InputStream inputStream,
-                              Long length, String contentType)
-        throws ConflictException, BadRequestException
-    {
+          Long length, String contentType)
+          throws ConflictException, BadRequestException {
         try {
             FsPath path = _path.child(newName);
             if (_factory.shouldRedirect(HttpManager.request())) {
@@ -156,9 +148,8 @@ public class DcacheDirectoryResource
 
     @Override
     public void sendContent(OutputStream out, Range range,
-                            Map<String,String> params, String contentType)
-        throws IOException, NotAuthorizedException
-    {
+          Map<String, String> params, String contentType)
+          throws IOException, NotAuthorizedException {
         try {
             Writer writer = new OutputStreamWriter(out, "UTF-8");
             if (!_factory.deliverClient(_path, writer)) {
@@ -171,32 +162,28 @@ public class DcacheDirectoryResource
             throw new WebDavException(e.getMessage(), e, this);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("This should not happen as UTF-8 " +
-                    "is a required encoding for JVM", e);
+                  "is a required encoding for JVM", e);
         }
     }
 
     @Override
-    public Long getMaxAgeSeconds(Auth auth)
-    {
+    public Long getMaxAgeSeconds(Auth auth) {
         return null;
     }
 
     @Override
-    public String getContentType(String accepts)
-    {
+    public String getContentType(String accepts) {
         return "text/html; charset=utf-8";
     }
 
     @Override
-    public Long getContentLength()
-    {
+    public Long getContentLength() {
         return null;
     }
 
     @Override
     public void delete()
-        throws NotAuthorizedException, ConflictException, BadRequestException
-    {
+          throws NotAuthorizedException, ConflictException, BadRequestException {
         try {
             _factory.deleteDirectory(_attributes.getPnfsId(), _path);
         } catch (PermissionDeniedCacheException e) {
@@ -208,8 +195,7 @@ public class DcacheDirectoryResource
 
     @Override
     public CollectionResource createCollection(String newName)
-        throws NotAuthorizedException, ConflictException, BadRequestException
-    {
+          throws NotAuthorizedException, ConflictException, BadRequestException {
         try {
             return _factory.makeDirectory(_attributes, _path.child(newName));
         } catch (FileExistsCacheException e) {
@@ -232,21 +218,22 @@ public class DcacheDirectoryResource
              */
             String httpMethod = ServletRequest.getRequest().getMethod();
             switch (httpMethod) {
-            case "MKCOL":
-                throw new MethodNotAllowedException("collection already exists", e, this);
+                case "MKCOL":
+                    throw new MethodNotAllowedException("collection already exists", e, this);
 
-            case "PUT":
-                Resource child = child(newName);
-                if (!(child instanceof CollectionResource)) {
-                    // This thread lost the race (in Milton), and the winning
-                    // thread created something other than a directory.
-                    throw new ConflictException(this);
-                }
-                return (CollectionResource)child;
+                case "PUT":
+                    Resource child = child(newName);
+                    if (!(child instanceof CollectionResource)) {
+                        // This thread lost the race (in Milton), and the winning
+                        // thread created something other than a directory.
+                        throw new ConflictException(this);
+                    }
+                    return (CollectionResource) child;
 
-            default:
-                LOGGER.error("createCollection called processing unexpected HTTP method: {}", httpMethod);
-                throw new WebDavException("Unexpected method", e, this);
+                default:
+                    LOGGER.error("createCollection called processing unexpected HTTP method: {}",
+                          httpMethod);
+                    throw new WebDavException("Unexpected method", e, this);
             }
         } catch (PermissionDeniedCacheException e) {
             throw WebDavExceptions.permissionDenied(this);
@@ -256,8 +243,7 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
-    {
+    public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo) {
         /* We do not currently support createAndLock, but as Mac OS X
          * insists on lock support before it allows writing to a
          * WebDAV store, we return a lock with zero lifetime.
@@ -270,8 +256,7 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public Object getProperty(QName name)
-    {
+    public Object getProperty(QName name) {
         Object value = super.getProperty(name);
 
         if (value != null) {
@@ -295,8 +280,7 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public PropertyMetaData getPropertyMetaData(QName name)
-    {
+    public PropertyMetaData getPropertyMetaData(QName name) {
         PropertyMetaData metadata = super.getPropertyMetaData(name);
 
         if (!_factory.isSpaceManaged(_path)) {
@@ -313,8 +297,7 @@ public class DcacheDirectoryResource
     }
 
     @Override
-    public List<QName> getAllPropertyNames()
-    {
+    public List<QName> getAllPropertyNames() {
         List<QName> genericNames = super.getAllPropertyNames();
 
         if (!_factory.isSpaceManaged(_path)) {

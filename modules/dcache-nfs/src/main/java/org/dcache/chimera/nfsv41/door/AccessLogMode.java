@@ -18,9 +18,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 /**
- * An {@code AccessLogMode} controls amount of information logged by access
- * logger.
- *
+ * An {@code AccessLogMode} controls amount of information logged by access logger.
  */
 public enum AccessLogMode {
 

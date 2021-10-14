@@ -71,21 +71,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Splitter;
-
-import org.w3c.dom.Comment;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.Text;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -96,7 +84,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -104,31 +97,33 @@ import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.w3c.dom.Comment;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class Configuration extends ConnectionConfiguration {
 
-    public static final String SRMCPCONFIGNAMESPACE="srmcp.srm.fnal.gov";
-    private static final String HOME_DIRECTORY=System.getProperty("user.home");
-    private static final String PATH_SEPARATOR=System.getProperty("file.separator");
-    private static final String CONFIGURATION_DIRECTORY=".srmconfig";
-    private static final String DEFAULT_CONFIG_FILE=HOME_DIRECTORY+
-    PATH_SEPARATOR+
-    CONFIGURATION_DIRECTORY+
-    PATH_SEPARATOR+"config.xml";
+    public static final String SRMCPCONFIGNAMESPACE = "srmcp.srm.fnal.gov";
+    private static final String HOME_DIRECTORY = System.getProperty("user.home");
+    private static final String PATH_SEPARATOR = System.getProperty("file.separator");
+    private static final String CONFIGURATION_DIRECTORY = ".srmconfig";
+    private static final String DEFAULT_CONFIG_FILE = HOME_DIRECTORY +
+          PATH_SEPARATOR +
+          CONFIGURATION_DIRECTORY +
+          PATH_SEPARATOR + "config.xml";
 
     @Option(
-            name = "default_port",
-            description = "default SRM port number",
-            defaultValue = "8443",
-            required=false,
-            log=true,
-            save=true
+          name = "default_port",
+          description = "default SRM port number",
+          defaultValue = "8443",
+          required = false,
+          log = true,
+          save = true
     )
     private int srmDefaultPortNumber;
 
@@ -137,16 +132,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setDefaultSrmPortNumber(int port) {
-        this.srmDefaultPortNumber=port;
+        this.srmDefaultPortNumber = port;
     }
 
     @Option(
-            name = "debug",
-            description = "enable debug output (including stack traces)",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "debug",
+          description = "enable debug output (including stack traces)",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean debug;
 
@@ -159,12 +154,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "srmcphome",
-            description = "path to srmcp product directory",
-            defaultValue = "..",
-            required=false,
-            log=true,
-            save=true
+          name = "srmcphome",
+          description = "path to srmcp product directory",
+          defaultValue = "..",
+          required = false,
+          log = true,
+          save = true
     )
     private String srmcphome;
 
@@ -177,12 +172,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "urlcopy",
-            description = "path to the urlcopy script",
-            defaultValue = "sbin/urlcopy.sh",
-            required=false,
-            log=true,
-            save=true
+          name = "urlcopy",
+          description = "path to the urlcopy script",
+          defaultValue = "sbin/urlcopy.sh",
+          required = false,
+          log = true,
+          save = true
     )
     private String urlcopy;
 
@@ -195,12 +190,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "gsiftpclient",
-            description = "name of ftp client \"globus-url-copy\" or \"kftp\"",
-            defaultValue = "globus-url-copy",
-            required=false,
-            log=true,
-            save=true
+          name = "gsiftpclient",
+          description = "name of ftp client \"globus-url-copy\" or \"kftp\"",
+          defaultValue = "globus-url-copy",
+          required = false,
+          log = true,
+          save = true
     )
     private String gsiftpclinet;
 
@@ -213,11 +208,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "help",
-            description = "displays usage",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "help",
+          description = "displays usage",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean help;
 
@@ -231,22 +226,22 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "h",
-            description = "displays usage",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "h",
+          description = "displays usage",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_help;
 
 
     @Option(
-            name = "webservice_path",
-            description = "path to wsdl in web service url",
-            defaultValue = "srm/managerv2",
-            required=false,
-            log=true,
-            save=true
+          name = "webservice_path",
+          description = "path to wsdl in web service url",
+          defaultValue = "srm/managerv2",
+          required = false,
+          log = true,
+          save = true
     )
     private String webservice_path;
 
@@ -259,12 +254,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "use_proxy",
-            description = "use user proxy(true) or use certificates directly(false)",
-            defaultValue = "true",
-            required=false,
-            log=true,
-            save=true
+          name = "use_proxy",
+          description = "use user proxy(true) or use certificates directly(false)",
+          defaultValue = "true",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean useproxy;
 
@@ -277,11 +272,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "globus_tcp_port_range",
-            description = "comma separated globus tcp port range, like MIN,MAX",
-            required=false,
-            log=true,
-            save=true
+          name = "globus_tcp_port_range",
+          description = "comma separated globus tcp port range, like MIN,MAX",
+          required = false,
+          log = true,
+          save = true
     )
     private String globus_tcp_port_range;
 
@@ -294,12 +289,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "protocols",
-            description = "comma separated list of protocol names",
-            defaultValue = "gsiftp,dcap,http",
-            required=false,
-            log=true,
-            save=true
+          name = "protocols",
+          description = "comma separated list of protocol names",
+          defaultValue = "gsiftp,dcap,http",
+          required = false,
+          log = true,
+          save = true
     )
     private String protocols_list;
 
@@ -311,7 +306,7 @@ public class Configuration extends ConnectionConfiguration {
         this.protocols_list = protocols_list;
     }
 
-    private String[] protocols = new String[]   {"gsiftp","dcap","http"};
+    private String[] protocols = new String[]{"gsiftp", "dcap", "http"};
 
     public String[] getProtocols() {
         return this.protocols;
@@ -323,12 +318,12 @@ public class Configuration extends ConnectionConfiguration {
 
 
     @Option(
-            name = "pushmode",
-            description = "true for pushmode and false for pullmode",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "pushmode",
+          description = "true for pushmode and false for pullmode",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean pushmode;
 
@@ -341,13 +336,13 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "buffer_size",
-            description = "buffer size, nonnegative integer",
-            defaultValue = "131072",
-            unit="bytes",
-            required=false,
-            log=true,
-            save=true
+          name = "buffer_size",
+          description = "buffer size, nonnegative integer",
+          defaultValue = "131072",
+          unit = "bytes",
+          required = false,
+          log = true,
+          save = true
     )
     private int buffer_size;
 
@@ -360,13 +355,13 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "tcp_buffer_size",
-            description = "tcp buffer size, nonnegative integer, (0 means do not set tcp_buffer_size at all)",
-            defaultValue = "0",
-            unit="bytes",
-            required=false,
-            log=true,
-            save=true
+          name = "tcp_buffer_size",
+          description = "tcp buffer size, nonnegative integer, (0 means do not set tcp_buffer_size at all)",
+          defaultValue = "0",
+          unit = "bytes",
+          required = false,
+          log = true,
+          save = true
     )
     private int tcp_buffer_size;
 
@@ -379,12 +374,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "streams_num",
-            description = "number of streams, nonnegative integer. Multi-stream extended block transfer require writes to be performed in server-passive and reads in server active mode. If client specified server_mode option conflicts with the multi-stream required mode, the transfer will be performed in a single stream mode, regardless of value specified for the streams_num option",
-            defaultValue = "10",
-            required=false,
-            log=true,
-            save=true
+          name = "streams_num",
+          description = "number of streams, nonnegative integer. Multi-stream extended block transfer require writes to be performed in server-passive and reads in server active mode. If client specified server_mode option conflicts with the multi-stream required mode, the transfer will be performed in a single stream mode, regardless of value specified for the streams_num option",
+          defaultValue = "10",
+          required = false,
+          log = true,
+          save = true
     )
     private int streams_num;
 
@@ -397,19 +392,19 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "conf",
-            description = "name of the configuration file",
-            defaultValue = "config.xml",
-            required=false,
-            log=true
+          name = "conf",
+          description = "name of the configuration file",
+          defaultValue = "config.xml",
+          required = false,
+          log = true
     )
     private String config_file;
 
     @Option(
-            name = "save_conf",
-            description = "path to the file where new configuration will be saved",
-            required=false,
-            log=true
+          name = "save_conf",
+          description = "path to the file where new configuration will be saved",
+          required = false,
+          log = true
     )
     private String save_config_file;
 
@@ -424,12 +419,12 @@ public class Configuration extends ConnectionConfiguration {
     private Logger logger;
 
     @Option(
-            name = "do_remove",
-            description = "remove files when executing srm-release-files",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "do_remove",
+          description = "remove files when executing srm-release-files",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean doRemove;
 
@@ -438,15 +433,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setDoRemove(boolean yes) {
-        this.doRemove=yes;
+        this.doRemove = yes;
     }
 
     @Option(
-            name = "copy",
-            description = " performs srm \"get\", \"put\", or \"copy\" depending on arguments",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "copy",
+          description = " performs srm \"get\", \"put\", or \"copy\" depending on arguments",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean copy;
 
@@ -459,11 +454,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "bringOnline",
-            description = "performs srmBringOnline",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "bringOnline",
+          description = "performs srmBringOnline",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean bringOnline;
 
@@ -476,11 +471,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "ping",
-            description = "performs srm ping command (useful for diagnostics and version info)",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "ping",
+          description = "performs srm ping command (useful for diagnostics and version info)",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean ping;
 
@@ -491,15 +486,16 @@ public class Configuration extends ConnectionConfiguration {
     public void setPing(boolean ping) {
         this.ping = ping;
     }
+
     //
     // SrmReserveSpace parameters
     //
     @Option(
-            name = "reserveSpace",
-            description = "performs explicit space reservation",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "reserveSpace",
+          description = "performs explicit space reservation",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean reserveSpace;
 
@@ -512,22 +508,22 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "array_of_client_networks",
-            description = "comma separated array of client networks",
-            required=false,
-            log=true,
-            save=true
+          name = "array_of_client_networks",
+          description = "comma separated array of client networks",
+          required = false,
+          log = true,
+          save = true
     )
     private String array_of_client_networks;
 
     private String[] arrayOfClientNetworks;
 
     @Option(
-            name = "retention_policy",
-            description = "retention policy",
-            required=false,
-            log=true,
-            save=true
+          name = "retention_policy",
+          description = "retention policy",
+          required = false,
+          log = true,
+          save = true
     )
     private String retentionPolicy;
 
@@ -536,14 +532,14 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setRetentionPolicy(String s) {
-        retentionPolicy=s;
+        retentionPolicy = s;
     }
 
     @Option(
-            name = "space_desc",
-            description = "space reservation description",
-            required=false,
-            log=true
+          name = "space_desc",
+          description = "space reservation description",
+          required = false,
+          log = true
     )
     private String spaceTokenDescription;
 
@@ -552,15 +548,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSpaceTokenDescription(String s) {
-        spaceTokenDescription=s;
+        spaceTokenDescription = s;
     }
 
     @Option(
-            name = "access_latency",
-            description = "access latency",
-            required=false,
-            log=true,
-            save=true
+          name = "access_latency",
+          description = "access latency",
+          required = false,
+          log = true,
+          save = true
     )
     private String accessLatency;
 
@@ -569,16 +565,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setAccessLatency(String s) {
-        accessLatency=s;
+        accessLatency = s;
     }
 
     @Option(
-            name = "access_pattern",
-            description = "access pattern (\"TRANSFER_MODE\"|\"PROCESSING_MODE\")",
-            defaultValue = "null",
-            required=false,
-            log=true,
-            save=true
+          name = "access_pattern",
+          description = "access pattern (\"TRANSFER_MODE\"|\"PROCESSING_MODE\")",
+          defaultValue = "null",
+          required = false,
+          log = true,
+          save = true
     )
     private String accessPattern;
 
@@ -587,16 +583,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setAccessPattern(String s) {
-        accessPattern=s;
+        accessPattern = s;
     }
 
     @Option(
-            name = "connection_type",
-            description = "connection type, (\"WAN\"|\"LAN\")",
-            defaultValue = "null",
-            required=false,
-            log=true,
-            save=true
+          name = "connection_type",
+          description = "connection type, (\"WAN\"|\"LAN\")",
+          defaultValue = "null",
+          required = false,
+          log = true,
+          save = true
     )
     private String connectionType;
 
@@ -605,16 +601,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setConnectionType(String s) {
-        connectionType=s;
+        connectionType = s;
     }
 
     @Option(
-            name = "desired_size",
-            description = "desired space reservation size",
-            defaultValue = "null",
-            unit="bytes",
-            required=false,
-            log=true
+          name = "desired_size",
+          description = "desired space reservation size",
+          defaultValue = "null",
+          unit = "bytes",
+          required = false,
+          log = true
     )
     private Long desiredReserveSpaceSize;
 
@@ -623,16 +619,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setDesiredReserveSpaceSize(Long size) {
-        desiredReserveSpaceSize=size;
+        desiredReserveSpaceSize = size;
     }
 
     @Option(
-            name = "guaranteed_size",
-            description = "guaranteed space reservation size",
-            defaultValue = "null",
-            unit="bytes",
-            required=false,
-            log=true
+          name = "guaranteed_size",
+          description = "guaranteed space reservation size",
+          defaultValue = "null",
+          unit = "bytes",
+          required = false,
+          log = true
     )
     private Long guaranteedReserveSpaceSize;
 
@@ -642,32 +638,33 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setGuaranteedReserveSpaceSize(Long size) {
-        guaranteedReserveSpaceSize=size;
+        guaranteedReserveSpaceSize = size;
     }
 
 
     @Option(
-            name = "lifetime",
-            description = "desired lifetime in seconds",
-            defaultValue = "null",
-            unit="seconds",
-            required=false,
-            log=true
+          name = "lifetime",
+          description = "desired lifetime in seconds",
+          defaultValue = "null",
+          unit = "seconds",
+          required = false,
+          log = true
     )
     private Long desiredLifetime;
 
     public Long getDesiredLifetime() {
         return desiredLifetime;
     }
+
     //
     // SrmReleaseSpace parameters
     //
     @Option(
-            name = "releaseSpace",
-            description = "performs release of explicit  space reservation",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "releaseSpace",
+          description = "performs release of explicit  space reservation",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean releaseSpace;
 
@@ -676,10 +673,10 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "space_token",
-            description = "space reservation token",
-            required=false,
-            log=true
+          name = "space_token",
+          description = "space reservation token",
+          required = false,
+          log = true
     )
     private String spaceToken;
 
@@ -688,16 +685,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSpaceToken(String s) {
-        spaceToken=s;
+        spaceToken = s;
     }
 
     @Option(
-            name = "force",
-            description = "force space reservation release",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "force",
+          description = "force space reservation release",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean forceFileRelease;
 
@@ -707,17 +704,18 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setForceFileRelease(boolean yes) {
-        forceFileRelease=yes;
+        forceFileRelease = yes;
     }
+
     //
     // SrmGetSpaceMetaData parameters
     //
     @Option(
-            name = "getSpaceMetaData",
-            description = "retrieves and prints metadata for given space tokens",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "getSpaceMetaData",
+          description = "retrieves and prints metadata for given space tokens",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean getSpaceMetaData;
 
@@ -735,19 +733,19 @@ public class Configuration extends ConnectionConfiguration {
 
 
     @Option(
-            name = "space_tokens",
-            description = "comma separated list of space reservation tokens",
-            required=false,
-            log=true
+          name = "space_tokens",
+          description = "comma separated list of space reservation tokens",
+          required = false,
+          log = true
     )
     private String space_tokens_list;
 
     @Option(
-            name = "copyjobfile",
-            description = "is the path to the text file containing list of sources and destination",
-            required=false,
-            log=true,
-            save=true
+          name = "copyjobfile",
+          description = "is the path to the text file containing list of sources and destination",
+          required = false,
+          log = true,
+          save = true
     )
     private String copyjobfile;
 
@@ -760,11 +758,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "wsdl_url",
-            description = "full URL to web service WSDL, overrides \"-webservice_path\" and \"-webservice_protocol\" options",
-            required=false,
-            log=true,
-            save=true
+          name = "wsdl_url",
+          description = "full URL to web service WSDL, overrides \"-webservice_path\" and \"-webservice_protocol\" options",
+          required = false,
+          log = true,
+          save = true
     )
     private String wsdl_url;
 
@@ -777,12 +775,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "use_urlcopy_script",
-            description = "if true, use urlcopy script, otherwise use java native copiers",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "use_urlcopy_script",
+          description = "if true, use urlcopy script, otherwise use java native copiers",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean use_urlcopy_script;
 
@@ -796,26 +794,28 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "ls",
-            description = "list content of directory",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "ls",
+          description = "list content of directory",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean ls;
 
-    public boolean isls() { return ls; }
+    public boolean isls() {
+        return ls;
+    }
 
     public void setLs(boolean l) {
-        ls=l;
+        ls = l;
     }
 
     @Option(
-            name = "getSpaceTokens",
-            description =  "gets space tokens belonging to this user",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "getSpaceTokens",
+          description = "gets space tokens belonging to this user",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean getSpaceTokens;
 
@@ -828,116 +828,130 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "rm",
-            description =  "remove file(s)",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "rm",
+          description = "remove file(s)",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_rm;
 
-    public boolean isRm() { return is_rm; }
+    public boolean isRm() {
+        return is_rm;
+    }
 
     public void setRm(boolean r) {
         is_rm = r;
     }
 
     @Option(
-            name = "rmdir",
-            description =  "remove empty directory tree",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "rmdir",
+          description = "remove empty directory tree",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_rmdir;
 
-    public boolean isRmdir() { return is_rmdir; }
+    public boolean isRmdir() {
+        return is_rmdir;
+    }
 
     public void setRmdir(boolean r) {
         is_rmdir = r;
     }
 
     @Option(
-            name = "mv",
-            description =  "performs srm \"mv\" of files and directories ",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "mv",
+          description = "performs srm \"mv\" of files and directories ",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_mv;
 
-    public boolean isMove() { return is_mv; }
+    public boolean isMove() {
+        return is_mv;
+    }
 
     public void setMove(boolean r) {
         is_mv = r;
     }
 
     @Option(
-            name = "mkdir",
-            description =  "create directory ",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "mkdir",
+          description = "create directory ",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_mkdir;
 
-    public boolean isMkdir() { return is_mkdir; }
+    public boolean isMkdir() {
+        return is_mkdir;
+    }
 
     public void setMkdir(boolean r) {
         is_mkdir = r;
     }
 
     @Option(
-            name = "getPermissions",
-            description =  "get permission of files",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "getPermissions",
+          description = "get permission of files",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean getPermission;
 
-    public boolean isGetPermission() { return getPermission;}
+    public boolean isGetPermission() {
+        return getPermission;
+    }
 
     public void setGetPermission(boolean r) {
         getPermission = r;
     }
 
     @Option(
-            name = "checkPermissions",
-            description =  "check permission of files",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "checkPermissions",
+          description = "check permission of files",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean checkPermission;
 
-    public boolean isCheckPermission() { return checkPermission;}
+    public boolean isCheckPermission() {
+        return checkPermission;
+    }
 
     public void setCheckPermission(boolean r) {
         checkPermission = r;
     }
 
     @Option(
-            name = "setPermissions",
-            description =  "set permissions of files",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "setPermissions",
+          description = "set permissions of files",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean setPermission;
 
-    public boolean isSetPermission() { return setPermission;}
+    public boolean isSetPermission() {
+        return setPermission;
+    }
 
     public void setSetPermission(boolean r) {
         setPermission = r;
     }
 
     @Option(
-            name = "getRequestSummary",
-            description =  "is to retrieve a summary of the submitted request",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "getRequestSummary",
+          description = "is to retrieve a summary of the submitted request",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_getRequestSummary;
 
@@ -946,15 +960,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setGetRequestSummary(boolean r) {
-        is_getRequestSummary=r;
+        is_getRequestSummary = r;
     }
 
     @Option(
-            name = "getRequestTokens",
-            description =  "retrieves request tokens for the clients requests, given client provided request description",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "getRequestTokens",
+          description = "retrieves request tokens for the clients requests, given client provided request description",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_getRequestTokens;
 
@@ -967,11 +981,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "abortFiles",
-            description =  "to abort files",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "abortFiles",
+          description = "to abort files",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_AbortFiles;
 
@@ -984,11 +998,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "releaseFiles",
-            description =  " to unpin files",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "releaseFiles",
+          description = " to unpin files",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_ReleaseFiles;
 
@@ -1001,10 +1015,10 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "request_desc",
-            description =  "request token description",
-            required=false,
-            log=true
+          name = "request_desc",
+          description = "request token description",
+          required = false,
+          log = true
     )
     private String userRequestDescription;
 
@@ -1013,14 +1027,14 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setUserRequestDescription(String desc) {
-        this.userRequestDescription=desc;
+        this.userRequestDescription = desc;
     }
 
     @Option(
-            name = "type",
-            description =  "permission type <ADD|REMOVE|CHANGE>",
-            required=false,
-            log=true
+          name = "type",
+          description = "permission type <ADD|REMOVE|CHANGE>",
+          required = false,
+          log = true
     )
     private String setPermissionType;
 
@@ -1029,14 +1043,14 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSetPermissionType(String x) {
-        this.setPermissionType=x;
+        this.setPermissionType = x;
     }
 
     @Option(
-            name = "owner",
-            description =  "owner permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
-            required=false,
-            log=true
+          name = "owner",
+          description = "owner permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
+          required = false,
+          log = true
     )
     private String setOwnerPermissionMode;
 
@@ -1045,14 +1059,14 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSetOwnerPermissionMode(String x) {
-        this.setOwnerPermissionMode=x;
+        this.setOwnerPermissionMode = x;
     }
 
     @Option(
-            name = "group",
-            description =  "group permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
-            required=false,
-            log=true
+          name = "group",
+          description = "group permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
+          required = false,
+          log = true
     )
     private String setGroupPermissionMode;
 
@@ -1061,15 +1075,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSetGroupPermissionMode(String x) {
-        this.setGroupPermissionMode=x;
+        this.setGroupPermissionMode = x;
     }
 
 
     @Option(
-            name = "other",
-            description =  "world permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
-            required=false,
-            log=true
+          name = "other",
+          description = "world permission mode <NONE,X,W,WR,R,RX,RW,RWX>",
+          required = false,
+          log = true
     )
     private String setOtherPermissionMode;
 
@@ -1078,26 +1092,26 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setSetOtherPermissionMode(String x) {
-        this.setOtherPermissionMode=x;
+        this.setOtherPermissionMode = x;
     }
 
     private String setPermissionSurl;
 
     @Option(
-            name = "request_tokens",
-            description =  "<id>,<id1>,<id2>... (comma separated list of Request Token(s))",
-            required=false,
-            log=true
+          name = "request_tokens",
+          description = "<id>,<id1>,<id2>... (comma separated list of Request Token(s))",
+          required = false,
+          log = true
     )
     private String requestTokens;
     //
     // srmExtendFileLifeTime parameters
     //
     @Option(
-            name = "request_token",
-            description =  "request token",
-            required=false,
-            log=true
+          name = "request_token",
+          description = "request token",
+          required = false,
+          log = true
     )
     private String srmExtendFileLifetimeRequestToken;
 
@@ -1106,58 +1120,70 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setExtendFileLifetimeRequestToken(String token) {
-        srmExtendFileLifetimeRequestToken=token;
+        srmExtendFileLifetimeRequestToken = token;
     }
 
     @Option(
-            name = "file_lifetime",
-            description =  "number of seconds to add to current time to extend file lifetime of SURL(s)",
-            required=false,
-            log=true,
-            save=true
+          name = "file_lifetime",
+          description = "number of seconds to add to current time to extend file lifetime of SURL(s)",
+          required = false,
+          log = true,
+          save = true
     )
     private Integer newFileLifetime;
 
-    public Integer getNewFileLifetime() { return newFileLifetime; }
+    public Integer getNewFileLifetime() {
+        return newFileLifetime;
+    }
 
-    public void setNewFileLifetime(Integer lt) { newFileLifetime=lt; }
+    public void setNewFileLifetime(Integer lt) {
+        newFileLifetime = lt;
+    }
 
 
     @Option(
-            name = "pin_lifetime",
-            description =  "number of seconds to add to current time to extend pin lifetime of SURL(s)",
-            required=false,
-            log=true,
-            save=true
+          name = "pin_lifetime",
+          description = "number of seconds to add to current time to extend pin lifetime of SURL(s)",
+          required = false,
+          log = true,
+          save = true
     )
     private Integer newPinLifetime;
 
-    public Integer getNewPinLifetime() { return newPinLifetime; }
+    public Integer getNewPinLifetime() {
+        return newPinLifetime;
+    }
 
-    public void setNewPinLifetime(Integer lt) { newPinLifetime=lt; }
+    public void setNewPinLifetime(Integer lt) {
+        newPinLifetime = lt;
+    }
 
     @Option(
-            name = "extendFileLifetime",
-            description =  "exend file(s) lifetimes",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "extendFileLifetime",
+          description = "exend file(s) lifetimes",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
-    private boolean  extendFileLifetime;
+    private boolean extendFileLifetime;
 
-    public boolean isExtendFileLifetime() { return extendFileLifetime; }
+    public boolean isExtendFileLifetime() {
+        return extendFileLifetime;
+    }
 
-    public void setExtendFileLifetime(boolean x) { extendFileLifetime=x; }
+    public void setExtendFileLifetime(boolean x) {
+        extendFileLifetime = x;
+    }
 
     private String getRequestStatusSurl;
 
     @Option(
-            name = "connect_to_wsdl",
-            description =  "connect to WSDL instead of connecting to the server directly",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "connect_to_wsdl",
+          description = "connect to WSDL instead of connecting to the server directly",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean connect_to_wsdl;
 
@@ -1170,11 +1196,11 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(name = "transport",
-            description = "the transport to use when connecting to server.",
-            defaultValue = "GSI",
-            required=false,
-            log=true,
-            save=true)
+          description = "the transport to use when connecting to server.",
+          defaultValue = "GSI",
+          required = false,
+          log = true,
+          save = true)
     private String transport;
 
     public Transport getTransport() {
@@ -1186,21 +1212,21 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "version",
-            description =  	"print SRM version information",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "version",
+          description = "print SRM version information",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean version;
 
 
     @Option(
-            name = "report",
-            description =  	"the path to the report file",
-            required=false,
-            log=true,
-            save=true
+          name = "report",
+          description = "the path to the report file",
+          required = false,
+          log = true,
+          save = true
     )
     private String report;
 
@@ -1213,28 +1239,30 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "server_mode",
-            description =  	"gridftp server mode for data transfer (\"passive\" or \"active\"). Needs to be explicitly specified to appropriate value if client or ftp server is behind a firewall",
-            defaultValue = "null",
-            required=false,
-            log=true,
-            save=true
+          name = "server_mode",
+          description = "gridftp server mode for data transfer (\"passive\" or \"active\"). Needs to be explicitly specified to appropriate value if client or ftp server is behind a firewall",
+          defaultValue = "null",
+          required = false,
+          log = true,
+          save = true
     )
     private String server_mode;
 
-    public String getServerMode() { return server_mode; }
+    public String getServerMode() {
+        return server_mode;
+    }
 
     public synchronized void setServerMode(String x) {
-        server_mode=x;
+        server_mode = x;
     }
 
     @Option(
-            name = "storagetype",
-            description =  	"<permanent|volatile|durable> to specify type of storage to use",
-            defaultValue = "null",
-            required=false,
-            log=true,
-            save=true
+          name = "storagetype",
+          description = "<permanent|volatile|durable> to specify type of storage to use",
+          defaultValue = "null",
+          required = false,
+          log = true,
+          save = true
     )
     private String storagetype;
 
@@ -1247,12 +1275,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "l",
-            description = "long format mode",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
+          name = "l",
+          description = "long format mode",
+          defaultValue = "false",
+          required = false,
+          log = true,
+          save = true
     )
     private boolean longLsFormat;
 
@@ -1260,16 +1288,16 @@ public class Configuration extends ConnectionConfiguration {
         return longLsFormat;
     }
 
-    public void  setLongLsFormat(boolean x) {
-        longLsFormat=x;
+    public void setLongLsFormat(boolean x) {
+        longLsFormat = x;
     }
 
     @Option(
-            name = "recursion_depth",
-            description = "directory tree depth level",
-            defaultValue = "1",
-            required=false,
-            log=false
+          name = "recursion_depth",
+          description = "directory tree depth level",
+          defaultValue = "1",
+          required = false,
+          log = false
     )
     private int recursionDepth;
 
@@ -1278,15 +1306,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setRecursionDepth(int x) {
-        recursionDepth=x;
+        recursionDepth = x;
     }
 
     @Option(
-            name = "recursive",
-            description = "enables recursive empty directory deletion",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "recursive",
+          description = "enables recursive empty directory deletion",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean recursive;
 
@@ -1300,12 +1328,12 @@ public class Configuration extends ConnectionConfiguration {
 
 
     @Option(
-            name = "offset",
-            description = "offset the number of elements to report",
-            defaultValue = "0",
-            required=false,
-            log=true,
-            save=true
+          name = "offset",
+          description = "offset the number of elements to report",
+          defaultValue = "0",
+          required = false,
+          log = true,
+          save = true
     )
     private int lsOffset;
 
@@ -1314,16 +1342,16 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setLsOffset(int x) {
-        lsOffset=x;
+        lsOffset = x;
     }
 
     @Option(
-            name = "count",
-            description = "number of elements to report",
-            defaultValue = "null",
-            required=false,
-            log=true,
-            save=true
+          name = "count",
+          description = "number of elements to report",
+          defaultValue = "null",
+          required = false,
+          log = true,
+          save = true
     )
     private Integer lsCount;
 
@@ -1332,17 +1360,17 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setLsCount(Integer count) {
-        lsCount=count;
+        lsCount = count;
     }
 
     @Option(
-            name = "request_lifetime",
-            description = "<num of seconds> request lifetime",
-            defaultValue = "86400",
-            unit = "seconds",
-            required=false,
-            log=true,
-            save=true
+          name = "request_lifetime",
+          description = "<num of seconds> request lifetime",
+          defaultValue = "86400",
+          unit = "seconds",
+          required = false,
+          log = true,
+          save = true
     )
     private long request_lifetime;
 
@@ -1355,12 +1383,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "priority",
-            description = "specify request priority, 0 is lowest",
-            defaultValue = "0",
-            required=false,
-            log=true,
-            save=true
+          name = "priority",
+          description = "specify request priority, 0 is lowest",
+          defaultValue = "0",
+          required = false,
+          log = true,
+          save = true
     )
     private Integer priority;
 
@@ -1373,14 +1401,14 @@ public class Configuration extends ConnectionConfiguration {
         this.priority = p;
     }
 
-    private final Map<String,String> storageSystemInfo =  new HashMap<>();
+    private final Map<String, String> storageSystemInfo = new HashMap<>();
 
     @Option(
-            name = "overwrite_mode",
-            description = "<ALWAYS|NEVER|WHEN_FILES_ARE_DIFFERENT>",
-            required=false,
-            log=true,
-            save=true
+          name = "overwrite_mode",
+          description = "<ALWAYS|NEVER|WHEN_FILES_ARE_DIFFERENT>",
+          required = false,
+          log = true,
+          save = true
     )
     private String overwriteMode;
 
@@ -1391,16 +1419,17 @@ public class Configuration extends ConnectionConfiguration {
     public void setOverwriteMode(String overwriteMode) {
         this.overwriteMode = overwriteMode;
     }
+
     //
     // checksum options
     //
     @Option(
-            name = "send_cksm",
-            description = "send check sum to gridftp server",
-            required=false,
-            log=true,
-            defaultValue="true",
-            save=true
+          name = "send_cksm",
+          description = "send check sum to gridftp server",
+          required = false,
+          log = true,
+          defaultValue = "true",
+          save = true
     )
     private boolean doSendCheckSum;
 
@@ -1408,53 +1437,53 @@ public class Configuration extends ConnectionConfiguration {
         return doSendCheckSum;
     }
 
-    public void setDoSendCheckSum(boolean sendCheckSum ) {
+    public void setDoSendCheckSum(boolean sendCheckSum) {
         doSendCheckSum = sendCheckSum;
     }
 
     @Option(
-            name = "cksm_type",
-            description = "<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5|....). If checksum value has been omitted, missing value will be computed over the local file. If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server. For gridftp transfers to/from servers that support checksumming features",
-            required=false,
-            log=true,
-            save=true
+          name = "cksm_type",
+          description = "<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5|....). If checksum value has been omitted, missing value will be computed over the local file. If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server. For gridftp transfers to/from servers that support checksumming features",
+          required = false,
+          log = true,
+          save = true
     )
     private String cksm_type;
 
 
-    public String getCksmType(){
+    public String getCksmType() {
         return this.cksm_type;
     }
 
-    public void setCksmType(String type){
+    public void setCksmType(String type) {
         this.cksm_type = type;
     }
 
     @Option(
-            name = "cksm_value",
-            description = "<checksum HEX value> override dynamic calucation of the local checksum with this value. If cksm_type option has not been set, adler32 will be assumed. For gridftp transfers to/from servers that support checksumming features",
-            required=false,
-            log=true
+          name = "cksm_value",
+          description = "<checksum HEX value> override dynamic calucation of the local checksum with this value. If cksm_type option has not been set, adler32 will be assumed. For gridftp transfers to/from servers that support checksumming features",
+          required = false,
+          log = true
     )
     private String cksm_value;
 
 
-    public String getCksmValue(){
+    public String getCksmValue() {
         return this.cksm_value;
     }
 
-    public void setCksmValue(String value){
+    public void setCksmValue(String value) {
         this.cksm_value = value;
     }
 
     @Option(
-            name = "linkgroup",
-            description = "the name of the linkgroup from which space will be "
-                    + "reserved.  This value is honoured by dCache v3.2 or "
-                    + "newer; older dCache instances and non-dCache SRM "
-                    + "instances will ignore this value.",
-            required = false,
-            log = true
+          name = "linkgroup",
+          description = "the name of the linkgroup from which space will be "
+                + "reserved.  This value is honoured by dCache v3.2 or "
+                + "newer; older dCache instances and non-dCache SRM "
+                + "instances will ignore this value.",
+          required = false,
+          log = true
     )
     private String linkgroup;
 
@@ -1469,11 +1498,11 @@ public class Configuration extends ConnectionConfiguration {
     private String arrayOfRequestTokens[];
 
     @Option(
-            name = "abortRequest",
-            description =  "to abort request",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "abortRequest",
+          description = "to abort request",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean is_AbortRequest;
 
@@ -1486,19 +1515,19 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "print_performance",
-            description = "if print_performance is set to a true, " +
-            "print start and end time of each client run, " +
-            "followed by the number of the specific run, "+
-            "followed by the value of the perf string, ",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "print_performance",
+          description = "if print_performance is set to a true, " +
+                "print start and end time of each client run, " +
+                "followed by the number of the specific run, " +
+                "followed by the value of the perf string, ",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean printPerformance;
 
     public boolean isPrintPerfomance() {
-        return printPerformance ;
+        return printPerformance;
     }
 
     public void setPrintPerfomance(boolean printPerformance) {
@@ -1506,18 +1535,18 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "performance_test_name",
-            description = "if performance_test_name is set to a true, " +
-            "and performance_test_name is specified, this name will be printed in " +
-            "each line with performance info ",
-            defaultValue = "null",
-            required=false,
-            log=true
+          name = "performance_test_name",
+          description = "if performance_test_name is set to a true, " +
+                "and performance_test_name is specified, this name will be printed in " +
+                "each line with performance info ",
+          defaultValue = "null",
+          required = false,
+          log = true
     )
     private String performanceTestName;
 
     public String getPerformanceTestName() {
-        return performanceTestName ;
+        return performanceTestName;
     }
 
     public void setPerformanceTestName(String performanceTestName) {
@@ -1526,12 +1555,12 @@ public class Configuration extends ConnectionConfiguration {
 
 
     @Option(
-            name = "repeat",
-            description = "number of times to repeat a client run",
-            defaultValue = "1",
-            required=false,
-            log=true,
-            save=true
+          name = "repeat",
+          description = "number of times to repeat a client run",
+          defaultValue = "1",
+          required = false,
+          log = true,
+          save = true
     )
     private int repeatCount;
 
@@ -1540,15 +1569,15 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setRepeatCount(int count) {
-        repeatCount=count;
+        repeatCount = count;
     }
 
     @Option(
-            name = "dryrun",
-            description =  	"performs srm \"get/put\", without actual data transfer for use as a diagnostics tool",
-            defaultValue = "false",
-            required=false,
-            log=true
+          name = "dryrun",
+          description = "performs srm \"get/put\", without actual data transfer for use as a diagnostics tool",
+          defaultValue = "false",
+          required = false,
+          log = true
     )
     private boolean dryRun;
 
@@ -1562,12 +1591,12 @@ public class Configuration extends ConnectionConfiguration {
 
 
     @Option(
-            name = "first_byte_timeout",
-            description = "griftp client option, timeout before first byte sent/received in seconds",
-            defaultValue = "3600",
-            required=false,
-            log=true,
-            save=true
+          name = "first_byte_timeout",
+          description = "griftp client option, timeout before first byte sent/received in seconds",
+          defaultValue = "3600",
+          required = false,
+          log = true,
+          save = true
     )
     private int firstByteTimeout;
 
@@ -1576,12 +1605,12 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     @Option(
-            name = "next_byte_timeout",
-            description = "griftp client option, timeout before next byte sent/received",
-            defaultValue = "600",
-            required=false,
-            log=true,
-            save=true
+          name = "next_byte_timeout",
+          description = "griftp client option, timeout before next byte sent/received",
+          defaultValue = "600",
+          required = false,
+          log = true,
+          save = true
     )
     private int nextByteTimeout;
 
@@ -1594,354 +1623,381 @@ public class Configuration extends ConnectionConfiguration {
     private String surls[];
 
     private String mkdir_options =
-        " srmmkdir options : \n"
-        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
-        + "Examples: \n"
-        + "\t\t srm -mkmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/path/ \n";
+          " srmmkdir options : \n"
+                + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                + "Examples: \n"
+                + "\t\t srm -mkmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/path/ \n";
 
     private String rm_options =
-        " srmrm options : \n"
-        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
-        + "\t\t Applies to files only.\n";
+          " srmrm options : \n"
+                + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                + "\t\t Applies to files only.\n";
 
     private String getPermission_options =
-        " srm-get-permissions options: \n"
-        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
+          " srm-get-permissions options: \n"
+                + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
     private String checkPermission_options =
-        " srm-check-permissions options : \n"
-        + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
+          " srm-check-permissions options : \n"
+                + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
     public final String usage() {
-        String general_options=
-            " General Options :\n"+
-            OptionParser.printOptions(this,"version",
-                    "debug",
-                    "srmcphome",
-                    "gsissl",
-                    "mapfile",
-                    "wsdl_url",
-                    "webservice_path",
-                    "webservice_protocol",
-                    "bearer_token",
-                    "use_proxy",
-                    "x509_user_proxy",
-                    "x509_user_cert",
-                    "x509_user_key",
-                    "x509_user_trusted_certificates",
-                    "globus_tcp_port_range",
-                    "gss_expected_name",
-                    "conf",
-                    "save_conf",
-                    "retry_timeout",
-                    "retry_num",
-                    "connect_to_wsdl",
-                    "delegate",
-                    "full_delegation",
-                    "transport",
-                    "h",
-            "help");
-        if(getSpaceTokens) {
-            String getSpaceTokensOptions="get-space-tokens options :\n"+
-            OptionParser.printOptions(this,"space_desc");
+        String general_options =
+              " General Options :\n" +
+                    OptionParser.printOptions(this, "version",
+                          "debug",
+                          "srmcphome",
+                          "gsissl",
+                          "mapfile",
+                          "wsdl_url",
+                          "webservice_path",
+                          "webservice_protocol",
+                          "bearer_token",
+                          "use_proxy",
+                          "x509_user_proxy",
+                          "x509_user_cert",
+                          "x509_user_key",
+                          "x509_user_trusted_certificates",
+                          "globus_tcp_port_range",
+                          "gss_expected_name",
+                          "conf",
+                          "save_conf",
+                          "retry_timeout",
+                          "retry_num",
+                          "connect_to_wsdl",
+                          "delegate",
+                          "full_delegation",
+                          "transport",
+                          "h",
+                          "help");
+        if (getSpaceTokens) {
+            String getSpaceTokensOptions = "get-space-tokens options :\n" +
+                  OptionParser.printOptions(this, "space_desc");
             return
-            "\nUsage:get-space-tokens [command line options]  srmurl\n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getSpaceTokensOptions:getSpaceTokensOptions);
+                  "\nUsage:get-space-tokens [command line options]  srmurl\n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + getSpaceTokensOptions
+                              : getSpaceTokensOptions);
         }
         if (copy) {
-            String copy_options=" srmcp options :\n"+
-            OptionParser.printOptions(this,"urlopy",
-                    "buffer_size",
-                    "tcp_buffer_size",
-                    "streams_num",
-                    "send_cksm",
-                    "server_mode",
-                    "storagetype",
-                    "array_of_client_networks",
-                    "protocols",
-                    "space_token",
-                    "retention_policy",
-                    "access_latency",
-                    "access_pattern",
-                    "connection_type",
-                    "overwrite_mode",
-                    "pushmode",
-                    "use_urlcopy_script",
-                    "priority",
-                    "request_lifetime",
-                    "copyjobfile",
-                    "report",
-                    "cksm_type",
-                    "cksm_value",
-                    "first_byte_timeout",
-                    "next_byte_timeout")+
-            "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"+
-            "the following return codes are supported:\n"+
-            "\t\t 0 - success\n"+
-            "\t\t 1 - general error\n"+
-            "\t\t 2 - file exists, can not overwrite\n"+
-            "\t\t 3 - user permission error\n" +
-            "Example of srm put:\n" +
-            "\t\t srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy\n"+
-            "Example of srm get:\n" +
-            "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh\n"+
-            "Example of srm copy (srm to srm):\n" +
-            "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy\n"+
-            "Example of srm copy (gsiftp to srm):\n" +
-            "\t\t srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file\n"+
-            "port number is optional\n";
+            String copy_options = " srmcp options :\n" +
+                  OptionParser.printOptions(this, "urlopy",
+                        "buffer_size",
+                        "tcp_buffer_size",
+                        "streams_num",
+                        "send_cksm",
+                        "server_mode",
+                        "storagetype",
+                        "array_of_client_networks",
+                        "protocols",
+                        "space_token",
+                        "retention_policy",
+                        "access_latency",
+                        "access_pattern",
+                        "connection_type",
+                        "overwrite_mode",
+                        "pushmode",
+                        "use_urlcopy_script",
+                        "priority",
+                        "request_lifetime",
+                        "copyjobfile",
+                        "report",
+                        "cksm_type",
+                        "cksm_value",
+                        "first_byte_timeout",
+                        "next_byte_timeout") +
+                  "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
+                  "the following return codes are supported:\n" +
+                  "\t\t 0 - success\n" +
+                  "\t\t 1 - general error\n" +
+                  "\t\t 2 - file exists, can not overwrite\n" +
+                  "\t\t 3 - user permission error\n" +
+                  "Example of srm put:\n" +
+                  "\t\t srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy\n" +
+                  "Example of srm get:\n" +
+                  "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh\n"
+                  +
+                  "Example of srm copy (srm to srm):\n" +
+                  "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy\n"
+                  +
+                  "Example of srm copy (gsiftp to srm):\n" +
+                  "\t\t srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file\n"
+                  +
+                  "port number is optional\n";
             return
-            "\nUsage: srmcp [command line options] source(s) destination\n\n"+
-            " or  : srmcp [command line options] -copyjobfile=<file>\n"+
-            "       either source(s) or destination or both should be (an) srm url\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+copy_options:copy_options);
+                  "\nUsage: srmcp [command line options] source(s) destination\n\n" +
+                        " or  : srmcp [command line options] -copyjobfile=<file>\n" +
+                        "       either source(s) or destination or both should be (an) srm url\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + copy_options : copy_options);
         }
         if (bringOnline) {
-            String bring_online_options=" srm-bring-online options: \n"+
-            OptionParser.printOptions(this,
-                    "storagetype",
-                    "protocols",
-                    "space_token",
-                    "access_pattern",
-                    "connection_type",
-                    "array_of_client_networks",
-                    "retention_policy",
-                    "access_latency",
-                    "request_lifetime",
-                    "lifetime",
-                    "priority",
-                    "report")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
+            String bring_online_options = " srm-bring-online options: \n" +
+                  OptionParser.printOptions(this,
+                        "storagetype",
+                        "protocols",
+                        "space_token",
+                        "access_pattern",
+                        "connection_type",
+                        "array_of_client_networks",
+                        "retention_policy",
+                        "access_latency",
+                        "request_lifetime",
+                        "lifetime",
+                        "priority",
+                        "report")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
 
             return
-            "\nUsage: srm-bring-online [command line options] srmUrl(s)\n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+bring_online_options:bring_online_options);
+                  "\nUsage: srm-bring-online [command line options] srmUrl(s)\n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + bring_online_options
+                              : bring_online_options);
         }
 
         if (reserveSpace) {
-            String reserveSpace_options=" srm-reserve-space options : \n"
-                    + OptionParser.printOptions(this, "space_desc",
-                            "retention_policy", "access_latency", "access_pattern",
-                            "array_of_client_networks", "protocols",
-                            "connection_type", "desired_size", "guaranteed_size",
-                            "lifetime", "linkgroup")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
-                    + printMandatoryOptions("retention_policy","guaranteed_size");
+            String reserveSpace_options = " srm-reserve-space options : \n"
+                  + OptionParser.printOptions(this, "space_desc",
+                  "retention_policy", "access_latency", "access_pattern",
+                  "array_of_client_networks", "protocols",
+                  "connection_type", "desired_size", "guaranteed_size",
+                  "lifetime", "linkgroup")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                  + printMandatoryOptions("retention_policy", "guaranteed_size");
             return
-            "\nUsage: srm-reserve-space [command line options]  srmUrl\n\n"+
-            "       default options are read from configuration file\n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+reserveSpace_options:reserveSpace_options);
+                  "\nUsage: srm-reserve-space [command line options]  srmUrl\n\n" +
+                        "       default options are read from configuration file\n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + reserveSpace_options
+                              : reserveSpace_options);
         }
-        if(getSpaceMetaData) {
-            String getSpaceMetaData_options = " srm-get-space-metadata options:\n"+
-            OptionParser.printOptions(this,"space_tokens")+
-            printMandatoryOptions("space_tokens");
+        if (getSpaceMetaData) {
+            String getSpaceMetaData_options = " srm-get-space-metadata options:\n" +
+                  OptionParser.printOptions(this, "space_tokens") +
+                  printMandatoryOptions("space_tokens");
             return
-            "\nUsage: srm-get-space-metadata [commnad line options] srmUrl\n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getSpaceMetaData_options:getSpaceMetaData_options);
+                  "\nUsage: srm-get-space-metadata [commnad line options] srmUrl\n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + getSpaceMetaData_options
+                              : getSpaceMetaData_options);
 
 
         }
         if (releaseSpace) {
             String releaseSpace_options = " srm-release-space options :\n"
-                    + OptionParser.printOptions(this, "space_token", "force")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
-                    + printMandatoryOptions("space_token");
+                  + OptionParser.printOptions(this, "space_token", "force")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                  + printMandatoryOptions("space_token");
 
             return
-            "\nUsage: srm-release-space [command line options]  srmUrl\n\n"+
-            "     default options can be set in configuration file \n"+
-            "     or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+releaseSpace_options:releaseSpace_options);
+                  "\nUsage: srm-release-space [command line options]  srmUrl\n\n" +
+                        "     default options can be set in configuration file \n" +
+                        "     or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + releaseSpace_options
+                              : releaseSpace_options);
         }
         if (ls) {
-            String ls_options="srmls options :\n"
-                    + OptionParser.printOptions(this,"l","recursion_depth","count","offset")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
+            String ls_options = "srmls options :\n"
+                  + OptionParser.printOptions(this, "l", "recursion_depth", "count", "offset")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n";
             return
-            "\nUsage: srmls [command line options] srmUrl [[srmUrl]...]\n\n" +
-            (isHelp()==true?general_options+ls_options:ls_options);
+                  "\nUsage: srmls [command line options] srmUrl [[srmUrl]...]\n\n" +
+                        (isHelp() == true ? general_options + ls_options : ls_options);
         }
         if (is_rm) {
             return
-            "\nUsage: srmrm [command line options] srmUrl [[srmUrl]...]\n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+rm_options:rm_options);
+                  "\nUsage: srmrm [command line options] srmUrl [[srmUrl]...]\n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + rm_options : rm_options);
         }
         if (is_mv) {
-            String move_options= "srmmv options :\n"
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
-            "Only moves within single storage system are allowed \n"+
-            "(you can't mv from one SRM to another SRM \n"+
-            "(or from/to remote/local filesystem, use copy and delete)).\n";
+            String move_options = "srmmv options :\n"
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
+                  "Only moves within single storage system are allowed \n" +
+                  "(you can't mv from one SRM to another SRM \n" +
+                  "(or from/to remote/local filesystem, use copy and delete)).\n";
             return
-            "\nUsage: srmmv [command line options] sourceSrmUrl destinationSrmUrl \n\n"+
-            (isHelp()==true?general_options+move_options:move_options);
+                  "\nUsage: srmmv [command line options] sourceSrmUrl destinationSrmUrl \n\n" +
+                        (isHelp() == true ? general_options + move_options : move_options);
         }
         if (is_getRequestSummary) {
-            String getRequestSummary_options=" srm-get-request-summary options:\n"+
-            OptionParser.printOptions(this,"request_tokens");
+            String getRequestSummary_options = " srm-get-request-summary options:\n" +
+                  OptionParser.printOptions(this, "request_tokens");
             return
-            "\nUsage: srm-get-request-summary [command line options] srmUrl \n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getRequestSummary_options:getRequestSummary_options);
+                  "\nUsage: srm-get-request-summary [command line options] srmUrl \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + getRequestSummary_options
+                              : getRequestSummary_options);
         }
         if (is_AbortRequest) {
-            String abortRequest_options = " srm-abort-request options: \n"+
-            OptionParser.printOptions(this,"request_tokens");
+            String abortRequest_options = " srm-abort-request options: \n" +
+                  OptionParser.printOptions(this, "request_tokens");
             return
-            "\nUsage: srm-abort-request [command line options] srmUrl \n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n"+
-            "       the command line options are one or more of the following:\n"+
-            (isHelp()==true?general_options+abortRequest_options:abortRequest_options);
+                  "\nUsage: srm-abort-request [command line options] srmUrl \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n" +
+                        "       the command line options are one or more of the following:\n" +
+                        (isHelp() == true ? general_options + abortRequest_options
+                              : abortRequest_options);
         }
         if (is_AbortFiles) {
-            String abortFiles_options=
-                " srm-abort-files options : \n"+
-                OptionParser.printOptions(this, "request_tokens");
+            String abortFiles_options =
+                  " srm-abort-files options : \n" +
+                        OptionParser.printOptions(this, "request_tokens");
             return
-            "\nUsage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+abortFiles_options:abortFiles_options);
+                  "\nUsage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + abortFiles_options
+                              : abortFiles_options);
         }
         if (is_ReleaseFiles) {
-            String releaseFiles_options=
-                " srm-release-files options : \n"+
-                OptionParser.printOptions(this,"request_tokens","do_remove");
+            String releaseFiles_options =
+                  " srm-release-files options : \n" +
+                        OptionParser.printOptions(this, "request_tokens", "do_remove");
             return
-            "\nUsage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+releaseFiles_options:releaseFiles_options);
+                  "\nUsage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + releaseFiles_options
+                              : releaseFiles_options);
         }
         if (is_getRequestTokens) {
-            String getRequestTokens_options=
-                " srm-get-request-tokens options :\n"+
-                OptionParser.printOptions(this,"request_desc");
+            String getRequestTokens_options =
+                  " srm-get-request-tokens options :\n" +
+                        OptionParser.printOptions(this, "request_desc");
             return
-            "\nUsage: srm-get-request-tokens [command line options] srmUrl  \n\n"+
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getRequestTokens_options:getRequestTokens_options);
+                  "\nUsage: srm-get-request-tokens [command line options] srmUrl  \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + getRequestTokens_options
+                              : getRequestTokens_options);
         }
         if (is_rmdir) {
             String rmdir_options = " srmrmdir options :\n"
-                    + OptionParser.printOptions(this, "recursive")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
-                "\t\t -rmdir is defined in SRM specification as :\n"+
-                "\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"+
-                "\t\t srmRm(), this function is for directories only. \"\n"+
-                "\t\t so it is unclear id the directories must be empty. \n"+
-                "\t\t We interpret \"rmdir\" as Unix \"rmdir\" which allows to remove only empty directories \n"+
-                "\t\t extending it to have an ability to remove trees of empty directories. \n"+
-                "\t\t Removal of multiple directories is not supported \n"+
-                "\t\t Removal of files is not supported (use srmrm).\n";
+                  + OptionParser.printOptions(this, "recursive")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n" +
+                  "\t\t -rmdir is defined in SRM specification as :\n" +
+                  "\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"
+                  +
+                  "\t\t srmRm(), this function is for directories only. \"\n" +
+                  "\t\t so it is unclear id the directories must be empty. \n" +
+                  "\t\t We interpret \"rmdir\" as Unix \"rmdir\" which allows to remove only empty directories \n"
+                  +
+                  "\t\t extending it to have an ability to remove trees of empty directories. \n" +
+                  "\t\t Removal of multiple directories is not supported \n" +
+                  "\t\t Removal of files is not supported (use srmrm).\n";
             return
-            "\nUsage: srmrmdir [command line options] srmUrl \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+rmdir_options:rmdir_options);
+                  "\nUsage: srmrmdir [command line options] srmUrl \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + rmdir_options : rmdir_options);
         }
         if (is_mkdir) {
             return
-            "\nUsage: srmmkdir [command line options] srmUrl \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n"+
-            "       the command line options are one or more of the following:\n"+
-            (isHelp()==true?general_options+mkdir_options:mkdir_options);
+                  "\nUsage: srmmkdir [command line options] srmUrl \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n" +
+                        "       the command line options are one or more of the following:\n" +
+                        (isHelp() == true ? general_options + mkdir_options : mkdir_options);
         }
-        if(getPermission) {
+        if (getPermission) {
             return
-            "\nUsage: srmgetpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+getPermission_options:getPermission_options);
+                  "\nUsage: srmgetpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + getPermission_options
+                              : getPermission_options);
         }
-        if(checkPermission) {
+        if (checkPermission) {
             return
-            "\nUsage: srmcheckpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?general_options+checkPermission_options:checkPermission_options);
+                  "\nUsage: srmcheckpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ? general_options + checkPermission_options
+                              : checkPermission_options);
         }
-        if(setPermission) {
+        if (setPermission) {
             String setPermission_options = " srm-set-permissions options : \n"
-                    + OptionParser.printOptions(this, "type", "owner", "other",
-                            "group")
-                    + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
-                    + printMandatoryOptions("type");
+                  + OptionParser.printOptions(this, "type", "owner", "other",
+                  "group")
+                  + "   [-extraInfo=<key>:<value> [-extraInfo=<key>:<value>...]]\n"
+                  + printMandatoryOptions("type");
 
             return
-            "\nUsage: srm-set-permissions [command line options] srmUrl [[srmUrl]...] \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options \n\n"+
-            (isHelp()==true?general_options+setPermission_options:setPermission_options);
+                  "\nUsage: srm-set-permissions [command line options] srmUrl [[srmUrl]...] \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options \n\n" +
+                        (isHelp() == true ? general_options + setPermission_options
+                              : setPermission_options);
         }
-        if(extendFileLifetime) {
+        if (extendFileLifetime) {
             String extendFileLifetime_options_string =
-                " srm-extend-file-lifetime options :\n"+
-                OptionParser.printOptions(this,"request_token",
-                        "file_lifetime",
-                "pin_lifetime");
+                  " srm-extend-file-lifetime options :\n" +
+                        OptionParser.printOptions(this, "request_token",
+                              "file_lifetime",
+                              "pin_lifetime");
             return
-            "\nUsage: srm-extend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            (isHelp()==true?
-                    general_options+
-                    extendFileLifetime_options_string :
-                        extendFileLifetime_options_string);
+                  "\nUsage: srm-extend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n\n"
+                        +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        (isHelp() == true ?
+                              general_options +
+                                    extendFileLifetime_options_string :
+                              extendFileLifetime_options_string);
         }
-        if(ping) {
+        if (ping) {
             return
-            "\nUsage: srmping  [command line options] srmUrl \n\n" +
-            "       default options can be set in configuration file \n"+
-            "       or overriden by the command line options\n\n"+
-            general_options;
+                  "\nUsage: srmping  [command line options] srmUrl \n\n" +
+                        "       default options can be set in configuration file \n" +
+                        "       or overriden by the command line options\n\n" +
+                        general_options;
         }
         return
-        "Usage: srm [command option] [command line options] arguments\n"+
-        "where command option is one of the following :\n"+
-        " -copy                   performs srm \"get\", \"put\", or \"copy\" depending \n"+
-        "                         on arguments \n"+
-        " -bringOnline            performs srmBringOnline \n"+
-        " -mv                     performs srm \"mv\" of files and directories \n"+
-        " -ls                     list content of directory \n"+
-        " -rm                     remove file(s) \n"+
-        " -mkdir                  create directory \n"+
-        " -rmdir                  remove empty directory tree \n"+
-        " -getPermissions	      get file(s) permissions \n"+
-        " -checkPermissions	      check file permissions \n"+
-        " -setPermissions	      set file permissions \n"+
-        " -extendFileLifetime     extend lifetime of existing SURL(s) pf volatile and durable files \n"+
-        "                         or pinned lifetime of TURL(s)\n"+
-        " -abortRequest           to abort request.  \n"+
-        " -abortFiles             to abort files.  \n"+
-        " -releaseFiles           to unpin files.  \n"+
-        " -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"+
-        " -getRequestTokens       retrieves request tokens for the clients requests, given client provided request description.\n"+
-        "                         This is to accommodate lost request tokens. This can also be used for getting all request tokens.\n"+
-        " -getSpaceTokens         gets space tokens belonging to this user\n"+
-        "                         which have a corresponding description (if provided)\n"+
-        " -reserveSpace           performs explicit space reservation \n"+
-        " -releaseSpace           performs release of explicit  space reservation \n"+
-        " -getSpaceMetaData       retrieves and prints metadata for given space tokens\n"+
-        " -ping                   performs srm ping command (useful for diagnostics and version info) \n"+
-        " -h,-help                prints this help\n"+
-        " type srm [command option] -h for more info about a particular option";
+              "Usage: srm [command option] [command line options] arguments\n" +
+                    "where command option is one of the following :\n" +
+                    " -copy                   performs srm \"get\", \"put\", or \"copy\" depending \n"
+                    +
+                    "                         on arguments \n" +
+                    " -bringOnline            performs srmBringOnline \n" +
+                    " -mv                     performs srm \"mv\" of files and directories \n" +
+                    " -ls                     list content of directory \n" +
+                    " -rm                     remove file(s) \n" +
+                    " -mkdir                  create directory \n" +
+                    " -rmdir                  remove empty directory tree \n" +
+                    " -getPermissions	      get file(s) permissions \n" +
+                    " -checkPermissions	      check file permissions \n" +
+                    " -setPermissions	      set file permissions \n" +
+                    " -extendFileLifetime     extend lifetime of existing SURL(s) pf volatile and durable files \n"
+                    +
+                    "                         or pinned lifetime of TURL(s)\n" +
+                    " -abortRequest           to abort request.  \n" +
+                    " -abortFiles             to abort files.  \n" +
+                    " -releaseFiles           to unpin files.  \n" +
+                    " -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"
+                    +
+                    " -getRequestTokens       retrieves request tokens for the clients requests, given client provided request description.\n"
+                    +
+                    "                         This is to accommodate lost request tokens. This can also be used for getting all request tokens.\n"
+                    +
+                    " -getSpaceTokens         gets space tokens belonging to this user\n" +
+                    "                         which have a corresponding description (if provided)\n"
+                    +
+                    " -reserveSpace           performs explicit space reservation \n" +
+                    " -releaseSpace           performs release of explicit  space reservation \n" +
+                    " -getSpaceMetaData       retrieves and prints metadata for given space tokens\n"
+                    +
+                    " -ping                   performs srm ping command (useful for diagnostics and version info) \n"
+                    +
+                    " -h,-help                prints this help\n" +
+                    " type srm [command option] -h for more info about a particular option";
     }
 
     public void parseArguments(String arguments[]) throws Exception {
@@ -1955,18 +2011,18 @@ public class Configuration extends ConnectionConfiguration {
         // elsewhere. In addition attempt has been made to
         // handle arbitrary space paddings between "="
         //
-        Set<String> optionMap=OptionParser.getOptions(this);
+        Set<String> optionMap = OptionParser.getOptions(this);
         StringBuilder sb = new StringBuilder();
         {
-            int i=0;
-            while(i<arguments.length) {
+            int i = 0;
+            while (i < arguments.length) {
                 //
                 // follow Gerd's suggestion and strip "-" to
                 // expose possible option name
                 //
                 String name = arguments[i];
-                while(name.startsWith("-")) {
-                    name=name.substring(1);
+                while (name.startsWith("-")) {
+                    name = name.substring(1);
                 }
                 if (optionMap.contains(name)) {
                     //
@@ -1982,10 +2038,10 @@ public class Configuration extends ConnectionConfiguration {
                     // checks if option is boolean, of not we will get
                     // exception later)
                     //
-                    if (i>=arguments.length) {
+                    if (i >= arguments.length) {
                         break;
                     }
-                    String value=arguments[i];
+                    String value = arguments[i];
                     //
                     // Option value must be :
                     // 1) string that does not start with "-"
@@ -1993,12 +2049,12 @@ public class Configuration extends ConnectionConfiguration {
                     //
                     // 2) string that does not start with "="
                     //
-                    if(value.startsWith("-")) {
+                    if (value.startsWith("-")) {
                         //
                         //"-1" and "-2" are magic numbers, nothing I can do
                         // here but:
                         //
-                        if (value.equals("-1")||value.equals("-2")) {
+                        if (value.equals("-1") || value.equals("-2")) {
                             sb.append(" ");
                             continue;
                         }
@@ -2013,8 +2069,7 @@ public class Configuration extends ConnectionConfiguration {
                             sb.append("=").append(value).append(" ");
                             i++;
                             continue;
-                        }
-                        catch (NumberFormatException nfe) {
+                        } catch (NumberFormatException nfe) {
                             // if we got here, we found another option
                             // so our input looked like "-option1 -option2"
                             // this is what we know how to process, just add
@@ -2022,8 +2077,7 @@ public class Configuration extends ConnectionConfiguration {
                             sb.append(" ");
                             continue;
                         }
-                    }
-                    else if (!value.startsWith("=")) {
+                    } else if (!value.startsWith("=")) {
                         //
                         // if value does not start with "=" and
                         // it is not an argument, and here we
@@ -2032,14 +2086,13 @@ public class Configuration extends ConnectionConfiguration {
                         // value and what is argument by checking this:
                         //
                         if (!value.startsWith("file:") &&
-                                !value.startsWith("srm:") &&
-                                !value.startsWith("gsiftp:") &&
-                                !value.startsWith("http")) {
+                              !value.startsWith("srm:") &&
+                              !value.startsWith("gsiftp:") &&
+                              !value.startsWith("http")) {
                             sb.append("=").append(value).append(" ");
                             i++;
                             continue;
-                        }
-                        else {
+                        } else {
                             //
                             // we got here if we had "-option srm:/..."
                             // just append space and proceed to attach SURL at the next
@@ -2047,16 +2100,14 @@ public class Configuration extends ConnectionConfiguration {
                             sb.append(" ");
                             continue;
                         }
-                    }
-                    else {
+                    } else {
                         // we got here if
                         // value of the option looks like :
                         // "=123" "="
                         // do nothing, we will append it at the next iteration
                         continue;
                     }
-                }
-                else {
+                } else {
                     //
                     // we do not have space separator, or
                     // we got here on the next iteration, after
@@ -2074,8 +2125,7 @@ public class Configuration extends ConnectionConfiguration {
                         // this is "complete" case ((1) (4) (5))
                         //
                         sb.append(arguments[i]).append(" ");
-                    }
-                    else {
+                    } else {
                         //
                         // if we have "exposed" "=" then we
                         // have incomplete case ((2) (3))
@@ -2105,26 +2155,26 @@ public class Configuration extends ConnectionConfiguration {
         // of config_file field. Make sure "conf" options is specified.
         //
         if (args.hasOption("conf")) {
-            OptionParser.parseOption(this,"conf",args);
-        }
-        else {
-            config_file=DEFAULT_CONFIG_FILE;
+            OptionParser.parseOption(this, "conf", args);
+        } else {
+            config_file = DEFAULT_CONFIG_FILE;
         }
         File f = new File(config_file);
         if (f.exists() && f.canRead()) {
             read(config_file);
-        }
-        else {
+        } else {
             if (args.hasOption("conf")) {
-                throw new IOException("specified configuratioin file \""+config_file+"\" does not exist or can not be read");
+                throw new IOException("specified configuratioin file \"" + config_file
+                      + "\" does not exist or can not be read");
             }
         }
 
         for (String value : args.getOptions("extraInfo")) {
             List<String> elements = Splitter.on(':').limit(2).splitToList(value);
             if (elements.size() != 2 || elements.get(0).isEmpty() ||
-                    elements.get(1).isEmpty()) {
-                throw new IllegalArgumentException("Illegal -extraInfo option.  Value must have the form <key>:<value>");
+                  elements.get(1).isEmpty()) {
+                throw new IllegalArgumentException(
+                      "Illegal -extraInfo option.  Value must have the form <key>:<value>");
             }
             storageSystemInfo.put(elements.get(0), elements.get(1));
         }
@@ -2137,203 +2187,186 @@ public class Configuration extends ConnectionConfiguration {
         // values from config file and then possibly overriden by command
         // line options.
         //
-        OptionParser.parseSpecifiedOptions(this,args);
-        storageSystemInfo.put("priority",priority.toString());
+        OptionParser.parseSpecifiedOptions(this, args);
+        storageSystemInfo.put("priority", priority.toString());
         //
         // take care of normal people who tend to specify range as MIN:MAX
         //
-        if (globus_tcp_port_range!=null) {
-            globus_tcp_port_range=globus_tcp_port_range.replace(':',',');
+        if (globus_tcp_port_range != null) {
+            globus_tcp_port_range = globus_tcp_port_range.replace(':', ',');
         }
         if (is_help) {
-            help=true;
+            help = true;
         }
 
         if (getRetry_timeout() <= 0) {
-            throw new IllegalArgumentException("illegal retry timeout : "+
-                    getRetry_timeout());
+            throw new IllegalArgumentException("illegal retry timeout : " +
+                  getRetry_timeout());
         }
-        if(getRetry_num() < 0) {
-            throw new IllegalArgumentException("illegal number of retries : "+
-                    getRetry_num());
+        if (getRetry_num() < 0) {
+            throw new IllegalArgumentException("illegal number of retries : " +
+                  getRetry_num());
         }
-        if(request_lifetime <= 0 && request_lifetime != -1) {
-            throw new IllegalArgumentException("illegal value for request lifetime"+
-                    request_lifetime);
+        if (request_lifetime <= 0 && request_lifetime != -1) {
+            throw new IllegalArgumentException("illegal value for request lifetime" +
+                  request_lifetime);
         }
         if (version || debug) {
             System.err.println(new Version().toString());
         }
-        if( isHelp()) {
+        if (isHelp()) {
             return;
         }
-        if(version) {
+        if (version) {
             System.exit(0);
         }
 
-        if (!( is_mv ^
-                is_mkdir ^
-                is_rmdir ^
-                is_rm ^
-                ls ^
-                copy ^
-                bringOnline ^
-                ping ^
-                getPermission ^
-                checkPermission ^
-                setPermission ^
-                extendFileLifetime ^
-                releaseSpace ^
-                reserveSpace ^
-                getSpaceMetaData ^
-                getSpaceTokens ^
-                is_getRequestSummary ^
-                is_getRequestTokens ^
-                is_AbortRequest ^
-                is_AbortFiles ^
-                is_ReleaseFiles
+        if (!(is_mv ^
+              is_mkdir ^
+              is_rmdir ^
+              is_rm ^
+              ls ^
+              copy ^
+              bringOnline ^
+              ping ^
+              getPermission ^
+              checkPermission ^
+              setPermission ^
+              extendFileLifetime ^
+              releaseSpace ^
+              reserveSpace ^
+              getSpaceMetaData ^
+              getSpaceTokens ^
+              is_getRequestSummary ^
+              is_getRequestTokens ^
+              is_AbortRequest ^
+              is_AbortFiles ^
+              is_ReleaseFiles
         )) {
             throw new IllegalArgumentException(
-                    "\n only one of the following options must be " +
-                    "specified:\n\n" + usage());
+                  "\n only one of the following options must be " +
+                        "specified:\n\n" + usage());
         }
 
         int numberOfArguments = args.argc();
 
-        if (numberOfArguments==0 && copyjobfile==null) {
-            throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
+        if (numberOfArguments == 0 && copyjobfile == null) {
+            throw new IllegalArgumentException("Please specify command line arguments\n" + usage());
         }
 
         surls = args.getArguments().toArray(String[]::new);
         srmUrl = new URI(args.argv(0));
 
         if (is_getRequestTokens) {
-            getRequestStatusSurl =  args.argv(0);
-        }
-        else if (is_getRequestSummary) {
-            getRequestStatusSurl =  args.argv(0);
-            arrayOfRequestTokens=readListOfOptions(requestTokens,",");
-        }
-        else if (is_AbortRequest) {
-            arrayOfRequestTokens=readListOfOptions(requestTokens,",");
-        }
-        else if (is_AbortFiles || is_ReleaseFiles ) {
-            arrayOfRequestTokens=readListOfOptions(requestTokens,",");
-        }
-        else if (releaseSpace) {
-            OptionParser.checkNullOptions(this,"space_token");
-        }
-        else if (reserveSpace) {
-            protocols = readListOfOptions(protocols_list,",");
-            arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
-            OptionParser.checkNullOptions(this,"retention_policy","guaranteed_size");
+            getRequestStatusSurl = args.argv(0);
+        } else if (is_getRequestSummary) {
+            getRequestStatusSurl = args.argv(0);
+            arrayOfRequestTokens = readListOfOptions(requestTokens, ",");
+        } else if (is_AbortRequest) {
+            arrayOfRequestTokens = readListOfOptions(requestTokens, ",");
+        } else if (is_AbortFiles || is_ReleaseFiles) {
+            arrayOfRequestTokens = readListOfOptions(requestTokens, ",");
+        } else if (releaseSpace) {
+            OptionParser.checkNullOptions(this, "space_token");
+        } else if (reserveSpace) {
+            protocols = readListOfOptions(protocols_list, ",");
+            arrayOfClientNetworks = readListOfOptions(array_of_client_networks, ",");
+            OptionParser.checkNullOptions(this, "retention_policy", "guaranteed_size");
             if (linkgroup != null) {
                 storageSystemInfo.put("linkgroup", linkgroup);
             }
-        }
-        else if (getSpaceMetaData) {
-            spaceTokensList=readListOfOptions(space_tokens_list,",");
-            OptionParser.checkNullOptions(this,"space_tokens");
-        }
-        else if (copy||is_mv) {
+        } else if (getSpaceMetaData) {
+            spaceTokensList = readListOfOptions(space_tokens_list, ",");
+            OptionParser.checkNullOptions(this, "space_tokens");
+        } else if (copy || is_mv) {
             if (copy) {
                 readCopyOptions();
             }
             if (copyjobfile == null) {
                 if (numberOfArguments >= 2) {
-                    if ( is_mv && numberOfArguments > 2 ) {
+                    if (is_mv && numberOfArguments > 2) {
                         throw new IllegalArgumentException(
-                                "one source and one destination " +
-                        "should be specified");
+                              "one source and one destination " +
+                                    "should be specified");
                     }
                     int number_of_sources = numberOfArguments - 1;
                     from = args.getArguments().subList(0, number_of_sources).
-                            toArray(String[]::new);
-                    to  = args.argv(number_of_sources);
-                }
-                else {
+                          toArray(String[]::new);
+                    to = args.argv(number_of_sources);
+                } else {
                     if (is_mv) {
                         throw new IllegalArgumentException(
-                                "one source and one destination " +
-                        "should be specified");
-                    }
-                    else if (copy) {
+                              "one source and one destination " +
+                                    "should be specified");
+                    } else if (copy) {
                         throw new IllegalArgumentException(
-                                "at least one source and one destination " +
-                        "should be specified");
+                              "at least one source and one destination " +
+                                    "should be specified");
                     }
                 }
-            }
-            else {
-                if (numberOfArguments > 0 ) {
+            } else {
+                if (numberOfArguments > 0) {
                     throw new IllegalArgumentException(
-                            "no source or destination should be specified when " +
-                    "using copyjobfile");
+                          "no source or destination should be specified when " +
+                                "using copyjobfile");
                 }
             }
-        }
-        else if(bringOnline){
-            protocols = readListOfOptions(protocols_list,",");
-        }
-        else if(ping) {
+        } else if (bringOnline) {
+            protocols = readListOfOptions(protocols_list, ",");
+        } else if (ping) {
             srmUrl = new URI(args.argv(0));
-        }
-        else if (setPermission) {
+        } else if (setPermission) {
             setPermissionSurl = args.argv(0);
-            OptionParser.checkNullOptions(this,"type");
-        }
-        else {
+            OptionParser.checkNullOptions(this, "type");
+        } else {
         }
     }
 
-    private void readCopyOptions()
-    {
-        protocols = readListOfOptions(protocols_list,",");
-        arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
+    private void readCopyOptions() {
+        protocols = readListOfOptions(protocols_list, ",");
+        arrayOfClientNetworks = readListOfOptions(array_of_client_networks, ",");
         readCksmOptions();
     }
 
     private String[] readListOfOptions(String option,
-                                       String separator)
-    {
+          String separator) {
         String[] listOfOptions = null;
         if (option != null) {
-            listOfOptions=option.split(separator);
+            listOfOptions = option.split(separator);
         }
         return listOfOptions;
     }
 
-    private void readCksmOptions()
-    {
-        if ( cksm_type == null ) {
-            if ( cksm_value == null ) {
+    private void readCksmOptions() {
+        if (cksm_type == null) {
+            if (cksm_value == null) {
                 return;
             }
             cksm_type = "adler32";
         }
 
-        if ( cksm_type.equals("negotiate") ) {
-            if ( cksm_value != null ) {
-                throw new IllegalArgumentException("-cksm_type=negotiate and -cksm_value=<value> are mutually exclusive");
+        if (cksm_type.equals("negotiate")) {
+            if (cksm_value != null) {
+                throw new IllegalArgumentException(
+                      "-cksm_type=negotiate and -cksm_value=<value> are mutually exclusive");
             }
-        }
-        else {
-            checkArgument(ChecksumType.isValid(cksm_type),"Invalid checksum type");
-            if ( cksm_value != null ) {
+        } else {
+            checkArgument(ChecksumType.isValid(cksm_type), "Invalid checksum type");
+            if (cksm_value != null) {
                 checkArgument(Checksum.isValid(ChecksumType.getChecksumType(cksm_type),
-                                               cksm_value),"Invalid checksum value");
+                      cksm_value), "Invalid checksum value");
             }
         }
     }
 
     public void read(String file) throws Exception {
         DocumentBuilderFactory factory =
-            DocumentBuilderFactory.newInstance();
+              DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document       = builder.parse(file);
-        Node root               = document.getFirstChild();
-        for (;root != null && !"srm-configuration".equals(root.getNodeName());
-        root = document.getNextSibling()) {
+        Document document = builder.parse(file);
+        Node root = document.getFirstChild();
+        for (; root != null && !"srm-configuration".equals(root.getNodeName());
+              root = document.getNextSibling()) {
         }
         if (root == null) {
             System.err.println(" error, root element \"srm-configuration\" is not found");
@@ -2341,12 +2374,12 @@ public class Configuration extends ConnectionConfiguration {
         }
         if (root != null && root.getNodeName().equals("srm-configuration")) {
             Node node = root.getFirstChild();
-            for (;node != null; node = node.getNextSibling()) {
-                if(node.getNodeType()!= Node.ELEMENT_NODE) {
+            for (; node != null; node = node.getNextSibling()) {
+                if (node.getNodeType() != Node.ELEMENT_NODE) {
                     continue;
                 }
                 Node child = node.getFirstChild();
-                for (;child != null; child = node.getNextSibling()) {
+                for (; child != null; child = node.getNextSibling()) {
                     if (child.getNodeType() == Node.TEXT_NODE) {
                         break;
                     }
@@ -2354,32 +2387,31 @@ public class Configuration extends ConnectionConfiguration {
                 if (child == null) {
                     continue;
                 }
-                Text t            = (Text)child;
-                String node_name  = node.getNodeName();
+                Text t = (Text) child;
+                String node_name = node.getNodeName();
                 String text_value = t.getData().trim();
                 for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
                     for (Field field : c.getDeclaredFields()) {
                         Option option = field.getAnnotation(Option.class);
                         try {
-                            if (option != null&&option.name().equals(node_name)&&option.save()) {
+                            if (option != null && option.name().equals(node_name)
+                                  && option.save()) {
                                 field.setAccessible(true);
                                 Object value;
                                 try {
                                     value = OptionParser.toType(text_value,
-                                            field.getType());
+                                          field.getType());
                                     field.set(this, value);
-                                }
-                                catch (ClassCastException e) {
+                                } catch (ClassCastException e) {
                                     throw new
-                                    IllegalArgumentException("Cannot convert '" + text_value
-                                            + "' to " + field.getType(), e);
+                                          IllegalArgumentException("Cannot convert '" + text_value
+                                          + "' to " + field.getType(), e);
                                 }
                             }
-                        }
-                        catch (SecurityException | IllegalAccessException e) {
+                        } catch (SecurityException | IllegalAccessException e) {
                             throw new
-                            RuntimeException("Bug detected while processing option " +
-                                    option.name(), e);
+                                  RuntimeException("Bug detected while processing option " +
+                                  option.name(), e);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -2391,10 +2423,10 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     private static void put(Document document,
-                            Node root,
-                            String elem_name,
-                            String value,
-                            String comment_str) {
+          Node root,
+          String elem_name,
+          String value,
+          String comment_str) {
         Text t = document.createTextNode("\n\n\t");
         root.appendChild(t);
         Comment comment = document.createComment(comment_str);
@@ -2402,15 +2434,15 @@ public class Configuration extends ConnectionConfiguration {
         t = document.createTextNode("\n\t");
         root.appendChild(t);
         Element element = document.createElement(elem_name);
-        t               = document.createTextNode(" "+value+" ");
+        t = document.createTextNode(" " + value + " ");
         element.appendChild(t);
         root.appendChild(element);
     }
 
-    private String printMandatoryOptions(String ... names) {
+    private String printMandatoryOptions(String... names) {
         StringBuilder sb = new StringBuilder();
         sb.append("\nmandatory options : ");
-        for(String s:names) {
+        for (String s : names) {
             sb.append("\"").append(s).append("\" ");
         }
         return sb.toString();
@@ -2418,9 +2450,9 @@ public class Configuration extends ConnectionConfiguration {
 
     public void write(String file) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder db         = dbf.newDocumentBuilder();
-        Document document          = db.newDocument();
-        Element root               = document.createElement("srm-configuration");
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.newDocument();
+        Element root = document.createElement("srm-configuration");
         for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
@@ -2429,8 +2461,8 @@ public class Configuration extends ConnectionConfiguration {
                         if (option.save()) {
                             field.setAccessible(true);
                             Object value = field.get(this);
-                            String svalue="null";
-                            if (value != null ) {
+                            String svalue = "null";
+                            if (value != null) {
                                 svalue = value.toString();
                             }
                             String description = option.description();
@@ -2439,20 +2471,20 @@ public class Configuration extends ConnectionConfiguration {
                                 description = option.name();
                             }
                             StringBuilder sb = new StringBuilder();
-                            sb.append(description.replaceAll("\n"," "));
-                            if (option.defaultValue().length()>0) {
+                            sb.append(description.replaceAll("\n", " "));
+                            if (option.defaultValue().length() > 0) {
                                 sb.append(", default is ")
-                                        .append(option.defaultValue());
+                                      .append(option.defaultValue());
                             }
-                            if (unit.length()>0) {
+                            if (unit.length() > 0) {
                                 sb.append(" (").append(unit).append(")");
                             }
-                            put(document,root,option.name(),svalue,sb.toString());
+                            put(document, root, option.name(), svalue, sb.toString());
                         }
                     }
-                }
-                catch (SecurityException | IllegalAccessException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                } catch (SecurityException | IllegalAccessException e) {
+                    throw new RuntimeException(
+                          "Bug detected while processing option " + option.name(), e);
                 }
             }
         }
@@ -2460,9 +2492,9 @@ public class Configuration extends ConnectionConfiguration {
         root.appendChild(t);
         document.appendChild(root);
         TransformerFactory tFactory = TransformerFactory.newInstance();
-        Transformer transformer     = tFactory.newTransformer();
-        DOMSource source            = new DOMSource(document);
-        StreamResult result         = new StreamResult(new FileWriter(file));
+        Transformer transformer = tFactory.newTransformer();
+        DOMSource source = new DOMSource(document);
+        StreamResult result = new StreamResult(new FileWriter(file));
         transformer.transform(source, result);
     }
 
@@ -2479,12 +2511,12 @@ public class Configuration extends ConnectionConfiguration {
                             field.setAccessible(true);
                             Object value = field.get(this);
                             sb.append("\n\t").append(option.name()).append("=")
-                                    .append(value);
+                                  .append(value);
                         }
                     }
-                }
-                catch (SecurityException | IllegalAccessException e) {
-                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                } catch (SecurityException | IllegalAccessException e) {
+                    throw new RuntimeException(
+                          "Bug detected while processing option " + option.name(), e);
                 }
             }
         }
@@ -2494,82 +2526,82 @@ public class Configuration extends ConnectionConfiguration {
         }
         if (getPermission && surls != null) {
             sb.append("\n\taction is getPermissions");
-            for (int i = 0; i<surls.length; ++i) {
+            for (int i = 0; i < surls.length; ++i) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
-        if (checkPermission &&  surls != null) {
+        if (checkPermission && surls != null) {
             sb.append("\n\taction is checkPermissions");
-            for (int i = 0; i<surls.length; ++i) {
+            for (int i = 0; i < surls.length; ++i) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
-        if (setPermission &&  setPermissionSurl != null) {
+        if (setPermission && setPermissionSurl != null) {
             sb.append("\n\taction is setPermissions");
             sb.append("\n\tsur=").append(this.setPermissionSurl);
         }
         if (extendFileLifetime && surls != null) {
             sb.append("\n\taction is extendFileLifetime");
-            for (int i = 0; i<surls.length; ++i) {
+            for (int i = 0; i < surls.length; ++i) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
         if (ls && surls != null) {
             sb.append("\n\taction is ls");
-            for(int i = 0; i< surls.length; i++) {
+            for (int i = 0; i < surls.length; i++) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
         if (is_rm && surls != null) {
             sb.append("\n\taction is rm");
-            for(int i = 0; i< surls.length; i++) {
+            for (int i = 0; i < surls.length; i++) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
         if (is_rmdir && surls != null) {
             sb.append("\n\taction is rmdir");
-            for(int i = 0; i< surls.length; i++) {
+            for (int i = 0; i < surls.length; i++) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
         if (is_mkdir && surls != null) {
             sb.append("\n\taction is mkdir");
-            for(int i = 0; i< surls.length; i++) {
+            for (int i = 0; i < surls.length; i++) {
                 sb.append("\n\tsurl[").append(i).append("]=")
-                        .append(this.surls[i]);
+                      .append(this.surls[i]);
             }
         }
         if (reserveSpace) {
             sb.append("\n\taction is reserveSpace");
-            if ( surls != null ) {
+            if (surls != null) {
                 for (String surl : surls) {
                     sb.append("\n\tsrm url=").append(surl);
                 }
             }
             sb.append("\n\tprotocols");
-            for(int i = 0; i< protocols.length; i++) {
+            for (int i = 0; i < protocols.length; i++) {
                 sb.append("\n\tprotocol[").append(i).append("]=")
-                        .append(this.protocols[i]);
+                      .append(this.protocols[i]);
             }
             sb.append("\n\tarray of client networks:");
-            if (arrayOfClientNetworks==null){
+            if (arrayOfClientNetworks == null) {
                 sb.append("\n\tnull");
             } else {
-                for(int i = 0; i<arrayOfClientNetworks.length; i++) {
+                for (int i = 0; i < arrayOfClientNetworks.length; i++) {
                     sb.append("\n\tnetwork[").append(i).append("]=")
-                            .append(arrayOfClientNetworks[i]);
+                          .append(arrayOfClientNetworks[i]);
                 }
             }
         }
         if (releaseSpace) {
             sb.append("\n\taction is releaseSpace");
-            if ( surls != null ) {
+            if (surls != null) {
                 for (String surl : surls) {
                     sb.append("\n\tsrm url=").append(surl);
                 }
@@ -2577,64 +2609,74 @@ public class Configuration extends ConnectionConfiguration {
         }
         if (getSpaceMetaData) {
             sb.append("\n\taction is getSpaceMetaData");
-            if ( getSpaceTokensList() != null ) {
-                for(int i = 0; i< getSpaceTokensList().length; i++) {
+            if (getSpaceTokensList() != null) {
+                for (int i = 0; i < getSpaceTokensList().length; i++) {
                     sb.append("\n\tgetSpaceMetaDataToken =").append(getSpaceTokensList()[i]);
                 }
             }
 
         }
-        if (from!= null) {
-            for(int i = 0; i<from.length; ++i) {
+        if (from != null) {
+            for (int i = 0; i < from.length; ++i) {
                 sb.append("\n\tfrom[").append(i).append("]=")
-                        .append(this.from[i]);
+                      .append(this.from[i]);
             }
         }
-        if(to != null) {
+        if (to != null) {
             sb.append("\n\tto=").append(this.to).append('\n');
         }
         return sb.toString();
     }
 
-    /** Getter for property from.
+    /**
+     * Getter for property from.
+     *
      * @return Value of property from.
      */
     public String[] getFrom() {
         return this.from;
     }
 
-    /** Setter for property from.
+    /**
+     * Setter for property from.
+     *
      * @param from New value of property from.
      */
     public void setFrom(String[] from) {
         this.from = from;
     }
 
-    /** Getter for property to.
+    /**
+     * Getter for property to.
+     *
      * @return Value of property to.
      */
     public String getTo() {
         return to;
     }
 
-    /** Setter for property to.
+    /**
+     * Setter for property to.
+     *
      * @param to New value of property to.
      */
     public void setTo(String to) {
         this.to = to;
     }
 
-    /** Getter for property logger.
-     * @return Value of property logger.
+    /**
+     * Getter for property logger.
      *
+     * @return Value of property logger.
      */
     public Logger getLogger() {
         return logger;
     }
 
-    /** Setter for property logger.
-     * @param logger New value of property logger.
+    /**
+     * Setter for property logger.
      *
+     * @param logger New value of property logger.
      */
     public void setLogger(Logger logger) {
         this.logger = logger;
@@ -2706,17 +2748,19 @@ public class Configuration extends ConnectionConfiguration {
         surls = inURLs;
     }
 
-    /** Getter for property getPermissionSurls.
-     * @return Value of property getPermissionSurls.
+    /**
+     * Getter for property getPermissionSurls.
      *
+     * @return Value of property getPermissionSurls.
      */
     public String[] getGetPermissionSurls() {
         return this.surls;
     }
 
-    /** Getter for property checkPermissionSurls.
-     * @return Value of property checkPermissionSurls.
+    /**
+     * Getter for property checkPermissionSurls.
      *
+     * @return Value of property checkPermissionSurls.
      */
     public String[] getCheckPermissionSurls() {
         return this.surls;
@@ -2726,33 +2770,37 @@ public class Configuration extends ConnectionConfiguration {
         return this.surls;
     }
 
-    /** Getter for property setPermissionSurls.
-     * @return Value of property setPermissionSurls.
+    /**
+     * Getter for property setPermissionSurls.
      *
+     * @return Value of property setPermissionSurls.
      */
     public String getSetPermissionSurl() {
         return this.setPermissionSurl;
     }
 
-    /** Setter for property getPermissionSurls.
-     * @param getPermissionSurls New value of property getPermissionSurls.
+    /**
+     * Setter for property getPermissionSurls.
      *
+     * @param getPermissionSurls New value of property getPermissionSurls.
      */
     public void setGetPermissionSurls(String[] getPermissionSurls) {
         this.surls = getPermissionSurls;
     }
 
-    /** Setter for property checkPermissionSurls.
-     * @param checkPermissionSurls New value of property checkPermissionSurls.
+    /**
+     * Setter for property checkPermissionSurls.
      *
+     * @param checkPermissionSurls New value of property checkPermissionSurls.
      */
     public void setCheckPermissionSurls(String[] checkPermissionSurls) {
         this.surls = checkPermissionSurls;
     }
 
-    /** Setter for property setPermissionSurls.
-     * @param setPermissionSurls New value of property setPermissionSurls.
+    /**
+     * Setter for property setPermissionSurls.
      *
+     * @param setPermissionSurls New value of property setPermissionSurls.
      */
     public void setSetPermissionSurl(String setPermissionSurls) {
         this.setPermissionSurl = setPermissionSurls;
@@ -2767,12 +2815,13 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setArrayOfClientNetworks(String[] a) {
-        arrayOfClientNetworks=a;
+        arrayOfClientNetworks = a;
     }
 
 
     /**
      * Getter for property getRequestStatusSurl.
+     *
      * @return Value of property getRequestStatusSurl.
      */
     public String getGetRequestStatusSurl() {
@@ -2781,6 +2830,7 @@ public class Configuration extends ConnectionConfiguration {
 
     /**
      * Setter for property getRequestStatusSurl.
+     *
      * @param getRequestStatusSurl New value of property getRequestStatusSurl.
      */
     public void setGetRequestStatusSurl(String getRequestStatusSurl) {
@@ -2796,8 +2846,9 @@ public class Configuration extends ConnectionConfiguration {
     }
 
     public void setJobPriority(int p) {
-        this.storageSystemInfo.put("priority",Integer.toString(p));
+        this.storageSystemInfo.put("priority", Integer.toString(p));
     }
+
     public int getJobPriority() {
         return Integer.parseInt(storageSystemInfo.get("priority"));
     }
@@ -2807,8 +2858,8 @@ public class Configuration extends ConnectionConfiguration {
             return Optional.empty();
         } else {
             TExtraInfo[] info = storageSystemInfo.entrySet().stream()
-                        .map(e -> new TExtraInfo(e.getKey(), e.getValue()))
-                        .toArray(n -> new TExtraInfo [n]);
+                  .map(e -> new TExtraInfo(e.getKey(), e.getValue()))
+                  .toArray(n -> new TExtraInfo[n]);
             return Optional.of(new ArrayOfTExtraInfo(info));
         }
     }

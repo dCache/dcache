@@ -18,15 +18,14 @@
  */
 package org.dcache.gridsite;
 
+import static eu.emi.security.authn.x509.impl.CertificateUtils.Encoding.PEM;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+import static org.dcache.util.NetLoggerBuilder.Level.WARN;
+
 import com.google.common.io.CharStreams;
 import eu.emi.security.authn.x509.impl.CertificateUtils;
 import eu.emi.security.authn.x509.impl.OpensslNameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.x500.X500Principal;
-import javax.xml.rpc.holders.StringHolder;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,35 +35,31 @@ import java.rmi.RemoteException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Optional;
-
+import javax.security.auth.x500.X500Principal;
+import javax.xml.rpc.holders.StringHolder;
 import org.dcache.delegation.gridsite2.Delegation;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.util.Axis;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.util.TimeUtils;
-
-import static eu.emi.security.authn.x509.impl.CertificateUtils.Encoding.PEM;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.dcache.util.NetLoggerBuilder.Level.INFO;
-import static org.dcache.util.NetLoggerBuilder.Level.WARN;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A wrapper to some Delegation that provides Access log entries.
  */
-public class AccessLoggerDelegation implements Delegation
-{
+public class AccessLoggerDelegation implements Delegation {
+
     private final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.grid-site");
 
     private final Delegation inner;
 
-    public AccessLoggerDelegation(Delegation inner)
-    {
+    public AccessLoggerDelegation(Delegation inner) {
         this.inner = inner;
     }
 
     @Override
-    public String getVersion() throws RemoteException, DelegationException
-    {
+    public String getVersion() throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getVersion");
         try {
             String version = inner.getVersion();
@@ -79,8 +74,7 @@ public class AccessLoggerDelegation implements Delegation
     }
 
     @Override
-    public String getInterfaceVersion() throws RemoteException, DelegationException
-    {
+    public String getInterfaceVersion() throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getInterfaceVersion");
         try {
             String version = inner.getInterfaceVersion();
@@ -96,10 +90,9 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public String getServiceMetadata(String key)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getServiceMetadata")
-                .map(l -> l.add("key", key));
+              .map(l -> l.add("key", key));
         try {
             String value = inner.getServiceMetadata(key);
             log = log.map(l -> l.add("response", value).withLevel(INFO));
@@ -114,10 +107,9 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public String getProxyReq(String delegationID)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getProxyReq")
-                    .map(l -> l.add("id", delegationID));
+              .map(l -> l.add("id", delegationID));
         try {
             String csr = inner.getProxyReq(delegationID);
             log = log.map(l -> l.withLevel(INFO));
@@ -132,8 +124,7 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public void getNewProxyReq(StringHolder proxyRequest, StringHolder delegationID)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getNewProxyReq");
         try {
             inner.getNewProxyReq(proxyRequest, delegationID);
@@ -148,10 +139,9 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public void putProxy(String delegationID, String proxy)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("putProxy")
-                    .map(l -> logCertChain(l, proxy).add("id", delegationID));
+              .map(l -> logCertChain(l, proxy).add("id", delegationID));
 
         try {
             inner.putProxy(delegationID, proxy);
@@ -166,10 +156,9 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public String renewProxyReq(String delegationID)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("renewProxyReq")
-                    .map(l -> l.add("id", delegationID));
+              .map(l -> l.add("id", delegationID));
         try {
             String csr = inner.renewProxyReq(delegationID);
             log = log.map(l -> l.withLevel(INFO));
@@ -184,13 +173,13 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public Calendar getTerminationTime(String delegationID)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("getTerminationTime")
-                    .map(l -> l.add("id", delegationID));
+              .map(l -> l.add("id", delegationID));
         try {
             Calendar when = inner.getTerminationTime(delegationID);
-            log = log.map(l -> l.add("time", TimeUtils.relativeTimestamp(when.toInstant())).withLevel(INFO));
+            log = log.map(l -> l.add("time", TimeUtils.relativeTimestamp(when.toInstant()))
+                  .withLevel(INFO));
             return when;
         } catch (RemoteException | RuntimeException e) {
             log = log.map(l -> l.add("error", e).withLevel(WARN));
@@ -202,10 +191,9 @@ public class AccessLoggerDelegation implements Delegation
 
     @Override
     public void destroy(String delegationID)
-            throws RemoteException, DelegationException
-    {
+          throws RemoteException, DelegationException {
         Optional<NetLoggerBuilder> log = log("destroy")
-                    .map(l -> l.add("id", delegationID));
+              .map(l -> l.add("id", delegationID));
         try {
             inner.destroy(delegationID);
             log = log.map(l -> l.withLevel(INFO));
@@ -217,19 +205,23 @@ public class AccessLoggerDelegation implements Delegation
         }
     }
 
-    private NetLoggerBuilder logCertChain(NetLoggerBuilder log, String certs)
-    {
+    private NetLoggerBuilder logCertChain(NetLoggerBuilder log, String certs) {
         try {
             Reader r = new StringReader(certs);
-            InputStream targetStream = new ByteArrayInputStream(CharStreams.toString(r).getBytes(UTF_8));
-            X509Certificate[] certificates = CertificateUtils.loadCertificateChain(targetStream, PEM);
+            InputStream targetStream = new ByteArrayInputStream(
+                  CharStreams.toString(r).getBytes(UTF_8));
+            X509Certificate[] certificates = CertificateUtils.loadCertificateChain(targetStream,
+                  PEM);
             for (int i = 0; i < certificates.length; i++) {
                 X509Certificate cert = certificates[i];
-                String prefix = "cert." + (i+1) + ".";
+                String prefix = "cert." + (i + 1) + ".";
                 X500Principal subject = cert.getSubjectX500Principal();
-                log.add(prefix + "dn", OpensslNameUtils.convertFromRfc2253(subject.getName(), true));
-                log.add(prefix + "notBefore", TimeUtils.relativeTimestamp(cert.getNotBefore().toInstant()));
-                log.add(prefix + "notAfter", TimeUtils.relativeTimestamp(cert.getNotAfter().toInstant()));
+                log.add(prefix + "dn",
+                      OpensslNameUtils.convertFromRfc2253(subject.getName(), true));
+                log.add(prefix + "notBefore",
+                      TimeUtils.relativeTimestamp(cert.getNotBefore().toInstant()));
+                log.add(prefix + "notAfter",
+                      TimeUtils.relativeTimestamp(cert.getNotAfter().toInstant()));
             }
         } catch (IOException e) {
             log.add("cert.error", e);
@@ -237,12 +229,11 @@ public class AccessLoggerDelegation implements Delegation
         return log;
     }
 
-    private Optional<NetLoggerBuilder> log(String method)
-    {
+    private Optional<NetLoggerBuilder> log(String method) {
         if (ACCESS_LOGGER.isErrorEnabled()) {
             NetLoggerBuilder log = new NetLoggerBuilder("org.dcache.grid-site.request")
-                    .omitNullValues()
-                    .onLogger(ACCESS_LOGGER);
+                  .omitNullValues()
+                  .onLogger(ACCESS_LOGGER);
             log.add("socket.remote", Axis.getRemoteSocketAddress());
             log.add("request.method", method);
             log.add("user.dn", Axis.getDN().orElse("-"));

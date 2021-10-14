@@ -59,10 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.transfers;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
-
-import javax.security.auth.Subject;
+import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.UserInfo;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoJobInfo;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -72,67 +80,57 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import diskCacheV111.util.TransferInfo;
-import diskCacheV111.util.UserInfo;
-import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.IoJobInfo;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.services.login.LoginManagerChildrenInfo;
-
-import static java.util.Objects.requireNonNull;
+import javax.security.auth.Subject;
 
 /**
  * <p>Utility class for aiding in the extraction of
- *      information relevant to active transfers.</p>
+ * information relevant to active transfers.</p>
  */
 public final class TransferCollectionUtils {
 
     public static <T> Function<List<T[]>, List<T>> flatten() {
         return l -> l.stream()
-                     .flatMap(Arrays::stream)
-                     .collect(Collectors.toList());
+              .flatMap(Arrays::stream)
+              .collect(Collectors.toList());
     }
 
     public static Set<CellPath> getDoors(
-                    Collection<LoginManagerChildrenInfo> loginManagerInfos) {
+          Collection<LoginManagerChildrenInfo> loginManagerInfos) {
         return loginManagerInfos.stream()
-                                .flatMap(i -> i.getChildren().stream()
-                                               .map(c -> new CellPath(c,
-                                                                      i.getCellDomainName())))
-                                .collect(Collectors.toSet());
+              .flatMap(i -> i.getChildren().stream()
+                    .map(c -> new CellPath(c,
+                          i.getCellDomainName())))
+              .collect(Collectors.toSet());
     }
 
     public static Set<CellPath> getLoginManagers(
-                    Collection<LoginBrokerInfo> loginBrokerInfos) {
+          Collection<LoginBrokerInfo> loginBrokerInfos) {
         return loginBrokerInfos.stream().map(
-                        d -> new CellPath(d.getCellName(),
-                                          d.getDomainName())).collect(
-                        Collectors.toSet());
+              d -> new CellPath(d.getCellName(),
+                    d.getDomainName())).collect(
+              Collectors.toSet());
     }
 
     public static Set<CellPath> getPools(Collection<IoDoorInfo> movers) {
         return movers.stream()
-                     .map(IoDoorInfo::getIoDoorEntries)
-                     .flatMap(Collection::stream)
-                     .map(IoDoorEntry::getPool)
-                     .filter(name -> name != null && !name.isEmpty()
-                                     && !name.equals("<unknown>"))
-                     .map(CellPath::new)
-                     .collect(Collectors.toSet());
+              .map(IoDoorInfo::getIoDoorEntries)
+              .flatMap(Collection::stream)
+              .map(IoDoorEntry::getPool)
+              .filter(name -> name != null && !name.isEmpty()
+                    && !name.equals("<unknown>"))
+              .map(CellPath::new)
+              .collect(Collectors.toSet());
     }
 
     public static <T> Function<List<T>, List<T>> removeNulls() {
         return l -> l.stream()
-                     .filter(Objects::nonNull)
-                     .collect(Collectors.toList());
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
     }
 
     public static String transferKey(String door, Long serialId) {
         requireNonNull(door,
-                                   "Transfer key must have a door value.");
+              "Transfer key must have a door value.");
 
         if (serialId == null) {
             return door;
@@ -142,30 +140,30 @@ public final class TransferCollectionUtils {
     }
 
     public static List<TransferInfo> transfers(Collection<IoDoorInfo> doors,
-                                               Collection<IoJobInfo> movers) {
+          Collection<IoJobInfo> movers) {
         Map<String, IoJobInfo> index = createIndex(movers);
         return doors.stream()
-                    .flatMap(info -> transfers(info, index))
-                    .collect(Collectors.toList());
+              .flatMap(info -> transfers(info, index))
+              .collect(Collectors.toList());
     }
 
     /**
-     * The collection is sorted by job id to ensure that for movers with the
-     * same session ID, the one created last is used.
+     * The collection is sorted by job id to ensure that for movers with the same session ID, the
+     * one created last is used.
      */
     private static Map<String, IoJobInfo> createIndex(Collection<IoJobInfo> movers) {
         Map<String, IoJobInfo> index = new HashMap<>();
         for (IoJobInfo info : Ordering.natural()
-                                      .onResultOf(IoJobInfo::getJobId)
-                                      .sortedCopy(movers)) {
+              .onResultOf(IoJobInfo::getJobId)
+              .sortedCopy(movers)) {
             index.put(moverKey(info), info);
         }
         return index;
     }
 
     private static TransferInfo createTransferInfo(IoDoorInfo door,
-                                                   IoDoorEntry session,
-                                                   IoJobInfo mover) {
+          IoDoorEntry session,
+          IoJobInfo mover) {
         TransferInfo info = new TransferInfo();
         info.setCellName(door.getCellName());
         info.setDomainName(door.getDomainName());
@@ -203,7 +201,7 @@ public final class TransferCollectionUtils {
 
     private static String doorKey(IoDoorInfo info, IoDoorEntry entry) {
         return info.getCellName() + "@" + info.getDomainName() + "#"
-                        + entry.getSerialId();
+              + entry.getSerialId();
     }
 
     private static String moverKey(IoJobInfo mover) {
@@ -211,10 +209,10 @@ public final class TransferCollectionUtils {
     }
 
     private static Stream<TransferInfo> transfers(IoDoorInfo door,
-                                                  Map<String, IoJobInfo> movers) {
+          Map<String, IoJobInfo> movers) {
         return door.getIoDoorEntries().stream()
-                   .map(e -> createTransferInfo(door, e, movers.get(
-                                   doorKey(door, e))));
+              .map(e -> createTransferInfo(door, e, movers.get(
+                    doorKey(door, e))));
     }
 
     private TransferCollectionUtils() {

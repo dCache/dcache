@@ -18,6 +18,8 @@
  */
 package org.dcache.restful.events;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,18 +28,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.primitives.Ints;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.sse.OutboundSseEvent;
-import javax.ws.rs.sse.Sse;
-import javax.ws.rs.sse.SseEventSink;
-
 import java.io.EOFException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
@@ -52,85 +42,83 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-
+import javax.annotation.concurrent.GuardedBy;
+import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.sse.OutboundSseEvent;
+import javax.ws.rs.sse.Sse;
+import javax.ws.rs.sse.SseEventSink;
 import org.dcache.auth.Subjects;
 import org.dcache.restful.events.spi.EventStream;
 import org.dcache.restful.events.spi.SelectionContext;
 import org.dcache.restful.events.spi.SelectionResult;
 import org.dcache.restful.events.spi.SelectionStatus;
 import org.dcache.restful.util.CloseableWithTasks;
-
-import static com.google.common.base.Preconditions.checkState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A channel represents a client's desire to know about events.  Each HTTP
- * client should have a single channel object, which has a corresponding unique
- * URL.
+ * A channel represents a client's desire to know about events.  Each HTTP client should have a
+ * single channel object, which has a corresponding unique URL.
  * <p>
- * The channel (and corresponding URL) allows the client to receive events via
- * an HTTP GET request, as described in the SSE protocol.  In addition the URL
- * also forms the basis for management of events.
+ * The channel (and corresponding URL) allows the client to receive events via an HTTP GET request,
+ * as described in the SSE protocol.  In addition the URL also forms the basis for management of
+ * events.
  * <p>
- * It is expected that a channel object is not shared between multiple clients
- * and that each client has (at most) a single ongoing SSE request (i.e., a
- * HTTP GET request through which the client will receive events).  Any incoming
- * SSE request will trigger the termination of any existing SSE request for
- * this channel.
+ * It is expected that a channel object is not shared between multiple clients and that each client
+ * has (at most) a single ongoing SSE request (i.e., a HTTP GET request through which the client
+ * will receive events).  Any incoming SSE request will trigger the termination of any existing SSE
+ * request for this channel.
  * <p>
- * The SSE protocol allows reconnecting clients to indicate the ID of the last
- * event they processed.  In theory, this allows dCache to send any events
- * that the client missed.  However, the SSE protocol provides no feedback on
- * which events have been consumed successfully.  Therefore, we should keep all
- * events until the client provides such feedback by reconnecting.
+ * The SSE protocol allows reconnecting clients to indicate the ID of the last event they processed.
+ *  In theory, this allows dCache to send any events that the client missed.  However, the SSE
+ * protocol provides no feedback on which events have been consumed successfully.  Therefore, we
+ * should keep all events until the client provides such feedback by reconnecting.
  * <p>
- * As a compromise, previous events are kept in a fixed-size ring buffer.  If
- * the client reconnects "fast enough" then dCache is able to send all events
- * that were missed.
+ * As a compromise, previous events are kept in a fixed-size ring buffer.  If the client reconnects
+ * "fast enough" then dCache is able to send all events that were missed.
  */
-public class Channel extends CloseableWithTasks
-{
+public class Channel extends CloseableWithTasks {
+
     /**
-     * Represents an individual event being sent to a specific client.  A
-     * single internal event (as delivered to its receiver by some EventStream)
-     * may generate multiple Event objects: one object for each client that has
-     * subscribed to the event.
+     * Represents an individual event being sent to a specific client.  A single internal event (as
+     * delivered to its receiver by some EventStream) may generate multiple Event objects: one
+     * object for each client that has subscribed to the event.
      */
-    private class Event
-    {
+    private class Event {
+
         private final int id;
         private final String type;
         private final String data;
 
-        public Event(int id, String type, String data)
-        {
+        public Event(int id, String type, String data) {
             this.id = id;
             this.type = type;
             this.data = data;
         }
 
-        public void sendEvent()
-        {
+        public void sendEvent() {
             if (sse != null && sink != null) {
                 OutboundSseEvent event = sse.newEventBuilder()
-                        .data(data)
-                        .name(type)
-                        .id(Integer.toString(id))
-                        .build();
+                      .data(data)
+                      .name(type)
+                      .id(Integer.toString(id))
+                      .build();
                 Channel.this.sendEvent(event);
             }
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return id;
         }
 
         @Override
-        public boolean equals(Object other)
-        {
+        public boolean equals(Object other) {
             return other == this ||
-                    (other instanceof Event) && ((Event)other).id == id;
+                  (other instanceof Event) && ((Event) other).id == id;
         }
     }
 
@@ -139,12 +127,12 @@ public class Channel extends CloseableWithTasks
     private final EvictingQueue<Event> ringBuffer;
     private final ScheduledExecutorService executor;
     private final AtomicInteger queueSize = new AtomicInteger();
-    private final Map<SubscriptionId,Subscription> subscriptionsByIdentity
-            = new ConcurrentHashMap<>();
+    private final Map<SubscriptionId, Subscription> subscriptionsByIdentity
+          = new ConcurrentHashMap<>();
 
     private final long owner;
     private final EventStreamRepository repository;
-    private final BiFunction<String,String,String> subscriptionValueBuilder;
+    private final BiFunction<String, String, String> subscriptionValueBuilder;
 
     private SseEventSink sink;
     private Sse sse;
@@ -153,10 +141,9 @@ public class Channel extends CloseableWithTasks
     private int nextEventId = 0;
 
     public Channel(ScheduledExecutorService executor,
-            EventStreamRepository repository, Subject subject, long timeout,
-            BiFunction<String,String,String> subscriptionValueBuilder,
-            int eventBacklog)
-    {
+          EventStreamRepository repository, Subject subject, long timeout,
+          BiFunction<String, String, String> subscriptionValueBuilder,
+          int eventBacklog) {
         this.executor = executor;
         this.repository = repository;
         this.owner = Subjects.getUid(subject);
@@ -166,33 +153,32 @@ public class Channel extends CloseableWithTasks
         ringBuffer = EvictingQueue.create(eventBacklog);
 
         onClose(() -> {
-                    subscriptionsByIdentity.values().forEach(Subscription::close);
-                    synchronized (Channel.this) {
-                        if (sink != null && !sink.isClosed()) {
-                            LOGGER.debug("Channel close triggering closure of connection with client");
-                            sink.close();
-                            sink = null;
-                            sse = null;
-                        }
-                        ringBuffer.clear();
-                        if (closeFuture != null) {
-                            closeFuture.cancel(false); // do not interrupt ourself
-                            closeFuture = null;
-                        }
-                    }
-                });
+            subscriptionsByIdentity.values().forEach(Subscription::close);
+            synchronized (Channel.this) {
+                if (sink != null && !sink.isClosed()) {
+                    LOGGER.debug("Channel close triggering closure of connection with client");
+                    sink.close();
+                    sink = null;
+                    sse = null;
+                }
+                ringBuffer.clear();
+                if (closeFuture != null) {
+                    closeFuture.cancel(false); // do not interrupt ourself
+                    closeFuture = null;
+                }
+            }
+        });
 
         // Time limit for client to connect after creating a channel
         scheduleClose();
     }
 
-    public boolean isAccessAllowed(Subject requestor)
-    {
+    public boolean isAccessAllowed(Subject requestor) {
         return Subjects.getUid(requestor) == owner;
     }
 
-    public synchronized void sendEvent(String eventType, String selectionId, JsonNode eventPayload)
-    {
+    public synchronized void sendEvent(String eventType, String selectionId,
+          JsonNode eventPayload) {
         if (eventPayload == EventStream.CLOSE_STREAM) {
             getSubscription(eventType, selectionId).ifPresent(Subscription::close);
             return;
@@ -221,13 +207,12 @@ public class Channel extends CloseableWithTasks
     /**
      * Send an event.
      * <p>
-     * @return a CompletionStage that completes normally with a boolean value
-     * describing whether the event was sent.  If the event was not sent then
-     * the sink and sse are both set to null.
+     *
+     * @return a CompletionStage that completes normally with a boolean value describing whether the
+     * event was sent.  If the event was not sent then the sink and sse are both set to null.
      */
     @GuardedBy("this")
-    private CompletionStage<Boolean> sendEvent(OutboundSseEvent event)
-    {
+    private CompletionStage<Boolean> sendEvent(OutboundSseEvent event) {
         if (sink.isClosed()) {
             LOGGER.debug("Discovered client connection closed when about to send an event");
             sinkClosed(sink);
@@ -241,37 +226,36 @@ public class Channel extends CloseableWithTasks
         }
         SseEventSink thisSink = sink;
         return sink.send(event).handle((o, t) -> {
-                    queueSize.decrementAndGet();
+            queueSize.decrementAndGet();
 
-                    // Jersey provides connection errors as normal result.
-                    if (o instanceof Throwable) {
-                        t = (Throwable) o;
-                        o = null;
-                    }
+            // Jersey provides connection errors as normal result.
+            if (o instanceof Throwable) {
+                t = (Throwable) o;
+                o = null;
+            }
 
-                    if (t instanceof ClosedChannelException || t instanceof EOFException) {
-                        synchronized (Channel.this) {
-                            LOGGER.debug("Discovered client connection closed when event was sent");
-                            sinkClosed(thisSink);
-                            return Boolean.FALSE;
-                        }
-                    } else if (t instanceof RuntimeException) {
-                        LOGGER.error("Bug detected: please report this to <support@dcache.org>", t);
-                    } else if (t instanceof Exception) {
-                        LOGGER.error("Failed to send event: {}", t.toString());
-                    } else if (t instanceof Error) {
-                        throw (Error) t;
-                    } else if (o != null) {
-                        LOGGER.warn("Send resulted in {}", o);
-                    }
+            if (t instanceof ClosedChannelException || t instanceof EOFException) {
+                synchronized (Channel.this) {
+                    LOGGER.debug("Discovered client connection closed when event was sent");
+                    sinkClosed(thisSink);
+                    return Boolean.FALSE;
+                }
+            } else if (t instanceof RuntimeException) {
+                LOGGER.error("Bug detected: please report this to <support@dcache.org>", t);
+            } else if (t instanceof Exception) {
+                LOGGER.error("Failed to send event: {}", t.toString());
+            } else if (t instanceof Error) {
+                throw (Error) t;
+            } else if (o != null) {
+                LOGGER.warn("Send resulted in {}", o);
+            }
 
-                    return Boolean.TRUE;
-                });
+            return Boolean.TRUE;
+        });
     }
 
     @GuardedBy("this")
-    private void sinkClosed(SseEventSink closedSink)
-    {
+    private void sinkClosed(SseEventSink closedSink) {
         if (sink == closedSink) {
             sink = null;
             sse = null;
@@ -281,26 +265,24 @@ public class Channel extends CloseableWithTasks
     }
 
     @GuardedBy("this")
-    private void scheduleClose()
-    {
+    private void scheduleClose() {
         closeFuture = executor.schedule(this::close, timeout, TimeUnit.MILLISECONDS);
     }
 
-    public synchronized void acceptConnection(Sse newSse, SseEventSink newSink, String lastId)
-    {
+    public synchronized void acceptConnection(Sse newSse, SseEventSink newSink, String lastId) {
         checkState(!isClosed());
 
         if (sink != null) {
             // Permit only one SSE (HTTP GET) operation per channel.
             OutboundSseEvent event = sse.newEventBuilder()
-                        .name("SYSTEM")
-                        .data("{\"type\":\"COMPETING_CLIENT\"}")
-                        .build();
+                  .name("SYSTEM")
+                  .data("{\"type\":\"COMPETING_CLIENT\"}")
+                  .build();
             sendEvent(event).thenAccept(wasSent -> {
-                        if (wasSent) {
-                            sink.close();
-                        }
-                    });
+                if (wasSent) {
+                    sink.close();
+                }
+            });
         }
 
         if (closeFuture != null) {
@@ -328,40 +310,36 @@ public class Channel extends CloseableWithTasks
 
             if (ringBuffer.isEmpty()) {
                 sendEvent(sse.newEventBuilder()
-                        .name("SYSTEM")
-                        .data("{\"type\":\"EVENT_LOSS\"}")
-                        .build());
+                      .name("SYSTEM")
+                      .data("{\"type\":\"EVENT_LOSS\"}")
+                      .build());
             } else {
                 ringBuffer.stream()
-                        .skip(1)
-                        .forEach(Event::sendEvent);
+                      .skip(1)
+                      .forEach(Event::sendEvent);
             }
         }
     }
 
-    public synchronized void notifyOfShutdown()
-    {
+    public synchronized void notifyOfShutdown() {
         if (sink != null && !sink.isClosed()) {
             sendEvent(sse.newEventBuilder()
-                        .name("SYSTEM")
-                        .data("{\"type\":\"SHUTDOWN\"}")
-                        .build());
+                  .name("SYSTEM")
+                  .data("{\"type\":\"SHUTDOWN\"}")
+                  .build());
         }
     }
 
-    public long getTimeout()
-    {
+    public long getTimeout() {
         return timeout;
     }
 
-    public synchronized void updateTimeout(long newTimeout)
-    {
+    public synchronized void updateTimeout(long newTimeout) {
         timeout = newTimeout;
         rescheduleClose();
     }
 
-    public synchronized void rescheduleClose()
-    {
+    public synchronized void rescheduleClose() {
         if (!isClosed() && closeFuture != null) {
             closeFuture.cancel(true);
             scheduleClose();
@@ -369,8 +347,7 @@ public class Channel extends CloseableWithTasks
     }
 
     private synchronized void sendSubscriptionEvent(String type,
-            String eventType, String subscriptionId)
-    {
+          String eventType, String subscriptionId) {
         if (sink != null && !sink.isClosed()) {
             try {
                 ObjectNode event = JsonNodeFactory.instance.objectNode();
@@ -386,10 +363,9 @@ public class Channel extends CloseableWithTasks
     }
 
     public SubscriptionResult subscribe(final HttpServletRequest request,
-            final String channelId, String eventType, JsonNode selector)
-    {
+          final String channelId, String eventType, JsonNode selector) {
         EventStream es = repository.getEventStream(eventType)
-                    .orElseThrow(() -> new BadRequestException("Unknown event type: " + eventType));
+              .orElseThrow(() -> new BadRequestException("Unknown event type: " + eventType));
 
         SelectionContext context = new SelectionContext() {
             @Override
@@ -404,13 +380,13 @@ public class Channel extends CloseableWithTasks
         };
 
         SelectionResult result = es.select(context,
-                (id,event) -> {
-                            try {
-                                sendEvent(eventType, id, event);
-                            } catch (RuntimeException e) {
-                                LOGGER.error("Bug found in dCache, please report to <support@dCache.org>", e);
-                            }
-                        }, selector);
+              (id, event) -> {
+                  try {
+                      sendEvent(eventType, id, event);
+                  } catch (RuntimeException e) {
+                      LOGGER.error("Bug found in dCache, please report to <support@dCache.org>", e);
+                  }
+              }, selector);
 
         if (result.getStatus() == SelectionStatus.CREATED) {
             String subscriptionId = result.getSelectedEventStream().getId();
@@ -418,8 +394,8 @@ public class Channel extends CloseableWithTasks
             Subscription s = new Subscription(eventType, result.getSelectedEventStream());
             subscriptionsByIdentity.put(id, s);
             s.onClose(() -> {
-                        sendSubscriptionEvent("SUBSCRIPTION_CLOSED", eventType, subscriptionId);
-                    });
+                sendSubscriptionEvent("SUBSCRIPTION_CLOSED", eventType, subscriptionId);
+            });
             s.onClose(() -> subscriptionsByIdentity.remove(id, s));
             sendSubscriptionEvent("NEW_SUBSCRIPTION", eventType, subscriptionId);
         }
@@ -427,13 +403,11 @@ public class Channel extends CloseableWithTasks
         return new SubscriptionResult(result);
     }
 
-    public List<Subscription> getSubscriptions()
-    {
+    public List<Subscription> getSubscriptions() {
         return new ArrayList<>(subscriptionsByIdentity.values());
     }
 
-    public Optional<Subscription> getSubscription(String eventType, String subscriptionId)
-    {
+    public Optional<Subscription> getSubscription(String eventType, String subscriptionId) {
         SubscriptionId id = new SubscriptionId(eventType, subscriptionId);
         return Optional.ofNullable(subscriptionsByIdentity.get(id));
     }

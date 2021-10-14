@@ -71,7 +71,7 @@ import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
  * <p>Thin wrapper around cell messaging to alarms endpoint.</p>
  */
 public class AlarmsCollector extends
-                CellMessagingCollector<AlarmMappingRequestMessage> {
+      CellMessagingCollector<AlarmMappingRequestMessage> {
 
     private String alarmsPath;
 
@@ -80,7 +80,7 @@ public class AlarmsCollector extends
      */
     @Override
     public AlarmMappingRequestMessage collectData()
-                    throws InterruptedException, CacheException {
+          throws InterruptedException, CacheException {
         return sendRequestToAlarmService(new AlarmMappingRequestMessage());
     }
 
@@ -98,12 +98,12 @@ public class AlarmsCollector extends
      * @return Futures which can be used to wait for the returned message.
      */
     public <T extends Message> T sendRequestToAlarmService(T message)
-                    throws CacheException, InterruptedException {
+          throws CacheException, InterruptedException {
 
         try {
             return stub.sendAndWait(new CellPath(alarmsPath), message);
         } catch (NoRouteToCellException e) {
-           throw new ServiceUnavailableException("Could not send alarms request", e);
+            throw new ServiceUnavailableException("Could not send alarms request", e);
         }
     }
 

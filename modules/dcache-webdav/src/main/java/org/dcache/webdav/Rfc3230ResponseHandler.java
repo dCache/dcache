@@ -28,70 +28,63 @@ import io.milton.http.exceptions.NotFoundException;
 import io.milton.http.webdav.WebDavResponseHandler;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
-
 import java.util.List;
 import java.util.Map;
 
 /**
- * This class is a WebDavResponseHandler that wraps some other
- * WebDavResponseHandler and adds RFC-3230 response headers.
+ * This class is a WebDavResponseHandler that wraps some other WebDavResponseHandler and adds
+ * RFC-3230 response headers.
  */
-public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler
-{
-    public static Rfc3230ResponseHandler wrap(WebDavResponseHandler inner)
-    {
+public class Rfc3230ResponseHandler extends AbstractWrappingResponseHandler {
+
+    public static Rfc3230ResponseHandler wrap(WebDavResponseHandler inner) {
         Rfc3230ResponseHandler handler = new Rfc3230ResponseHandler();
         handler.setWrapped(inner);
         return handler;
     }
 
     @Override
-    public void respondHead(Resource resource, Response response, Request request)
-    {
+    public void respondHead(Resource resource, Response response, Request request) {
         super.respondHead(resource, response, request);
         rfc3230(resource, response);
     }
 
     @Override
-    public void respondPartialContent(GetableResource resource, Response response, Request request, Map<String, String> params, List<Range> ranges)
-            throws NotAuthorizedException, BadRequestException, NotFoundException
-    {
+    public void respondPartialContent(GetableResource resource, Response response, Request request,
+          Map<String, String> params, List<Range> ranges)
+          throws NotAuthorizedException, BadRequestException, NotFoundException {
         super.respondPartialContent(resource, response, request, params, ranges);
         rfc3230(resource, response);
     }
 
     @Override
     public void respondPartialContent(GetableResource resource,
-            Response response, Request request, Map<String,String> params,
-            Range range) throws NotAuthorizedException, BadRequestException,
-            NotFoundException
-    {
+          Response response, Request request, Map<String, String> params,
+          Range range) throws NotAuthorizedException, BadRequestException,
+          NotFoundException {
         super.respondPartialContent(resource, response, request, params, range);
         rfc3230(resource, response);
     }
 
     @Override
-    public void respondContent(Resource resource,  Response response,
-            Request request, Map<String, String> params)
-            throws NotAuthorizedException, BadRequestException,
-            NotFoundException
-    {
+    public void respondContent(Resource resource, Response response,
+          Request request, Map<String, String> params)
+          throws NotAuthorizedException, BadRequestException,
+          NotFoundException {
         super.respondContent(resource, response, request, params);
         rfc3230(resource, response);
     }
 
     @Override
-    public void respondCreated(Resource resource, Response response, Request request)
-    {
+    public void respondCreated(Resource resource, Response response, Request request) {
         super.respondCreated(resource, response, request);
         rfc3230(resource, response);
     }
 
-    private void rfc3230(Resource resource, Response response)
-    {
+    private void rfc3230(Resource resource, Response response) {
         if (resource instanceof DcacheFileResource) {
             ((DcacheFileResource) resource).getRfc3230Digest()
-                    .ifPresent(d -> response.setNonStandardHeader("Digest", d));
+                  .ifPresent(d -> response.setNonStandardHeader("Digest", d));
         }
     }
 }

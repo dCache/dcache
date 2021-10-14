@@ -59,21 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.CacheException;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.dcache.util.FireAndForgetTask;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * <p>Base class which provides Fire-and-Forget wrapper to
- *    catch and handle properly RuntimeExceptions.</p>
+ * catch and handle properly RuntimeExceptions.</p>
  */
 public abstract class ErrorAwareTask implements Callable<Void> {
 
-    private Consumer<CacheException> errorHandler = (e) -> {};
+    private Consumer<CacheException> errorHandler = (e) -> {
+    };
 
     public void setErrorHandler(Consumer<CacheException> handler) {
         errorHandler = requireNonNull(handler);
@@ -93,7 +93,7 @@ public abstract class ErrorAwareTask implements Callable<Void> {
                 call();
             } catch (RuntimeException e) {
                 errorHandler.accept(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                                       "Bug detected: " + e.toString(), e));
+                      "Bug detected: " + e.toString(), e));
                 throw e;
             }
         });

@@ -18,13 +18,13 @@
 package org.dcache.auth;
 
 /**
- * The EntityDefinition defines what kind of entity holds the private key
- * corresponding to this certificate.
+ * The EntityDefinition defines what kind of entity holds the private key corresponding to this
+ * certificate.
  */
-public enum EntityDefinition
-{
+public enum EntityDefinition {
     /**
      * A non-human automated client or robot.
+     *
      * @see <a href="https://www.eugridpma.org/guidelines/1scp/">IGTF
      * guidelines</a>.
      */
@@ -32,6 +32,7 @@ public enum EntityDefinition
 
     /**
      * A networked end-point entity (host).
+     *
      * @see <a href="https://www.eugridpma.org/guidelines/1scp/">IGTF
      * guidelines</a>.
      */
@@ -39,6 +40,7 @@ public enum EntityDefinition
 
     /**
      * A natural person.
+     *
      * @see <a href="https://www.eugridpma.org/guidelines/1scp/">IGTF
      * guidelines</a>.
      */
@@ -46,13 +48,11 @@ public enum EntityDefinition
 
     private final String name;
 
-    EntityDefinition(String name)
-    {
+    EntityDefinition(String name) {
         this.name = name;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 }

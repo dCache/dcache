@@ -1,34 +1,30 @@
 package org.dcache.xrootd.pool;
 
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.stream.AbstractChunkedReadvResponse;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
+public class ChunkedFileDescriptorReadvResponse extends AbstractChunkedReadvResponse {
 
-public class ChunkedFileDescriptorReadvResponse extends AbstractChunkedReadvResponse
-{
     private final List<FileDescriptor> descriptors;
 
     public ChunkedFileDescriptorReadvResponse(ReadVRequest request,
-                                              int maxFrameSize,
-                                              List<FileDescriptor> descriptors)
-    {
+          int maxFrameSize,
+          List<FileDescriptor> descriptors) {
         super(request, maxFrameSize);
         this.descriptors = descriptors;
     }
 
     @Override
-    protected long getSize(int fd) throws IOException, XrootdException
-    {
+    protected long getSize(int fd) throws IOException, XrootdException {
         if (fd < 0 || fd >= descriptors.size() || descriptors.get(fd) == null) {
             throw new XrootdException(kXR_FileNotOpen, "Invalid file descriptor");
         }
@@ -37,8 +33,7 @@ public class ChunkedFileDescriptorReadvResponse extends AbstractChunkedReadvResp
 
     @Override
     protected ByteBuf read(ByteBufAllocator alloc, int fd, long position, int length)
-            throws IOException, XrootdException
-    {
+          throws IOException, XrootdException {
         if (fd < 0 || fd >= descriptors.size() || descriptors.get(fd) == null) {
             throw new XrootdException(kXR_FileNotOpen, "Invalid file descriptor");
         }

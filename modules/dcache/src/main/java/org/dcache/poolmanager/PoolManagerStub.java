@@ -19,18 +19,14 @@
 package org.dcache.poolmanager;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageSender;
-
+import java.util.concurrent.TimeUnit;
 import org.dcache.util.TimeUtils;
 
 /**
@@ -39,8 +35,8 @@ import org.dcache.util.TimeUtils;
  * <p>Defines default parameters and timeout limits and provides a simpler interface than
  * what PoolManagerHandler exposes.
  */
-public class PoolManagerStub implements CellMessageSender, CellIdentityAware
-{
+public class PoolManagerStub implements CellMessageSender, CellIdentityAware {
+
     private CellEndpoint endpoint;
 
     private PoolManagerHandler handler;
@@ -56,19 +52,16 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     private CellAddressCore address;
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
+    public void setCellEndpoint(CellEndpoint endpoint) {
         this.endpoint = endpoint;
     }
 
     @Override
-    public void setCellAddress(CellAddressCore address)
-    {
+    public void setCellAddress(CellAddressCore address) {
         this.address = address;
     }
 
-    public void setHandler(PoolManagerHandler handler)
-    {
+    public void setHandler(PoolManagerHandler handler) {
         this.handler = handler;
     }
 
@@ -80,13 +73,11 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      *
      * @param timeout
      */
-    public void setMaximumPoolManagerTimeout(long timeout)
-    {
+    public void setMaximumPoolManagerTimeout(long timeout) {
         maxPoolManagerTimeout = timeout;
     }
 
-    public void setMaximumPoolManagerTimeoutUnit(TimeUnit unit)
-    {
+    public void setMaximumPoolManagerTimeoutUnit(TimeUnit unit) {
         maxPoolManagerTimeoutUnit = unit;
     }
 
@@ -105,13 +96,11 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      *
      * @param timeout
      */
-    public void setMaximumPoolTimeout(long timeout)
-    {
+    public void setMaximumPoolTimeout(long timeout) {
         maxPoolTimeout = timeout;
     }
 
-    public void setMaximumPoolTimeoutUnit(TimeUnit unit)
-    {
+    public void setMaximumPoolTimeoutUnit(TimeUnit unit) {
         maxPoolTimeoutUnit = unit;
     }
 
@@ -125,13 +114,13 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     /**
      * Submit a request to a pool.
      *
-     * @param pool The address of the pool
-     * @param msg  The mover creation request
+     * @param pool    The address of the pool
+     * @param msg     The mover creation request
      * @param timeout timeout in milliseconds
      * @return An asynchronous reply
      */
-    public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool, T msg, long timeout)
-    {
+    public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool, T msg,
+          long timeout) {
         msg.setReplyRequired(true);
         long boundedTimeout = Math.min(timeout, maxPoolTimeoutUnit.toMillis(maxPoolTimeout));
         return handler.startAsync(endpoint, pool, msg, boundedTimeout);
@@ -144,8 +133,8 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      * @param msg  The mover creation request
      * @return An asynchronous reply
      */
-    public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool, T msg)
-    {
+    public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(CellAddressCore pool,
+          T msg) {
         msg.setReplyRequired(true);
         return handler.startAsync(endpoint, pool, msg, maxPoolTimeoutUnit.toMillis(maxPoolTimeout));
     }
@@ -153,14 +142,14 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     /**
      * Submit a request to pool manager.
      *
-     * @param msg The pool manager request
+     * @param msg     The pool manager request
      * @param timeout timeout in milliseconds
      * @return An asynchronous reply
      */
-    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg, long timeout)
-    {
+    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg, long timeout) {
         msg.setReplyRequired(true);
-        long boundedTimeout = Math.min(timeout, maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
+        long boundedTimeout = Math.min(timeout,
+              maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
         return handler.sendAsync(endpoint, msg, boundedTimeout);
     }
 
@@ -170,24 +159,23 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
      * @param msg The pool manager request
      * @return An asynchronous reply
      */
-    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg)
-    {
+    public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(T msg) {
         msg.setReplyRequired(true);
-        return handler.sendAsync(endpoint, msg, maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
+        return handler.sendAsync(endpoint, msg,
+              maxPoolManagerTimeoutUnit.toMillis(maxPoolManagerTimeout));
     }
 
     /**
-     * Submit a request to start a mover to the named pool.  Any response
-     * message is handled explicitly within the cell code.
-     *
-     * This method exists primarily to support legacy code; new code should
-     * consider using the startAsync method instead.
+     * Submit a request to start a mover to the named pool.  Any response message is handled
+     * explicitly within the cell code.
+     * <p>
+     * This method exists primarily to support legacy code; new code should consider using the
+     * startAsync method instead.
      *
      * @param pool The address of the pool
      * @param msg  The mover creation request
      */
-    public void start(CellAddressCore pool, PoolIoFileMessage msg)
-    {
+    public void start(CellAddressCore pool, PoolIoFileMessage msg) {
         // This method is only used by DCapDoorInterpreterV3, which is
         // expecting a reply.
         msg.setReplyRequired(true);
@@ -197,16 +185,15 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     /**
-     * Submit a request to pool manager.  Any response message is handled
-     * explicitly within the cell code.
-     *
-     * This method exists primarily to support legacy code; new code should
-     * consider using the sendAsync method instead.
+     * Submit a request to pool manager.  Any response message is handled explicitly within the cell
+     * code.
+     * <p>
+     * This method exists primarily to support legacy code; new code should consider using the
+     * sendAsync method instead.
      *
      * @param msg The pool manager request
      */
-    public void send(PoolManagerMessage msg)
-    {
+    public void send(PoolManagerMessage msg) {
         // This method is only used by DCapDoorInterpreterV3, which is
         // expecting a reply.
         msg.setReplyRequired(true);
@@ -216,18 +203,16 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     /**
-     * Submit a request to pool manager, indicating that the response will be
-     * ignored after some timeout.  Any response message is handled explicitly
-     * within the cell code.
+     * Submit a request to pool manager, indicating that the response will be ignored after some
+     * timeout.  Any response message is handled explicitly within the cell code.
+     * <p>
+     * This method exists primarily to support legacy code; new code should consider using the
+     * sendAsync method instead.
      *
-     * This method exists primarily to support legacy code; new code should
-     * consider using the sendAsync method instead.
-     *
-     * @param msg The pool manager request
+     * @param msg     The pool manager request
      * @param timeout How long before PoolManager should discard this request
      */
-    public void send(PoolManagerMessage msg, long timeout)
-    {
+    public void send(PoolManagerMessage msg, long timeout) {
         // This method is only used by DCapDoorInterpreterV3, which is
         // expecting a reply.
         msg.setReplyRequired(true);
@@ -238,12 +223,14 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         CharSequence poolManagrTimeout =
-                TimeUtils.duration(maxPoolManagerTimeout, maxPoolManagerTimeoutUnit, TimeUtils.TimeUnitFormat.SHORT);
+              TimeUtils.duration(maxPoolManagerTimeout, maxPoolManagerTimeoutUnit,
+                    TimeUtils.TimeUnitFormat.SHORT);
         CharSequence poolTimeout =
-                TimeUtils.duration(maxPoolTimeout, maxPoolTimeoutUnit, TimeUtils.TimeUnitFormat.SHORT);
-        return "handler=" + handler + ", " + "pool manager timeout=" + poolManagrTimeout + ", " + "pool timeout=" + poolTimeout;
+              TimeUtils.duration(maxPoolTimeout, maxPoolTimeoutUnit,
+                    TimeUtils.TimeUnitFormat.SHORT);
+        return "handler=" + handler + ", " + "pool manager timeout=" + poolManagrTimeout + ", "
+              + "pool timeout=" + poolTimeout;
     }
 }

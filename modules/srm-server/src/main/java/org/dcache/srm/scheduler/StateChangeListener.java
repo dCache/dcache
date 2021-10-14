@@ -5,7 +5,7 @@ import org.dcache.srm.request.Job;
 /**
  * Listener for SRM job state changes.
  */
-public interface StateChangeListener
-{
+public interface StateChangeListener {
+
     void stateChanged(Job job, State oldState, State newState);
 }

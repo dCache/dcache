@@ -59,24 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Set;
-
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Abstraction to take care of the situation in which a readable source for
- *    the given file cannot be currently found. May be implemented, for
- *    instance, simply to send a warning, or could attempt to restore
- *    a copy from tape if the file is also <code>CUSTODIAL</code>.</p>
+ * the given file cannot be currently found. May be implemented, for instance, simply to send a
+ * warning, or could attempt to restore a copy from tape if the file is also
+ * <code>CUSTODIAL</code>.</p>
  */
 abstract class InaccessibleFileHandler {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(InaccessibleFileHandler.class);
+          = LoggerFactory.getLogger(InaccessibleFileHandler.class);
 
     protected FileTaskCompletionHandler completionHandler;
     protected PoolInfoMap poolInfoMap;
@@ -91,34 +90,33 @@ abstract class InaccessibleFileHandler {
 
     /**
      * <p>Takes the appropriate action.  Should be called when
-     *    {@link #isInaccessible(Set, FileOperation)} returns true.</p>
+     * {@link #isInaccessible(Set, FileOperation)} returns true.</p>
      *
      * @param operation contains information keyed to the PoolInfoMap.
-     * @return type of operation which the caller should proceed with; this
-     *          will in most cases be VOID.
+     * @return type of operation which the caller should proceed with; this will in most cases be
+     * VOID.
      */
     protected abstract Type handleInaccessibleFile(FileOperation operation);
 
     /**
      * <p>Takes the appropriate action when it is discovered there are no
-     *    locations in the namespace for a file which has not been deleted.</p>
+     * locations in the namespace for a file which has not been deleted.</p>
      *
      * @param operation contains information keyed to the PoolInfoMap.
-     * @return type of operation which the caller should proceed with; this
-     *          will in most cases be VOID.
+     * @return type of operation which the caller should proceed with; this will in most cases be
+     * VOID.
      */
     protected abstract Type handleNoLocationsForFile(FileOperation operation);
 
     /**
      * <p>This logic will usually involve checking that readable locations
-     *    is 0, and may involve other checks on the file operation attributes,
-     *    depending on the implementation.</p>
+     * is 0, and may involve other checks on the file operation attributes, depending on the
+     * implementation.</p>
      *
-     * @param readableLocations set of locations for this file
-     *                          which can be read from.
-     * @param operation contains information keyed to the PoolInfoMap.
+     * @param readableLocations set of locations for this file which can be read from.
+     * @param operation         contains information keyed to the PoolInfoMap.
      * @return true is no readable copy is presently available.
      */
     protected abstract boolean isInaccessible(Set<String> readableLocations,
-                                              FileOperation operation);
+          FileOperation operation);
 }

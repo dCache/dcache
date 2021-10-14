@@ -3,12 +3,12 @@ package org.dcache.chimera.nfsv41.door;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.net.InternetDomainName;
-import org.dcache.nfs.util.UnixSubjects;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.Principal;
+import java.util.Hashtable;
+import java.util.Set;
 import javax.naming.CommunicationException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
@@ -19,15 +19,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.Principal;
-import java.util.Hashtable;
-import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginStrategy;
@@ -35,10 +26,15 @@ import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.nfs.util.SubjectHolder;
+import org.dcache.nfs.util.UnixSubjects;
 import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.oncrpc4j.rpc.RpcLoginService;
 import org.dcache.oncrpc4j.rpc.RpcTransport;
-import org.dcache.nfs.util.SubjectHolder;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
@@ -61,7 +57,8 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     private final String _domain;
     private boolean _fallbackToNumeric = false;
 
-    public StrategyIdMapper(LoginStrategy remoteLoginStrategy, String domain) throws NamingException, UnknownHostException {
+    public StrategyIdMapper(LoginStrategy remoteLoginStrategy, String domain)
+          throws NamingException, UnknownHostException {
         _remoteLoginStrategy = remoteLoginStrategy;
         _domain = discoverNFS4Domain(domain);
     }
@@ -82,7 +79,8 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         }
 
         try {
-            Set<Principal> principals = _remoteLoginStrategy.reverseMap(new GidPrincipal(id, false));
+            Set<Principal> principals = _remoteLoginStrategy.reverseMap(
+                  new GidPrincipal(id, false));
             for (Principal principal : principals) {
                 if (principal instanceof GroupNamePrincipal) {
                     return addDomain(principal.getName());
@@ -118,7 +116,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 return (int) ((UidPrincipal) uidPrincipal).getUid();
             }
         } catch (CacheException e) {
-             LOGGER.debug("Failed to map principal {} : {}", name, e);
+            LOGGER.debug("Failed to map principal {} : {}", name, e);
         }
 
         return tryNumericIfAllowed(name);
@@ -139,7 +137,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 }
             }
         } catch (CacheException e) {
-             LOGGER.debug("Failed to reverseMap for uid {} : {}", id, e);
+            LOGGER.debug("Failed to reverseMap for uid {} : {}", id, e);
         }
         return numericStringIfAllowed(id);
     }
@@ -157,7 +155,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     }
 
     private int tryNumericIfAllowed(String id) {
-        if ( !_fallbackToNumeric ) {
+        if (!_fallbackToNumeric) {
             return NODOBY_ID;
         } else {
             try {
@@ -169,7 +167,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     }
 
     private String numericStringIfAllowed(int id) {
-        return _fallbackToNumeric ? String.valueOf(id) :NOBODY;
+        return _fallbackToNumeric ? String.valueOf(id) : NOBODY;
     }
 
     @Override
@@ -184,7 +182,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
             in.setReadOnly();
 
             return populateWithUnixPrincipals(_remoteLoginStrategy.login(in).getSubject());
-        }catch(GSSException | CacheException e) {
+        } catch (GSSException | CacheException e) {
             LOGGER.debug("Failed to login for : {} : {}", gssc, e.toString());
         }
         return Subjects.NOBODY;
@@ -195,24 +193,24 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         try {
             return populateWithUnixPrincipals(_remoteLoginStrategy.login(in).getSubject());
         } catch (CacheException e) {
-            LOGGER.debug("Failed to login for : {} : {}", new SubjectHolder(in),  e.toString());
+            LOGGER.debug("Failed to login for : {} : {}", new SubjectHolder(in), e.toString());
         }
         return in;
     }
 
     /**
-     * Auto-discovers NFSv4 domain from DNS server. if provided {@code
-     * configuredDomain} is null or an empty string, a local DNS server will
-     * be queried for the {@code _nfsv4idmapdomain} text record. If the record exists
-     * that will be used as the domain. When the record does not exist, the domain
-     * part of the DNS domain will used.
-     *
-     * @see <a href="http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html">nfsmapid and DNS TXT Records</a>
+     * Auto-discovers NFSv4 domain from DNS server. if provided {@code configuredDomain} is null or
+     * an empty string, a local DNS server will be queried for the {@code _nfsv4idmapdomain} text
+     * record. If the record exists that will be used as the domain. When the record does not exist,
+     * the domain part of the DNS domain will used.
      *
      * @param configuredDomain nfs4domain to be used.
      * @return NFSv4 domain
+     * @see <a href="http://docs.oracle.com/cd/E19253-01/816-4555/epubp/index.html">nfsmapid and DNS
+     * TXT Records</a>
      */
-    private String discoverNFS4Domain(String configuredDomain) throws NamingException, UnknownHostException {
+    private String discoverNFS4Domain(String configuredDomain)
+          throws NamingException, UnknownHostException {
 
         if (!Strings.isNullOrEmpty(configuredDomain)) {
             LOGGER.info("Using config provided nfs4domain: {}", configuredDomain);
@@ -222,8 +220,9 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         // Java doesn't provide a way to discover local domain.....
         String fqdn = InetAddress.getLocalHost().getCanonicalHostName();
         if (!InternetDomainName.isValid(fqdn)) {
-            LOGGER.warn("The FQDN {} can't be associated with a domain name, using default nfs4domain: {}",
-                    fqdn, DEFAULT_NFS4_DOMAIN);
+            LOGGER.warn(
+                  "The FQDN {} can't be associated with a domain name, using default nfs4domain: {}",
+                  fqdn, DEFAULT_NFS4_DOMAIN);
             return DEFAULT_NFS4_DOMAIN;
         }
 
@@ -231,20 +230,20 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         if (!domainName.hasParent()) {
             // DNS is not configured, or we got something like localhost
             LOGGER.warn("The FQDN {} has no parent, using default nfs4domain: {}",
-                    fqdn, DEFAULT_NFS4_DOMAIN);
+                  fqdn, DEFAULT_NFS4_DOMAIN);
             return DEFAULT_NFS4_DOMAIN;
         }
 
         // try to get TXT record from DNS a server
         Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial",
-                "com.sun.jndi.dns.DnsContextFactory");
+              "com.sun.jndi.dns.DnsContextFactory");
 
         DirContext dirContext = new InitialDirContext(env);
 
         InternetDomainName domain = domainName.parent();
         // we can't use InternetDomainName#child as leading underscore is not allowed by domain names
-        String idmapDomainRecord = NFS4_DNS_TXT_REC + "." +domain.toString();
+        String idmapDomainRecord = NFS4_DNS_TXT_REC + "." + domain.toString();
 
         try {
             Attributes attrs = dirContext.getAttributes(idmapDomainRecord, new String[]{"TXT"});
@@ -257,7 +256,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
             }
         } catch (CommunicationException e) {
             LOGGER.warn("DNS query to discover NFS domain name failed: {}",
-                    Throwables.getRootCause(e).getMessage());
+                  Throwables.getRootCause(e).getMessage());
         } catch (NameNotFoundException e) {
             // nfsv4idmapdomain record doesn't exists
         }
@@ -269,6 +268,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
     /**
      * Populate dCache generated subject to NFS4J compatible principals.
+     *
      * @param subject
      * @return
      */
@@ -277,17 +277,18 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
         if (subject.isReadOnly()) {
 
             Subject copy = new Subject(
-                    false,
-                    subject.getPrincipals(),
-                    subject.getPublicCredentials(),
-                    subject.getPrivateCredentials()
+                  false,
+                  subject.getPrincipals(),
+                  subject.getPublicCredentials(),
+                  subject.getPrivateCredentials()
             );
 
             subject = copy;
         }
 
         // with this construction we don't expose which Principals used by nfs4j code as we never crate an instance in dCahce code.
-        Subject unixSubject = UnixSubjects.toSubject(Subjects.getUid(subject), Subjects.getPrimaryGid(subject), Subjects.getGids(subject));
+        Subject unixSubject = UnixSubjects.toSubject(Subjects.getUid(subject),
+              Subjects.getPrimaryGid(subject), Subjects.getGids(subject));
         subject.getPrincipals().addAll(unixSubject.getPrincipals());
 
         return subject;

@@ -17,36 +17,33 @@
  */
 package org.dcache.pool.repository;
 
-import diskCacheV111.util.PnfsId;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
+import diskCacheV111.util.PnfsId;
+
 /**
- * An Allocator that wraps some other Allocator and imposes a limit on
- * the total allocation for this upload.
+ * An Allocator that wraps some other Allocator and imposes a limit on the total allocation for this
+ * upload.
  */
-public class LimitedAllocator extends ForwardingAllocator
-{
+public class LimitedAllocator extends ForwardingAllocator {
+
     private final Allocator _inner;
     private final long _maximumSize;
     private long _currentSize;
 
-    public LimitedAllocator(Allocator inner, long maximumSize)
-    {
+    public LimitedAllocator(Allocator inner, long maximumSize) {
         _inner = inner;
         _maximumSize = maximumSize;
     }
 
     @Override
-    protected Allocator getAllocator()
-    {
+    protected Allocator getAllocator() {
         return _inner;
     }
 
     @Override
     public synchronized void allocate(PnfsId id, long size) throws IllegalStateException,
-            IllegalArgumentException, InterruptedException, OutOfDiskException
-    {
+          IllegalArgumentException, InterruptedException, OutOfDiskException {
         checkArgument(size >= 0);
         if (_currentSize + size > _maximumSize) {
             throw new OutOfDiskException("Exceeded allowed upload size");
@@ -56,8 +53,8 @@ public class LimitedAllocator extends ForwardingAllocator
     }
 
     @Override
-    public synchronized void free(PnfsId id, long size) throws IllegalStateException, IllegalArgumentException
-    {
+    public synchronized void free(PnfsId id, long size)
+          throws IllegalStateException, IllegalArgumentException {
         checkArgument(size >= 0);
         super.free(id, size);
         _currentSize -= size;

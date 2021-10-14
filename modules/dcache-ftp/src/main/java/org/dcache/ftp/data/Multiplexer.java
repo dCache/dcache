@@ -1,43 +1,39 @@
 package org.dcache.ftp.data;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Multiplexer implements an event loop around a normal Java NIO
- * Selector and delegates each even to MultiplexerListener
- * implementations.
- *
- * Besides the infrastructure for registering listeners and the event
- * loop, this class provides little functionality.
- *
+ * Multiplexer implements an event loop around a normal Java NIO Selector and delegates each even to
+ * MultiplexerListener implementations.
+ * <p>
+ * Besides the infrastructure for registering listeners and the event loop, this class provides
+ * little functionality.
+ * <p>
  * Notice that the multiplexer is not thread-safe.
  */
-public class Multiplexer
-{
+public class Multiplexer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Multiplexer.class);
 
     protected boolean _shutdown;
     protected Selector _selector;
 
     /**
-     * Constructs a new multiplexer. The multiplexer must be destroyed
-     * by a call to close().
+     * Constructs a new multiplexer. The multiplexer must be destroyed by a call to close().
      */
     public Multiplexer() throws IOException {
-        _shutdown      = false;
-        _selector      = Selector.open();
+        _shutdown = false;
+        _selector = Selector.open();
     }
 
     /**
-     * The event loop. The event loop continues running until
-     * shutdown() is called or the current thread has been
-     * interrupted.
+     * The event loop. The event loop continues running until shutdown() is called or the current
+     * thread has been interrupted.
      *
      * @throws InterruptedException
      */
@@ -51,8 +47,8 @@ public class Multiplexer
 
             for (SelectionKey key : _selector.selectedKeys()) {
                 MultiplexerListener listener =
-                        (MultiplexerListener)key.attachment();
-                if (key.isValid() && key.isConnectable() ) {
+                      (MultiplexerListener) key.attachment();
+                if (key.isValid() && key.isConnectable()) {
                     listener.connect(this, key);
                 }
                 if (key.isValid() && key.isAcceptable()) {
@@ -70,31 +66,28 @@ public class Multiplexer
     }
 
     /**
-     * Register a listener on the given channel. Only one listener can
-     * be registered on any given channel. If a listener was already
-     * registered, the old listener is silently unregistered and the
-     * new listener is registered. The listener is registered for the
-     * type of events specified by the op bitmask (@see
-     * SelectionKey).
+     * Register a listener on the given channel. Only one listener can be registered on any given
+     * channel. If a listener was already registered, the old listener is silently unregistered and
+     * the new listener is registered. The listener is registered for the type of events specified
+     * by the op bitmask (@see SelectionKey).
      */
     public SelectionKey register(MultiplexerListener listener,
-                                 int op, SelectableChannel channel)
-            throws IOException
-    {
+          int op, SelectableChannel channel)
+          throws IOException {
         return channel.register(_selector, op, listener);
     }
 
     /**
-     * Add a listener to the multiplexer. This is equivalent to
-     * calling listener.register(multiplexer).
+     * Add a listener to the multiplexer. This is equivalent to calling
+     * listener.register(multiplexer).
      */
     public void add(MultiplexerListener listener) throws IOException {
         listener.register(this);
     }
 
     /**
-     * Closes the multiplexer. This closes the encapsulated selector
-     * and all channels currently registered in the selector.
+     * Closes the multiplexer. This closes the encapsulated selector and all channels currently
+     * registered in the selector.
      */
     public void close() throws IOException {
         for (SelectionKey key : _selector.keys()) {

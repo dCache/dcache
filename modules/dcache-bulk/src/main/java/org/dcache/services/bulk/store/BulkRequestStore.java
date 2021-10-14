@@ -59,8 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store;
 
-import javax.security.auth.Subject;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -68,7 +66,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
@@ -79,20 +77,19 @@ import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkStorageException;
 
 /**
- *  Implemented by the underlying stores; combines both internal and
- *  external APIs (the latter in support of user-facing requests).
+ * Implemented by the underlying stores; combines both internal and external APIs (the latter in
+ * support of user-facing requests).
  */
-public interface BulkRequestStore
-{
-    static String uidGidKey(Subject subject)
-    {
+public interface BulkRequestStore {
+
+    static String uidGidKey(Subject subject) {
         try {
             if (subject == null) {
                 return "<unknown>:<unknown>";
             }
 
             return Subjects.getUid(subject) + ":"
-                            + Subjects.getPrimaryGid(subject);
+                  + Subjects.getPrimaryGid(subject);
         } catch (NoSuchElementException | IllegalArgumentException e) {
             return "<unknown>:<unknown>";
         }
@@ -101,8 +98,7 @@ public interface BulkRequestStore
     /**
      * Does not throw exception, as this is a last resort cancellation.
      * <p>
-     * Should not clear the request from store unless automatic clear
-     * is set.
+     * Should not clear the request from store unless automatic clear is set.
      *
      * @param requestId unique id for request.
      * @param exception possibly associated with the abort.
@@ -125,8 +121,8 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     void clear(Subject subject, String requestId)
-                    throws BulkRequestStorageException,
-                    BulkPermissionDeniedException;
+          throws BulkRequestStorageException,
+          BulkPermissionDeniedException;
 
     /**
      * @param requestId unique id for request.
@@ -140,8 +136,7 @@ public interface BulkRequestStore
 
     /**
      * @param user originator of the requests (=uidGidKey).
-     * @return the number of (matching) requests owned by the owner
-     * which have yet to be completed.
+     * @return the number of (matching) requests owned by the owner which have yet to be completed.
      * @throws BulkRequestStorageException
      */
     int countNonTerminated(String user) throws BulkRequestStorageException;
@@ -150,21 +145,21 @@ public interface BulkRequestStore
      * @param requestFilter optional filter on the request.
      * @param statusFilter  optional filter on the request status
      * @param limit         max requests to return (can be <code>null</code>).
-     * @return a collection of requests in the store which match
-     * the filters, if present; no filter means return all.
+     * @return a collection of requests in the store which match the filters, if present; no filter
+     * means return all.
      * @throws BulkRequestStorageException
      */
     Collection<BulkRequest> find(Optional<Predicate<BulkRequest>> requestFilter,
-                                 Optional<Predicate<BulkRequestStatus>> statusFilter,
-                                 Long limit)
-                    throws BulkRequestStorageException;
+          Optional<Predicate<BulkRequestStatus>> statusFilter,
+          Long limit)
+          throws BulkRequestStorageException;
 
     /**
      * @param requestId unique id for request.
      * @return optional of the request.
      */
     Optional<BulkRequest> getRequest(String requestId)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * @param subject of request user
@@ -173,7 +168,7 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     Set<String> getRequestUrls(Subject subject, Set<Status> status)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * @param requestId unique id for request.
@@ -181,7 +176,7 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     Optional<Restriction> getRestriction(String requestId)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * @param subject   of request user
@@ -190,8 +185,8 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     BulkRequestStatus getStatus(Subject subject, String requestId)
-                    throws BulkRequestStorageException,
-                    BulkPermissionDeniedException;
+          throws BulkRequestStorageException,
+          BulkPermissionDeniedException;
 
     /**
      * @param requestId unique id for request.
@@ -199,11 +194,10 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     Optional<BulkRequestStatus> getStatus(String requestId)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
-     * @return comparator for request status by timestamp.  Takes
-     * requestId.
+     * @return comparator for request status by timestamp.  Takes requestId.
      */
     Comparator<String> getStatusComparator();
 
@@ -213,7 +207,7 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     Optional<Subject> getSubject(String requestId)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * Checks to see if the subject owns or has access to the request.
@@ -232,16 +226,14 @@ public interface BulkRequestStore
     Set<String> ids();
 
     /**
-     * Load the store into memory.
-     * May be a NOP.
+     * Load the store into memory. May be a NOP.
      */
     void load() throws BulkStorageException;
 
     /**
      * @param limit max requests to return
-     * @return list of requests in the store
-     * which are queued to start;
-     * these should be ordered by arrival time.
+     * @return list of requests in the store which are queued to start; these should be ordered by
+     * arrival time.
      * @throws BulkRequestStorageException
      */
     List<BulkRequest> next(long limit) throws BulkRequestStorageException;
@@ -255,32 +247,29 @@ public interface BulkRequestStore
     void reset(String requestId) throws BulkRequestStorageException;
 
     /**
-     * Persist the store from memory.
-     * May be a NOP.
+     * Persist the store from memory. May be a NOP.
      */
     void save() throws BulkStorageException;
 
     /**
-     * Store the request.  It is understood that an associated status
-     * object is also generated and stored with it.
+     * Store the request.  It is understood that an associated status object is also generated and
+     * stored with it.
      *
      * @param subject     sending the request.
      * @param restriction on subject's permissions.
      * @param request     request specifics.
-     * @param status      request status; if <code>null</code> a new instance
-     *                    will be created.
+     * @param status      request status; if <code>null</code> a new instance will be created.
      * @throws BulkRequestStorageException
      */
     void store(Subject subject,
-               Restriction restriction,
-               BulkRequest request,
-               BulkRequestStatus status)
-                    throws BulkRequestStorageException;
+          Restriction restriction,
+          BulkRequest request,
+          BulkRequestStatus status)
+          throws BulkRequestStorageException;
 
     /**
-     * Update the request target record error.  Does not increment
-     * the completion count as this target has not been added since it
-     * failed prematurely.
+     * Update the request target record error.  Does not increment the completion count as this
+     * target has not been added since it failed prematurely.
      *
      * @param requestId unique id for request.
      * @param target    belonging to the request.
@@ -288,7 +277,7 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     void targetAborted(String requestId, String target, Throwable exception)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * Update the request target completion count and record error.
@@ -299,7 +288,7 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     void targetCompleted(String requestId, String target, Throwable exception)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 
     /**
      * Update the status of the request.
@@ -309,5 +298,5 @@ public interface BulkRequestStore
      * @throws BulkRequestStorageException
      */
     void update(String requestId, Status status)
-                    throws BulkRequestStorageException;
+          throws BulkRequestStorageException;
 }

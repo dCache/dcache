@@ -19,37 +19,32 @@ package org.dcache.srm;
 
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMOtherException extends SRMException
-{
+public class SRMOtherException extends SRMException {
+
     private static final long serialVersionUID = 2572990986579044025L;
     private TStatusCode statusCode;
 
-    public SRMOtherException(TStatusCode statusCode)
-    {
+    public SRMOtherException(TStatusCode statusCode) {
         this.statusCode = statusCode;
     }
 
-    public SRMOtherException(TStatusCode statusCode, String message)
-    {
+    public SRMOtherException(TStatusCode statusCode, String message) {
         super(message);
         this.statusCode = statusCode;
     }
 
-    public SRMOtherException(TStatusCode statusCode, String message, Throwable cause)
-    {
+    public SRMOtherException(TStatusCode statusCode, String message, Throwable cause) {
         super(message, cause);
         this.statusCode = statusCode;
     }
 
-    public SRMOtherException(TStatusCode statusCode, Throwable cause)
-    {
+    public SRMOtherException(TStatusCode statusCode, Throwable cause) {
         super(cause);
         this.statusCode = statusCode;
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return statusCode;
     }
 }

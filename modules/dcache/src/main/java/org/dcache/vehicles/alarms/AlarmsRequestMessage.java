@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.alarms;
 
-import java.util.List;
-
 import diskCacheV111.vehicles.Message;
+import java.util.List;
 import org.dcache.alarms.LogEntry;
 import org.dcache.util.FieldSort;
 
@@ -69,20 +68,21 @@ import org.dcache.util.FieldSort;
  * <p>Request for list of alarms filtered by date range and/or type.</p>
  */
 public class AlarmsRequestMessage extends Message {
-    private Long            limit;
-    private Long            offset;
-    private Long            before;
-    private Long            after;
-    private String          type;
-    private Boolean         includeClosed;
-    private String          severity;
-    private String          host;
-    private String          domain;
-    private String          service;
-    private String          info;
+
+    private Long limit;
+    private Long offset;
+    private Long before;
+    private Long after;
+    private String type;
+    private Boolean includeClosed;
+    private String severity;
+    private String host;
+    private String domain;
+    private String service;
+    private String info;
     private List<FieldSort> sort;
 
-    private List<LogEntry>  alarms;
+    private List<LogEntry> alarms;
 
     public Long getAfter() {
         return after;

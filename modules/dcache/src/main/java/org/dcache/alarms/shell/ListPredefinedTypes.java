@@ -66,9 +66,7 @@ COPYRIGHT STATUS:
 package org.dcache.alarms.shell;
 
 import com.google.common.base.Joiner;
-
 import java.util.Arrays;
-
 import org.dcache.alarms.PredefinedAlarm;
 
 /**
@@ -77,6 +75,7 @@ import org.dcache.alarms.PredefinedAlarm;
  * @author arossi
  */
 public final class ListPredefinedTypes {
+
     private static final String ERROR_PROMPT = "--> cause: ";
 
     public static void main(String[] args) {
@@ -111,7 +110,7 @@ public final class ListPredefinedTypes {
                  * a bug, shouldn't happen
                  */
                 System.err.println("This is a bug; please report it "
-                                                   + "to the dCache team.");
+                      + "to the dCache team.");
                 t.printStackTrace();
             } else {
                 System.err.println(t.getMessage());

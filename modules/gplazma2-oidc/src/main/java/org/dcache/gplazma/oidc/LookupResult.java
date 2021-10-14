@@ -18,55 +18,48 @@
  */
 package org.dcache.gplazma.oidc;
 
+import static java.util.Objects.requireNonNull;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * This class represents the result of a user-info request.
  */
-public class LookupResult
-{
+public class LookupResult {
+
     private final Set<Principal> principals;
     private final String error;
     private final IdentityProvider ip;
 
-    public static LookupResult error(IdentityProvider ip, String message)
-    {
+    public static LookupResult error(IdentityProvider ip, String message) {
         return new LookupResult(ip, Collections.emptySet(), requireNonNull(message));
     }
 
-    public static LookupResult success(IdentityProvider ip, Set<Principal> principals)
-    {
+    public static LookupResult success(IdentityProvider ip, Set<Principal> principals) {
         return new LookupResult(ip, principals, null);
     }
 
-    private LookupResult(IdentityProvider ip, Set<Principal> principals, String error)
-    {
+    private LookupResult(IdentityProvider ip, Set<Principal> principals, String error) {
         this.principals = requireNonNull(principals);
         this.ip = requireNonNull(ip);
         this.error = error;
     }
 
-    public IdentityProvider getIdentityProvider()
-    {
+    public IdentityProvider getIdentityProvider() {
         return ip;
     }
 
-    public boolean isSuccess()
-    {
+    public boolean isSuccess() {
         return error == null;
     }
 
-    public String getError()
-    {
+    public String getError() {
         return error;
     }
 
-    public Set<Principal> getPrincipals()
-    {
+    public Set<Principal> getPrincipals() {
         return principals;
     }
 }

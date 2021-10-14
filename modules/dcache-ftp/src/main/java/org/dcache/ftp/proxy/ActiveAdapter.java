@@ -66,8 +66,8 @@
 
 package org.dcache.ftp.proxy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Strings.indentLines;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -84,29 +84,27 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.Strings.indentLines;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * The ActiveAdapter relays data by accepting TCP connections and establishing
- * a corresponding TCP connection to the specified endpoint.  The adapter opens
- * a server socket that listens for incoming connections.  When a connection is
- * established, a corresponding connection to the target endpoint is established.
+ * The ActiveAdapter relays data by accepting TCP connections and establishing a corresponding TCP
+ * connection to the specified endpoint.  The adapter opens a server socket that listens for
+ * incoming connections.  When a connection is established, a corresponding connection to the target
+ * endpoint is established.
  * <p>
- * Once established, any data received from either connection is relayed to the
- * corresponding connection.  This data is not parsed in any way and can contain
- * arbitrary information.
+ * Once established, any data received from either connection is relayed to the corresponding
+ * connection.  This data is not parsed in any way and can contain arbitrary information.
  * <p>
- * When a remote party (on either side of the adapter) half-closes their
- * connection (i.e., the adapter sees the connection's input is now closed), it
- * will half-close the corresponding channel's output.  Therefore, when both
- * remote parties close their connection, both connections are completely closed.
+ * When a remote party (on either side of the adapter) half-closes their connection (i.e., the
+ * adapter sees the connection's input is now closed), it will half-close the corresponding
+ * channel's output.  Therefore, when both remote parties close their connection, both connections
+ * are completely closed.
  */
-public class ActiveAdapter implements Runnable, ProxyAdapter
-{
+public class ActiveAdapter implements Runnable, ProxyAdapter {
+
     private static final Logger _log =
-        LoggerFactory.getLogger(ActiveAdapter.class);
+          LoggerFactory.getLogger(ActiveAdapter.class);
 
     /* After the transfer is completed we only expect the key for the
      * server socket to be left.
@@ -114,7 +112,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private static final int EXPECTED_KEY_SET_SIZE_WHEN_DONE = 1;
 
     private ServerSocketChannel _ssc; // The ServerSocketChannel we will
-                                        // listen on...
+    // listen on...
     private String _tgtHost; // The remote host to connect
     private int _tgtPort; // The remote port to connect
     private String _laddr; // Local IP address
@@ -129,8 +127,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private final List<Tunnel> _tunnels = new ArrayList<>();
 
     public ActiveAdapter(InetAddress internalAddress, String host, int port)
-            throws IOException
-    {
+          throws IOException {
         _tgtHost = host;
         _tgtPort = port;
 
@@ -146,8 +143,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     }
 
     @Override
-    public synchronized void close()
-    {
+    public synchronized void close() {
         _closeForced = true;
         if (_selector != null) {
             _selector.wakeup();
@@ -159,8 +155,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         }
     }
 
-    private synchronized void closeNow()
-    {
+    private synchronized void closeNow() {
         if (_ssc != null) {
             try {
                 say("Closing " + _ssc.socket());
@@ -172,7 +167,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         }
 
         if (_selector != null) {
-            for (SelectionKey key: _selector.keys()) {
+            for (SelectionKey key : _selector.keys()) {
                 if (key.isValid() && key.attachment() instanceof Tunnel) {
                     ((Tunnel) key.attachment()).close();
                 }
@@ -191,8 +186,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      * Returns whether the transfer is still in progress.
      */
     private synchronized boolean isTransferInProgress()
-        throws IOException
-    {
+          throws IOException {
         if (_closeForced) {
             return false;
         }
@@ -294,6 +288,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      */
     private class Tunnel {
+
         //
         private final SocketChannel _scs;
         private final SocketChannel _sct;
@@ -332,8 +327,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         /*
          *
          */
-        public void close()
-        {
+        public void close() {
             if (_selector != null) {
                 SelectionKey key;
 
@@ -392,8 +386,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         /*
          *
          */
-        private void processInput(SocketChannel scs) throws IOException
-        {
+        private void processInput(SocketChannel scs) throws IOException {
             SocketChannel sct = getMate(scs);
             ByteBuffer b = getBuffer(scs);
             b.clear();
@@ -418,8 +411,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         /*
          *
          */
-        private void processOutput(SocketChannel sct) throws IOException
-        {
+        private void processOutput(SocketChannel sct) throws IOException {
             SocketChannel scs = getMate(sct);
             ByteBuffer b = getBuffer(scs);
 
@@ -447,8 +439,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      *
      */
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             // Create a new Selector for selecting
             // _selector = Selector.open();
@@ -468,7 +459,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
                 // Get the keys corresponding to the activity that has been
                 // detected, and process them one by one
                 Iterator<SelectionKey> selectedKeys = _selector.selectedKeys()
-                        .iterator();
+                      .iterator();
 
                 while (selectedKeys.hasNext()) {
                     // Get a key representing one of bits of I/O activity
@@ -577,8 +568,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      *
      */
-    private void read(SelectionKey key)
-    {
+    private void read(SelectionKey key) {
         Tunnel tnl = null;
         try {
             // There is incoming data on a connection, process it
@@ -595,8 +585,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      *
      */
-    private void write(SelectionKey key)
-    {
+    private void write(SelectionKey key) {
         Tunnel tnl = null;
         try {
             // There is outgoing data on a connection, process it
@@ -665,14 +654,13 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     }
 
     @Override
-    public String toString()
-    {
-        return "active -> " + _tgtHost + ":" + _tgtPort + "; " + _streamsCreated + " streams created";
+    public String toString() {
+        return "active -> " + _tgtHost + ":" + _tgtPort + "; " + _streamsCreated
+              + " streams created";
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("Active adapter:");
         pw.println("    Listening for pool on: " + _ssc.socket().getLocalSocketAddress());
         pw.println("    Connecting to: " + _tgtHost + ":" + _tgtPort);

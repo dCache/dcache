@@ -66,11 +66,11 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.base.Strings;
-import org.apache.axis.types.URI;
-
 import java.rmi.RemoteException;
-
+import org.apache.axis.types.URI;
 import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -84,9 +84,8 @@ import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
-
 public class SRMV2CopyJob implements CopyJob {
+
     private java.net.URI from;
     private java.net.URI to;
     private ISRM srm;
@@ -100,7 +99,8 @@ public class SRMV2CopyJob implements CopyJob {
     private String requestToken;
 
 
-    public SRMV2CopyJob(java.net.URI from, java.net.URI to, ISRM srm, String requestToken, Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
+    public SRMV2CopyJob(java.net.URI from, java.net.URI to, ISRM srm, String requestToken,
+          Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
         this.from = requireNonNull(from);
         this.to = requireNonNull(to);
         this.srm = requireNonNull(srm);
@@ -140,7 +140,7 @@ public class SRMV2CopyJob implements CopyJob {
 
     @Override
     public String toString() {
-        return "CopyJob, source = "+from+" destination = "+to;
+        return "CopyJob, source = " + from + " destination = " + to;
     }
 
     @Override
@@ -153,12 +153,13 @@ public class SRMV2CopyJob implements CopyJob {
         }
 
         try {
-            URI surlArray[] = new URI[]{ new URI(surl.toASCIIString()) };
+            URI surlArray[] = new URI[]{new URI(surl.toASCIIString())};
             if (!success) {
                 SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
                 srmAbortFilesRequest.setRequestToken(requestToken);
                 srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
-                SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
+                SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(
+                      srmAbortFilesRequest);
                 if (srmAbortFilesResponse == null) {
                     logger.elog("srmAbortFilesResponse is null");
                 } else {
@@ -174,19 +175,20 @@ public class SRMV2CopyJob implements CopyJob {
                 srmReleaseFilesRequest.setRequestToken(requestToken);
                 srmReleaseFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
                 SrmReleaseFilesResponse srmReleaseFilesResponse =
-                        srm.srmReleaseFiles(srmReleaseFilesRequest);
+                      srm.srmReleaseFiles(srmReleaseFilesRequest);
                 TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
                 if (returnStatus == null) {
                     success = false;
                     error = "srmReleaseFilesResponse return status is null";
                 } else {
-                    logger.log("srmReleaseFilesResponse status code=" + returnStatus.getStatusCode());
+                    logger.log(
+                          "srmReleaseFilesResponse status code=" + returnStatus.getStatusCode());
                 }
             } else {
                 SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
                 srmPutDoneRequest.setRequestToken(requestToken);
                 srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
-                SrmPutDoneResponse srmPutDoneResponse =srm.srmPutDone(srmPutDoneRequest);
+                SrmPutDoneResponse srmPutDoneResponse = srm.srmPutDone(srmPutDoneRequest);
                 TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
                 if (returnStatus == null) {
                     success = false;
@@ -195,11 +197,14 @@ public class SRMV2CopyJob implements CopyJob {
                     success = false;
                     ArrayOfTSURLReturnStatus arrayOfFileStatuses = srmPutDoneResponse.getArrayOfFileStatuses();
                     if (arrayOfFileStatuses != null &&
-                            arrayOfFileStatuses.getStatusArray() != null &&
-                            arrayOfFileStatuses.getStatusArray().length > 0 &&
-                            arrayOfFileStatuses.getStatusArray()[0].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS &&
-                            !Strings.isNullOrEmpty(arrayOfFileStatuses.getStatusArray()[0].getStatus().getExplanation())) {
-                        error = arrayOfFileStatuses.getStatusArray()[0].getStatus().getExplanation();
+                          arrayOfFileStatuses.getStatusArray() != null &&
+                          arrayOfFileStatuses.getStatusArray().length > 0 &&
+                          arrayOfFileStatuses.getStatusArray()[0].getStatus().getStatusCode()
+                                != TStatusCode.SRM_SUCCESS &&
+                          !Strings.isNullOrEmpty(arrayOfFileStatuses.getStatusArray()[0].getStatus()
+                                .getExplanation())) {
+                        error = arrayOfFileStatuses.getStatusArray()[0].getStatus()
+                              .getExplanation();
                     } else {
                         error = returnStatus.getExplanation();
                     }

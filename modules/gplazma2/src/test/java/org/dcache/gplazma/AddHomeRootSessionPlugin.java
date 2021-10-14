@@ -1,9 +1,10 @@
 package org.dcache.gplazma;
 
+import static java.util.Objects.requireNonNull;
+
 import java.security.Principal;
 import java.util.Properties;
 import java.util.Set;
-
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.Restriction;
@@ -11,12 +12,10 @@ import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * This plugin adds a specified home, root and readOnly attribute to
- * authorizedPrincipals if is detects a specified user principal in
- * authorizedPrincipals
+ * This plugin adds a specified home, root and readOnly attribute to authorizedPrincipals if is
+ * detects a specified user principal in authorizedPrincipals
+ *
  * @author timur
  */
 public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
@@ -37,18 +36,20 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
 
     public AddHomeRootSessionPlugin(Properties properties) {
 
-        root = new RootDirectory(requireNonNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
+        root = new RootDirectory(
+              requireNonNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
         user = new UserNamePrincipal(properties.getProperty(USER_KEY, USER_DEFAULT));
         home = new HomeDirectory(properties.getProperty(HOME_KEY, HOME_DEFAULT));
-        boolean isReadonly = Boolean.valueOf(properties.getProperty(READONLY_KEY, READONLY_DEFAULT));
+        boolean isReadonly = Boolean.valueOf(
+              properties.getProperty(READONLY_KEY, READONLY_DEFAULT));
         restriction = isReadonly ? Restrictions.readOnly() : null;
     }
 
     @Override
     public void session(Set<Principal> authorizedPrincipals,
-            Set<Object> attrib) throws AuthenticationException {
-        for(Principal principal:authorizedPrincipals ) {
-            if(principal.equals(user)) {
+          Set<Object> attrib) throws AuthenticationException {
+        for (Principal principal : authorizedPrincipals) {
+            if (principal.equals(user)) {
                 attrib.add(home);
                 attrib.add(root);
                 if (restriction != null) {

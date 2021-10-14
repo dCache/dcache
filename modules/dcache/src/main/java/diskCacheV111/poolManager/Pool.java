@@ -2,7 +2,11 @@ package diskCacheV111.poolManager;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.pools.PoolV2Mode;
+import dmg.cells.nucleus.CellAddressCore;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,14 +15,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.pools.PoolV2Mode;
-
-import dmg.cells.nucleus.CellAddressCore;
-
 public class Pool extends PoolCore implements SelectionPool {
+
     private static final long serialVersionUID = 8108406418388363116L;
     final Map<String, PGroup> _pGroupList = new ConcurrentHashMap<>();
     private boolean _enabled = true;
@@ -63,8 +61,7 @@ public class Pool extends PoolCore implements SelectionPool {
     }
 
     /**
-     * Returns true if pool heartbeat was received within the last
-     * 5 minutes.
+     * Returns true if pool heartbeat was received within the last 5 minutes.
      */
     @Override
     public boolean isActive() {
@@ -86,18 +83,19 @@ public class Pool extends PoolCore implements SelectionPool {
      */
     @Override
     public boolean canRead() {
-        return isEnabled() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(PoolV2Mode.DISABLED_FETCH) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        return isEnabled() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(
+              PoolV2Mode.DISABLED_FETCH) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
     }
 
     /**
-     * Returns true if writing to the pool is allowed. Since we
-     * cannot distinguish between a client write and a
-     * pool-to-pool write, both operations must be enabled on the
-     * pool.
+     * Returns true if writing to the pool is allowed. Since we cannot distinguish between a client
+     * write and a pool-to-pool write, both operations must be enabled on the pool.
      */
     @Override
     public boolean canWrite() {
-        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(PoolV2Mode.DISABLED_STORE) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD) && !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
+        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED
+              && !_mode.isDisabled(PoolV2Mode.DISABLED_STORE) && !_mode.isDisabled(
+              PoolV2Mode.DISABLED_DEAD) && !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
     }
 
     /**
@@ -105,24 +103,27 @@ public class Pool extends PoolCore implements SelectionPool {
      */
     @Override
     public boolean canReadFromTape() {
-        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(PoolV2Mode.DISABLED_STAGE) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED
+              && !_mode.isDisabled(PoolV2Mode.DISABLED_STAGE) && !_mode.isDisabled(
+              PoolV2Mode.DISABLED_DEAD);
     }
 
     /**
-     * Returns true if the pool can deliver files for P2P
-     * operations.
+     * Returns true if the pool can deliver files for P2P operations.
      */
     @Override
     public boolean canReadForP2P() {
-        return isEnabled() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        return isEnabled() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(
+              PoolV2Mode.DISABLED_P2P_SERVER) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
     }
 
     /**
-     * Returns true if the pool can receive files for P2P
-     * operations.
+     * Returns true if the pool can receive files for P2P operations.
      */
     public boolean canWriteForP2P() {
-        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED && !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) && !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        return isEnabled() && !isReadOnly() && _mode.getMode() != PoolV2Mode.DISABLED
+              && !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) && !_mode.isDisabled(
+              PoolV2Mode.DISABLED_DEAD);
     }
 
     public void setEnabled(boolean enabled) {
@@ -144,7 +145,10 @@ public class Pool extends PoolCore implements SelectionPool {
 
     @Override
     public String toString() {
-        return getName() + "  (enabled=" + _enabled + ";active=" + (_active > 0 ? (getActive() / 1000) : "no") + ";rdOnly=" + isReadOnly() + ";links=" + _linkList.size() + ";pgroups=" + _pGroupList.size() + ";hsm=" + _hsmInstances.toString() + ";mode=" + _mode + ")";
+        return getName() + "  (enabled=" + _enabled + ";active=" + (_active > 0 ? (getActive()
+              / 1000) : "no") + ";rdOnly=" + isReadOnly() + ";links=" + _linkList.size()
+              + ";pgroups=" + _pGroupList.size() + ";hsm=" + _hsmInstances.toString() + ";mode="
+              + _mode + ")";
     }
 
     @Override
@@ -157,8 +161,7 @@ public class Pool extends PoolCore implements SelectionPool {
     }
 
     @Override
-    public long getSerialId()
-    {
+    public long getSerialId() {
         return _serialId;
     }
 
@@ -201,26 +204,22 @@ public class Pool extends PoolCore implements SelectionPool {
     }
 
     @Override
-    public CellAddressCore getAddress()
-    {
+    public CellAddressCore getAddress() {
         return _address;
     }
 
     @Override
-    public void setAddress(CellAddressCore address)
-    {
+    public void setAddress(CellAddressCore address) {
         _address = address;
     }
 
     @Override
-    public void setCanonicalHostName(String hostName)
-    {
+    public void setCanonicalHostName(String hostName) {
         _hostName = hostName;
     }
 
     @Override
-    public Optional<String> getCanonicalHostName()
-    {
+    public Optional<String> getCanonicalHostName() {
         return Optional.ofNullable(_hostName);
     }
 }

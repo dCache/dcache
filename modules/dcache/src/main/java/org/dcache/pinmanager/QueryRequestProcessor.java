@@ -1,22 +1,18 @@
 package org.dcache.pinmanager;
 
-import org.springframework.beans.factory.annotation.Required;
+import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 
 import diskCacheV111.util.CacheException;
-
 import dmg.cells.nucleus.CellMessageReceiver;
-
 import org.dcache.pinmanager.PinDao.PinCriterion;
-
-import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
+import org.springframework.beans.factory.annotation.Required;
 
 
 /**
  * Process request to get the count of pins.
- *
  */
 public class QueryRequestProcessor
-        implements CellMessageReceiver {
+      implements CellMessageReceiver {
 
     private PinDao _dao;
 
@@ -28,8 +24,7 @@ public class QueryRequestProcessor
 
     public PinManagerCountPinsMessage
     messageArrived(PinManagerCountPinsMessage message)
-            throws CacheException
-    {
+          throws CacheException {
         PinCriterion criterion = _dao.where().pnfsId(message.getPnfsId());
         String requestId = message.getRequestId();
         if (requestId != null) {

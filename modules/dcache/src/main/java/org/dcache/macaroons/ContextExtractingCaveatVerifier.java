@@ -17,29 +17,27 @@
  */
 package org.dcache.macaroons;
 
-import com.github.nitram509.jmacaroons.GeneralCaveatVerifier;
+import static org.dcache.macaroons.CaveatValues.parseActivityCaveatValue;
+import static org.dcache.macaroons.CaveatValues.parseIdentityCaveatValue;
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
+import com.github.nitram509.jmacaroons.GeneralCaveatVerifier;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
-import static org.dcache.macaroons.CaveatValues.*;
-import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
-
 /**
- * Extract context information from caveats.  Fails if those caveats are
- * somehow invalid.
+ * Extract context information from caveats.  Fails if those caveats are somehow invalid.
  */
-public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
-{
+public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier {
+
     private final MacaroonContext context = new MacaroonContext();
 
     private String error;
     private boolean haveCaveats;
 
     @Override
-    public boolean verifyCaveat(String serialised)
-    {
+    public boolean verifyCaveat(String serialised) {
         try {
             Caveat caveat = new Caveat(serialised);
             boolean accepted = acceptCaveat(caveat);
@@ -51,72 +49,70 @@ public class ContextExtractingCaveatVerifier implements GeneralCaveatVerifier
         }
     }
 
-    private boolean acceptCaveat(Caveat caveat) throws InvalidCaveatException
-    {
+    private boolean acceptCaveat(Caveat caveat) throws InvalidCaveatException {
         String value = caveat.getValue();
 
         switch (caveat.getType()) {
-        case HOME:
-            context.updateHome(value);
-            break;
+            case HOME:
+                context.updateHome(value);
+                break;
 
-        case ROOT:
-            context.updateRoot(value);
-            break;
+            case ROOT:
+                context.updateRoot(value);
+                break;
 
-        case PATH:
-            context.updatePath(value);
-            break;
+            case PATH:
+                context.updatePath(value);
+                break;
 
-        case IDENTITY:
-            parseIdentityCaveatValue(context, value);
-            break;
+            case IDENTITY:
+                parseIdentityCaveatValue(context, value);
+                break;
 
-        case ACTIVITY:
-            context.updateAllowedActivities(parseActivityCaveatValue(value));
-            break;
+            case ACTIVITY:
+                context.updateAllowedActivities(parseActivityCaveatValue(value));
+                break;
 
-        case BEFORE:
-            try {
-                Instant expiry = Instant.parse(value);
-                if (Instant.now().isAfter(expiry)) {
-                    throw new InvalidCaveatException("expired");
+            case BEFORE:
+                try {
+                    Instant expiry = Instant.parse(value);
+                    if (Instant.now().isAfter(expiry)) {
+                        throw new InvalidCaveatException("expired");
+                    }
+                    context.updateExpiry(expiry);
+                } catch (DateTimeParseException e) {
+                    throw InvalidCaveatException.wrap("Bad ISO 8601 timestamp", e);
                 }
-                context.updateExpiry(expiry);
-            } catch (DateTimeParseException e) {
-                throw InvalidCaveatException.wrap("Bad ISO 8601 timestamp", e);
-            }
-            break;
+                break;
 
-        case MAX_UPLOAD:
-            try {
-                long maxUpload = Long.parseLong(value);
-                context.updateMaxUpload(maxUpload);
-            } catch (NumberFormatException e) {
-                throw InvalidCaveatException.wrap("Bad " + CaveatType.MAX_UPLOAD.getLabel(), e);
-            }
-            break;
+            case MAX_UPLOAD:
+                try {
+                    long maxUpload = Long.parseLong(value);
+                    context.updateMaxUpload(maxUpload);
+                } catch (NumberFormatException e) {
+                    throw InvalidCaveatException.wrap("Bad " + CaveatType.MAX_UPLOAD.getLabel(), e);
+                }
+                break;
 
-        case ISSUE_ID:
-            checkCaveat(context.getIssueId() == null, "Multiple %s", CaveatType.ISSUE_ID.getLabel());
-            checkCaveat(!haveCaveats, "%s not first caveat", CaveatType.ISSUE_ID.getLabel());
-            context.updateIssueId(value);
-            break;
+            case ISSUE_ID:
+                checkCaveat(context.getIssueId() == null, "Multiple %s",
+                      CaveatType.ISSUE_ID.getLabel());
+                checkCaveat(!haveCaveats, "%s not first caveat", CaveatType.ISSUE_ID.getLabel());
+                context.updateIssueId(value);
+                break;
 
-        default:
-            return false;
+            default:
+                return false;
         }
 
         return true;
     }
 
-    public MacaroonContext getContext()
-    {
+    public MacaroonContext getContext() {
         return context;
     }
 
-    public Optional<String> getError()
-    {
+    public Optional<String> getError() {
         return Optional.ofNullable(error);
     }
 }

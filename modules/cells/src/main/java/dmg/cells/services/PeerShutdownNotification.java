@@ -20,19 +20,17 @@ package dmg.cells.services;
 
 import java.io.Serializable;
 
-public class PeerShutdownNotification implements Serializable
-{
+public class PeerShutdownNotification implements Serializable {
+
     private static final long serialVersionUID = 8153133416685738651L;
 
     private final String domainName;
 
-    public PeerShutdownNotification(String domainName)
-    {
+    public PeerShutdownNotification(String domainName) {
         this.domainName = domainName;
     }
 
-    public String getDomainName()
-    {
+    public String getDomainName() {
         return domainName;
     }
 }

@@ -21,12 +21,11 @@ import java.net.URI;
 
 /**
  * A request to remove a file from nearline storage.
- *
- * A remove request has no result value beyond success or failure to
- * delete the file.
+ * <p>
+ * A remove request has no result value beyond success or failure to delete the file.
  */
-public interface RemoveRequest extends NearlineRequest<Void>
-{
+public interface RemoveRequest extends NearlineRequest<Void> {
+
     /**
      * URI of the file to remove as generated when the file was flushed.
      *

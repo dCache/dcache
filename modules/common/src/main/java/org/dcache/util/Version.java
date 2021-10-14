@@ -10,24 +10,22 @@ import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
-public class Version
-{
+public class Version {
+
     private final Optional<String> _version;
     private final Optional<String> _buildTime;
     private final Optional<String> _buildNumber;
     private final Optional<String> _branch;
 
     public Version(Optional<String> buildTime, Optional<String> version,
-                   Optional<String> buildNumber, Optional<String> branch)
-    {
+          Optional<String> buildNumber, Optional<String> branch) {
         _buildTime = buildTime;
         _buildNumber = buildNumber;
         _version = version;
         _branch = branch;
     }
 
-    public static Version of(Class<?> clazz)
-    {
+    public static Version of(Class<?> clazz) {
         Optional<String> buildTime = Optional.empty();
         Optional<String> version = Optional.empty();
         Optional<String> buildNumber = Optional.empty();
@@ -53,33 +51,27 @@ public class Version
         return new Version(buildTime, version, buildNumber, branch);
     }
 
-    public static Version of(Object object)
-    {
+    public static Version of(Object object) {
         return of(object.getClass());
     }
 
-    public String getVersion()
-    {
+    public String getVersion() {
         return _version.orElse("undefined");
     }
 
-    public String getBuildTime()
-    {
+    public String getBuildTime() {
         return _buildTime.orElse("undefined");
     }
 
-    public String getBuild()
-    {
+    public String getBuild() {
         return _buildNumber.orElse("undefined");
     }
 
-    public String getBranch()
-    {
+    public String getBranch() {
         return _branch.orElse("undefined");
     }
 
-    public static void main(String[] args) throws IOException
-    {
+    public static void main(String[] args) throws IOException {
         System.out.println(Version.of(Version.class).getVersion());
     }
 }

@@ -1,12 +1,6 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
+import static diskCacheV111.util.CacheException.INVALID_UPDATE;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -14,21 +8,23 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
-
-import static diskCacheV111.util.CacheException.INVALID_UPDATE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ChimeraHsmStorageInfoExtractor implements
-       ChimeraStorageInfoExtractable {
+      ChimeraStorageInfoExtractable {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(ChimeraHsmStorageInfoExtractor.class);
+          LoggerFactory.getLogger(ChimeraHsmStorageInfoExtractor.class);
 
     /**
      * default access latency for newly created files
@@ -42,7 +38,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
 
     public ChimeraHsmStorageInfoExtractor(AccessLatency defaultAL,
-                                          RetentionPolicy defaultRP) {
+          RetentionPolicy defaultRP) {
 
         _defaultAccessLatency = defaultAL;
         _defaultRetentionPolicy = defaultRP;
@@ -57,8 +53,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     }
 
     @Override
-    public AccessLatency getAccessLatency(ExtendedInode inode) throws CacheException
-    {
+    public AccessLatency getAccessLatency(ExtendedInode inode) throws CacheException {
         try {
             if (!inode.exists()) {
                 throw new FileNotFoundCacheException(inode.toString() + " does not exist");
@@ -82,12 +77,13 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 try {
                     return AccessLatency.getAccessLatency(accessLatency.get());
                 } catch (IllegalArgumentException e) {
-                    LOGGER.error("Badly formatted AccessLatency tag in {}: {}", dirInode, e.getMessage());
+                    LOGGER.error("Badly formatted AccessLatency tag in {}: {}", dirInode,
+                          e.getMessage());
                 }
             }
 
             Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-            if (spaceToken.isPresent() ) {
+            if (spaceToken.isPresent()) {
                 return null;
             }
             return getDefaultAccessLatency();
@@ -99,8 +95,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     }
 
     @Override
-    public RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException
-    {
+    public RetentionPolicy getRetentionPolicy(ExtendedInode inode) throws CacheException {
         try {
             if (!inode.exists()) {
                 throw new FileNotFoundCacheException(inode.toString() + " does not exists");
@@ -124,12 +119,13 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
                 try {
                     return RetentionPolicy.getRetentionPolicy(retentionPolicy.get());
                 } catch (IllegalArgumentException e) {
-                    LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", dirInode, e.getMessage());
+                    LOGGER.error("Badly formatted RetentionPolicy tag in {}: {}", dirInode,
+                          e.getMessage());
                 }
             }
 
             Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-            if (spaceToken.isPresent() ) {
+            if (spaceToken.isPresent()) {
                 return null;
             }
 
@@ -150,10 +146,10 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
 
     @Override
     public StorageInfo getStorageInfo(ExtendedInode inode)
-            throws CacheException {
+          throws CacheException {
 
         try {
-            if( !inode.exists() ) {
+            if (!inode.exists()) {
                 throw new FileNotFoundCacheException(inode.toString() + " does not exist");
             }
         } catch (ChimeraFsException e) {
@@ -164,14 +160,14 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         ExtendedInode dirInode;
 
         if (inode.isDirectory()) {
-            info =  getDirStorageInfo(inode);
+            info = getDirStorageInfo(inode);
             dirInode = inode;
         } else {
             dirInode = inode.getParent();
             if (dirInode == null) {
                 throw new FileNotFoundCacheException("File " + inode + " has been deleted.");
             }
-            info =  getFileStorageInfo(inode);
+            info = getFileStorageInfo(inode);
         }
 
         // overwrite hsm type with hsmInstance tag
@@ -186,12 +182,12 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
 
         Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-        if (spaceToken.isPresent() ) {
+        if (spaceToken.isPresent()) {
             info.setKey("writeToken", spaceToken.get());
         }
 
         Optional<String> path = getFirstLine(dirInode.getTag("Path"));
-        if (path.isPresent() ) {
+        if (path.isPresent()) {
             info.setKey("path", path.get());
         }
 
@@ -199,6 +195,7 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     }
 
     public abstract StorageInfo getFileStorageInfo(ExtendedInode inode) throws CacheException;
+
     public abstract StorageInfo getDirStorageInfo(ExtendedInode inode) throws CacheException;
 
     /*
@@ -211,48 +208,47 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
     public void setStorageInfo(FsInode inode, StorageInfo dCacheStorageInfo) throws CacheException {
 
         try {
-            if(dCacheStorageInfo.isSetAddLocation() ) {
+            if (dCacheStorageInfo.isSetAddLocation()) {
                 checkFlushUpdate(dCacheStorageInfo);
 
                 List<URI> locationURIs = dCacheStorageInfo.locations();
 
-                if( !locationURIs.isEmpty() ) {
+                if (!locationURIs.isEmpty()) {
                     InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
-                    dCacheStorageInfo.getHsm(),
-                    dCacheStorageInfo.getKey("store"),
-                    dCacheStorageInfo.getKey("group"));
+                          dCacheStorageInfo.getHsm(),
+                          dCacheStorageInfo.getKey("store"),
+                          dCacheStorageInfo.getKey("group"));
                     inode.getFs().setStorageInfo(inode, storageInfo);
                 }
 
-                for(URI location : locationURIs) {
+                for (URI location : locationURIs) {
                     // skip bad URI's if the get here
-                    if(location.toString().isEmpty()) {
+                    if (location.toString().isEmpty()) {
                         continue;
                     }
                     HsmLocationExtractorFactory.validate(location);
-                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, location.toString());
+                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE,
+                          location.toString());
                 }
             }
 
-        }catch(FileNotFoundHimeraFsException e) {
+        } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException(e.getMessage());
-        }catch(ChimeraFsException he ) {
-            throw new CacheException(he.getMessage() );
+        } catch (ChimeraFsException he) {
+            throw new CacheException(he.getMessage());
         }
     }
 
-    protected void checkFlushUpdate(StorageInfo info) throws CacheException
-    {
+    protected void checkFlushUpdate(StorageInfo info) throws CacheException {
         List<URI> locations = info.locations();
 
         if (locations.isEmpty()) {
             throw new CacheException(INVALID_UPDATE, "Flush was successful but"
-                    + " no extra (tape) locations were reported.");
+                  + " no extra (tape) locations were reported.");
         }
     }
 
-    protected static Optional<String> getFirstLine(List<String> lines)
-    {
+    protected static Optional<String> getFirstLine(List<String> lines) {
         if (!lines.isEmpty()) {
             String line = lines.get(0).trim();
             if (!line.isEmpty()) {

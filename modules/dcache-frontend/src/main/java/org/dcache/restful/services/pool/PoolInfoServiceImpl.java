@@ -109,13 +109,14 @@ import org.springframework.beans.factory.annotation.Required;
  * <p>Responsible for serving up data from the cache.</p>
  */
 public class PoolInfoServiceImpl extends
-                CellDataCollectingService<Map<String, ListenableFutureWrapper<PoolDataRequestMessage>>,
-                                PoolDiagnosticInfoCollector>
-                implements PoolInfoService, CellMessageReceiver {
+      CellDataCollectingService<Map<String, ListenableFutureWrapper<PoolDataRequestMessage>>,
+            PoolDiagnosticInfoCollector>
+      implements PoolInfoService, CellMessageReceiver {
+
     private static <N extends PoolNearlineListingMessage> PagedList<NearlineData>
-            getNearlineData(String pool, ListenableFutureWrapper<N> wrapper)
-                    throws InterruptedException,  NoRouteToCellException,
-                    CacheException {
+    getNearlineData(String pool, ListenableFutureWrapper<N> wrapper)
+          throws InterruptedException, NoRouteToCellException,
+          CacheException {
         List<NearlineData> data = null;
         int total = 0;
 
@@ -131,10 +132,10 @@ public class PoolInfoServiceImpl extends
     }
 
     private static <M extends PoolMoverListingMessage>
-            PagedList<MoverData>
-            getMoverData(String pool, ListenableFutureWrapper<M> wrapper)
-                    throws InterruptedException, NoRouteToCellException,
-                    CacheException {
+    PagedList<MoverData>
+    getMoverData(String pool, ListenableFutureWrapper<M> wrapper)
+          throws InterruptedException, NoRouteToCellException,
+          CacheException {
         List<org.dcache.pool.movers.json.MoverData> data = null;
         int total = 0;
 
@@ -147,13 +148,13 @@ public class PoolInfoServiceImpl extends
         }
 
         return new PagedList<>(data.stream()
-                                   .map(org.dcache.restful.providers.pool.MoverData::new)
-                                   .collect(Collectors.toList()),
-                               total);
+              .map(org.dcache.restful.providers.pool.MoverData::new)
+              .collect(Collectors.toList()),
+              total);
     }
 
     private static RuntimeException handleExecutionException(ExecutionException e)
-                    throws CacheException, NoRouteToCellException {
+          throws CacheException, NoRouteToCellException {
         Throwable thrownDuringExecution = e.getCause();
         if (thrownDuringExecution instanceof NoRouteToCellException) {
             throw (NoRouteToCellException) thrownDuringExecution;
@@ -163,22 +164,24 @@ public class PoolInfoServiceImpl extends
             return (RuntimeException) thrownDuringExecution;
         } else {
             return new RuntimeException("Unexpected exception.",
-                                        thrownDuringExecution);
+                  thrownDuringExecution);
         }
     }
 
     @Command(name = "pools set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "collections of pool information")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "collections of pool information")
     class PoolsSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "pools refresh",
-                    hint = "Query for current pool info",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query for current pool info",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class PoolsRefreshCommand extends RefreshCommand {
+
         @Override
         public String call() {
             processor.cancel();
@@ -187,7 +190,7 @@ public class PoolInfoServiceImpl extends
     }
 
     private final ReadWriteData<String, PoolInfoWrapper> cache
-                    = new ReadWriteData<>(true);
+          = new ReadWriteData<>(true);
 
     /**
      * <p>Remote monitor, from context.</p>
@@ -217,7 +220,7 @@ public class PoolInfoServiceImpl extends
     public void getCacheInfo(String pool, PnfsId pnfsid, PoolInfo info) {
         CacheEntryInfoMessage message = new CacheEntryInfoMessage(pnfsid);
         ListenableFutureWrapper<CacheEntryInfoMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
         try {
             message = wrapper.getFuture().get();
             info.setPnfsidInfo(message.getInfo());
@@ -226,8 +229,8 @@ public class PoolInfoServiceImpl extends
             LOGGER.trace("get cache info interrupted.");
         } catch (ExecutionException e) {
             LOGGER.error("Problem retrieving cache info for {} on {}: "
-                                         + "{}, cause: {}.",
-                         pnfsid, pool, e.getMessage(), e.getCause());
+                        + "{}, cause: {}.",
+                  pnfsid, pool, e.getMessage(), e.getCause());
         }
     }
 
@@ -242,14 +245,14 @@ public class PoolInfoServiceImpl extends
             synchronized (this) {
                 PoolSelectionUnit psu = getSelectionUnit();
                 List<String> groups = psu.getPoolGroupsOfPool(name)
-                                         .stream()
-                                         .map(SelectionPoolGroup::getName)
-                                         .collect(Collectors.toList());
+                      .stream()
+                      .map(SelectionPoolGroup::getName)
+                      .collect(Collectors.toList());
                 Set<String> links = groups.stream()
-                                          .map(psu::getLinksPointingToPoolGroup)
-                                          .flatMap(c -> c.stream())
-                                          .map(SelectionLink::getName)
-                                          .collect(Collectors.toSet());
+                      .map(psu::getLinksPointingToPoolGroup)
+                      .flatMap(c -> c.stream())
+                      .map(SelectionLink::getName)
+                      .collect(Collectors.toSet());
                 data.setPoolGroups(groups);
                 data.setLinks(links);
                 info.setPoolData(data);
@@ -264,13 +267,13 @@ public class PoolInfoServiceImpl extends
     public void getFileStat(String name, PoolInfo info) {
         PoolInfoWrapper cached = cache.read(name);
         if (cached != null) {
-            Histogram[] fstat = new Histogram[] {
-                            toHistogram(cached.getInfo().getSweeperData()
-                                              .getLastAccessHistogram()),
-                            toHistogram(cached.getFileLiftimeMax()),
-                            toHistogram(cached.getFileLiftimeAvg()),
-                            toHistogram(cached.getFileLiftimeMin()),
-                            toHistogram(cached.getFileLiftimeStddev()) };
+            Histogram[] fstat = new Histogram[]{
+                  toHistogram(cached.getInfo().getSweeperData()
+                        .getLastAccessHistogram()),
+                  toHistogram(cached.getFileLiftimeMax()),
+                  toHistogram(cached.getFileLiftimeAvg()),
+                  toHistogram(cached.getFileLiftimeMin()),
+                  toHistogram(cached.getFileLiftimeStddev())};
             info.setFileStat(fstat);
         }
     }
@@ -282,13 +285,13 @@ public class PoolInfoServiceImpl extends
     public void getFileStat(String name, PoolGroupInfo info) {
         PoolInfoWrapper cached = cache.read(name);
         if (cached != null) {
-            Histogram[] fstat = new Histogram[] {
-                            toHistogram(cached.getInfo().getSweeperData()
-                                              .getLastAccessHistogram()),
-                            toHistogram(cached.getFileLiftimeMax()),
-                            toHistogram(cached.getFileLiftimeAvg()),
-                            toHistogram(cached.getFileLiftimeMin()),
-                            toHistogram(cached.getFileLiftimeStddev()) };
+            Histogram[] fstat = new Histogram[]{
+                  toHistogram(cached.getInfo().getSweeperData()
+                        .getLastAccessHistogram()),
+                  toHistogram(cached.getFileLiftimeMax()),
+                  toHistogram(cached.getFileLiftimeAvg()),
+                  toHistogram(cached.getFileLiftimeMin()),
+                  toHistogram(cached.getFileLiftimeStddev())};
             info.setGroupFileStat(fstat);
         }
     }
@@ -298,26 +301,26 @@ public class PoolInfoServiceImpl extends
      */
     @Override
     public PagedList<NearlineData> getFlush(String pool,
-                                       int offset,
-                                       int limit,
-                                       String pnfsid,
-                                       String state,
-                                       String storageClass,
-                                       String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException {
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "class,created";
         }
 
         PoolFlushListingMessage message
-                        = new PoolFlushListingMessage(offset,
-                                                      Math.min(limit, maxPoolActivityListSize),
-                                                      pnfsid,
-                                                      state,
-                                                      storageClass,
-                                                      sort);
+              = new PoolFlushListingMessage(offset,
+              Math.min(limit, maxPoolActivityListSize),
+              pnfsid,
+              state,
+              storageClass,
+              sort);
         ListenableFutureWrapper<PoolFlushListingMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
 
         return getNearlineData(pool, wrapper);
     }
@@ -377,36 +380,36 @@ public class PoolInfoServiceImpl extends
      */
     @Override
     public PagedList<MoverData> getMovers(String pool,
-                                          int offset,
-                                          int limit,
-                                          String pnfsid,
-                                          String queue,
-                                          String state,
-                                          String mode,
-                                          String door,
-                                          String storageClass,
-                                          String sort) throws InterruptedException,
-                     NoRouteToCellException, CacheException {
+          int offset,
+          int limit,
+          String pnfsid,
+          String queue,
+          String state,
+          String mode,
+          String door,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,startTime";
         } else {
             //REVISIT this is a hack to maintain backward compatibility; eliminate when pool object is modified
             sort = sort.replace("timeInMilliseconds",
-                            "timeInSeconds");
+                  "timeInSeconds");
         }
 
         PoolMoverListingMessage message
-                        = new PoolMoverListingMessage(offset,
-                                                      Math.min(limit, maxPoolActivityListSize),
-                                                      pnfsid,
-                                                      queue,
-                                                      state,
-                                                      mode,
-                                                      door,
-                                                      storageClass,
-                                                      sort);
+              = new PoolMoverListingMessage(offset,
+              Math.min(limit, maxPoolActivityListSize),
+              pnfsid,
+              queue,
+              state,
+              mode,
+              door,
+              storageClass,
+              sort);
         ListenableFutureWrapper<PoolMoverListingMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
         return getMoverData(pool, wrapper);
     }
 
@@ -415,32 +418,32 @@ public class PoolInfoServiceImpl extends
      */
     @Override
     public PagedList<MoverData> getP2p(String pool,
-                                  int offset,
-                                  int limit,
-                                  String pnfsid,
-                                  String queue,
-                                  String state,
-                                  String storageClass,
-                                  String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException {
+          int offset,
+          int limit,
+          String pnfsid,
+          String queue,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "door,startTime";
         } else {
             //REVISIT this is a hack to maintain backward compatibility; eliminate when pool object is modified
             sort = sort.replace("timeInMilliseconds",
-                                "timeInSeconds");
+                  "timeInSeconds");
         }
 
         PoolP2PListingMessage message
-                        = new PoolP2PListingMessage(offset,
-                                                    Math.min(limit, maxPoolActivityListSize),
-                                                    pnfsid,
-                                                    queue,
-                                                    state,
-                                                    storageClass,
-                                                    sort);
+              = new PoolP2PListingMessage(offset,
+              Math.min(limit, maxPoolActivityListSize),
+              pnfsid,
+              queue,
+              state,
+              storageClass,
+              sort);
         ListenableFutureWrapper<PoolP2PListingMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
         return getMoverData(pool, wrapper);
     }
 
@@ -451,17 +454,17 @@ public class PoolInfoServiceImpl extends
     public void getQueueStat(String name, PoolInfo info) {
         PoolInfoWrapper cached = cache.read(name);
         if (cached != null) {
-            Histogram[] qstat = new Histogram[] {
-                            toHistogram(cached.getActiveMovers()),
-                            toHistogram(cached.getQueuedMovers()),
-                            toHistogram(cached.getActiveP2PClient()),
-                            toHistogram(cached.getQueuedP2PClient()),
-                            toHistogram(cached.getActiveP2P()),
-                            toHistogram(cached.getQueuedP2P()),
-                            toHistogram(cached.getActiveFlush()),
-                            toHistogram(cached.getQueuedFlush()),
-                            toHistogram(cached.getActiveStage()),
-                            toHistogram(cached.getQueuedStage()) };
+            Histogram[] qstat = new Histogram[]{
+                  toHistogram(cached.getActiveMovers()),
+                  toHistogram(cached.getQueuedMovers()),
+                  toHistogram(cached.getActiveP2PClient()),
+                  toHistogram(cached.getQueuedP2PClient()),
+                  toHistogram(cached.getActiveP2P()),
+                  toHistogram(cached.getQueuedP2P()),
+                  toHistogram(cached.getActiveFlush()),
+                  toHistogram(cached.getQueuedFlush()),
+                  toHistogram(cached.getActiveStage()),
+                  toHistogram(cached.getQueuedStage())};
             info.setQueueStat(qstat);
         }
     }
@@ -473,17 +476,17 @@ public class PoolInfoServiceImpl extends
     public void getQueueStat(String name, PoolGroupInfo info) {
         PoolInfoWrapper cached = cache.read(name);
         if (cached != null) {
-            Histogram[] qstat = new Histogram[] {
-                            toHistogram(cached.getActiveMovers()),
-                            toHistogram(cached.getQueuedMovers()),
-                            toHistogram(cached.getActiveP2PClient()),
-                            toHistogram(cached.getQueuedP2PClient()),
-                            toHistogram(cached.getActiveP2P()),
-                            toHistogram(cached.getQueuedP2P()),
-                            toHistogram(cached.getActiveFlush()),
-                            toHistogram(cached.getQueuedFlush()),
-                            toHistogram(cached.getActiveStage()),
-                            toHistogram(cached.getQueuedStage()) };
+            Histogram[] qstat = new Histogram[]{
+                  toHistogram(cached.getActiveMovers()),
+                  toHistogram(cached.getQueuedMovers()),
+                  toHistogram(cached.getActiveP2PClient()),
+                  toHistogram(cached.getQueuedP2PClient()),
+                  toHistogram(cached.getActiveP2P()),
+                  toHistogram(cached.getQueuedP2P()),
+                  toHistogram(cached.getActiveFlush()),
+                  toHistogram(cached.getQueuedFlush()),
+                  toHistogram(cached.getActiveStage()),
+                  toHistogram(cached.getQueuedStage())};
             info.setGroupQueueStat(qstat);
         }
     }
@@ -493,26 +496,26 @@ public class PoolInfoServiceImpl extends
      */
     @Override
     public PagedList<NearlineData> getRemove(String pool,
-                                             int offset,
-                                             int limit,
-                                             String pnfsid,
-                                             String state,
-                                             String storageClass,
-                                             String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException {
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException {
         PoolRemoveListingMessage message
-                        = new PoolRemoveListingMessage(offset,
-                                                       Math.min(limit, maxPoolActivityListSize),
-                                                       pnfsid,
-                                                       state,
-                                                       storageClass,
-                                                       sort);
+              = new PoolRemoveListingMessage(offset,
+              Math.min(limit, maxPoolActivityListSize),
+              pnfsid,
+              state,
+              storageClass,
+              sort);
         if (Strings.isNullOrEmpty(sort)) {
             sort = "class,created";
         }
 
         ListenableFutureWrapper<PoolRemoveListingMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
         return getNearlineData(pool, wrapper);
     }
 
@@ -525,26 +528,26 @@ public class PoolInfoServiceImpl extends
      */
     @Override
     public PagedList<NearlineData> getStage(String pool,
-                                            int offset,
-                                            int limit,
-                                            String pnfsid,
-                                            String state,
-                                            String storageClass,
-                                            String sort) throws InterruptedException,
-                    NoRouteToCellException, CacheException {
+          int offset,
+          int limit,
+          String pnfsid,
+          String state,
+          String storageClass,
+          String sort) throws InterruptedException,
+          NoRouteToCellException, CacheException {
         if (Strings.isNullOrEmpty(sort)) {
             sort = "class,created";
         }
 
         PoolStageListingMessage message
-                        = new PoolStageListingMessage(offset,
-                                                      Math.min(limit, maxPoolActivityListSize),
-                                                      pnfsid,
-                                                      state,
-                                                      storageClass,
-                                                      sort);
+              = new PoolStageListingMessage(offset,
+              Math.min(limit, maxPoolActivityListSize),
+              pnfsid,
+              state,
+              storageClass,
+              sort);
         ListenableFutureWrapper<PoolStageListingMessage> wrapper
-                        = collector.sendRequestToPool(pool, message);
+              = collector.sendRequestToPool(pool, message);
         return getNearlineData(pool, wrapper);
     }
 
@@ -553,8 +556,8 @@ public class PoolInfoServiceImpl extends
     mapToStorageClass(Map<String, StorageUnitSpaceStatistics> byUnit) {
         Map<String, StorageUnitSpaceStatistics> byGroup = new HashMap<>();
         byUnit.entrySet().stream()
-                         .forEach(entry ->byGroup.put(entry.getKey().split("[@]")[0],
-                                                      entry.getValue()));
+              .forEach(entry -> byGroup.put(entry.getKey().split("[@]")[0],
+                    entry.getValue()));
         return byGroup;
     }
 
@@ -600,18 +603,18 @@ public class PoolInfoServiceImpl extends
 
     @Override
     protected void update(
-                    Map<String, ListenableFutureWrapper<PoolDataRequestMessage>> data) {
+          Map<String, ListenableFutureWrapper<PoolDataRequestMessage>> data) {
         try {
             processor.process(data);
         } catch (IllegalStateException e) {
             LOGGER.info("Processing cycle for processor has overlapped; you may wish to "
-                                        + "increase the interval between pool "
-                                        + "info collections, which is currently "
-                                        + "set to {} {}.",
-                        timeout, timeoutUnit);
+                        + "increase the interval between pool "
+                        + "info collections, which is currently "
+                        + "set to {} {}.",
+                  timeout, timeoutUnit);
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Processing failed for the current cycle: {}.",
-                        e.getMessage());
+                  e.getMessage());
         }
     }
 

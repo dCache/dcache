@@ -59,30 +59,29 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
-import java.util.Map;
-import java.util.Objects;
+import static com.google.common.base.Strings.nullToEmpty;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
-
+import java.util.Map;
+import java.util.Objects;
 import org.dcache.auth.Subjects;
-
-import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * @author arossi
  */
 public final class DoorRequestData extends PnfsConnectInfo {
+
     private static final long serialVersionUID = 4921127459667094459L;
 
     public static final String QUEUED_TIME = "queuedTime";
 
     public String toString() {
         return "(" + dateString() + "," + cellName + "," + action + ","
-                        + owner + "," + mappedUID + "," + mappedGID + ","
-                        + "," + client + "," + transaction + "," + pnfsID
-                        + "," + connectionTime + "," + queuedTime + ","
-                        + errorCode + "," + errorMessage + "," + path + ","
-                        + nullToEmpty(fqan) + ")";
+              + owner + "," + mappedUID + "," + mappedGID + ","
+              + "," + client + "," + transaction + "," + pnfsID
+              + "," + connectionTime + "," + queuedTime + ","
+              + errorCode + "," + errorMessage + "," + path + ","
+              + nullToEmpty(fqan) + ")";
     }
 
     private String owner;
@@ -105,7 +104,7 @@ public final class DoorRequestData extends PnfsConnectInfo {
         mappedGID = info.getGid();
         client = info.getClient();
         path = info.getBillingPath();
-        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()),null);
+        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()), null);
     }
 
     public String getOwner() {

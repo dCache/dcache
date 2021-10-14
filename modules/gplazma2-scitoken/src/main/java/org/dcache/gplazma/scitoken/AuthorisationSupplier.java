@@ -17,22 +17,20 @@
  */
 package org.dcache.gplazma.scitoken;
 
-import java.util.Optional;
-
 import diskCacheV111.util.FsPath;
-
+import java.util.Optional;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
 
 /**
- * An AuthorisationSupplier is something that may return a relocatable
- * Authorisation statement.
+ * An AuthorisationSupplier is something that may return a relocatable Authorisation statement.
  */
 @FunctionalInterface
-public interface AuthorisationSupplier
-{
+public interface AuthorisationSupplier {
+
     /**
-     * Provides an authorisation statement.  There is a path argument to allow
-     * the supplier to resolve any relative paths.
+     * Provides an authorisation statement.  There is a path argument to allow the supplier to
+     * resolve any relative paths.
+     *
      * @param prefix The path to resolve relative paths.
      * @return Empty if no authorisation, or a non-null Authorisation statement.
      */

@@ -9,17 +9,19 @@ package org.dcache.srm.util.events;
 import java.beans.PropertyChangeListenerProxy;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
-public class OneToManyMapChangeListenerProxy 
-    extends PropertyChangeListenerProxy
-    implements OneToManyMapChangeListener{
-    /** Creates a new instance of OneToManyMapChangeListenerProxy */
+public class OneToManyMapChangeListenerProxy
+      extends PropertyChangeListenerProxy
+      implements OneToManyMapChangeListener {
+
+    /**
+     * Creates a new instance of OneToManyMapChangeListenerProxy
+     */
     public OneToManyMapChangeListenerProxy(String eventName,
-                                    OneToManyMapChangeListener listener) {
+          OneToManyMapChangeListener listener) {
         super(eventName, listener);
     }
-        
-    
+
+
 }

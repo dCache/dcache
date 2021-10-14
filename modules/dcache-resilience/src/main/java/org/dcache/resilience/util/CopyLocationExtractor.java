@@ -61,18 +61,18 @@ package org.dcache.resilience.util;
 
 import java.util.Collection;
 import java.util.Map;
-
 import org.dcache.resilience.data.PoolInfoMap;
 
 /**
  * <p>Implementation of the {@link AbstractLocationExtractor}
- *      which uses {@link PoolInfoMap} to get the pool tags.</p>
+ * which uses {@link PoolInfoMap} to get the pool tags.</p>
  */
 public final class CopyLocationExtractor extends AbstractLocationExtractor {
+
     private final PoolInfoMap info;
 
     public CopyLocationExtractor(Collection<String> onlyOneCopyPer,
-                                 PoolInfoMap info) {
+          PoolInfoMap info) {
         super(onlyOneCopyPer);
         this.info = info;
     }

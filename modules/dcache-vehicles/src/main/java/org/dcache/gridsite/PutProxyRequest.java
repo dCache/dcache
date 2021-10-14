@@ -18,36 +18,31 @@
  */
 package org.dcache.gridsite;
 
+import java.io.Serializable;
 import javax.security.auth.Subject;
 
-import java.io.Serializable;
+public class PutProxyRequest implements Serializable {
 
-public class PutProxyRequest implements Serializable
-{
     private static final long serialVersionUID = -4493056296943387341L;
     private final Subject subject;
     private final String delegationID;
     private final String proxy;
 
-    public PutProxyRequest(Subject subject, String delegationID, String proxy)
-    {
+    public PutProxyRequest(Subject subject, String delegationID, String proxy) {
         this.subject = subject;
         this.delegationID = delegationID;
         this.proxy = proxy;
     }
 
-    public String getDelegationID()
-    {
+    public String getDelegationID() {
         return delegationID;
     }
 
-    public String getProxy()
-    {
+    public String getProxy() {
         return proxy;
     }
 
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 }

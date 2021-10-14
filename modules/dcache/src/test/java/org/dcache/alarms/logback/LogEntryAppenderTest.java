@@ -59,21 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Marker;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
@@ -81,10 +78,11 @@ import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Marker;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Tests filtering and storing of logging events.<br>
@@ -95,6 +93,7 @@ import static org.junit.Assert.assertThat;
 public class LogEntryAppenderTest {
 
     static class Receiver extends AppenderBase<ILoggingEvent> {
+
         LogEntryHandler handler;
         HashMap<String, String> mdc = new HashMap<>();
 
@@ -160,8 +159,8 @@ public class LogEntryAppenderTest {
         }
     };
 
-    private LogEntry            lastEntry;
-    private Receiver            appender;
+    private LogEntry lastEntry;
+    private Receiver appender;
 
     @Before
     public void setup() throws Exception {
@@ -189,7 +188,7 @@ public class LogEntryAppenderTest {
 
             @Override
             public void setApplicationContext(ApplicationContext applicationContext)
-                            throws BeansException {
+                  throws BeansException {
             }
         };
         handler.setEmailEnabled(false);
@@ -237,7 +236,7 @@ public class LogEntryAppenderTest {
         switch (type) {
             case "DB_UNAVAILABLE":
                 return "Connections could not be acquired "
-                                + "from the underlying database";
+                      + "from the underlying database";
             case "OUT_OF_FILE_DESCRIPTORS":
                 return "There are too many open files";
             case "JVM_OUT_OF_MEMORY":

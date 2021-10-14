@@ -59,18 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.xrootd.plugins.authz;
 
-import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.Subject;
-
-import java.net.InetSocketAddress;
-import java.util.Map;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-
+import io.netty.channel.ChannelHandlerContext;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import javax.security.auth.Subject;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -79,15 +77,13 @@ import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.door.LoginEvent;
 import org.dcache.xrootd.plugins.AuthorizationHandler;
 import org.dcache.xrootd.protocol.XrootdProtocol.FilePerm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_InvalidRequest;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
-import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
+public class XrootdSciTokenAuthzHandler implements AuthorizationHandler {
 
-public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
-{
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(XrootdSciTokenAuthzHandler.class);
+          = LoggerFactory.getLogger(XrootdSciTokenAuthzHandler.class);
 
     /**
      * The path query name to which the SciToken value is assigned.
@@ -95,22 +91,18 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
     private static final String SCITOKEN = "authz";
 
     /**
-     * The open call from the originating client to the destination server in
-     * third-party-copy.
+     * The open call from the originating client to the destination server in third-party-copy.
      */
     private static final String TPC_STAGE = "tpc.stage";
 
     /**
-     * The initial phase of the TPC_STAGE open call.  The client does
-     * not pass the path query tokens to the server, so it is
-     * necessary to skip this phase with respect to token authorization.
+     * The initial phase of the TPC_STAGE open call.  The client does not pass the path query tokens
+     * to the server, so it is necessary to skip this phase with respect to token authorization.
      */
     private static final String TPC_PLACEMENT = "placement";
 
-    private static Activity toActivity(FilePerm perm)
-    {
-        switch(perm)
-        {
+    private static Activity toActivity(FilePerm perm) {
+        switch (perm) {
             case WRITE:
             case WRITE_ONCE:
                 return Activity.UPLOAD;
@@ -151,9 +143,8 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
     private final ChannelHandlerContext ctx;
 
     public XrootdSciTokenAuthzHandler(LoginStrategy loginStrategy,
-                                      boolean strict,
-                                      ChannelHandlerContext ctx)
-    {
+          boolean strict,
+          ChannelHandlerContext ctx) {
         this.loginStrategy = loginStrategy;
         this.strict = strict;
         this.ctx = ctx;
@@ -161,17 +152,16 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
 
     @Override
     public String authorize(Subject subject,
-                            InetSocketAddress localAddress,
-                            InetSocketAddress remoteAddress,
-                            String path,
-                            Map<String, String> opaque,
-                            int request,
-                            FilePerm mode)
-                    throws XrootdException, SecurityException
-    {
+          InetSocketAddress localAddress,
+          InetSocketAddress remoteAddress,
+          String path,
+          Map<String, String> opaque,
+          int request,
+          FilePerm mode)
+          throws XrootdException, SecurityException {
         LOGGER.trace("authorize: {}, {}, {}, {}, {}, {}, {}.",
-                    subject, localAddress, remoteAddress,
-                    path, opaque, request, mode);
+              subject, localAddress, remoteAddress,
+              path, opaque, request, mode);
 
         String tpcStage = opaque.get(TPC_STAGE);
         if (TPC_PLACEMENT.equals(tpcStage)) {
@@ -188,7 +178,7 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
             }
 
             throw new XrootdException(kXR_InvalidRequest,
-                                      "user provided no bearer token.");
+                  "user provided no bearer token.");
         }
 
         Subject tokenSubject = new Subject();
@@ -198,7 +188,7 @@ public class XrootdSciTokenAuthzHandler implements AuthorizationHandler
 
         try {
             LOGGER.debug("getting login reply with: {}.",
-                        tokenSubject.getPrivateCredentials());
+                  tokenSubject.getPrivateCredentials());
             loginReply = loginStrategy.login(tokenSubject);
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.toString());

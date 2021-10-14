@@ -65,16 +65,17 @@ import java.util.Date;
 
 /**
  * <p>Corresponds to the information delivered
- * from the {@link org.dcache.pool.classic.HsmFlushController} using
- * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
+ * from the {@link org.dcache.pool.classic.HsmFlushController} using {@link
+ * dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
 public class FlushControllerData implements Serializable {
+
     private static final long serialVersionUID = 427562149930277435L;
     private String label;
-    private Long    flushInterval;
+    private Long flushInterval;
     private Integer maxActive;
-    private Long    flushDelayOnError;
-    private Long    nextFlush;
+    private Long flushDelayOnError;
+    private Long nextFlush;
 
     public Long getFlushDelayOnError() {
         return flushDelayOnError;
@@ -98,13 +99,13 @@ public class FlushControllerData implements Serializable {
 
     public void print(PrintWriter pw) {
         pw.println("   Flush interval                : " + flushInterval
-                                   + " ms");
+              + " ms");
         pw.println("   Maximum classes flushing      : " + maxActive);
         pw.println("   Minimum flush delay on error  : " + flushDelayOnError
-                                   + " ms");
+              + " ms");
         if (nextFlush != null) {
             pw.println("   Next flush                    : " + new Date(
-                            nextFlush));
+                  nextFlush));
         }
     }
 

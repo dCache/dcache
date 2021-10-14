@@ -1,6 +1,11 @@
 // $Id: PrintPoolCellHelper.java,v 1.1 2006-06-05 08:51:28 patrick Exp $Cg
 package diskCacheV111.services.web;
 
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
+import diskCacheV111.util.HTMLWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -8,53 +13,42 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import diskCacheV111.pools.PoolCellInfo;
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
-import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
-import diskCacheV111.util.HTMLWriter;
+class PoolCostEntry {
 
-class PoolCostEntry
-{
-    final String  _cellName;
-    final String  _domainName;
+    final String _cellName;
+    final String _domainName;
     final int[][] _row;
     final Map<String, NamedPoolQueueInfo> _movers;
 
-    PoolCostEntry(String name, String domain, int[][] row)
-    {
-        _cellName   = name;
+    PoolCostEntry(String name, String domain, int[][] row) {
+        _cellName = name;
         _domainName = domain;
-        _row        = row;
-        _movers     = null;
+        _row = row;
+        _movers = null;
     }
 
     PoolCostEntry(String name, String domain, int[][] row,
-                  Map<String, NamedPoolQueueInfo> movers)
-    {
-        _cellName   = name;
+          Map<String, NamedPoolQueueInfo> movers) {
+        _cellName = name;
         _domainName = domain;
-        _row        = row;
-        _movers     = movers;
+        _row = row;
+        _movers = movers;
     }
 }
 
-class ActionHeaderExtension
-{
-    private final TreeMap<String,int[]> _map;
+class ActionHeaderExtension {
 
-    ActionHeaderExtension(TreeMap<String,int[]> map)
-    {
+    private final TreeMap<String, int[]> _map;
+
+    ActionHeaderExtension(TreeMap<String, int[]> map) {
         _map = map;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return _map.toString();
     }
 
-    int[][] getSortedMovers(Map<String,NamedPoolQueueInfo> moverMap)
-    {
+    int[][] getSortedMovers(Map<String, NamedPoolQueueInfo> moverMap) {
         int[][] rows = new int[_map.size()][];
         if (moverMap == null) {
             for (int i = 0; i < _map.size(); i++) {
@@ -64,13 +58,13 @@ class ActionHeaderExtension
             int i = 0;
             for (String key : _map.keySet()) {
                 NamedPoolQueueInfo mover = moverMap.get(key);
-                if (mover == null ) {
-                    rows[i] = new int[] { -1, -1, -1 };
+                if (mover == null) {
+                    rows[i] = new int[]{-1, -1, -1};
                 } else {
-                    rows[i] = new int[] {
-                        mover.getActive(),
-                        mover.getMaxActive(),
-                        mover.getQueued()
+                    rows[i] = new int[]{
+                          mover.getActive(),
+                          mover.getMaxActive(),
+                          mover.getQueued()
                     };
                 }
                 i++;
@@ -79,34 +73,30 @@ class ActionHeaderExtension
         return rows;
     }
 
-    public Set<String> getSet()
-    {
+    public Set<String> getSet() {
         return _map.keySet();
     }
 
-    public Map<String,int[]> getTotals()
-    {
+    public Map<String, int[]> getTotals() {
         return _map;
     }
 }
 
-public class PoolQueueTableWriter
-{
-    private static final int HEADER_TOP    = 0;
+public class PoolQueueTableWriter {
+
+    private static final int HEADER_TOP = 0;
     private static final int HEADER_MIDDLE = 1;
     private static final int HEADER_BOTTOM = 2;
 
     private final int _repeatHeader = 30;
     private final HTMLWriter _html;
 
-    public PoolQueueTableWriter(HTMLWriter html)
-    {
+    public PoolQueueTableWriter(HTMLWriter html) {
         _html = html;
     }
 
     private void printPoolActionTableTotals(ActionHeaderExtension extension,
-                                            int[][] total)
-    {
+          int[][] total) {
         _html.beginRow("total");
         _html.th(2, null, "Total");
 
@@ -120,8 +110,8 @@ public class PoolQueueTableWriter
             _html.td("queued", row[2]);
         }
 
-        Map<String,int[]> map =
-            extension == null ? null : extension.getTotals();
+        Map<String, int[]> map =
+              extension == null ? null : extension.getTotals();
         if (map != null) {
             for (int[] row : map.values()) {
                 _html.td("active", row[0]);
@@ -133,11 +123,10 @@ public class PoolQueueTableWriter
     }
 
     private void printPoolActionRow(PoolCostEntry info,
-                                    ActionHeaderExtension ext)
-    {
+          ActionHeaderExtension ext) {
         try {
             _html.beginRow(null, "odd");
-            _html.td("cell",   info._cellName);
+            _html.td("cell", info._cellName);
             _html.td("domain", info._domainName);
 
             for (int[] row : info._row) {
@@ -176,16 +165,15 @@ public class PoolQueueTableWriter
     }
 
     private void printPoolActionTableHeader(ActionHeaderExtension ext,
-                                            int position)
-    {
-        assert HEADER_TOP    == 0;
+          int position) {
+        assert HEADER_TOP == 0;
         assert HEADER_MIDDLE == 1;
         assert HEADER_BOTTOM == 2;
 
         int[][] program = {
-            { 0, 1, 2, 3 },
-            { 0, 3, 2, 1, 2, 3 },
-            { 0, 3, 2, 1 }
+              {0, 1, 2, 3},
+              {0, 3, 2, 1, 2, 3},
+              {0, 3, 2, 1}
         };
 
         Set<String> moverSet = ext != null ? ext.getSet() : null;
@@ -193,54 +181,52 @@ public class PoolQueueTableWriter
 
         for (int i : program[position]) {
             switch (i) {
-            case 0:
-                int rowspan = program[position].length / 2;
-                _html.beginRow();
-                _html.th(rowspan, 1, "cell",   "CellName");
-                _html.th(rowspan, 1, "domain", "DomainName");
-                break;
+                case 0:
+                    int rowspan = program[position].length / 2;
+                    _html.beginRow();
+                    _html.th(rowspan, 1, "cell", "CellName");
+                    _html.th(rowspan, 1, "domain", "DomainName");
+                    break;
 
-            case 1:
-                _html.th(3, null, "Movers");
-                _html.th(3, null, "Restores");
-                _html.th(3, null, "Stores");
-                _html.th(3, null, "P2P-Server");
-                _html.th(3, null, "P2P-Client");
+                case 1:
+                    _html.th(3, null, "Movers");
+                    _html.th(3, null, "Restores");
+                    _html.th(3, null, "Stores");
+                    _html.th(3, null, "P2P-Server");
+                    _html.th(3, null, "P2P-Client");
 
-                if (moverSet != null) {
-                    for (String s : moverSet) {
-                        _html.th(3, null, s);
+                    if (moverSet != null) {
+                        for (String s : moverSet) {
+                            _html.th(3, null, s);
+                        }
                     }
-                }
-                _html.endRow();
-                break;
+                    _html.endRow();
+                    break;
 
-            case 2:
-                _html.beginRow();
-                break;
+                case 2:
+                    _html.beginRow();
+                    break;
 
-            case 3:
-                for (int h = 0, n = 5 + diff; h < n; h++) {
-                    _html.th("active", "Active");
-                    _html.th("max",    "Max");
-                    _html.th("queued", "Queued");
-                }
-                _html.endRow();
-                break;
+                case 3:
+                    for (int h = 0, n = 5 + diff; h < n; h++) {
+                        _html.th("active", "Active");
+                        _html.th("max", "Max");
+                        _html.th("queued", "Queued");
+                    }
+                    _html.endRow();
+                    break;
             }
         }
     }
 
     /**
-     * Converts the pool cost info (xgetcellinfo) into the int[][]
-     * array.
+     * Converts the pool cost info (xgetcellinfo) into the int[][] array.
      */
-    private int[][] decodePoolCostInfo(PoolCostInfo costInfo)
-    {
+    private int[][] decodePoolCostInfo(PoolCostInfo costInfo) {
         try {
-            PoolQueueInfo mover     = costInfo.getMoverQueue();
-            PoolQueueInfo restore   = costInfo.getRestoreQueue();
-            PoolQueueInfo store     = costInfo.getStoreQueue();
+            PoolQueueInfo mover = costInfo.getMoverQueue();
+            PoolQueueInfo restore = costInfo.getRestoreQueue();
+            PoolQueueInfo store = costInfo.getStoreQueue();
             PoolQueueInfo p2pServer = costInfo.getP2pQueue();
             PoolQueueInfo p2pClient = costInfo.getP2pClientQueue();
 
@@ -281,8 +267,7 @@ public class PoolQueueTableWriter
         }
     }
 
-    public void print(Collection<PoolCellQueryInfo> itemSet)
-    {
+    public void print(Collection<PoolCellQueryInfo> itemSet) {
         //
         // get the translated list
         //
@@ -296,8 +281,8 @@ public class PoolQueueTableWriter
 
         for (PoolCostEntry e : list) {
             if (e._movers != null) {
-                for (Map.Entry<String,NamedPoolQueueInfo> entry :
-                         e._movers.entrySet()) {
+                for (Map.Entry<String, NamedPoolQueueInfo> entry :
+                      e._movers.entrySet()) {
                     String queueName = entry.getKey();
                     int[] t = moverMap.get(queueName);
                     if (t == null) {
@@ -340,8 +325,7 @@ public class PoolQueueTableWriter
     }
 
     private List<PoolCostEntry>
-        preparePoolCostTable(Collection<PoolCellQueryInfo> itemSet)
-    {
+    preparePoolCostTable(Collection<PoolCellQueryInfo> itemSet) {
         List<PoolCostEntry> list = new ArrayList<>();
 
         for (PoolCellQueryInfo info : itemSet) {
@@ -349,13 +333,13 @@ public class PoolQueueTableWriter
                 PoolCellInfo cellInfo = info.getPoolCellInfo();
                 if (info.isOk()) {
                     PoolCostInfo pci = cellInfo.getPoolCostInfo();
-                    int [] [] status = decodePoolCostInfo(pci);
+                    int[][] status = decodePoolCostInfo(pci);
 
                     if (status != null) {
                         list.add(new PoolCostEntry(cellInfo.getCellName(),
-                                                   cellInfo.getDomainName(),
-                                                   status,
-                                                   pci.getExtendedMoverHash()));
+                              cellInfo.getDomainName(),
+                              status,
+                              pci.getExtendedMoverHash()));
                     }
                 }
             } catch (Exception e) {

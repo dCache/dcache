@@ -1,23 +1,18 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfsv41.common.StatsDecoratedOperationExecutor;
@@ -42,22 +37,23 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.util.PortRange;
-import org.dcache.util.Bytes;
-import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.oncrpc4j.rpc.IoStrategy;
-import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
+import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.OncRpcProgram;
 import org.dcache.oncrpc4j.rpc.OncRpcSvc;
 import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
 import org.dcache.oncrpc4j.rpc.RpcLoginService;
 import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
-import org.dcache.oncrpc4j.rpc.OncRpcException;
+import org.dcache.oncrpc4j.rpc.net.IpProtocolType;
+import org.dcache.util.Bytes;
+import org.dcache.util.PortRange;
+import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.ietf.jgss.GSSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
  * Pool embedded NFSv4.1 data server
- *
  */
 public class NFSv4MoverHandler {
 
@@ -79,7 +75,7 @@ public class NFSv4MoverHandler {
      * NFSv4 operation executer with requests statistics.
      */
     private final StatsDecoratedOperationExecutor _operationFactory =
-            new StatsDecoratedOperationExecutor(new EDSNFSv4OperationFactory());
+          new StatsDecoratedOperationExecutor(new EDSNFSv4OperationFactory());
 
     private final NFSServerV41 _embededDS;
 
@@ -97,21 +93,23 @@ public class NFSv4MoverHandler {
      */
     private final Duration deadMoverIdleTime;
 
-    public NFSv4MoverHandler(NfsTransferService nfsTransferService, PortRange portRange, IoStrategy ioStrategy,
-            boolean withGss, String serverId, CellStub door, long bootVerifier)
-            throws IOException , GSSException, OncRpcException {
+    public NFSv4MoverHandler(NfsTransferService nfsTransferService, PortRange portRange,
+          IoStrategy ioStrategy,
+          boolean withGss, String serverId, CellStub door, long bootVerifier)
+          throws IOException, GSSException, OncRpcException {
 
         _nfsTransferService = nfsTransferService;
         _embededDS = new NFSServerV41.Builder()
-                .withOperationExecutor(_operationFactory)
-                .build();
+              .withOperationExecutor(_operationFactory)
+              .build();
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
-                .withMinPort(portRange.getLower())
-                .withMaxPort(portRange.getUpper())
-                .withTCP()
-                .withoutAutoPublish()
-                .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
+              .withMinPort(portRange.getLower())
+              .withMaxPort(portRange.getUpper())
+              .withTCP()
+              .withoutAutoPublish()
+              .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4),
+                    _embededDS);
 
         _log.debug("Using {} IO strategy", ioStrategy);
         if (ioStrategy == IoStrategy.SAME_THREAD) {
@@ -131,14 +129,16 @@ public class NFSv4MoverHandler {
         _door = door;
         _bootVerifier = bootVerifier;
         _cleanerExecutor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder()
-                .setNameFormat("NFS mover validationthread")
-                .build()
+              new ThreadFactoryBuilder()
+                    .setNameFormat("NFS mover validationthread")
+                    .build()
         );
 
         // Make mover validation schedule to match nfs state handler lease timeout.
-        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime()).multipliedBy(LEASE_MISSES);
-        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(), deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
+        deadMoverIdleTime = Duration.ofSeconds(_embededDS.getStateHandler().getLeaseTime())
+              .multipliedBy(LEASE_MISSES);
+        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), deadMoverIdleTime.toSeconds(),
+              deadMoverIdleTime.toSeconds(), TimeUnit.SECONDS);
         _cleanerExecutor.scheduleAtFixedRate(new MoverResendRedirect(), 30, 30, TimeUnit.SECONDS);
     }
 
@@ -149,7 +149,7 @@ public class NFSv4MoverHandler {
      */
     public void add(NfsMover mover) {
         _log.debug("registering new mover {}", mover);
-        _activeIO.put(mover.getStateId(), mover );
+        _activeIO.put(mover.getStateId(), mover);
     }
 
     /**
@@ -206,7 +206,8 @@ public class NFSv4MoverHandler {
         }
     }
 
-    NfsMover getOrCreateMover(InetSocketAddress remoteAddress, stateid4 stateid, byte[] fh) throws ChimeraNFSException {
+    NfsMover getOrCreateMover(InetSocketAddress remoteAddress, stateid4 stateid, byte[] fh)
+          throws ChimeraNFSException {
         NfsMover mover = _activeIO.get(stateid);
         if (mover == null) {
             /*
@@ -218,32 +219,35 @@ public class NFSv4MoverHandler {
              */
             long clientId = Bytes.getLong(stateid.other, 0);
             return _activeIO.values().stream()
-                    .filter(m -> Bytes.getLong(m.getStateId().other, 0) == clientId)
-                    .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
-                    .findFirst()
-                    .orElse(null);
+                  .filter(m -> Bytes.getLong(m.getStateId().other, 0) == clientId)
+                  .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
+                  .findFirst()
+                  .orElse(null);
         }
         return mover;
     }
 
     /**
      * Find a mover for a corresponding nfs handle.
+     *
      * @param fh file handle
      * @return a mover for a given nfs file handle
      * @throws ChimeraNFSException
      */
     NfsMover getPnfsIdByHandle(byte[] fh) throws BadHandleException {
         return _activeIO.values().stream()
-                .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
-                .findAny()
-                .orElseThrow(() -> new BadHandleException("No mover for found for given file handle"));
+              .filter(m -> Arrays.equals(fh, m.getNfsFilehandle()))
+              .findAny()
+              .orElseThrow(
+                    () -> new BadHandleException("No mover for found for given file handle"));
     }
 
     /**
      * Get TCP port number used by handler.
+     *
      * @return port number.
      */
-    public InetSocketAddress getLocalAddress(){
+    public InetSocketAddress getLocalAddress() {
         return _rpcService.getInetSocketAddress(IpProtocolType.TCP);
     }
 
@@ -263,41 +267,48 @@ public class NFSv4MoverHandler {
             Instant now = Instant.now();
 
             _activeIO.values()
-                    .stream()
-                    .filter(NfsMover::hasSession)
-                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plus(deadMoverIdleTime).isBefore(now))
-                    .forEach(mover -> {
-                        _log.debug("Verifying inactive mover {}", mover);
-                        final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-                        CellStub.addCallback(_door.send(mover.getPathToDoor(),
-                                new DoorValidateMoverMessage<>(-1, mover.getFileAttributes().getPnfsId(), _bootVerifier, legacyStateId)),
-                                new NfsMoverValidationCallback(mover),
-                                    _cleanerExecutor);
-                    });
+                  .stream()
+                  .filter(NfsMover::hasSession)
+                  .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred())
+                        .plus(deadMoverIdleTime).isBefore(now))
+                  .forEach(mover -> {
+                      _log.debug("Verifying inactive mover {}", mover);
+                      final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo()
+                            .stateId();
+                      CellStub.addCallback(_door.send(mover.getPathToDoor(),
+                                  new DoorValidateMoverMessage<>(-1,
+                                        mover.getFileAttributes().getPnfsId(), _bootVerifier,
+                                        legacyStateId)),
+                            new NfsMoverValidationCallback(mover),
+                            _cleanerExecutor);
+                  });
         }
     }
 
     /**
-     * Scans active transfers to find movers that wasn't connected by a client and re-sent the redirect information.
+     * Scans active transfers to find movers that wasn't connected by a client and re-sent the
+     * redirect information.
      */
     class MoverResendRedirect implements Runnable {
+
         @Override
         public void run() {
             Instant now = Instant.now();
 
             // mover is not attached to a session (no connection from client)
             _activeIO.values()
-                    .stream()
-                    .filter(Predicate.not(NfsMover::hasSession))
-                    .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plusSeconds(5).isBefore(now))
-                    .forEach( mover -> {
-                        _log.warn("Re-sending mover redirect {}", mover);
-                        try {
-                            _nfsTransferService.notifyDoorWithRedirect(mover);
-                        } catch (SocketException e) {
-                            _log.warn("Failed to send re-direct notification", e);
-                        }
-                    });
+                  .stream()
+                  .filter(Predicate.not(NfsMover::hasSession))
+                  .filter(mover -> Instant.ofEpochMilli(mover.getLastTransferred()).plusSeconds(5)
+                        .isBefore(now))
+                  .forEach(mover -> {
+                      _log.warn("Re-sending mover redirect {}", mover);
+                      try {
+                          _nfsTransferService.notifyDoorWithRedirect(mover);
+                      } catch (SocketException e) {
+                          _log.warn("Failed to send re-direct notification", e);
+                      }
+                  });
         }
     }
 

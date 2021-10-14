@@ -7,33 +7,28 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import java.io.PrintWriter;
 import java.security.Principal;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
-
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
-
+import javax.security.auth.Subject;
 import org.dcache.util.Args;
 
 /**
  * Caching implementation of {@link LoginStrategy}.
  */
-public class CachingLoginStrategy implements LoginStrategy, CellCommandListener, CellInfoProvider
-{
+public class CachingLoginStrategy implements LoginStrategy, CellCommandListener, CellInfoProvider {
+
     private final LoginStrategy _inner;
 
-    private final LoadingCache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
-    private final LoadingCache<Principal,CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
+    private final LoadingCache<Principal, CheckedFuture<Principal, CacheException>> _forwardCache;
+    private final LoadingCache<Principal, CheckedFuture<Set<Principal>, CacheException>> _reverseCache;
     private final LoadingCache<Subject, CheckedFuture<LoginReply, CacheException>> _loginCache;
 
     private final long _time;
@@ -43,35 +38,35 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     /**
      * Create an instance of LoginStrategy
      *
-     * @param inner {@link LoginStrategy} used for fetching data.
-     * @param size maximal size of cached entries per cache table
+     * @param inner   {@link LoginStrategy} used for fetching data.
+     * @param size    maximal size of cached entries per cache table
      * @param timeout cache entry life time.
-     * @param unit the time unit of the timeout argument
+     * @param unit    the time unit of the timeout argument
      */
     public CachingLoginStrategy(LoginStrategy inner, int size, long timeout, TimeUnit unit) {
 
         _inner = inner;
 
         _forwardCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(timeout, unit)
-                .maximumSize(size)
-                .softValues()
-                .recordStats()
-                .build( new ForwardFetcher());
+              .expireAfterWrite(timeout, unit)
+              .maximumSize(size)
+              .softValues()
+              .recordStats()
+              .build(new ForwardFetcher());
 
         _reverseCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(timeout, unit)
-                .maximumSize(size)
-                .softValues()
-                .recordStats()
-                .build( new ReverseFetcher());
+              .expireAfterWrite(timeout, unit)
+              .maximumSize(size)
+              .softValues()
+              .recordStats()
+              .build(new ReverseFetcher());
 
         _loginCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(timeout, unit)
-                .maximumSize(size)
-                .softValues()
-                .recordStats()
-                .build( new LoginFetcher());
+              .expireAfterWrite(timeout, unit)
+              .maximumSize(size)
+              .softValues()
+              .recordStats()
+              .build(new LoginFetcher());
 
         _time = timeout;
         _unit = unit;
@@ -117,11 +112,12 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class ForwardFetcher extends CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
+    private class ForwardFetcher extends
+          CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
 
         @Override
-        public CheckedFuture<Principal, CacheException> load(Principal f) throws TimeoutCacheException
-        {
+        public CheckedFuture<Principal, CacheException> load(Principal f)
+              throws TimeoutCacheException {
             try {
                 Principal p = _inner.map(f);
                 return Futures.immediateCheckedFuture(p);
@@ -133,14 +129,15 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class ReverseFetcher extends CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
+    private class ReverseFetcher extends
+          CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
 
         @Override
-        public CheckedFuture<Set<Principal>, CacheException> load(Principal f) throws TimeoutCacheException
-        {
+        public CheckedFuture<Set<Principal>, CacheException> load(Principal f)
+              throws TimeoutCacheException {
             try {
                 Set<Principal> s = _inner.reverseMap(f);
-                return  Futures.immediateCheckedFuture(s);
+                return Futures.immediateCheckedFuture(s);
             } catch (TimeoutCacheException e) {
                 throw e;
             } catch (CacheException e) {
@@ -149,11 +146,12 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
         }
     }
 
-    private class LoginFetcher extends CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
+    private class LoginFetcher extends
+          CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
 
         @Override
-        public CheckedFuture<LoginReply, CacheException> load(Subject f) throws TimeoutCacheException
-        {
+        public CheckedFuture<LoginReply, CacheException> load(Subject f)
+              throws TimeoutCacheException {
             try {
                 LoginReply s = _inner.login(f);
                 return Futures.immediateCheckedFuture(s);
@@ -166,6 +164,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     }
 
     public static final String hh_login_clear_cache = " # clear cached result of login and identity mapping oprations";
+
     public String ac_login_clear_cache(Args args) {
 
         _forwardCache.invalidateAll();
@@ -175,12 +174,13 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     }
 
     public static final String hh_login_dump_cache = " # dump cached result of login and identity mapping oprations";
+
     public String ac_login_dump_cache(Args args) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Max Cache size: ").append(_size).append("\n");
         sb.append("Max Cache time: ").append(_time).append(" ")
-                .append(_unit.name().toLowerCase()).append("\n");
+              .append(_unit.name().toLowerCase()).append("\n");
         sb.append("Login:\n");
         for (Subject s : _loginCache.asMap().keySet()) {
             try {
@@ -221,16 +221,14 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.append("gPlazma login cache: ").println(_loginCache.stats());
         pw.append("gPlazma map cache: ").println(_forwardCache.stats());
         pw.append("gPlazma reverse map cache: ").println(_reverseCache.stats());
     }
 
     @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
+    public CellInfo getCellInfo(CellInfo info) {
         return info;
     }
 }

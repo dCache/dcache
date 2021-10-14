@@ -19,8 +19,8 @@ package javatunnel.token;
 
 import java.io.IOException;
 
-public interface TokenWriter
-{
+public interface TokenWriter {
+
     void write(byte[] token) throws IOException;
 
     void close() throws IOException;

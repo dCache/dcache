@@ -17,42 +17,40 @@
  */
 package org.dcache.gridsite;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertPath;
-
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.X509Delegation;
 import org.dcache.gsi.X509DelegationHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The factory class for generating delegated credentials using Bouncy Castle.
  */
-public class BouncyCastleCredentialDelegationFactory implements CredentialDelegationFactory
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(BouncyCastleCredentialDelegationFactory.class);
+public class BouncyCastleCredentialDelegationFactory implements CredentialDelegationFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+          BouncyCastleCredentialDelegationFactory.class);
 
     private KeyPairCache _keypairs;
 
-    public void setKeyPairCache(KeyPairCache keyPairs)
-    {
+    public void setKeyPairCache(KeyPairCache keyPairs) {
         _keypairs = keyPairs;
     }
 
     @Override
-    public CredentialDelegation newDelegation(DelegationIdentity id, CertPath path) throws DelegationException
-    {
+    public CredentialDelegation newDelegation(DelegationIdentity id, CertPath path)
+          throws DelegationException {
         try {
             X509Delegation delegation = X509DelegationHelper.newDelegation(path,
-                                                                           _keypairs);
+                  _keypairs);
 
             return new BouncyCastleCredentialDelegation(delegation.getKeyPair(),
-                                                        id,
-                                                        delegation.getCertificates());
+                  id,
+                  delegation.getCertificates());
 
         } catch (IllegalArgumentException e) {
             throw new DelegationException("Certificate path is empty.");

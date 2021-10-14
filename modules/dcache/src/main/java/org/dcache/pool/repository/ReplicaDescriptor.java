@@ -1,26 +1,22 @@
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.CacheException;
 import java.io.IOException;
 import java.net.URI;
-
-import diskCacheV111.util.CacheException;
-
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 
 /**
  * Repository replica IO descriptor providing read or write access to an entry.
- *
- * A descriptor must be explicitly closed when access id no longer desired.
- * Opened for the write descriptor have to be committed prior closing it.
- *
- * Two or more read descriptors for the same entry can be open
- * simultaneously. An open read descriptor does not prevent entry state
- * changes.
+ * <p>
+ * A descriptor must be explicitly closed when access id no longer desired. Opened for the write
+ * descriptor have to be committed prior closing it.
+ * <p>
+ * Two or more read descriptors for the same entry can be open simultaneously. An open read
+ * descriptor does not prevent entry state changes.
  */
-public interface ReplicaDescriptor
-{
+public interface ReplicaDescriptor {
     /*
      * TODO:
      * for now commit is not called only in case of checksum errors.
@@ -30,40 +26,32 @@ public interface ReplicaDescriptor
 
     /**
      * Commit changes on file.
+     * <p>
+     * The file must not be modified after the descriptor has been committed.
+     * <p>
+     * Committing adjusts space reservation to match the actual file size. It may cause the file
+     * size in the storage info and in PNFS to be updated. Committing sets the repository entry to
+     * its target state.
+     * <p>
+     * In case of problems, the descriptor is not closed and an exception is thrown.
+     * <p>
+     * Committing a descriptor multiple times causes an IllegalStateException.
      *
-     * The file must not be modified after the descriptor has been
-     * committed.
-     *
-     * Committing adjusts space reservation to match the actual file
-     * size. It may cause the file size in the storage info and in
-     * PNFS to be updated. Committing sets the repository entry to its
-     * target state.
-     *
-     * In case of problems, the descriptor is not closed and an exception
-     * is thrown.
-     *
-     * Committing a descriptor multiple times causes an
-     * IllegalStateException.
-     *
-     * @throws IllegalStateException if the descriptor is already
-     * committed or closed.
-     * @throws FileSizeMismatchException if file size does not match
-     * the expected size.
-     * @throws CacheException if the repository or PNFS state could
-     * not be updated.
+     * @throws IllegalStateException     if the descriptor is already committed or closed.
+     * @throws FileSizeMismatchException if file size does not match the expected size.
+     * @throws CacheException            if the repository or PNFS state could not be updated.
      */
     void commit()
-        throws IllegalStateException, InterruptedException, FileSizeMismatchException, CacheException;
+          throws IllegalStateException, InterruptedException, FileSizeMismatchException, CacheException;
 
     /**
      * Closes the descriptor. Once descriptor is closed it can't be used any more.
-     *
-     * If the descriptor was not committed, closing the descriptor will mark
-     * the replica broken or delete it. The action taken depends on
-     * the descriptor state and possibly configuration settings.
-     *
-     * Closing a descriptor multiple times causes an
-     * IllegalStateException.
+     * <p>
+     * If the descriptor was not committed, closing the descriptor will mark the replica broken or
+     * delete it. The action taken depends on the descriptor state and possibly configuration
+     * settings.
+     * <p>
+     * Closing a descriptor multiple times causes an IllegalStateException.
      *
      * @throws IllegalStateException if the descriptor is closed.
      */
@@ -78,6 +66,7 @@ public interface ReplicaDescriptor
 
     /**
      * Get {@link RepositoryChannel} for this {@code ReplicaDescriptor}.
+     *
      * @return repository channel.
      * @throws IOException if repository channel can't be created.
      */
@@ -90,21 +79,21 @@ public interface ReplicaDescriptor
 
     /**
      * Returns known checksums of the file.
-     *
-     * These are the expected checksums, not the actual checksums of the replica. If the
-     * replica is corrupted, the actual checksums may differ from the expected checksums.
-     *
-     * This method differs from calling getEntry().getFileAttributes().getChecksums() by
-     * doing a name space lookup if checksums are not defined in the file attributes. The
-     * result of such a lookup is cached.
+     * <p>
+     * These are the expected checksums, not the actual checksums of the replica. If the replica is
+     * corrupted, the actual checksums may differ from the expected checksums.
+     * <p>
+     * This method differs from calling getEntry().getFileAttributes().getChecksums() by doing a
+     * name space lookup if checksums are not defined in the file attributes. The result of such a
+     * lookup is cached.
      */
     Iterable<Checksum> getChecksums() throws CacheException;
 
     /**
      * Add checksums of the file.
-     *
-     * The checksums are not in any way verified. Only valid checksums should be added.
-     * The checksums will be stored in the name space on commit or close.
+     * <p>
+     * The checksums are not in any way verified. Only valid checksums should be added. The
+     * checksums will be stored in the name space on commit or close.
      *
      * @param checksum Checksum of the file
      */
@@ -112,7 +101,7 @@ public interface ReplicaDescriptor
 
     /**
      * Sets the last access time of the replica.
-     *
+     * <p>
      * Only applicable to writes.
      *
      * @param time
@@ -126,6 +115,7 @@ public interface ReplicaDescriptor
 
     /**
      * Returns replica creation time in milliseconds.
+     *
      * @return replica creation time.
      */
     long getReplicaCreationTime();

@@ -1,4 +1,4 @@
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 
 import java.io.FileInputStream;
@@ -6,96 +6,121 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
-  * Implementation of the StorageInfo for Enstore. Adds 'fileFamily',
-  * 'storageGroup', 'bfid, 'volume, and 'location' to the general
-  * attributes.
-  */
+ * Implementation of the StorageInfo for Enstore. Adds 'fileFamily', 'storageGroup', 'bfid, 'volume,
+ * and 'location' to the general attributes.
+ */
 public class EnstoreStorageInfo extends GenericStorageInfo {
-   private String _family;
-   private String _group;
-   private String _volume   = "<unknown>" ;
-   private String _location = "<unknown>" ;
-   private String _path;
 
-   private static final long serialVersionUID = 8640934581729492133L;
+    private String _family;
+    private String _group;
+    private String _volume = "<unknown>";
+    private String _location = "<unknown>";
+    private String _path;
 
-   public EnstoreStorageInfo( String storageGroup , String fileFamily ){
-      setHsm("enstore");
-      _family = fileFamily ;
-      _group  = storageGroup ;
-      setIsNew( true ) ;
+    private static final long serialVersionUID = 8640934581729492133L;
 
-   }
-   public EnstoreStorageInfo( String storageGroup ,
-                              String fileFamily ,
-                              String bfid ){
-      setHsm("enstore");
-      _family = fileFamily ;
-      _group  = storageGroup ;
-      setBitfileId(bfid) ;
-      setIsNew( false ) ;
+    public EnstoreStorageInfo(String storageGroup, String fileFamily) {
+        setHsm("enstore");
+        _family = fileFamily;
+        _group = storageGroup;
+        setIsNew(true);
 
-   }
-   public void setPath( String path){ _path = path ; }
-   public String getPath(){ return _path ; }
-   @Override
-   public String getStorageClass() {
-      return (_group==null?"None":_group) + '.' +
-             (_family==null?"None":_family) ;
-   }
-   public String toString(){
-      return
+    }
+
+    public EnstoreStorageInfo(String storageGroup,
+          String fileFamily,
+          String bfid) {
+        setHsm("enstore");
+        _family = fileFamily;
+        _group = storageGroup;
+        setBitfileId(bfid);
+        setIsNew(false);
+
+    }
+
+    public void setPath(String path) {
+        _path = path;
+    }
+
+    public String getPath() {
+        return _path;
+    }
+
+    @Override
+    public String getStorageClass() {
+        return (_group == null ? "None" : _group) + '.' +
+              (_family == null ? "None" : _family);
+    }
+
+    public String toString() {
+        return
               super.toString() +
-              ";path=" + (_path==null?"<Unknown>":_path) +
-              ";group=" + (_group==null?"<Unknown>":_group) +
-              ";family=" + (_family==null?"<Unknown>":_family) +
-              ";bfid=" + getBitfileId() +
-              ";volume=" + _volume +
-              ";location=" + _location + ';';
-   }
-   public String getStorageGroup(){ return _group ; }
-   public String getFileFamily(){ return _family ; }
-   public void setVolume( String volume ){ _volume = volume ; }
-   public void setLocation(String location ){ _location = location ; }
+                    ";path=" + (_path == null ? "<Unknown>" : _path) +
+                    ";group=" + (_group == null ? "<Unknown>" : _group) +
+                    ";family=" + (_family == null ? "<Unknown>" : _family) +
+                    ";bfid=" + getBitfileId() +
+                    ";volume=" + _volume +
+                    ";location=" + _location + ';';
+    }
 
-   public String getVolume(){ return _volume ; }
-   public String getLocation(){ return _location ; }
+    public String getStorageGroup() {
+        return _group;
+    }
 
-   @Override
-   public String getKey( String key ){
-      switch (key) {
-         case "store":
-            return _group;
-         case "group":
-            return _family;
-         default:
-            return super.getKey(key);
-      }
-   }
+    public String getFileFamily() {
+        return _family;
+    }
 
-   private void readObject(java.io.ObjectInputStream stream)
-           throws IOException, ClassNotFoundException
-   {
-      stream.defaultReadObject();
-      if (_group != null) {
-         _group = _group.intern();
-      }
+    public void setVolume(String volume) {
+        _volume = volume;
+    }
 
-      if (_family != null) {
-         _family = _family.intern();
-      }
-   }
+    public void setLocation(String location) {
+        _location = location;
+    }
 
-   public static void main (String[] args) throws Exception {
-       ObjectInputStream io = new ObjectInputStream (
-          new FileInputStream(args[0]));
-       Object o = io.readObject();
-       if(!(o instanceof EnstoreStorageInfo)) {
-           System.err.println(" Object read is not a FileInputStream!!!");
-           System.exit(1);
-       }
-       EnstoreStorageInfo se = (EnstoreStorageInfo) o;
-       System.out.println(se);
-   }
+    public String getVolume() {
+        return _volume;
+    }
+
+    public String getLocation() {
+        return _location;
+    }
+
+    @Override
+    public String getKey(String key) {
+        switch (key) {
+            case "store":
+                return _group;
+            case "group":
+                return _family;
+            default:
+                return super.getKey(key);
+        }
+    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+          throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if (_group != null) {
+            _group = _group.intern();
+        }
+
+        if (_family != null) {
+            _family = _family.intern();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        ObjectInputStream io = new ObjectInputStream(
+              new FileInputStream(args[0]));
+        Object o = io.readObject();
+        if (!(o instanceof EnstoreStorageInfo)) {
+            System.err.println(" Object read is not a FileInputStream!!!");
+            System.exit(1);
+        }
+        EnstoreStorageInfo se = (EnstoreStorageInfo) o;
+        System.out.println(se);
+    }
 }
 

@@ -17,51 +17,45 @@
  */
 package org.dcache.pool.repository.inotify;
 
-import java.nio.file.OpenOption;
-import java.time.Duration;
-import java.util.Set;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.nio.file.OpenOption;
+import java.time.Duration;
+import java.util.Set;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.ForwardingReplicaStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-
 /**
- * A ReplicaStore that wraps all ReplicaRecord objects in an
- * InotifyReplicaRecord.
+ * A ReplicaStore that wraps all ReplicaRecord objects in an InotifyReplicaRecord.
  */
-public class InotifyReplicaStore extends ForwardingReplicaStore
-{
+public class InotifyReplicaStore extends ForwardingReplicaStore {
+
     private final ReplicaStore inner;
     private final NotificationAmplifier notification;
     private final Duration suppression;
 
     public InotifyReplicaStore(ReplicaStore inner, NotificationAmplifier notication,
-            Duration duration)
-    {
+          Duration duration) {
         checkArgument(!duration.isNegative(), "Negative suppression duration"
-                + " not allowed: %s", duration);
+              + " not allowed: %s", duration);
         this.inner = requireNonNull(inner);
         this.notification = requireNonNull(notication);
         suppression = duration;
     }
 
     @Override
-    protected ReplicaStore delegate()
-    {
+    protected ReplicaStore delegate() {
         return inner;
     }
 
     @Override
     public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
-            throws DuplicateEntryException, CacheException
-    {
+          throws DuplicateEntryException, CacheException {
         ReplicaRecord innerRecord = super.create(id, flags);
         InotifyReplicaRecord record = new InotifyReplicaRecord(innerRecord, notification, id);
         record.setSuppressDuration(suppression);
@@ -69,8 +63,7 @@ public class InotifyReplicaStore extends ForwardingReplicaStore
     }
 
     @Override
-    public ReplicaRecord get(PnfsId id) throws CacheException
-    {
+    public ReplicaRecord get(PnfsId id) throws CacheException {
         ReplicaRecord innerRecord = super.get(id);
         if (innerRecord == null) {
             return null;

@@ -1,28 +1,25 @@
 package org.dcache.srm.scheduler;
 
-import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.TransactionException;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
-
 import org.dcache.srm.request.Job;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionException;
 
 /**
- *
  * @author timur
  */
 public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J> {
 
     private final JobStorage<J> jobStorage;
-    public ForceOnlyJobStorageDecorator(JobStorage<J> jobStorage ) {
+
+    public ForceOnlyJobStorageDecorator(JobStorage<J> jobStorage) {
         this.jobStorage = jobStorage;
     }
 
     @Override
-    public void init() throws DataAccessException
-    {
+    public void init() throws DataAccessException {
         jobStorage.init();
     }
 
@@ -44,26 +41,22 @@ public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J
     }
 
     @Override
-    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
-    {
+    public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException {
         return jobStorage.getLatestCompletedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
-    {
+    public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException {
         return jobStorage.getLatestFailedJobIds(maxNum);
     }
 
     @Override
-    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
-    {
+    public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException {
         return jobStorage.getLatestCanceledJobIds(maxNum);
     }
 
     @Override
-    public Set<J> getActiveJobs()
-    {
+    public Set<J> getActiveJobs() {
         return jobStorage.getActiveJobs();
     }
 

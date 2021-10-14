@@ -18,22 +18,20 @@
  */
 package diskCacheV111.namespace;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Multimaps.synchronizedListMultimap;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.io.BaseEncoding;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
-import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,95 +48,84 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import org.dcache.namespace.events.EventType;
-
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
-
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.events.Event;
 import org.dcache.events.NotificationMessage;
 import org.dcache.events.SystemEvent;
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.events.EventType;
 import org.dcache.namespace.events.InotifyEvent;
 import org.dcache.util.RepeatableTaskRunner;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Multimaps.synchronizedListMultimap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * This class is responsible for accepting inotify(7)-like events and sending
- * them to event receivers: cells within dCache.  An event receiver must
- * subscribe (so selecting the subset of events that are of interest) before it
- * receives any events.
+ * This class is responsible for accepting inotify(7)-like events and sending them to event
+ * receivers: cells within dCache.  An event receiver must subscribe (so selecting the subset of
+ * events that are of interest) before it receives any events.
  * <p>
- * The two main design goals are that the thread delivering an event to this
- * class never blocks (see EventReceiver) and that the system "degrades
- * gracefully" under overload.  The work is handled by executors, allowing the
- * CPU resources are limited.  This ensures that sending events can never
- * monopolise activity, preventing dCache from doing useful work.  Instead,
- * under overload, users will experience a delay in receiving events (as events
- * are queued).  If the overload persists then events will be dropped, which
- * users are informed of through the OVERFLOW event.
+ * The two main design goals are that the thread delivering an event to this class never blocks (see
+ * EventReceiver) and that the system "degrades gracefully" under overload.  The work is handled by
+ * executors, allowing the CPU resources are limited.  This ensures that sending events can never
+ * monopolise activity, preventing dCache from doing useful work.  Instead, under overload, users
+ * will experience a delay in receiving events (as events are queued).  If the overload persists
+ * then events will be dropped, which users are informed of through the OVERFLOW event.
  * <p>
- * Note that, it is possible (under heavy load) that some undesired events are
- * sent to an event receive if the event receiver's subscription changes and
- * the events have already been queued for delivery.
+ * Note that, it is possible (under heavy load) that some undesired events are sent to an event
+ * receive if the event receiver's subscription changes and the events have already been queued for
+ * delivery.
  * <p>
- * Subscription is handled through ZooKeeper: the event receiver updates a
- * ZK node using an encoded version of the desired events.  ZK places a limit
- * on the size of any node, which limits the number of concurrent "watches" any
- * event receiver may make.  The binary format of the ZK node is versioned,
- * to support future changes.
+ * Subscription is handled through ZooKeeper: the event receiver updates a ZK node using an encoded
+ * version of the desired events.  ZK places a limit on the size of any node, which limits the
+ * number of concurrent "watches" any event receiver may make.  The binary format of the ZK node is
+ * versioned, to support future changes.
  * <p>
- * Incoming events are immediately queued for processing.  This avoids blocking
- * while this class is processing any changes in the watches/subscriptions.  If
- * this queue exceeds the maximum allowed size then all event receivers will
- * receive the OVERFLOW event.
+ * Incoming events are immediately queued for processing.  This avoids blocking while this class is
+ * processing any changes in the watches/subscriptions.  If this queue exceeds the maximum allowed
+ * size then all event receivers will receive the OVERFLOW event.
  * <p>
- * Queued events are processed to determine which (if any) event receivers are
- * interested.  Each event receiver has a queue of events: those that match this
- * event receiver's list of watches.  These events are sent to the event
- * receiver as a sequence of messages directed explicitly to that event receiver.
+ * Queued events are processed to determine which (if any) event receivers are interested.  Each
+ * event receiver has a queue of events: those that match this event receiver's list of watches.
+ * These events are sent to the event receiver as a sequence of messages directed explicitly to that
+ * event receiver.
  * <p>
- * A single threaded task is responsible for sending events.  This task sends
- * all outstanding events for an event receiver before moving onto the next
- * event receiver.  To reduce overheads in message sending, multiple events may
- * be sent in a single message.  The number of events sent in any one message
- * is limited to prevent sending very large messages.
+ * A single threaded task is responsible for sending events.  This task sends all outstanding events
+ * for an event receiver before moving onto the next event receiver.  To reduce overheads in message
+ * sending, multiple events may be sent in a single message.  The number of events sent in any one
+ * message is limited to prevent sending very large messages.
  */
 public class EventNotifier implements EventReceiver, CellMessageReceiver,
-        CuratorFrameworkAware, CellLifeCycleAware, PathChildrenCacheListener
-{
+      CuratorFrameworkAware, CellLifeCycleAware, PathChildrenCacheListener {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(EventNotifier.class);
     public static final String INOTIFY_PATH = ZKPaths.makePath("dcache", "inotify");
     private static final Event OVERFLOW_EVENT = new SystemEvent(SystemEvent.Type.OVERFLOW);
 
     /**
-     * Convert an event receiver's list of desired events to the binary
-     * representation.  Each Map.Entry is a Watch subscribing to some events of
-     * some file or directory.
-     * @param entries the watches.  The watches to which the event receiver is
-     * subscribing.
+     * Convert an event receiver's list of desired events to the binary representation.  Each
+     * Map.Entry is a Watch subscribing to some events of some file or directory.
+     *
+     * @param entries the watches.  The watches to which the event receiver is subscribing.
      * @return the binary data for the ZooKeeper node.
      */
-    public static byte[] toZkData(Map<PnfsId,Collection<EventType>> entries)
-    {
+    public static byte[] toZkData(Map<PnfsId, Collection<EventType>> entries) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.write(0); // Format #0: simple list.
-        for (Map.Entry<PnfsId,Collection<EventType>> entry : entries.entrySet()) {
+        for (Map.Entry<PnfsId, Collection<EventType>> entry : entries.entrySet()) {
             // 16-bit mask of interested events; currently 13 of 16 bits are used.
             short bitmask = (short) entry.getValue().stream()
-                    .mapToInt(EventType::ordinal)
-                    .map(o -> 1<<o)
-                    .reduce(0, (a,b) -> a | b);
+                  .mapToInt(EventType::ordinal)
+                  .map(o -> 1 << o)
+                  .reduce(0, (a, b) -> a | b);
             out.write(bitmask >> 8);
             out.write(bitmask & 0xff);
 
@@ -146,7 +133,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
             // REVISIT this assumes that the PNFS-ID value is (upper case) hex value.
             byte[] pnfsid = BaseEncoding.base16().decode(id.toString());
             checkState(pnfsid.length < 256, "PNFS-ID length exceeds 256 bytes");
-            out.write((byte)pnfsid.length);
+            out.write((byte) pnfsid.length);
             out.write(pnfsid, 0, pnfsid.length);
             LOGGER.debug("encoded id={} bitmask={}", id, bitmask);
         }
@@ -154,28 +141,27 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     }
 
     /**
-     * Convert a binary representation back into an event receiver's list of
-     * desired events.
+     * Convert a binary representation back into an event receiver's list of desired events.
+     *
      * @param data the binary data
      * @return a Map between the target and its set of desired event types.
      * @throws IllegalArgumentException if the data is badly formatted.
      */
-    public static Map<PnfsId,EnumSet<EventType>> fromZkData(byte[] data)
-    {
+    public static Map<PnfsId, EnumSet<EventType>> fromZkData(byte[] data) {
         checkArgument(data.length > 1, "Too little data");
         checkArgument(data[0] == 0, "Wrong format");
 
-        Map<PnfsId,EnumSet<EventType>> deserialised = new HashMap<>();
+        Map<PnfsId, EnumSet<EventType>> deserialised = new HashMap<>();
         int index = 1;
         while (index < data.length) {
             checkArgument(data.length - index >= 3, "Too little data for bitmask");
-            short bitmask = (short)(data [index++] << 8 | data [index++] & 0xFF);
+            short bitmask = (short) (data[index++] << 8 | data[index++] & 0xFF);
 
             EnumSet<EventType> eventTypes = Arrays.stream(EventType.values())
-                    .filter(t -> (bitmask & 1<<t.ordinal()) != 0)
-                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(EventType.class)));
+                  .filter(t -> (bitmask & 1 << t.ordinal()) != 0)
+                  .collect(Collectors.toCollection(() -> EnumSet.noneOf(EventType.class)));
 
-            byte length = data [index++];
+            byte length = data[index++];
             checkArgument(data.length - index >= length, "Too little data for PNFSID");
             PnfsId id = new PnfsId(BaseEncoding.base16().encode(data, index, length));
             index += length;
@@ -187,26 +173,24 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     }
 
     /**
-     * Represents an event receiver's subscription to events that target some
-     * specific file or directory.  The name Watch is used as this class is
-     * somewhat similar to the inotify(7) concept.
+     * Represents an event receiver's subscription to events that target some specific file or
+     * directory.  The name Watch is used as this class is somewhat similar to the inotify(7)
+     * concept.
      */
-    private class Watch
-    {
+    private class Watch {
+
         private final PnfsId target;
         private final EnumSet<EventType> selectedEvents;
         private final Consumer<Event> eventSender;
 
         public Watch(PnfsId target, EnumSet<EventType> events,
-                Consumer<Event> sender)
-        {
+              Consumer<Event> sender) {
             this.target = target;
             eventSender = sender;
             selectedEvents = EnumSet.copyOf(events);
         }
 
-        public void accept(EventType eventType, String name, String cookie, FileType type)
-        {
+        public void accept(EventType eventType, String name, String cookie, FileType type) {
             if (selectedEvents.contains(eventType)) {
                 eventSender.accept(new InotifyEvent(eventType, target, name, cookie, type));
             }
@@ -214,25 +198,22 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     }
 
     /**
-     * Represents some cell within dCache that has requested inotify events.
-     * Each event receiver has an independent queue.  This allows a "busy"
-     * event receiver (one that has watches that are receiving many events) to
-     * overflow without affecting "quiet" event receivers.
+     * Represents some cell within dCache that has requested inotify events. Each event receiver has
+     * an independent queue.  This allows a "busy" event receiver (one that has watches that are
+     * receiving many events) to overflow without affecting "quiet" event receivers.
      */
-    private class EventReceiver
-    {
+    private class EventReceiver {
+
         private final Queue<Event> in = new ArrayBlockingQueue(maximumQueuedEvents);
         private final List<Watch> watches = new ArrayList<>();
         private boolean overflow;
 
-        public EventReceiver(byte[] data)
-        {
-            fromZkData(data).forEach((id,flags) ->
-                    watches.add(new Watch(id, flags, this::enqueueMessage)));
+        public EventReceiver(byte[] data) {
+            fromZkData(data).forEach((id, flags) ->
+                  watches.add(new Watch(id, flags, this::enqueueMessage)));
         }
 
-        private void sendOverflow()
-        {
+        private void sendOverflow() {
             // A subtle point.  The enqueueMessasge method will not enqueue this
             // OVERFLOW event if enqueueing the message results in the queue
             // overflowing, or if the queue is already in overflow.  In either
@@ -241,8 +222,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
             enqueueMessage(OVERFLOW_EVENT);
         }
 
-        public synchronized void enqueueMessage(Event event)
-        {
+        public synchronized void enqueueMessage(Event event) {
             if (in.offer(event)) {
                 sender.start();
             } else if (!overflow) {
@@ -251,8 +231,7 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
             }
         }
 
-        public synchronized List<Event> drainQueuedEvents()
-        {
+        public synchronized List<Event> drainQueuedEvents() {
             int count = in.size();
             if (overflow) {
                 count++;
@@ -277,9 +256,9 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
 
     private CellStub eventSender;
     private PathChildrenCache cache;
-    private final Map<CellAddressCore,EventReceiver> receivers = new ConcurrentHashMap<>();
+    private final Map<CellAddressCore, EventReceiver> receivers = new ConcurrentHashMap<>();
     private final ListMultimap<PnfsId, Watch> watchesByPnfsId =
-            synchronizedListMultimap(MultimapBuilder.hashKeys().arrayListValues().build());
+          synchronizedListMultimap(MultimapBuilder.hashKeys().arrayListValues().build());
 
     private Executor dispatchExecutor;
     private boolean dispatchOverflow;
@@ -289,45 +268,38 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     private RepeatableTaskRunner sender;
 
     @Override
-    public void setCuratorFramework(CuratorFramework client)
-    {
+    public void setCuratorFramework(CuratorFramework client) {
         setPathChildrenCache(new PathChildrenCache(client, INOTIFY_PATH, true));
     }
 
     @VisibleForTesting
-    void setPathChildrenCache(PathChildrenCache cache)
-    {
+    void setPathChildrenCache(PathChildrenCache cache) {
         this.cache = cache;
     }
 
     @Required
-    public void setDispatchExecutor(Executor executor)
-    {
+    public void setDispatchExecutor(Executor executor) {
         dispatchExecutor = executor;
     }
 
     @Required
-    public void setSenderExecutor(Executor executor)
-    {
+    public void setSenderExecutor(Executor executor) {
         sender = new RepeatableTaskRunner(executor, this::sendQueuedEvents);
     }
 
     @Required
-    public void setMaximumQueuedEvents(int maximum)
-    {
+    public void setMaximumQueuedEvents(int maximum) {
         maximumQueuedEvents = maximum;
     }
 
     @Required
-    public void setEventBatchSize(int size)
-    {
+    public void setEventBatchSize(int size) {
         checkArgument(size > 0, "Cannot be zero or negative value");
         batchSize = size;
     }
 
     @Override
-    public void afterStart()
-    {
+    public void afterStart() {
         LOGGER.debug("EventNotifier#afterStart");
         cache.getListenable().addListener(this);
         try {
@@ -339,62 +311,58 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         LOGGER.debug("EventNotifier#beforeStop");
         CloseableUtils.closeQuietly(cache);
     }
 
     @Override
-    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
-    {
+    public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
         ChildData child = event.getData(); // value may be null for some events
 
         switch (event.getType()) {
-        case CHILD_ADDED:
-        case CHILD_UPDATED:
-            String newChildName = ZKPaths.getNodeFromPath(child.getPath());
-            CellAddressCore newChildTarget = new CellAddressCore(newChildName);
-            LOGGER.debug("ZK child {} added or updated", newChildName);
-            EventReceiver priorReceiver = receivers.get(newChildTarget);
-            EventReceiver newReceiver = new EventReceiver(child.getData());
+            case CHILD_ADDED:
+            case CHILD_UPDATED:
+                String newChildName = ZKPaths.getNodeFromPath(child.getPath());
+                CellAddressCore newChildTarget = new CellAddressCore(newChildName);
+                LOGGER.debug("ZK child {} added or updated", newChildName);
+                EventReceiver priorReceiver = receivers.get(newChildTarget);
+                EventReceiver newReceiver = new EventReceiver(child.getData());
 
-            synchronized (watchesByPnfsId) {
-                if (priorReceiver != null) {
-                    priorReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
+                synchronized (watchesByPnfsId) {
+                    if (priorReceiver != null) {
+                        priorReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
+                    }
+
+                    receivers.put(newChildTarget, newReceiver);
+                    newReceiver.watches.forEach(w -> watchesByPnfsId.put(w.target, w));
                 }
+                break;
 
-                receivers.put(newChildTarget, newReceiver);
-                newReceiver.watches.forEach(w -> watchesByPnfsId.put(w.target, w));
-            }
-            break;
-
-        case CHILD_REMOVED:
-            String removedChildName = ZKPaths.getNodeFromPath(child.getPath());
-            CellAddressCore removedChildTarget = new CellAddressCore(removedChildName);
-            LOGGER.debug("ZK child {} removed", removedChildName);
-            EventReceiver oldReceiver = receivers.remove(removedChildTarget);
-            synchronized (watchesByPnfsId) {
-                if (oldReceiver != null) {
-                    oldReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
+            case CHILD_REMOVED:
+                String removedChildName = ZKPaths.getNodeFromPath(child.getPath());
+                CellAddressCore removedChildTarget = new CellAddressCore(removedChildName);
+                LOGGER.debug("ZK child {} removed", removedChildName);
+                EventReceiver oldReceiver = receivers.remove(removedChildTarget);
+                synchronized (watchesByPnfsId) {
+                    if (oldReceiver != null) {
+                        oldReceiver.watches.forEach(w -> watchesByPnfsId.remove(w.target, w));
+                    }
                 }
-            }
-            break;
+                break;
 
-        default:
-            LOGGER.debug("unexpected ZK event: {}", event.getType());
+            default:
+                LOGGER.debug("unexpected ZK event: {}", event.getType());
         }
     }
 
     @Required
-    public void setCellStub(CellStub subscribers)
-    {
+    public void setCellStub(CellStub subscribers) {
         this.eventSender = subscribers;
     }
 
     private void acceptEvent(EventType eventType, PnfsId target, String name,
-            String cookie, FileType fileType)
-    {
+          String cookie, FileType fileType) {
         synchronized (this) {
             if (dispatchOverflow && !overflowNotificationScheduled) {
                 try {
@@ -412,39 +380,38 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
         }
     }
 
-    private synchronized void notifyDispatchOverflow()
-    {
+    private synchronized void notifyDispatchOverflow() {
         receivers.values().forEach(EventReceiver::sendOverflow);
         dispatchOverflow = false;
     }
 
     @Override
-    public void notifySelfEvent(EventType eventType, PnfsId target, FileType fileType)
-    {
+    public void notifySelfEvent(EventType eventType, PnfsId target, FileType fileType) {
         notifyEvent(eventType, target, null, null, fileType);
     }
 
     @Override
-    public void notifyChildEvent(EventType eventType, PnfsId target, String name, FileType fileType)
-    {
+    public void notifyChildEvent(EventType eventType, PnfsId target, String name,
+          FileType fileType) {
         notifyEvent(eventType, target, name, null, fileType);
     }
 
     @Override
-    public void notifyMovedEvent(EventType eventType, PnfsId target, String name, String cookie, FileType fileType)
-    {
+    public void notifyMovedEvent(EventType eventType, PnfsId target, String name, String cookie,
+          FileType fileType) {
         notifyEvent(eventType, target, name, cookie, fileType);
     }
 
-    private synchronized void notifyEvent(EventType eventType, PnfsId target, String name, String cookie, FileType fileType)
-    {
+    private synchronized void notifyEvent(EventType eventType, PnfsId target, String name,
+          String cookie, FileType fileType) {
         if (!dispatchOverflow) {
             try {
                 // The acceptEvent is decoupled via the dispatchExecutor to
                 // prevent this method from blocking if acceptEvent blocks.  The
                 // acceptEvent method can block if the set of watches (as
                 // recorded in ZK) changes.
-                dispatchExecutor.execute(() -> acceptEvent(eventType, target, name, cookie, fileType));
+                dispatchExecutor.execute(
+                      () -> acceptEvent(eventType, target, name, cookie, fileType));
             } catch (RejectedExecutionException e) {
                 LOGGER.warn("Inotify overflow: too slow accepting new events");
                 dispatchOverflow = true;
@@ -453,23 +420,22 @@ public class EventNotifier implements EventReceiver, CellMessageReceiver,
         }
     }
 
-    private void sendQueuedEvents()
-    {
+    private void sendQueuedEvents() {
         LOGGER.debug("Starting send queued events run");
 
         receivers.forEach((door, receiver) -> {
-                    List<Event> events = receiver.drainQueuedEvents();
+            List<Event> events = receiver.drainQueuedEvents();
 
-                    CellPath path = new CellPath(door);
+            CellPath path = new CellPath(door);
 
-                    int sent = 0;
-                    while (sent < events.size()) {
-                        int upper = Math.min(events.size(), sent+batchSize);
-                        List<Event> batch = events.subList(sent, upper);
-                        LOGGER.debug("Sending events: {}", batch);
-                        eventSender.notify(path, new NotificationMessage(batch));
-                        sent += batch.size();
-                    }
-                });
+            int sent = 0;
+            while (sent < events.size()) {
+                int upper = Math.min(events.size(), sent + batchSize);
+                List<Event> batch = events.subList(sent, upper);
+                LOGGER.debug("Sending events: {}", batch);
+                eventSender.notify(path, new NotificationMessage(batch));
+                sent += batch.size();
+            }
+        });
     }
 }

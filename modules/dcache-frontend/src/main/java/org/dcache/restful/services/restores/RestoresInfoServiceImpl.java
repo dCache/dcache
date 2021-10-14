@@ -60,7 +60,9 @@ documents or software obtained from this server.
 package org.dcache.restful.services.restores;
 
 import com.google.common.base.Strings;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
+import dmg.util.command.Command;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -70,12 +72,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.RestoreHandlerInfo;
-
-import dmg.util.command.Command;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.util.admin.SnapshotDataAccess;
@@ -88,26 +84,28 @@ import org.dcache.util.FieldSort;
  * the pool manager on current staging requests and caching it.</p>
  *
  * <p>All synchronization is done on the object reference rather
- *      than the main map and snapshot cache, in order to
- *      allow the cache to be rebuilt.
+ * than the main map and snapshot cache, in order to allow the cache to be rebuilt.
  * </p>
  */
 public final class RestoresInfoServiceImpl extends
-                CellDataCollectingService<List<RestoreHandlerInfo>,
-                                RestoreCollector>
-                implements RestoresInfoService {
+      CellDataCollectingService<List<RestoreHandlerInfo>,
+            RestoreCollector>
+      implements RestoresInfoService {
+
     @Command(name = "restores set timeout",
-                    hint = "Set the timeout interval between refreshes",
-                    description = "Changes the interval between "
-                                    + "collections of restore queue information.")
+          hint = "Set the timeout interval between refreshes",
+          description = "Changes the interval between "
+                + "collections of restore queue information.")
     class RestoresSetTimeoutCommand extends SetTimeoutCommand {
+
     }
 
     @Command(name = "restores refresh",
-                    hint = "Query for current tape restore queue info",
-                    description = "Interrupts current wait to run query "
-                                    + "immediately.")
+          hint = "Query for current tape restore queue info",
+          description = "Interrupts current wait to run query "
+                + "immediately.")
     class RestoresRefreshCommand extends RefreshCommand {
+
     }
 
     private static Function<FieldSort, Comparator<RestoreInfo>> nextComparator() {
@@ -123,7 +121,7 @@ public final class RestoresInfoServiceImpl extends
                     break;
                 case "pool":
                     comparator = Comparator.comparing(
-                                    RestoreInfo::getPoolCandidate);
+                          RestoreInfo::getPoolCandidate);
                     break;
                 case "status":
                     comparator = Comparator.comparing(RestoreInfo::getStatus);
@@ -139,8 +137,8 @@ public final class RestoresInfoServiceImpl extends
                     break;
                 default:
                     throw new IllegalArgumentException(
-                                    "sort field " + sort.getName()
-                                                    + " not supported.");
+                          "sort field " + sort.getName()
+                                + " not supported.");
             }
 
             if (sort.isReverse()) {
@@ -152,22 +150,22 @@ public final class RestoresInfoServiceImpl extends
     }
 
     private static Predicate<RestoreInfo> getFilter(String pnfsid,
-                                                    String subnet,
-                                                    String pool,
-                                                    String status) {
+          String subnet,
+          String pool,
+          String status) {
         Predicate<RestoreInfo> matchesPnfsid =
-                        (info) -> pnfsid == null || Strings.nullToEmpty
-                                        (String.valueOf(info.getPnfsId()))
-                                               .contains(pnfsid);
+              (info) -> pnfsid == null || Strings.nullToEmpty
+                          (String.valueOf(info.getPnfsId()))
+                    .contains(pnfsid);
         Predicate<RestoreInfo> matchesSubnet =
-                        (info) ->  subnet == null || Strings.nullToEmpty(info.getSubnet())
-                                                            .contains(subnet);
+              (info) -> subnet == null || Strings.nullToEmpty(info.getSubnet())
+                    .contains(subnet);
         Predicate<RestoreInfo> matchesPool =
-                        (info) -> pool == null || Strings.nullToEmpty(info.getPoolCandidate())
-                                                         .contains(pool);
+              (info) -> pool == null || Strings.nullToEmpty(info.getPoolCandidate())
+                    .contains(pool);
         Predicate<RestoreInfo> matchesStatus =
-                        (info) -> status == null || Strings.nullToEmpty(info.getStatus())
-                                                           .contains(status);
+              (info) -> status == null || Strings.nullToEmpty(info.getStatus())
+                    .contains(status);
         return matchesPnfsid.and(matchesSubnet).and(matchesPool).and(matchesStatus);
     }
 
@@ -176,29 +174,29 @@ public final class RestoresInfoServiceImpl extends
      * <p>Data store providing snapshots.</p>
      */
     private final SnapshotDataAccess<String, RestoreInfo>
-                    access = new SnapshotDataAccess<>();
+          access = new SnapshotDataAccess<>();
 
     @Override
     public SnapshotList<RestoreInfo> get(UUID token,
-                                         Integer offset,
-                                         Integer limit,
-                                         String pnfsid,
-                                         String subnet,
-                                         String pool,
-                                         String status,
-                                         String sort)
-                    throws CacheException {
+          Integer offset,
+          Integer limit,
+          String pnfsid,
+          String subnet,
+          String pool,
+          String status,
+          String sort)
+          throws CacheException {
         Predicate<RestoreInfo> filter = getFilter(pnfsid, subnet, pool, status);
 
         if (Strings.isNullOrEmpty(sort)) {
             sort = "pool,started";
         }
 
-        List<FieldSort> fields= Arrays.stream(sort.split(","))
-                                      .map(FieldSort::new)
-                                      .collect(Collectors.toList());
+        List<FieldSort> fields = Arrays.stream(sort.split(","))
+              .map(FieldSort::new)
+              .collect(Collectors.toList());
         Comparator<RestoreInfo> sorter
-                        = FieldSort.getSorter(fields, nextComparator());
+              = FieldSort.getSorter(fields, nextComparator());
         return access.getSnapshot(token, offset, limit, filter, sorter);
     }
 
@@ -215,8 +213,8 @@ public final class RestoresInfoServiceImpl extends
         } catch (CacheException e) {
             Throwable t = e.getCause();
             LOGGER.warn("Update could not complete: {}, {}.",
-                        e.getMessage(),
-                        t == null ? "" : t.toString());
+                  e.getMessage(),
+                  t == null ? "" : t.toString());
         }
 
         access.refresh(newInfo);

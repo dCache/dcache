@@ -1,16 +1,15 @@
 package org.dcache.srm.scheduler.spi;
 
 import java.util.Map;
-
 import org.dcache.srm.scheduler.Scheduler;
 
 /**
  * Service provider interface to instantiate implementations of SchedulingStrategy.
- *
+ * <p>
  * Implementations are discovered using Java's ServiceLoader mechanism.
  */
-public interface SchedulingStrategyProvider
-{
+public interface SchedulingStrategyProvider {
+
     /**
      * The name an admin uses to identify the strategy.
      */
@@ -19,7 +18,7 @@ public interface SchedulingStrategyProvider
     /**
      * Sets configuration parameters for the strategy.
      */
-    void setConfiguration(Map<String,String> configuration);
+    void setConfiguration(Map<String, String> configuration);
 
     /**
      * Creates a new scheduling strategy for a given scheduler.

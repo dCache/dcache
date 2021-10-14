@@ -7,19 +7,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.dcache.pool.repository.StickyRecord;
 
 /**
- *
  * file sticky status.
- * @since 1.7.1
  *
+ * @since 1.7.1
  */
 
 public class Sticky {
 
-    private final Map<String,StickyRecord> _records = new HashMap<>();
+    private final Map<String, StickyRecord> _records = new HashMap<>();
 
 
     public synchronized boolean isSticky() {
@@ -30,8 +28,7 @@ public class Sticky {
         return isSticky();
     }
 
-    public synchronized boolean addRecord(String owner, long expire, boolean overwrite)
-    {
+    public synchronized boolean addRecord(String owner, long expire, boolean overwrite) {
         if (!removeRecord(owner, overwrite ? -1 : expire)) {
             return false;
         }
@@ -43,14 +40,12 @@ public class Sticky {
     }
 
     /**
-     * Removes all sticky flags owned by <code>owner</code> and not
-     * valid at <code>time</code>. No flag is valid at time point -1.
-     *
-     * Returns true if all flags owned by <code>owner</code> have been
-     * removed, false otherwise.
+     * Removes all sticky flags owned by <code>owner</code> and not valid at <code>time</code>. No
+     * flag is valid at time point -1.
+     * <p>
+     * Returns true if all flags owned by <code>owner</code> have been removed, false otherwise.
      */
-    private synchronized boolean removeRecord(String owner, long time)
-    {
+    private synchronized boolean removeRecord(String owner, long time) {
         StickyRecord record = _records.get(owner);
         if ((record != null) && (time > -1) && record.isValidAt(time)) {
             return false;
@@ -66,9 +61,10 @@ public class Sticky {
 
         long now = System.currentTimeMillis();
 
-        for( StickyRecord record: _records.values() ) {
-            if( record.isValidAt(now) ) {
-                sb.append("sticky:").append(record.owner()).append(":").append(record.expire()).append("\n");
+        for (StickyRecord record : _records.values()) {
+            if (record.isValidAt(now)) {
+                sb.append("sticky:").append(record.owner()).append(":").append(record.expire())
+                      .append("\n");
             }
         }
 
@@ -82,8 +78,7 @@ public class Sticky {
     /**
      * Removes expired flags. Returns the list of removed records.
      */
-    public synchronized List<StickyRecord> removeExpired()
-    {
+    public synchronized List<StickyRecord> removeExpired() {
         List<StickyRecord> removed = new ArrayList();
         long now = System.currentTimeMillis();
         Iterator<StickyRecord> i = _records.values().iterator();

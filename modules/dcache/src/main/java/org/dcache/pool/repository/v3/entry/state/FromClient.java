@@ -1,6 +1,7 @@
 package org.dcache.pool.repository.v3.entry.state;
 
 public class FromClient {
+
     private boolean _isSet;
 
 
@@ -18,9 +19,9 @@ public class FromClient {
     }
 
     public String stringValue() {
-        if(_isSet) {
+        if (_isSet) {
             return "from_client";
-        }else{
+        } else {
             return "";
         }
     }

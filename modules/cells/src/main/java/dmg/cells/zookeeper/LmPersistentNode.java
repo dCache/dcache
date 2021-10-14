@@ -2,28 +2,25 @@ package dmg.cells.zookeeper;
 
 import com.google.common.base.Throwables;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.zookeeper.CreateMode;
 
-import java.util.function.Function;
+public class LmPersistentNode<T> extends PersistentNode {
 
-public class LmPersistentNode<T> extends PersistentNode
-{
     private LmPersistentNode(CuratorFramework client,
-                              String basePath,
-                              T data,
-                              Function<T, byte[]> f)
-    {
+          String basePath,
+          T data,
+          Function<T, byte[]> f) {
         super(client, CreateMode.EPHEMERAL, false, basePath, f.apply(data));
     }
 
     public static <T> LmPersistentNode<T> createOrUpdate(CuratorFramework client,
-                                                          String basePath,
-                                                          T data,
-                                                          Function<T, byte[]> f,
-                                                          LmPersistentNode lmPersistentNode) throws PersistentNodeException
-    {
+          String basePath,
+          T data,
+          Function<T, byte[]> f,
+          LmPersistentNode lmPersistentNode) throws PersistentNodeException {
         if (lmPersistentNode == null) {
             LmPersistentNode<T> node = new LmPersistentNode<>(client, basePath, data, f);
             node.start();
@@ -33,8 +30,8 @@ public class LmPersistentNode<T> extends PersistentNode
         }
     }
 
-    public LmPersistentNode<T> update(T data, Function<T, byte[]> f, String basePath) throws PersistentNodeException
-    {
+    public LmPersistentNode<T> update(T data, Function<T, byte[]> f, String basePath)
+          throws PersistentNodeException {
         try {
             waitForInitialCreate(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             setData(f.apply(data));
@@ -45,8 +42,8 @@ public class LmPersistentNode<T> extends PersistentNode
         }
     }
 
-    public static class PersistentNodeException extends Exception
-    {
+    public static class PersistentNodeException extends Exception {
+
         public PersistentNodeException() {
         }
 

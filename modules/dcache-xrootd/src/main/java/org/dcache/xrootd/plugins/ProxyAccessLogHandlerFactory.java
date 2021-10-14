@@ -20,25 +20,22 @@ package org.dcache.xrootd.plugins;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-
 import org.dcache.util.ChannelCdcSessionHandlerWrapper;
 
-public class ProxyAccessLogHandlerFactory extends AccessLogHandlerFactory
-{
+public class ProxyAccessLogHandlerFactory extends AccessLogHandlerFactory {
+
     private final ChannelHandler proxyAccessLogHandler = new ChannelCdcSessionHandlerWrapper(
-                new ProxyAccessLogHandler(accessLogger, handler) {
-                    @Override
-                    protected void replaceWith(ChannelHandlerContext ctx, ChannelHandler handler)
-                    {
-                        ctx.pipeline().replace(ProxyAccessLogHandlerFactory.this.proxyAccessLogHandler,
-                                null, handler);
-                    }
-                }
-            );
+          new ProxyAccessLogHandler(accessLogger, handler) {
+              @Override
+              protected void replaceWith(ChannelHandlerContext ctx, ChannelHandler handler) {
+                  ctx.pipeline().replace(ProxyAccessLogHandlerFactory.this.proxyAccessLogHandler,
+                        null, handler);
+              }
+          }
+    );
 
     @Override
-    public ChannelHandler createHandler()
-    {
+    public ChannelHandler createHandler() {
         return proxyAccessLogHandler;
     }
 }

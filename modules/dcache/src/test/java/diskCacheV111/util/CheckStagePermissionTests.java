@@ -1,87 +1,80 @@
 package diskCacheV111.util;
 
-import org.junit.After;
+import static com.google.common.base.Preconditions.checkState;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
-import static org.junit.Assert.*;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
-
+import diskCacheV111.vehicles.ProtocolInfo;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
-
-import diskCacheV111.vehicles.ProtocolInfo;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static com.google.common.base.Preconditions.checkState;
-import static org.hamcrest.Matchers.is;
-
-public class CheckStagePermissionTests
-{
+public class CheckStagePermissionTests {
     /*
      * definition is taken verbatim from NFS4ProtocolInfo
      * (NFS4) and major=4 seem to be redundant
      */
 
-    public static final ProtocolInfo NFS4_PROTOCOL_INFO = new ProtocolInfo () {
-            private static final String _protocolName = "NFS4";
-            private static final int _minor = 1;
-            private static final int _major = 4;
+    public static final ProtocolInfo NFS4_PROTOCOL_INFO = new ProtocolInfo() {
+        private static final String _protocolName = "NFS4";
+        private static final int _minor = 1;
+        private static final int _major = 4;
 
-            @Override
-            public String getProtocol() {
-                return _protocolName;
-            }
+        @Override
+        public String getProtocol() {
+            return _protocolName;
+        }
 
-            @Override
-            public int getMinorVersion() {
-                return _minor;
-            }
+        @Override
+        public int getMinorVersion() {
+            return _minor;
+        }
 
-            @Override
-            public int getMajorVersion() {
-                return _major;
-            }
+        @Override
+        public int getMajorVersion() {
+            return _major;
+        }
 
-            @Override
-            public String getVersionString() {
-                return _protocolName + "-" + _major + "." + _minor;
-            }
-        };
+        @Override
+        public String getVersionString() {
+            return _protocolName + "-" + _major + "." + _minor;
+        }
+    };
 
 
-    public static final ProtocolInfo XROOTD_PROTOCOL_INFO = new ProtocolInfo () {
-            private static final String _protocolName =  "Xrootd";
-            private static final int _minor = 2;
-            private static final int _major = 7;
+    public static final ProtocolInfo XROOTD_PROTOCOL_INFO = new ProtocolInfo() {
+        private static final String _protocolName = "Xrootd";
+        private static final int _minor = 2;
+        private static final int _major = 7;
 
-            @Override
-            public String getProtocol() {
-                return _protocolName;
-            }
+        @Override
+        public String getProtocol() {
+            return _protocolName;
+        }
 
-            @Override
-            public int getMinorVersion() {
-                return _minor;
-            }
+        @Override
+        public int getMinorVersion() {
+            return _minor;
+        }
 
-            @Override
-            public int getMajorVersion() {
-                return _major;
-            }
+        @Override
+        public int getMajorVersion() {
+            return _major;
+        }
 
-            @Override
-            public String getVersionString() {
-                return _protocolName + "-" + _major + "." + _minor;
-            }
-        };
+        @Override
+        public String getVersionString() {
+            return _protocolName + "-" + _major + "." + _minor;
+        }
+    };
 
     private File _file;
     private CheckStagePermission _check;
@@ -106,50 +99,46 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnAndFqanToStageIfEmptyConstructed() throws Exception
-    {
+    public void shouldAllowUserWithDnAndFqanToStageIfEmptyConstructed() throws Exception {
         givenCheckConstructedWith("");
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowUserWithDnToStageIfEmptyConstructed() throws Exception
-    {
+    public void shouldAllowUserWithDnToStageIfEmptyConstructed() throws Exception {
         givenCheckConstructedWith("");
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user"),
-                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowUserWithDnAndFqanToStageIfNullConstructed() throws Exception
-    {
+    public void shouldAllowUserWithDnAndFqanToStageIfNullConstructed() throws Exception {
         givenCheckConstructedWith(null);
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowUserWithDnToStageIfNullConstructed() throws Exception
-    {
+    public void shouldAllowUserWithDnToStageIfNullConstructed() throws Exception {
         givenCheckConstructedWith(null);
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -159,14 +148,13 @@ public class CheckStagePermissionTests
      */
 
     @Test()
-    public void shouldDenyUserWithDnAndFqanToStageIfEmpty() throws Exception
-    {
+    public void shouldDenyUserWithDnAndFqanToStageIfEmpty() throws Exception {
         given(file().isEmpty());
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -176,14 +164,13 @@ public class CheckStagePermissionTests
      */
 
     @Test()
-    public void shouldDenyUserWithDnAndFqanToStageIfMissing() throws Exception
-    {
+    public void shouldDenyUserWithDnAndFqanToStageIfMissing() throws Exception {
         given(file().isMissing());
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -194,38 +181,35 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnToStageIfDnAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnToStageIfDnAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowUserWithDnAndFqanToStageIfDnAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnAndFqanToStageIfDnAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldDenyUserWithWrongDnToStageIfDnAuthz() throws Exception
-    {
+    public void shouldDenyUserWithWrongDnToStageIfDnAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=otherExample/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=otherExample/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -235,63 +219,58 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldDenyUserWithDnToStageIfDnFqanAuthz() throws Exception
-    {
+    public void shouldDenyUserWithDnToStageIfDnFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldDenyUserWithDnAndWrongFqanToStageIfDnFqanAuthz() throws Exception
-    {
+    public void shouldDenyUserWithDnAndWrongFqanToStageIfDnFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlas")
-                        .dn("/DC=org/DC=example/CN=test user").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldAllowUserWithDnAndFqanToStageIfDnFqanAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnAndFqanToStageIfDnFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowUserWithDnAndNonprimaryFqanToStageIfDnFqanAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnAndNonprimaryFqanToStageIfDnFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldDenyUserWithWrongDnToStageIfDnFqanAuthz() throws Exception
-    {
+    public void shouldDenyUserWithWrongDnToStageIfDnFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=anotherExample/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=anotherExample/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -302,20 +281,19 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnToStageIfDnAuthzAfterReload() throws Exception
-    {
+    public void shouldAllowUserWithDnToStageIfDnAuthzAfterReload() throws Exception {
         given(file().isEmpty());
         givenCheckedWith(Subjects.of().uid(100).gid(100).dn("/DC=org/DC=example/CN=test user"),
-                         FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
-                         NFS4_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
+              NFS4_PROTOCOL_INFO);
         // Note: filesystems have differing granularity of their timestamp: so
         //       we must make sure the mtime has increased.
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\"").withDifferentMtime());
 
         whenCheck(Subjects.of().uid(100).gid(100).username("testuser")
-                        .dn("/DC=org/DC=example/CN=test user"),
-                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
-                  NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
+              NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -326,40 +304,37 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnToStageIfWildDnWildFqanAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnToStageIfWildDnWildFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/.*\" \"/atlas/Role=.*\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldDenyUserWithWrongDnToStageIfWildDnWildFqanAuthz() throws Exception
-    {
+    public void shouldDenyUserWithWrongDnToStageIfWildDnWildFqanAuthz() throws Exception {
         given(file().hasContents("\"/DC=org/DC=example/.*\" \"/atlas/Role=.*\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=anotherExample/CN=test")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=anotherExample/CN=test")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldAllowUserWithDnFqanToStageIfAnyDnAnyFqanAnyStoreAuthz() throws Exception
-    {
+    public void shouldAllowUserWithDnFqanToStageIfAnyDnAnyFqanAnyStoreAuthz() throws Exception {
         given(file().hasContents("\".*\" \".*\" \".*\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=anotherExample/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=anotherExample/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -370,27 +345,27 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnFqanToStageStoreIfDnFqanStoreAuthz() throws Exception
-    {
-        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+    public void shouldAllowUserWithDnFqanToStageStoreIfDnFqanStoreAuthz() throws Exception {
+        given(file().hasContents(
+              "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldDenyUserWithDnFqanToStageWrongStoreIfDnFqanStoreAuthz() throws Exception
-    {
-        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
+    public void shouldDenyUserWithDnFqanToStageWrongStoreIfDnFqanStoreAuthz() throws Exception {
+        given(file().hasContents(
+              "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                  FileAttributes.of().storageClass("data:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("data:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -401,118 +376,114 @@ public class CheckStagePermissionTests
      */
 
     @Test
-    public void shouldAllowUserWithDnFqanStoreToStageIfDnFqanStoreProtocolAuthz() throws Exception
-    {
-        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"NFS4/4\""));
+    public void shouldAllowUserWithDnFqanStoreToStageIfDnFqanStoreProtocolAuthz() throws Exception {
+        given(file().hasContents(
+              "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"NFS4/4\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldDenyUserWithDnFqanStoreWrongProtocoIfDnFqanStoreAuthz() throws Exception
-    {
-        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"DCap/3\""));
+    public void shouldDenyUserWithDnFqanStoreWrongProtocoIfDnFqanStoreAuthz() throws Exception {
+        given(file().hasContents(
+              "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"DCap/3\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldDenyUserWithDnFqanStoreProtocoIfDnFqanStoreAuthzButPtocolIsBanned() throws Exception
-    {
-        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"!NFS4/4\""));
+    public void shouldDenyUserWithDnFqanStoreProtocoIfDnFqanStoreAuthzButPtocolIsBanned()
+          throws Exception {
+        given(file().hasContents(
+              "\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"!NFS4/4\""));
 
         whenCheck(Subjects.of().uid(100).gid(100).username("atlasprod")
-                        .dn("/DC=org/DC=example/CN=test user")
-                        .fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+                    .dn("/DC=org/DC=example/CN=test user")
+                    .fqan("/atlas/Role=production").fqan("/atlas"),
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldAllowAnonymousUserIfStoreIsNotBlackListedProtocolNotListed() throws Exception
-    {
+    public void shouldAllowAnonymousUserIfStoreIsNotBlackListedProtocolNotListed()
+          throws Exception {
         given(file().hasContents("\"\" \"\" \"!sql:chimera@osm\""));
 
         whenCheck(Subjects.NOBODY,
-                FileAttributes.of().storageClass("sql:chimera").hsm("enstore"),NFS4_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("enstore"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldAllowAnonymousUserStoreIfProtocolNotBlackListed() throws Exception
-    {
+    public void shouldAllowAnonymousUserStoreIfProtocolNotBlackListed() throws Exception {
         given(file().hasContents("\"\" \"\" \"sql:chimera@osm\" \"!NFS.*\""));
 
         whenCheck(Subjects.NOBODY,
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),XROOTD_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), XROOTD_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
 
     @Test
-    public void shouldNotAllowAnonymousUserIfAnonymousDisallowedAndNoFile() throws Exception
-    {
+    public void shouldNotAllowAnonymousUserIfAnonymousDisallowedAndNoFile() throws Exception {
         given(file().isMissing());
         givenAllowAnonymousAccess(false);
 
         whenCheck(Subjects.NOBODY,
-                FileAttributes.of().storageClass("sql:chimera").hsm("enstore"),NFS4_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("enstore"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldNotAllowAnonymousUserIfAnonymousDisallowedAndStoreIsNotBlackListedProtocolNotListed() throws Exception
-    {
+    public void shouldNotAllowAnonymousUserIfAnonymousDisallowedAndStoreIsNotBlackListedProtocolNotListed()
+          throws Exception {
         given(file().hasContents("\"\" \"\" \"!sql:chimera@osm\""));
         givenAllowAnonymousAccess(false);
 
         whenCheck(Subjects.NOBODY,
-                FileAttributes.of().storageClass("sql:chimera").hsm("enstore"),NFS4_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("enstore"), NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     @Test
-    public void shouldNotAllowAnonymousUserStoreIfAnonymousDisallowedAndProtocolNotBlackListed() throws Exception
-    {
+    public void shouldNotAllowAnonymousUserStoreIfAnonymousDisallowedAndProtocolNotBlackListed()
+          throws Exception {
         given(file().hasContents("\"\" \"\" \"sql:chimera@osm\" \"!NFS.*\""));
         givenAllowAnonymousAccess(false);
 
         whenCheck(Subjects.NOBODY,
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),XROOTD_PROTOCOL_INFO);
+              FileAttributes.of().storageClass("sql:chimera").hsm("osm"), XROOTD_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
     private void whenCheck(Subjects.Builder subjectBuilder,
-                           FileAttributes.Builder attributeBuilder,
-                           ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException
-    {
+          FileAttributes.Builder attributeBuilder,
+          ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
         whenCheck(subjectBuilder.build(), attributeBuilder, protocolInfo);
     }
 
     private void whenCheck(Subject subject,
-                           FileAttributes.Builder attributeBuilder,
-                           ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException
-    {
+          FileAttributes.Builder attributeBuilder,
+          ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
         _allowed = getCheck().canPerformStaging(subject, attributeBuilder.build(), protocolInfo);
     }
 
-    private CheckStagePermission getCheck() throws IOException
-    {
+    private CheckStagePermission getCheck() throws IOException {
         if (_check == null) {
             _check = new CheckStagePermission(_file.getCanonicalPath());
             _check.setAllowAnonymousStaging(_anonymousAllowed);
@@ -520,25 +491,22 @@ public class CheckStagePermissionTests
         return _check;
     }
 
-    private void givenCheckConstructedWith(String argument)
-    {
+    private void givenCheckConstructedWith(String argument) {
         _check = new CheckStagePermission(argument);
     }
 
     private void givenCheckedWith(Subjects.Builder subjectBuilder,
-                                  FileAttributes.Builder attributeBuilder,
-                                  ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException
-    {
-        getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build(),protocolInfo);
+          FileAttributes.Builder attributeBuilder,
+          ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException {
+        getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build(),
+              protocolInfo);
     }
 
-    private void givenAllowAnonymousAccess(boolean allowed)
-    {
+    private void givenAllowAnonymousAccess(boolean allowed) {
         _anonymousAllowed = allowed;
     }
 
-    private FileStateAssertion file() throws IOException
-    {
+    private FileStateAssertion file() throws IOException {
         if (_file == null) {
             _file = File.createTempFile("stagePermissionFile", null, null);
             _file.deleteOnExit();
@@ -546,48 +514,42 @@ public class CheckStagePermissionTests
         return new FileStateAssertion(_file);
     }
 
-    private void given(FileStateAssertion assertion) throws IOException, InterruptedException
-    {
+    private void given(FileStateAssertion assertion) throws IOException, InterruptedException {
         assertion.apply();
     }
 
     /**
-     * A class to record assumptions about the file's state and a method to
-     * enact those assumptions.
+     * A class to record assumptions about the file's state and a method to enact those
+     * assumptions.
      */
-    public static class FileStateAssertion
-    {
+    public static class FileStateAssertion {
+
         private final File _file;
 
         private String _contents;
         private boolean _deleteFile;
         private long _mtime;
 
-        public FileStateAssertion(File file)
-        {
+        public FileStateAssertion(File file) {
             _file = file;
         }
 
-        public FileStateAssertion hasContents(String contents) throws IOException
-        {
+        public FileStateAssertion hasContents(String contents) throws IOException {
             _contents = contents.endsWith("\n") ? contents : (contents + '\n');
             return this;
         }
 
-        public FileStateAssertion isEmpty() throws IOException
-        {
+        public FileStateAssertion isEmpty() throws IOException {
             _contents = "";
             return this;
         }
 
-        public FileStateAssertion isMissing()
-        {
+        public FileStateAssertion isMissing() {
             _deleteFile = true;
             return this;
         }
 
-        public FileStateAssertion withDifferentMtime() throws InterruptedException
-        {
+        public FileStateAssertion withDifferentMtime() throws InterruptedException {
             // CheckStagePermission uses current time (rather than file's mtime)
             // when checking if the file has been modified.  Not only is this
             // wrong (racy), it also means the testing code must also use
@@ -596,8 +558,7 @@ public class CheckStagePermissionTests
             return this;
         }
 
-        public void apply() throws IOException, InterruptedException
-        {
+        public void apply() throws IOException, InterruptedException {
             checkState(_deleteFile || _contents != null);
             checkState(!_deleteFile || _mtime == 0);
 
@@ -612,8 +573,7 @@ public class CheckStagePermissionTests
             }
         }
 
-        private void updateContent() throws IOException
-        {
+        private void updateContent() throws IOException {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file))) {
                 writer.write(_contents);
             }
