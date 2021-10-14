@@ -17,20 +17,24 @@
  */
 package org.dcache.auth.attributes;
 
-import org.junit.Test;
-
-import diskCacheV111.util.FsPath;
-
-import static org.dcache.auth.attributes.Activity.*;
+import static org.dcache.auth.attributes.Activity.DELETE;
+import static org.dcache.auth.attributes.Activity.DOWNLOAD;
+import static org.dcache.auth.attributes.Activity.LIST;
+import static org.dcache.auth.attributes.Activity.MANAGE;
+import static org.dcache.auth.attributes.Activity.READ_METADATA;
+import static org.dcache.auth.attributes.Activity.UPDATE_METADATA;
+import static org.dcache.auth.attributes.Activity.UPLOAD;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class DenyAcitivityRestrictionTests
-{
+import diskCacheV111.util.FsPath;
+import org.junit.Test;
+
+public class DenyAcitivityRestrictionTests {
+
     @Test
-    public void shouldRestrictAllActivity()
-    {
+    public void shouldRestrictAllActivity() {
         FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = DenyActivityRestriction.restrictAllActivity();
@@ -45,8 +49,7 @@ public class DenyAcitivityRestrictionTests
     }
 
     @Test
-    public void shouldRestrictNoActivity()
-    {
+    public void shouldRestrictNoActivity() {
         FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = DenyActivityRestriction.restrictNoActivity();
@@ -61,8 +64,7 @@ public class DenyAcitivityRestrictionTests
     }
 
     @Test
-    public void shouldRestrictSingleActivity()
-    {
+    public void shouldRestrictSingleActivity() {
         FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = new DenyActivityRestriction(DELETE);
@@ -78,8 +80,7 @@ public class DenyAcitivityRestrictionTests
     }
 
     @Test
-    public void shouldRestrictTwoActivities()
-    {
+    public void shouldRestrictTwoActivities() {
         FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = new DenyActivityRestriction(DELETE, MANAGE);
@@ -95,8 +96,7 @@ public class DenyAcitivityRestrictionTests
     }
 
     @Test
-    public void shouldHaveUnrestrictedChild()
-    {
+    public void shouldHaveUnrestrictedChild() {
         FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = new DenyActivityRestriction(DELETE, MANAGE);

@@ -1,10 +1,8 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.net.InetAddresses;
-import java.net.InetSocketAddress;
-
 import diskCacheV111.vehicles.IpProtocolInfo;
-
+import java.net.InetSocketAddress;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {
@@ -62,9 +60,9 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getVersionString()).append(":")
-                .append(InetAddresses.toAddrString(_socketAddress.getAddress()))
-                .append(':')
-                .append(_socketAddress.getPort());
+              .append(InetAddresses.toAddrString(_socketAddress.getAddress()))
+              .append(':')
+              .append(_socketAddress.getPort());
 
         return sb.toString();
     }

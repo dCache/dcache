@@ -64,9 +64,10 @@ import diskCacheV111.vehicles.Message;
 
 /**
  * <p>Used by resilience handler to request removal of a cache entry from
- *      the pool repository. </p>
+ * the pool repository. </p>
  */
 public final class RemoveReplicaMessage extends Message {
+
     private static final long serialVersionUID = 917042860498788919L;
 
     private final String pool;
@@ -87,6 +88,6 @@ public final class RemoveReplicaMessage extends Message {
 
     public String toString() {
         return String.format("%s: (pool %s) (pnfsid %s) - %s", getMessageName(),
-                        pool, pnfsId, super.toString());
+              pool, pnfsId, super.toString());
     }
 }

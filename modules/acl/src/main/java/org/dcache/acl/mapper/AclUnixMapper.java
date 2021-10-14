@@ -1,11 +1,7 @@
 package org.dcache.acl.mapper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.Permission;
@@ -16,18 +12,21 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.acl.unix.ACLUnix;
 import org.dcache.acl.unix.AMUnix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mapping Between NFSv4 and Unix ACLs.
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
 public class AclUnixMapper {
 
-    private static final Logger logger = LoggerFactory.getLogger("logger.org.dcache.authorization." + AclUnixMapper.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(
+          "logger.org.dcache.authorization." + AclUnixMapper.class.getName());
 
     private static AclUnixMapper _SINGLETON;
+
     static {
         _SINGLETON = new AclUnixMapper();
     }
@@ -49,7 +48,7 @@ public class AclUnixMapper {
         List<ACE> defaultACEs;
 
         int[] defaultMasks = null;
-        if ( rsType == RsType.DIR ) {
+        if (rsType == RsType.DIR) {
             splitACEs(aces, accessACEs = new ArrayList<>(), defaultACEs = new ArrayList<>());
             defaultMasks = getMasks(defaultACEs);
         }
@@ -71,24 +70,24 @@ public class AclUnixMapper {
             boolean allowed = (AceType.ACCESS_ALLOWED_ACE_TYPE == ace.getType());
 
             switch (who) {
-            case OWNER:
-                applyMask(permOwner, ace.getAccessMsk(), allowed);
-                break;
+                case OWNER:
+                    applyMask(permOwner, ace.getAccessMsk(), allowed);
+                    break;
 
-            case OWNER_GROUP:
-                applyMask(permGroup, ace.getAccessMsk(), allowed);
-                break;
+                case OWNER_GROUP:
+                    applyMask(permGroup, ace.getAccessMsk(), allowed);
+                    break;
 
-            case EVERYONE:
-                int msk = applyMask(permEveryone, ace.getAccessMsk(), allowed);
-                if ( msk != 0 ) {
-                    applyMask(permOwner, msk, allowed);
-                    applyMask(permGroup, msk, allowed);
-                }
-                break;
+                case EVERYONE:
+                    int msk = applyMask(permEveryone, ace.getAccessMsk(), allowed);
+                    if (msk != 0) {
+                        applyMask(permOwner, msk, allowed);
+                        applyMask(permGroup, msk, allowed);
+                    }
+                    break;
 
-            default:
-                logger.info("Unsupported who: {}", who);
+                default:
+                    logger.info("Unsupported who: {}", who);
             }
         }
 
@@ -101,9 +100,9 @@ public class AclUnixMapper {
 
     private static int applyMask(Permission perm, int access_msk, boolean allowed) {
         int msk = access_msk & (~perm.getDefMsk());
-        if ( msk != 0 ) {
+        if (msk != 0) {
             perm.appendDefMsk(msk);
-            if ( allowed ) {
+            if (allowed) {
                 perm.appendAllowMsk(msk);
             }
         }
@@ -115,18 +114,19 @@ public class AclUnixMapper {
         int allow_msk = perm.getAllowMsk();
 
         int mask = 0;
-        if ( AccessMask.READ_DATA.matches(allow_msk) || AccessMask.LIST_DIRECTORY.matches(allow_msk) ) {
+        if (AccessMask.READ_DATA.matches(allow_msk) || AccessMask.LIST_DIRECTORY.matches(
+              allow_msk)) {
             mask |= AMUnix.READ.getValue();
         }
 
-        if ( AccessMask.WRITE_DATA.matches(allow_msk) || AccessMask.ADD_FILE.matches(allow_msk) || AccessMask.APPEND_DATA.matches(allow_msk)
-                || AccessMask.ADD_SUBDIRECTORY.matches(allow_msk) || AccessMask.DELETE_CHILD.matches(allow_msk) )
-
-        {
+        if (AccessMask.WRITE_DATA.matches(allow_msk) || AccessMask.ADD_FILE.matches(allow_msk)
+              || AccessMask.APPEND_DATA.matches(allow_msk)
+              || AccessMask.ADD_SUBDIRECTORY.matches(allow_msk) || AccessMask.DELETE_CHILD.matches(
+              allow_msk)) {
             mask |= AMUnix.WRITE.getValue();
         }
 
-        if ( AccessMask.EXECUTE.matches(allow_msk) ) {
+        if (AccessMask.EXECUTE.matches(allow_msk)) {
             mask |= AMUnix.EXECUTE.getValue();
         }
 
@@ -134,25 +134,23 @@ public class AclUnixMapper {
     }
 
     /**
-     * If the ACL in question is for a directory, we split it into two ACLs, one
-     * purely effective and one purely inherited.
+     * If the ACL in question is for a directory, we split it into two ACLs, one purely effective
+     * and one purely inherited.
      *
-     * @param aces
-     *            List of ACEs
-     * @param effectiveACEs
-     *            Returnes list of purely effective ACEs
-     * @param inheritedACEs
-     *            Returns list of purely inherited ACEs
-     *
+     * @param aces          List of ACEs
+     * @param effectiveACEs Returnes list of purely effective ACEs
+     * @param inheritedACEs Returns list of purely inherited ACEs
      */
-    private static void splitACEs(List<ACE> aces, List<ACE> effectiveACEs, List<ACE> inheritedACEs) {
+    private static void splitACEs(List<ACE> aces, List<ACE> effectiveACEs,
+          List<ACE> inheritedACEs) {
         for (ACE ace : aces) {
             int flags = ace.getFlags();
-            if ( AceFlags.INHERIT_ONLY_ACE.matches(flags) == false ) {
+            if (AceFlags.INHERIT_ONLY_ACE.matches(flags) == false) {
                 effectiveACEs.add(ace);
             }
 
-            if ( AceFlags.DIRECTORY_INHERIT_ACE.matches(flags) || AceFlags.FILE_INHERIT_ACE.matches(flags) ) {
+            if (AceFlags.DIRECTORY_INHERIT_ACE.matches(flags) || AceFlags.FILE_INHERIT_ACE.matches(
+                  flags)) {
                 inheritedACEs.add(ace);
             }
         }

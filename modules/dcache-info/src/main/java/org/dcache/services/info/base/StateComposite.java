@@ -1,42 +1,41 @@
 package org.dcache.services.info.base;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * A StateComposite is an aggregation of zero or more StateComponents.  StateComposites
- * form the branch nodes within the dCache state tree.
+ * A StateComposite is an aggregation of zero or more StateComponents.  StateComposites form the
+ * branch nodes within the dCache state tree.
  * <p>
- * A Mortal StateComposite has a minimum lifetime when created.  The expiry date will be
- * adjusted to match any added Mortal children: the branch will always persist whilst it
- * contains any children.
+ * A Mortal StateComposite has a minimum lifetime when created.  The expiry date will be adjusted to
+ * match any added Mortal children: the branch will always persist whilst it contains any children.
  * <p>
- * An Ephemeral StateComposite has no lifetime: it will persist without having fixed
- * lifetime.  However an Ephemeral StateComposite will not prevent an ancestor StateComposite
- * that is Mortal from expiring.  In general, a StateComposite that contains <i>only</i>
- * Ephemeral children should also be Ephemeral; all other StateComposites should be Mortal.
+ * An Ephemeral StateComposite has no lifetime: it will persist without having fixed lifetime.
+ * However an Ephemeral StateComposite will not prevent an ancestor StateComposite that is Mortal
+ * from expiring.  In general, a StateComposite that contains <i>only</i> Ephemeral children should
+ * also be Ephemeral; all other StateComposites should be Mortal.
  * <p>
  * A StateComposite also maintains a record of the earliest any of its children (or children of
- * children) will expire.  This is an optimisation, allowing a quick determination when
- * a tree should next be purged and, with any subtree, whether it is necessary to purge that
- * subtree.
+ * children) will expire.  This is an optimisation, allowing a quick determination when a tree
+ * should next be purged and, with any subtree, whether it is necessary to purge that subtree.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StateComposite implements StateComponent
-{
+public class StateComposite implements StateComponent {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(StateComposite.class);
 
-    /** Minimum lifetime for on-the-fly created StateComposites, in seconds */
+    /**
+     * Minimum lifetime for on-the-fly created StateComposites, in seconds
+     */
     static final long DEFAULT_LIFETIME = 10;
 
     private final Map<String, StateComponent> _children = new HashMap<>();
@@ -48,11 +47,9 @@ public class StateComposite implements StateComponent
     /**
      * The constructor for public use: a StateComposite with a finite lifetime.
      *
-     * @param lifetime the minimum duration, in seconds, that this StateComposite
-     * should persist.
+     * @param lifetime the minimum duration, in seconds, that this StateComposite should persist.
      */
-    public StateComposite(long lifetime)
-    {
+    public StateComposite(long lifetime) {
         if (lifetime < 0) {
             lifetime = 0;
         }
@@ -63,25 +60,21 @@ public class StateComposite implements StateComponent
 
 
     /**
-     * Create an Ephemeral StateComposite.  These should <i>only</i> be used
-     * when they are to contain only Ephemeral children.  Normally StateComposites
-     * should be created Mortal.
+     * Create an Ephemeral StateComposite.  These should <i>only</i> be used when they are to
+     * contain only Ephemeral children.  Normally StateComposites should be created Mortal.
      */
-    public StateComposite()
-    {
+    public StateComposite() {
         this(false);
     }
 
     /**
-     * Create a new Ephemeral or Immortal StateComposite.  Normally
-     * StateComposites should be mortal.  (Mortal StateComposites will
-     * automatically extend their lives so they don't expire before their
-     * children.)
-     * @param isImmortal true for an immortal StateComposite, false for
-     * an ephemeral one.
+     * Create a new Ephemeral or Immortal StateComposite.  Normally StateComposites should be
+     * mortal.  (Mortal StateComposites will automatically extend their lives so they don't expire
+     * before their children.)
+     *
+     * @param isImmortal true for an immortal StateComposite, false for an ephemeral one.
      */
-    public StateComposite(boolean isImmortal)
-    {
+    public StateComposite(boolean isImmortal) {
         if (isImmortal) {
             becomeImmortal();
         } else {
@@ -91,37 +84,36 @@ public class StateComposite implements StateComponent
     }
 
     /**
-     * Our private usage below: build a new Mortal StateComposite with a
-     * link to persistentMetadata.
+     * Our private usage below: build a new Mortal StateComposite with a link to
+     * persistentMetadata.
      *
      * @param persistentMetadata the corresponding StatePersistentMetadata object.
-     * @param lifetime the minimum lifetime of this object, in seconds.
+     * @param lifetime           the minimum lifetime of this object, in seconds.
      */
-    private StateComposite(StatePersistentMetadata persistentMetadata, long lifetime)
-    {
+    private StateComposite(StatePersistentMetadata persistentMetadata, long lifetime) {
         becomeMortal(lifetime);
         _metadataRef = persistentMetadata;
     }
 
     /**
-     * Build an Immortal StateComposite with specific metadata link.
-     * This should only be used by the State singleton.
+     * Build an Immortal StateComposite with specific metadata link. This should only be used by the
+     * State singleton.
+     *
      * @param persistentMetadata the top-level metadata.
      */
-    protected StateComposite(StatePersistentMetadata persistentMetadata)
-    {
+    protected StateComposite(StatePersistentMetadata persistentMetadata) {
         becomeImmortal();
         _metadataRef = persistentMetadata;
     }
 
     /**
-     * Possibly update our belief of the earliest time that a Mortal child StateComponent
-     * will expire.  It is safe to call this method with all child Dates: it will
-     * update the _earliestChildExpiry Date correctly.
-     * @param newDate  the expiry Date of a Mortal child StateComponent
+     * Possibly update our belief of the earliest time that a Mortal child StateComponent will
+     * expire.  It is safe to call this method with all child Dates: it will update the
+     * _earliestChildExpiry Date correctly.
+     *
+     * @param newDate the expiry Date of a Mortal child StateComponent
      */
-    private void updateEarliestChildExpiryDate(Date newDate)
-    {
+    private void updateEarliestChildExpiryDate(Date newDate) {
         if (newDate == null) {
             return;
         }
@@ -132,23 +124,21 @@ public class StateComposite implements StateComponent
     }
 
     /**
-     * @return the time when the earliest child will expire, or null if we have
-     * no Mortal children.
+     * @return the time when the earliest child will expire, or null if we have no Mortal children.
      */
     @Override
-    public Date getEarliestChildExpiryDate()
-    {
+    public Date getEarliestChildExpiryDate() {
         return _earliestChildExpiry != null ? new Date(_earliestChildExpiry.getTime()) : null;
     }
 
 
     /**
-     * Update our whenIShouldExpire date.  If the new date is before the existing
-     * one it is ignored.
-     * @param newDate  the new whenIShouldExpire date
+     * Update our whenIShouldExpire date.  If the new date is before the existing one it is
+     * ignored.
+     *
+     * @param newDate the new whenIShouldExpire date
      */
-    private void updateWhenIShouldExpireDate(Date newDate)
-    {
+    private void updateWhenIShouldExpireDate(Date newDate) {
         if (newDate == null) {
             return;
         }
@@ -159,18 +149,14 @@ public class StateComposite implements StateComponent
     }
 
 
-
-
-
     /**
      * Return a cryptic string describing this StateComposite.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("StateComposite <");
-        sb.append(isMortal() ? "+" : isEphemeral() ? "*" : "#" );
+        sb.append(isMortal() ? "+" : isEphemeral() ? "*" : "#");
         sb.append("> {");
         sb.append(_children.size());
         sb.append("}");
@@ -182,17 +168,15 @@ public class StateComposite implements StateComponent
      * When we should expire.
      */
     @Override
-    public Date getExpiryDate()
-    {
+    public Date getExpiryDate() {
         return _whenIShouldExpire != null ? new Date(_whenIShouldExpire.getTime()) : null;
     }
 
     /**
-     *  This function checks whether our parent should expunge us.
+     * This function checks whether our parent should expunge us.
      */
     @Override
-    public boolean hasExpired()
-    {
+    public boolean hasExpired() {
         Date now = new Date();
 
         return _whenIShouldExpire != null ? !now.before(_whenIShouldExpire) : false;
@@ -201,31 +185,29 @@ public class StateComposite implements StateComponent
     /**
      * Make sure we never expire.
      */
-    private void becomeImmortal()
-    {
+    private void becomeImmortal() {
         _isEphemeral = false;
         _whenIShouldExpire = null;
     }
 
     /**
-     * Switch behaviour to be Ephemeral.  That is, don't expire automatically but
-     * don't prevent Mortal parent(s) from expiring.
+     * Switch behaviour to be Ephemeral.  That is, don't expire automatically but don't prevent
+     * Mortal parent(s) from expiring.
      */
-    private void becomeEphemeral()
-    {
+    private void becomeEphemeral() {
         _isEphemeral = true;
         _whenIShouldExpire = null;
     }
 
     /**
      * Initialise our expiry time to some point in the future.
+     *
      * @param lifetime the time, in seconds.
      */
-    private void becomeMortal(long lifetime)
-    {
-        _whenIShouldExpire = new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(lifetime));
+    private void becomeMortal(long lifetime) {
+        _whenIShouldExpire = new Date(
+              System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(lifetime));
     }
-
 
 
     /**
@@ -237,28 +219,27 @@ public class StateComposite implements StateComponent
      * exhausted
      * <li> There are five StateVisitor call-backs from this StateComponent
      * </ul>
-     *
+     * <p>
      * The standard call-backs are:
      * <ul>
      * <li>visitCompositePreDescend() called before visiting children.
      * <li>visitCompositePreLastDescend() called before visiting the last child.
      * <li>visitCompositePostDescend() called after visiting children.
      * </ul>
-     *
+     * <p>
      * The <tt>start</tt> path allows the client to specify a point within the State tree
      * to start visiting.  Iterations down to that level call a different set of Visitor
      * call-backs: visitCompositePreSkipDescend() and visitCompositePostSkipDescend().
      * These are equivalent to the non-<tt>Skip</tt> versions and allow the StateVisitor
      * to represent the skipping down to the starting point, or not.
      *
-     * @param path the path to the current position in the State.
+     * @param path    the path to the current position in the State.
      * @param visitor the object that implements the StateVisitor class.
      */
     @Override
-    public void acceptVisitor(StatePath path, StateVisitor visitor)
-    {
+    public void acceptVisitor(StatePath path, StateVisitor visitor) {
         LOGGER.trace("acceptVisitor({})", path);
-        Map<String,String> branchMetadata = getMetadataInfo();
+        Map<String, String> branchMetadata = getMetadataInfo();
 
         visitor.visitCompositePreDescend(path, branchMetadata);
 
@@ -280,17 +261,16 @@ public class StateComposite implements StateComponent
      * State after the transition has taken effect.
      */
     @Override
-    public void acceptVisitor(StateTransition transition, StatePath ourPath, StateVisitor visitor)
-    {
+    public void acceptVisitor(StateTransition transition, StatePath ourPath, StateVisitor visitor) {
         requireNonNull(transition);
         LOGGER.trace("acceptVisitor; transition={}, path={})", transition, ourPath);
 
-        Map<String,String> branchMetadata = getMetadataInfo();
+        Map<String, String> branchMetadata = getMetadataInfo();
 
         visitor.visitCompositePreDescend(ourPath, branchMetadata);
 
         StateChangeSet changeSet = transition.getStateChangeSet(ourPath);
-        Map<String,StateComponent> futureChildren = getFutureChildren(changeSet);
+        Map<String, StateComponent> futureChildren = getFutureChildren(changeSet);
 
         for (Map.Entry<String, StateComponent> mapEntry : futureChildren.entrySet()) {
             String childName = mapEntry.getKey();
@@ -306,17 +286,15 @@ public class StateComposite implements StateComponent
     }
 
 
-
     /**
      * Return what this._children will look like after a StateChangeSet has been applied.
      */
-    private Map<String,StateComponent> getFutureChildren(StateChangeSet changeSet)
-    {
+    private Map<String, StateComponent> getFutureChildren(StateChangeSet changeSet) {
         if (changeSet == null) {
             return _children;
         }
 
-        Map<String,StateComponent> futureChildren = new HashMap<>(_children);
+        Map<String, StateComponent> futureChildren = new HashMap<>(_children);
 
         for (String childName : changeSet.getNewChildren()) {
             StateComponent childValue = changeSet.getNewChildValue(childName);
@@ -345,14 +323,14 @@ public class StateComposite implements StateComponent
 
 
     /**
-     * Apply a transition to our current state.  Children are added, updated or removed based on
-     * the supplied transition.
-     * @param ourPath the path to this within dCache tree, or null for top-most StateComposite
+     * Apply a transition to our current state.  Children are added, updated or removed based on the
+     * supplied transition.
+     *
+     * @param ourPath    the path to this within dCache tree, or null for top-most StateComposite
      * @param transition the StateTransition to apply
      */
     @Override
-    public void applyTransition(StatePath ourPath, StateTransition transition)
-    {
+    public void applyTransition(StatePath ourPath, StateTransition transition) {
         StateChangeSet changeSet = transition.getStateChangeSet(ourPath);
 
         if (changeSet == null) {
@@ -381,14 +359,15 @@ public class StateComposite implements StateComponent
             StateComponent updatedChildValue = changeSet.getUpdatedChildValue(childName);
 
             if (updatedChildValue == null) {
-                LOGGER.error("Attempting to update {} in {}, but value is null; wilfully ignoring this.", childName, ourPath);
+                LOGGER.error(
+                      "Attempting to update {} in {}, but value is null; wilfully ignoring this.",
+                      childName, ourPath);
                 continue;
             }
 
             LOGGER.trace("updating child {}, updated value {}", childName, updatedChildValue);
             addComponent(childName, updatedChildValue);
         }
-
 
         // Finally, add all new children.
         for (String childName : changeSet.getNewChildren()) {
@@ -404,7 +383,7 @@ public class StateComposite implements StateComponent
             if (child == null) {
                 if (!changeSet.getRemovedChildren().contains(childName)) {
                     LOGGER.error("Whilst in {}, avoided attempting to applyTransition()" +
-                            " on missing child {}", ourPath, childName);
+                          " on missing child {}", ourPath, childName);
                 }
                 continue;
             }
@@ -422,8 +401,7 @@ public class StateComposite implements StateComponent
      * TODO: this isn't always necessary, but it's hard to know when.  Also, it isn't clear that the
      * cost of figuring out when it is necessary is less than the CPU time saved by always recalculating.
      */
-    private void recalcEarliestChildExpiry()
-    {
+    private void recalcEarliestChildExpiry() {
         _earliestChildExpiry = null; // A forceful reset
 
         for (StateComponent child : _children.values()) {
@@ -442,21 +420,20 @@ public class StateComposite implements StateComponent
 
 
     /**
-     * Look up persistent metadata reference for child and return it.  If none is
-     * available, null is returned.
+     * Look up persistent metadata reference for child and return it.  If none is available, null is
+     * returned.
+     *
      * @param childName the name of the child.
      * @return a StatePersistentMetadata entry, or null if none is appropriate.
      */
-    private StatePersistentMetadata getChildMetadata(String childName)
-    {
+    private StatePersistentMetadata getChildMetadata(String childName) {
         return _metadataRef == null ? null : _metadataRef.getChild(childName);
     }
 
     /**
      * @return our metadata info, if there is any, otherwise null.
      */
-    private Map<String,String> getMetadataInfo()
-    {
+    private Map<String, String> getMetadataInfo() {
         return _metadataRef == null ? null : _metadataRef.getMetadata();
     }
 
@@ -464,11 +441,11 @@ public class StateComposite implements StateComponent
     /**
      * Add a new component to our list of children.
      * <p>
+     *
      * @param childName the name under which this item should be recorded
-     * @param newChild the StateComponent to be stored.
+     * @param newChild  the StateComponent to be stored.
      */
-    private void addComponent(String childName, StateComponent newChild)
-    {
+    private void addComponent(String childName, StateComponent newChild) {
         StateComponent existingChild = _children.get(childName);
 
         /**
@@ -486,15 +463,16 @@ public class StateComposite implements StateComponent
                 StateComposite existingComposite = (StateComposite) existingChild;
 
                 // Copy across the existingComposite's children over to the newComposite
-                for (Map.Entry<String,StateComponent> entry : existingComposite._children.entrySet()) {
+                for (Map.Entry<String, StateComponent> entry : existingComposite._children.entrySet()) {
                     if (!newComposite._children.containsKey(entry.getKey())) {
                         newComposite._children
-                                .put(entry.getKey(), entry.getValue());
+                              .put(entry.getKey(), entry.getValue());
                     }
                 }
 
                 // ... and details of the dates...
-                newComposite.updateEarliestChildExpiryDate(existingComposite.getEarliestChildExpiryDate());
+                newComposite.updateEarliestChildExpiryDate(
+                      existingComposite.getEarliestChildExpiryDate());
                 newComposite.updateWhenIShouldExpireDate(existingComposite.getExpiryDate());
             }
         }
@@ -504,20 +482,20 @@ public class StateComposite implements StateComponent
     }
 
 
-
     /**
      * Update a StateTransition object so a new StateComponent will be added to dCache's state.  The
      * changes are recorded in StateTransition so they can be applied later.
-     * @param ourPath the StatePath to this StateComposite.
-     * @param newComponentPath the StatePath to this StateComponent, relative to this StateComposition
-     * @param newComponent the StateComponent to add.
-     * @param transition the StateTransition in which we will record these changes
+     *
+     * @param ourPath          the StatePath to this StateComposite.
+     * @param newComponentPath the StatePath to this StateComponent, relative to this
+     *                         StateComposition
+     * @param newComponent     the StateComponent to add.
+     * @param transition       the StateTransition in which we will record these changes
      */
     @Override
     public void buildTransition(StatePath ourPath, StatePath newComponentPath,
-            StateComponent newComponent, StateTransition transition)
-            throws MetricStatePathException
-    {
+          StateComponent newComponent, StateTransition transition)
+          throws MetricStatePathException {
         String childName = newComponentPath.getFirstElement();
         StateChangeSet changeSet = transition.getOrCreateChangeSet(ourPath);
 
@@ -574,30 +552,32 @@ public class StateComposite implements StateComponent
          * Even if we didn't change anything, record that we're about to iterate down and do so.
          */
         changeSet.recordChildItr(childName);
-        child.buildTransition(buildChildPath(ourPath, childName), newComponentPath.childPath(), newComponent, transition);
+        child.buildTransition(buildChildPath(ourPath, childName), newComponentPath.childPath(),
+              newComponent, transition);
     }
 
 
     /**
-     * Check whether the specified StatePathPredicate has been triggered by the given StateTransition.
+     * Check whether the specified StatePathPredicate has been triggered by the given
+     * StateTransition.
      * <p>
-     * If none of our children match the top-level element of the predicate, then the answer is definitely
-     * not triggered.
+     * If none of our children match the top-level element of the predicate, then the answer is
+     * definitely not triggered.
      * <p>
-     * If a child matches but there are more elements to consider, iterate down: ask the child whether the
-     * predicate has been triggered with one less element in the predicate.
+     * If a child matches but there are more elements to consider, iterate down: ask the child
+     * whether the predicate has been triggered with one less element in the predicate.
      * <p>
      * If the predicate is simple (that is, contains only a single element) then the predicate is
      * triggered depending on the activity of our children under the StateTransition.
-     * @param ourPath  Our path
-     * @param predicate the predicate we are to check.
+     *
+     * @param ourPath    Our path
+     * @param predicate  the predicate we are to check.
      * @param transition the StateTransition to consider.
      * @return true if the transition has triggered this predicate, false otherwise
      */
     @Override
     public boolean predicateHasBeenTriggered(StatePath ourPath,
-            StatePathPredicate predicate, StateTransition transition)
-    {
+          StatePathPredicate predicate, StateTransition transition) {
         LOGGER.trace("predicateHasBeenTriggered path={}, predicate={}", ourPath, predicate);
         StateChangeSet changeSet = transition.getStateChangeSet(ourPath);
 
@@ -624,7 +604,8 @@ public class StateComposite implements StateComponent
                  *  concur.
                  */
                 StateComponent child = changeSet.getNewChildValue(newChildName);
-                if (child.predicateHasBeenTriggered(buildChildPath(ourPath, newChildName), predicate.childPath(), transition)) {
+                if (child.predicateHasBeenTriggered(buildChildPath(ourPath, newChildName),
+                      predicate.childPath(), transition)) {
                     return true;
                 }
 
@@ -664,7 +645,8 @@ public class StateComposite implements StateComponent
                 }
             } else {
                 // ... otherwise, try iterating down.
-                if (child.predicateHasBeenTriggered(buildChildPath(ourPath, childName), predicate.childPath(), transition)) {
+                if (child.predicateHasBeenTriggered(buildChildPath(ourPath, childName),
+                      predicate.childPath(), transition)) {
                     return true;
                 }
             }
@@ -675,41 +657,37 @@ public class StateComposite implements StateComponent
 
 
     @Override
-    public boolean isEphemeral()
-    {
+    public boolean isEphemeral() {
         return _whenIShouldExpire == null && _isEphemeral;
     }
 
     @Override
-    public boolean isImmortal()
-    {
+    public boolean isImmortal() {
         return _whenIShouldExpire == null && !_isEphemeral;
     }
 
     @Override
-    public boolean isMortal()
-    {
+    public boolean isMortal() {
         return _whenIShouldExpire != null;
     }
 
 
     /**
-     * Build a child's StatePath, taking into account that a path may be null
-     * (this one-liner is repeated fairly often)
-     * @param ourPath our current path, or null if we are the root StateComposite
+     * Build a child's StatePath, taking into account that a path may be null (this one-liner is
+     * repeated fairly often)
+     *
+     * @param ourPath   our current path, or null if we are the root StateComposite
      * @param childName the name of the child.
      * @return
      */
-    private StatePath buildChildPath(StatePath ourPath, String childName)
-    {
+    private StatePath buildChildPath(StatePath ourPath, String childName) {
         return ourPath != null ? ourPath.newChild(childName) : new StatePath(childName);
     }
 
     /**
-     * Ostensibly, we iterate over all children to find Mortal children that should be
-     * removed.  In practise, cached knowledge of Mortal child expiry Dates means this
-     * iterates over only those StateComponents that contain children that have actually
-     * expired.
+     * Ostensibly, we iterate over all children to find Mortal children that should be removed.  In
+     * practise, cached knowledge of Mortal child expiry Dates means this iterates over only those
+     * StateComponents that contain children that have actually expired.
      *
      * @param ourPath
      * @param transition
@@ -717,13 +695,12 @@ public class StateComposite implements StateComponent
      */
     @Override
     public void buildRemovalTransition(StatePath ourPath,
-            StateTransition transition, boolean forced)
-    {
+          StateTransition transition, boolean forced) {
         LOGGER.trace("entering buildRemovalTransition: path={}", ourPath);
         Date now = new Date();
 
         // Check each child in turn:
-        for (Map.Entry<String, StateComponent>entry : _children.entrySet()) {
+        for (Map.Entry<String, StateComponent> entry : _children.entrySet()) {
             StateComponent childValue = entry.getValue();
             String childName = entry.getKey();
 
@@ -751,7 +728,8 @@ public class StateComposite implements StateComponent
 
                 if (shouldItr) {
                     changeSet.recordChildItr(childName);
-                    childValue.buildRemovalTransition(buildChildPath(ourPath, childName), transition, shouldRemoveThisChild);
+                    childValue.buildRemovalTransition(buildChildPath(ourPath, childName),
+                          transition, shouldRemoveThisChild);
                 }
             }
         }
@@ -759,13 +737,12 @@ public class StateComposite implements StateComponent
 
 
     /**
-     * We are to update a StateTransition so all StateComponents that have a certain path as
-     * their parent are to be removed.
+     * We are to update a StateTransition so all StateComponents that have a certain path as their
+     * parent are to be removed.
      */
     @Override
     public void buildPurgeTransition(StateTransition transition, StatePath ourPath,
-            StatePath remainingPath)
-    {
+          StatePath remainingPath) {
         LOGGER.trace("buildPurgeTransition: path={}, remaining={}", ourPath, remainingPath);
         StateChangeSet scs = transition.getOrCreateChangeSet(ourPath);
 
@@ -799,21 +776,18 @@ public class StateComposite implements StateComponent
      * Return a hash-code that honours the equals() / hashCode() contract.
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _children.hashCode();
     }
 
     /**
-     * Override the public equals method.  All StateComposites are considered equal if
-     * they have the same children are the same type and have the same expiry date
-     * (if mortal).
-     *
+     * Override the public equals method.  All StateComposites are considered equal if they have the
+     * same children are the same type and have the same expiry date (if mortal).
+     * <p>
      * This is significant for when considering whether a StatePredicate has been triggered.
      */
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }

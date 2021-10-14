@@ -4,9 +4,8 @@ import org.dcache.util.Exceptions;
 
 public class GplazmaParseMapFileException extends Exception {
 
-    public static void checkFormat(boolean isOK, String template, Object...args)
-            throws GplazmaParseMapFileException
-    {
+    public static void checkFormat(boolean isOK, String template, Object... args)
+          throws GplazmaParseMapFileException {
         Exceptions.genericCheck(isOK, GplazmaParseMapFileException::new, template, args);
     }
 

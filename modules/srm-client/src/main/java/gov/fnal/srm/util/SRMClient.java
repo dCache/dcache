@@ -67,25 +67,21 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import eu.emi.security.authn.x509.X509Credential;
-import eu.emi.security.authn.x509.impl.PEMCredential;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Date;
-
 import diskCacheV111.srm.ISRM;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
-
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Date;
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.SRMClientV1;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TransportUtil;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public abstract class SRMClient {
 
@@ -97,8 +93,8 @@ public abstract class SRMClient {
     protected Logger logger;
     protected boolean doDelegation;
     protected boolean fullDelegation;
-    protected String gss_expected_name ="host";
-    protected long retrytimeout=1000;
+    protected String gss_expected_name = "host";
+    protected long retrytimeout = 1000;
     protected int retries = 10;
     protected Report report;
 
@@ -107,15 +103,16 @@ public abstract class SRMClient {
         this.configuration = configuration;
         logger = configuration.getLogger();
         this.gluepath = configuration.getWebservice_path();
-        this.debug=configuration.isDebug();
-        this.urlcopy=configuration.getUrlcopy();
+        this.debug = configuration.isDebug();
+        this.urlcopy = configuration.getUrlcopy();
         this.doDelegation = configuration.isDelegate();
         this.fullDelegation = configuration.isFull_delegation();
         this.gss_expected_name = configuration.getGss_expected_name();
 
         Transport transport = configuration.getTransport();
-        dsay("In SRMClient ExpectedName: "+gss_expected_name);
-        dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+gluepath+","+transport.toString()+")");
+        dsay("In SRMClient ExpectedName: " + gss_expected_name);
+        dsay("SRMClient(" + TransportUtil.uriSchemaFor(transport) + "," + gluepath + ","
+              + transport.toString() + ")");
     }
 
     public void setUrlcopy(String urlcopy) {
@@ -127,10 +124,10 @@ public abstract class SRMClient {
     }
 
     public static RequestFileStatus getFileRequest(RequestStatus rs,
-                                                   Integer nextID) {
+          Integer nextID) {
 
         RequestFileStatus[] frs = rs.fileStatuses;
-        if(frs == null ) {
+        if (frs == null) {
             return null;
         }
 
@@ -144,25 +141,25 @@ public abstract class SRMClient {
 
 
     public final void say(String msg) {
-        logger.log(new Date().toString() +": "+msg);
+        logger.log(new Date().toString() + ": " + msg);
     }
 
     //say if debug
-    public  final void dsay(String msg) {
-        if(debug) {
-            logger.log(new Date().toString() +": "+msg);
+    public final void dsay(String msg) {
+        if (debug) {
+            logger.log(new Date().toString() + ": " + msg);
         }
     }
 
     //error say
     public final void esay(String err) {
-        logger.elog(new Date().toString() +": "+err);
+        logger.elog(new Date().toString() + ": " + err);
     }
 
     //esay if debug
-    public  final void edsay(String err) {
-        if(debug) {
-            logger.elog(new Date().toString() +": "+err);
+    public final void edsay(String err) {
+        if (debug) {
+            logger.elog(new Date().toString() + ": " + err);
         }
     }
 
@@ -175,20 +172,20 @@ public abstract class SRMClient {
 
             SRMClientV1 client;
             client = new SRMClientV1(srmUrl, getCredential(),
-                    configuration.getRetry_timeout(),
-                    configuration.getRetry_num(),
-                    doDelegation, fullDelegation, gss_expected_name,
-                    configuration.getWebservice_path(),
-                    configuration.getTransport());
+                  configuration.getRetry_timeout(),
+                  configuration.getRetry_num(),
+                  doDelegation, fullDelegation, gss_expected_name,
+                  configuration.getWebservice_path(),
+                  configuration.getTransport());
             dsay("connected to server, obtaining proxy");
 
             srm = client;
-            dsay("got proxy of type "+srm.getClass());
+            dsay("got proxy of type " + srm.getClass());
 
         } catch (Exception srme) {
             throw new IOException(srme.toString());
         }
-        if(srm == null) {
+        if (srm == null) {
             throw new IOException("can not get manager connection");
         }
 
@@ -198,93 +195,93 @@ public abstract class SRMClient {
         if (configuration.isUseproxy()) {
             return new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
-            return new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
+            return new PEMCredential(configuration.getX509_user_key(),
+                  configuration.getX509_user_cert(), null);
         }
     }
 
-    public  void done(RequestStatus rs,ISRM srm) {
-        if(rs.fileStatuses != null) {
-            for(int i = 0; i< rs.fileStatuses.length;++i) {
+    public void done(RequestStatus rs, ISRM srm) {
+        if (rs.fileStatuses != null) {
+            for (int i = 0; i < rs.fileStatuses.length; ++i) {
                 RequestFileStatus rfs = rs.fileStatuses[i];
-                if(!rfs.state.equals("Done") &&
-                        !rfs.state.equals("Failed")) {
+                if (!rfs.state.equals("Done") &&
+                      !rfs.state.equals("Failed")) {
                     say("rfs.state is " + rfs.state +
-                            " calling setFileStatus(" + rs.requestId + "," +
-                            rfs.fileId + ",\"Done\")");
-                    srm.setFileStatus(rs.requestId,rfs.fileId,"Done");
+                          " calling setFileStatus(" + rs.requestId + "," +
+                          rfs.fileId + ",\"Done\")");
+                    srm.setFileStatus(rs.requestId, rfs.fileId, "Done");
                 }
             }
         }
     }
 
-    private void setReportSuccessStatusBySource(URI url){
-        if(report == null) {
+    private void setReportSuccessStatusBySource(URI url) {
+        if (report == null) {
             return;
         }
         report.setStatusBySourceUrl(url, Report.OK_RC, null);
 
     }
 
-    private void setReportSuccessStatusByDest(URI url){
-        if(report == null) {
+    private void setReportSuccessStatusByDest(URI url) {
+        if (report == null) {
             return;
         }
         report.setStatusByDestinationUrl(url, Report.OK_RC, null);
 
     }
-    private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl){
-        if(srcurl == null ) {
+
+    private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl) {
+        if (srcurl == null) {
             setReportSuccessStatusByDest(dsturl);
             return;
         }
-        if(dsturl == null ) {
+        if (dsturl == null) {
             setReportSuccessStatusBySource(srcurl);
             return;
         }
 
-        if(report == null) {
+        if (report == null) {
             return;
         }
-
-
 
         report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.OK_RC, null);
     }
 
-    private void setReportFailedStatusBySource(URI url, String error){
-        if(report == null) {
+    private void setReportFailedStatusBySource(URI url, String error) {
+        if (report == null) {
             return;
         }
-        if(error == null) {
+        if (error == null) {
             report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
+        if (error.toLowerCase().contains("file exists")) {
             report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
+        if (error.toLowerCase().contains("permission")) {
             report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
             return;
         }
         report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusByDest(URI url, String error){
-        if(report == null) {
+    private void setReportFailedStatusByDest(URI url, String error) {
+        if (report == null) {
             return;
         }
-        if(error == null) {
+        if (error == null) {
             report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
+        if (error.toLowerCase().contains("file exists")) {
             report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
+        if (error.toLowerCase().contains("permission")) {
             report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
             return;
         }
@@ -292,57 +289,57 @@ public abstract class SRMClient {
         report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusBySrcAndDest(URI srcurl, URI dsturl, String error){
-        if(srcurl == null ) {
-            setReportFailedStatusByDest(dsturl,error);
+    private void setReportFailedStatusBySrcAndDest(URI srcurl, URI dsturl, String error) {
+        if (srcurl == null) {
+            setReportFailedStatusByDest(dsturl, error);
             return;
         }
-        if(dsturl == null ) {
-            setReportFailedStatusBySource(srcurl,error);
-            return;
-        }
-
-        if(report == null) {
+        if (dsturl == null) {
+            setReportFailedStatusBySource(srcurl, error);
             return;
         }
 
+        if (report == null) {
+            return;
+        }
 
-        if(error == null) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknown error");
+        if (error == null) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.ERROR_RC,
+                  "unknown error");
             return;
         }
         error = error.replace('\n', ' ');
-        if(error.toLowerCase().contains("file exists")) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
+        if (error.toLowerCase().contains("file exists")) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.FILE_EXISTS_RC, error);
             return;
         }
-        if(error.toLowerCase().contains("permission")) {
-            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
+        if (error.toLowerCase().contains("permission")) {
+            report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.PERMISSION_RC, error);
             return;
         }
 
-        report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
+        report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.ERROR_RC, error);
     }
 
-    protected void setReportFailed(URI srcurl, URI dsturl,String error ) {
+    protected void setReportFailed(URI srcurl, URI dsturl, String error) {
         try {
-            setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
-        } catch(Exception e) {
+            setReportFailedStatusBySrcAndDest(srcurl, dsturl, error);
+        } catch (Exception e) {
             try {
                 setReportFailedStatusByDest(dsturl, error);
-            } catch(Exception e1){
-                setReportFailedStatusBySource(srcurl,error);
+            } catch (Exception e1) {
+                setReportFailedStatusBySource(srcurl, error);
             }
         }
     }
 
     protected void setReportSucceeded(URI srcurl, URI dsturl) {
         try {
-            setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
-        } catch(Exception e) {
+            setReportSuccessStatusBySrcAndDest(srcurl, dsturl);
+        } catch (Exception e) {
             try {
                 setReportSuccessStatusByDest(dsturl);
-            } catch(Exception e1){
+            } catch (Exception e1) {
                 setReportSuccessStatusBySource(srcurl);
             }
         }

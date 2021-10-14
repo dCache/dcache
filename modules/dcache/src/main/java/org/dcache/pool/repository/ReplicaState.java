@@ -1,7 +1,6 @@
 package org.dcache.pool.repository;
 
-public enum ReplicaState
-{
+public enum ReplicaState {
     NEW(true),
     FROM_CLIENT(true),
     FROM_POOL(true),
@@ -14,13 +13,11 @@ public enum ReplicaState
 
     boolean isMutable;
 
-    ReplicaState(boolean isMutable)
-    {
+    ReplicaState(boolean isMutable) {
         this.isMutable = isMutable;
     }
 
-    public boolean isMutable()
-    {
+    public boolean isMutable() {
         return isMutable;
     }
 }

@@ -61,11 +61,10 @@ package org.dcache.services.bulk;
 
 import diskCacheV111.util.PnfsHandler;
 
-public interface NamespaceHandlerAware
-{
+public interface NamespaceHandlerAware {
+
     /**
-     *  If a single-target job implements this interface, the handler
-     *  will inject the stub.
+     * If a single-target job implements this interface, the handler will inject the stub.
      */
     void setNamespaceHandler(PnfsHandler pnfsHandler);
 }

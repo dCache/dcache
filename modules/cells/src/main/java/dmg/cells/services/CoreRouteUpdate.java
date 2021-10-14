@@ -18,49 +18,44 @@
  */
 package dmg.cells.services;
 
-import javax.annotation.concurrent.Immutable;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableCollection;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableCollection;
+import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public class CoreRouteUpdate implements Serializable
-{
+public class CoreRouteUpdate implements Serializable {
+
     private static final long serialVersionUID = 5105253793542041494L;
     private final String[] exports;
     private final String[] topics;
     // as Optional class is not serializable use raw String
     private final String zone;
 
-    public CoreRouteUpdate(Collection<String> exports, Optional<String> zone)
-    {
+    public CoreRouteUpdate(Collection<String> exports, Optional<String> zone) {
         this(exports, Collections.emptyList(), zone);
     }
 
-    public CoreRouteUpdate(Collection<String> exports, Collection<String> topics, Optional<String> zone)
-    {
+    public CoreRouteUpdate(Collection<String> exports, Collection<String> topics,
+          Optional<String> zone) {
         this.exports = exports.stream().distinct().toArray(String[]::new);
         this.topics = topics.stream().distinct().toArray(String[]::new);
         this.zone = zone.orElse(null);
     }
 
-    public Collection<String> getExports()
-    {
+    public Collection<String> getExports() {
         return unmodifiableCollection(asList(exports));
     }
 
-    public Collection<String> getTopics()
-    {
+    public Collection<String> getTopics() {
         return unmodifiableCollection(asList(topics));
     }
 
-    public Optional<String> getZone()
-    {
+    public Optional<String> getZone() {
         return Optional.ofNullable(zone);
     }
 }

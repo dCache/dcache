@@ -1,8 +1,9 @@
 package org.dcache.chimera.posix;
 
+import static org.junit.Assert.assertEquals;
+
 import org.dcache.chimera.UnixPermission;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class StatTest {
 

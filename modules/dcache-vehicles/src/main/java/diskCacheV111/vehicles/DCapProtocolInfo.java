@@ -1,8 +1,7 @@
 package diskCacheV111.vehicles;
 
-import java.net.InetSocketAddress;
-
 import dmg.cells.nucleus.CellPath;
+import java.net.InetSocketAddress;
 
 public class DCapProtocolInfo implements IpProtocolInfo {
 
@@ -20,7 +19,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private static final long serialVersionUID = 7432555710192378884L;
 
     public DCapProtocolInfo(String protocol, int major, int minor,
-            InetSocketAddress addr) {
+          InetSocketAddress addr) {
         _name = protocol;
         _minor = minor;
         _major = major;
@@ -81,8 +80,8 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     @Override
     public String toString() {
         String sb = getVersionString() + ',' +
-                    _addr.getAddress().getHostAddress() +
-                    ':' + _addr.getPort();
+              _addr.getAddress().getHostAddress() +
+              ':' + _addr.getPort();
 
         return sb;
     }

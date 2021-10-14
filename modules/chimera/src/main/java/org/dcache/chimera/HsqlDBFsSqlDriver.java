@@ -16,18 +16,15 @@
  */
 package org.dcache.chimera;
 
-import javax.sql.DataSource;
-
 import java.util.EnumSet;
 import java.util.List;
-
+import javax.sql.DataSource;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.RsType;
 
 public class HsqlDBFsSqlDriver extends FsSqlDriver {
 
-    public HsqlDBFsSqlDriver(DataSource dataSource) throws ChimeraFsException
-    {
+    public HsqlDBFsSqlDriver(DataSource dataSource) throws ChimeraFsException {
         super(dataSource);
     }
 
@@ -35,7 +32,8 @@ public class HsqlDBFsSqlDriver extends FsSqlDriver {
     void removeTag(FsInode dir) {
         /* Get the tag IDs of the tag links to be removed.
          */
-        List<String> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE inumber=?", String.class, dir.ino());
+        List<String> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE inumber=?",
+              String.class, dir.ino());
         if (!ids.isEmpty()) {
             /* Remove the links.
              */
@@ -67,25 +65,27 @@ public class HsqlDBFsSqlDriver extends FsSqlDriver {
              * and even if one does, the consequence is merely an orphaned inode.
              */
             _jdbc.batchUpdate("DELETE FROM t_tags_inodes i WHERE itagid = ? " +
-                              "AND NOT EXISTS (SELECT 1 FROM t_tags t WHERE t.itagid=i.itagid LIMIT 1)",
-                              ids, ids.size(),
-                              (ps, tagid) -> ps.setString(1, tagid));
+                        "AND NOT EXISTS (SELECT 1 FROM t_tags t WHERE t.itagid=i.itagid LIMIT 1)",
+                  ids, ids.size(),
+                  (ps, tagid) -> ps.setString(1, tagid));
         }
     }
 
     @Override
-    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask,
+          EnumSet<AceFlags> flags) {
         int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
         int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
-        _jdbc.update("INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
-                     "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
-                     "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
-                     ps -> {
-                         ps.setLong(1, inode.ino());
-                         ps.setInt(2, type.getValue());
-                         ps.setInt(3, msk);
-                         ps.setLong(4, source.ino());
-                         ps.setInt(5, flgs);
-                     });
+        _jdbc.update(
+              "INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
+                    "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
+                    "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
+              ps -> {
+                  ps.setLong(1, inode.ino());
+                  ps.setInt(2, type.getValue());
+                  ps.setInt(3, msk);
+                  ps.setLong(4, source.ino());
+                  ps.setInt(5, flgs);
+              });
     }
 }

@@ -60,21 +60,15 @@ documents or software obtained from this server.
 package org.dcache.resilience;
 
 import com.google.common.collect.ImmutableList;
-import org.junit.After;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.Pool;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-
+import java.io.File;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.ProportionalPoolSelectionStrategy;
 import org.dcache.poolmanager.PoolMonitor;
@@ -93,31 +87,35 @@ import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.vehicles.FileAttributes;
+import org.junit.After;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class TestBase implements Cancellable {
-    public static final String    STATSFILE      = "/tmp/statistics-file";
 
-    protected static final Logger    LOGGER
-                    = LoggerFactory.getLogger(TestBase.class);
+    public static final String STATSFILE = "/tmp/statistics-file";
+
+    protected static final Logger LOGGER
+          = LoggerFactory.getLogger(TestBase.class);
     protected static final Exception FORCED_FAILURE
-                    = new Exception("Forced failure for test purposes");
-    protected static final String    CHKPTFILE      = "/tmp/checkpoint-file";
-    protected static final String    POOLSFILE      = "/tmp/excluded-pools";
+          = new Exception("Forced failure for test purposes");
+    protected static final String CHKPTFILE = "/tmp/checkpoint-file";
+    protected static final String POOLSFILE = "/tmp/excluded-pools";
 
     /*
      *  Real instances.
      */
-    protected OperationStatistics   counters;
+    protected OperationStatistics counters;
 
     /*
      *  Used, but also tested separately.
      */
     protected FileOperationHandler fileOperationHandler;
     protected PoolOperationHandler poolOperationHandler;
-    protected FileOperationMap     fileOperationMap;
-    protected PoolOperationMap     poolOperationMap;
-    protected PoolInfoMap          poolInfoMap;
-    protected LocationSelector     locationSelector;
+    protected FileOperationMap fileOperationMap;
+    protected PoolOperationMap poolOperationMap;
+    protected PoolInfoMap poolInfoMap;
+    protected LocationSelector locationSelector;
 
     /*
      *  Injected or created by individual tests.
@@ -130,29 +128,29 @@ public abstract class TestBase implements Cancellable {
     protected TestSynchronousExecutor longJobExecutor;
     protected TestSynchronousExecutor scheduledExecutorService;
 
-    protected TestStub          testPnfsManagerStub;
+    protected TestStub testPnfsManagerStub;
 
     protected TestSelectionUnit testSelectionUnit;
-    protected TestCostModule      testCostModule;
-    protected TestPoolMonitor     testPoolMonitor;
+    protected TestCostModule testCostModule;
+    protected TestPoolMonitor testPoolMonitor;
 
     protected TestNamespaceAccess testNamespaceAccess;
 
     /*
      *  For testing updates
      */
-    protected TestSelectionUnit   newSelectionUnit;
-    protected TestCostModule      newCostModule;
-    protected TestPoolMonitor     newPoolMonitor;
+    protected TestSelectionUnit newSelectionUnit;
+    protected TestCostModule newCostModule;
+    protected TestPoolMonitor newPoolMonitor;
 
     private boolean isCancelled = false;
-    private boolean isDone      = false;
+    private boolean isDone = false;
 
     /*
      * Whether the tasks should fail or cancel.
      */
     private TestSynchronousExecutor.Mode shortTaskExecutionMode = TestSynchronousExecutor.Mode.NOP;
-    private TestSynchronousExecutor.Mode longTaskExecutionMode  = TestSynchronousExecutor.Mode.NOP;
+    private TestSynchronousExecutor.Mode longTaskExecutionMode = TestSynchronousExecutor.Mode.NOP;
     private TestSynchronousExecutor.Mode scheduledExecutionMode = TestSynchronousExecutor.Mode.NOP;
 
     private TestStub testPoolStub;
@@ -185,74 +183,74 @@ public abstract class TestBase implements Cancellable {
 
     protected FileAttributes aCustodialNearlineFile() throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.CUSTODIAL_NEARLINE[0]);
+              TestData.CUSTODIAL_NEARLINE[0]);
     }
 
     protected FileAttributes aCustodialOnlineFile() throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.CUSTODIAL_ONLINE[0]);
+              TestData.CUSTODIAL_ONLINE[0]);
     }
 
     protected FileAttributes aDeletedReplicaOnlineFileWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         FileAttributes attributes = testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[3]);
+              TestData.REPLICA_ONLINE[3]);
         testNamespaceAccess.delete(attributes.getPnfsId(), false);
         attributes.getLocations().clear();
         return attributes;
     }
 
     protected FileAttributes aFileWithAReplicaOnAllResilientPools()
-                    throws CacheException {
+          throws CacheException {
         FileAttributes attributes = aReplicaOnlineFileWithNoTags();
         attributes.setLocations(testCostModule.pools.stream().filter(
-                        (p) -> p.contains("resilient")).collect(
-                        Collectors.toList()));
+              (p) -> p.contains("resilient")).collect(
+              Collectors.toList()));
         return attributes;
     }
 
     protected FileAttributes aFileWithThreeReplicasInsteadOfTwo()
-                    throws CacheException {
+          throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[1]);
+              TestData.REPLICA_ONLINE[1]);
     }
 
     protected FileAttributes aNonResilientFile() throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.CUSTODIAL_NEARLINE[0]);
+              TestData.CUSTODIAL_NEARLINE[0]);
     }
 
     protected FileAttributes aReplicaOnlineFileWithBothTags()
-                    throws CacheException {
+          throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[3]);
+              TestData.REPLICA_ONLINE[3]);
     }
 
     protected FileAttributes aReplicaOnlineFileWithBothTagsButNoLocations()
-                    throws CacheException {
+          throws CacheException {
         FileAttributes attributes = testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[3]);
+              TestData.REPLICA_ONLINE[3]);
         testNamespaceAccess.delete(attributes.getPnfsId(), true);
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[3]);
+              TestData.REPLICA_ONLINE[3]);
     }
 
     protected FileAttributes aReplicaOnlineFileWithHostTag()
-                    throws CacheException {
+          throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[0]);
+              TestData.REPLICA_ONLINE[0]);
     }
 
     protected FileAttributes aReplicaOnlineFileWithNoTags()
-                    throws CacheException {
+          throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[4]);
+              TestData.REPLICA_ONLINE[4]);
     }
 
     protected FileAttributes aReplicaOnlineFileWithRackTag()
-                    throws CacheException {
+          throws CacheException {
         return testNamespaceAccess.getRequiredAttributes(
-                        TestData.REPLICA_ONLINE[2]);
+              TestData.REPLICA_ONLINE[2]);
     }
 
     protected void clearInMemory() {
@@ -354,7 +352,7 @@ public abstract class TestBase implements Cancellable {
         if (newPoolMonitor != null) {
             newSelectionUnit.psu.createPool(name, false, false, false);
             newSelectionUnit.psu.setPoolEnabled(name);
-            Pool pool = (Pool)newSelectionUnit.getPool(name);
+            Pool pool = (Pool) newSelectionUnit.getPool(name);
             pool.setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));
             newCostModule.addPool(name, 2);
         }
@@ -392,7 +390,7 @@ public abstract class TestBase implements Cancellable {
     protected void initializeCounters() {
         counters.setStatisticsPath(STATSFILE);
         counters.initialize();
-        for (String pool: testSelectionUnit.getActivePools()) {
+        for (String pool : testSelectionUnit.getActivePools()) {
             counters.registerPool(pool);
         }
         counters.registerPool("UNDEFINED");
@@ -402,7 +400,7 @@ public abstract class TestBase implements Cancellable {
         poolInfoMap.apply(poolInfoMap.compare(testPoolMonitor));
         testSelectionUnit.getAllDefinedPools(false).stream().forEach((p) -> {
             PoolStateUpdate update = new PoolStateUpdate(p.getName(),
-                                                         new PoolV2Mode(PoolV2Mode.ENABLED));
+                  new PoolV2Mode(PoolV2Mode.ENABLED));
             poolInfoMap.updatePoolStatus(update);
         });
     }
@@ -439,7 +437,7 @@ public abstract class TestBase implements Cancellable {
         testNamespaceAccess.loadNewResilientWithUnmappedStorageUnit();
     }
 
-    protected void loadNewFilesWithStorageUnitMatchingPattern(){
+    protected void loadNewFilesWithStorageUnitMatchingPattern() {
         testNamespaceAccess.loadNewFilesWithStorageUnitMatchingPattern();
     }
 
@@ -460,7 +458,7 @@ public abstract class TestBase implements Cancellable {
         testSelectionUnit.setOffline(pool);
         for (String p : pool) {
             PoolStateUpdate update = new PoolStateUpdate(p,
-                                                         new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
+                  new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
             poolInfoMap.updatePoolStatus(update);
         }
     }
@@ -477,13 +475,13 @@ public abstract class TestBase implements Cancellable {
     }
 
     protected void setScheduledExecutionMode(
-                    TestSynchronousExecutor.Mode mode) {
+          TestSynchronousExecutor.Mode mode) {
         scheduledExecutionMode = mode;
         setScheduledExecutor();
     }
 
     protected <T extends Message> void setPoolMessageProcessor(
-                    TestMessageProcessor<T> processor) {
+          TestMessageProcessor<T> processor) {
         testPoolStub.setProcessor(processor);
     }
 
@@ -538,7 +536,7 @@ public abstract class TestBase implements Cancellable {
         fileOperationMap.setCompletionHandler(fileTaskCompletionHandler);
         fileOperationMap.setPoolTaskCompletionHandler(poolTaskCompletionHandler);
         fileOperationMap.setCounters(counters);
-        OperationHistory  history = new OperationHistory();
+        OperationHistory history = new OperationHistory();
         history.setCapacity(1);
         history.initialize();
         fileOperationMap.setHistory(history);
@@ -554,7 +552,7 @@ public abstract class TestBase implements Cancellable {
     protected void wireLocationSelector() {
         locationSelector.setPoolInfoMap(poolInfoMap);
         locationSelector.setPoolSelectionStrategy(
-                        new ProportionalPoolSelectionStrategy());
+              new ProportionalPoolSelectionStrategy());
     }
 
     protected void wirePoolMonitor() {
@@ -591,7 +589,7 @@ public abstract class TestBase implements Cancellable {
 
     private void setScheduledExecutor() {
         scheduledExecutorService = new TestSynchronousExecutor(
-                        scheduledExecutionMode);
+              scheduledExecutionMode);
     }
 
     private void setShortTaskExecutor() {

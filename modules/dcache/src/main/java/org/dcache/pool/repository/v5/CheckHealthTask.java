@@ -1,8 +1,6 @@
 package org.dcache.pool.repository.v5;
 
-import org.apache.log4j.NDC;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,18 +9,18 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+import org.apache.log4j.NDC;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.SpaceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.util.Exceptions.messageOrClassName;
+class CheckHealthTask implements Runnable {
 
-class CheckHealthTask implements Runnable
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckHealthTask.class);
     public static final int GRACE_PERIOD_ON_FREE = 60_000;
 
@@ -39,59 +37,54 @@ class CheckHealthTask implements Runnable
     private ReplicaStore _replicaStore;
 
     /**
-     * Command string to execute periodically to check the health of the file system,
-     * disk array, host, etc.
+     * Command string to execute periodically to check the health of the file system, disk array,
+     * host, etc.
      */
     private String[] _commands = {};
 
-    public void setRepository(ReplicaRepository repository)
-    {
+    public void setRepository(ReplicaRepository repository) {
         _repository = repository;
     }
 
-    public void setAccount(Account account)
-    {
+    public void setAccount(Account account) {
         _account = account;
     }
 
-    public void setReplicaStore(ReplicaStore store)
-    {
+    public void setReplicaStore(ReplicaStore store) {
         _replicaStore = store;
     }
 
-    public void setCommand(String s)
-    {
+    public void setCommand(String s) {
         _commands = new Scanner(s).scan();
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         switch (_repository.getState()) {
-        case UNINITIALIZED:
-        case INITIALIZED:
-        case LOADING:
-        case FAILED:
-        case CLOSED:
-            break;
-        case OPEN:
-            if (!_replicaStore.isOk()) {
-                _repository.fail(FaultAction.DISABLED, "I/O test failed");
-            }
+            case UNINITIALIZED:
+            case INITIALIZED:
+            case LOADING:
+            case FAILED:
+            case CLOSED:
+                break;
+            case OPEN:
+                if (!_replicaStore.isOk()) {
+                    _repository.fail(FaultAction.DISABLED, "I/O test failed");
+                }
 
-            if (!checkSpaceAccounting()) {
-                LOGGER.error("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
-                _repository.fail(FaultAction.READONLY, "Accounting errors detected");
-            }
+                if (!checkSpaceAccounting()) {
+                    LOGGER.error(
+                          "Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
+                    _repository.fail(FaultAction.READONLY, "Accounting errors detected");
+                }
 
-            adjustFreeSpace();
+                adjustFreeSpace();
         }
 
         checkHealthCommand();
     }
 
-    private void checkHealthCommand()
-    {
+    private void checkHealthCommand() {
         if (_commands.length > 0) {
             NDC.push("health-check");
             try {
@@ -110,21 +103,23 @@ class CheckHealthTask implements Runnable
                     }
                     int code = process.waitFor();
                     switch (code) {
-                    case 0:
-                        if (output.length() > 0) {
-                            LOGGER.debug("{}", output);
-                        }
-                        break;
-                    case 1:
-                        _repository.fail(FaultAction.READONLY, "Health check command failed with exit code 1");
-                        if (output.length() > 0) {
-                            LOGGER.warn("{}", output);
-                        }
-                    default:
-                        _repository.fail(FaultAction.DISABLED, "Health check command failed with exit code " + code);
-                        if (output.length() > 0) {
-                            LOGGER.warn("{}", output);
-                        }
+                        case 0:
+                            if (output.length() > 0) {
+                                LOGGER.debug("{}", output);
+                            }
+                            break;
+                        case 1:
+                            _repository.fail(FaultAction.READONLY,
+                                  "Health check command failed with exit code 1");
+                            if (output.length() > 0) {
+                                LOGGER.warn("{}", output);
+                            }
+                        default:
+                            _repository.fail(FaultAction.DISABLED,
+                                  "Health check command failed with exit code " + code);
+                            if (output.length() > 0) {
+                                LOGGER.warn("{}", output);
+                            }
                     }
                 } catch (InterruptedException e) {
                     LOGGER.debug("Health check command was interrupted");
@@ -132,15 +127,14 @@ class CheckHealthTask implements Runnable
                 }
             } catch (IOException e) {
                 LOGGER.error("Failed to launch health check command '{}': {}",
-                        Arrays.toString(_commands), messageOrClassName(e));
+                      Arrays.toString(_commands), messageOrClassName(e));
             } finally {
                 NDC.pop();
             }
         }
     }
 
-    private boolean checkSpaceAccounting()
-    {
+    private boolean checkSpaceAccounting() {
         SpaceRecord record = _account.getSpaceRecord();
         long removable = record.getRemovableSpace();
         long total = record.getTotalSpace();
@@ -178,14 +172,14 @@ class CheckHealthTask implements Runnable
          * the error, but do not return false.
          */
         if (precious + removable > used) {
-            LOGGER.warn("Used space is less than the sum of precious and removable space (this may be a temporary problem - if it persists then please report it to support@dcache.org).");
+            LOGGER.warn(
+                  "Used space is less than the sum of precious and removable space (this may be a temporary problem - if it persists then please report it to support@dcache.org).");
         }
 
         return true;
     }
 
-    private void adjustFreeSpace()
-    {
+    private void adjustFreeSpace() {
         /* At any time the file system must have at least as much free
          * space as shows in the account. Thus invariantly
          *
@@ -209,36 +203,37 @@ class CheckHealthTask implements Runnable
                 long total = _replicaStore.getTotalSpace();
 
                 if (total == 0) {
-                    LOGGER.debug("Java reported file system size as 0. Skipping file system size check.");
+                    LOGGER.debug(
+                          "Java reported file system size as 0. Skipping file system size check.");
                     return;
                 }
 
                 if (total < account.getTotal()) {
                     LOGGER.warn(AlarmMarkerFactory.getMarker(
-                                        PredefinedAlarm.POOL_SIZE, _repository.getPoolName()),
-                                "The file system containing the data files "
-                                        + "appears to be smaller {} than the configured "
-                                        + "pool size {}.",
-                                String.format("(%,d bytes)", total),
-                                String.format("(%,d bytes)", _account.getTotal()));
+                                PredefinedAlarm.POOL_SIZE, _repository.getPoolName()),
+                          "The file system containing the data files "
+                                + "appears to be smaller {} than the configured "
+                                + "pool size {}.",
+                          String.format("(%,d bytes)", total),
+                          String.format("(%,d bytes)", _account.getTotal()));
                 }
 
                 if (free < account.getFree()) {
                     long newSize =
-                            account.getTotal() - (account.getFree() - free);
+                          account.getTotal() - (account.getFree() - free);
                     LOGGER.warn(AlarmMarkerFactory.getMarker(
-                                        PredefinedAlarm.POOL_FREE_SPACE, _repository.getPoolName()),
-                                "The file system containing the data files "
-                                        + "appears to have less free space {} than "
-                                        + "expected {}; reducing the pool size to {} "
-                                        + "to compensate. Notice that this does not leave "
-                                        + "any space for the meta data. If such data is "
-                                        + "stored on the same file system, then it is "
-                                        + "paramount that the pool size is reconfigured "
-                                        + "to leave enough space for the meta data.",
-                                String.format("(%,d bytes)", free),
-                                String.format("(%,d bytes)", _account.getFree()),
-                                String.format("%,d bytes", newSize));
+                                PredefinedAlarm.POOL_FREE_SPACE, _repository.getPoolName()),
+                          "The file system containing the data files "
+                                + "appears to have less free space {} than "
+                                + "expected {}; reducing the pool size to {} "
+                                + "to compensate. Notice that this does not leave "
+                                + "any space for the meta data. If such data is "
+                                + "stored on the same file system, then it is "
+                                + "paramount that the pool size is reconfigured "
+                                + "to leave enough space for the meta data.",
+                          String.format("(%,d bytes)", free),
+                          String.format("(%,d bytes)", _account.getFree()),
+                          String.format("%,d bytes", newSize));
                     account.setTotal(newSize);
                 }
             }
@@ -246,51 +241,43 @@ class CheckHealthTask implements Runnable
     }
 
     /**
-     * Scanner for parsing strings of white space separated
-     * words. Characters may be escaped with a backslash and character
-     * sequences may be quoted.
+     * Scanner for parsing strings of white space separated words. Characters may be escaped with a
+     * backslash and character sequences may be quoted.
      */
-    static class Scanner
-    {
+    static class Scanner {
+
         private final CharSequence _line;
         private int _position;
 
-        public Scanner(CharSequence line)
-        {
+        public Scanner(CharSequence line) {
             _line = line;
         }
 
-        private char peek()
-        {
+        private char peek() {
             return isEof() ? (char) 0 : _line.charAt(_position);
         }
 
-        private char readChar()
-        {
+        private char readChar() {
             char c = peek();
             _position++;
             return c;
         }
 
-        private boolean isEof()
-        {
+        private boolean isEof() {
             return (_position >= _line.length());
         }
 
-        private boolean isWhitespace()
-        {
+        private boolean isWhitespace() {
             return Character.isWhitespace(peek());
         }
 
-        private void scanWhitespace()
-        {
+        private void scanWhitespace() {
             while (isWhitespace()) {
                 readChar();
             }
         }
 
-        public String[] scan()
-        {
+        public String[] scan() {
             List<String> arguments = new ArrayList<>();
             scanWhitespace();
             while (!isEof()) {
@@ -301,12 +288,10 @@ class CheckHealthTask implements Runnable
         }
 
         /**
-         * Scans the next word. A word is a sequence of non-white
-         * space characters and escaped or quoted white space
-         * characters. The unescaped and unquoted word is returned.
+         * Scans the next word. A word is a sequence of non-white space characters and escaped or
+         * quoted white space characters. The unescaped and unquoted word is returned.
          */
-        private String scanWord()
-        {
+        private String scanWord() {
             StringBuilder word = new StringBuilder();
             while (!isEof() && !isWhitespace()) {
                 scanWordElement(word);
@@ -315,36 +300,34 @@ class CheckHealthTask implements Runnable
         }
 
         /**
-         * Scans the next element of a word. Elements of a word are
-         * non-white space characters, escaped characters and quoted
-         * strings. The unescaped and unquoted element is added to word.
+         * Scans the next element of a word. Elements of a word are non-white space characters,
+         * escaped characters and quoted strings. The unescaped and unquoted element is added to
+         * word.
          */
-        private void scanWordElement(StringBuilder word)
-        {
+        private void scanWordElement(StringBuilder word) {
             if (!isEof() && !isWhitespace()) {
                 switch (peek()) {
-                case '\'':
-                    scanSingleQuotedString(word);
-                    break;
-                case '"':
-                    scanDoubleQuotedString(word);
-                    break;
-                case '\\':
-                    scanEscapedCharacter(word);
-                    break;
-                default:
-                    word.append(readChar());
-                    break;
+                    case '\'':
+                        scanSingleQuotedString(word);
+                        break;
+                    case '"':
+                        scanDoubleQuotedString(word);
+                        break;
+                    case '\\':
+                        scanEscapedCharacter(word);
+                        break;
+                    default:
+                        word.append(readChar());
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a single quoted string. Escaped characters are not
-         * recognized. The unquoted string is added to word.
+         * Scans a single quoted string. Escaped characters are not recognized. The unquoted string
+         * is added to word.
          */
-        private void scanSingleQuotedString(StringBuilder word)
-        {
+        private void scanSingleQuotedString(StringBuilder word) {
             if (readChar() != '\'') {
                 throw new IllegalStateException("Parse failure");
             }
@@ -352,47 +335,44 @@ class CheckHealthTask implements Runnable
             while (!isEof()) {
                 char c = readChar();
                 switch (c) {
-                case '\'':
-                    return;
-                default:
-                    word.append(c);
-                    break;
+                    case '\'':
+                        return;
+                    default:
+                        word.append(c);
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a double quoted string. Escaped characters are
-         * recognized. The unquoted and unescaped string is added to
-         * word.
+         * Scans a double quoted string. Escaped characters are recognized. The unquoted and
+         * unescaped string is added to word.
          */
-        private void scanDoubleQuotedString(StringBuilder word)
-        {
+        private void scanDoubleQuotedString(StringBuilder word) {
             if (readChar() != '"') {
                 throw new IllegalStateException("Parse failure");
             }
 
             while (!isEof()) {
                 switch (peek()) {
-                case '\\':
-                    scanEscapedCharacter(word);
-                    break;
-                case '"':
-                    readChar();
-                    return;
-                default:
-                    word.append(readChar());
-                    break;
+                    case '\\':
+                        scanEscapedCharacter(word);
+                        break;
+                    case '"':
+                        readChar();
+                        return;
+                    default:
+                        word.append(readChar());
+                        break;
                 }
             }
         }
 
         /**
-         * Scans a backslash escaped character. The escaped character
-         * without the escape symbol is added to word.
+         * Scans a backslash escaped character. The escaped character without the escape symbol is
+         * added to word.
          */
-        private void scanEscapedCharacter(StringBuilder word)
-        {
+        private void scanEscapedCharacter(StringBuilder word) {
             if (readChar() != '\\') {
                 throw new IllegalStateException("Parse failure");
             }

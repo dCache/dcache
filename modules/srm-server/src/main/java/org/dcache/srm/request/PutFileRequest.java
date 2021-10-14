@@ -68,15 +68,10 @@ package org.dcache.srm.request;
 
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-
 import java.net.URI;
 import java.util.Objects;
-
+import javax.annotation.Nullable;
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
@@ -93,8 +88,11 @@ import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class PutFileRequest extends FileRequest<PutRequest> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PutFileRequest.class);
 
     private final URI surl;
@@ -109,13 +107,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     private final TRetentionPolicy retentionPolicy;
 
     public PutFileRequest(long requestId,
-            URI url,
-            @Nullable Long size,
-            long lifetime,
-            @Nullable String spaceReservationId,
-            @Nullable TRetentionPolicy retentionPolicy,
-            @Nullable TAccessLatency accessLatency)
-    {
+          URI url,
+          @Nullable Long size,
+          long lifetime,
+          @Nullable String spaceReservationId,
+          @Nullable TRetentionPolicy retentionPolicy,
+          @Nullable TAccessLatency accessLatency) {
         super(requestId, lifetime);
         this.surl = url;
         this.size = size;
@@ -125,26 +122,25 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public PutFileRequest(
-            long id,
-            Long nextJobId,
-            long creationTime,
-            long lifetime,
-            int stateId,
-            String scheduelerId,
-            long schedulerTimeStamp,
-            int numberOfRetries,
-            long lastStateTransitionTime,
-            JobHistory[] jobHistoryArray,
-            long requestId,
-            String statusCodeString,
-            String SURL,
-            @Nullable String TURL,
-            @Nullable String fileId,
-            @Nullable String spaceReservationId,
-            @Nullable Long size,
-            @Nullable TRetentionPolicy retentionPolicy,
-            @Nullable TAccessLatency accessLatency)
-    {
+          long id,
+          Long nextJobId,
+          long creationTime,
+          long lifetime,
+          int stateId,
+          String scheduelerId,
+          long schedulerTimeStamp,
+          int numberOfRetries,
+          long lastStateTransitionTime,
+          JobHistory[] jobHistoryArray,
+          long requestId,
+          String statusCodeString,
+          String SURL,
+          @Nullable String TURL,
+          @Nullable String fileId,
+          @Nullable String spaceReservationId,
+          @Nullable Long size,
+          @Nullable TRetentionPolicy retentionPolicy,
+          @Nullable TAccessLatency accessLatency) {
         super(id,
               nextJobId,
               creationTime,
@@ -163,7 +159,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             this.turl = URI.create(TURL);
         }
 
-        if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
+        if (fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
         this.spaceReservationId = spaceReservationId;
@@ -204,8 +200,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return getSurl().toASCIIString();
     }
 
-    public String getTurlString()
-    {
+    public String getTurlString() {
         rlock();
         try {
             if (turl != null) {
@@ -218,13 +213,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     protected TPutRequestFileStatus getTPutRequestFileStatus()
-            throws SRMInvalidRequestException {
+          throws SRMInvalidRequestException {
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
         fileStatus.setFileSize(((getSize() == null) ? null : new UnsignedLong(getSize())));
 
         org.apache.axis.types.URI anSurl;
         try {
-            anSurl= new org.apache.axis.types.URI(getSurlString());
+            anSurl = new org.apache.axis.types.URI(getSurlString());
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
             LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
@@ -235,7 +230,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         TReturnStatus returnStatus = getReturnStatus();
 
         String turlstring = getTurlString();
-        if(turlstring != null && TStatusCode.SRM_SPACE_AVAILABLE.equals(returnStatus.getStatusCode())) {
+        if (turlstring != null && TStatusCode.SRM_SPACE_AVAILABLE.equals(
+              returnStatus.getStatusCode())) {
             org.apache.axis.types.URI transferURL;
             try {
                 transferURL = new org.apache.axis.types.URI(turlstring);
@@ -247,8 +243,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
-        fileStatus.setRemainingPinLifetime((int)getRemainingLifetime()/1000);
-        if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
+        fileStatus.setRemainingPinLifetime((int) getRemainingLifetime() / 1000);
+        if (TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
             //SRM_SPACE_LIFETIME_EXPIRED is illeal on the file level,
             // but we use it to correctly calculate the request level status
             // so we do the translation here
@@ -269,7 +265,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         sb.append("file id:").append(getId());
         State state = getState();
         sb.append(" state:").append(state);
-        if(longformat) {
+        if (longformat) {
             sb.append('\n');
             sb.append(padding).append("   SURL: ").append(getSurlString()).append('\n');
             sb.append(padding).append("   TURL: ").append(getTurlString()).append('\n');
@@ -298,8 +294,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public void run() throws IllegalStateTransition, SRMException
-    {
+    public void run() throws IllegalStateTransition, SRMException {
         LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getFileId() == null) {
@@ -310,24 +305,27 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 // SRM_DUPLICATION_ERROR must be returned at the file level.
                 if (SRM.getSRM().hasMultipleUploads(getSurl())) {
                     if (!getContainerRequest().isOverwrite()) {
-                        throw new SRMDuplicationException("The requested SURL is locked by another upload.");
+                        throw new SRMDuplicationException(
+                              "The requested SURL is locked by another upload.");
                     } else {
-                        throw new SRMFileBusyException("The requested SURL is locked by another upload.");
+                        throw new SRMFileBusyException(
+                              "The requested SURL is locked by another upload.");
                     }
                 }
 
                 addHistoryEvent("Doing name space lookup.");
                 SRMUser user = getUser();
                 CheckedFuture<String, ? extends SRMException> future =
-                        getStorage().prepareToPut(
-                                user,
-                                getSurl(),
-                                getSize(),
-                                Objects.toString(getAccessLatency(), null),
-                                Objects.toString(getRetentionPolicy(), null),
-                                getSpaceReservationId(),
-                                getContainerRequest().isOverwrite());
-                future.addListener(new PutCallbacks(user, getId(), surl, future), MoreExecutors.directExecutor());
+                      getStorage().prepareToPut(
+                            user,
+                            getSurl(),
+                            getSize(),
+                            Objects.toString(getAccessLatency(), null),
+                            Objects.toString(getRetentionPolicy(), null),
+                            getSpaceReservationId(),
+                            getContainerRequest().isOverwrite());
+                future.addListener(new PutCallbacks(user, getId(), surl, future),
+                      MoreExecutors.directExecutor());
                 return;
             }
 
@@ -346,8 +344,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         State oldState = getState();
         LOGGER.debug("State changed from {} to {}", oldState, newState);
         if (newState == State.READY) {
@@ -368,18 +365,17 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         super.processStateChange(newState, description);
     }
 
-    private void computeTurl() throws SRMException
-    {
+    private void computeTurl() throws SRMException {
         PutRequest request = getContainerRequest();
         // do not synchronize on request, since it might cause deadlock
-        URI turl = getStorage().getPutTurl(request.getUser(), getFileId(), request.getProtocols(), request.getPreviousTurl());
+        URI turl = getStorage().getPutTurl(request.getUser(), getFileId(), request.getProtocols(),
+              request.getPreviousTurl());
         request.setPreviousTurl(turl);
         setTurl(turl);
     }
 
     @Override
-    public void abort(String reason) throws IllegalStateTransition, SRMException
-    {
+    public void abort(String reason) throws IllegalStateTransition, SRMException {
         wlock();
         try {
             /* [ SRM 2.2, 5.12.2 ]
@@ -409,52 +405,61 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
                 setState(State.CANCELED, "Request aborted.");
             } else if (state == State.DONE) {
-                throw new IllegalStateTransition("Put request completed successfully and cannot be aborted",
-                        State.DONE, State.CANCELED);
+                throw new IllegalStateTransition(
+                      "Put request completed successfully and cannot be aborted",
+                      State.DONE, State.CANCELED);
             }
         } finally {
             wunlock();
         }
     }
 
-    public TReturnStatus done(SRMUser user)
-    {
+    public TReturnStatus done(SRMUser user) {
         wlock();
         try {
             switch (getState()) {
-            case READY:
-            case TRANSFERRING:
-                try {
-                    getStorage().putDone(user, getFileId(), getSurl(), getContainerRequest().isOverwrite());
-                    setState(State.DONE, "SrmPutDone called.");
-                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-                } catch (SRMAuthorizationException e) {
-                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                    return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE, e.getMessage());
-                } catch (SRMDuplicationException e) {
-                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_DUPLICATION_ERROR);
-                    return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, e.getMessage());
-                } catch (SRMInvalidPathException e) {
-                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_INVALID_PATH);
-                    return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
-                } catch (SRMException e) {
-                    setStateAndStatusCode(State.FAILED, e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
-                    return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
-                }
-            case DONE:
-                return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, "File exists already.");
-            case CANCELED:
-                return new TReturnStatus(TStatusCode.SRM_ABORTED, "The SURL has been aborted.");
-            case FAILED:
-                TStatusCode statusCode = getStatusCode();
-                String description = latestHistoryEvent();
-                if (statusCode != null) {
-                    return new TReturnStatus(statusCode, description);
-                }
-                return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
-            default:
-                setStateAndStatusCode(State.FAILED, "SrmPutDone called before TURL was made available.", TStatusCode.SRM_INVALID_PATH);
-                return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
+                case READY:
+                case TRANSFERRING:
+                    try {
+                        getStorage().putDone(user, getFileId(), getSurl(),
+                              getContainerRequest().isOverwrite());
+                        setState(State.DONE, "SrmPutDone called.");
+                        return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                    } catch (SRMAuthorizationException e) {
+                        setStateAndStatusCode(State.FAILED, e.getMessage(),
+                              TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                        return new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
+                              e.getMessage());
+                    } catch (SRMDuplicationException e) {
+                        setStateAndStatusCode(State.FAILED, e.getMessage(),
+                              TStatusCode.SRM_DUPLICATION_ERROR);
+                        return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR, e.getMessage());
+                    } catch (SRMInvalidPathException e) {
+                        setStateAndStatusCode(State.FAILED, e.getMessage(),
+                              TStatusCode.SRM_INVALID_PATH);
+                        return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, e.getMessage());
+                    } catch (SRMException e) {
+                        setStateAndStatusCode(State.FAILED, e.getMessage(),
+                              TStatusCode.SRM_INTERNAL_ERROR);
+                        return new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
+                    }
+                case DONE:
+                    return new TReturnStatus(TStatusCode.SRM_DUPLICATION_ERROR,
+                          "File exists already.");
+                case CANCELED:
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED, "The SURL has been aborted.");
+                case FAILED:
+                    TStatusCode statusCode = getStatusCode();
+                    String description = latestHistoryEvent();
+                    if (statusCode != null) {
+                        return new TReturnStatus(statusCode, description);
+                    }
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+                default:
+                    setStateAndStatusCode(State.FAILED,
+                          "SrmPutDone called before TURL was made available.",
+                          TStatusCode.SRM_INVALID_PATH);
+                    return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
             }
         } catch (IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, "Scheduling failure.");
@@ -464,13 +469,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public boolean isTouchingSurl(URI surl)
-    {
+    public boolean isTouchingSurl(URI surl) {
         return surl.equals(getSurl());
     }
 
     /**
      * Getter for property spaceReservationId.
+     *
      * @return Value of property spaceReservationId.
      */
     @Nullable
@@ -479,33 +484,33 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    protected TReturnStatus getReturnStatus()
-    {
+    protected TReturnStatus getReturnStatus() {
         String description = latestHistoryEvent();
         TStatusCode statusCode = getStatusCode();
         if (statusCode != null) {
-            if (statusCode == TStatusCode.SRM_SUCCESS || statusCode == TStatusCode.SRM_SPACE_AVAILABLE) {
+            if (statusCode == TStatusCode.SRM_SUCCESS
+                  || statusCode == TStatusCode.SRM_SPACE_AVAILABLE) {
                 description = null;
             }
             return new TReturnStatus(statusCode, description);
         }
 
         switch (getState()) {
-        case UNSCHEDULED:
-        case QUEUED:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
-        case READY:
-        case TRANSFERRING:
-            return new TReturnStatus(TStatusCode.SRM_SPACE_AVAILABLE, null);
-        case DONE:
-            // REVISIT: Spec doesn't allow this for statusOfPut
-            return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-        case CANCELED:
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
-        case FAILED:
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
-        default:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+            case UNSCHEDULED:
+            case QUEUED:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+            case READY:
+            case TRANSFERRING:
+                return new TReturnStatus(TStatusCode.SRM_SPACE_AVAILABLE, null);
+            case DONE:
+                // REVISIT: Spec doesn't allow this for statusOfPut
+                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+            default:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
     }
 
@@ -521,16 +526,15 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    private static class PutCallbacks implements Runnable
-    {
+    private static class PutCallbacks implements Runnable {
+
         private final CheckedFuture<String, ? extends SRMException> future;
         private final long fileRequestJobId;
         private final SRMUser user;
         private final URI surl;
 
         public PutCallbacks(SRMUser user, long fileRequestJobId, URI surl,
-                            CheckedFuture<String, ? extends SRMException> future)
-        {
+              CheckedFuture<String, ? extends SRMException> future) {
             this.user = user;
             this.fileRequestJobId = fileRequestJobId;
             this.surl = surl;
@@ -538,8 +542,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 PutFileRequest fr = Job.getJob(fileRequestJobId, PutFileRequest.class);
 
@@ -548,26 +551,29 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
                     State state = fr.getState();
                     switch (state) {
-                    case INPROGRESS:
-                        LOGGER.trace("Storage info arrived for file {}.", fr.getSurlString());
-                        fr.setFileId(fileId);
-                        fr.saveJob(true);
-                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
-                        break;
-                    case CANCELED:
-                    case FAILED:
-                        fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.latestHistoryEvent());
-                        break;
-                    default:
-                        LOGGER.error("Put request is in an unexpected state in callback: {}", state);
-                        fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.latestHistoryEvent());
-                        break;
+                        case INPROGRESS:
+                            LOGGER.trace("Storage info arrived for file {}.", fr.getSurlString());
+                            fr.setFileId(fileId);
+                            fr.saveJob(true);
+                            Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
+                            break;
+                        case CANCELED:
+                        case FAILED:
+                            fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(),
+                                  fr.latestHistoryEvent());
+                            break;
+                        default:
+                            LOGGER.error("Put request is in an unexpected state in callback: {}",
+                                  state);
+                            fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(),
+                                  fr.latestHistoryEvent());
+                            break;
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
-                            State.FAILED,
-                            e.getMessage(),
-                            e.getStatusCode());
+                          State.FAILED,
+                          e.getMessage(),
+                          e.getStatusCode());
                 }
             } catch (IllegalStateTransition ist) {
                 if (!ist.getFromState().isFinal()) {
@@ -576,7 +582,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             } catch (SRMInvalidRequestException e) {
                 try {
                     String fileId = future.checkedGet();
-                    SRM.getSRM().getStorage().abortPut(user, fileId, surl, "Request was aborted while being prepared.");
+                    SRM.getSRM().getStorage().abortPut(user, fileId, surl,
+                          "Request was aborted while being prepared.");
                 } catch (SRMException ignored) {
                 }
             }
@@ -594,24 +601,20 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     /**
-     *
-     *
-     * @param newLifetime  new lifetime in millis
-     *  -1 stands for infinite lifetime
-     * @return int lifetime left in millis
-     *    -1 stands for infinite lifetime
+     * @param newLifetime new lifetime in millis -1 stands for infinite lifetime
+     * @return int lifetime left in millis -1 stands for infinite lifetime
      */
     @Override
     public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
-        if(requestLifetime <newLifetime) {
+        if (requestLifetime < newLifetime) {
             newLifetime = requestLifetime;
         }
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         return extendLifetimeMillis(newLifetime);

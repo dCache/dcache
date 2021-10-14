@@ -17,34 +17,30 @@
  */
 package diskCacheV111.srm;
 
+import dmg.cells.nucleus.CellAddressCore;
 import java.io.Serializable;
 import java.net.URI;
-
-import dmg.cells.nucleus.CellAddressCore;
 
 /**
  * Announcement published by CredentialService.
  */
-public class CredentialServiceAnnouncement implements Serializable
-{
+public class CredentialServiceAnnouncement implements Serializable {
+
     private static final long serialVersionUID = -5124144151059581536L;
 
     private final URI delegationEndpoint;
     private final CellAddressCore cellAddress;
 
-    public CredentialServiceAnnouncement(URI delegationEndpoint, CellAddressCore cellAddress)
-    {
+    public CredentialServiceAnnouncement(URI delegationEndpoint, CellAddressCore cellAddress) {
         this.delegationEndpoint = delegationEndpoint;
         this.cellAddress = cellAddress;
     }
 
-    public URI getDelegationEndpoint()
-    {
+    public URI getDelegationEndpoint() {
         return delegationEndpoint;
     }
 
-    public CellAddressCore getCellAddress()
-    {
+    public CellAddressCore getCellAddress() {
         return cellAddress;
     }
 }

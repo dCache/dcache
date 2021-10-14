@@ -7,81 +7,84 @@
 package org.dcache.srm.client;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class ConvertUtil {
 
-    /** Creates a new instance of ConvertUtil */
+    /**
+     * Creates a new instance of ConvertUtil
+     */
     public ConvertUtil() {
     }
 
-    public static diskCacheV111.srm.RequestStatus axisRS2RS(org.dcache.srm.client.axis.RequestStatus axisrs) {
-        if(axisrs == null) {
+    public static diskCacheV111.srm.RequestStatus axisRS2RS(
+          org.dcache.srm.client.axis.RequestStatus axisrs) {
+        if (axisrs == null) {
             return null;
         }
         diskCacheV111.srm.RequestStatus rs = new diskCacheV111.srm.RequestStatus();
         org.dcache.srm.client.axis.RequestFileStatus[] axisrfss = axisrs.getFileStatuses();
-        if(axisrfss != null) {
+        if (axisrfss != null) {
             rs.fileStatuses = new diskCacheV111.srm.RequestFileStatus[axisrfss.length];
-            for ( int i = 0; i<rs.fileStatuses.length ;++i) {
+            for (int i = 0; i < rs.fileStatuses.length; ++i) {
                 rs.fileStatuses[i] = axisRFS2RFS(axisrfss[i]);
             }
         }
-        rs.estTimeToStart =  axisrs.getEstTimeToStart();
-        rs.requestId =   axisrs.getRequestId() ;
-        rs.retryDeltaTime =  axisrs.getRetryDeltaTime();
+        rs.estTimeToStart = axisrs.getEstTimeToStart();
+        rs.requestId = axisrs.getRequestId();
+        rs.retryDeltaTime = axisrs.getRetryDeltaTime();
         rs.errorMessage = axisrs.getErrorMessage();
         rs.state = axisrs.getState();
         rs.type = axisrs.getType();
         java.util.Calendar cal = axisrs.getFinishTime();
-        if(cal != null) {
+        if (cal != null) {
             rs.finishTime = cal.getTime();
         }
         cal = axisrs.getStartTime();
-        if(cal != null) {
+        if (cal != null) {
             rs.startTime = cal.getTime();
         }
         cal = axisrs.getSubmitTime();
-        if(cal != null) {
+        if (cal != null) {
             rs.submitTime = cal.getTime();
         }
         return rs;
     }
 
-    public static org.dcache.srm.client.axis.RequestStatus RS2axisRS(diskCacheV111.srm.RequestStatus rs) {
-        if(rs == null) {
+    public static org.dcache.srm.client.axis.RequestStatus RS2axisRS(
+          diskCacheV111.srm.RequestStatus rs) {
+        if (rs == null) {
             return null;
         }
         org.dcache.srm.client.axis.RequestStatus axisrs = new org.dcache.srm.client.axis.RequestStatus();
         diskCacheV111.srm.RequestFileStatus[] rfss = rs.fileStatuses;
-        if(rfss != null) {
+        if (rfss != null) {
             org.dcache.srm.client.axis.RequestFileStatus[] axisrfss =
-                new org.dcache.srm.client.axis.RequestFileStatus[rfss.length];
-            for ( int i = 0; i<rfss.length ;++i) {
+                  new org.dcache.srm.client.axis.RequestFileStatus[rfss.length];
+            for (int i = 0; i < rfss.length; ++i) {
                 axisrfss[i] = RFS2axisRFS(rfss[i]);
             }
             axisrs.setFileStatuses(axisrfss);
         }
         axisrs.setEstTimeToStart(rs.estTimeToStart);
-        axisrs.setRequestId(rs.requestId ) ;
-        axisrs.setRetryDeltaTime(rs.retryDeltaTime );
+        axisrs.setRequestId(rs.requestId);
+        axisrs.setRetryDeltaTime(rs.retryDeltaTime);
         axisrs.setErrorMessage(rs.errorMessage);
-        axisrs.setState(rs.state );
-        axisrs.setType(rs.type );
-        if(rs.finishTime != null) {
+        axisrs.setState(rs.state);
+        axisrs.setType(rs.type);
+        if (rs.finishTime != null) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(rs.finishTime);
             axisrs.setFinishTime(cal);
 
         }
-        if(rs.startTime != null) {
+        if (rs.startTime != null) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(rs.startTime);
             axisrs.setStartTime(cal);
 
         }
-        if(rs.submitTime != null) {
+        if (rs.submitTime != null) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(rs.submitTime);
             axisrs.setSubmitTime(cal);
@@ -91,8 +94,9 @@ public class ConvertUtil {
         return axisrs;
     }
 
-    public static diskCacheV111.srm.RequestFileStatus axisRFS2RFS(org.dcache.srm.client.axis.RequestFileStatus axisrfs) {
-        if(axisrfs == null) {
+    public static diskCacheV111.srm.RequestFileStatus axisRFS2RFS(
+          org.dcache.srm.client.axis.RequestFileStatus axisrfs) {
+        if (axisrfs == null) {
             return null;
         }
         diskCacheV111.srm.RequestFileStatus rfs = new diskCacheV111.srm.RequestFileStatus();
@@ -117,8 +121,9 @@ public class ConvertUtil {
         return rfs;
     }
 
-    public static org.dcache.srm.client.axis.RequestFileStatus RFS2axisRFS( diskCacheV111.srm.RequestFileStatus rfs) {
-        if(rfs == null) {
+    public static org.dcache.srm.client.axis.RequestFileStatus RFS2axisRFS(
+          diskCacheV111.srm.RequestFileStatus rfs) {
+        if (rfs == null) {
             return null;
         }
         org.dcache.srm.client.axis.RequestFileStatus axisrfs = new org.dcache.srm.client.axis.RequestFileStatus();
@@ -143,8 +148,9 @@ public class ConvertUtil {
         return axisrfs;
     }
 
-    public static diskCacheV111.srm.FileMetaData axisFMD2FMD(org.dcache.srm.client.axis.FileMetaData axisfmd) {
-        if(axisfmd == null) {
+    public static diskCacheV111.srm.FileMetaData axisFMD2FMD(
+          org.dcache.srm.client.axis.FileMetaData axisfmd) {
+        if (axisfmd == null) {
             return null;
         }
 
@@ -163,13 +169,14 @@ public class ConvertUtil {
         return fmd;
     }
 
-    public static org.dcache.srm.client.axis.FileMetaData FMD2AxisFMD(diskCacheV111.srm.FileMetaData fmd) {
-        if(fmd == null) {
+    public static org.dcache.srm.client.axis.FileMetaData FMD2AxisFMD(
+          diskCacheV111.srm.FileMetaData fmd) {
+        if (fmd == null) {
             return null;
         }
         org.dcache.srm.client.axis.FileMetaData axisfmd =
-            new org.dcache.srm.client.axis.FileMetaData();
-        axisfmd.setIsCached(fmd.isCached );
+              new org.dcache.srm.client.axis.FileMetaData();
+        axisfmd.setIsCached(fmd.isCached);
         axisfmd.setIsPermanent(fmd.isPermanent);
         axisfmd.setIsPinned(fmd.isPinned);
         axisfmd.setPermMode(fmd.permMode);
@@ -184,25 +191,25 @@ public class ConvertUtil {
     }
 
     public static diskCacheV111.srm.FileMetaData[] axisFMDs2FMDs(
-                                                                 org.dcache.srm.client.axis.FileMetaData[] axisfmds) {
-        if(axisfmds == null) {
+          org.dcache.srm.client.axis.FileMetaData[] axisfmds) {
+        if (axisfmds == null) {
             return null;
         }
         diskCacheV111.srm.FileMetaData[] fmds = new diskCacheV111.srm.FileMetaData[axisfmds.length];
-        for ( int i = 0; i<fmds.length ;++i) {
+        for (int i = 0; i < fmds.length; ++i) {
             fmds[i] = axisFMD2FMD(axisfmds[i]);
         }
         return fmds;
     }
 
     public static org.dcache.srm.client.axis.FileMetaData[] FMDs2AxisFMDs(
-                                                                          diskCacheV111.srm.FileMetaData[] fmds) {
-        if(fmds == null) {
+          diskCacheV111.srm.FileMetaData[] fmds) {
+        if (fmds == null) {
             return null;
         }
         org.dcache.srm.client.axis.FileMetaData[] axisfmds =
-            new org.dcache.srm.client.axis.FileMetaData[fmds.length];
-        for ( int i = 0; i<fmds.length ;++i) {
+              new org.dcache.srm.client.axis.FileMetaData[fmds.length];
+        for (int i = 0; i < fmds.length; ++i) {
             axisfmds[i] = FMD2AxisFMD(fmds[i]);
         }
         return axisfmds;

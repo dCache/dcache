@@ -1,5 +1,24 @@
 package org.dcache.boot;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.util.Properties;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import org.dcache.util.configuration.ConfigurationProperties;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -11,33 +30,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.util.Properties;
-
-import org.dcache.util.configuration.ConfigurationProperties;
-
-import static org.junit.Assert.*;
-
 /**
- * A series of tests to verify that the XmlEntityLayoutPrinter provides
- * XML entity definitions that work as expected.
+ * A series of tests to verify that the XmlEntityLayoutPrinter provides XML entity definitions that
+ * work as expected.
  */
 public class XmlEntityLayoutPrinterTests {
 
     private static final String XML_ENCODING = "UTF-8";
-    private static final String XPATH_EXPRESSION_FOR_TEST_ELEMENT = "/" + ParserContext.XML_TEST_ELEMENT_NAME;
+    private static final String XPATH_EXPRESSION_FOR_TEST_ELEMENT =
+          "/" + ParserContext.XML_TEST_ELEMENT_NAME;
 
     private static final String DEFAULT_PROPERTY_KEY = "default";
     private static final String DEFAULT_PROPERTY_VALUE = "default value";
@@ -46,9 +47,8 @@ public class XmlEntityLayoutPrinterTests {
     Layout layout;
 
     @Before
-    public void setUp()
-    {
-        ConfigurationProperties defaults = new ConfigurationProperties( new Properties());
+    public void setUp() {
+        ConfigurationProperties defaults = new ConfigurationProperties(new Properties());
         defaults.setProperty(DEFAULT_PROPERTY_KEY, DEFAULT_PROPERTY_VALUE);
 
         layout = new Layout(defaults);
@@ -59,7 +59,6 @@ public class XmlEntityLayoutPrinterTests {
     public void testDefaultProperty() throws IOException {
         assertEntityHasValue(DEFAULT_PROPERTY_KEY, DEFAULT_PROPERTY_VALUE);
     }
-
 
 
     @Test
@@ -120,7 +119,8 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityHasValue(key, value);
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testPropertyNameWithDot() throws IOException {
         String key = "key.value";
         String value = "some information";
@@ -131,7 +131,8 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityNotDefined("key_value");
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testPropertyNameWithDash() throws IOException {
         String key = "key-value";
         String value = "some information";
@@ -142,7 +143,8 @@ public class XmlEntityLayoutPrinterTests {
         assertEntityNotDefined("key_value");
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testPropertyNameWithDigits() throws IOException {
         String key = "key25";
         String value = "some information";
@@ -220,7 +222,8 @@ public class XmlEntityLayoutPrinterTests {
     }
 
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testScopedPropertiesIgnored() throws IOException {
         String key = "scope/key";
         String value = "some simple value";
@@ -255,8 +258,7 @@ public class XmlEntityLayoutPrinterTests {
         assertEquals(expectedValue, observedValue);
     }
 
-    private void assertEntityNotDefined(String entityName)
-    {
+    private void assertEntityNotDefined(String entityName) {
         ParserContext context = new ParserContext(entityName);
         XPathExpression expression = buildExpression();
 
@@ -264,7 +266,7 @@ public class XmlEntityLayoutPrinterTests {
             Document doc = context.parse();
             expression.evaluate(doc);
         } catch (SAXException e) {
-            assertTrue( context.hasEntityResolvingError());
+            assertTrue(context.hasEntityResolvingError());
             return;
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
@@ -284,23 +286,21 @@ public class XmlEntityLayoutPrinterTests {
     }
 
 
-
     /**
-     * A context for building and parsing a predefined XML data.  The
-     * predefined XML tests contains a single XML element that encompasses
-     * a single entity.  The document also includes the file with public ID of
+     * A context for building and parsing a predefined XML data.  The predefined XML tests contains
+     * a single XML element that encompasses a single entity.  The document also includes the file
+     * with public ID of
      * <tt>-//dCache//ENTITIES dCache Properties//EN</tt>.  This allows the inclusion
-     * of dCache property values as entities using a custom EntityResolver.
-     * A custom ErrorHandler is used to catch potential problems expanding an
-     * entity reference.
+     * of dCache property values as entities using a custom EntityResolver. A custom ErrorHandler is
+     * used to catch potential problems expanding an entity reference.
      * <p>
-     * The overall effect is that calling {@link #parse} will build a Document
-     * object that represents the value of a dCache property, if that property
-     * exist; if the entity isn't defined then a SAXException is thrown.  The
-     * {@link #hasEntityResolvingError} method returns true if the test
-     * entity could not be resolved or false otherwise.
+     * The overall effect is that calling {@link #parse} will build a Document object that
+     * represents the value of a dCache property, if that property exist; if the entity isn't
+     * defined then a SAXException is thrown.  The {@link #hasEntityResolvingError} method returns
+     * true if the test entity could not be resolved or false otherwise.
      */
     private class ParserContext {
+
         private static final String XML_TEST_ELEMENT_NAME = "test";
 
         private final DocumentBuilder _db;
@@ -309,7 +309,7 @@ public class XmlEntityLayoutPrinterTests {
 
         ParserContext(String entityName) {
             String data = buildTestXml(entityName);
-            _source = new InputSource( new StringReader(data));
+            _source = new InputSource(new StringReader(data));
             try {
                 _db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             } catch (ParserConfigurationException e) {
@@ -349,10 +349,13 @@ public class XmlEntityLayoutPrinterTests {
 
             out.println("<?xml version=\"1.0\" encoding=\"" + XML_ENCODING + "\"?>");
             out.println("<!DOCTYPE " + XML_TEST_ELEMENT_NAME + " [");
-            out.println("<!ENTITY % properties-data PUBLIC \"" + DcachePropertiesEntityResolver.PUBLIC_NAME + "\" \"/\">");
+            out.println("<!ENTITY % properties-data PUBLIC \""
+                  + DcachePropertiesEntityResolver.PUBLIC_NAME + "\" \"/\">");
             out.println("%properties-data;");
             out.println("]>");
-            out.println("<" + XML_TEST_ELEMENT_NAME + ">&" + entityName + ";</" + XML_TEST_ELEMENT_NAME + ">");
+            out.println(
+                  "<" + XML_TEST_ELEMENT_NAME + ">&" + entityName + ";</" + XML_TEST_ELEMENT_NAME
+                        + ">");
 
             out.flush();
 
@@ -365,20 +368,18 @@ public class XmlEntityLayoutPrinterTests {
     }
 
 
-
-
     /**
-     * SAX ErrorHandler that remembers whether a document is invalid due to
-     * an entity that cannot be resolved.  No output is emitted to stdout
-     * or stderr.
+     * SAX ErrorHandler that remembers whether a document is invalid due to an entity that cannot be
+     * resolved.  No output is emitted to stdout or stderr.
      */
     private class RecordingErrorHandler implements ErrorHandler {
+
         private boolean _entityResolvingError;
         private final String _entityResolvingMessage;
 
         RecordingErrorHandler(String entityName) {
             _entityResolvingMessage = "The entity \"" + entityName +
-                "\" was referenced, but not declared.";
+                  "\" was referenced, but not declared.";
         }
 
 
@@ -395,7 +396,7 @@ public class XmlEntityLayoutPrinterTests {
         @Override
         public void fatalError(SAXParseException exception) throws SAXException {
             // This is ugly, but seems the only way to detect an entity resolving error.
-            if( exception.getMessage().equals(_entityResolvingMessage)) {
+            if (exception.getMessage().equals(_entityResolvingMessage)) {
                 _entityResolvingError = true;
             }
         }
@@ -406,29 +407,29 @@ public class XmlEntityLayoutPrinterTests {
     }
 
     /**
-     * This class provides an alternative {@link EntityResolver} that may be
-     * used for any XML SAX-based operation.
+     * This class provides an alternative {@link EntityResolver} that may be used for any XML
+     * SAX-based operation.
      * <p>
      * If the requested entity has a public ID of:
      * <p>
      * <tt>-//dCache//ENTITIES dCache Properties//EN</tt>
      * <p>
-     * then the system ID is ignored and a list of auto-generated entities,
-     * based on the {@link XmlEntityLayoutPrinter} class, is supplied.  All
-     * other requests are resolved by the default handler, which will load
-     * the corresponding files normally.
+     * then the system ID is ignored and a list of auto-generated entities, based on the {@link
+     * XmlEntityLayoutPrinter} class, is supplied.  All other requests are resolved by the default
+     * handler, which will load the corresponding files normally.
      */
     private class DcachePropertiesEntityResolver implements EntityResolver {
+
         public static final String PUBLIC_NAME = "-//dCache//ENTITIES dCache Properties//EN";
 
         private final EntityResolver _inner = new DefaultHandler();
 
         @Override
         public InputSource resolveEntity(String publicId, String systemId)
-                throws SAXException, IOException {
+              throws SAXException, IOException {
             InputSource result;
 
-            if( PUBLIC_NAME.equals(publicId)) {
+            if (PUBLIC_NAME.equals(publicId)) {
                 String xml = buildPropertiesFile();
                 result = new InputSource(new StringReader(xml));
             } else {

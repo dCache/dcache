@@ -59,45 +59,41 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
-import com.google.common.base.Preconditions;
-
-import java.text.ParseException;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.dcache.services.bulk.BulkServiceException;
-
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.base.Preconditions;
+import java.text.ParseException;
+import java.util.concurrent.atomic.AtomicLong;
+import org.dcache.services.bulk.BulkServiceException;
+
 /**
- *  For storage and searching.
+ * For storage and searching.
  */
-public class BulkJobKey
-{
+public class BulkJobKey {
+
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
     private static final String SEPARATOR = "::";
 
     private String requestId;
-    private Long   jobId;
+    private Long jobId;
 
-    public static BulkJobKey newKey(String requestId) throws BulkServiceException
-    {
+    public static BulkJobKey newKey(String requestId) throws BulkServiceException {
         try {
             String error = "Cannot construct key without request id.";
             return new BulkJobKey(requireNonNull(requestId, error),
-                                  ID_GENERATOR.getAndIncrement());
+                  ID_GENERATOR.getAndIncrement());
         } catch (IllegalArgumentException e) {
             throw new BulkServiceException("newKey", e);
         }
     }
 
-    public static BulkJobKey parse(String key) throws BulkServiceException
-    {
+    public static BulkJobKey parse(String key) throws BulkServiceException {
         String[] parts = key.split(SEPARATOR);
         Preconditions.checkArgument(parts.length == 2,
-                                    "Malformed job key string.");
+              "Malformed job key string.");
         if (parts.length != 2) {
             ParseException cause
-                            = new ParseException("Could not parse " + key, -1);
+                  = new ParseException("Could not parse " + key, -1);
             throw new BulkServiceException("BulkJobKey parse", cause);
         }
         String requestId = parts[0];
@@ -111,29 +107,24 @@ public class BulkJobKey
         return new BulkJobKey(requestId, jobId);
     }
 
-    private BulkJobKey(String requestId, Long jobId)
-    {
+    private BulkJobKey(String requestId, Long jobId) {
         this.requestId = requestId;
         this.jobId = jobId;
     }
 
-    public String getRequestId()
-    {
+    public String getRequestId() {
         return requestId;
     }
 
-    public Long getJobId()
-    {
+    public Long getJobId() {
         return jobId;
     }
 
-    public String getKey()
-    {
+    public String getKey() {
         return requestId + SEPARATOR + jobId;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return getKey();
     }
 }

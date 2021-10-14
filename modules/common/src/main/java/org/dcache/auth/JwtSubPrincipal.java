@@ -18,17 +18,17 @@
 package org.dcache.auth;
 
 /**
- * A principal that represents the JWT 'sub' claim.  The claim value is unique
- * only within the OAuth Provider, so this principal's value is a combination of
- * a unique nickname for the OP and the subject.
+ * A principal that represents the JWT 'sub' claim.  The claim value is unique only within the OAuth
+ * Provider, so this principal's value is a combination of a unique nickname for the OP and the
+ * subject.
+ *
  * @since 5.1
  */
-public class JwtSubPrincipal extends OpScopedPrincipal
-{
+public class JwtSubPrincipal extends OpScopedPrincipal {
+
     private static final long serialVersionUID = 1L;
 
-    public JwtSubPrincipal(String op, String sub)
-    {
+    public JwtSubPrincipal(String op, String sub) {
         super(op, sub);
     }
 }

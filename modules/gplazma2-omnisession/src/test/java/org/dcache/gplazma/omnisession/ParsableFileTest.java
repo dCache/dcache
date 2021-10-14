@@ -17,13 +17,23 @@
  */
 package org.dcache.gplazma.omnisession;
 
-import org.junit.Test;
+import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
+import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
+import static com.google.common.base.Preconditions.checkState;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Objects.requireNonNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.theInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import org.junit.Before;
-import org.mockito.Mockito;
-
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -36,34 +46,23 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.*;
+public class ParsableFileTest {
 
-public class ParsableFileTest
-{
     private FileSystem fs;
     private AdvanceableClock testClock;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         fs = Jimfs.newFileSystem(Configuration.unix());
         testClock = new AdvanceableClock(Clock.systemUTC());
     }
 
     @Test
-    public void shouldLoadFile() throws Exception
-    {
+    public void shouldLoadFile() throws Exception {
         var model = givenAModel();
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturns(model));
@@ -75,9 +74,8 @@ public class ParsableFileTest
         verify(parser).apply(path);
     }
 
-    @Test(expected=NullPointerException.class)
-    public void shouldRejectNullModel() throws Exception
-    {
+    @Test(expected = NullPointerException.class)
+    public void shouldRejectNullModel() throws Exception {
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturnsNull());
         var file = givenParsableFileOf(parser, path);
@@ -86,8 +84,7 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldNotLoadFileAgainIfNothingChanged() throws Exception
-    {
+    public void shouldNotLoadFileAgainIfNothingChanged() throws Exception {
         var model = givenAModel();
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturns(model));
@@ -102,8 +99,7 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldReloadUpdatedFile() throws Exception
-    {
+    public void shouldReloadUpdatedFile() throws Exception {
         var model1 = givenAModel();
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturns(model1));
@@ -121,8 +117,7 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldNotReloadFileIfNotModified() throws Exception
-    {
+    public void shouldNotReloadFileIfNotModified() throws Exception {
         var model = givenAModel();
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturns(model));
@@ -137,8 +132,7 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldAttemptReloadIfFileUpdatedAndIsNowBad() throws Exception
-    {
+    public void shouldAttemptReloadIfFileUpdatedAndIsNowBad() throws Exception {
         var model = givenAModel();
         var path = given(aFile().withName("omnisession.conf").withContent("DEFAULT home:/ root:/"));
         var parser = given(aParser().thatReturns(model));
@@ -155,8 +149,7 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldReloadFileUpdatedFromBadToGood() throws Exception
-    {
+    public void shouldReloadFileUpdatedFromBadToGood() throws Exception {
         var path = given(aFile().withName("omnisession.conf").withContent("INVALID DATA"));
         var parser = given(aParser().thatReturnsEmpty());
         var file = givenParsableFileOf(parser, path);
@@ -173,20 +166,18 @@ public class ParsableFileTest
     }
 
     @Test
-    public void shouldReturnEmptyIfFileDoesNotExist() throws Exception
-    {
+    public void shouldReturnEmptyIfFileDoesNotExist() throws Exception {
         var path = given(aFile().withName("omnisession.conf").thatDoesNotExist());
         var parser = given(aParser().thatReturnsEmpty());
         var file = givenParsableFileOf(parser, path);
 
         Optional<Model> received = file.get();
 
-        verify(parser,never()).apply(any());
+        verify(parser, never()).apply(any());
     }
 
     @Test
-    public void shouldReturnContentsRereadingNewlyWrittenFile() throws Exception
-    {
+    public void shouldReturnContentsRereadingNewlyWrittenFile() throws Exception {
         var path = given(aFile().withName("omnisession.conf").thatDoesNotExist());
         var parser = given(aParser().thatReturnsEmpty());
         var file = givenParsableFileOf(parser, path);
@@ -202,28 +193,23 @@ public class ParsableFileTest
         assertThat(received, isPresentAnd(is(theInstance(model))));
     }
 
-    private Path given(FileBuilder builder) throws IOException
-    {
+    private Path given(FileBuilder builder) throws IOException {
         return builder.build();
     }
 
-    private void givenTimeHasAdvacedBy(int amount, TemporalUnit unit)
-    {
+    private void givenTimeHasAdvacedBy(int amount, TemporalUnit unit) {
         testClock.advance(amount, unit);
     }
 
-    private Function<Path,Optional<Model>> given(ParserBuilder builder)
-    {
+    private Function<Path, Optional<Model>> given(ParserBuilder builder) {
         return builder.build();
     }
 
-    private MockAdjuster givenParser(Function<Path,Optional<Model>> mock)
-    {
+    private MockAdjuster givenParser(Function<Path, Optional<Model>> mock) {
         return new MockAdjuster(mock);
     }
 
-    private void givenFileTouched(Path file) throws IOException, InterruptedException
-    {
+    private void givenFileTouched(Path file) throws IOException, InterruptedException {
         FileTime originalFileTime = Files.getLastModifiedTime(file);
 
         Files.setLastModifiedTime(file, FileTime.from(Instant.now()));
@@ -237,70 +223,59 @@ public class ParsableFileTest
         }
     }
 
-    private void givenFileUpdate(Path file, String contents) throws IOException
-    {
+    private void givenFileUpdate(Path file, String contents) throws IOException {
         Files.writeString(file, contents);
     }
 
-    private Model givenAModel()
-    {
+    private Model givenAModel() {
         return mock(Model.class);
     }
 
-    private FileBuilder aFile()
-    {
+    private FileBuilder aFile() {
         return new FileBuilder();
     }
 
-    private ParserBuilder aParser()
-    {
+    private ParserBuilder aParser() {
         return new ParserBuilder();
     }
 
-    private ParsableFile givenParsableFileOf(Function<Path,Optional<Model>> parser, Path path)
-    {
+    private ParsableFile givenParsableFileOf(Function<Path, Optional<Model>> parser, Path path) {
         return new ParsableFile(testClock, parser, path);
     }
 
-    private void givenFileHasBeenRead(ParsableFile file)
-    {
+    private void givenFileHasBeenRead(ParsableFile file) {
         file.get();
     }
 
-    private class FileBuilder
-    {
+    private class FileBuilder {
+
         private String name;
         private Path directory = fs.getRootDirectories().iterator().next();
         private StringBuilder contents = new StringBuilder();
         private boolean exists = true;
 
-        public FileBuilder withName(String name)
-        {
+        public FileBuilder withName(String name) {
             this.name = requireNonNull(name);
             return this;
         }
 
-        public FileBuilder inDirectory(String path) throws IOException
-        {
+        public FileBuilder inDirectory(String path) throws IOException {
             directory = fs.getPath(path);
             Files.createDirectories(directory);
             return this;
         }
 
-        public FileBuilder withContent(String... lines) throws IOException
-        {
+        public FileBuilder withContent(String... lines) throws IOException {
             Arrays.stream(lines).forEach(l -> contents.append(l).append('\n'));
             return this;
         }
 
-        public FileBuilder thatDoesNotExist()
-        {
+        public FileBuilder thatDoesNotExist() {
             exists = false;
             return this;
         }
 
-        public Path build() throws IOException
-        {
+        public Path build() throws IOException {
             checkState(name != null, "Missing filename");
             Path file = directory.resolve(name);
 
@@ -316,55 +291,48 @@ public class ParsableFileTest
         }
     }
 
-    private class ParserBuilder<Model>
-    {
-        private final Function<Path,Optional<Model>> parser = mock(Function.class);
+    private class ParserBuilder<Model> {
 
-        public ParserBuilder thatReturns(Model model)
-        {
+        private final Function<Path, Optional<Model>> parser = mock(Function.class);
+
+        public ParserBuilder thatReturns(Model model) {
             when(parser.apply(any())).thenReturn(Optional.of(model));
             return this;
         }
 
-        public ParserBuilder thatReturnsNull()
-        {
+        public ParserBuilder thatReturnsNull() {
             when(parser.apply(any())).thenReturn(null);
             return this;
         }
 
-        public ParserBuilder thatReturnsEmpty()
-        {
+        public ParserBuilder thatReturnsEmpty() {
             when(parser.apply(any())).thenReturn(Optional.empty());
             return this;
         }
 
-        public Function<Path,Optional<Model>> build()
-        {
+        public Function<Path, Optional<Model>> build() {
             return parser;
         }
     }
 
     /**
-     * This class is very ugly -- or, at least, it hides the ugliness of
-     * calling the Mockito#reset method.
+     * This class is very ugly -- or, at least, it hides the ugliness of calling the Mockito#reset
+     * method.
      */
-    private class MockAdjuster
-    {
-        private final Function<Path,Optional<Model>> mock;
+    private class MockAdjuster {
 
-        MockAdjuster(Function<Path,Optional<Model>> mock)
-        {
+        private final Function<Path, Optional<Model>> mock;
+
+        MockAdjuster(Function<Path, Optional<Model>> mock) {
             this.mock = mock;
         }
 
-        public void nowReturns(Model model)
-        {
+        public void nowReturns(Model model) {
             Mockito.reset(mock);
             when(mock.apply(any())).thenReturn(Optional.of(model));
         }
 
-        public void nowReturnsEmpty()
-        {
+        public void nowReturnsEmpty() {
             Mockito.reset(mock);
             when(mock.apply(any())).thenReturn(Optional.empty());
         }
@@ -373,7 +341,7 @@ public class ParsableFileTest
     /**
      * The model representing the file's contents.
      */
-    private interface Model
-    {
+    private interface Model {
+
     }
 }

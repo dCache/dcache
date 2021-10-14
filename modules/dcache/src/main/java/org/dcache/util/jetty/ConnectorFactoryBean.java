@@ -17,9 +17,18 @@
  */
 package org.dcache.util.jetty;
 
+import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;
+import static org.dcache.util.jetty.ConnectorFactoryBean.Protocol.PLAIN;
+
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.dcache.gsi.KeyPairCache;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -32,19 +41,8 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+public class ConnectorFactoryBean implements FactoryBean<ServerConnector> {
 
-import org.dcache.gsi.KeyPairCache;
-
-import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;
-import static org.dcache.util.jetty.ConnectorFactoryBean.Protocol.PLAIN;
-
-public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
-{
     private int acceptors = -1;
     private int port;
     private String host;
@@ -73,262 +71,211 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
 
     private Protocol protocol;
 
-    public int getAcceptors()
-    {
+    public int getAcceptors() {
         return acceptors;
     }
 
-    public void setAcceptors(int acceptors)
-    {
+    public void setAcceptors(int acceptors) {
         this.acceptors = acceptors;
     }
 
-    public int getPort()
-    {
+    public int getPort() {
         return port;
     }
 
-    public void setPort(int port)
-    {
+    public void setPort(int port) {
         this.port = port;
     }
 
-    public String getHost()
-    {
+    public String getHost() {
         return host;
     }
 
-    public void setHost(String host)
-    {
+    public void setHost(String host) {
         this.host = host;
     }
 
-    public int getBacklog()
-    {
+    public int getBacklog() {
         return backlog;
     }
 
-    public void setBacklog(int backlog)
-    {
+    public void setBacklog(int backlog) {
         this.backlog = backlog;
     }
 
-    public long getIdleTimeout()
-    {
+    public long getIdleTimeout() {
         return idleTimeout;
     }
 
     @Required
-    public void setIdleTimeout(long idleTimeout)
-    {
+    public void setIdleTimeout(long idleTimeout) {
         this.idleTimeout = idleTimeout;
     }
 
-    public TimeUnit getIdleTimeoutUnit()
-    {
+    public TimeUnit getIdleTimeoutUnit() {
         return idleTimeoutUnit;
     }
 
     @Required
-    public void setIdleTimeoutUnit(TimeUnit idleTimeoutUnit)
-    {
+    public void setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
         this.idleTimeoutUnit = idleTimeoutUnit;
     }
 
-    public Server getServer()
-    {
+    public Server getServer() {
         return server;
     }
 
     @Required
-    public void setServer(Server server)
-    {
+    public void setServer(Server server) {
         this.server = server;
     }
 
-    public long getServerCertificateTimeout()
-    {
+    public long getServerCertificateTimeout() {
         return hostCertificateTimeout;
     }
 
-    public void setServerCertificateTimeout(long serverCertificateTimeout)
-    {
+    public void setServerCertificateTimeout(long serverCertificateTimeout) {
         this.hostCertificateTimeout = serverCertificateTimeout;
     }
 
-    public TimeUnit getServerCertificateTimeoutUnit()
-    {
+    public TimeUnit getServerCertificateTimeoutUnit() {
         return hostCertificateTimeoutUnit;
     }
 
-    public void setServerCertificateTimeoutUnit(TimeUnit serverCertificateTimeoutUnit)
-    {
+    public void setServerCertificateTimeoutUnit(TimeUnit serverCertificateTimeoutUnit) {
         this.hostCertificateTimeoutUnit = serverCertificateTimeoutUnit;
     }
 
-    public long getCaPathTimeout()
-    {
+    public long getCaPathTimeout() {
         return caCertificateTimeout;
     }
 
-    public void setCaPathTimeout(long caPathTimeout)
-    {
+    public void setCaPathTimeout(long caPathTimeout) {
         this.caCertificateTimeout = caPathTimeout;
     }
 
-    public TimeUnit getCaPathTimeoutUnit()
-    {
+    public TimeUnit getCaPathTimeoutUnit() {
         return caCertificateTimeoutUnit;
     }
 
-    public void setCaPathTimeoutUnit(TimeUnit caPathTimeoutUnit)
-    {
+    public void setCaPathTimeoutUnit(TimeUnit caPathTimeoutUnit) {
         this.caCertificateTimeoutUnit = caPathTimeoutUnit;
     }
 
-    public File getServerCertificatePath()
-    {
+    public File getServerCertificatePath() {
         return serverCertificatePath;
     }
 
-    public void setServerCertificatePath(File serverCertificatePath)
-    {
+    public void setServerCertificatePath(File serverCertificatePath) {
         this.serverCertificatePath = serverCertificatePath;
     }
 
-    public File getServerKeyPath()
-    {
+    public File getServerKeyPath() {
         return serverKeyPath;
     }
 
-    public void setServerKeyPath(File serverKeyPath)
-    {
+    public void setServerKeyPath(File serverKeyPath) {
         this.serverKeyPath = serverKeyPath;
     }
 
-    public File getCaPath()
-    {
+    public File getCaPath() {
         return certificateAuthorityPath;
     }
 
-    public void setCaPath(File caPath)
-    {
+    public void setCaPath(File caPath) {
         this.certificateAuthorityPath = caPath;
     }
 
-    public boolean isNeedClientAuth()
-    {
+    public boolean isNeedClientAuth() {
         return needClientAuth;
     }
 
-    public void setNeedClientAuth(boolean needClientAuth)
-    {
+    public void setNeedClientAuth(boolean needClientAuth) {
         this.needClientAuth = needClientAuth;
     }
 
-    public boolean isWantClientAuth()
-    {
+    public boolean isWantClientAuth() {
         return wantClientAuth;
     }
 
-    public void setWantClientAuth(boolean wantClientAuth)
-    {
+    public void setWantClientAuth(boolean wantClientAuth) {
         this.wantClientAuth = wantClientAuth;
     }
 
-    public String[] getExcludedCipherSuites()
-    {
+    public String[] getExcludedCipherSuites() {
         return excludedCipherSuites;
     }
 
-    public void setExcludedCipherSuites(String[] excludedCipherSuites)
-    {
+    public void setExcludedCipherSuites(String[] excludedCipherSuites) {
         this.excludedCipherSuites = excludedCipherSuites;
     }
 
-    public void setCipherFlags(String cipherFlags)
-    {
+    public void setCipherFlags(String cipherFlags) {
         this.excludedCipherSuites = getBannedCipherSuitesFromConfigurationValue(cipherFlags);
     }
 
     @Required
-    public void setProtocol(Protocol protocol)
-    {
+    public void setProtocol(Protocol protocol) {
         this.protocol = protocol;
     }
 
-    public boolean isUsingLegacyClose()
-    {
+    public boolean isUsingLegacyClose() {
         return isUsingLegacyClose;
     }
 
-    public void setUsingLegacyClose(boolean isUsingLegacyClose)
-    {
+    public void setUsingLegacyClose(boolean isUsingLegacyClose) {
         this.isUsingLegacyClose = isUsingLegacyClose;
     }
 
-    public CrlCheckingMode getCrlCheckingMode()
-    {
+    public CrlCheckingMode getCrlCheckingMode() {
         return crlCheckingMode;
     }
 
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
         this.crlCheckingMode = crlCheckingMode;
     }
 
-    public OCSPCheckingMode getOcspCheckingMode()
-    {
+    public OCSPCheckingMode getOcspCheckingMode() {
         return ocspCheckingMode;
     }
 
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
         this.ocspCheckingMode = ocspCheckingMode;
     }
 
-    public NamespaceCheckingMode getNamespaceMode()
-    {
+    public NamespaceCheckingMode getNamespaceMode() {
         return namespaceMode;
     }
 
-    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
-    {
+    public void setNamespaceMode(NamespaceCheckingMode namespaceMode) {
         this.namespaceMode = namespaceMode;
     }
 
-    public KeyPairCache getKeyPairCache()
-    {
+    public KeyPairCache getKeyPairCache() {
         return keyPairCache;
     }
 
-    public void setKeyPairCache(KeyPairCache keyPairCache)
-    {
+    public void setKeyPairCache(KeyPairCache keyPairCache) {
         this.keyPairCache = keyPairCache;
     }
 
-    public boolean isProxyConnectionEnabled()
-    {
+    public boolean isProxyConnectionEnabled() {
         return isProxyConnectionEnabled;
     }
 
-    public void setProxyConnectionEnabled(boolean proxyConnectionEnabled)
-    {
+    public void setProxyConnectionEnabled(boolean proxyConnectionEnabled) {
         isProxyConnectionEnabled = proxyConnectionEnabled;
     }
 
-    public boolean isForwardedHeaderProcessingEnabled()
-    {
+    public boolean isForwardedHeaderProcessingEnabled() {
         return isForwardedHeaderProcessingEnabled;
     }
 
-    public void setForwardedHeaderProcessingEnabled(boolean forwardedHeaderProcessingEnabled)
-    {
+    public void setForwardedHeaderProcessingEnabled(boolean forwardedHeaderProcessingEnabled) {
         isForwardedHeaderProcessingEnabled = forwardedHeaderProcessingEnabled;
     }
 
-    private SslContextFactory createContextFactory() throws Exception
-    {
+    private SslContextFactory createContextFactory() throws Exception {
         CanlContextFactory factory = new CanlContextFactory();
         factory.setCertificatePath(serverCertificatePath);
         factory.setKeyPath(serverKeyPath);
@@ -339,8 +286,10 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
         factory.setGsiEnabled(protocol == Protocol.GSI);
         factory.setUsingLegacyClose(isUsingLegacyClose);
         factory.setKeyPairCache(keyPairCache);
-        factory.setCertificateAuthorityUpdateInterval(caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
-        factory.setCredentialUpdateInterval(hostCertificateTimeoutUnit.toMillis(hostCertificateTimeout));
+        factory.setCertificateAuthorityUpdateInterval(
+              caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
+        factory.setCredentialUpdateInterval(
+              hostCertificateTimeoutUnit.toMillis(hostCertificateTimeout));
         factory.setNamespaceMode(namespaceMode);
         factory.setCrlCheckingMode(crlCheckingMode);
         factory.setOcspCheckingMode(ocspCheckingMode);
@@ -349,8 +298,7 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
     }
 
     @Override
-    public ServerConnector getObject() throws Exception
-    {
+    public ServerConnector getObject() throws Exception {
         checkState(protocol == PLAIN || hostCertificateTimeout > 0);
         checkState(protocol == PLAIN || hostCertificateTimeoutUnit != null);
         checkState(protocol == PLAIN || caCertificateTimeout > 0);
@@ -362,19 +310,23 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
         HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
 
         switch (protocol) {
-        case PLAIN:
-            break;
-        case TLS:
-            httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
-            break;
-        case GSI:
-            httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
-            httpConnectionFactory.getHttpConfiguration().addCustomizer(new GsiRequestCustomizer());
-            break;
+            case PLAIN:
+                break;
+            case TLS:
+                httpConnectionFactory.getHttpConfiguration()
+                      .addCustomizer(new SecureRequestCustomizer());
+                break;
+            case GSI:
+                httpConnectionFactory.getHttpConfiguration()
+                      .addCustomizer(new SecureRequestCustomizer());
+                httpConnectionFactory.getHttpConfiguration()
+                      .addCustomizer(new GsiRequestCustomizer());
+                break;
         }
 
         if (isForwardedHeaderProcessingEnabled) {
-            httpConnectionFactory.getHttpConfiguration().addCustomizer(new ForwardedRequestCustomizer());
+            httpConnectionFactory.getHttpConfiguration()
+                  .addCustomizer(new ForwardedRequestCustomizer());
         }
 
         List<ConnectionFactory> factories = new ArrayList<>();
@@ -382,12 +334,14 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
             factories.add(new ProxyConnectionFactory());
         }
         if (protocol != PLAIN) {
-            factories.add(new SslConnectionFactory(createContextFactory(), httpConnectionFactory.getProtocol()));
+            factories.add(new SslConnectionFactory(createContextFactory(),
+                  httpConnectionFactory.getProtocol()));
         }
         factories.add(httpConnectionFactory);
 
         ServerConnector serverConnector =
-                new ServerConnector(server, null, null, null, acceptors, -1, factories.toArray(ConnectionFactory[]::new));
+              new ServerConnector(server, null, null, null, acceptors, -1,
+                    factories.toArray(ConnectionFactory[]::new));
         serverConnector.setPort(port);
         serverConnector.setHost(host);
         serverConnector.setAcceptQueueSize(backlog);
@@ -396,19 +350,16 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
     }
 
     @Override
-    public Class<?> getObjectType()
-    {
+    public Class<?> getObjectType() {
         return ServerConnector.class;
     }
 
     @Override
-    public boolean isSingleton()
-    {
+    public boolean isSingleton() {
         return true;
     }
 
-    public enum Protocol
-    {
+    public enum Protocol {
         PLAIN, TLS, GSI
     }
 }

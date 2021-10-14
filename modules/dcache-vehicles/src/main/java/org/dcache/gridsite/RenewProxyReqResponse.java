@@ -20,18 +20,16 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class RenewProxyReqResponse implements Serializable
-{
+public class RenewProxyReqResponse implements Serializable {
+
     private static final long serialVersionUID = 8621130424590038457L;
     private final String certificateSigningRequest;
 
-    public RenewProxyReqResponse(String certificateSigningRequest)
-    {
+    public RenewProxyReqResponse(String certificateSigningRequest) {
         this.certificateSigningRequest = certificateSigningRequest;
     }
 
-    public String getCertificateSigningRequest()
-    {
+    public String getCertificateSigningRequest() {
         return certificateSigningRequest;
     }
 }

@@ -17,30 +17,26 @@
  */
 package org.dcache.chimera.nfsv41.mover;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.nio.channels.CompletionHandler;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
-
 import dmg.cells.nucleus.CellPath;
-
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.nio.channels.CompletionHandler;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.StateOwner;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.status.NfsIoException;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
@@ -52,10 +48,10 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private volatile CompletionHandler<Void, Void> _completionHandler;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-            NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
+          NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
         super(handle, message, pathToDoor, nfsTransferService);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = getProtocolInfo().stateId();
         _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
     }
@@ -72,21 +68,23 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     protected String getStatus() {
         StringBuilder s = new StringBuilder();
         s.append("NFSv4.1/pNFS,OS=")
-                .append(getStateId())
-                .append(",cl=[")
-                .append(getProtocolInfo().getSocketAddress().getAddress().getHostAddress())
-                .append("]");
+              .append(getStateId())
+              .append(",cl=[")
+              .append(getProtocolInfo().getSocketAddress().getAddress().getHostAddress())
+              .append("]");
         return s.toString();
     }
 
     /**
      * Enable access with this mover.
+     *
      * @param completionHandler to be called when mover finishes.
      * @return handle to cancel mover if needed
-     * @throws InterruptedIOException if mover was cancelled
+     * @throws InterruptedIOException  if mover was cancelled
      * @throws DiskErrorCacheException
      */
-    public Cancellable enable(final CompletionHandler<Void,Void> completionHandler) throws DiskErrorCacheException, InterruptedIOException {
+    public Cancellable enable(final CompletionHandler<Void, Void> completionHandler)
+          throws DiskErrorCacheException, InterruptedIOException {
 
         open();
         _completionHandler = completionHandler;
@@ -96,8 +94,9 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     }
 
     /**
-     * Disable access with this mover. If {@code error} is not a {@code null},
-     * the {@link CompletionHandler#failed(Throwable, A)} method will be called.
+     * Disable access with this mover. If {@code error} is not a {@code null}, the {@link
+     * CompletionHandler#failed(Throwable, A)} method will be called.
+     *
      * @param error error to report, or {@code null} on success
      */
     void disable(Throwable error) {
@@ -108,7 +107,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         } catch (IOException e) {
             _log.error("failed to close RAF {}", e.toString());
         }
-        if(error == null) {
+        if (error == null) {
             _completionHandler.completed(null, null);
         } else {
             _completionHandler.failed(error, null);
@@ -117,6 +116,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     /**
      * Attach mover tho the client's NFSv41 session.
+     *
      * @param session to attach to
      */
     synchronized void attachSession(NFSv41Session session) {
@@ -141,7 +141,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      */
     private class MoverState extends NFS4State {
 
-        MoverState(StateOwner owner,  stateid4 stateid) {
+        MoverState(StateOwner owner, stateid4 stateid) {
             super(owner, stateid);
         }
 
@@ -154,7 +154,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     public void commitFileSize(long size) throws ChimeraNFSException {
         try {
             _namespace.setFileAttributes(getFileAttributes().getPnfsId(),
-                    FileAttributes.ofSize(size));
+                  FileAttributes.ofSize(size));
         } catch (CacheException e) {
             throw new NfsIoException("Failed to update file size in the namespace", e);
         }

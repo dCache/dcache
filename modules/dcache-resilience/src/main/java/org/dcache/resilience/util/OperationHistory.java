@@ -59,23 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import com.google.common.collect.EvictingQueue;
+import static java.util.stream.Collectors.toList;
 
+import com.google.common.collect.EvictingQueue;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * <p>A small circular buffer for preserving the most recent operation
- *      records after they have completed.</p>
+ * records after they have completed.</p>
  *
  * <p>Capacity is fixed for the duration of the JVM (only configurable
- *      through properties).</p>
+ * through properties).</p>
  *
  * <p>Also maintains a separate buffer for failed operations.</p>
  */
 public class OperationHistory {
+
     private EvictingQueue<String> history;
     private EvictingQueue<String> errors;
     private int capacity = 1000;
@@ -102,7 +102,7 @@ public class OperationHistory {
         int index = 0;
         synchronized (queue) {
             for (Iterator<String> it = queue.iterator();
-                 it.hasNext() && index++ < limit; ) {
+                  it.hasNext() && index++ < limit; ) {
                 builder.append(it.next()).append("\n");
             }
         }
@@ -131,14 +131,14 @@ public class OperationHistory {
 
     public List<String> getErrorPnfsids() {
         List<String> pnfsids;
-        synchronized(errors) {
+        synchronized (errors) {
             pnfsids = errors.stream()
-                            .map((s) ->
-                                 {
-                                    String pnfsid = s.substring(s.indexOf("(") + 1);
-                                    return pnfsid.substring(0, pnfsid.indexOf(" "));
-                                 })
-                            .collect(toList());
+                  .map((s) ->
+                  {
+                      String pnfsid = s.substring(s.indexOf("(") + 1);
+                      return pnfsid.substring(0, pnfsid.indexOf(" "));
+                  })
+                  .collect(toList());
             errors.clear();
         }
 

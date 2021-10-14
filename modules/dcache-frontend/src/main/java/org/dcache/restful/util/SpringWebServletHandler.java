@@ -17,52 +17,47 @@
  */
 package org.dcache.restful.util;
 
+import static org.springframework.web.context.WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE;
+
+import javax.servlet.ServletContext;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.servlet.ServletContext;
-
-import static org.springframework.web.context.WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE;
-
 /**
- * Provide a minimal spring-web compatibility layer for a Jetty server
- * that was instantiated from within a Spring ApplicationContext.
+ * Provide a minimal spring-web compatibility layer for a Jetty server that was instantiated from
+ * within a Spring ApplicationContext.
  */
-public class SpringWebServletHandler extends ServletHandler implements ApplicationContextAware
-{
+public class SpringWebServletHandler extends ServletHandler implements ApplicationContextAware {
+
     private ApplicationContext context;
 
     @Override
-    public void setApplicationContext(ApplicationContext context)
-    {
+    public void setApplicationContext(ApplicationContext context) {
         this.context = context;
     }
 
     @Override
-    public void doStart() throws Exception
-    {
+    public void doStart() throws Exception {
         super.doStart();
 
         getServletContext().setAttribute(ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE,
-                new ForwardingWebApplicationContext());
+              new ForwardingWebApplicationContext());
     }
 
     /**
      * Bridge jetty-web with an existing Spring context and Jetty instance.
      */
     public class ForwardingWebApplicationContext extends ForwardingApplicationContext
-            implements WebApplicationContext
-    {
-        public ForwardingWebApplicationContext()
-        {
+          implements WebApplicationContext {
+
+        public ForwardingWebApplicationContext() {
             super(SpringWebServletHandler.this.context);
         }
 
         @Override
-        public ServletContext getServletContext()
-        {
+        public ServletContext getServletContext() {
             return SpringWebServletHandler.this.getServletContext();
         }
     }

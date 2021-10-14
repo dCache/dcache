@@ -90,15 +90,14 @@ package org.dcache.srm.client;
 import java.beans.PropertyChangeEvent;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class RequestFailedEvent extends PropertyChangeEvent {
 
     private static final long serialVersionUID = 2345183720240417219L;
 
-    public RequestFailedEvent(TurlGetterPutter getterPutter, Object reason)  {
-        super(getterPutter, "Request",null, reason);
+    public RequestFailedEvent(TurlGetterPutter getterPutter, Object reason) {
+        super(getterPutter, "Request", null, reason);
     }
 
 

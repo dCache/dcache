@@ -1,10 +1,18 @@
 package org.dcache.util.cli;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.fusesource.jansi.Ansi.Color.RED;
+
 import com.google.common.io.CharStreams;
 import com.google.common.io.LineProcessor;
-import jline.console.ConsoleReader;
-import org.fusesource.jansi.Ansi;
-
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.CommandPanicException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.CommandThrowableException;
+import dmg.util.command.Command;
+import dmg.util.command.HelpFormat;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.FileInputStream;
@@ -17,40 +25,21 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-
-import dmg.util.CommandException;
-import dmg.util.CommandExitException;
-import dmg.util.CommandPanicException;
-import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
-import dmg.util.command.Command;
-import dmg.util.command.HelpFormat;
-
+import jline.console.ConsoleReader;
 import org.dcache.util.Args;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.fusesource.jansi.Ansi.Color.RED;
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import org.fusesource.jansi.Ansi;
 
 
 /**
- * A simple framework for providing a CLI Shell.  A basic application has as
- * main method like:
- * {@code
- *   public static void main(String[] arguments) throws Throwable
- *   {
- *       try (BasicShell shell = new BasicShell()) {
- *           shell.start(new Args(arguments));
- *       }
- *   }
- * }
+ * A simple framework for providing a CLI Shell.  A basic application has as main method like:
+ * {@code public static void main(String[] arguments) throws Throwable { try (BasicShell shell = new
+ * BasicShell()) { shell.start(new Args(arguments)); } } }
  */
-public abstract class ShellApplication implements Closeable
-{
+public abstract class ShellApplication implements Closeable {
+
     protected final ConsoleReader console = new ConsoleReader() {
         @Override
-        public void print(CharSequence s) throws IOException
-        {
+        public void print(CharSequence s) throws IOException {
             /* See https://github.com/jline/jline2/issues/205 */
             getOutput().append(s);
         }
@@ -60,8 +49,7 @@ public abstract class ShellApplication implements Closeable
     private final boolean isAnsiSupported;
     private final boolean hasConsole;
 
-    public ShellApplication() throws Exception
-    {
+    public ShellApplication() throws Exception {
         commandInterpreter = new CommandInterpreter();
         commandInterpreter.addCommandScanner(new AnnotatedCommandScanner());
         commandInterpreter.addCommandListener(commandInterpreter.new HelpCommands());
@@ -73,12 +61,12 @@ public abstract class ShellApplication implements Closeable
     /**
      * Start processing the command(s), based on the supplied arguments.
      */
-    protected void start(Args args) throws Throwable
-    {
+    protected void start(Args args) throws Throwable {
         if (args.hasOption("h")) {
             System.out.println("Usage: " + getCommandName() + " [-e] [-f=<file>]|[-]|[COMMAND]");
             System.out.println();
-            System.out.println("Use '" + getCommandName() + " help' for an overview of available commands.");
+            System.out.println(
+                  "Use '" + getCommandName() + " help' for an overview of available commands.");
             System.exit(0);
         }
 
@@ -99,54 +87,52 @@ public abstract class ShellApplication implements Closeable
         }
     }
 
-    /** Provide the command name, as typed in by the user. */
+    /**
+     * Provide the command name, as typed in by the user.
+     */
     protected abstract String getCommandName();
 
     /**
-     * Execute multiple commands where each command is read as a line from
-     * the supplied InputStream and the commands' output is sent to the supplied
-     * PrintStream, optionally prefixed by the command.
+     * Execute multiple commands where each command is read as a line from the supplied InputStream
+     * and the commands' output is sent to the supplied PrintStream, optionally prefixed by the
+     * command.
      */
-    public void execute(InputStream in, final PrintStream out, final boolean echo) throws IOException
-    {
+    public void execute(InputStream in, final PrintStream out, final boolean echo)
+          throws IOException {
         CharStreams.readLines(
-                new InputStreamReader(in, US_ASCII),
-                new LineProcessor<Object>()
-                {
-                    @Override
-                    public boolean processLine(String line) throws IOException
-                    {
-                        try {
-                            if (echo) {
-                                out.println(line);
-                            }
-                            Args args = new Args(line);
-                            if (args.argc() == 0) {
-                                return true;
-                            }
-                            String s = Objects.toString(commandInterpreter.command(args), null);
-                            if (!isNullOrEmpty(s)) {
-                                out.println(s);
-                            }
-                            return true;
-                        } catch (CommandException e) {
-                            throw new IOException(e);
-                        }
-                    }
+              new InputStreamReader(in, US_ASCII),
+              new LineProcessor<Object>() {
+                  @Override
+                  public boolean processLine(String line) throws IOException {
+                      try {
+                          if (echo) {
+                              out.println(line);
+                          }
+                          Args args = new Args(line);
+                          if (args.argc() == 0) {
+                              return true;
+                          }
+                          String s = Objects.toString(commandInterpreter.command(args), null);
+                          if (!isNullOrEmpty(s)) {
+                              out.println(s);
+                          }
+                          return true;
+                      } catch (CommandException e) {
+                          throw new IOException(e);
+                      }
+                  }
 
-                    @Override
-                    public Object getResult()
-                    {
-                        return null;
-                    }
-                });
+                  @Override
+                  public Object getResult() {
+                      return null;
+                  }
+              });
     }
 
     /**
      * Executes a single command with the output being printed to the console.
      */
-    public void execute(Args args) throws Throwable
-    {
+    public void execute(Args args) throws Throwable {
         if (args.argc() == 0) {
             return;
         }
@@ -167,7 +153,7 @@ public abstract class ShellApplication implements Closeable
         } catch (CommandSyntaxException e) {
             Ansi sb = Ansi.ansi();
             sb.fg(RED).a("Syntax error: " + e.getMessage() + "\n").reset();
-            String help  = e.getHelpText();
+            String help = e.getHelpText();
             if (help != null) {
                 sb.a(help);
             }
@@ -176,7 +162,8 @@ public abstract class ShellApplication implements Closeable
             throw e;
         } catch (CommandPanicException e) {
             Ansi sb = Ansi.ansi();
-            sb.fg(RED).a("Bug detected! ").reset().a("Please email the following details to <support@dcache.org>:\n");
+            sb.fg(RED).a("Bug detected! ").reset()
+                  .a("Please email the following details to <support@dcache.org>:\n");
             Throwable t = e.getCause() == null ? e : e.getCause();
             StringWriter sw = new StringWriter();
             t.printStackTrace(new PrintWriter(sw));
@@ -194,12 +181,10 @@ public abstract class ShellApplication implements Closeable
     }
 
     /**
-     * Start an interactive session.  The user is supplied a prompt and
-     * their input is executed as a command.  This repeats until they indicate
-     * that they wish to exit the session.
+     * Start an interactive session.  The user is supplied a prompt and their input is executed as a
+     * command.  This repeats until they indicate that they wish to exit the session.
      */
-    public void console() throws Throwable
-    {
+    public void console() throws Throwable {
         onInteractiveStart();
         try {
             while (true) {
@@ -218,19 +203,16 @@ public abstract class ShellApplication implements Closeable
     /**
      * Method called exactly once when starting an interactive session.
      */
-    protected void onInteractiveStart() throws IOException
-    {
+    protected void onInteractiveStart() throws IOException {
         console.println("Type 'help' for help on commands.");
         console.println("Type 'exit' or Ctrl+D to exit.");
     }
 
     /**
-     * The prompt that will be supplied to the user.  It is recommended that
-     * the prompt end with a space.  The returned text should not be wrapped in
-     * ANSI escape sequences.
+     * The prompt that will be supplied to the user.  It is recommended that the prompt end with a
+     * space.  The returned text should not be wrapped in ANSI escape sequences.
      */
-    protected String getPrompt()
-    {
+    protected String getPrompt() {
         return "# ";
     }
 
@@ -238,17 +220,15 @@ public abstract class ShellApplication implements Closeable
      * This method allows for a clean shutdown on exit.
      */
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         // not needed for the abstract case.
     }
 
     @Command(name = "exit", hint = "exit the shell")
-    public class ExitComamnd implements Callable<Serializable>
-    {
+    public class ExitComamnd implements Callable<Serializable> {
+
         @Override
-        public Serializable call() throws CommandExitException
-        {
+        public Serializable call() throws CommandExitException {
             throw new CommandExitException();
         }
     }

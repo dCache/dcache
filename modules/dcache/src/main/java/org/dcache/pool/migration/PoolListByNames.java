@@ -1,35 +1,29 @@
 package org.dcache.pool.migration;
 
 import com.google.common.util.concurrent.MoreExecutors;
-
-import java.util.Collection;
-
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
-
+import java.util.Collection;
 import org.dcache.cells.CellStub;
 
 public class PoolListByNames
-    extends PoolListFromPoolManager
-{
+      extends PoolListFromPoolManager {
+
     private final CellStub _poolManager;
     private final Collection<String> _names;
 
-    public PoolListByNames(CellStub poolManager, Collection<String> pools)
-    {
+    public PoolListByNames(CellStub poolManager, Collection<String> pools) {
         _poolManager = poolManager;
         _names = pools;
     }
 
     @Override
-    public void refresh()
-    {
+    public void refresh() {
         CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByNameMessage(_names)),
-                             this, MoreExecutors.directExecutor());
+              this, MoreExecutors.directExecutor());
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         if (_pools.isEmpty()) {
             return "";
         }

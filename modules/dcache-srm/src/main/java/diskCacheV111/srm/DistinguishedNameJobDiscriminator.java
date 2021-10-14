@@ -18,28 +18,23 @@
 package diskCacheV111.srm;
 
 import com.google.common.base.Strings;
-
-import javax.annotation.Nonnull;
-
 import diskCacheV111.srm.dcache.DcacheUser;
-
+import javax.annotation.Nonnull;
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.strategy.UserDiscriminator;
 
-public class DistinguishedNameJobDiscriminator extends UserDiscriminator
-{
+public class DistinguishedNameJobDiscriminator extends UserDiscriminator {
+
     @Nonnull
     @Override
-    protected String getDiscriminatingValue(SRMUser user)
-    {
+    protected String getDiscriminatingValue(SRMUser user) {
         return Strings.nullToEmpty(Subjects.getDn(((DcacheUser) user).getSubject()));
     }
 
     @Nonnull
     @Override
-    public String getKey()
-    {
+    public String getKey() {
         return "dn";
     }
 }

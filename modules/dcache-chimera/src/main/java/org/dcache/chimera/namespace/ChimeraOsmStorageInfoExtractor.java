@@ -1,19 +1,16 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.collect.ImmutableList;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.StringTokenizer;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
@@ -24,8 +21,8 @@ import org.dcache.chimera.store.InodeStorageInformation;
 public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor {
 
     public ChimeraOsmStorageInfoExtractor(AccessLatency defaultAL,
-                                          RetentionPolicy defaultRP) {
-        super(defaultAL,defaultRP);
+          RetentionPolicy defaultRP) {
+        super(defaultAL, defaultRP);
     }
 
     @Override
@@ -36,7 +33,9 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         try {
             Stat stat = inode.statCache();
 
-            boolean isNew = stat.getState() == FileState.CREATED || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(2).exists();
+            boolean isNew = stat.getState() == FileState.CREATED
+                  || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(
+                  2).exists();
 
             if (!isNew) {
                 ImmutableList<String> locations = inode.getLocations(StorageGenericLocation.TAPE);
@@ -47,7 +46,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                     InodeStorageInformation inodeStorageInfo = inode.getStorageInfo();
 
                     info = new OSMStorageInfo(inodeStorageInfo.storageGroup(),
-                            inodeStorageInfo.storageSubGroup());
+                          inodeStorageInfo.storageSubGroup());
 
                     for (String location : locations) {
                         try {
@@ -77,15 +76,14 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
             if (dirInode == null) {
                 throw new FileNotFoundCacheException("file unlinked");
             }
-        }
-        else {
+        } else {
             dirInode = inode;
         }
         HashMap<String, String> hash = new HashMap<>();
         String store = null;
         ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
         if (!OSMTemplate.isEmpty()) {
-            for (String line: OSMTemplate) {
+            for (String line : OSMTemplate) {
                 StringTokenizer st = new StringTokenizer(line);
                 if (st.countTokens() < 2) {
                     continue;

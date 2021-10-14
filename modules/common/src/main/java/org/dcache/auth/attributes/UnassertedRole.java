@@ -20,29 +20,25 @@ package org.dcache.auth.attributes;
 import java.io.Serializable;
 
 /**
- * A role that the user may assert but, for this login, chose not to.  This
- * LoginAttribute allows a door to provide the user with a list of roles that
- * may be asserted.
+ * A role that the user may assert but, for this login, chose not to.  This LoginAttribute allows a
+ * door to provide the user with a list of roles that may be asserted.
  */
-public class UnassertedRole implements LoginAttribute, Serializable
-{
+public class UnassertedRole implements LoginAttribute, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final String _name;
 
-    public UnassertedRole(String name)
-    {
+    public UnassertedRole(String name) {
         _name = name;
     }
 
-    public String getRole()
-    {
+    public String getRole() {
         return _name;
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -54,14 +50,12 @@ public class UnassertedRole implements LoginAttribute, Serializable
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return _name.hashCode();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "UnassertedRole[" + _name + ']';
     }
 }

@@ -18,60 +18,53 @@
  */
 package org.dcache.restful.events.streams.metronome;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
-
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.BiConsumer;
-
 import org.dcache.restful.events.spi.SelectedEventStream;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-
 /**
- * Represents the selected stream of events.  It contains the client-supplied
- * JSON selector along with other, operational elements.
+ * Represents the selected stream of events.  It contains the client-supplied JSON selector along
+ * with other, operational elements.
  */
-class Selection implements SelectedEventStream
-{
-    private final BiConsumer<String,JsonNode> receiver;
+class Selection implements SelectedEventStream {
+
+    private final BiConsumer<String, JsonNode> receiver;
     private final String id = UUID.randomUUID().toString();
     private final Selector selector;
     private ScheduledFuture ticking;
 
-    public Selection(BiConsumer<String,JsonNode> receiver,
-            ScheduledExecutorService service, Selector selector)
-    {
+    public Selection(BiConsumer<String, JsonNode> receiver,
+          ScheduledExecutorService service, Selector selector) {
         this.receiver = receiver;
         this.selector = selector;
         ticking = startTicking(service, selector);
     }
 
     @Override
-    public JsonNode selector()
-    {
+    public JsonNode selector() {
         return new ObjectMapper().convertValue(selector, JsonNode.class);
     }
 
     @Override
-    public String getId()
-    {
+    public String getId() {
         return id;
     }
 
-    private ScheduledFuture startTicking(ScheduledExecutorService service, Selector selector)
-    {
+    private ScheduledFuture startTicking(ScheduledExecutorService service, Selector selector) {
         long delay = selector.tickDelay(MICROSECONDS);
         return service.scheduleAtFixedRate(() -> selector.sendEvents(d -> receiver.accept(id, d)),
-                delay, delay, MICROSECONDS);
+              delay, delay, MICROSECONDS);
     }
 
     @Override
-    public synchronized void close()
-    {
+    public synchronized void close() {
         if (ticking != null) {
             ticking.cancel(false);
             ticking = null;
@@ -79,16 +72,15 @@ class Selection implements SelectedEventStream
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         boolean isActive;
         synchronized (this) {
             isActive = ticking != null;
         }
         return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("selector", selector)
-                .add("active", isActive)
-                .toString();
+              .add("id", id)
+              .add("selector", selector)
+              .add("active", isActive)
+              .toString();
     }
 }

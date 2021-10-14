@@ -59,29 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.cells;
 
+import diskCacheV111.util.CacheException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.springframework.stereotype.Component;
-
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.springframework.stereotype.Component;
 
 /**
  * RESTful API to the {@link CellInfoService} service.
@@ -90,6 +86,7 @@ import org.dcache.restful.services.cells.CellInfoService;
 @Api(value = "cells", authorizations = {@Authorization("basicAuth")})
 @Path("/cells")
 public final class CellInfoResources {
+
     @Inject
     private CellInfoService service;
 
@@ -97,8 +94,8 @@ public final class CellInfoResources {
     @GET
     @ApiOperation("Get a list of current addresses for well-known cells.")
     @ApiResponses({
-                @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
-            })
+          @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
+    })
     @Path("/addresses")
     @Produces(MediaType.APPLICATION_JSON)
     public String[] getAddresses() throws CacheException {
@@ -109,30 +106,30 @@ public final class CellInfoResources {
     @GET
     @ApiOperation("Provide information about a specific cell.")
     @ApiResponses({
-                @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
-            })
+          @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
+    })
     @Path("/{address}")
     @Produces(MediaType.APPLICATION_JSON)
     public CellData getCell(
-                    @ApiParam(value="The cell to query", example="cell@domain")
-                    @PathParam("address") String address)throws CacheException {
+          @ApiParam(value = "The cell to query", example = "cell@domain")
+          @PathParam("address") String address) throws CacheException {
         return service.getCellData(address);
     }
 
 
     @GET
     @ApiOperation("Provide information about all cells. "
-                    + "Results sorted lexicographically by cell name.")
+          + "Results sorted lexicographically by cell name.")
     @ApiResponses({
-                @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
-            })
+          @ApiResponse(code = 403, message = "Cell info service only accessible to admin users."),
+    })
     @Produces(MediaType.APPLICATION_JSON)
-    public CellData[] getCells()throws CacheException {
+    public CellData[] getCells() throws CacheException {
         return Arrays.stream(service.getAddresses())
-                     .map(service::getCellData)
-                     .collect(Collectors.toList())
-                     .stream()
-                     .sorted(Comparator.comparing(CellData::getCellName))
-                     .toArray(CellData[]::new);
+              .map(service::getCellData)
+              .collect(Collectors.toList())
+              .stream()
+              .sorted(Comparator.comparing(CellData::getCellName))
+              .toArray(CellData[]::new);
     }
 }

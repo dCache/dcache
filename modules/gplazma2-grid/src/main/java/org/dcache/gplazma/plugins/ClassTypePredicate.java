@@ -4,9 +4,9 @@ import com.google.common.base.Predicate;
 
 /**
  * Predicate to match a certain class type.
- * @author karsten
  *
  * @param <T> class the predicate matches
+ * @author karsten
  */
 class ClassTypePredicate<T> implements Predicate<T> {
 

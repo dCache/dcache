@@ -20,12 +20,13 @@ import java.nio.charset.StandardCharsets;
 import org.dcache.chimera.posix.Stat;
 
 /**
- * This class has been generalized as a superclass.  The specific operation
- * should be encoded as a concrete {@link FsInodeType}.
+ * This class has been generalized as a superclass.  The specific operation should be encoded as a
+ * concrete {@link FsInodeType}.
  *
  * @author arossi
  */
 public abstract class FsInode_PGET extends FsInode {
+
     protected static final String NEWLINE = "\n\r";
 
     protected FsInode_PGET(FileSystemProvider fs, long ino, FsInodeType type) {

@@ -24,19 +24,17 @@ import diskCacheV111.vehicles.PoolManagerMessage;
 /**
  * Request to pool manager to provide a PoolManagerHandler.
  */
-public class PoolMgrGetHandler extends PoolManagerMessage
-{
+public class PoolMgrGetHandler extends PoolManagerMessage {
+
     private static final long serialVersionUID = -73370607653174431L;
 
     private SerializablePoolManagerHandler handler;
 
-    public SerializablePoolManagerHandler getHandler()
-    {
+    public SerializablePoolManagerHandler getHandler() {
         return handler;
     }
 
-    public void setHandler(SerializablePoolManagerHandler handler)
-    {
+    public void setHandler(SerializablePoolManagerHandler handler) {
         this.handler = handler;
     }
 }

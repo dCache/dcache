@@ -19,12 +19,7 @@
 package org.dcache.restful.events;
 
 import com.google.common.io.BaseEncoding;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.inject.Inject;
-import javax.security.auth.Subject;
-import javax.ws.rs.ClientErrorException;
-
+import dmg.cells.nucleus.CellLifeCycleAware;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,45 +29,43 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
-
+import javax.inject.Inject;
+import javax.security.auth.Subject;
+import javax.ws.rs.ClientErrorException;
 import org.dcache.auth.Subjects;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- *  The Registrar is responsible for holding client channels.
+ * The Registrar is responsible for holding client channels.
  */
-public class Registrar implements CellLifeCycleAware
-{
+public class Registrar implements CellLifeCycleAware {
+
     @FunctionalInterface
-    public interface SubscriptionValueBuilder
-    {
+    public interface SubscriptionValueBuilder {
+
         String buildUrl(String channelId, String eventType, String subscriptionId);
     }
 
     /**
      * An identifier that combines the UID of a user and the client-id.
      */
-    private static class UidClientId
-    {
+    private static class UidClientId {
+
         private final long uid;
         private final String clientId;
 
-        UidClientId(String clientId, long uid)
-        {
+        UidClientId(String clientId, long uid) {
             this.clientId = clientId;
             this.uid = uid;
         }
 
         @Override
-        public int hashCode()
-        {
-            return (int)uid ^ (clientId == null ? 0 : clientId.hashCode());
+        public int hashCode() {
+            return (int) uid ^ (clientId == null ? 0 : clientId.hashCode());
         }
 
         @Override
-        public boolean equals(Object other)
-        {
+        public boolean equals(Object other) {
             if (other == this) {
                 return true;
             }
@@ -81,14 +74,14 @@ public class Registrar implements CellLifeCycleAware
                 return false;
             }
 
-            UidClientId otherId = (UidClientId)other;
+            UidClientId otherId = (UidClientId) other;
             return otherId.uid == uid && Objects.equals(otherId.clientId, clientId);
         }
     }
 
-    private final Map<String,Channel> _channels = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long,List<String>> _channelsByUid = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UidClientId,List<String>> _channelsByUidClientId = new ConcurrentHashMap<>();
+    private final Map<String, Channel> _channels = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, List<String>> _channelsByUid = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UidClientId, List<String>> _channelsByUidClientId = new ConcurrentHashMap<>();
     private final Random random = new Random();
     private int maximumChannelsPerUser;
     private int eventBacklog;
@@ -101,41 +94,34 @@ public class Registrar implements CellLifeCycleAware
     private EventStreamRepository repository;
 
     @Required
-    public void setMaximumChannelsPerUser(int max)
-    {
+    public void setMaximumChannelsPerUser(int max) {
         maximumChannelsPerUser = max;
     }
 
     @Required
-    public void setEventBacklog(int backlog)
-    {
+    public void setEventBacklog(int backlog) {
         eventBacklog = backlog;
     }
 
-    public int getMaximumChannelsPerUser()
-    {
+    public int getMaximumChannelsPerUser() {
         return maximumChannelsPerUser;
     }
 
     @Required
-    public void setDefaultDisconnectTimeout(long timeout)
-    {
+    public void setDefaultDisconnectTimeout(long timeout) {
         defaultDisconnectTimeout = timeout;
     }
 
-    public long getDefaultDisconnectTimeout()
-    {
+    public long getDefaultDisconnectTimeout() {
         return defaultDisconnectTimeout;
     }
 
     @Override
-    public void beforeStop()
-    {
+    public void beforeStop() {
         _channels.values().forEach(Channel::notifyOfShutdown);
     }
 
-    public String newChannel(Subject user, String clientId, SubscriptionValueBuilder serialiser)
-    {
+    public String newChannel(Subject user, String clientId, SubscriptionValueBuilder serialiser) {
         byte[] r = new byte[16]; // 128 bit is equivalent to a UUID.
         random.nextBytes(r);
         String id = BaseEncoding.base64Url().omitPadding().encode(r);
@@ -143,7 +129,7 @@ public class Registrar implements CellLifeCycleAware
         long uid = Subjects.getUid(user);
 
         List<String> existingIds = _channelsByUid.computeIfAbsent(uid,
-                (u) -> new ArrayList());
+              (u) -> new ArrayList());
         synchronized (existingIds) {
             if (existingIds.size() >= maximumChannelsPerUser) {
                 throw new ClientErrorException("Too Many Channels", 429);
@@ -153,34 +139,32 @@ public class Registrar implements CellLifeCycleAware
 
         UidClientId uci = new UidClientId(clientId, uid);
         List<String> existingClientIds = _channelsByUidClientId.computeIfAbsent(uci,
-                (u) -> new ArrayList());
+              (u) -> new ArrayList());
         synchronized (existingClientIds) {
             existingClientIds.add(id);
         }
 
         Channel channel = new Channel(executor, repository, user, defaultDisconnectTimeout,
-                (type, subId) -> serialiser.buildUrl(id, type, subId), eventBacklog);
+              (type, subId) -> serialiser.buildUrl(id, type, subId), eventBacklog);
         _channels.put(id, channel);
 
         channel.onClose(() -> {
-                    _channels.remove(id);
-                    synchronized (existingIds) {
-                        existingIds.remove(id);
-                    }
-                    synchronized (existingClientIds) {
-                        existingClientIds.remove(id);
-                    }
-                });
+            _channels.remove(id);
+            synchronized (existingIds) {
+                existingIds.remove(id);
+            }
+            synchronized (existingClientIds) {
+                existingClientIds.remove(id);
+            }
+        });
         return id;
     }
 
-    public Optional<Channel> get(String id)
-    {
+    public Optional<Channel> get(String id) {
         return Optional.ofNullable(_channels.get(id));
     }
 
-    public List<String> idsForUser(Subject subject)
-    {
+    public List<String> idsForUser(Subject subject) {
         List<String> ids = _channelsByUid.get(Subjects.getUid(subject));
         if (ids == null) {
             return Collections.emptyList();
@@ -190,8 +174,7 @@ public class Registrar implements CellLifeCycleAware
         }
     }
 
-    public List<String> idsForUser(Subject subject, String clientId)
-    {
+    public List<String> idsForUser(Subject subject, String clientId) {
         UidClientId uci = new UidClientId(clientId, Subjects.getUid(subject));
 
         List<String> ids = _channelsByUidClientId.get(uci);

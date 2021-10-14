@@ -59,16 +59,21 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.namespace;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -83,19 +88,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-
-import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Exceptions;
-
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
@@ -105,6 +97,9 @@ import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to which allows one to map the pnfsid to (a) path.</p>
@@ -115,6 +110,7 @@ import org.dcache.vehicles.FileAttributes;
 @Api(value = "namespace", authorizations = {@Authorization("basicAuth")})
 @Path("/id")
 public class IdResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(IdResources.class);
 
     @Context
@@ -136,27 +132,26 @@ public class IdResources {
 
 
     @GET
-    @ApiOperation(value="Discover information about a file from the PNFS-ID.",
-            notes="Retrieve all file attributes plus the file's path from the "
-                    + "given PNFS-ID.")
+    @ApiOperation(value = "Discover information about a file from the PNFS-ID.",
+          notes = "Retrieve all file attributes plus the file's path from the "
+                + "given PNFS-ID.")
     @ApiResponses({
-                @ApiResponse(code = 400, message = "Bad pnsfid"),
-                @ApiResponse(code = 401, message = "Unauthorized"),
-                @ApiResponse(code = 403, message = "Forbidden"),
-                @ApiResponse(code = 404, message = "Not Found"),
-                @ApiResponse(code = 500, message = "Internal Server Error"),
-            })
+          @ApiResponse(code = 400, message = "Bad pnsfid"),
+          @ApiResponse(code = 401, message = "Unauthorized"),
+          @ApiResponse(code = 403, message = "Forbidden"),
+          @ApiResponse(code = 404, message = "Not Found"),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
+    })
     @Path("{pnfsid}")
     @Produces(MediaType.APPLICATION_JSON)
     public JsonFileAttributes getAttributes(@ApiParam("The PNFS-ID of a file or directory.")
-                                            @PathParam("pnfsid") String value)
-    {
+    @PathParam("pnfsid") String value) {
         Set<FileAttribute> attributeSet
-                        = NamespaceUtils.getRequestedAttributes(true,
-                                                                true,
-                                                                true,
-                                                                false,
-                                                                true);
+              = NamespaceUtils.getRequestedAttributes(true,
+              true,
+              true,
+              false,
+              true);
         JsonFileAttributes result = new JsonFileAttributes();
         PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
 
@@ -183,13 +178,13 @@ public class IdResources {
             result.setFileName(name);
 
             NamespaceUtils.chimeraToJsonAttributes(name,
-                                                   result,
-                                                   attributes,
-                                                   true,
-                                                   true,
-                                                   true,
-                                                   request,
-                                                   poolMonitor);
+                  result,
+                  attributes,
+                  true,
+                  true,
+                  true,
+                  request,
+                  poolMonitor);
 
             NamespaceUtils.addQoSAttributes(result, attributes, request, poolMonitor, pinmanager);
         } catch (IllegalArgumentException e) {

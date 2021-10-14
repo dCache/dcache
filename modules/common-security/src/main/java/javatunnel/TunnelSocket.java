@@ -17,12 +17,12 @@
  */
 package javatunnel;
 
+import java.io.IOException;
 import javax.security.auth.Subject;
 
-import java.io.IOException;
+public interface TunnelSocket {
 
-public interface TunnelSocket
-{
     Subject getSubject();
+
     void verify() throws IOException;
 }

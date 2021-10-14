@@ -83,24 +83,23 @@ package org.dcache.srm;
 
 
 /**
- * This interface is used for asyncronous notification of SRM of the varios
- * states of actions performed  for "advisory deleting" file from the storage
+ * This interface is used for asyncronous notification of SRM of the varios states of actions
+ * performed  for "advisory deleting" file from the storage
+ * <p>
+ * Instance of this class is passed to implementation of AbstractStorageElement.advisoryDelete(...)
+ * method storage should call its methods in this order:
  *
- * Instance of this class is passed to implementation
- * of AbstractStorageElement.advisoryDelete(...) method
- * storage should call its methods in this order:
- *
- * @author  timur
+ * @author timur
  */
 public interface AdvisoryDeleteCallbacks {
-    
+
     void AdvisoryDeleteFailed(String reason);
-    
+
     void AdvisoryDeleteSuccesseded();
-    
+
     void Exception(Exception e);
-    
+
     void Timeout();
-    
+
     void Error(String error);
 }

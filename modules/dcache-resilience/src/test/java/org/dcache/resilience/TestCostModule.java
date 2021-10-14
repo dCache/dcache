@@ -61,52 +61,50 @@ package org.dcache.resilience;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import javax.annotation.Nullable;
+import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.pools.PoolCostInfo;
+import dmg.cells.nucleus.CellAddressCore;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellMessage;
+import javax.annotation.Nullable;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
 
 final class TestCostModule implements CostModule {
+
     private static PoolCostInfo buildPoolCost(String name,
-                                              int moverActive,
-                                              int moverMaxActive,
-                                              int moverQueued,
-                                              int restoreActive,
-                                              int restoreMaxActive,
-                                              int restoreQueued,
-                                              int storeActive,
-                                              int storeMaxActive,
-                                              int storeQueued,
-                                              long total,
-                                              long free,
-                                              long precious,
-                                              long removable) {
+          int moverActive,
+          int moverMaxActive,
+          int moverQueued,
+          int restoreActive,
+          int restoreMaxActive,
+          int restoreQueued,
+          int storeActive,
+          int storeMaxActive,
+          int storeQueued,
+          long total,
+          long free,
+          long precious,
+          long removable) {
         PoolCostInfo poolCost
-                        = new PoolCostInfo(name, IoQueueManager.DEFAULT_QUEUE);
+              = new PoolCostInfo(name, IoQueueManager.DEFAULT_QUEUE);
 
         poolCost.setQueueSizes(restoreActive,
-                               restoreMaxActive,
-                               restoreQueued,
-                               storeActive,
-                               storeMaxActive,
-                               storeQueued);
+              restoreMaxActive,
+              restoreQueued,
+              storeActive,
+              storeMaxActive,
+              storeQueued);
 
         poolCost.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE,
-                                            moverActive,
-                                            moverMaxActive,
-                                            moverQueued,
-                                            0, 0);
+              moverActive,
+              moverMaxActive,
+              moverQueued,
+              0, 0);
 
         poolCost.setSpaceUsage(total, free, precious, removable);
 
@@ -116,7 +114,7 @@ final class TestCostModule implements CostModule {
     private static ImmutableMap<String, String> getTagMap(int i) {
         Map<String, String> map = new HashMap<>();
         String[] pooltags = TestData.POOL_TAGS[i];
-        for (String tag: pooltags) {
+        for (String tag : pooltags) {
             String[] keyValue = tag.split("[:]");
             map.put(keyValue[0], keyValue[1]);
         }
@@ -146,7 +144,7 @@ final class TestCostModule implements CostModule {
     @Override
     public Map<String, PoolInfo> getPoolInfoAsMap(Iterable<String> pools) {
         Map<String, PoolInfo> map = new HashMap<>();
-        pools.forEach((p)->map.put(p, poolInfoMap.get(p)));
+        pools.forEach((p) -> map.put(p, poolInfoMap.get(p)));
         return map;
     }
 
@@ -159,7 +157,7 @@ final class TestCostModule implements CostModule {
         StringBuilder builder = new StringBuilder();
         String[] keys = poolInfoMap.keySet().toArray(String[]::new);
         Arrays.sort(keys);
-        for (String pool: keys) {
+        for (String pool : keys) {
             builder.append(pool).append("\n");
             PoolInfo info = poolInfoMap.get(pool);
             builder.append("\tAddress:\t:").append(info.getAddress()).append("\n");
@@ -181,26 +179,26 @@ final class TestCostModule implements CostModule {
     }
 
     void addPool(String name, int index) {
-        int [] metric = TestData.COST_METRICS[index];
+        int[] metric = TestData.COST_METRICS[index];
         long[] space = TestData.POOL_SPACE[index];
         PoolCostInfo cost = buildPoolCost(name, metric[0],
-                        metric[1],
-                        metric[2],
-                        metric[3],
-                        metric[4],
-                        metric[5],
-                        metric[6],
-                        metric[7],
-                        metric[8],
-                        space[0],
-                        space[1],
-                        space[2],
-                        space[3]);
+              metric[1],
+              metric[2],
+              metric[3],
+              metric[4],
+              metric[5],
+              metric[6],
+              metric[7],
+              metric[8],
+              space[0],
+              space[1],
+              space[2],
+              space[3]);
         pools.add(name);
         poolCostInfoMap.put(name, cost);
         PoolInfo info = new PoolInfo(new CellAddressCore(name),
-                        cost,
-                        getTagMap(index));
+              cost,
+              getTagMap(index));
         poolInfoMap.put(name, info);
     }
 }

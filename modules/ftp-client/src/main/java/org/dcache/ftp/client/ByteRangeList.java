@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,15 +16,13 @@
 package org.dcache.ftp.client;
 
 import java.util.Vector;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents list of ranges of integers (ByteRange objects).
- * The name reflects the fact that in FTP extended mode restart markers, such
- * structure represent a list of ranges of transfered bytes.
- * The list has following characteristic:
+ * Represents list of ranges of integers (ByteRange objects). The name reflects the fact that in FTP
+ * extended mode restart markers, such structure represent a list of ranges of transfered bytes. The
+ * list has following characteristic:
  * <ul>
  * <li> no ranges from the list are adjacent nor have any common subset.
  * In other words, for any two list members, r1.merge(r2) always
@@ -37,31 +35,26 @@ import org.slf4j.LoggerFactory;
  *
  * @see GridFTPRestartMarker
  **/
-public class ByteRangeList implements RestartData
-{
+public class ByteRangeList implements RestartData {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(ByteRangeList.class);
+          LoggerFactory.getLogger(ByteRangeList.class);
 
     /**
-     * vector of ByteRanges. It is guaranteed
-     * that any two ranges are not adjacent to each other,
-     * nor have a common subset.
-     * They are unordered, however.
+     * vector of ByteRanges. It is guaranteed that any two ranges are not adjacent to each other,
+     * nor have a common subset. They are unordered, however.
      **/
     protected final Vector vector;
 
-    public ByteRangeList()
-    {
+    public ByteRangeList() {
         vector = new Vector();
     }
 
     /**
-     * @return true if this list logically represents the same range list,
-     * although the object instances may be different.
+     * @return true if this list logically represents the same range list, although the object
+     * instances may be different.
      **/
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
@@ -81,8 +74,7 @@ public class ByteRangeList implements RestartData
         }
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         int value = 0;
         for (int i = 0; i < this.vector.size(); i++) {
             value += this.vector.elementAt(i).hashCode();
@@ -91,12 +83,9 @@ public class ByteRangeList implements RestartData
     }
 
     /**
-     * Merge a copy of the given ByteRange into this list.
-     * The resulting range list will represent
-     * all the integers represented so far, plus the integers represented
-     * by the new range.
-     * The resulting list will be stored in this object,
-     * while the parameter object will remain intact.
+     * Merge a copy of the given ByteRange into this list. The resulting range list will represent
+     * all the integers represented so far, plus the integers represented by the new range. The
+     * resulting list will be stored in this object, while the parameter object will remain intact.
      * For instance:
      * <ul>
      * <li>merge("10-15 30-35", "20-25") ->  "10-15 20-25 30-35"
@@ -104,8 +93,7 @@ public class ByteRangeList implements RestartData
      * <li>merge("10-15 30-35", "16-40") ->  "10-40"
      * </ul>
      **/
-    public void merge(final ByteRange range)
-    {
+    public void merge(final ByteRange range) {
         // always use copies of objects
         ByteRange newRange = new ByteRange(range);
         logger.debug(this.toFtpCmdArgument() + " + " + newRange.toString());
@@ -124,28 +112,28 @@ public class ByteRangeList implements RestartData
             int result = newRange.merge((ByteRange) vector.elementAt(index));
 
             switch (result) {
-            case ByteRange.THIS_ABOVE:
-                //last_below = index;
-                index++;
-                break;
-            case ByteRange.ADJACENT:
-            case ByteRange.THIS_SUBSET:
-            case ByteRange.THIS_SUPERSET:
-                if (merged == NOT_YET) {
-                    vector.remove(index);
-                    vector.add(index, newRange);
-                    merged = index;
+                case ByteRange.THIS_ABOVE:
+                    //last_below = index;
                     index++;
-                } else {
-                    vector.remove(index);
-                    //do not augment index
-                }
-                break;
-            case ByteRange.THIS_BELOW:
-                if (merged == NOT_YET) {
-                    vector.add(index, newRange);
-                }
-                return;
+                    break;
+                case ByteRange.ADJACENT:
+                case ByteRange.THIS_SUBSET:
+                case ByteRange.THIS_SUPERSET:
+                    if (merged == NOT_YET) {
+                        vector.remove(index);
+                        vector.add(index, newRange);
+                        merged = index;
+                        index++;
+                    } else {
+                        vector.remove(index);
+                        //do not augment index
+                    }
+                    break;
+                case ByteRange.THIS_BELOW:
+                    if (merged == NOT_YET) {
+                        vector.add(index, newRange);
+                    }
+                    return;
             }
         }
 
@@ -155,13 +143,11 @@ public class ByteRangeList implements RestartData
     }
 
     /**
-     * Merge into this list all the ranges contained
-     * in the given vector using merge(ByteRange).
+     * Merge into this list all the ranges contained in the given vector using merge(ByteRange).
      *
      * @param other the Vector of ByteRange objects
      **/
-    public void merge(final Vector other)
-    {
+    public void merge(final Vector other) {
         for (int i = 0; i < other.size(); i++) {
             this.merge((ByteRange) other.elementAt(i));
         }
@@ -169,39 +155,31 @@ public class ByteRangeList implements RestartData
 
 
     /**
-     * Merge into this list all the ranges contained
-     * in the given ByteRangeList using merge(ByteRange).
-     * The parameter object remains intact.
+     * Merge into this list all the ranges contained in the given ByteRangeList using
+     * merge(ByteRange). The parameter object remains intact.
      *
      * @param other the ByteRangeList to be merged into this
      **/
-    public void merge(final ByteRangeList other)
-    {
+    public void merge(final ByteRangeList other) {
         merge(other.vector);
     }
 
     /**
-     * convert this object to a vector of ByteRanges.
-     * The resulting vector will preserve the features
-     * of ByteRangeList: (1) order and (2) separation.
-     * Subsequent calls of this method will return
-     * the same Vector object.
+     * convert this object to a vector of ByteRanges. The resulting vector will preserve the
+     * features of ByteRangeList: (1) order and (2) separation. Subsequent calls of this method will
+     * return the same Vector object.
      **/
-    public Vector toVector()
-    {
+    public Vector toVector() {
         return vector;
     }
 
     /**
-     * convert this object to a String, in the format
-     * of argument of REST GridFTP command, for instance:
-     * "0-29,32-89"
-     * The resulting String will preserve the features
-     * of ByteRangeList: (1) order and (2) separation
+     * convert this object to a String, in the format of argument of REST GridFTP command, for
+     * instance: "0-29,32-89" The resulting String will preserve the features of ByteRangeList: (1)
+     * order and (2) separation
      **/
     @Override
-    public String toFtpCmdArgument()
-    {
+    public String toFtpCmdArgument() {
         char comma = ',';
         boolean first = true;
         StringBuilder result = new StringBuilder();

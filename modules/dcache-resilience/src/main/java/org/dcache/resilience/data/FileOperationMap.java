@@ -60,7 +60,8 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
@@ -76,9 +77,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileTaskCompletionHandler;
@@ -101,73 +99,67 @@ import org.dcache.vehicles.FileAttributes;
  * <p>The main locus of operations for resilience.</p>
  *
  * <p>Tracks all operations on individual files via an instance of
- *      {@link FileOperation}, whose lifecycle is initiated by the the arrival
- *      of a message or scan update, and which terminates when all work on
- *      the associated pnfsid has completed or has been aborted/cancelled.</p>
+ * {@link FileOperation}, whose lifecycle is initiated by the the arrival of a message or scan
+ * update, and which terminates when all work on the associated pnfsid has completed or has been
+ * aborted/cancelled.</p>
  *
  * <p>When more than one event references a pnfsid which has a current
- *      entry in the map, the entry's operation count is simply incremented.
- *      This indicates that when the current task finishes, another pass
- *      should be made.  For each pass, file attributes, and hence location
- *      information, is refreshed directly against the namespace. In the case
- *      where there are > 1 additional passes to be made, but the current
- *      state of the pnfsid locations satisfies the requirements, the
- *      operation is aborted (count is set to 0, to enable removal from the
- *      map).</p>
+ * entry in the map, the entry's operation count is simply incremented. This indicates that when the
+ * current task finishes, another pass should be made.  For each pass, file attributes, and hence
+ * location information, is refreshed directly against the namespace. In the case where there are >
+ * 1 additional passes to be made, but the current state of the pnfsid locations satisfies the
+ * requirements, the operation is aborted (count is set to 0, to enable removal from the map).</p>
  *
  * <p>The runnable logic entails scanning the queues in order to post-process
- *      terminated tasks, and to launch new tasks for eligible operations if
- *      there are slots available.</p>
+ * terminated tasks, and to launch new tasks for eligible operations if there are slots
+ * available.</p>
  *
  * <p>Fairness is defined here as the availability of the first copy.
- *      This means that operations are processed FIFO, but those requiring more
- *      than one copy or remove task are requeued after each task has completed
- *      successfully.</p>
+ * This means that operations are processed FIFO, but those requiring more than one copy or remove
+ * task are requeued after each task has completed successfully.</p>
  *
  * <p>The map distinguishes between foreground (new files) and background
- *      (files on a pool being scanned) operations. The number of foreground
- *      vs background operations allowed to run at each pass of the scanner
- *      is balanced in proportion to the number of waiting operations on each
- *      queue.</p>
+ * (files on a pool being scanned) operations. The number of foreground vs background operations
+ * allowed to run at each pass of the scanner is balanced in proportion to the number of waiting
+ * operations on each queue.</p>
  *
  * <p>A periodic checkpointer, if on, writes out selected data from each
- *      operation entry.  In the case of crash and restart of this domain,
- *      the checkpoint file is reloaded into memory.</p>
+ * operation entry.  In the case of crash and restart of this domain, the checkpoint file is
+ * reloaded into memory.</p>
  *
  * <p>Access to the index map is not synchronized, because
- *      it is implemented using a ConcurrentHashMap.  This is the most
- *      efficient solution for allowing multiple inserts and reads to take
- *      place concurrently with any consumer thread removes.  All
- *      updating of operation state or settings in fact is done through
- *      an index read, since the necessary synchronization of those
- *      values is handled inside the operation object.  Only the initial
- *      queueing and cancellation requests require additional synchronization.</p>
+ * it is implemented using a ConcurrentHashMap.  This is the most efficient solution for allowing
+ * multiple inserts and reads to take place concurrently with any consumer thread removes.  All
+ * updating of operation state or settings in fact is done through an index read, since the
+ * necessary synchronization of those values is handled inside the operation object.  Only the
+ * initial queueing and cancellation requests require additional synchronization.</p>
  *
  * <p>However, since index reads are not blocked, the list and count methods,
- *      which filter against the index (and not the queues), along with
- *      the checkpointer, which attempts to persist live operations, will return
- *      or write out a dirty snapshot which is only an approximation of state,
- *      so as not to block consumer processing.</p>
+ * which filter against the index (and not the queues), along with the checkpointer, which attempts
+ * to persist live operations, will return or write out a dirty snapshot which is only an
+ * approximation of state, so as not to block consumer processing.</p>
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class FileOperationMap extends RunnableModule {
+
     private static final String MISSING_ENTRY =
-                    "Entry for %s + was removed from map before completion of "
-                                    + "outstanding operation.";
+          "Entry for %s + was removed from map before completion of "
+                + "outstanding operation.";
 
     private static final String COUNTS_FORMAT = "    %-24s %15s\n";
 
     final class Checkpointer implements Runnable {
-        long     last;
-        long     expiry;
-        TimeUnit expiryUnit;
-        String   path;
-        Thread   thread;
 
-        volatile boolean running        = false;
+        long last;
+        long expiry;
+        TimeUnit expiryUnit;
+        String path;
+        Thread thread;
+
+        volatile boolean running = false;
         volatile boolean resetInterrupt = false;
-        volatile boolean runInterrupt   = false;
+        volatile boolean runInterrupt = false;
 
         public void run() {
             running = true;
@@ -180,7 +172,7 @@ public class FileOperationMap extends RunnableModule {
                 } catch (InterruptedException e) {
                     if (resetInterrupt) {
                         LOGGER.trace("Checkpoint reset: expiry {} {}.",
-                                     expiry, expiryUnit);
+                              expiry, expiryUnit);
                         resetInterrupt = false;
                         continue;
                     }
@@ -205,7 +197,7 @@ public class FileOperationMap extends RunnableModule {
         void save() {
             long start = System.currentTimeMillis();
             long count = CheckpointUtils.save(path, poolInfoMap,
-                                              index.values().iterator());
+                  index.values().iterator());
             last = System.currentTimeMillis();
             counters.recordCheckpoint(last, last - start, count);
         }
@@ -215,13 +207,14 @@ public class FileOperationMap extends RunnableModule {
      * <p>Handles canceled operations.</p>
      *
      * <p>Searches the running queue to see which operations have completed.
-     *      Merges these with any cancelled operations.  It then appends
-     *      the incoming operations to the foreground/background queues.</p>
+     * Merges these with any cancelled operations.  It then appends the incoming operations to the
+     * foreground/background queues.</p>
      *
      * <p>Post-processing determines whether the operation can be permanently
-     *      removed or needs to be requeued.</p>
+     * removed or needs to be requeued.</p>
      */
     class TerminalOperationProcessor {
+
         private Collection<FileOperation> toProcess = new ArrayList<>();
 
         void processTerminated() {
@@ -259,17 +252,17 @@ public class FileOperationMap extends RunnableModule {
         }
 
         /**
-         *  <p>This is a potentially expensive operation (O[n] in the
-         *     queue size), but should be called relatively infrequently.</p>
+         * <p>This is a potentially expensive operation (O[n] in the
+         * queue size), but should be called relatively infrequently.</p>
          */
         private void cancel(Queue<FileOperation> queue,
-                            Collection<FileMatcher> filters,
-                            Collection<FileOperation> toProcess) {
-            for (Iterator<FileOperation> i = queue.iterator(); i.hasNext();) {
+              Collection<FileMatcher> filters,
+              Collection<FileOperation> toProcess) {
+            for (Iterator<FileOperation> i = queue.iterator(); i.hasNext(); ) {
                 FileOperation operation = i.next();
                 for (FileMatcher filter : filters) {
                     if (filter.matches(operation, poolInfoMap)
-                            && cancel(operation, filter.isForceRemoval())) {
+                          && cancel(operation, filter.isForceRemoval())) {
                         i.remove();
                         toProcess.add(operation);
                         break;
@@ -314,9 +307,8 @@ public class FileOperationMap extends RunnableModule {
 
         /**
          * <p> Exceptions are analyzed to determine if any more work can be done.
-         *      In the case of fatal errors, an alarm is sent.  Operations with
-         *      counts > 0 are reset to waiting; otherwise, the operation record
-         *      will be removed when this method returns.</p>
+         * In the case of fatal errors, an alarm is sent.  Operations with counts > 0 are reset to
+         * waiting; otherwise, the operation record will be removed when this method returns.</p>
          */
         private void postProcess(FileOperation operation) {
             operation.setLastType();
@@ -332,8 +324,8 @@ public class FileOperationMap extends RunnableModule {
 
             if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
-                    CacheExceptionUtils.getFailureType(operation.getException(),
-                                                       operation.getType());
+                      CacheExceptionUtils.getFailureType(operation.getException(),
+                            operation.getType());
                 switch (type) {
                     case BROKEN:
                         if (source != null) {
@@ -379,7 +371,7 @@ public class FileOperationMap extends RunnableModule {
                          *  All readable pools in the pool group.
                          */
                         int groupMembers = poolInfoMap.getMemberPools
-                                        (operation.getPoolGroup(), false).size();
+                              (operation.getPoolGroup(), false).size();
 
                         if (groupMembers > operation.getTried().size()) {
                             operation.resetSourceAndTarget();
@@ -393,15 +385,15 @@ public class FileOperationMap extends RunnableModule {
                             operation.addSourceToTriedLocations();
                         }
                         Set<String> tried = operation.getTried().stream()
-                                        .map(poolInfoMap::getPool)
-                                        .collect(Collectors.toSet());
+                              .map(poolInfoMap::getPool)
+                              .collect(Collectors.toSet());
                         completionHandler.taskAborted(operation.getPnfsId(),
-                                                      pool,
-                                                      poolInfoMap.getUnit(operation.getStorageUnit()),
-                                                      tried,
-                                                      operation.getRetried(),
-                                                      maxRetries,
-                                                      operation.getException());
+                              pool,
+                              poolInfoMap.getUnit(operation.getStorageUnit()),
+                              tried,
+                              operation.getRetried(),
+                              maxRetries,
+                              operation.getException());
                         operation.abortOperation();
                         abort = true;
 
@@ -415,20 +407,20 @@ public class FileOperationMap extends RunnableModule {
                         operation.abortOperation();
                         abort = true;
                         LOGGER.error("{}: No such failure type: {}.",
-                                        operation.getPnfsId(), type);
+                              operation.getPnfsId(), type);
                 }
                 counters.recordTaskStatistics(operation.getTask(),
-                                operation.getStateName(), type,
-                                operation.getParent() == null ? null : pool,
-                                source, target);
+                      operation.getStateName(), type,
+                      operation.getParent() == null ? null : pool,
+                      source, target);
             } else if (operation.getState() == FileOperation.DONE) {
                 counters.incrementOperation(Operation.FILE.name());
                 counters.increment(source, target, operation.getType(),
-                                operation.getSize());
+                      operation.getSize());
                 counters.recordTaskStatistics(operation.getTask(),
-                                operation.getStateName(), null,
-                                operation.getParent() == null ? null : pool,
-                                source, target);
+                      operation.getStateName(), null,
+                      operation.getParent() == null ? null : pool,
+                      source, target);
                 operation.setSource(null);
                 operation.setTarget(null);
             }
@@ -460,8 +452,8 @@ public class FileOperationMap extends RunnableModule {
                     if (broken) {
                         pool = poolInfoMap.getPool(operation.getSource());
                         new BrokenFileTask(operation.getPnfsId(), pool,
-                                           operationHandler)
-                                        .submit();
+                              operationHandler)
+                              .submit();
                     }
                 }
             }
@@ -486,16 +478,17 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>Handles dequeueing waiting operations and submitting them for
-     *    task execution.</p>
+     * task execution.</p>
      */
     class WaitingOperationProcessor {
+
         /*
          *  The algorithm type is hard-coded for now.  We may eventually
          *  wish to inject this, if there arises a need for custom
          *  algorithms.
          */
         final ForegroundBackgroundAllocator allocator
-                        = new StandardForegroundBackgroundAllocator();
+              = new StandardForegroundBackgroundAllocator();
 
         long fgAvailable;
         long bgAvailable;
@@ -504,8 +497,8 @@ public class FileOperationMap extends RunnableModule {
             computeAvailable();
 
             LOGGER.trace("After computing available: {} foreground, "
-                            + "{} background.",
-                            fgAvailable, bgAvailable);
+                        + "{} background.",
+                  fgAvailable, bgAvailable);
 
             long remainder = promoteToRunning(foreground, fgAvailable);
             promoteToRunning(background, bgAvailable + remainder);
@@ -515,17 +508,17 @@ public class FileOperationMap extends RunnableModule {
 
         private void computeAvailable() {
             ForegroundBackgroundAllocation available = allocator.allocate(copyThreads,
-                                                                          running.size(),
-                                                                          foreground.size(),
-                                                                          background.size(),
-                                                                          maxAllocation);
+                  running.size(),
+                  foreground.size(),
+                  background.size(),
+                  maxAllocation);
             fgAvailable = available.getForeground();
             bgAvailable = available.getBackground();
         }
 
         /**
          * <p>Dequeues up to the indicated number of operations and submits
-         *      them.</p>
+         * them.</p>
          */
         private long promoteToRunning(Queue<FileOperation> queue, long limit) {
             for (int i = 0; i < limit; i++) {
@@ -548,8 +541,8 @@ public class FileOperationMap extends RunnableModule {
          */
         private void submit(FileOperation operation) {
             operation.setTask(new ResilientFileTask(operation.getPnfsId(),
-                            operation.getRetried(),
-                            operationHandler));
+                  operation.getRetried(),
+                  operationHandler));
             operation.setState(FileOperation.RUNNING);
             running.add(operation);
             operation.submit();
@@ -557,45 +550,40 @@ public class FileOperationMap extends RunnableModule {
     }
 
     /**
-     *  <p>Accessed mostly for retrieval of the operation.  Writes occur on
-     *      the handler threads adding operations and removes occur
-     *      on the consumer thread.</p>
+     * <p>Accessed mostly for retrieval of the operation.  Writes occur on
+     * the handler threads adding operations and removes occur on the consumer thread.</p>
      *
-     *  <p>Default sharding is probably OK for the present purposes,
-     *      even with a large copyThreads value, so we have not specified the
-     *      constructor parameters.</p>
+     * <p>Default sharding is probably OK for the present purposes,
+     * even with a large copyThreads value, so we have not specified the constructor
+     * parameters.</p>
      */
     final Map<PnfsId, FileOperation> index = new ConcurrentHashMap<>();
 
     /**
-     *  <p>These queues are entirely used by the consumer thread. Hence
-     *      there is no need for synchronization on any of them.</p>
+     * <p>These queues are entirely used by the consumer thread. Hence
+     * there is no need for synchronization on any of them.</p>
      *
-     *  <p>The order for election to run is FIFO.  The operation is
-     *      removed from these waiting queues and added to running;
-     *      an attempt at fairness is made by appending it back to
-     *      these queues when it successfully terminates, if more work
-     *      is to be done, but to restoring it to the head of the
-     *      queue if there is a retriable failure.</p>
+     * <p>The order for election to run is FIFO.  The operation is
+     * removed from these waiting queues and added to running; an attempt at fairness is made by
+     * appending it back to these queues when it successfully terminates, if more work is to be
+     * done, but to restoring it to the head of the queue if there is a retriable failure.</p>
      */
     final Deque<FileOperation> foreground = new LinkedList<>();
     final Deque<FileOperation> background = new LinkedList<>();
-    final Queue<FileOperation> running    = new LinkedList<>();
+    final Queue<FileOperation> running = new LinkedList<>();
 
     /**
-     *  <p>Queue of incoming/ready operations.  This buffer is
-     *       shared between the handler and consumer threads, to avoid
-     *       synchronizing the internal queues.  The incoming operations
-     *       are appended to the latter during the consumer scan.</p>
+     * <p>Queue of incoming/ready operations.  This buffer is
+     * shared between the handler and consumer threads, to avoid synchronizing the internal queues.
+     * The incoming operations are appended to the latter during the consumer scan.</p>
      */
     final Queue<FileOperation> incoming = new LinkedList<>();
 
     /**
-     *  <p>List of filters for cancelling operations.  This buffer is
-     *       shared between the caller and the consumer thread.</p>
-     *       Processing of cancellation is done during the consumer scan,
-     *       as it would have to be atomic anyway.  This avoids once again any
-     *       extra locking on the internal queues.</p>
+     * <p>List of filters for cancelling operations.  This buffer is
+     * shared between the caller and the consumer thread.</p> Processing of cancellation is done
+     * during the consumer scan, as it would have to be atomic anyway.  This avoids once again any
+     * extra locking on the internal queues.</p>
      */
     final Collection<FileMatcher> cancelFilters = new ArrayList<>();
 
@@ -609,49 +597,47 @@ public class FileOperationMap extends RunnableModule {
      * <p>The consumer thread logic is encapsulated in these two processors.</p>
      */
     final TerminalOperationProcessor terminalOperationProcessor =
-                    new TerminalOperationProcessor();
+          new TerminalOperationProcessor();
     final WaitingOperationProcessor waitingOperationProcessor =
-                    new WaitingOperationProcessor();
+          new WaitingOperationProcessor();
 
     /**
-     *  <p>For reporting operations terminated or canceled while the
-     *      consumer thread is doing work outside the wait monitor.</p>
+     * <p>For reporting operations terminated or canceled while the
+     * consumer thread is doing work outside the wait monitor.</p>
      */
-    final AtomicInteger               signalled = new AtomicInteger(0);
+    final AtomicInteger signalled = new AtomicInteger(0);
 
     /**
-     *  <p>Maximum proportion to allocate to either foreground or
-     *      background operations.</p>
+     * <p>Maximum proportion to allocate to either foreground or
+     * background operations.</p>
      */
     double maxAllocation = 0.8;
 
-    private PoolInfoMap               poolInfoMap;
-    private FileOperationHandler      operationHandler;
+    private PoolInfoMap poolInfoMap;
+    private FileOperationHandler operationHandler;
     private FileTaskCompletionHandler completionHandler;
     private PoolTaskCompletionHandler poolTaskCompletionHandler;
 
     /**
-     *  <p>This number serves as the upper limit on the number of tasks
-     *          which can be run at a given time. This ensures the tasks
-     *          will not block on the executor queue waiting for a thread.
-     *          To ensure the task does not block in general, the number of
-     *          database connections must be at least equal to this, but should
-     *          probably be 1 1/2 to 2 times greater to allow other operations
-     *          to run as well.  See the default settings.</p>
+     * <p>This number serves as the upper limit on the number of tasks
+     * which can be run at a given time. This ensures the tasks will not block on the executor queue
+     * waiting for a thread. To ensure the task does not block in general, the number of database
+     * connections must be at least equal to this, but should probably be 1 1/2 to 2 times greater
+     * to allow other operations to run as well.  See the default settings.</p>
      */
     private int copyThreads = 200;
 
     /**
-     *  <p>Meaning for a given source-target pair. When a source or target
-     *      is changed, the retry count is reset to 0.</p>
+     * <p>Meaning for a given source-target pair. When a source or target
+     * is changed, the retry count is reset to 0.</p>
      */
-    private int maxRetries  = 2;
+    private int maxRetries = 2;
 
     /**
-     *  <p>Statistics collection.</p>
+     * <p>Statistics collection.</p>
      */
     private OperationStatistics counters;
-    private OperationHistory    history;
+    private OperationHistory history;
 
     /**
      * <p>Only used by admin command.</p>
@@ -659,9 +645,8 @@ public class FileOperationMap extends RunnableModule {
      * <p>Degenerate call to {@link #cancel(FileMatcher)}.</p>
      *
      * @param pnfsId single operation to cancel.
-     * @param remove true if the entire entry is to be removed from the
-     *               map at the next scan.  Otherwise, cancellation pertains
-     *               only to the current (running) operation.
+     * @param remove true if the entire entry is to be removed from the map at the next scan.
+     *               Otherwise, cancellation pertains only to the current (running) operation.
      */
     public void cancel(PnfsId pnfsId, boolean remove) {
         FileFilter filter = new FileCancelFilter();
@@ -672,8 +657,8 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>Batch version of cancel.  In this case, the filter will
-     *      indicate whether the operation should be cancelled <i>in toto</i>
-     *      or only the current task.</p>
+     * indicate whether the operation should be cancelled <i>in toto</i> or only the current
+     * task.</p>
      *
      * <p>The actual scan is conducted by the consumer thread.</p>
      */
@@ -692,7 +677,7 @@ public class FileOperationMap extends RunnableModule {
         Iterator<FileOperation> iterator = index.values().iterator();
 
         Map<String, AtomicLong> summary =
-                        builder == null ? null : new HashMap<>();
+              builder == null ? null : new HashMap<>();
 
         while (iterator.hasNext()) {
             FileOperation operation = iterator.next();
@@ -715,9 +700,9 @@ public class FileOperationMap extends RunnableModule {
 
         if (summary != null) {
             summary.entrySet()
-                   .stream()
-                   .forEach((e) -> builder.append(String.format(COUNTS_FORMAT,
-                                   e.getKey(), e.getValue())));
+                  .stream()
+                  .forEach((e) -> builder.append(String.format(COUNTS_FORMAT,
+                        e.getKey(), e.getValue())));
         }
         return total;
     }
@@ -757,7 +742,7 @@ public class FileOperationMap extends RunnableModule {
     }
 
     /**
-     *  <p>Used by the admin command.</p>
+     * <p>Used by the admin command.</p>
      */
     public String list(FileMatcher filter, int limit) {
         StringBuilder builder = new StringBuilder();
@@ -787,16 +772,16 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>Called by the {@link FileOperationHandler}.
-     *      Adds essential information to a new entry.</p>
+     * Adds essential information to a new entry.</p>
      *
      * @return true if add returns true.
      */
     public boolean register(FileUpdate data) {
         FileOperation operation = new FileOperation(data.pnfsId,
-                                                    data.getGroup(),
-                                                    data.getUnitIndex(),
-                                                    data.getCount(),
-                                                    data.getSize());
+              data.getGroup(),
+              data.getUnitIndex(),
+              data.getCount(),
+              data.getSize());
         operation.setParentOrSource(data.getSourceIndex(), data.isParent());
         FileAttributes attributes = data.getAttributes();
         operation.setRetentionPolicy(attributes.getRetentionPolicy().toString());
@@ -806,8 +791,8 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>Reads in the checkpoint file.  Creates one if it does not exist.
-     *      For each entry read, creates a {@link FileUpdate} and calls
-     *      {@link FileOperationHandler#handleLocationUpdate(FileUpdate)}.</p>
+     * For each entry read, creates a {@link FileUpdate} and calls {@link
+     * FileOperationHandler#handleLocationUpdate(FileUpdate)}.</p>
      */
     public void reload() {
         CheckpointUtils.load(checkpointer.path, poolInfoMap, this, operationHandler);
@@ -815,7 +800,7 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>Called after a change to the checkpoint path and/or interval.
-     *    Interrupts the thread so that it resumes with the new settings.</p>
+     * Interrupts the thread so that it resumes with the new settings.</p>
      */
     public void reset() {
         if (isCheckpointingOn()) {
@@ -826,15 +811,13 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>The consumer thread. When notified or times out, iterates over
-     *      the queues to check the state of running tasks and
-     *      to submit waiting tasks if there are open slots.  Removes
-     *      completed operations.</p>
+     * the queues to check the state of running tasks and to submit waiting tasks if there are open
+     * slots.  Removes completed operations.</p>
      *
      * <p>Note that since the scan takes place outside of the monitor, the
-     *      signals sent by various update methods will not be caught before
-     *      the current thread is inside {@link #await}; for this reason, a
-     *      counter is used and reset to 0 before each scan.  No wait occurs if
-     *      the counter is non-zero after the scan.</p>
+     * signals sent by various update methods will not be caught before the current thread is inside
+     * {@link #await}; for this reason, a counter is used and reset to 0 before each scan.  No wait
+     * occurs if the counter is non-zero after the scan.</p>
      */
     public void run() {
         try {
@@ -851,8 +834,8 @@ public class FileOperationMap extends RunnableModule {
                      *  to free slots immediately, if possible, by rescanning now.
                      */
                     LOGGER.trace("Scan complete, received {} signals; "
-                                    + "rechecking for requeued operations ...",
-                                    signalled.get());
+                                + "rechecking for requeued operations ...",
+                          signalled.get());
                     continue;
                 }
 
@@ -875,10 +858,9 @@ public class FileOperationMap extends RunnableModule {
 
     /**
      * <p>If the checkpointing thread is running, interrupts the wait
-     *      so that it calls save immediately.  If it is off, it just calls
-     *      save. (Note:  the latter is done on the caller thread;
-     *      this is used mainly for testing.  For the admin command,
-     *      this method is disallowed if checkpointing is off.)</p>
+     * so that it calls save immediately.  If it is off, it just calls save. (Note:  the latter is
+     * done on the caller thread; this is used mainly for testing.  For the admin command, this
+     * method is disallowed if checkpointing is off.)</p>
      */
     public void runCheckpointNow() {
         if (isCheckpointingOn()) {
@@ -890,7 +872,7 @@ public class FileOperationMap extends RunnableModule {
     }
 
     /**
-     *  <p>"File operation sweep:" the main queue update sequence (run by the consumer).</p>
+     * <p>"File operation sweep:" the main queue update sequence (run by the consumer).</p>
      */
     @VisibleForTesting
     public void scan() {
@@ -914,7 +896,7 @@ public class FileOperationMap extends RunnableModule {
     }
 
     public void setCompletionHandler(
-                    FileTaskCompletionHandler completionHandler) {
+          FileTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
@@ -947,7 +929,7 @@ public class FileOperationMap extends RunnableModule {
     }
 
     public void setPoolTaskCompletionHandler(
-                    PoolTaskCompletionHandler poolTaskCompletionHandler) {
+          PoolTaskCompletionHandler poolTaskCompletionHandler) {
         this.poolTaskCompletionHandler = poolTaskCompletionHandler;
     }
 
@@ -981,7 +963,7 @@ public class FileOperationMap extends RunnableModule {
 
         if (operation == null) {
             throw new IllegalStateException(
-                            String.format(MISSING_ENTRY, pnfsId));
+                  String.format(MISSING_ENTRY, pnfsId));
         }
 
         if (source != null) {
@@ -997,16 +979,15 @@ public class FileOperationMap extends RunnableModule {
      * <p>Terminal update.</p>
      *
      * <p>Unlike with cancellation, this method should only
-     *      be called in reference to submitted/running tasks; hence,
-     *      there is no need to remove them from a queue at this point,
-     *      as the consumer sweeps the running list during its scan.</p>
+     * be called in reference to submitted/running tasks; hence, there is no need to remove them
+     * from a queue at this point, as the consumer sweeps the running list during its scan.</p>
      */
     public void updateOperation(PnfsId pnfsId, CacheException error) {
         FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             throw new IllegalStateException(
-                            String.format(MISSING_ENTRY, pnfsId));
+                  String.format(MISSING_ENTRY, pnfsId));
         }
 
         if (operation.updateOperation(error)) {
@@ -1024,7 +1005,7 @@ public class FileOperationMap extends RunnableModule {
 
         if (operation == null) {
             throw new IllegalStateException(
-                            String.format(MISSING_ENTRY, pnfsId));
+                  String.format(MISSING_ENTRY, pnfsId));
         }
 
         operation.relay(message);
@@ -1034,9 +1015,8 @@ public class FileOperationMap extends RunnableModule {
      * <p>Terminal update. OpCount is set to 0 so consumer will remove.</p>
      *
      * <p>Unlike with cancellation, this method should only
-     *      be called in reference to submitted/running tasks; hence,
-     *      there is no need to remove them from a queue at this point,
-     *      as the consumer sweeps the running list during its scan.</p>
+     * be called in reference to submitted/running tasks; hence, there is no need to remove them
+     * from a queue at this point, as the consumer sweeps the running list during its scan.</p>
      */
     public void voidOperation(PnfsId pnfsId) {
         FileOperation operation = index.get(pnfsId);
@@ -1094,13 +1074,13 @@ public class FileOperationMap extends RunnableModule {
             String parent = poolInfoMap.getPool(operation.getParent());
             if (parent == null) {
                 LOGGER.error("Operation on background "
-                                + "queue has no parent: {}; "
-                                + "this is a bug.", operation);
+                      + "queue has no parent: {}; "
+                      + "this is a bug.", operation);
             }
 
             if (failed) {
                 poolTaskCompletionHandler.childTerminatedWithFailure(parent,
-                                                                     pnfsId);
+                      pnfsId);
             } else {
                 poolTaskCompletionHandler.childTerminated(parent, pnfsId);
             }

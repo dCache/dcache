@@ -22,32 +22,27 @@ import org.dcache.srm.v2_2.TStatusCode;
 /**
  * Lifetime of the space that is associated with the spaceToken is already expired.
  */
-public class SRMSpaceLifetimeExpiredException extends SRMException
-{
+public class SRMSpaceLifetimeExpiredException extends SRMException {
+
     private static final long serialVersionUID = 3698747527038391036L;
 
-    public SRMSpaceLifetimeExpiredException()
-    {
+    public SRMSpaceLifetimeExpiredException() {
     }
 
-    public SRMSpaceLifetimeExpiredException(String message)
-    {
+    public SRMSpaceLifetimeExpiredException(String message) {
         super(message);
     }
 
-    public SRMSpaceLifetimeExpiredException(String message, Throwable cause)
-    {
+    public SRMSpaceLifetimeExpiredException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SRMSpaceLifetimeExpiredException(Throwable cause)
-    {
+    public SRMSpaceLifetimeExpiredException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_SPACE_LIFETIME_EXPIRED;
     }
 }

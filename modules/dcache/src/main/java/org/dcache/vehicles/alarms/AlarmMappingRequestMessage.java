@@ -59,9 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.alarms;
 
-import java.util.Map;
-
 import diskCacheV111.vehicles.Message;
+import java.util.Map;
 import org.dcache.alarms.AlarmPriority;
 
 /**

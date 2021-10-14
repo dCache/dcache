@@ -1,7 +1,8 @@
 package org.dcache.srm.handler;
 
-import org.apache.axis.types.URI;
+import static java.util.Objects.requireNonNull;
 
+import org.apache.axis.types.URI;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -14,24 +15,20 @@ import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.Objects.requireNonNull;
+public class SrmStatusOfCopyRequest {
 
-public class SrmStatusOfCopyRequest
-{
     private final SrmStatusOfCopyRequestRequest request;
     private SrmStatusOfCopyRequestResponse response;
 
     public SrmStatusOfCopyRequest(SRMUser user,
-                                  SrmStatusOfCopyRequestRequest request,
-                                  AbstractStorageElement storage,
-                                  SRM srm,
-                                  String clientHost)
-    {
+          SrmStatusOfCopyRequestRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
     }
 
-    public SrmStatusOfCopyRequestResponse getResponse()
-    {
+    public SrmStatusOfCopyRequestResponse getResponse() {
         if (response == null) {
             try {
                 response = srmStatusOfCopyRequest();
@@ -43,11 +40,11 @@ public class SrmStatusOfCopyRequest
     }
 
     private SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest()
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         CopyRequest copyRequest = Request.getRequest(request.getRequestToken(), CopyRequest.class);
         try (JDC ignored = copyRequest.applyJdc()) {
-            if (request.getArrayOfSourceSURLs() == null || request.getArrayOfTargetSURLs() == null) {
+            if (request.getArrayOfSourceSURLs() == null
+                  || request.getArrayOfTargetSURLs() == null) {
                 return copyRequest.getSrmStatusOfCopyRequest();
             }
 
@@ -57,19 +54,19 @@ public class SrmStatusOfCopyRequest
                 return copyRequest.getSrmStatusOfCopyRequest();
             }
             if (tosurls.length != fromsurls.length) {
-                throw new SRMInvalidRequestException("Length of arrayOfSourceSURLs and arrayOfTargetSURLs differ.");
+                throw new SRMInvalidRequestException(
+                      "Length of arrayOfSourceSURLs and arrayOfTargetSURLs differ.");
             }
             return copyRequest.getSrmStatusOfCopyRequest(fromsurls, tosurls);
         }
     }
 
-    public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text)
-    {
+    public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text) {
         return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text, TStatusCode statusCode)
-    {
+    public static final SrmStatusOfCopyRequestResponse getFailedResponse(String text,
+          TStatusCode statusCode) {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;

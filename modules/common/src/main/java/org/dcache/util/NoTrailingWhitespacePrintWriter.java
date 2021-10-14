@@ -18,35 +18,30 @@
 package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
-
 import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * This class provides a PrintWriter that strips off any trailing
- * whitespace at the end of a line.  This class assumes that newlines are
- * introduced by one of the println methods and not by using one of the append,
- * print or write methods with the '\n' character.
+ * This class provides a PrintWriter that strips off any trailing whitespace at the end of a line.
+ * This class assumes that newlines are introduced by one of the println methods and not by using
+ * one of the append, print or write methods with the '\n' character.
  */
-public class NoTrailingWhitespacePrintWriter extends PrintWriter
-{
+public class NoTrailingWhitespacePrintWriter extends PrintWriter {
+
     private StringBuilder padding;
 
-    public NoTrailingWhitespacePrintWriter(Writer inner)
-    {
+    public NoTrailingWhitespacePrintWriter(Writer inner) {
         super(inner);
     }
 
-    private StringBuilder getPadding()
-    {
+    private StringBuilder getPadding() {
         if (padding == null) {
             padding = new StringBuilder();
         }
         return padding;
     }
 
-    private void flushPadding()
-    {
+    private void flushPadding() {
         if (padding != null) {
             String pad = padding.toString();
             super.write(pad, 0, pad.length());
@@ -54,11 +49,10 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
         }
     }
 
-    private int lastTrailingWhitespace(char[] buf, int off, int len)
-    {
+    private int lastTrailingWhitespace(char[] buf, int off, int len) {
         int idx = -1;
-        for (int i = off+len-1; i >= off; i--) {
-            if (!CharMatcher.whitespace().matches(buf [i])) {
+        for (int i = off + len - 1; i >= off; i--) {
+            if (!CharMatcher.whitespace().matches(buf[i])) {
                 break;
             }
             idx = i;
@@ -66,10 +60,9 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
         return idx;
     }
 
-    private int lastTrailingWhitespace(String s, int off, int len)
-    {
+    private int lastTrailingWhitespace(String s, int off, int len) {
         int idx = -1;
-        for (int i = off+len-1; i >= off; i--) {
+        for (int i = off + len - 1; i >= off; i--) {
             if (!CharMatcher.whitespace().matches(s.charAt(i))) {
                 break;
             }
@@ -79,29 +72,25 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
     }
 
     @Override
-    public void println()
-    {
+    public void println() {
         super.println();
         padding = null;
     }
 
     @Override
-    public void write(String s)
-    {
+    public void write(String s) {
         write(s, 0, s.length());
     }
 
     @Override
-    public void write(char[] buf)
-    {
+    public void write(char[] buf) {
         write(buf, 0, buf.length);
     }
 
     @Override
-    public void write(int c)
-    {
-        if (CharMatcher.whitespace().matches((char)c)) {
-            getPadding().append((char)c);
+    public void write(int c) {
+        if (CharMatcher.whitespace().matches((char) c)) {
+            getPadding().append((char) c);
         } else {
             flushPadding();
             super.write(c);
@@ -109,28 +98,26 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
     }
 
     @Override
-    public void write(char buf[], int off, int len)
-    {
+    public void write(char buf[], int off, int len) {
         int idx = lastTrailingWhitespace(buf, off, len);
         if (idx != 0) {
             flushPadding();
-            super.write(buf, off, idx == -1 ? len : (idx-off));
+            super.write(buf, off, idx == -1 ? len : (idx - off));
         }
         if (idx > -1) {
-            getPadding().append(buf, idx, len-(idx-off));
+            getPadding().append(buf, idx, len - (idx - off));
         }
     }
 
     @Override
-    public void write(String s, int off, int len)
-    {
+    public void write(String s, int off, int len) {
         int idx = lastTrailingWhitespace(s, off, len);
         if (idx != 0) {
             flushPadding();
-            super.write(s, off, idx == -1 ? len : (idx-off));
+            super.write(s, off, idx == -1 ? len : (idx - off));
         }
         if (idx > -1) {
-            getPadding().append(s, idx, off+len);
+            getPadding().append(s, idx, off + len);
         }
     }
 }

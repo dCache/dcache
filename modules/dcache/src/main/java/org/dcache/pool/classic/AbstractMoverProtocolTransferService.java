@@ -19,10 +19,12 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
@@ -32,15 +34,6 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
@@ -50,30 +43,33 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Exceptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 public abstract class AbstractMoverProtocolTransferService
-        extends AbstractCellComponent
-        implements TransferService<MoverProtocolMover>,MoverFactory, CellInfoProvider
-{
+      extends AbstractCellComponent
+      implements TransferService<MoverProtocolMover>, MoverFactory, CellInfoProvider {
+
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(MoverMapTransferService.class);
+          LoggerFactory.getLogger(MoverMapTransferService.class);
     private final ExecutorService _executor =
-            new CDCExecutorServiceDecorator<>(
-                    Executors.newCachedThreadPool(
-                            new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
+          new CDCExecutorServiceDecorator<>(
+                Executors.newCachedThreadPool(
+                      new ThreadFactoryBuilder().setNameFormat(
+                            getClass().getSimpleName() + "-transfer-service-%d").build()));
     private PostTransferService _postTransferService;
 
 
     @Required
-    public void setPostTransferService(PostTransferService postTransferService)
-    {
+    public void setPostTransferService(PostTransferService postTransferService) {
         _postTransferService = postTransferService;
     }
 
     @Override
-    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor)
-            throws CacheException
-    {
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+          CellPath pathToDoor)
+          throws CacheException {
         ProtocolInfo info = message.getProtocolInfo();
         try {
             MoverProtocol moverProtocol = createMoverProtocol(info);
@@ -81,55 +77,55 @@ public abstract class AbstractMoverProtocolTransferService
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
             String causeError = cause instanceof Exception
-                    ? Exceptions.messageOrClassName((Exception)cause)
-                    : cause.toString();
+                  ? Exceptions.messageOrClassName((Exception) cause)
+                  : cause.toString();
             String error = "Construction of MoverProtocol mover for " + info
-                    + " failed: " + causeError;
+                  + " failed: " + causeError;
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error,
-                    cause);
+                  cause);
         } catch (ClassNotFoundException e) {
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
-                    "Protocol " + info + " is not supported", e);
+                  "Protocol " + info + " is not supported", e);
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
             String error = "Could not create MoverProtocol mover for " + info
-                    + ": " + Exceptions.messageOrClassName(e);
+                  + ": " + Exceptions.messageOrClassName(e);
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER, error,
-                    e);
+                  e);
         }
     }
 
     protected abstract MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception;
 
     @Override
-    public Cancellable executeMover(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
+    public Cancellable executeMover(MoverProtocolMover mover,
+          CompletionHandler<Void, Void> completionHandler) {
         MoverTask task = new MoverTask(mover, completionHandler);
         _executor.execute(task);
         return task;
     }
 
     @Override
-    public void closeMover(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
+    public void closeMover(MoverProtocolMover mover,
+          CompletionHandler<Void, Void> completionHandler) {
         _postTransferService.execute(mover, completionHandler);
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         _executor.shutdown();
     }
 
-    private class MoverTask implements Runnable, Cancellable
-    {
+    private class MoverTask implements Runnable, Cancellable {
+
         private final MoverProtocolMover _mover;
-        private final CompletionHandler<Void,Void> _completionHandler;
+        private final CompletionHandler<Void, Void> _completionHandler;
 
         private Thread _thread;
         private boolean _needInterruption;
         private String _explanation;
 
-        public MoverTask(MoverProtocolMover mover, CompletionHandler<Void,Void> completionHandler) {
+        public MoverTask(MoverProtocolMover mover,
+              CompletionHandler<Void, Void> completionHandler) {
             _mover = mover;
             _completionHandler = completionHandler;
         }
@@ -147,7 +143,8 @@ public abstract class AbstractMoverProtocolTransferService
                     }
                 } catch (ClosedChannelException | InterruptedIOException e) {
                     // InterruptedException doesn't have constructor that accepts cause
-                    throw  (InterruptedException)(new InterruptedException(e.getMessage()).initCause(e));
+                    throw (InterruptedException) (new InterruptedException(
+                          e.getMessage()).initCause(e));
                 } finally {
                     cleanThread();
                     fileIoChannel.close();
@@ -158,15 +155,14 @@ public abstract class AbstractMoverProtocolTransferService
 
             } catch (InterruptedException e) {
                 InterruptedException why = _explanation == null ? e :
-                        (InterruptedException)(new InterruptedException(_explanation).initCause(e));
+                      (InterruptedException) (new InterruptedException(_explanation).initCause(e));
                 _completionHandler.failed(why, null);
             } catch (Throwable t) {
                 _completionHandler.failed(t, null);
             }
         }
 
-        private void handleChecksumMover()
-        {
+        private void handleChecksumMover() {
             MoverProtocol mover = _mover.getMover();
 
             if (mover instanceof ChecksumMover) {
@@ -175,9 +171,11 @@ public abstract class AbstractMoverProtocolTransferService
             }
         }
 
-    private void runMoverForRead(RepositoryChannel fileIoChannel) throws Exception {
-            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
-    }
+        private void runMoverForRead(RepositoryChannel fileIoChannel) throws Exception {
+            _mover.getMover()
+                  .runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
+                        _mover.getIoMode());
+        }
 
         private void tryToSync(RepositoryChannel channel) throws IOException {
             if (channel.isOpen()) {
@@ -193,7 +191,9 @@ public abstract class AbstractMoverProtocolTransferService
         private void runMoverForWrite(RepositoryChannel fileIoChannel) throws Exception {
             handleChecksumMover();
             try {
-                _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
+                _mover.getMover()
+                      .runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
+                            _mover.getIoMode());
             } finally {
                 tryToSync(fileIoChannel);
             }

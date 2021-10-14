@@ -18,46 +18,40 @@
  */
 package org.dcache.xrootd.plugins;
 
+import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+
 import com.google.common.net.HostAndPort;
-import io.netty.channel.ChannelDuplexHandler;
+import dmg.cells.nucleus.CDC;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
-import org.slf4j.Logger;
-
 import java.net.InetSocketAddress;
 import java.util.Objects;
-
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.util.NetLoggerBuilder;
-
-import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+import org.slf4j.Logger;
 
 /**
  * Access log handler used when proxy protocol support is enabled.
- *
- * We delay the connection start event until the proxy message is received. Once received,
- * we replace this handler with a regular access logger. If a proxy message is not received
- * or indicates that the connection is a health check, we keep this handler and suppress the
- * connection event.
+ * <p>
+ * We delay the connection start event until the proxy message is received. Once received, we
+ * replace this handler with a regular access logger. If a proxy message is not received or
+ * indicates that the connection is a health check, we keep this handler and suppress the connection
+ * event.
  */
 @ChannelHandler.Sharable
-public class ProxyAccessLogHandler extends AccessLogHandler
-{
+public class ProxyAccessLogHandler extends AccessLogHandler {
+
     private final ChannelHandler handler;
 
-    public ProxyAccessLogHandler(Logger logger, ChannelHandler handler)
-    {
+    public ProxyAccessLogHandler(Logger logger, ChannelHandler handler) {
         super(logger);
         this.handler = handler;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
-    {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof HAProxyMessage) {
             HAProxyMessage proxyMessage = (HAProxyMessage) msg;
             if (proxyMessage.command() == HAProxyCommand.PROXY) {
@@ -68,23 +62,25 @@ public class ProxyAccessLogHandler extends AccessLogHandler
 
                 if (proxyMessage.proxiedProtocol() == HAProxyProxiedProtocol.UNKNOWN) {
                     NetLoggerBuilder log = new NetLoggerBuilder(INFO,
-                                                                "org.dcache.xrootd.connection.start").omitNullValues();
+                          "org.dcache.xrootd.connection.start").omitNullValues();
                     log.add("session", CDC.getSession());
                     log.add("socket.remote", remoteAddress);
                     log.add("socket.local", localAddress);
                     log.toLogger(logger);
                     replaceWith(ctx, handler);
-                } else if (!Objects.equals(destinationAddress, localAddress.getAddress().getHostAddress())) {
+                } else if (!Objects.equals(destinationAddress,
+                      localAddress.getAddress().getHostAddress())) {
                     /* The above check is a workaround for what looks like a bug in HAProxy - health checks
                      * should generate a LOCAL command, but it appears they do actually use PROXY.
                      */
                     NetLoggerBuilder log = new NetLoggerBuilder(INFO,
-                                                                "org.dcache.xrootd.connection.start").omitNullValues();
+                          "org.dcache.xrootd.connection.start").omitNullValues();
                     log.add("session", CDC.getSession());
                     log.add("socket.remote",
-                            HostAndPort.fromParts(sourceAddress, proxyMessage.sourcePort()));
+                          HostAndPort.fromParts(sourceAddress, proxyMessage.sourcePort()));
                     log.add("socket.proxy",
-                            HostAndPort.fromParts(destinationAddress, proxyMessage.destinationPort()));
+                          HostAndPort.fromParts(destinationAddress,
+                                proxyMessage.destinationPort()));
                     log.add("socket.local", localAddress);
                     log.toLogger(logger);
                     replaceWith(ctx, handler);
@@ -94,20 +90,17 @@ public class ProxyAccessLogHandler extends AccessLogHandler
         super.channelRead(ctx, msg);
     }
 
-    protected void replaceWith(ChannelHandlerContext ctx, ChannelHandler handler)
-    {
+    protected void replaceWith(ChannelHandlerContext ctx, ChannelHandler handler) {
         ctx.channel().pipeline().replace(this, null, handler);
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ctx.fireChannelActive();
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception
-    {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         ctx.fireChannelInactive();
     }
 }

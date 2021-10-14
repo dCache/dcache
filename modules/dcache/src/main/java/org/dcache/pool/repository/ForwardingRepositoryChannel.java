@@ -26,9 +26,9 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Optional;
 
 /**
- * A {@link RepositoryChannel| implementation which forwards all its
- * method calls to another channel. Subclasses should override one or more
- * methods to modify the behavior of the backing file system as desired per the
+ * A {@link RepositoryChannel| implementation which forwards all its method calls to another
+ * channel. Subclasses should override one or more methods to modify the behavior of the backing
+ * file system as desired per the
  * <a href="http://en.wikipedia.org/wiki/Decorator_pattern">decorator
  * pattern</a>.
  */
@@ -57,12 +57,14 @@ public abstract class ForwardingRepositoryChannel implements RepositoryChannel {
     }
 
     @Override
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+    public long transferTo(long position, long count, WritableByteChannel target)
+          throws IOException {
         return delegate().transferTo(position, count, target);
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         return delegate().transferFrom(src, position, count);
     }
 
@@ -127,8 +129,7 @@ public abstract class ForwardingRepositoryChannel implements RepositoryChannel {
     }
 
     @Override
-    public <T> Optional<T> optionallyAs(Class<T> type)
-    {
+    public <T> Optional<T> optionallyAs(Class<T> type) {
         if (type.isAssignableFrom(getClass())) {
             return Optional.of(type.cast(this));
         } else {

@@ -18,20 +18,18 @@
  */
 package diskCacheV111.doors;
 
+import static diskCacheV111.doors.DCapDoorInterpreterV3._log;
+
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-
+import diskCacheV111.util.CheckStagePermission;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CheckStagePermission;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.dcache.auth.CachingLoginStrategy;
@@ -45,10 +43,8 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Option;
 
-import static diskCacheV111.doors.DCapDoorInterpreterV3._log;
+public class DcapDoorSettings {
 
-public class DcapDoorSettings
-{
     @Option(name = "authorization")
     protected String auth;
 
@@ -56,33 +52,33 @@ public class DcapDoorSettings
     protected String anon;
 
     @Option(name = "poolManager",
-            description = "Cell address of the pool manager",
-            defaultValue = "PoolManager")
+          description = "Cell address of the pool manager",
+          defaultValue = "PoolManager")
     protected CellPath poolManager;
 
     @Option(name = "pnfsManager",
-            description = "Cell address of the PNFS manager",
-            defaultValue = "PnfsManager")
+          description = "Cell address of the PNFS manager",
+          defaultValue = "PnfsManager")
     protected CellPath pnfsManager;
 
     @Option(name = "pinManager",
-            description = "Cell address of the pin manager",
-            defaultValue = "PinManager")
+          description = "Cell address of the pin manager",
+          defaultValue = "PinManager")
     protected CellPath pinManager;
 
     @Option(name = "gplazma",
-            description = "Cell address of GPlazma",
-            defaultValue = "gplazma")
+          description = "Cell address of GPlazma",
+          defaultValue = "gplazma")
     protected CellPath gPlazma;
 
     @Option(name = "billing",
-            description = "Cell address of billing",
-            defaultValue = "billing")
+          description = "Cell address of billing",
+          defaultValue = "billing")
     protected CellPath billing;
 
     @Option(name = "kafka",
-            description = "Kafka service enabled",
-            defaultValue = "false")
+          description = "Kafka service enabled",
+          defaultValue = "false")
     protected boolean isKafkaEnabled;
 
     @Option(name = "bootstrap-server-kafka")
@@ -102,8 +98,8 @@ public class DcapDoorSettings
 
 
     @Option(name = "hsm",
-            description = "Cell address of hsm manager",
-            defaultValue = "hsm")
+          description = "Cell address of hsm manager",
+          defaultValue = "hsm")
     protected CellPath hsmManager;
 
     @Option(name = "truncate")
@@ -142,53 +138,55 @@ public class DcapDoorSettings
     protected boolean allowAnonymousStaging;
 
     /**
-     * If true, then the Subject of the request must have a UID and
-     * GID. If false, then a Subject without a UID and GID (i.e. a
-     * Nobody) will be allowed to proceed, but only allowed to perform
+     * If true, then the Subject of the request must have a UID and GID. If false, then a Subject
+     * without a UID and GID (i.e. a Nobody) will be allowed to proceed, but only allowed to perform
      * operations authorized to world.
      */
     private boolean isAuthorizationStrong;
 
     /**
-     * If false, then authorization checks on read and write
-     * operations are bypassed for non URL operations. If true, then
-     * such operations are subject to authorization checks.
+     * If false, then authorization checks on read and write operations are bypassed for non URL
+     * operations. If true, then such operations are subject to authorization checks.
      */
     private boolean isAuthorizationRequired;
 
     private UnionLoginStrategy.AccessLevel anonymousAccessLevel;
 
-    private DCapDoorInterpreterV3.Version minClientVersion = new DCapDoorInterpreterV3.Version(0, 0);
+    private DCapDoorInterpreterV3.Version minClientVersion = new DCapDoorInterpreterV3.Version(0,
+          0);
 
-    private DCapDoorInterpreterV3.Version maxClientVersion = new DCapDoorInterpreterV3.Version(Integer.MAX_VALUE, Integer.MAX_VALUE);
+    private DCapDoorInterpreterV3.Version maxClientVersion = new DCapDoorInterpreterV3.Version(
+          Integer.MAX_VALUE, Integer.MAX_VALUE);
 
     private Restriction doorRestriction;
 
     private CheckStagePermission checkStagePermission;
 
-    public void init()
-    {
+    public void init() {
         isAuthorizationStrong = (auth != null) && auth.equals("strong");
-        isAuthorizationRequired = (auth != null) && (auth.equals("strong") || auth.equals("required"));
+        isAuthorizationRequired =
+              (auth != null) && (auth.equals("strong") || auth.equals("required"));
         anonymousAccessLevel = (anon != null)
-                               ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase())
-                               : UnionLoginStrategy.AccessLevel.READONLY;
+              ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase())
+              : UnionLoginStrategy.AccessLevel.READONLY;
 
         if (clientVersion != null) {
             try {
-                List<String> values = Splitter.on(':').limit(2).trimResults().splitToList(clientVersion);
+                List<String> values = Splitter.on(':').limit(2).trimResults()
+                      .splitToList(clientVersion);
                 if (values.get(0).isEmpty()) {
                     throw new IllegalArgumentException("missing minimum version");
                 }
-                minClientVersion  = new DCapDoorInterpreterV3.Version(values.get(0));
+                minClientVersion = new DCapDoorInterpreterV3.Version(values.get(0));
                 if (values.size() > 1) {
                     if (values.get(1).isEmpty()) {
                         throw new IllegalArgumentException("missing maximum version");
                     }
-                    maxClientVersion  = new DCapDoorInterpreterV3.Version(values.get(1));
+                    maxClientVersion = new DCapDoorInterpreterV3.Version(values.get(1));
                 }
             } catch (IllegalArgumentException e) {
-                _log.error("Ignoring client version limits: syntax error with '{}': {}", clientVersion, e.getMessage());
+                _log.error("Ignoring client version limits: syntax error with '{}': {}",
+                      clientVersion, e.getMessage());
             }
         }
 
@@ -200,40 +198,33 @@ public class DcapDoorSettings
         checkStagePermission.setAllowAnonymousStaging(allowAnonymousStaging);
     }
 
-    public boolean isAuthorizationRequired()
-    {
+    public boolean isAuthorizationRequired() {
         return isAuthorizationRequired;
     }
 
-    public CellPath getPnfsManager()
-    {
+    public CellPath getPnfsManager() {
         return pnfsManager;
     }
 
-    public CellPath getPoolManager()
-    {
+    public CellPath getPoolManager() {
         return poolManager;
     }
 
-    public CellPath getPinManager()
-    {
+    public CellPath getPinManager() {
         return pinManager;
     }
 
-    public CellPath getGplazma()
-    {
+    public CellPath getGplazma() {
         return gPlazma;
     }
 
-    public CellPath getBilling()
-    {
+    public CellPath getBilling() {
         return billing;
     }
 
     /**
-     *  Returns Kafka service enabled
-     *  If enabled, the various dCache services, like pools and doors will publish messages to
-     *   a Kafka cluster after each transfer.
+     * Returns Kafka service enabled If enabled, the various dCache services, like pools and doors
+     * will publish messages to a Kafka cluster after each transfer.
      *
      * @return true if the user wants to send messages to Kafka
      */
@@ -242,11 +233,11 @@ public class DcapDoorSettings
     }
 
     /**
-     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to the Kafka cluster.
-     * This list is just used to discover the rest of the brokers in the cluster and should be in the form
-     * host1:port1,host2:port2,....
+     * Returns a list of host/port pairs (brokers) to use for establishing the initial connection to
+     * the Kafka cluster. This list is just used to discover the rest of the brokers in the cluster
+     * and should be in the form host1:port1,host2:port2,....
      *
-     * @return    the list of  of host/port pairs
+     * @return the list of  of host/port pairs
      */
     public String getKafkaBootstrapServer() {
         return kafkaBootstrapServer;
@@ -255,96 +246,86 @@ public class DcapDoorSettings
     /**
      * Returns the name of kafka topic
      *
-     * @return    kafka topic name
+     * @return kafka topic name
      */
     public String getKafkaTopic() {
         return kafkaTopic;
     }
 
     /**
-     * Returns the parameter that controls how long
-     * how long the producer will block when calling send().
+     * Returns the parameter that controls how long how long the producer will block when calling
+     * send().
      *
-     * @retrun a timeframe during which producer will block sending messages, by default set to 60000
+     * @retrun a timeframe during which producer will block sending messages, by default set to
+     * 60000
      */
     public String getKafkaMaxBlockMs() {
         return String.valueOf(TimeUnit.MILLISECONDS.convert(kafkaMaxBlock, kafkaMaxBlockUnits));
     }
 
     /**
-     * Returns the number of retries that the producer will retry sending the messages before failing it.
+     * Returns the number of retries that the producer will retry sending the messages before
+     * failing it.
      *
-     *  @return number of retries, set to 0 by default
+     * @return number of retries, set to 0 by default
      */
     public String getKafkaRetries() {
         return kafkaRetries;
     }
 
-    public CellPath getHsmManager()
-    {
+    public CellPath getHsmManager() {
         return hsmManager;
     }
 
-    public boolean isTruncateAllowed()
-    {
+    public boolean isTruncateAllowed() {
         return isTruncateAllowed;
     }
 
-    public boolean isAccessLatencyOverwriteAllowed()
-    {
+    public boolean isAccessLatencyOverwriteAllowed() {
         return isAccessLatencyOverwriteAllowed;
     }
 
-    public boolean isRetentionPolicyOverwriteAllowed()
-    {
+    public boolean isRetentionPolicyOverwriteAllowed() {
         return isRetentionPolicyOverwriteAllowed;
     }
 
-    public boolean isCheckStrict()
-    {
+    public boolean isCheckStrict() {
         return isCheckStrict;
     }
 
-    public DCapDoorInterpreterV3.Version getMinClientVersion()
-    {
+    public DCapDoorInterpreterV3.Version getMinClientVersion() {
         return minClientVersion;
     }
 
-    public DCapDoorInterpreterV3.Version getMaxClientVersion()
-    {
+    public DCapDoorInterpreterV3.Version getMaxClientVersion() {
         return maxClientVersion;
     }
 
-    public long getPoolRetry()
-    {
+    public long getPoolRetry() {
         return poolRetry * 1000;
     }
 
-    public String getIoQueueName()
-    {
+    public String getIoQueueName() {
         return ioQueueName;
     }
 
-    public boolean isIoQueueAllowOverwrite()
-    {
+    public boolean isIoQueueAllowOverwrite() {
         return ioQueueAllowOverwrite;
     }
 
-    public Restriction getDoorRestriction()
-    {
+    public Restriction getDoorRestriction() {
         return doorRestriction;
     }
 
-    public CheckStagePermission getCheckStagePermission()
-    {
+    public CheckStagePermission getCheckStagePermission() {
         return checkStagePermission;
     }
 
-    public LoginStrategy createLoginStrategy(CellEndpoint cell)
-    {
+    public LoginStrategy createLoginStrategy(CellEndpoint cell) {
         UnionLoginStrategy union = new UnionLoginStrategy();
         if (isAuthorizationStrong || isAuthorizationRequired) {
-            RemoteLoginStrategy loginStrategy = new RemoteLoginStrategy(new CellStub(cell, gPlazma, 30000));
+            RemoteLoginStrategy loginStrategy = new RemoteLoginStrategy(
+                  new CellStub(cell, gPlazma, 30000));
             union.setLoginStrategies(Collections.singletonList(loginStrategy));
         }
         if (!isAuthorizationStrong) {
@@ -353,8 +334,8 @@ public class DcapDoorSettings
         return new CachingLoginStrategy(union, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, CellAddressCore address, PoolManagerHandler handler)
-    {
+    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, CellAddressCore address,
+          PoolManagerHandler handler) {
         PoolManagerStub stub = new PoolManagerStub();
         stub.setCellEndpoint(cellEndpoint);
         stub.setCellAddress(address);
@@ -365,16 +346,17 @@ public class DcapDoorSettings
     }
 
     public KafkaProducer createKafkaProducer(String bootstrap_server,
-                                             String client_id,
-                                             String max_block_ms,
-                                             String retries)
-    {
+          String client_id,
+          String max_block_ms,
+          String retries) {
         Properties props = new Properties();
 
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, client_id);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.dcache.notification.DoorRequestMessageSerializer");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+              "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+              "org.dcache.notification.DoorRequestMessageSerializer");
         props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, max_block_ms);
         props.put(ProducerConfig.RETRIES_CONFIG, retries);
 
@@ -382,8 +364,7 @@ public class DcapDoorSettings
     }
 
 
-    public CellStub createPinManagerStub(CellEndpoint cell)
-    {
+    public CellStub createPinManagerStub(CellEndpoint cell) {
         return new CellStub(cell, pinManager);
     }
 }

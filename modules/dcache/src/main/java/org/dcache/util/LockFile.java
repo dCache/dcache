@@ -5,16 +5,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * Encapsulates a lock based on a well-known file. When acquired, an
- * empty file is created and immediately locked.
+ * Encapsulates a lock based on a well-known file. When acquired, an empty file is created and
+ * immediately locked.
  */
-class LockFile
-{
+class LockFile {
+
     private final File _file;
     private RandomAccessFile _lock;
 
-    public LockFile(File file)
-    {
+    public LockFile(File file) {
         _file = file;
     }
 
@@ -22,17 +21,16 @@ class LockFile
      * Creates and locks the lock file.
      *
      * @throw IllegalStateException If the lock could note be acquired
-     * @throw IOException If an I/O error occured while creating or
-     * locking the file
+     * @throw IOException If an I/O error occured while creating or locking the file
      */
     public synchronized void acquire()
-        throws IOException, IllegalStateException
-    {
+          throws IOException, IllegalStateException {
         if (_lock == null) {
             RandomAccessFile lock = new RandomAccessFile(_file, "rw");
             try {
                 if (lock.getChannel().tryLock() == null) {
-                    throw new IllegalStateException(String.format("Lock file [%s] is owned by another process", _file));
+                    throw new IllegalStateException(
+                          String.format("Lock file [%s] is owned by another process", _file));
                 }
                 _lock = lock;
                 lock = null;
@@ -50,8 +48,7 @@ class LockFile
      * @throws IOException If the lock file could not be closed.
      */
     public synchronized void release()
-        throws IOException
-    {
+          throws IOException {
         if (_lock != null) {
             /* The lock is automatically released when the file is
              * closed.

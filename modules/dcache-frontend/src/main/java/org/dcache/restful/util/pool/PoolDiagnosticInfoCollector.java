@@ -66,7 +66,8 @@ import org.dcache.vehicles.pool.PoolDataRequestMessage;
  * <p>Used to gather diagnostic data from the pools.</p>
  */
 public class PoolDiagnosticInfoCollector extends
-                PoolInfoCollector<PoolDataRequestMessage> {
+      PoolInfoCollector<PoolDataRequestMessage> {
+
     @Override
     protected PoolDataRequestMessage newMessage(long timestamp) {
         return new PoolDataRequestMessage();

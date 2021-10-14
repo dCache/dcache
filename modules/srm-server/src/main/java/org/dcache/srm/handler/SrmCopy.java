@@ -1,11 +1,9 @@
 package org.dcache.srm.handler;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
@@ -28,13 +26,13 @@ import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
+public class SrmCopy implements CredentialAwareHandler {
 
-public class SrmCopy implements CredentialAwareHandler
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmCopy.class);
+          LoggerFactory.getLogger(SrmCopy.class);
 
     private final SrmCopyRequest request;
     private final SRMUser user;
@@ -46,11 +44,10 @@ public class SrmCopy implements CredentialAwareHandler
     private SrmCopyResponse response;
 
     public SrmCopy(SRMUser user,
-                   SrmCopyRequest request,
-                   AbstractStorageElement storage,
-                   SRM srm,
-                   String clientHost)
-    {
+          SrmCopyRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.configuration = srm.getConfiguration();
@@ -59,13 +56,11 @@ public class SrmCopy implements CredentialAwareHandler
     }
 
     @Override
-    public void setCredential(RequestCredential credential)
-    {
+    public void setCredential(RequestCredential credential) {
         this.credential = requireNonNull(credential);
     }
 
-    public SrmCopyResponse getResponse()
-    {
+    public SrmCopyResponse getResponse() {
         if (response == null) {
             try {
                 response = srmCopy();
@@ -82,11 +77,11 @@ public class SrmCopy implements CredentialAwareHandler
     }
 
     private SrmCopyResponse srmCopy()
-            throws SRMInvalidRequestException, SRMNotSupportedException,
-                   SRMInternalErrorException
-    {
+          throws SRMInvalidRequestException, SRMNotSupportedException,
+          SRMInternalErrorException {
         TCopyFileRequest[] arrayOfFileRequests = getFileRequests(request);
-        long lifetime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(), configuration.getCopyLifetime());
+        long lifetime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(),
+              configuration.getCopyLifetime());
         String spaceToken = request.getTargetSpaceToken();
 
         URI from_urls[] = new URI[arrayOfFileRequests.length];
@@ -105,24 +100,24 @@ public class SrmCopy implements CredentialAwareHandler
 
         TOverwriteMode overwriteMode = getOverwriteMode(request);
 
-        ImmutableMap<String,String> extraInfo = getExtraInfo(request);
+        ImmutableMap<String, String> extraInfo = getExtraInfo(request);
         credential.acceptAlternative(extraInfo.get("credential"));
         CopyRequest r = new CopyRequest(
-                srm.getSrmId(),
-                user,
-                credential.getId(),
-                from_urls,
-                to_urls,
-                spaceToken,
-                lifetime,
-                configuration.getCopyMaxPollPeriod(),
-                request.getTargetFileStorageType(),
-                targetRetentionPolicy,
-                targetAccessLatency,
-                request.getUserRequestDescription(),
-                clientHost,
-                overwriteMode,
-                extraInfo);
+              srm.getSrmId(),
+              user,
+              credential.getId(),
+              from_urls,
+              to_urls,
+              spaceToken,
+              lifetime,
+              configuration.getCopyMaxPollPeriod(),
+              request.getTargetFileStorageType(),
+              targetRetentionPolicy,
+              targetAccessLatency,
+              request.getUserRequestDescription(),
+              clientHost,
+              overwriteMode,
+              extraInfo);
         try (JDC ignored = r.applyJdc()) {
             srm.acceptNewJob(r);
             return r.getSrmCopyResponse();
@@ -131,8 +126,7 @@ public class SrmCopy implements CredentialAwareHandler
         }
     }
 
-    private static ImmutableMap<String,String> getExtraInfo(SrmCopyRequest request)
-    {
+    private static ImmutableMap<String, String> getExtraInfo(SrmCopyRequest request) {
         ArrayOfTExtraInfo sourceStorageSystemInfo = request.getSourceStorageSystemInfo();
         if (sourceStorageSystemInfo == null) {
             return ImmutableMap.of();
@@ -143,29 +137,31 @@ public class SrmCopy implements CredentialAwareHandler
             return ImmutableMap.of();
         }
 
-        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         for (TExtraInfo extraInfo : extraInfoArray) {
             builder.put(extraInfo.getKey(), extraInfo.getValue());
         }
         return builder.build();
     }
 
-    private static TOverwriteMode getOverwriteMode(SrmCopyRequest request) throws SRMNotSupportedException
-    {
+    private static TOverwriteMode getOverwriteMode(SrmCopyRequest request)
+          throws SRMNotSupportedException {
         TOverwriteMode overwriteMode = request.getOverwriteOption();
-        if (overwriteMode != null && overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
-            throw new SRMNotSupportedException("Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported");
+        if (overwriteMode != null && overwriteMode.equals(
+              TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
+            throw new SRMNotSupportedException(
+                  "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported");
         }
         return overwriteMode;
     }
 
-    private static TCopyFileRequest[] getFileRequests(SrmCopyRequest request) throws SRMInvalidRequestException
-    {
+    private static TCopyFileRequest[] getFileRequests(SrmCopyRequest request)
+          throws SRMInvalidRequestException {
         if (request.getArrayOfFileRequests() == null) {
             throw new SRMInvalidRequestException("ArrayOfFileRequests is null");
         }
         TCopyFileRequest[] arrayOfFileRequests =
-                request.getArrayOfFileRequests().getRequestArray();
+              request.getArrayOfFileRequests().getRequestArray();
         if (arrayOfFileRequests == null) {
             throw new SRMInvalidRequestException("null array of file requests");
         }
@@ -175,13 +171,11 @@ public class SrmCopy implements CredentialAwareHandler
         return arrayOfFileRequests;
     }
 
-    public static final SrmCopyResponse getFailedResponse(String text)
-    {
+    public static final SrmCopyResponse getFailedResponse(String text) {
         return getFailedResponse(text, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmCopyResponse getFailedResponse(String text, TStatusCode statusCode)
-    {
+    public static final SrmCopyResponse getFailedResponse(String text, TStatusCode statusCode) {
         SrmCopyResponse response = new SrmCopyResponse();
         response.setReturnStatus(new TReturnStatus(statusCode, text));
         return response;

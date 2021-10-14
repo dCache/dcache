@@ -1,13 +1,14 @@
 package org.dcache.util;
 
-import org.junit.Test;
-import org.springframework.util.SerializationUtils;
+import static com.google.common.net.InetAddresses.forString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import static com.google.common.net.InetAddresses.forString;
-import static org.junit.Assert.*;
+import org.junit.Test;
+import org.springframework.util.SerializationUtils;
 
 public class SubnetTest {
 
@@ -16,13 +17,16 @@ public class SubnetTest {
         Subnet subnet = Subnet.create(forString("192.168.0.0"), 24);
         assertTrue(subnet.containsHost("192.168.0.1"));
         assertTrue(subnet.contains(forString("192.168.0.1")));
-        assertTrue(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("192.168.0.1"), forString("127.0.0.1")}));
+        assertTrue(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("192.168.0.1"),
+                    forString("127.0.0.1")}));
         assertFalse(subnet.containsHost("192.168.1.1"));
         assertFalse(subnet.contains(forString("192.168.1.1")));
-        assertFalse(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("127.0.0.1")}));
+        assertFalse(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("127.0.0.1")}));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testCreateStringWithInvalidCidrPattern() {
         assertFalse(Subnet.isValid("something"));
         Subnet.create("something");
@@ -34,10 +38,13 @@ public class SubnetTest {
         Subnet subnet = Subnet.create("192.168.0.0/24");
         assertTrue(subnet.containsHost("192.168.0.1"));
         assertTrue(subnet.contains(forString("192.168.0.1")));
-        assertTrue(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("192.168.0.1"), forString("127.0.0.1")}));
+        assertTrue(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("192.168.0.1"),
+                    forString("127.0.0.1")}));
         assertFalse(subnet.containsHost("192.168.1.1"));
         assertFalse(subnet.contains(forString("192.168.1.1")));
-        assertFalse(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("127.0.0.1")}));
+        assertFalse(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("127.0.0.1")}));
     }
 
     @Test
@@ -45,19 +52,22 @@ public class SubnetTest {
         Subnet subnet = Subnet.create();
         assertTrue(subnet.containsHost("192.168.0.1"));
         assertTrue(subnet.contains(forString("192.168.0.1")));
-        assertTrue(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("192.168.0.1"), forString("127.0.0.1")}));
+        assertTrue(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("192.168.0.1"),
+                    forString("127.0.0.1")}));
         assertTrue(subnet.containsHost("192.168.1.1"));
         assertTrue(subnet.contains(forString("192.168.1.1")));
-        assertTrue(subnet.containsAny(new InetAddress[] {forString("134.102.101.100"), forString("127.0.0.1")}));
+        assertTrue(subnet.containsAny(
+              new InetAddress[]{forString("134.102.101.100"), forString("127.0.0.1")}));
     }
 
-    @Test(expected=NumberFormatException.class)
+    @Test(expected = NumberFormatException.class)
     public void testCidrWithInvalidMask() {
         assertFalse(Subnet.isValid("1.2.3.4/abc"));
         Subnet.create("1.2.3.4/abc");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testCidrWithInvalidAddress() {
         assertFalse(Subnet.isValid("foobar/22"));
         Subnet.create("foobar/22");
@@ -97,30 +107,27 @@ public class SubnetTest {
         testCreateToString("0:0:0::ffff:192.168.0.0/127", "192.168.0.0/31");
         testCreateToString("0:0:0::ffff:192.168.0.0/128", "192.168.0.0/32");
         testCreateToString("1234:1234:1234:1234:1234:1234:1234:1234/96",
-                "1234:1234:1234:1234:1234:1234::/96");
+              "1234:1234:1234:1234:1234:1234::/96");
         testCreateToString("1234:1234:1234::1234:1234:1234/96",
-                "1234:1234:1234::1234:0:0/96");
+              "1234:1234:1234::1234:0:0/96");
         testCreateToString("0:11:0:11::1", "0:11:0:11::1/128");
         testCreateToString("00ff:ff:00ff:00ff:00ff::1", "ff:ff:ff:ff:ff::1/128");
         testCreateToString("192.168.0.0/255.255.255.0", "192.168.0.0/24");
         testCreateToString("::ffff:192.168.0.0/128", "192.168.0.0/32");
     }
 
-    private void testCreateToString(String source)
-    {
+    private void testCreateToString(String source) {
         assertTrue(Subnet.isValid(source));
         assertCreateToString(source, source);
     }
 
-    private void testCreateToString(String source, String expected)
-    {
+    private void testCreateToString(String source, String expected) {
         assertTrue(Subnet.isValid(source));
         assertTrue(Subnet.isValid(expected));
         assertCreateToString(source, expected);
     }
 
-    private void assertCreateToString(String source, String expected)
-    {
+    private void assertCreateToString(String source, String expected) {
         assertEquals(expected, Subnet.create(source).toString());
     }
 
@@ -144,19 +151,19 @@ public class SubnetTest {
     public void serializeSubnetTest() {
         Subnet original = Subnet.create();
         Object copy = SerializationUtils.deserialize(
-                SerializationUtils.serialize(original));
+              SerializationUtils.serialize(original));
 
         assertTrue(copy instanceof Subnet);
         assertEquals(original, copy);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void shouldThrowExceptionForTooBigMaskForIPv4Address() {
         assertFalse(Subnet.isValid("0.0.0.0/33"));
         Subnet.create("0.0.0.0/33");
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void shouldThrowExceptionForTooBigMaskForIPv6Address() {
         assertFalse(Subnet.isValid("::/129"));
         Subnet.create("::/129");
@@ -193,8 +200,7 @@ public class SubnetTest {
         assertFalse(matches("131.169.252.76/32", "131.169.252.75"));
     }
 
-    private boolean matches(String subnetLabel, String ip)
-    {
+    private boolean matches(String subnetLabel, String ip) {
         assertTrue(Subnet.isValid(subnetLabel));
         assertTrue(Subnet.isValid(ip));
         Subnet subnet = Subnet.create(subnetLabel);

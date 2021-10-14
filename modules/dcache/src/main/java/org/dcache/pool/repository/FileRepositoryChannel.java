@@ -9,7 +9,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.OpenOption;
-
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
@@ -29,20 +28,20 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private final long _fileSize;
 
     /**
-     * Creates a {@link RepositortyChannel} to read from, and optionally to
-     * write to, the file specified by the {@link File} argument.
+     * Creates a {@link RepositortyChannel} to read from, and optionally to write to, the file
+     * specified by the {@link File} argument.
      *
-     * @param      path   the file object
-     * @param      openOptions   Options specifying how the file is opened
-     * @throws  FileNotFoundException
-     *            if the mode is <tt>"r"</tt> but the given file object does
-     *            not denote an existing regular file, or if the mode begins
-     *            with <tt>"rw"</tt> but the given file object does not denote
-     *            an existing, writable regular file and a new regular file of
-     *            that name cannot be created, or if some other error occurs
-     *            while opening or creating the file
+     * @param path        the file object
+     * @param openOptions Options specifying how the file is opened
+     * @throws FileNotFoundException if the mode is <tt>"r"</tt> but the given file object does not
+     *                               denote an existing regular file, or if the mode begins with
+     *                               <tt>"rw"</tt> but the given file object does not denote an
+     *                               existing, writable regular file and a new regular file of that
+     *                               name cannot be created, or if some other error occurs while
+     *                               opening or creating the file
      */
-    public FileRepositoryChannel(Path path, Set<? extends OpenOption> openOptions) throws FileNotFoundException, IOException {
+    public FileRepositoryChannel(Path path, Set<? extends OpenOption> openOptions)
+          throws FileNotFoundException, IOException {
         _path = path;
         _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
         _fileSize = !openOptions.contains(StandardOpenOption.WRITE) ? _fileChannel.size() : -1;
@@ -126,12 +125,14 @@ public class FileRepositoryChannel implements RepositoryChannel {
     }
 
     @Override
-    public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
+    public long transferTo(long position, long count, WritableByteChannel target)
+          throws IOException {
         return _fileChannel.transferTo(position, count, target);
     }
 
     @Override
-    public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
+    public long transferFrom(ReadableByteChannel src, long position, long count)
+          throws IOException {
         return _fileChannel.transferFrom(src, position, count);
     }
 }

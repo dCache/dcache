@@ -60,46 +60,40 @@ documents or software obtained from this server.
 package org.dcache.xrootd.plugins.authz;
 
 import io.netty.channel.ChannelHandlerContext;
-
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginStrategyAware;
 import org.dcache.xrootd.plugins.AuthorizationFactory;
 import org.dcache.xrootd.plugins.AuthorizationHandler;
 
 public class XrootdSciTokenAuthzFactory implements AuthorizationFactory,
-                                                   LoginStrategyAware
-{
+      LoginStrategyAware {
+
     private final boolean strict;
 
     private LoginStrategy loginStrategy;
 
-    public XrootdSciTokenAuthzFactory(boolean strict)
-    {
+    public XrootdSciTokenAuthzFactory(boolean strict) {
         this.strict = strict;
     }
 
     @Override
-    public AuthorizationHandler createHandler(ChannelHandlerContext ctx)
-    {
+    public AuthorizationHandler createHandler(ChannelHandlerContext ctx) {
         return new XrootdSciTokenAuthzHandler(loginStrategy, strict, ctx);
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Authorizes requests based on a scitoken "
-                        + "passed in as path query element";
+              + "passed in as path query element";
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return XrootdSciTokenAuthzProvider.NAME;
     }
 
     @Override
-    public void setLoginStrategy(LoginStrategy loginStrategy)
-    {
+    public void setLoginStrategy(LoginStrategy loginStrategy) {
         this.loginStrategy = loginStrategy;
     }
 }

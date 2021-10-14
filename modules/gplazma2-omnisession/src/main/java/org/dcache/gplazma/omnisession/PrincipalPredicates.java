@@ -19,17 +19,13 @@ package org.dcache.gplazma.omnisession;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableMap;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
 import org.dcache.auth.FQANPrincipal;
@@ -41,33 +37,34 @@ import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.util.Exceptions;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 /**
  * A utility class to support {@code Predicate<Principal>}.
  */
-public class PrincipalPredicates
-{
+public class PrincipalPredicates {
+
     private static final Pattern PRINCIPAL_PREDICATE =
-            Pattern.compile("^(?<type>[^:]+):(?<value>([^\"][^ ]*)|(\"[^\"]*\"?)) *");
-    private static final Map<String,TestablePrincipal> TESTABLE_PRINCIPAL_BY_LABEL;
+          Pattern.compile("^(?<type>[^:]+):(?<value>([^\"][^ ]*)|(\"[^\"]*\"?)) *");
+    private static final Map<String, TestablePrincipal> TESTABLE_PRINCIPAL_BY_LABEL;
 
     static {
-        var builder = ImmutableMap.<String,TestablePrincipal>builder();
+        var builder = ImmutableMap.<String, TestablePrincipal>builder();
         Arrays.stream(TestablePrincipal.values()).forEach(p -> builder.put(p.label, p));
         TESTABLE_PRINCIPAL_BY_LABEL = builder.build();
     }
 
-    /** Indicates a problem parsing a predicate's String representation. */
-    public static class PredicateParserException extends Exception
-    {
-        public PredicateParserException(String message)
-        {
+    /**
+     * Indicates a problem parsing a predicate's String representation.
+     */
+    public static class PredicateParserException extends Exception {
+
+        public PredicateParserException(String message) {
             super(message);
         }
     }
 
-    private PrincipalPredicates()
-    {
+    private PrincipalPredicates() {
         // Prevent instantiation.
     }
 
@@ -83,24 +80,21 @@ public class PrincipalPredicates
         READ_QUOTED_VALUE,
     }
 
-    public static class ParsedLine
-    {
+    public static class ParsedLine {
+
         private final Predicate<Principal> predicate;
         private final String remaining;
 
-        ParsedLine(Predicate<Principal> predicate, String remaining)
-        {
+        ParsedLine(Predicate<Principal> predicate, String remaining) {
             this.predicate = predicate;
             this.remaining = remaining;
         }
 
-        public Predicate<Principal> predicate()
-        {
+        public Predicate<Principal> predicate() {
             return predicate;
         }
 
-        public String remaining()
-        {
+        public String remaining() {
             return remaining;
         }
     }
@@ -108,20 +102,17 @@ public class PrincipalPredicates
     /**
      * Information about the principals that may be be used to build predicates.
      */
-    private static enum TestablePrincipal
-    {
+    private static enum TestablePrincipal {
         DISTINGUISHED_NAME("dn", GlobusPrincipal.class) {
             @Override
-            void checkName(String name) throws PredicateParserException
-            {
+            void checkName(String name) throws PredicateParserException {
                 checkParsable(name.startsWith("/"), "DN does not start with '/'");
             }
         },
 
         EMAIL("email", EmailAddressPrincipal.class) {
             @Override
-            void checkName(String name) throws PredicateParserException
-            {
+            void checkName(String name) throws PredicateParserException {
                 checkParsable(EmailAddressPrincipal.isValid(name), "Invalid email address");
             }
         },
@@ -129,8 +120,7 @@ public class PrincipalPredicates
         GID("gid", GidPrincipal.class) {
             @Override
             Predicate<Principal> buildNamePredicate(String expectedName)
-                    throws PredicateParserException
-            {
+                  throws PredicateParserException {
                 long expectedGid;
                 try {
                     expectedGid = Long.parseLong(expectedName);
@@ -138,23 +128,21 @@ public class PrincipalPredicates
                     throw new PredicateParserException(expectedName + " is not an integer");
                 }
 
-                return p -> ((GidPrincipal)p).getGid() == expectedGid;
+                return p -> ((GidPrincipal) p).getGid() == expectedGid;
             }
         },
 
         GROUP_NAME("group", GroupNamePrincipal.class),
         FQAN("fqan", FQANPrincipal.class) {
             @Override
-            void checkName(String name) throws PredicateParserException
-            {
+            void checkName(String name) throws PredicateParserException {
                 checkParsable(org.dcache.auth.FQAN.isValid(name), "Invalid FQAN");
             }
         },
 
         KERBEROS_PRINCIPAL("kerberos", KerberosPrincipal.class) {
             @Override
-            void checkName(String name) throws PredicateParserException
-            {
+            void checkName(String name) throws PredicateParserException {
                 checkParsable(name.contains("@"), "Invalid Kerberos principal");
             }
         },
@@ -162,21 +150,21 @@ public class PrincipalPredicates
         OIDC("oidc", OidcSubjectPrincipal.class) {
             @Override
             Predicate<Principal> buildNamePredicate(String expectedName)
-                    throws PredicateParserException
-            {
+                  throws PredicateParserException {
                 int lastAt = expectedName.lastIndexOf('@');
 
                 checkParsable(lastAt > -1, "Missing '@' in oidc predicate");
                 checkParsable(lastAt > 0, "Last '@' cannot be first character in oidc predicate");
-                checkParsable(lastAt < expectedName.length()-1, "Last '@' cannot be last character in oidc predicate");
+                checkParsable(lastAt < expectedName.length() - 1,
+                      "Last '@' cannot be last character in oidc predicate");
 
                 String expectedSubClaim = expectedName.substring(0, lastAt);
-                String expectedOP = expectedName.substring(lastAt+1);
+                String expectedOP = expectedName.substring(lastAt + 1);
 
                 return p -> {
-                    OidcSubjectPrincipal principal = (OidcSubjectPrincipal)p;
+                    OidcSubjectPrincipal principal = (OidcSubjectPrincipal) p;
                     return principal.getSubClaim().equals(expectedSubClaim)
-                            && principal.getOP().equals(expectedOP);
+                          && principal.getOP().equals(expectedOP);
                 };
             }
         },
@@ -185,8 +173,7 @@ public class PrincipalPredicates
         UID("uid", UidPrincipal.class) {
             @Override
             Predicate<Principal> buildNamePredicate(String expectedName)
-                    throws PredicateParserException
-            {
+                  throws PredicateParserException {
                 long expectedUid;
                 try {
                     expectedUid = Long.parseLong(expectedName);
@@ -194,7 +181,7 @@ public class PrincipalPredicates
                     throw new PredicateParserException(expectedName + " is not a valid uid");
                 }
 
-                return p -> ((UidPrincipal)p).getUid() == expectedUid;
+                return p -> ((UidPrincipal) p).getUid() == expectedUid;
             }
         },
 
@@ -204,35 +191,31 @@ public class PrincipalPredicates
         private final String label;
         private final Class<? extends Principal> clazz;
 
-        TestablePrincipal(String label, Class<? extends Principal> type)
-        {
+        TestablePrincipal(String label, Class<? extends Principal> type) {
             this.label = label;
             this.clazz = type;
         }
 
-        void checkName(String value) throws PredicateParserException
-        {
+        void checkName(String value) throws PredicateParserException {
         }
 
         Predicate<Principal> buildNamePredicate(String expectedName)
-                throws PredicateParserException
-        {
+              throws PredicateParserException {
             checkName(expectedName);
             return p -> p.getName().equals(expectedName);
         }
 
         public Predicate<Principal> buildPredicate(String value)
-                throws PredicateParserException
-        {
+              throws PredicateParserException {
             Predicate<Principal> predicate = p -> clazz.isAssignableFrom(p.getClass());
 
             if (GroupPrincipal.class.isAssignableFrom(clazz) && value.contains(",")) {
                 int idx = value.lastIndexOf(',');
                 String expectedName = value.substring(0, idx);
-                boolean isPrimary = parseQualifier(value.substring(idx+1));
+                boolean isPrimary = parseQualifier(value.substring(idx + 1));
 
                 predicate = predicate.and(buildNamePredicate(expectedName));
-                predicate = predicate.and(p -> ((GroupPrincipal)p).isPrimaryGroup() == isPrimary);
+                predicate = predicate.and(p -> ((GroupPrincipal) p).isPrimaryGroup() == isPrimary);
             } else {
                 predicate = predicate.and(buildNamePredicate(value));
             }
@@ -241,30 +224,27 @@ public class PrincipalPredicates
         }
     }
 
-    private static void checkParsable(boolean isOk, String format, Object...args)
-            throws PredicateParserException
-    {
+    private static void checkParsable(boolean isOk, String format, Object... args)
+          throws PredicateParserException {
         Exceptions.genericCheck(isOk, PredicateParserException::new, format, args);
     }
 
-    private static boolean parseQualifier(String value) throws PredicateParserException
-    {
+    private static boolean parseQualifier(String value) throws PredicateParserException {
         switch (value) {
-        case "primary":
-            return true;
-        case "nonprimary":
-            return false;
-        default:
-            throw new PredicateParserException("Unexpected value \""
-                    + value + "\", should be either 'true' or 'false'");
+            case "primary":
+                return true;
+            case "nonprimary":
+                return false;
+            default:
+                throw new PredicateParserException("Unexpected value \""
+                      + value + "\", should be either 'true' or 'false'");
         }
     }
 
-    private static String remaining(String line, int index)
-    {
+    private static String remaining(String line, int index) {
         int i = index;
         while (i < line.length() && CharMatcher.whitespace().matches(line.charAt(i))) {
-           i++;
+            i++;
         }
 
         if (i == line.length()) {
@@ -274,8 +254,7 @@ public class PrincipalPredicates
     }
 
     public static ParsedLine parseFirstPredicate(String line)
-            throws PredicateParserException
-    {
+          throws PredicateParserException {
         Matcher m = PRINCIPAL_PREDICATE.matcher(line);
 
         if (!m.find()) {
@@ -289,8 +268,8 @@ public class PrincipalPredicates
 
         String value = m.group("value");
         if (value.charAt(0) == '\"') {
-            checkParsable(value.charAt(value.length()-1) == '\"', "Missing close quote");
-            value = value.substring(1, value.length()-1);
+            checkParsable(value.charAt(value.length() - 1) == '\"', "Missing close quote");
+            value = value.substring(1, value.length() - 1);
         }
 
         var predicate = type.buildPredicate(value);

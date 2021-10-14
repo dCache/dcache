@@ -17,31 +17,64 @@
  */
 package org.dcache.xrootd;
 
-import diskCacheV111.util.CacheException;
+import static diskCacheV111.util.CacheException.ATTRIBUTE_FORMAT_ERROR;
+import static diskCacheV111.util.CacheException.ERROR_IO_DISK;
+import static diskCacheV111.util.CacheException.FILESIZE_UNKNOWN;
+import static diskCacheV111.util.CacheException.FILE_CORRUPTED;
+import static diskCacheV111.util.CacheException.FILE_EXISTS;
+import static diskCacheV111.util.CacheException.FILE_IN_CACHE;
+import static diskCacheV111.util.CacheException.FILE_IS_NEW;
+import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
+import static diskCacheV111.util.CacheException.FILE_NOT_IN_REPOSITORY;
+import static diskCacheV111.util.CacheException.FILE_NOT_ONLINE;
+import static diskCacheV111.util.CacheException.FILE_NOT_STORED;
+import static diskCacheV111.util.CacheException.FILE_PRECIOUS;
+import static diskCacheV111.util.CacheException.HSM_DELAY_ERROR;
+import static diskCacheV111.util.CacheException.INVALID_ARGS;
+import static diskCacheV111.util.CacheException.LOCKED;
+import static diskCacheV111.util.CacheException.MOVER_NOT_FOUND;
+import static diskCacheV111.util.CacheException.NOT_DIR;
+import static diskCacheV111.util.CacheException.NOT_FILE;
+import static diskCacheV111.util.CacheException.NOT_IN_TRASH;
+import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
+import static diskCacheV111.util.CacheException.NO_POOL_ONLINE;
+import static diskCacheV111.util.CacheException.OUT_OF_DATE;
+import static diskCacheV111.util.CacheException.PANIC;
+import static diskCacheV111.util.CacheException.PERMISSION_DENIED;
+import static diskCacheV111.util.CacheException.POOL_DISABLED;
+import static diskCacheV111.util.CacheException.RESOURCE;
+import static diskCacheV111.util.CacheException.SERVICE_UNAVAILABLE;
+import static diskCacheV111.util.CacheException.THIRD_PARTY_TRANSFER_FAILED;
+import static diskCacheV111.util.CacheException.TIMEOUT;
+import static diskCacheV111.util.CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ArgInvalid;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ChkSumErr;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FSError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileLocked;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_IOError;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotAuthorized;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotFile;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_NotFound;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 
+import diskCacheV111.util.CacheException;
 import org.dcache.xrootd.core.XrootdException;
 
-import static diskCacheV111.util.CacheException.*;
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
-
 /**
- *  Centralized place for translating CacheExceptions into XrootdExceptions
+ * Centralized place for translating CacheExceptions into XrootdExceptions
  */
-public class CacheExceptionMapper
-{
-    public static XrootdException xrootdException(CacheException e)
-    {
+public class CacheExceptionMapper {
+
+    public static XrootdException xrootdException(CacheException e) {
         return xrootdException(e.getRc(), e.getMessage());
     }
 
-    public static XrootdException xrootdException(int error, String message)
-    {
+    public static XrootdException xrootdException(int error, String message) {
         return new XrootdException(xrootdErrorCode(error), message);
     }
 
-    public static int xrootdErrorCode(int rc)
-    {
-        switch(rc) {
+    public static int xrootdErrorCode(int rc) {
+        switch (rc) {
             case FILE_NOT_FOUND:
                 return kXR_NotFound;
 
@@ -93,6 +126,6 @@ public class CacheExceptionMapper
         }
     }
 
-    private CacheExceptionMapper()
-    {} // static class
+    private CacheExceptionMapper() {
+    } // static class
 }

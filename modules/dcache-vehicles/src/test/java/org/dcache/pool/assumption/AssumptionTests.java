@@ -18,128 +18,124 @@
  */
 package org.dcache.pool.assumption;
 
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.Collections;
-
-import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.util.OutOfDateCacheException;
-
 import static org.dcache.pool.assumption.Assumptions.none;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class AssumptionTests
-{
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.util.OutOfDateCacheException;
+import java.util.Collection;
+import java.util.Collections;
+import org.junit.Test;
+
+public class AssumptionTests {
+
     @Test
-    public void shouldProvideAssumptionThatAllowsEverything() throws OutOfDateCacheException
-    {
+    public void shouldProvideAssumptionThatAllowsEverything() throws OutOfDateCacheException {
         none().check(new EmptyPool());
     }
 
     @Test
-    public void shouldConcatNoneAndNoneToNone() throws OutOfDateCacheException
-    {
+    public void shouldConcatNoneAndNoneToNone() throws OutOfDateCacheException {
         assertThat(none().and(none()), is(none()));
     }
 
     @Test
-    public void shouldConcatSomethingAndNoneToSomething() throws OutOfDateCacheException
-    {
-        assertThat(PerformanceCostAssumption.of(0, 1).and(none()), is(PerformanceCostAssumption.of(0, 1)));
+    public void shouldConcatSomethingAndNoneToSomething() throws OutOfDateCacheException {
+        assertThat(PerformanceCostAssumption.of(0, 1).and(none()),
+              is(PerformanceCostAssumption.of(0, 1)));
     }
 
     @Test
-    public void shouldConcatNoneAndSomethingToSomething() throws OutOfDateCacheException
-    {
-        assertThat(none().and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1)));
+    public void shouldConcatNoneAndSomethingToSomething() throws OutOfDateCacheException {
+        assertThat(none().and(PerformanceCostAssumption.of(0, 1)),
+              is(PerformanceCostAssumption.of(0, 1)));
     }
 
     @Test
-    public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething() throws OutOfDateCacheException
-    {
-        assertThat(none().and(PerformanceCostAssumption.of(0, 1)).and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
+    public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething()
+          throws OutOfDateCacheException {
+        assertThat(none().and(PerformanceCostAssumption.of(0, 1))
+                    .and(PerformanceCostAssumption.of(0, 1)),
+              is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
-    public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething2() throws OutOfDateCacheException
-    {
-        assertThat(none().and(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
+    public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething2()
+          throws OutOfDateCacheException {
+        assertThat(none().and(
+                    PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))),
+              is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
-    public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething() throws OutOfDateCacheException
-    {
-        assertThat(PerformanceCostAssumption.of(0, 1).and(none()).and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
+    public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething()
+          throws OutOfDateCacheException {
+        assertThat(PerformanceCostAssumption.of(0, 1).and(none())
+                    .and(PerformanceCostAssumption.of(0, 1)),
+              is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
-    public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething2() throws OutOfDateCacheException
-    {
-        assertThat(PerformanceCostAssumption.of(0, 1).and(none().and(PerformanceCostAssumption.of(0, 1))), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
+    public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething2()
+          throws OutOfDateCacheException {
+        assertThat(PerformanceCostAssumption.of(0, 1)
+                    .and(none().and(PerformanceCostAssumption.of(0, 1))),
+              is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
-    public void shouldBeAssociative() throws OutOfDateCacheException
-    {
-        assertThat((PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))).and(PerformanceCostAssumption.of(0, 1)),
-                   is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1)))));
+    public void shouldBeAssociative() throws OutOfDateCacheException {
+        assertThat((PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))).and(
+                    PerformanceCostAssumption.of(0, 1)),
+              is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1)
+                    .and(PerformanceCostAssumption.of(0, 1)))));
     }
 
-    private static class EmptyPool implements Assumption.Pool
-    {
+    private static class EmptyPool implements Assumption.Pool {
+
         @Override
-        public String name()
-        {
+        public String name() {
             return "pool";
         }
 
         @Override
-        public PoolCostInfo.PoolSpaceInfo space()
-        {
+        public PoolCostInfo.PoolSpaceInfo space() {
             return new PoolCostInfo.PoolSpaceInfo(0, 0, 0, 0, 0, 0, 0);
         }
 
         @Override
-        public double moverCostFactor()
-        {
+        public double moverCostFactor() {
             return 0;
         }
 
         @Override
-        public PoolCostInfo.NamedPoolQueueInfo getMoverQueue(String name)
-        {
+        public PoolCostInfo.NamedPoolQueueInfo getMoverQueue(String name) {
             return null;
         }
 
         @Override
-        public Collection<PoolCostInfo.NamedPoolQueueInfo> movers()
-        {
+        public Collection<PoolCostInfo.NamedPoolQueueInfo> movers() {
             return Collections.emptyList();
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo p2PClient()
-        {
+        public PoolCostInfo.PoolQueueInfo p2PClient() {
             return new PoolCostInfo.PoolQueueInfo(0, 0, 0, 0, 0);
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo p2pServer()
-        {
+        public PoolCostInfo.PoolQueueInfo p2pServer() {
             return new PoolCostInfo.PoolQueueInfo(0, 0, 0, 0, 0);
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo restore()
-        {
+        public PoolCostInfo.PoolQueueInfo restore() {
             return new PoolCostInfo.PoolQueueInfo(0, 0, 0, 0, 0);
         }
 
         @Override
-        public PoolCostInfo.PoolQueueInfo store()
-        {
+        public PoolCostInfo.PoolQueueInfo store() {
             return new PoolCostInfo.PoolQueueInfo(0, 0, 0, 0, 0);
         }
     }

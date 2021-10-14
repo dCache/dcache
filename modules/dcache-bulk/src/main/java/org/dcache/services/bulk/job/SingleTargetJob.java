@@ -59,33 +59,30 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.job;
 
+import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.Message;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import diskCacheV111.util.FsPath;
-import diskCacheV111.vehicles.Message;
-
 /**
- * This is the class which should be extended for all
- * activity types and mapped to the job factory's map.
+ * This is the class which should be extended for all activity types and mapped to the job factory's
+ * map.
  */
-public abstract class SingleTargetJob extends BulkJob
-{
-    protected FsPath              path;
+public abstract class SingleTargetJob extends BulkJob {
+
+    protected FsPath path;
     protected Map<String, String> arguments;
-    protected ExecutorService     executorService;
-    protected Future<? extends Message>  waitable;
+    protected ExecutorService executorService;
+    protected Future<? extends Message> waitable;
 
     protected SingleTargetJob(BulkJobKey key,
-                              BulkJobKey parentKey,
-                              String activity)
-    {
+          BulkJobKey parentKey,
+          String activity) {
         super(key, parentKey, activity);
     }
 
-    public synchronized boolean cancel()
-    {
+    public synchronized boolean cancel() {
         if (waitable != null) {
             waitable.cancel(true);
         }
@@ -93,35 +90,29 @@ public abstract class SingleTargetJob extends BulkJob
         return super.cancel();
     }
 
-    public void setArguments(Map<String, String> arguments)
-    {
+    public void setArguments(Map<String, String> arguments) {
         this.arguments = arguments;
     }
 
-    public void setPath(FsPath path)
-    {
+    public void setPath(FsPath path) {
         this.path = path;
     }
 
-    public void setExecutorService(ExecutorService executorService)
-    {
+    public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
-    protected synchronized void setWaitable(Future<? extends Message> waitable)
-    {
+    protected synchronized void setWaitable(Future<? extends Message> waitable) {
         this.waitable = waitable;
     }
 
-    protected void postCompletion()
-    {
+    protected void postCompletion() {
         completionHandler.jobCompleted(this);
     }
 
-    protected void setError(Object error)
-    {
+    protected void setError(Object error) {
         if (error instanceof Throwable) {
-            errorObject = (Throwable)error;
+            errorObject = (Throwable) error;
         } else {
             errorObject = new Throwable(String.valueOf(error));
         }

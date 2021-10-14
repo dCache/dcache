@@ -1,5 +1,14 @@
 package org.dcache.pool.classic;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.joining;
+import static org.dcache.pool.classic.IoRequestState.CANCELED;
+import static org.dcache.pool.classic.IoRequestState.DONE;
+import static org.dcache.pool.classic.IoRequestState.NEW;
+import static org.dcache.pool.classic.IoRequestState.QUEUED;
+import static org.dcache.pool.classic.IoRequestState.RUNNING;
+
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -38,15 +47,10 @@ import org.dcache.util.IoPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.stream.Collectors.joining;
-import static org.dcache.pool.classic.IoRequestState.*;
+public class MoverRequestScheduler {
 
-public class MoverRequestScheduler
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(MoverRequestScheduler.class);
+          LoggerFactory.getLogger(MoverRequestScheduler.class);
 
     private static final long DEFAULT_LAST_ACCESSED = 0;
     private static final long DEFAULT_TOTAL = 0;
@@ -54,15 +58,13 @@ public class MoverRequestScheduler
     /**
      * A RuntimeException that wraps a CacheException.
      */
-    private static class UncheckedCacheException extends RuntimeException
-    {
-        private UncheckedCacheException(CacheException cause)
-        {
+    private static class UncheckedCacheException extends RuntimeException {
+
+        private UncheckedCacheException(CacheException cause) {
             super(cause.getMessage(), cause);
         }
 
-        private CacheException getCacheException()
-        {
+        private CacheException getCacheException() {
             return (CacheException) getCause();
         }
     }
@@ -76,22 +78,21 @@ public class MoverRequestScheduler
      * All movers, both queued and running, managed by the scheduler.
      */
     private final Map<Integer, PrioritizedRequest> _jobs =
-            new ConcurrentHashMap<>(128);
+          new ConcurrentHashMap<>(128);
 
     /**
      * Requests by door unique request id.
      */
     private final Map<String, PrioritizedRequest> _moverByRequests
-            = new ConcurrentHashMap<>(128);
+          = new ConcurrentHashMap<>(128);
 
     /**
-     * ID of the current queue. Used to identify queue in {@link
-     * IoQueueManager}.
+     * ID of the current queue. Used to identify queue in {@link IoQueueManager}.
      */
     private final int _queueId;
 
     private final List<FaultListener> _faultListeners =
-            new CopyOnWriteArrayList<>();
+          new CopyOnWriteArrayList<>();
 
     /**
      * Number of free job slots.
@@ -130,13 +131,11 @@ public class MoverRequestScheduler
 
     private boolean _loggedQueuingMovers;
 
-    public enum Order
-    {
+    public enum Order {
         FIFO, LIFO
     }
 
-    public MoverRequestScheduler(String name, int queueId, Order order)
-    {
+    public MoverRequestScheduler(String name, int queueId, Order order) {
         _name = name;
         _queueId = queueId;
         _order = order;
@@ -144,42 +143,37 @@ public class MoverRequestScheduler
         _semaphore.setMaxPermits(2);
     }
 
-    public void addFaultListener(FaultListener listener)
-    {
+    public void addFaultListener(FaultListener listener) {
         _faultListeners.add(listener);
     }
 
-    public void removeFaultListener(FaultListener listener)
-    {
+    public void removeFaultListener(FaultListener listener) {
         _faultListeners.remove(listener);
     }
 
-    private PriorityBlockingQueue<PrioritizedRequest> createQueue(Order order)
-    {
+    private PriorityBlockingQueue<PrioritizedRequest> createQueue(Order order) {
         /* PriorityBlockingQueue returns the least elements first, that is, the
          * the highest priority requests have to be first in the ordering.
          */
         Comparator<IoPrioritizable> comparator =
-                order == Order.FIFO
-                ? Comparator
-                        .comparing(IoPrioritizable::getPriority)
-                        .reversed()
-                        .thenComparingLong(IoPrioritizable::getCreateTime)
-                : Comparator
-                        .comparing(IoPrioritizable::getPriority)
-                        .thenComparingLong(IoPrioritizable::getCreateTime)
-                        .reversed();
+              order == Order.FIFO
+                    ? Comparator
+                    .comparing(IoPrioritizable::getPriority)
+                    .reversed()
+                    .thenComparingLong(IoPrioritizable::getCreateTime)
+                    : Comparator
+                          .comparing(IoPrioritizable::getPriority)
+                          .thenComparingLong(IoPrioritizable::getCreateTime)
+                          .reversed();
 
         return new PriorityBlockingQueue<>(16, comparator);
     }
 
-    public Order getOrder()
-    {
+    public Order getOrder() {
         return _order;
     }
 
-    public synchronized void setOrder(Order order)
-    {
+    public synchronized void setOrder(Order order) {
         if (order != _order) {
             PriorityBlockingQueue<PrioritizedRequest> queue = createQueue(order);
             _queue.drainTo(queue);
@@ -189,11 +183,10 @@ public class MoverRequestScheduler
     }
 
     /**
-     * Get mover id for given door request. If there is no mover associated with {@code doorUniqueueRequest} a new mover
-     * will be created by using provided {@code moverSupplier}.
+     * Get mover id for given door request. If there is no mover associated with {@code
+     * doorUniqueueRequest} a new mover will be created by using provided {@code moverSupplier}.
      * <p>
-     * The returned mover id generated with following encoding:
-     * | 31- queue id -24|23- job id -0|
+     * The returned mover id generated with following encoding: | 31- queue id -24|23- job id -0|
      *
      * @param moverSupplier {@link MoverSupplier} which can create a mover for given requests.
      * @param doorUniqueId  unique request identifier generated by the door.
@@ -201,22 +194,21 @@ public class MoverRequestScheduler
      * @return mover id
      */
     public int getOrCreateMover(MoverSupplier moverSupplier, String doorUniqueId,
-                                IoPriority priority) throws CacheException
-    {
+          IoPriority priority) throws CacheException {
         checkState(!_isShutdown);
 
         try {
             /* Create the request if it doesn't already exists.
              */
             PrioritizedRequest request =
-                    _moverByRequests.computeIfAbsent(doorUniqueId,
-                                                     key -> {
-                                                         try {
-                                                             return createRequest(moverSupplier, key, priority);
-                                                         } catch (CacheException e) {
-                                                             throw new UncheckedCacheException(e);
-                                                         }
-                                                     });
+                  _moverByRequests.computeIfAbsent(doorUniqueId,
+                        key -> {
+                            try {
+                                return createRequest(moverSupplier, key, priority);
+                            } catch (CacheException e) {
+                                throw new UncheckedCacheException(e);
+                            }
+                        });
 
             /* If not already queued, submit it.
              */
@@ -227,7 +219,7 @@ public class MoverRequestScheduler
                     sendToExecution(request);
                 } else if (_semaphore.getMaxPermits() <= 0) {
                     LOGGER.warn("A task was added to queue '{}', however the queue is not " +
-                                "configured to execute any tasks.", _name);
+                          "configured to execute any tasks.", _name);
                 }
             }
 
@@ -238,13 +230,12 @@ public class MoverRequestScheduler
     }
 
     private PrioritizedRequest createRequest(MoverSupplier moverSupplier,
-                                             String doorUniqueId,
-                                             IoPriority priority) throws CacheException
-    {
+          String doorUniqueId,
+          IoPriority priority) throws CacheException {
         return new PrioritizedRequest(_queueId << 24 | nextId(),
-                                      doorUniqueId,
-                                      moverSupplier.createMover(),
-                                      priority);
+              doorUniqueId,
+              moverSupplier.createMover(),
+              priority);
     }
 
     /**
@@ -255,10 +246,10 @@ public class MoverRequestScheduler
      * @param request
      * @return
      */
-    private synchronized boolean submit(PrioritizedRequest request)
-    {
+    private synchronized boolean submit(PrioritizedRequest request) {
         if (_jobs.put(request.getId(), request) != null) {
-            throw new RuntimeException("Duplicate mover id detected. Please report to support@dcache.org.");
+            throw new RuntimeException(
+                  "Duplicate mover id detected. Please report to support@dcache.org.");
         }
 
         if (_semaphore.tryAcquire()) {
@@ -274,14 +265,13 @@ public class MoverRequestScheduler
     }
 
     /**
-     * Returns the next job or releases a job slot. If a non-null value is returned, the caller
-     * must submit the job to execution. Should only be caller by a caller than currently holds
-     * a job slot.
+     * Returns the next job or releases a job slot. If a non-null value is returned, the caller must
+     * submit the job to execution. Should only be caller by a caller than currently holds a job
+     * slot.
      *
      * @return
      */
-    private synchronized PrioritizedRequest nextOrRelease()
-    {
+    private synchronized PrioritizedRequest nextOrRelease() {
         PrioritizedRequest request = _queue.poll();
         if (request == null) {
             _semaphore.release();
@@ -297,8 +287,7 @@ public class MoverRequestScheduler
         return request;
     }
 
-    private synchronized int nextId()
-    {
+    private synchronized int nextId() {
         if (_nextId == 0x00FFFFFF) {
             _nextId = 0;
         } else {
@@ -312,16 +301,14 @@ public class MoverRequestScheduler
      *
      * @return number of running jobs.
      */
-    public synchronized int getActiveJobs()
-    {
+    public synchronized int getActiveJobs() {
         return _jobs.size() - _queue.size();
     }
 
     /**
      * Get job information.
      */
-    public Optional<JobInfo> getJobInfo(int id) throws NoSuchElementException
-    {
+    public Optional<JobInfo> getJobInfo(int id) throws NoSuchElementException {
         PrioritizedRequest request = _jobs.get(id);
         return request == null ? Optional.empty() : Optional.of(request.toJobInfo());
     }
@@ -331,27 +318,25 @@ public class MoverRequestScheduler
      *
      * @return list of all jobs
      */
-    public List<IoJobInfo> getJobInfos()
-    {
+    public List<IoJobInfo> getJobInfos() {
         return Collections.unmodifiableList(_jobs.values().stream()
-                                                    .map(PrioritizedRequest::toJobInfo)
-                                                    .collect(Collectors.toList())
+              .map(PrioritizedRequest::toJobInfo)
+              .collect(Collectors.toList())
         );
     }
 
     /**
-     * This method is necessary because IoJobInfo does not give all
-     * the info that the toString on the Mover class does.
+     * This method is necessary because IoJobInfo does not give all the info that the toString on
+     * the Mover class does.
      */
     public List<MoverData> getMoverData(Predicate<MoverData> filter,
-                                        Comparator<MoverData> sorter)
-    {
+          Comparator<MoverData> sorter) {
         return _jobs.values()
-                    .stream()
-                    .map(PrioritizedRequest::toMoverData)
-                    .filter(filter)
-                    .sorted(sorter)
-                    .collect(Collectors.toList());
+              .stream()
+              .map(PrioritizedRequest::toMoverData)
+              .filter(filter)
+              .sorted(sorter)
+              .collect(Collectors.toList());
     }
 
     /**
@@ -369,19 +354,17 @@ public class MoverRequestScheduler
      *
      * @return maximal number of jobs.
      */
-    public int getMaxActiveJobs()
-    {
+    public int getMaxActiveJobs() {
         return _semaphore.getMaxPermits();
     }
 
     /**
-     * Set maximal number of concurrently running jobs by this scheduler. All
-     * pending jobs will be executed.
+     * Set maximal number of concurrently running jobs by this scheduler. All pending jobs will be
+     * executed.
      *
      * @param maxJobs
      */
-    public void setMaxActiveJobs(int maxJobs)
-    {
+    public void setMaxActiveJobs(int maxJobs) {
         synchronized (this) {
             _semaphore.setMaxPermits(maxJobs);
         }
@@ -396,8 +379,7 @@ public class MoverRequestScheduler
      *
      * @return number of pending requests.
      */
-    public synchronized int getQueueSize()
-    {
+    public synchronized int getQueueSize() {
         return _queue.size();
     }
 
@@ -425,13 +407,11 @@ public class MoverRequestScheduler
      *
      * @return name of the scheduler
      */
-    public String getName()
-    {
+    public String getName() {
         return _name;
     }
 
-    public int getId()
-    {
+    public int getId() {
         return _queueId;
     }
 
@@ -442,8 +422,7 @@ public class MoverRequestScheduler
      * @param explanation A reason to log
      * @return true if a job was killed, false otherwise
      */
-    public synchronized boolean cancel(int id, @Nullable String explanation)
-    {
+    public synchronized boolean cancel(int id, @Nullable String explanation) {
         boolean killed = false;
         PrioritizedRequest request = _jobs.get(id);
         if (request != null) {
@@ -456,39 +435,35 @@ public class MoverRequestScheduler
         return killed;
     }
 
-    private void postprocessWithoutJobSlot(PrioritizedRequest request)
-    {
+    private void postprocessWithoutJobSlot(PrioritizedRequest request) {
         try (CDC ignore = request.getCdc().restore()) {
             request.getMover().close(
-                    new CompletionHandler<Void, Void>()
-                    {
-                        @Override
-                        public void completed(Void result, Void attachment)
-                        {
-                            release();
-                        }
+                  new CompletionHandler<Void, Void>() {
+                      @Override
+                      public void completed(Void result, Void attachment) {
+                          release();
+                      }
 
-                        private void release()
-                        {
-                            request.done();
-                            _jobs.remove(request.getId());
-                            _moverByRequests.remove(request.getDoorUniqueId());
-                        }                        @Override
-                        public void failed(Throwable exc, Void attachment)
-                        {
-                            release();
-                        }
+                      private void release() {
+                          request.done();
+                          _jobs.remove(request.getId());
+                          _moverByRequests.remove(request.getDoorUniqueId());
+                      }
+
+                      @Override
+                      public void failed(Throwable exc, Void attachment) {
+                          release();
+                      }
 
 
-                    });
+                  });
         }
     }
 
     /**
      * Shutdown the scheduler. All subsequent execution request will be rejected.
      */
-    public void shutdown() throws InterruptedException
-    {
+    public void shutdown() throws InterruptedException {
         checkState(!_isShutdown);
         _isShutdown = true;
 
@@ -512,130 +487,120 @@ public class MoverRequestScheduler
             // This is often due to a mover not reacting to interrupt or the transfer
             // doing a lengthy checksum calculation during post processing.
             String versions =
-                    _jobs.values().stream()
-                            .map(PrioritizedRequest::getMover)
-                            .map(Mover::getProtocolInfo)
-                            .map(ProtocolInfo::getVersionString)
-                            .collect(joining(","));
+                  _jobs.values().stream()
+                        .map(PrioritizedRequest::getMover)
+                        .map(Mover::getProtocolInfo)
+                        .map(ProtocolInfo::getVersionString)
+                        .collect(joining(","));
             LOGGER.warn("Failed to terminate some movers prior to shutdown: {}", versions);
         }
     }
 
-    private void sendToExecution(final PrioritizedRequest request)
-    {
+    private void sendToExecution(final PrioritizedRequest request) {
         try (CDC ignore = request.getCdc().restore()) {
             request.transfer(
-                    new CompletionHandler<Void, Void>()
-                    {
-                        @Override
-                        public void completed(Void result, Void attachment)
-                        {
-                            postprocess();
-                        }
+                  new CompletionHandler<Void, Void>() {
+                      @Override
+                      public void completed(Void result, Void attachment) {
+                          postprocess();
+                      }
 
-                        @Override
-                        public void failed(Throwable exc, Void attachment)
-                        {
-                            if (exc instanceof InterruptedException || exc instanceof InterruptedIOException) {
-                                request.getMover().setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
-                                                                     "Transfer was killed");
-                            } else if (exc instanceof DiskErrorCacheException) {
-                                FaultEvent faultEvent = new FaultEvent("transfer", FaultAction.DISABLED, exc.getMessage(), exc);
-                                _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
-                            }
-                            postprocess();
-                        }
+                      @Override
+                      public void failed(Throwable exc, Void attachment) {
+                          if (exc instanceof InterruptedException
+                                || exc instanceof InterruptedIOException) {
+                              request.getMover()
+                                    .setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
+                                          "Transfer was killed");
+                          } else if (exc instanceof DiskErrorCacheException) {
+                              FaultEvent faultEvent = new FaultEvent("transfer",
+                                    FaultAction.DISABLED, exc.getMessage(), exc);
+                              _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
+                          }
+                          postprocess();
+                      }
 
-                        private void postprocess()
-                        {
-                            try (CDC ignore = request.getCdc().restore()) {
-                                request.getMover().close(
-                                        new CompletionHandler<Void, Void>()
-                                        {
-                                            @Override
-                                            public void completed(Void result, Void attachment)
-                                            {
-                                                release();
+                      private void postprocess() {
+                          try (CDC ignore = request.getCdc().restore()) {
+                              request.getMover().close(
+                                    new CompletionHandler<Void, Void>() {
+                                        @Override
+                                        public void completed(Void result, Void attachment) {
+                                            release();
+                                        }
+
+                                        @Override
+                                        public void failed(Throwable exc, Void attachment) {
+                                            if (exc instanceof DiskErrorCacheException) {
+                                                FaultEvent faultEvent = new FaultEvent(
+                                                      "post-processing",
+                                                      FaultAction.DISABLED,
+                                                      exc.getMessage(), exc);
+                                                _faultListeners.forEach(
+                                                      l -> l.faultOccurred(faultEvent));
                                             }
+                                            release();
+                                        }
 
-                                            @Override
-                                            public void failed(Throwable exc, Void attachment)
-                                            {
-                                                if (exc instanceof DiskErrorCacheException) {
-                                                    FaultEvent faultEvent = new FaultEvent("post-processing",
-                                                                                           FaultAction.DISABLED,
-                                                                                           exc.getMessage(), exc);
-                                                    _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
-                                                }
-                                                release();
+                                        private void release() {
+                                            request.done();
+                                            _jobs.remove(request.getId());
+                                            _moverByRequests.remove(request.getDoorUniqueId());
+                                            PrioritizedRequest nextRequest = nextOrRelease();
+                                            if (nextRequest != null) {
+                                                sendToExecution(nextRequest);
                                             }
-
-                                            private void release()
-                                            {
-                                                request.done();
-                                                _jobs.remove(request.getId());
-                                                _moverByRequests.remove(request.getDoorUniqueId());
-                                                PrioritizedRequest nextRequest = nextOrRelease();
-                                                if (nextRequest != null) {
-                                                    sendToExecution(nextRequest);
-                                                }
-                                            }
-                                        });
-                            }
-                        }
-                    });
+                                        }
+                                    });
+                          }
+                      }
+                  });
         }
     }
 
-    public synchronized boolean isExpired(JobInfo job, long now)
-    {
+    public synchronized boolean isExpired(JobInfo job, long now) {
         long started = job.getStartTime();
         long lastAccessed =
-                job instanceof IoJobInfo ?
-                ((IoJobInfo) job).getLastTransferred() :
-                now;
+              job instanceof IoJobInfo ?
+                    ((IoJobInfo) job).getLastTransferred() :
+                    now;
 
         return
-                ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&
-                 ((now - lastAccessed) > getLastAccessed())) ||
-                ((getTotal() > 0L) && (started > 0L) &&
-                 ((now - started) > getTotal()));
+              ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&
+                    ((now - lastAccessed) > getLastAccessed())) ||
+                    ((getTotal() > 0L) && (started > 0L) &&
+                          ((now - started) > getTotal()));
     }
 
-    public synchronized long getLastAccessed()
-    {
+    public synchronized long getLastAccessed() {
         return _lastAccessed;
     }
 
-    public synchronized void setLastAccessed(long lastAccessed)
-    {
-        checkArgument(lastAccessed >= 0L, "The lastAccess timeout must be greater than or equal to 0.");
+    public synchronized void setLastAccessed(long lastAccessed) {
+        checkArgument(lastAccessed >= 0L,
+              "The lastAccess timeout must be greater than or equal to 0.");
         _lastAccessed = lastAccessed;
     }
 
-    public boolean hasNonDefaultLastAccessed()
-    {
+    public boolean hasNonDefaultLastAccessed() {
         return _lastAccessed != DEFAULT_LAST_ACCESSED;
     }
 
-    public synchronized long getTotal()
-    {
+    public synchronized long getTotal() {
         return _total;
     }
 
-    public synchronized void setTotal(long total)
-    {
+    public synchronized void setTotal(long total) {
         checkArgument(total >= 0L, "The total timeout must be greater than or equal to 0.");
         _total = total;
     }
 
-    public boolean hasNonDefaultTotal()
-    {
+    public boolean hasNonDefaultTotal() {
         return _total != DEFAULT_TOTAL;
     }
 
-    static class PrioritizedRequest implements IoPrioritizable, Comparable<PrioritizedRequest>
-    {
+    static class PrioritizedRequest implements IoPrioritizable, Comparable<PrioritizedRequest> {
+
         private final Mover<?> _mover;
         private final IoPriority _priority;
         private final long _ctime;
@@ -658,8 +623,7 @@ public class MoverRequestScheduler
 
         private Cancellable _cancellable;
 
-        PrioritizedRequest(int id, String doorUniqueId, Mover<?> mover, IoPriority p)
-        {
+        PrioritizedRequest(int id, String doorUniqueId, Mover<?> mover, IoPriority p) {
             _id = id;
             _mover = mover;
             _priority = p;
@@ -675,57 +639,47 @@ public class MoverRequestScheduler
             return Integer.compare(_id, o._id);
         }
 
-        public Mover<?> getMover()
-        {
+        public Mover<?> getMover() {
             return _mover;
         }
 
-        public CDC getCdc()
-        {
+        public CDC getCdc() {
             return _cdc;
         }
 
-        public int getId()
-        {
+        public int getId() {
             return _id;
         }
 
-        public String getDoorUniqueId()
-        {
+        public String getDoorUniqueId() {
             return _doorUniqueId;
         }
 
         @Override
-        public IoPriority getPriority()
-        {
+        public IoPriority getPriority() {
             return _priority;
         }
 
         @Override
-        public long getCreateTime()
-        {
+        public long getCreateTime() {
             return _ctime;
         }
 
-        public boolean isRead()
-        {
+        public boolean isRead() {
             return _mover.getIoMode().equals(FileStore.O_READ);
         }
 
-        public boolean isWrite()
-        {
+        public boolean isWrite() {
             return _mover.getIoMode().equals(FileStore.O_RW);
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return _id;
         }
 
         @Override
-        public boolean equals(Object o)
-        {
+        public boolean equals(Object o) {
             if (o == this) {
                 return true;
             }
@@ -739,25 +693,23 @@ public class MoverRequestScheduler
         }
 
         @Override
-        public synchronized String toString()
-        {
-            return _state + " : " + _mover.toString() + " si={" + _mover.getFileAttributes().getStorageClass() + "}";
+        public synchronized String toString() {
+            return _state + " : " + _mover.toString() + " si={" + _mover.getFileAttributes()
+                  .getStorageClass() + "}";
         }
 
-        public synchronized IoJobInfo toJobInfo()
-        {
+        public synchronized IoJobInfo toJobInfo() {
             return new IoJobInfo(_submitTime, _startTime, _state.toString(), _id,
-                                 _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
-                                 _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
-                                 _mover.getBytesExpected(),
-                                 _mover.getTransferTime(), _mover.getLastTransferred(),
-                                 _mover.remoteConnections());
+                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
+                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
+                  _mover.getBytesExpected(),
+                  _mover.getTransferTime(), _mover.getLastTransferred(),
+                  _mover.remoteConnections());
         }
 
-        public synchronized MoverData toMoverData()
-        {
+        public synchronized MoverData toMoverData() {
             MoverData data = new MoverData();
-            data.setPnfsId( _mover.getFileAttributes().getPnfsId().toString());
+            data.setPnfsId(_mover.getFileAttributes().getPnfsId().toString());
             data.setQueue(_mover.getQueueName());
             data.setMode(_mover.getIoMode().toString());
             data.setStorageClass(_mover.getFileAttributes().getStorageClass());
@@ -772,8 +724,7 @@ public class MoverRequestScheduler
             return data;
         }
 
-        public synchronized boolean queue()
-        {
+        public synchronized boolean queue() {
             if (_state == NEW) {
                 _state = QUEUED;
                 return true;
@@ -781,8 +732,7 @@ public class MoverRequestScheduler
             return false;
         }
 
-        public synchronized void transfer(CompletionHandler<Void, Void> completionHandler)
-        {
+        public synchronized void transfer(CompletionHandler<Void, Void> completionHandler) {
             try {
                 if (_state != QUEUED) {
                     completionHandler.failed(new InterruptedException("Transfer cancelled"), null);
@@ -795,28 +745,26 @@ public class MoverRequestScheduler
             }
         }
 
-        public synchronized void kill(@Nullable String explanation)
-        {
+        public synchronized void kill(@Nullable String explanation) {
             if (_state == CANCELED || _state == DONE) {
                 return;
             }
 
             if (_cancellable != null) {
                 String why = explanation == null
-                        ? "Active transfer cancelled"
-                        : ("Active transfer cancelled: " + explanation);
+                      ? "Active transfer cancelled"
+                      : ("Active transfer cancelled: " + explanation);
                 _cancellable.cancel(why);
             } else {
                 String why = explanation == null
-                        ? "Queued transfer cancelled"
-                        : ("Queued transfer cancelled: " + explanation);
+                      ? "Queued transfer cancelled"
+                      : ("Queued transfer cancelled: " + explanation);
                 _mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, why);
             }
             _state = CANCELED;
         }
 
-        public synchronized void done()
-        {
+        public synchronized void done() {
             _state = DONE;
         }
     }

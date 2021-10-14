@@ -60,12 +60,11 @@ documents or software obtained from this server.
 package org.dcache.xrootd.plugins.authz;
 
 import java.util.Properties;
-
 import org.dcache.xrootd.plugins.AuthorizationFactory;
 import org.dcache.xrootd.plugins.AuthorizationProvider;
 
-public class XrootdSciTokenAuthzProvider implements AuthorizationProvider
-{
+public class XrootdSciTokenAuthzProvider implements AuthorizationProvider {
+
     /*
      *  Used by factory.
      */
@@ -74,11 +73,10 @@ public class XrootdSciTokenAuthzProvider implements AuthorizationProvider
     private static final String STRICT_PROPERTY = "xrootd.plugin!scitokens.strict";
 
     @Override
-    public AuthorizationFactory createFactory(String plugin, Properties properties)
-    {
+    public AuthorizationFactory createFactory(String plugin, Properties properties) {
         if (NAME.equals(plugin)) {
             String strict = properties.getProperty(STRICT_PROPERTY,
-                                                   "false");
+                  "false");
             return new XrootdSciTokenAuthzFactory(Boolean.valueOf(strict));
         }
 

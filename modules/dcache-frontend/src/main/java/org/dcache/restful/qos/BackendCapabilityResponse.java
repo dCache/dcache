@@ -10,7 +10,7 @@ public class BackendCapabilityResponse {
     private String status = "200";
 
     @ApiModelProperty(value = "The message corresponding to the HTTP status code.",
-                    required = true)
+          required = true)
     private String message = "successful";
 
     @ApiModelProperty("Additional information about this quality of service.")
@@ -20,7 +20,7 @@ public class BackendCapabilityResponse {
     private String target;
 
     @ApiModelProperty("The target quality of service when a file is "
-                    + "transitioning between different quality of services.")
+          + "transitioning between different quality of services.")
     private BackendCapability backendCapability;
 
     public BackendCapability getBackendCapability() {

@@ -66,20 +66,14 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 
+import static com.google.common.collect.Iterables.getFirst;
+import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
+
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.italiangrid.voms.util.CredentialsUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -88,85 +82,89 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.util.SqlGlob;
-
-import static com.google.common.collect.Iterables.getFirst;
-import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
+import org.italiangrid.voms.util.CredentialsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 public class DatabaseRequestCredentialStorage implements RequestCredentialStorage {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
+          LoggerFactory.getLogger(DatabaseRequestCredentialStorage.class);
 
-   /** Creates a new instance of TestDatabaseJobStorage */
-   private final JdbcTemplate jdbcTemplate;
-   protected static final String stringType=" VARCHAR(32672)  ";
-   protected static final String longType=" BIGINT ";
-   protected static final String intType=" INTEGER ";
-   protected static final String dateTimeType= " TIMESTAMP ";
-   protected static final String booleanType= " INT ";
-   private final String credentialsDirectory;
+    /**
+     * Creates a new instance of TestDatabaseJobStorage
+     */
+    private final JdbcTemplate jdbcTemplate;
+    protected static final String stringType = " VARCHAR(32672)  ";
+    protected static final String longType = " BIGINT ";
+    protected static final String intType = " INTEGER ";
+    protected static final String dateTimeType = " TIMESTAMP ";
+    protected static final String booleanType = " INT ";
+    private final String credentialsDirectory;
 
-   public DatabaseRequestCredentialStorage(Configuration configuration)
-           throws DataAccessException
-   {
-      this.credentialsDirectory = configuration.getCredentialsDirectory();
-      this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
-      File dir = new File(credentialsDirectory);
-      if(!dir.exists()) {
-          if(!dir.mkdir()) {
-              LOGGER.error("failed to create directory {}", credentialsDirectory);
-          }
-      }
-      if(!dir.isDirectory() || !dir.canWrite()) {
-          LOGGER.error("credential directory {} does not exist or is not writable", credentialsDirectory);
-      }
-      dbInit();
-   }
+    public DatabaseRequestCredentialStorage(Configuration configuration)
+          throws DataAccessException {
+        this.credentialsDirectory = configuration.getCredentialsDirectory();
+        this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
+        File dir = new File(credentialsDirectory);
+        if (!dir.exists()) {
+            if (!dir.mkdir()) {
+                LOGGER.error("failed to create directory {}", credentialsDirectory);
+            }
+        }
+        if (!dir.isDirectory() || !dir.canWrite()) {
+            LOGGER.error("credential directory {} does not exist or is not writable",
+                  credentialsDirectory);
+        }
+        dbInit();
+    }
 
-   public String getTableName() {
-      return requestCredentialTableName;
-   }
+    public String getTableName() {
+        return requestCredentialTableName;
+    }
 
-   public static final String requestCredentialTableName = "srmrequestcredentials";
+    public static final String requestCredentialTableName = "srmrequestcredentials";
 
-   public static final String createRequestCredentialTable =
-      "CREATE TABLE "+requestCredentialTableName+" ( "+
-      "id "+         longType+" NOT NULL PRIMARY KEY,"+
-      "creationtime "+        longType  +","+
-      "credentialname "+        stringType+ ","+
-      "role "+           stringType+   ","+
-      "numberofusers "+           intType+   ","+
-      "delegatedcredentials "+         stringType+    ","+
-      "credentialexpiration "+ longType+
-      " )";
+    public static final String createRequestCredentialTable =
+          "CREATE TABLE " + requestCredentialTableName + " ( " +
+                "id " + longType + " NOT NULL PRIMARY KEY," +
+                "creationtime " + longType + "," +
+                "credentialname " + stringType + "," +
+                "role " + stringType + "," +
+                "numberofusers " + intType + "," +
+                "delegatedcredentials " + stringType + "," +
+                "credentialexpiration " + longType +
+                " )";
 
-   private void dbInit()
-           throws DataAccessException
-   {
-       jdbcTemplate.execute((Connection con) -> {
-           //get database info
-           DatabaseMetaData md = con.getMetaData();
-           String tableNameAsStored = getIdentifierAsStored(md, getTableName());
-           try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-               if (!tableRs.next()) {
-                   // Table does not exist
-                   try (Statement s = con.createStatement()) {
-                       LOGGER.debug("dbInit trying {}", createRequestCredentialTable);
-                       s.executeUpdate(createRequestCredentialTable);
-                   }
-               }
-           }
-           return null;
-       });
-   }
+    private void dbInit()
+          throws DataAccessException {
+        jdbcTemplate.execute((Connection con) -> {
+            //get database info
+            DatabaseMetaData md = con.getMetaData();
+            String tableNameAsStored = getIdentifierAsStored(md, getTableName());
+            try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+                if (!tableRs.next()) {
+                    // Table does not exist
+                    try (Statement s = con.createStatement()) {
+                        LOGGER.debug("dbInit trying {}", createRequestCredentialTable);
+                        s.executeUpdate(createRequestCredentialTable);
+                    }
+                }
+            }
+            return null;
+        });
+    }
 
-    public static final String INSERT = "INSERT INTO "+requestCredentialTableName +
-       " (id, creationtime, credentialname, role, numberofusers, delegatedcredentials, credentialexpiration) "+
-       " VALUES ( ?,?,?,?,?,?,?) ";
+    public static final String INSERT = "INSERT INTO " + requestCredentialTableName +
+          " (id, creationtime, credentialname, role, numberofusers, delegatedcredentials, credentialexpiration) "
+          +
+          " VALUES ( ?,?,?,?,?,?,?) ";
 
     public void createRequestCredential(RequestCredential requestCredential) {
         X509Credential credential = requestCredential.getDelegatedCredential();
@@ -176,115 +174,117 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             write(credential, credentialFileName);
         }
         jdbcTemplate.update(INSERT,
-                requestCredential.getId(),
-                requestCredential.getCreationtime(),
-                requestCredential.getCredentialName(),
-                requestCredential.getRole(),
-                0, // Legacy field - not used
-                credentialFileName,
-                requestCredential.getDelegatedCredentialExpiration());
+              requestCredential.getId(),
+              requestCredential.getCreationtime(),
+              requestCredential.getCredentialName(),
+              requestCredential.getRole(),
+              0, // Legacy field - not used
+              credentialFileName,
+              requestCredential.getDelegatedCredentialExpiration());
     }
 
-    public static final String SELECT = "SELECT * FROM "+requestCredentialTableName +
-        " WHERE ";
+    public static final String SELECT = "SELECT * FROM " + requestCredentialTableName +
+          " WHERE ";
 
-    private RequestCredential getRequestCredentialByCondition(String query, Object ...args)
-            throws DataAccessException
-    {
+    private RequestCredential getRequestCredentialByCondition(String query, Object... args)
+          throws DataAccessException {
         List<RequestCredential> result =
-                jdbcTemplate.query(query, args,
-                                   (rs, rowNum) -> new RequestCredential(rs.getLong("id"),
-                                                                         rs.getLong("creationtime"),
-                                                                         rs.getString("credentialname"),
-                                                                         rs.getString("role"),
-                                                                         read(rs.getString("delegatedcredentials")),
-                                                                         rs.getLong("credentialexpiration"),
-                                                                         DatabaseRequestCredentialStorage.this));
+              jdbcTemplate.query(query, args,
+                    (rs, rowNum) -> new RequestCredential(rs.getLong("id"),
+                          rs.getLong("creationtime"),
+                          rs.getString("credentialname"),
+                          rs.getString("role"),
+                          read(rs.getString("delegatedcredentials")),
+                          rs.getLong("credentialexpiration"),
+                          DatabaseRequestCredentialStorage.this));
         return getFirst(result, null);
     }
 
-    public static final String SELECT_BY_ID = "SELECT * FROM "+requestCredentialTableName +
-        " WHERE id=?";
+    public static final String SELECT_BY_ID = "SELECT * FROM " + requestCredentialTableName +
+          " WHERE id=?";
 
     @Override
-    public RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException {
+    public RequestCredential getRequestCredential(Long requestCredentialId)
+          throws DataAccessException {
         return getRequestCredentialByCondition(SELECT_BY_ID, requestCredentialId);
     }
 
     public static final String SELECT_BY_NAME = "SELECT * FROM " + requestCredentialTableName +
-        " WHERE credentialname=? AND role IS null ORDER BY credentialexpiration DESC";
+          " WHERE credentialname=? AND role IS null ORDER BY credentialexpiration DESC";
 
-    public static final String SELECT_BY_NAME_AND_ROLE = "SELECT * FROM " + requestCredentialTableName +
-        " WHERE credentialname=? AND role=? ORDER BY credentialexpiration DESC";
+    public static final String SELECT_BY_NAME_AND_ROLE =
+          "SELECT * FROM " + requestCredentialTableName +
+                " WHERE credentialname=? AND role=? ORDER BY credentialexpiration DESC";
 
 
-   @Override
-   public RequestCredential getRequestCredential(String credentialName,
-                                                 String role) throws DataAccessException {
-      if (isRoleSpecified(role)) {
-          return getRequestCredentialByCondition(SELECT_BY_NAME_AND_ROLE,credentialName,role);
-      } else {
-          return getRequestCredentialByCondition(SELECT_BY_NAME,credentialName);
-      }
-   }
+    @Override
+    public RequestCredential getRequestCredential(String credentialName,
+          String role) throws DataAccessException {
+        if (isRoleSpecified(role)) {
+            return getRequestCredentialByCondition(SELECT_BY_NAME_AND_ROLE, credentialName, role);
+        } else {
+            return getRequestCredentialByCondition(SELECT_BY_NAME, credentialName);
+        }
+    }
 
     public static final String SELECT_BY_NAME_ONLY = "SELECT * FROM " + requestCredentialTableName +
-        " WHERE credentialname=? ORDER BY credentialexpiration DESC";
+          " WHERE credentialname=? ORDER BY credentialexpiration DESC";
 
     @Override
     public RequestCredential getRequestCredential(String credentialName)
-            throws DataAccessException {
+          throws DataAccessException {
         return getRequestCredentialByCondition(SELECT_BY_NAME_ONLY, credentialName);
     }
 
-    private static final String UPDATE = "UPDATE " +requestCredentialTableName +
-       " SET creationtime=?, credentialname=?, role=?, " +
-       " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
-   @Override
-   public void saveRequestCredential(RequestCredential requestCredential)  {
-       X509Credential credential = requestCredential.getDelegatedCredential();
-       String credentialFileName = null;
-       if (credential != null) {
-           credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
-           write(credential, credentialFileName);
-       }
-       int result = jdbcTemplate.update(UPDATE,
-               requestCredential.getCreationtime(),
-               requestCredential.getCredentialName(),
-               requestCredential.getRole(),
-               0, // Legacy field - not used
-               credentialFileName,
-               requestCredential.getDelegatedCredentialExpiration(),
-               requestCredential.getId());
-       if (result == 0) {
-           createRequestCredential(requestCredential);
-       }
-   }
+    private static final String UPDATE = "UPDATE " + requestCredentialTableName +
+          " SET creationtime=?, credentialname=?, role=?, " +
+          " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
 
-   private void write(X509Credential credential, String credentialFileName) {
-       try {
-           if (credential != null) {
-               CredentialsUtils.saveProxyCredentials(credentialFileName, credential);
-           }
-       } catch (IOException e) {
-           LOGGER.error(e.toString());
-       }
-   }
+    @Override
+    public void saveRequestCredential(RequestCredential requestCredential) {
+        X509Credential credential = requestCredential.getDelegatedCredential();
+        String credentialFileName = null;
+        if (credential != null) {
+            credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
+            write(credential, credentialFileName);
+        }
+        int result = jdbcTemplate.update(UPDATE,
+              requestCredential.getCreationtime(),
+              requestCredential.getCredentialName(),
+              requestCredential.getRole(),
+              0, // Legacy field - not used
+              credentialFileName,
+              requestCredential.getDelegatedCredentialExpiration(),
+              requestCredential.getId());
+        if (result == 0) {
+            createRequestCredential(requestCredential);
+        }
+    }
 
-   private X509Credential read(String fileName) {
-       if (fileName != null) {
-           try {
-               return new PEMCredential(fileName, (char[]) null);
-           } catch (IOException | KeyStoreException | CertificateException e) {
-               LOGGER.error("error reading the credentials from database: {}", e.toString());
-           }
-       }
-       return null;
-   }
+    private void write(X509Credential credential, String credentialFileName) {
+        try {
+            if (credential != null) {
+                CredentialsUtils.saveProxyCredentials(credentialFileName, credential);
+            }
+        } catch (IOException e) {
+            LOGGER.error(e.toString());
+        }
+    }
+
+    private X509Credential read(String fileName) {
+        if (fileName != null) {
+            try {
+                return new PEMCredential(fileName, (char[]) null);
+            } catch (IOException | KeyStoreException | CertificateException e) {
+                LOGGER.error("error reading the credentials from database: {}", e.toString());
+            }
+        }
+        return null;
+    }
 
     public static int update(Connection connection,
-                             String query,
-                             Object ... args)  throws SQLException {
+          String query,
+          Object... args) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             for (int i = 0; i < args.length; i++) {
                 stmt.setObject(i + 1, args[i]);
@@ -295,44 +295,42 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     }
 
     public static int delete(Connection connection,
-                             String query,
-                             Object ... args)  throws SQLException {
+          String query,
+          Object... args) throws SQLException {
         return update(connection, query, args);
     }
 
     public static int insert(Connection connection,
-                             String query,
-                             Object ... args)  throws SQLException {
+          String query,
+          Object... args) throws SQLException {
         return update(connection, query, args);
     }
 
     public static PreparedStatement prepare(Connection connection,
-                                   String query,
-                                   Object ... args)  throws SQLException {
-            PreparedStatement stmt =  connection.prepareStatement(query);
-            for (int i = 0; i < args.length; i++) {
-                stmt.setObject(i + 1, args[i]);
-            }
-            return  stmt;
+          String query,
+          Object... args) throws SQLException {
+        PreparedStatement stmt = connection.prepareStatement(query);
+        for (int i = 0; i < args.length; i++) {
+            stmt.setObject(i + 1, args[i]);
+        }
+        return stmt;
     }
 
-    private static boolean isRoleSpecified(String role)
-    {
+    private static boolean isRoleSpecified(String role) {
         return role != null && !role.equalsIgnoreCase("null");
     }
 
     private static final String COUNT_ROWS_MATCHING_NAME = "SELECT COUNT(1) FROM " +
-            requestCredentialTableName + " WHERE credentialname=?";
+          requestCredentialTableName + " WHERE credentialname=?";
 
     private static final String COUNT_ROWS_MATCHING_NAME_AND_ROLE =
-            "SELECT COUNT(1) FROM " + requestCredentialTableName +
-            " WHERE credentialname=? AND role=?";
+          "SELECT COUNT(1) FROM " + requestCredentialTableName +
+                " WHERE credentialname=? AND role=?";
 
 
     @Override
     public boolean hasRequestCredential(String name, String role)
-            throws IOException
-    {
+          throws IOException {
         if (isRoleSpecified(role)) {
             return queryForInt(COUNT_ROWS_MATCHING_NAME_AND_ROLE, name, role) > 0;
         } else {
@@ -340,18 +338,16 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         }
     }
 
-    public int queryForInt(String query, Object... args)
-    {
+    public int queryForInt(String query, Object... args) {
         return jdbcTemplate.queryForObject(query, args, Integer.class);
     }
 
     private static final String DELETE_GIVEN_ID = "DELETE FROM " +
-            requestCredentialTableName + " WHERE id=?";
+          requestCredentialTableName + " WHERE id=?";
 
     @Override
     public boolean deleteRequestCredential(String name, String role)
-            throws IOException
-    {
+          throws IOException {
         boolean hasDeletedSomething = false;
         boolean failedToDelete = false;
 
@@ -361,7 +357,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
 
             if (!credentialFile.exists()) {
                 LOGGER.warn("cannot find credential file to delete it: {}",
-                        credentialFile.getAbsolutePath());
+                      credentialFile.getAbsolutePath());
             }
 
             if (credentialFile.delete()) {
@@ -369,7 +365,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                 hasDeletedSomething = true;
             } else {
                 LOGGER.error("cannot delete credential file: {}",
-                        credentialFile.getAbsolutePath());
+                      credentialFile.getAbsolutePath());
                 failedToDelete = true;
             }
         }
@@ -382,31 +378,30 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     }
 
     /**
-     * Provide a (possibly empty) Iterable of IDs that match the supplied
-     * name and role.  If role is null then any role will match.
+     * Provide a (possibly empty) Iterable of IDs that match the supplied name and role.  If role is
+     * null then any role will match.
      */
-    private Iterable<Long> idsMatching(String name, String role)
-    {
+    private Iterable<Long> idsMatching(String name, String role) {
         if (isRoleSpecified(role)) {
             return jdbcTemplate.queryForList("SELECT id FROM " +
-                    requestCredentialTableName + " WHERE credentialname=? " +
-                    "AND role=?", Long.class, name, role);
+                  requestCredentialTableName + " WHERE credentialname=? " +
+                  "AND role=?", Long.class, name, role);
         } else {
             return jdbcTemplate.queryForList("SELECT id FROM " +
-                    requestCredentialTableName + " WHERE credentialname=?",
-                    Long.class, name);
+                        requestCredentialTableName + " WHERE credentialname=?",
+                  Long.class, name);
         }
     }
 
     private static final String SEARCH_BY_NAME = "SELECT * FROM " + requestCredentialTableName +
-        " WHERE credentialname LIKE ? AND role IS NULL ORDER BY credentialexpiration DESC";
+          " WHERE credentialname LIKE ? AND role IS NULL ORDER BY credentialexpiration DESC";
 
-    private static final String SEARCH_BY_NAME_AND_ROLE = "SELECT * FROM " + requestCredentialTableName +
-        " WHERE credentialname LIKE ? AND role LIKE ? ORDER BY credentialexpiration DESC";
+    private static final String SEARCH_BY_NAME_AND_ROLE =
+          "SELECT * FROM " + requestCredentialTableName +
+                " WHERE credentialname LIKE ? AND role LIKE ? ORDER BY credentialexpiration DESC";
 
     @Override
-    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob)
-    {
+    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob) {
         String name = nameGlob.toSql();
 
         if (roleGlob != null) {

@@ -59,24 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.selection;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApiModel(description = "Information about a unitgroup.")
 public final class UnitGroup extends SelectionTypeWithLinks {
+
     private static final long serialVersionUID = -5173508468206889927L;
 
     @ApiModelProperty("A list of units.  If any unit is satisfied by a request "
-                    + "then the unitgroup is satisfied by the request.")
+          + "then the unitgroup is satisfied by the request.")
     private final List<String> units;
 
     public UnitGroup() {
@@ -86,10 +85,10 @@ public final class UnitGroup extends SelectionTypeWithLinks {
     public UnitGroup(SelectionUnitGroup group, PoolSelectionUnit psu) {
         super(group.getName(), psu);
         units = group.getMemberUnits()
-                     .stream()
-                     .sorted(Comparator.comparing(SelectionUnit::getName))
-                     .map(SelectionUnit::getName)
-                     .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionUnit::getName))
+              .map(SelectionUnit::getName)
+              .collect(Collectors.toList());
     }
 
     public List<String> getUnits() {
@@ -99,10 +98,10 @@ public final class UnitGroup extends SelectionTypeWithLinks {
     @Override
     protected List<String> extractLinks(PoolSelectionUnit psu) {
         return psu.getUnitGroups().get(name)
-                  .getLinksPointingTo()
-                  .stream()
-                  .sorted(Comparator.comparing(SelectionLink::getName))
-                  .map(SelectionLink::getName)
-                  .collect(Collectors.toList());
+              .getLinksPointingTo()
+              .stream()
+              .sorted(Comparator.comparing(SelectionLink::getName))
+              .map(SelectionLink::getName)
+              .collect(Collectors.toList());
     }
 }

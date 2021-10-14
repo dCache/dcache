@@ -72,7 +72,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
  * <p>Uses underlying HashMap to store key - value pair.</p>
  *
  * <p>Specialized methods allow for clearing map before
- *      global updating.</p>
+ * global updating.</p>
  */
 public class ReadWriteData<K, V extends Serializable> {
 
@@ -80,8 +80,8 @@ public class ReadWriteData<K, V extends Serializable> {
      * <p>Access control.</p>
      */
     private ReentrantReadWriteLock lock;
-    private ReadLock               readLock;
-    private WriteLock              writeLock;
+    private ReadLock readLock;
+    private WriteLock writeLock;
 
     /**
      * <p>Storage.</p>

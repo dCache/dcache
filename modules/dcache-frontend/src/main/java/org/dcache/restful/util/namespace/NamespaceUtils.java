@@ -1,20 +1,15 @@
 package org.dcache.restful.util.namespace;
 
 import com.google.common.collect.ImmutableSet;
-
-import javax.servlet.http.HttpServletRequest;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -28,35 +23,36 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * <p>Utilities for obtaining and returning file attributes and qos
- *    information.</p>
+ * information.</p>
  */
 public final class NamespaceUtils {
+
     /**
      * <p>Add quality-of-service attributes (pinned, locality, etc.) </p>
      *
-     * @param json               mapped from attributes
-     * @param attributes         returned by the query to namespace
-     * @param request            to check for client info
-     * @param poolMonitor        a PoolMonitor to check locality
-     * @param pinmanager         communication with pinmanager
+     * @param json        mapped from attributes
+     * @param attributes  returned by the query to namespace
+     * @param request     to check for client info
+     * @param poolMonitor a PoolMonitor to check locality
+     * @param pinmanager  communication with pinmanager
      */
     public static void addQoSAttributes(JsonFileAttributes json,
-                                        FileAttributes attributes,
-                                        HttpServletRequest request,
-                                        PoolMonitor poolMonitor,
-                                        CellStub pinmanager)
-                    throws CacheException, NoRouteToCellException,
-                    InterruptedException {
+          FileAttributes attributes,
+          HttpServletRequest request,
+          PoolMonitor poolMonitor,
+          CellStub pinmanager)
+          throws CacheException, NoRouteToCellException,
+          InterruptedException {
         if (RequestUser.isAnonymous()) {
             throw new PermissionDeniedCacheException("Permission denied");
         }
 
         QosStatus status = new QoSTransitionEngine(poolMonitor, pinmanager)
-                        .getQosStatus(attributes, request.getRemoteHost());
+              .getQosStatus(attributes, request.getRemoteHost());
 
         json.setCurrentQos(status.getCurrent().displayName());
         Qos target = status.getTarget();
-        if (target != null){
+        if (target != null) {
             json.setTargetQos(target.displayName());
         }
     }
@@ -64,24 +60,23 @@ public final class NamespaceUtils {
     /**
      * <p>Map returned attributes to JsonFileAttributes object.</p>
      *
-     * @param name                of file
-     * @param json                mapped from attributes
-     * @param attributes          returned by the query to namespace
-     * @param isLocality          used to check weather user queried
-     *                            locality of the file
-     * @param isLocations         add locations if true
-     * @param isOptional          add optional attributes if true
-     * @param request             to check for client info
-     * @param poolMonitor         for access to remote PoolMonitor
+     * @param name        of file
+     * @param json        mapped from attributes
+     * @param attributes  returned by the query to namespace
+     * @param isLocality  used to check weather user queried locality of the file
+     * @param isLocations add locations if true
+     * @param isOptional  add optional attributes if true
+     * @param request     to check for client info
+     * @param poolMonitor for access to remote PoolMonitor
      */
     public static void chimeraToJsonAttributes(String name,
-                                               JsonFileAttributes json,
-                                               FileAttributes attributes,
-                                               boolean isLocality,
-                                               boolean isLocations,
-                                               boolean isOptional,
-                                               HttpServletRequest request,
-                                               PoolMonitor poolMonitor) throws CacheException {
+          JsonFileAttributes json,
+          FileAttributes attributes,
+          boolean isLocality,
+          boolean isLocations,
+          boolean isOptional,
+          HttpServletRequest request,
+          PoolMonitor poolMonitor) throws CacheException {
         json.setPnfsId(attributes.getPnfsId());
 
         if (attributes.isDefined(FileAttribute.NLINK)) {
@@ -114,8 +109,8 @@ public final class NamespaceUtils {
         if ((isLocality) && fileType != FileType.DIR) {
             String client = request.getRemoteHost();
             FileLocality fileLocality
-                            = poolMonitor.getFileLocality(attributes,
-                                                                client);
+                  = poolMonitor.getFileLocality(attributes,
+                  client);
             json.setFileLocality(fileLocality);
         }
 
@@ -130,20 +125,20 @@ public final class NamespaceUtils {
         }
 
         if (attributes.isDefined(FileAttribute.XATTR)) {
-            Map<String,String> xattr = attributes.getXattrs();
+            Map<String, String> xattr = attributes.getXattrs();
             json.setExtendedAttributes(xattr);
         }
     }
 
     /**
      * <p>Adds the rest of the file attributes in the case full
-     *    information on the file is requested.</p>
+     * information on the file is requested.</p>
      *
-     * @param json                mapped from attributes
-     * @param attributes          returned by the query to namespace
+     * @param json       mapped from attributes
+     * @param attributes returned by the query to namespace
      */
     private static void addAllOptionalAttributes(JsonFileAttributes json,
-                                                 FileAttributes attributes) {
+          FileAttributes attributes) {
         if (attributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
             json.setAccessLatency(attributes.getAccessLatency());
         }
@@ -204,10 +199,10 @@ public final class NamespaceUtils {
     }
 
     public static Set<FileAttribute> getRequestedAttributes(boolean locality,
-                                                            boolean locations,
-                                                            boolean qos,
-                                                            boolean xattr,
-                                                            boolean optional) {
+          boolean locations,
+          boolean qos,
+          boolean xattr,
+          boolean optional) {
         Set<FileAttribute> attributes = new HashSet<>();
         attributes.add(FileAttribute.PNFSID);
         attributes.add(FileAttribute.NLINK);

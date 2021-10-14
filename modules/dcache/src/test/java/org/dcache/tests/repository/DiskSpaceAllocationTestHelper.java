@@ -1,8 +1,8 @@
 package org.dcache.tests.repository;
 
-import org.dcache.pool.repository.Account;
-
 import static org.dcache.tests.repository.DiskSpaceAllocatorTest.ID;
+
+import org.dcache.pool.repository.Account;
 
 public class DiskSpaceAllocationTestHelper {
 
@@ -13,13 +13,16 @@ public class DiskSpaceAllocationTestHelper {
 
 
     /**
-     * Execute the <code>spaceAllocator</code> object's <code>free()</code> method
-     * for the given entry after a delay of at least milli milliseconds.
+     * Execute the <code>spaceAllocator</code> object's <code>free()</code> method for the given
+     * entry after a delay of at least milli milliseconds.
+     *
      * @param spaceAllocator The Account object to free space within
-     * @param entry The size of data to remove
-     * @param millis The minimum delay, in milliseconds, before executing spaceAllocator.free().
+     * @param entry          The size of data to remove
+     * @param millis         The minimum delay, in milliseconds, before executing
+     *                       spaceAllocator.free().
      */
-    public static void delayedFreeEntry( final Account spaceAllocator, final long size, final long millis) {
+    public static void delayedFreeEntry(final Account spaceAllocator, final long size,
+          final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
@@ -27,7 +30,7 @@ public class DiskSpaceAllocationTestHelper {
                 try {
                     Thread.sleep(millis);
                     spaceAllocator.free(ID, size);
-                }catch(Exception e) {
+                } catch (Exception e) {
                     // ignore
                 }
             }
@@ -36,7 +39,8 @@ public class DiskSpaceAllocationTestHelper {
     }
 
 
-    public static void delayedAddSpace( final Account spaceAllocator,final long newSpace, final long millis) {
+    public static void delayedAddSpace(final Account spaceAllocator, final long newSpace,
+          final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
@@ -44,7 +48,7 @@ public class DiskSpaceAllocationTestHelper {
                 try {
                     Thread.sleep(millis);
                     spaceAllocator.setTotal(newSpace);
-                }catch(Exception e) {
+                } catch (Exception e) {
                     // ignore
                 }
             }
@@ -52,19 +56,18 @@ public class DiskSpaceAllocationTestHelper {
 
     }
 
-    public static Thread allocateInThread( final Account spaceAllocator, final long size) {
-
+    public static Thread allocateInThread(final Account spaceAllocator, final long size) {
 
         Thread t = new Thread("DiskSpaceAllocationTestHelper") {
             @Override
             public void run() {
                 try {
                     spaceAllocator.allocate(ID, size);
-                }catch(Exception e) {
+                } catch (Exception e) {
                     // ignore
                 }
             }
-            };
+        };
         t.start();
         return t;
     }

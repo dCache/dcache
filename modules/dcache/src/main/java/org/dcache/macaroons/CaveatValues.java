@@ -17,35 +17,32 @@
  */
 package org.dcache.macaroons;
 
-import com.google.common.base.Splitter;
+import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
+import com.google.common.base.Splitter;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.dcache.auth.attributes.Activity;
-
-import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
 /**
  * Utility class for handling caveat values.
  */
-public class CaveatValues
-{
-    private CaveatValues()
-    {
+public class CaveatValues {
+
+    private CaveatValues() {
         // prevent instantiation.
     }
 
-    public static String asIdentityCaveatValue(MacaroonContext context)
-    {
-        String gidList = Arrays.stream(context.getGids()).mapToObj(Long::toString).collect(Collectors.joining(","));
+    public static String asIdentityCaveatValue(MacaroonContext context) {
+        String gidList = Arrays.stream(context.getGids()).mapToObj(Long::toString)
+              .collect(Collectors.joining(","));
         return context.getUid() + ";" + gidList + ";" + context.getUsername();
     }
 
-    public static void parseIdentityCaveatValue(MacaroonContext context, String value) throws InvalidCaveatException
-    {
+    public static void parseIdentityCaveatValue(MacaroonContext context, String value)
+          throws InvalidCaveatException {
         List<String> idElements = Splitter.on(';').limit(3).splitToList(value);
         checkCaveat(idElements.size() == 3, "Missing elements");
 
@@ -68,13 +65,12 @@ public class CaveatValues
         context.setUsername(username);
     }
 
-    public static String asActivityCaveatValue(EnumSet<Activity> allowedActivities)
-    {
+    public static String asActivityCaveatValue(EnumSet<Activity> allowedActivities) {
         return allowedActivities.stream().map(Activity::name).collect(Collectors.joining(","));
     }
 
-    public static EnumSet<Activity> parseActivityCaveatValue(String value) throws InvalidCaveatException
-    {
+    public static EnumSet<Activity> parseActivityCaveatValue(String value)
+          throws InvalidCaveatException {
         EnumSet<Activity> activities = EnumSet.noneOf(Activity.class);
         for (String activity : Splitter.on(',').trimResults().split(value)) {
             try {

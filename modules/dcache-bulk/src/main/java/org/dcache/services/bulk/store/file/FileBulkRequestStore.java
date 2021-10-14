@@ -59,11 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.file;
 
+import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
+
 import com.google.common.collect.ImmutableMap;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.security.auth.Subject;
-
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
@@ -75,7 +73,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
+import javax.security.auth.Subject;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.services.bulk.BulkFailures;
 import org.dcache.services.bulk.BulkPermissionDeniedException;
@@ -89,51 +87,48 @@ import org.dcache.services.bulk.BulkStorageException;
 import org.dcache.services.bulk.store.BulkRequestStore;
 import org.dcache.services.bulk.store.file.FileBulkRequestStore.FileBulkRequestWrapper;
 import org.dcache.services.bulk.store.memory.InMemoryBulkRequestStore;
-
-import static org.dcache.services.bulk.store.BulkRequestStore.uidGidKey;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- *  Delegates main storage to in-memory implementation.
- *  <p>
- *  The file is written to disk only on store and on update of request
- *  to its terminal state.  Intermediate states are not persisted
- *  as the current implementation does not checkpoint and restore
- *  incomplete requests (such a procedure would in any case require a
- *  fully transactional database).
- *  <p>
- *  At start-up, it reads back in the files and populates the in-memory store.
+ * Delegates main storage to in-memory implementation.
+ * <p>
+ * The file is written to disk only on store and on update of request to its terminal state.
+ * Intermediate states are not persisted as the current implementation does not checkpoint and
+ * restore incomplete requests (such a procedure would in any case require a fully transactional
+ * database).
+ * <p>
+ * At start-up, it reads back in the files and populates the in-memory store.
  */
 public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkRequestWrapper>
-                implements BulkRequestStore
-{
-    static class FileBulkRequestWrapper implements Serializable
-    {
+      implements BulkRequestStore {
+
+    static class FileBulkRequestWrapper implements Serializable {
+
         private static final long serialVersionUID = 2678690448465233963L;
 
-        String                    requestId;
-        String                    urlPrefix;
-        String                    target;
-        String                    targetPrefix;
-        String                    activity;
-        Boolean                   clearOnSuccess;
-        Boolean                   clearOnFailure;
-        Integer                   delayClear;
-        Map<String, String>       arguments;
-        Depth                     expandDirectories;
-        long                      firstArrived;
-        long                      lastModified;
-        Status                    status;
-        int                       targets;
-        int                       processed;
+        String requestId;
+        String urlPrefix;
+        String target;
+        String targetPrefix;
+        String activity;
+        Boolean clearOnSuccess;
+        Boolean clearOnFailure;
+        Integer delayClear;
+        Map<String, String> arguments;
+        Depth expandDirectories;
+        long firstArrived;
+        long lastModified;
+        Status status;
+        int targets;
+        int processed;
         Map<String, List<String>> failures;
-        Subject                   subject;
-        Restriction               restriction;
+        Subject subject;
+        Restriction restriction;
 
         FileBulkRequestWrapper(BulkRequest request,
-                               BulkRequestStatus status,
-                               Subject subject,
-                               Restriction restriction)
-        {
+              BulkRequestStatus status,
+              Subject subject,
+              Restriction restriction) {
             if (request != null) {
                 setRequest(request);
             }
@@ -146,8 +141,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             this.restriction = restriction;
         }
 
-        BulkRequest getRequest()
-        {
+        BulkRequest getRequest() {
             BulkRequest request = new BulkRequest();
             request.setId(requestId);
             request.setUrlPrefix(urlPrefix);
@@ -162,13 +156,11 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             return request;
         }
 
-        Restriction getRestriction()
-        {
+        Restriction getRestriction() {
             return restriction;
         }
 
-        BulkRequestStatus getStatus()
-        {
+        BulkRequestStatus getStatus() {
             BulkRequestStatus status = new BulkRequestStatus();
             status.setFirstArrived(firstArrived);
             status.setLastModified(lastModified);
@@ -181,13 +173,11 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             return status;
         }
 
-        Subject getSubject()
-        {
+        Subject getSubject() {
             return subject;
         }
 
-        void setRequest(BulkRequest request)
-        {
+        void setRequest(BulkRequest request) {
             requestId = request.getId();
             urlPrefix = request.getUrlPrefix();
             target = request.getTarget();
@@ -203,13 +193,11 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             expandDirectories = request.getExpandDirectories();
         }
 
-        void setRestriction(Restriction restriction)
-        {
+        void setRestriction(Restriction restriction) {
             this.restriction = restriction;
         }
 
-        void setStatus(BulkRequestStatus status)
-        {
+        void setStatus(BulkRequestStatus status) {
             firstArrived = status.getFirstArrived();
             lastModified = status.getLastModified();
             this.status = status.getStatus();
@@ -221,8 +209,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
             }
         }
 
-        void setSubject(Subject subject)
-        {
+        void setSubject(Subject subject) {
             this.subject = subject;
         }
     }
@@ -230,27 +217,25 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     private final InMemoryBulkRequestStore delegate;
 
     /**
-     *  For handling delayed clear requests.
+     * For handling delayed clear requests.
      */
     private ScheduledExecutorService scheduler;
 
     public FileBulkRequestStore(File storageDir,
-                                InMemoryBulkRequestStore delegate)
-    {
+          InMemoryBulkRequestStore delegate) {
         super(storageDir, FileBulkRequestWrapper.class);
         this.delegate = delegate;
     }
 
     @Override
-    public void abort(String requestId, Throwable exception)
-    {
+    public void abort(String requestId, Throwable exception) {
         LOGGER.trace("abort {}, {}.", requestId, exception.toString());
 
         Optional<BulkRequest> optionalRequest = delegate.getRequest(requestId);
         if (!optionalRequest.isPresent()) {
             LOGGER.error("Fatal error trying to abort {}: "
-                                         + "request not found; error which "
-                                         + "caused the abort: {}.", requestId);
+                  + "request not found; error which "
+                  + "caused the abort: {}.", requestId);
         }
 
         BulkRequest request = optionalRequest.get();
@@ -258,8 +243,8 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         Optional<Subject> optionalSubject = delegate.getSubject(requestId);
         if (!optionalSubject.isPresent()) {
             LOGGER.error("Fatal error trying to abort {}: "
-                                         + "request has no subject; error which "
-                                         + "caused the abort: {}.", requestId);
+                  + "request has no subject; error which "
+                  + "caused the abort: {}.", requestId);
         }
 
         delegate.abort(requestId, exception);
@@ -270,18 +255,16 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     }
 
     @Override
-    public void addTarget(String requestId)
-    {
+    public void addTarget(String requestId) {
         delegate.addTarget(requestId);
     }
 
     @Override
     public void clear(Subject subject, String requestId)
-                    throws BulkRequestStorageException,
-                    BulkPermissionDeniedException
-    {
+          throws BulkRequestStorageException,
+          BulkPermissionDeniedException {
         LOGGER.trace("clear {}, {}.", uidGidKey(subject),
-                     requestId);
+              requestId);
 
         if (!delegate.isRequestSubject(subject, requestId)) {
             throw new BulkPermissionDeniedException(requestId);
@@ -295,8 +278,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     }
 
     @Override
-    public void clear(String requestId)
-    {
+    public void clear(String requestId) {
         LOGGER.trace("clear {}.", requestId);
 
         Optional<BulkRequest> request = delegate.getRequest(requestId);
@@ -318,8 +300,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     }
 
     @Override
-    public int countActive() throws BulkRequestStorageException
-    {
+    public int countActive() throws BulkRequestStorageException {
         int count = delegate.countActive();
 
         LOGGER.trace("count active requests returning {}.", count);
@@ -328,8 +309,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     }
 
     @Override
-    public int countNonTerminated(String user)
-    {
+    public int countNonTerminated(String user) {
         int count = delegate.countNonTerminated(user);
 
         LOGGER.trace("count non terminated for {}: {}.", user, count);
@@ -339,32 +319,28 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
 
     @Override
     public Collection<BulkRequest> find(Optional<Predicate<BulkRequest>> requestFilter,
-                                        Optional<Predicate<BulkRequestStatus>> statusFilter,
-                                        Long limit)
-    {
+          Optional<Predicate<BulkRequestStatus>> statusFilter,
+          Long limit) {
         return delegate.find(requestFilter, statusFilter, limit);
     }
 
     @Override
-    public Set<String> getRequestUrls(Subject subject, Set<Status> status)
-    {
+    public Set<String> getRequestUrls(Subject subject, Set<Status> status) {
         LOGGER.trace("getRequestUrls {}, {}.", uidGidKey(subject),
-                     status);
+              status);
 
         return delegate.getRequestUrls(subject, status);
     }
 
     @Override
-    public Optional<BulkRequest> getRequest(String requestId)
-    {
+    public Optional<BulkRequest> getRequest(String requestId) {
         LOGGER.trace("getRequest {}.", requestId);
 
         return delegate.getRequest(requestId);
     }
 
     @Override
-    public Optional<Restriction> getRestriction(String requestId)
-    {
+    public Optional<Restriction> getRestriction(String requestId) {
         LOGGER.trace("getRestriction {}.", requestId);
 
         return delegate.getRestriction(requestId);
@@ -372,45 +348,39 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
 
     @Override
     public BulkRequestStatus getStatus(Subject subject, String requestId)
-                    throws BulkPermissionDeniedException,
-                    BulkRequestStorageException
-    {
+          throws BulkPermissionDeniedException,
+          BulkRequestStorageException {
         LOGGER.trace("getStatus {}, {}.", uidGidKey(subject),
-                     requestId);
+              requestId);
         return delegate.getStatus(subject, requestId);
     }
 
     @Override
-    public Comparator<String> getStatusComparator()
-    {
+    public Comparator<String> getStatusComparator() {
         return delegate.getStatusComparator();
     }
 
     @Override
-    public Optional<BulkRequestStatus> getStatus(String requestId)
-    {
+    public Optional<BulkRequestStatus> getStatus(String requestId) {
         LOGGER.trace("getStatus {}.", requestId);
 
         return delegate.getStatus(requestId);
     }
 
     @Override
-    public Optional<Subject> getSubject(String requestId)
-    {
+    public Optional<Subject> getSubject(String requestId) {
         LOGGER.trace("getSubject {}.", requestId);
 
         return delegate.getSubject(requestId);
     }
 
     @Override
-    public boolean isRequestSubject(Subject subject, String requestId)
-    {
+    public boolean isRequestSubject(Subject subject, String requestId) {
         return delegate.isRequestSubject(subject, requestId);
     }
 
     @Override
-    public void load()
-    {
+    public void load() {
         LOGGER.trace("load called.");
 
         readFromDisk();
@@ -418,41 +388,36 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
     }
 
     @Override
-    public List<BulkRequest> next(long limit)
-    {
+    public List<BulkRequest> next(long limit) {
         LOGGER.trace("next {}.", limit);
 
         return delegate.next(limit);
     }
 
     @Override
-    public void reset(String requestId) throws BulkRequestStorageException
-    {
+    public void reset(String requestId) throws BulkRequestStorageException {
         LOGGER.trace("reset {}.", requestId);
         delegate.reset(requestId);
         writeToDisk(requestId);
     }
 
     @Override
-    public void save()
-    {
+    public void save() {
         writeToDisk();
     }
 
     @Required
-    public void setScheduler(ScheduledExecutorService scheduler)
-    {
+    public void setScheduler(ScheduledExecutorService scheduler) {
         this.scheduler = scheduler;
     }
 
     @Override
     public void store(Subject subject,
-                      Restriction restriction,
-                      BulkRequest request,
-                      BulkRequestStatus status)
-    {
+          Restriction restriction,
+          BulkRequest request,
+          BulkRequestStatus status) {
         LOGGER.trace("store {}, subject {}.", request.getId(),
-                     uidGidKey(subject));
+              uidGidKey(subject));
         delegate.store(subject, restriction, request, status);
 
         String requestId = request.getId();
@@ -461,41 +426,37 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
 
     @Override
     public void targetAborted(String requestId,
-                              String target,
-                              Throwable exception)
-                    throws BulkRequestStorageException
-    {
+          String target,
+          Throwable exception)
+          throws BulkRequestStorageException {
         LOGGER.trace("targetAborted {}, {}, {}.", requestId, target,
-                     exception.toString());
+              exception.toString());
         delegate.targetAborted(requestId, target, exception);
     }
 
     @Override
     public void targetCompleted(String requestId,
-                                String target,
-                                Throwable exception)
-                    throws BulkRequestStorageException
-    {
+          String target,
+          Throwable exception)
+          throws BulkRequestStorageException {
         LOGGER.trace("targetCompleted {}, {}.", requestId, target);
         delegate.targetCompleted(requestId, target, exception);
     }
 
     @Override
     public void update(String requestId, Status status)
-                    throws BulkRequestStorageException
-    {
+          throws BulkRequestStorageException {
         LOGGER.trace("update {}, {}.", requestId, status);
 
         Optional<BulkRequest> optionalRequest
-                        = delegate.getRequest(requestId);
+              = delegate.getRequest(requestId);
         if (!optionalRequest.isPresent()) {
             throw new BulkRequestStorageException("Request " + requestId
-                                                             + " not found.");
+                  + " not found.");
         }
 
         boolean checkStatus = false;
-        switch (status)
-        {
+        switch (status) {
             case COMPLETED:
                 checkStatus = true;
             case CANCELLED:
@@ -510,7 +471,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         if (checkStatus) {
             BulkRequest request = optionalRequest.get();
             Optional<BulkRequestStatus> optionalStatus
-                            = delegate.getStatus(requestId);
+                  = delegate.getStatus(requestId);
             if (!optionalStatus.isPresent()) {
                 /*
                  *  If the status object is missing, this probably indicates
@@ -530,7 +491,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
                  */
                 if (request.isClearOnFailure()) {
                     LOGGER.trace("request is clear on failure: {}.",
-                                 requestId);
+                          requestId);
                     clear(requestId);
                 }
             } else if (request.isClearOnSuccess()) {
@@ -540,16 +501,14 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         }
     }
 
-    public Set<String> ids()
-    {
+    public Set<String> ids() {
         LOGGER.trace("listIds called.");
 
         return delegate.ids();
     }
 
-    protected FileBulkRequestWrapper newInstance(String id)  throws
-                    BulkStorageException
-    {
+    protected FileBulkRequestWrapper newInstance(String id) throws
+          BulkStorageException {
         BulkRequest request = delegate.getRequest(id).orElse(null);
         if (request == null) {
             throw new BulkRequestStorageException("could not find request " + id);
@@ -562,8 +521,7 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
 
     @Override
     protected void postProcessDeserialized(String id,
-                                           FileBulkRequestWrapper wrapper)
-    {
+          FileBulkRequestWrapper wrapper) {
         /*
          *  Crashed or was saved in an incomplete state, jobs
          *  (targets) were not all processed.  This is unrecoverable,
@@ -574,13 +532,12 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         }
 
         delegate.store(wrapper.subject,
-                       wrapper.restriction,
-                       wrapper.getRequest(),
-                       wrapper.getStatus());
+              wrapper.restriction,
+              wrapper.getRequest(),
+              wrapper.getStatus());
     }
 
-    private void resetUnfinished()
-    {
+    private void resetUnfinished() {
         LOGGER.trace("resetUnfinished called.");
 
         Predicate<String> resetFilter = id -> {
@@ -593,16 +550,17 @@ public class FileBulkRequestStore extends AbstractObjectFileStore<FileBulkReques
         };
 
         delegate.ids()
-                .stream()
-                .filter(resetFilter)
-                .forEach(id -> {
-                    try {
-                        reset(id);
-                    } catch (BulkRequestStorageException e) {
-                        LOGGER.warn("reload failed to reset STARTED "
-                                                    + "request {} "
-                                                    + "to QUEUED.",
-                                    id);
-                    }});
+              .stream()
+              .filter(resetFilter)
+              .forEach(id -> {
+                  try {
+                      reset(id);
+                  } catch (BulkRequestStorageException e) {
+                      LOGGER.warn("reload failed to reset STARTED "
+                                  + "request {} "
+                                  + "to QUEUED.",
+                            id);
+                  }
+              });
     }
 }

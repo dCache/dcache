@@ -59,30 +59,26 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.pool;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import org.springframework.stereotype.Component;
-
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.selection.PoolGroup;
 import org.dcache.restful.services.pool.PoolInfoService;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link PoolInfoService} service.</p>
@@ -93,6 +89,7 @@ import org.dcache.restful.services.pool.PoolInfoService;
 @Api(value = "poolmanager", authorizations = {@Authorization("basicAuth")})
 @Path("/poolgroups")
 public final class PoolGroupInfoResources {
+
     @Inject
     private PoolInfoService service;
 
@@ -101,16 +98,16 @@ public final class PoolGroupInfoResources {
 
     @GET
     @ApiOperation("Get a list of poolgroups."
-                    + " Results sorted lexicographically by group name.")
+          + " Results sorted lexicographically by group name.")
     @Produces(MediaType.APPLICATION_JSON)
     public List<PoolGroup> getPoolGroups() {
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return psu.getPoolGroups().values()
-                  .stream()
-                  .sorted(Comparator.comparing(SelectionPoolGroup::getName))
-                  .map((g) -> new PoolGroup(g.getName(), psu))
-                  .collect(Collectors.toList());
+              .stream()
+              .sorted(Comparator.comparing(SelectionPoolGroup::getName))
+              .map((g) -> new PoolGroup(g.getName(), psu))
+              .collect(Collectors.toList());
     }
 
 
@@ -119,18 +116,18 @@ public final class PoolGroupInfoResources {
     @ApiOperation("Get information about a poolgroup.")
     @Path("/{group}")
     public PoolGroup getPoolGroup(@ApiParam("The poolgroup to be described.")
-                                  @PathParam("group") String group) {
+    @PathParam("group") String group) {
         return new PoolGroup(group, poolMonitor.getPoolSelectionUnit());
     }
 
     @GET
     @Path("/{group}/pools")
     @ApiOperation("Get a list of pools that are a member of a poolgroup.  If no "
-            + "poolgroup is specified then all pools are listed. "
-                    + "Results sorted lexicographically by pool name.")
+          + "poolgroup is specified then all pools are listed. "
+          + "Results sorted lexicographically by pool name.")
     @Produces(MediaType.APPLICATION_JSON)
     public String[] getPoolsOfGroup(@ApiParam("The poolgroup to be described.")
-                                    @PathParam("group") String group) {
+    @PathParam("group") String group) {
         if (group == null) {
             return service.listPools();
         }
@@ -144,7 +141,7 @@ public final class PoolGroupInfoResources {
     @Path("/{group}/usage")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolGroupInfo getGroupUsage(@ApiParam("The poolgroup to be described.")
-                                       @PathParam("group") String group) {
+    @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupCellInfos(group, info);
@@ -158,7 +155,7 @@ public final class PoolGroupInfoResources {
     @Path("/{group}/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolGroupInfo getQueueInfo(@ApiParam("The poolgroup to be described.")
-                                      @PathParam("group") String group) {
+    @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupQueueInfos(group, info);
@@ -172,7 +169,7 @@ public final class PoolGroupInfoResources {
     @Path("/{group}/space")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolGroupInfo getSpaceInfo(@ApiParam("The poolgroup to be described.")
-                                      @PathParam("group") String group) {
+    @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getGroupSpaceInfos(group, info);
@@ -186,7 +183,7 @@ public final class PoolGroupInfoResources {
     @Path("/{group}/histograms/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolGroupInfo getQueueHistograms(@ApiParam("The poolgroup to be described.")
-                                            @PathParam("group") String group) {
+    @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getQueueStat(group, info);
@@ -200,7 +197,7 @@ public final class PoolGroupInfoResources {
     @Path("/{group}/histograms/files")
     @Produces(MediaType.APPLICATION_JSON)
     public PoolGroupInfo getFilesHistograms(@ApiParam("The poolgroup to be described.")
-                                            @PathParam("group") String group) {
+    @PathParam("group") String group) {
         PoolGroupInfo info = new PoolGroupInfo();
 
         service.getFileStat(group, info);

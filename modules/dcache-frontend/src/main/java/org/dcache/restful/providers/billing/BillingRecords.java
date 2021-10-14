@@ -61,12 +61,11 @@ package org.dcache.restful.providers.billing;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 import java.util.List;
 
 @ApiModel(description = "A listing of the billing records "
-                                + "associated with a given file.")
+      + "associated with a given file.")
 public final class BillingRecords implements Serializable {
 
     @ApiModelProperty("The PNFS-ID of the file.")
@@ -124,7 +123,7 @@ public final class BillingRecords implements Serializable {
     }
 
     public void setRestores(
-                    List<HSMTransferRecord> restores) {
+          List<HSMTransferRecord> restores) {
         this.restores = restores;
     }
 

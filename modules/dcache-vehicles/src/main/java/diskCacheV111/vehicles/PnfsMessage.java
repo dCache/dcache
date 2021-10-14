@@ -2,18 +2,16 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.Collections;
-import java.util.Set;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-
+import java.util.Collections;
+import java.util.Set;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Base class for messages to PnfsManager.
@@ -29,72 +27,67 @@ public class PnfsMessage extends Message {
 
     private static final long serialVersionUID = -3686370854772807059L;
 
-    public PnfsMessage(PnfsId pnfsId){
-	_pnfsId = pnfsId ;
+    public PnfsMessage(PnfsId pnfsId) {
+        _pnfsId = pnfsId;
     }
 
-    public PnfsMessage(){ }
+    public PnfsMessage() {
+    }
 
     public void setPnfsPath(String pnfsPath) {
         checkArgument(pnfsPath == null || pnfsPath.charAt(0) == '/');
         _path = pnfsPath;
     }
 
-    public String getPnfsPath(){ return _path ;}
+    public String getPnfsPath() {
+        return _path;
+    }
 
-    public FsPath getFsPath()
-    {
+    public FsPath getFsPath() {
         return _path == null ? null : FsPath.create(_path);
     }
 
-    public PnfsId getPnfsId(){
-	return _pnfsId;
+    public PnfsId getPnfsId() {
+        return _pnfsId;
     }
 
-    public void setPnfsId(PnfsId pnfsId){
-	_pnfsId = pnfsId ;
+    public void setPnfsId(PnfsId pnfsId) {
+        _pnfsId = pnfsId;
     }
 
-    public void setAccessMask(Set<AccessMask> mask)
-    {
+    public void setAccessMask(Set<AccessMask> mask) {
         _mask = requireNonNull(mask);
     }
 
-    public Set<AccessMask> getAccessMask()
-    {
+    public Set<AccessMask> getAccessMask() {
         return _mask;
     }
 
-    public void setFollowSymlink(boolean follow)
-    {
+    public void setFollowSymlink(boolean follow) {
         _symlinkFollowed = follow;
     }
 
-    public boolean isFollowSymlink()
-    {
+    public boolean isFollowSymlink() {
         return _symlinkFollowed;
     }
 
 
-    public void setRestriction(Restriction restriction)
-    {
+    public void setRestriction(Restriction restriction) {
         _restriction = requireNonNull(restriction);
     }
 
-    public Restriction getRestriction()
-    {
+    public Restriction getRestriction() {
         return _restriction;
     }
 
     @Override
-    public String toString(){
-        return _pnfsId==null?
-               (_path==null?"NULL":("Path="+_path)):
-               ("PnfsId="+_pnfsId.toString()) ;
+    public String toString() {
+        return _pnfsId == null ?
+              (_path == null ? "NULL" : ("Path=" + _path)) :
+              ("PnfsId=" + _pnfsId.toString());
     }
 
-    protected final boolean genericInvalidatesForPnfsMessage(Message message)
-    {
+    protected final boolean genericInvalidatesForPnfsMessage(Message message) {
         /* Conservatively assume that a PnfsMessage invalidates any
          * non PnfsMessage.
          */
@@ -110,17 +103,16 @@ public class PnfsMessage extends Message {
          * PNFS IDs or paths are the same.
          */
         return
-            ((getPnfsId() == null || msg.getPnfsId() == null) &&
-             (getPnfsPath() == null || msg.getPnfsPath() == null)) ||
-            (getPnfsId() != null && msg.getPnfsId() != null &&
-             getPnfsId().equals(msg.getPnfsId())) ||
-            (getPnfsPath() != null && msg.getPnfsPath() != null &&
-             getPnfsPath().equals(msg.getPnfsPath()));
+              ((getPnfsId() == null || msg.getPnfsId() == null) &&
+                    (getPnfsPath() == null || msg.getPnfsPath() == null)) ||
+                    (getPnfsId() != null && msg.getPnfsId() != null &&
+                          getPnfsId().equals(msg.getPnfsId())) ||
+                    (getPnfsPath() != null && msg.getPnfsPath() != null &&
+                          getPnfsPath().equals(msg.getPnfsPath()));
     }
 
     @Override
-    public boolean invalidates(Message message)
-    {
+    public boolean invalidates(Message message) {
         return genericInvalidatesForPnfsMessage(message);
     }
 

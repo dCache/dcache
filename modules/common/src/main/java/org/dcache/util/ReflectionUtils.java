@@ -6,38 +6,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This class contains useful static methods for working with Java
- * reflection.
+ * This class contains useful static methods for working with Java reflection.
  */
-public class ReflectionUtils
-{
-    private static final Map<String,Method> methodCache =
-        new HashMap<>();
+public class ReflectionUtils {
+
+    private static final Map<String, Method> methodCache =
+          new HashMap<>();
 
     /**
      * Finds a maximally specific public method called <i>name</i> in
      * <i>c</i> accepting parameters of type <i>parameters</i>.
-     *
+     * <p>
      * In contrast to <code>Class.getMethod</code>,
      * <code>resolve</code> performs type widening on the parameters,
-     * in effect emulating the steps performed at compile time for
-     * finding the a method.
-     *
-     * Notice that we return the first method found in a depth-first
-     * left-to-right search. This is different from what Java does at
-     * compile time. We do not support auto-boxing or methods with a
-     * variable number of arguments. Lack of auto-boxing means the
-     * methods with parameters of primitive types are never returned.
-     *
-     * To improve performance, a cache of resolved methods is
-     * maintained.
+     * in effect emulating the steps performed at compile time for finding the a method.
+     * <p>
+     * Notice that we return the first method found in a depth-first left-to-right search. This is
+     * different from what Java does at compile time. We do not support auto-boxing or methods with
+     * a variable number of arguments. Lack of auto-boxing means the methods with parameters of
+     * primitive types are never returned.
+     * <p>
+     * To improve performance, a cache of resolved methods is maintained.
      *
      * @returns a matching method or null if no method is found
      */
-    public static Method resolve(Class<?> c, String name, Class<?> ... parameters)
-    {
+    public static Method resolve(Class<?> c, String name, Class<?>... parameters) {
         try {
-            Object[] signature = { c, name, parameters };
+            Object[] signature = {c, name, parameters};
             String key = Arrays.deepToString(signature);
 
             /* Cache lookup.
@@ -75,9 +70,8 @@ public class ReflectionUtils
         }
     }
 
-    public static boolean hasDeclaredException(Method method, Exception exception)
-    {
-        for (Class<?> clazz: method.getExceptionTypes()) {
+    public static boolean hasDeclaredException(Method method, Exception exception) {
+        for (Class<?> clazz : method.getExceptionTypes()) {
             if (clazz.isAssignableFrom(exception.getClass())) {
                 return true;
             }
@@ -89,8 +83,8 @@ public class ReflectionUtils
      * Like Class#getMethod, but also returns non-public methods. Differs from
      * Class#getDeclaredMethod by also searching super classes.
      */
-    public static Method getAnyMethod(Class<?> clazz, String name, Class<?>... parameterTypes) throws NoSuchMethodException
-    {
+    public static Method getAnyMethod(Class<?> clazz, String name, Class<?>... parameterTypes)
+          throws NoSuchMethodException {
         try {
             // Because execute is protected, we cannot use getMethod.
             return clazz.getDeclaredMethod(name, parameterTypes);

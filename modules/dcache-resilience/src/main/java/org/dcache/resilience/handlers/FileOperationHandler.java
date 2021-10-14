@@ -59,12 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
+import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.CellPath;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -80,21 +91,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.auth.Subjects;
@@ -125,33 +121,33 @@ import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
-
-import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Principal resilience logic component.</p>
  *
  * <p>Contains methods for registering a pnfsid for handling and
- *    for updating the number of times it should be processed (based
- *    on the arrival of update messages), for verifying if some
- *    action indeed needs to be taken, for launching a copy/migration
- *    task and for eliminating an excess copy.</p>
+ * for updating the number of times it should be processed (based on the arrival of update
+ * messages), for verifying if some action indeed needs to be taken, for launching a copy/migration
+ * task and for eliminating an excess copy.</p>
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class FileOperationHandler implements CellMessageSender {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    FileOperationHandler.class);
+          FileOperationHandler.class);
     private static final Logger ACTIVITY_LOGGER =
-            LoggerFactory.getLogger("org.dcache.resilience-log");
+          LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private static final String INCONSISTENT_LOCATIONS_ALARM
-                    = "Resilience has detected an inconsistency or lag between "
-                    + "the namespace replica locations and the actual locations on disk.";
+          = "Resilience has detected an inconsistency or lag between "
+          + "the namespace replica locations and the actual locations on disk.";
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
-                    = ImmutableList.of(new StickyRecord("system",
-                                                        StickyRecord.NON_EXPIRING));
+          = ImmutableList.of(new StickyRecord("system",
+          StickyRecord.NON_EXPIRING));
 
     private static final RateLimiter LIMITER = RateLimiter.create(0.001);
 
@@ -165,9 +161,9 @@ public class FileOperationHandler implements CellMessageSender {
          */
         if (LIMITER.tryAcquire()) {
             LOGGER.warn(AlarmMarkerFactory.getMarker(
-                            PredefinedAlarm.RESILIENCE_LOC_SYNC_ISSUE,
-                            Instant.now().truncatedTo(ChronoUnit.HOURS).toString()),
-                         INCONSISTENT_LOCATIONS_ALARM);
+                        PredefinedAlarm.RESILIENCE_LOC_SYNC_ISSUE,
+                        Instant.now().truncatedTo(ChronoUnit.HOURS).toString()),
+                  INCONSISTENT_LOCATIONS_ALARM);
         }
     }
 
@@ -183,26 +179,26 @@ public class FileOperationHandler implements CellMessageSender {
     }
 
     private final PoolSelectionStrategy taskSelectionStrategy
-                    = new DegenerateSelectionStrategy();
+          = new DegenerateSelectionStrategy();
     private final ReplicaVerifier verifier = new ReplicaVerifier();
 
     private FileOperationMap fileOpMap;
-    private PoolInfoMap      poolInfoMap;
-    private NamespaceAccess  namespace;
+    private PoolInfoMap poolInfoMap;
+    private NamespaceAccess namespace;
     private LocationSelector locationSelector;
 
-    private CellStub                  pinManager;
-    private CellStub                  pools;
-    private CellEndpoint              endpoint;
-    private String                    poolManagerAddress;
-    private ScheduledExecutorService  taskService;
+    private CellStub pinManager;
+    private CellStub pools;
+    private CellEndpoint endpoint;
+    private String poolManagerAddress;
+    private ScheduledExecutorService taskService;
 
-    private ScheduledExecutorService  migrationTaskService;
+    private ScheduledExecutorService migrationTaskService;
     private FileTaskCompletionHandler completionHandler;
-    private InaccessibleFileHandler   inaccessibleFileHandler;
+    private InaccessibleFileHandler inaccessibleFileHandler;
 
-    private long        launchDelay       =  0L;
-    private TimeUnit    launchDelayUnit   = TimeUnit.SECONDS;
+    private long launchDelay = 0L;
+    private TimeUnit launchDelayUnit = TimeUnit.SECONDS;
 
     public ScheduledExecutorService getTaskService() {
         return taskService;
@@ -213,7 +209,7 @@ public class FileOperationHandler implements CellMessageSender {
     }
 
     public long getLaunchDelay() {
-       return launchDelay;
+        return launchDelay;
     }
 
     public TimeUnit getLaunchDelayUnit() {
@@ -223,9 +219,9 @@ public class FileOperationHandler implements CellMessageSender {
     public void handleBrokenFileLocation(PnfsId pnfsId, String pool) {
         try {
             FileAttributes attributes
-                            = FileUpdate.getAttributes(pnfsId, pool,
-                                                       MessageType.CORRUPT_FILE,
-                                                       namespace);
+                  = FileUpdate.getAttributes(pnfsId, pool,
+                  MessageType.CORRUPT_FILE,
+                  namespace);
             if (attributes == null) {
                 LOGGER.trace("{} not ONLINE.", pnfsId);
                 return;
@@ -241,7 +237,7 @@ public class FileOperationHandler implements CellMessageSender {
 
             if (!verifier.exists(pool, verified)) {
                 LOGGER.trace("Broken replica of {} on {} has already been removed.",
-                             pnfsId, pool);
+                      pnfsId, pool);
                 return;
             }
 
@@ -255,9 +251,9 @@ public class FileOperationHandler implements CellMessageSender {
                  * This is the only copy; do nothing.
                  */
                 LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                                          pnfsId.toString()),
-                             "{}: Repair of broken replicas is not possible, "
-                                             + "file currently inaccessible", pnfsId);
+                            pnfsId.toString()),
+                      "{}: Repair of broken replicas is not possible, "
+                            + "file currently inaccessible", pnfsId);
                 return;
             }
 
@@ -267,8 +263,8 @@ public class FileOperationHandler implements CellMessageSender {
 
             if (poolInfoMap.getCountableLocations(locations) > 0) {
                 FileUpdate update = new FileUpdate(pnfsId, pool,
-                                                   MessageType.CLEAR_CACHE_LOCATION,
-                                                   false);
+                      MessageType.CLEAR_CACHE_LOCATION,
+                      false);
                 /*
                  * Bypass the message guard check of CDC session.
                  */
@@ -279,37 +275,37 @@ public class FileOperationHandler implements CellMessageSender {
                  *  any further replicas.
                  */
                 LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                                          pnfsId.toString()),
-                             "{}: Repair of broken replicas is not possible, "
-                                             + "file currently inaccessible", pnfsId);
+                            pnfsId.toString()),
+                      "{}: Repair of broken replicas is not possible, "
+                            + "file currently inaccessible", pnfsId);
             }
         } catch (CacheException e) {
             LOGGER.error("Error during handling of broken file removal ({}, {}): {}",
-                         pnfsId, pool, new ExceptionMessage(e));
+                  pnfsId, pool, new ExceptionMessage(e));
         } catch (InterruptedException e) {
             LOGGER.warn("Handling of broken file removal interrupted ({}, {})",
-                        pnfsId, pool);
+                  pnfsId, pool);
         }
     }
 
     /**
      * <p>The entry method for a PnfsId operation from a location update, called
-     *      in response to an incoming message.</p>
+     * in response to an incoming message.</p>
      *
      * <p>If the entry is already in the current map, its count is incremented.</p>
      *
      * <p>A check is then made to see if the source belongs to a resilient
-     *      pool group.  If not, the update is discarded.</p>
+     * pool group.  If not, the update is discarded.</p>
      *
      * <p>All attributes of the file that are necessary for resilience
-     *      processing are then fetched.  Thereafter a series of preliminary
-     *      checks are run for other disqualifying conditions.  If the pnfsId
-     *      does qualify, an entry is added to the {@link FileOperationMap}.</p>
+     * processing are then fetched.  Thereafter a series of preliminary checks are run for other
+     * disqualifying conditions.  If the pnfsId does qualify, an entry is added to the {@link
+     * FileOperationMap}.</p>
      *
      * @return true if a new operation is added to the map.
      */
     public boolean handleLocationUpdate(FileUpdate data)
-                    throws CacheException {
+          throws CacheException {
         LOGGER.trace("handleLocationUpdate {}", data);
 
         /*
@@ -319,16 +315,16 @@ public class FileOperationHandler implements CellMessageSender {
         if (QOS_MODIFIED != data.type) {
             if (data.pool == null) {
                 LOGGER.debug("Update of {} with no location; file has likely "
-                                             + "been deleted from namespace.",
-                             data.pnfsId);
+                            + "been deleted from namespace.",
+                      data.pnfsId);
                 return false;
             }
 
             if (!data.verifyPoolGroup(poolInfoMap)) {
                 LOGGER.debug("Handle location update ({}, {}, {}; "
-                                             + "pool is not a member "
-                                             + "of a resilient group.",
-                             data.pnfsId, data.pool, data.getGroup());
+                            + "pool is not a member "
+                            + "of a resilient group.",
+                      data.pnfsId, data.pool, data.getGroup());
                 return false;
             }
         }
@@ -355,9 +351,9 @@ public class FileOperationHandler implements CellMessageSender {
             data.pool = data.getAttributes().getLocations().iterator().next();
             if (!data.verifyPoolGroup(poolInfoMap)) {
                 LOGGER.debug("QOS_MODIFIED update ({}, {}, {}; "
-                                             + "pool is not a member "
-                                             + "of a resilient group.",
-                             data.pnfsId, data.pool, data.getGroup());
+                            + "pool is not a member "
+                            + "of a resilient group.",
+                      data.pnfsId, data.pool, data.getGroup());
                 return false;
             }
         }
@@ -366,9 +362,9 @@ public class FileOperationHandler implements CellMessageSender {
          *  Determine if action needs to be taken (counts).
          */
         if (!data.validateForAction(null,
-                                    poolInfoMap,
-                                    verifier,
-                                    pools)) {
+              poolInfoMap,
+              verifier,
+              pools)) {
             return false;
         }
 
@@ -382,16 +378,15 @@ public class FileOperationHandler implements CellMessageSender {
      * <p>If the entry is already in the current map, its count is incremented.</p>
      *
      * <p>All attributes of the file that are necessary for resilience
-     *      processing are then fetched.  Preliminary checks run for disqualifying
-     *      conditions here include whether this is a storage unit modification,
-     *      in which case the task is registered if the file has the storage unit
-     *      in question. Otherwise, verification proceeds as in the
-     *      {@link #handleLocationUpdate(FileUpdate)} method.</p>
+     * processing are then fetched.  Preliminary checks run for disqualifying conditions here
+     * include whether this is a storage unit modification, in which case the task is registered if
+     * the file has the storage unit in question. Otherwise, verification proceeds as in the {@link
+     * #handleLocationUpdate(FileUpdate)} method.</p>
      *
      * @return true if a new operation is added to the map.
      */
     public boolean handleScannedLocation(FileUpdate data, Integer storageUnit)
-                    throws CacheException {
+          throws CacheException {
         LOGGER.debug("handleScannedLocation {}", data);
 
         /*
@@ -410,9 +405,9 @@ public class FileOperationHandler implements CellMessageSender {
          *  Determine if action needs to be taken.
          */
         if (!data.validateForAction(storageUnit,
-                                    poolInfoMap,
-                                    verifier,
-                                    pools)) {
+              poolInfoMap,
+              verifier,
+              pools)) {
             return false;
         }
 
@@ -422,8 +417,8 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Wraps the creation of a migration {@link Task}.  The task is given
-     *      a static single pool list and a degenerate selection strategy,
-     *      since the target has already been selected by this handler.</p>
+     * a static single pool list and a degenerate selection strategy, since the target has already
+     * been selected by this handler.</p>
      */
     public Task handleMakeOneCopy(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
@@ -436,10 +431,10 @@ public class FileOperationHandler implements CellMessageSender {
             list = new StaticSinglePoolList(poolInfoMap.getPoolManagerInfo(operation.getTarget()));
         } catch (NoSuchElementException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(
-                            CacheException.NO_POOL_CONFIGURED,
-                            "Copy %s, could not get PoolManager info for %s: %s.",
-                            pnfsId, Type.COPY, poolInfoMap.getPool(operation.getTarget()),
-                            e);
+                  CacheException.NO_POOL_CONFIGURED,
+                  "Copy %s, could not get PoolManager info for %s: %s.",
+                  pnfsId, Type.COPY, poolInfoMap.getPool(operation.getTarget()),
+                  e);
             completionHandler.taskFailed(pnfsId, exception);
             return null;
         }
@@ -447,43 +442,42 @@ public class FileOperationHandler implements CellMessageSender {
         String source = poolInfoMap.getPool(operation.getSource());
 
         TaskParameters taskParameters = new TaskParameters(
-                        pools,
-                        null,   // PnfsManager cell stub not used
-                        pinManager,
-                        migrationTaskService,
-                        taskSelectionStrategy,
-                        list,
-                        false,  // eager; update should not happen
-                        false,  // isMetaOnly; just move the metadata
-                        false,  // compute checksum on update; should not happen
-                        false,  // force copy even if pool not readable
-                        true,   // maintain atime
-                        1);
+              pools,
+              null,   // PnfsManager cell stub not used
+              pinManager,
+              migrationTaskService,
+              taskSelectionStrategy,
+              list,
+              false,  // eager; update should not happen
+              false,  // isMetaOnly; just move the metadata
+              false,  // compute checksum on update; should not happen
+              false,  // force copy even if pool not readable
+              true,   // maintain atime
+              1);
 
         Task task = new Task(taskParameters, completionHandler, source, pnfsId,
-                             ReplicaState.CACHED, ONLINE_STICKY_RECORD,
-                             Collections.EMPTY_LIST, attributes,
-                             attributes.getAccessTime());
+              ReplicaState.CACHED, ONLINE_STICKY_RECORD,
+              Collections.EMPTY_LIST, attributes,
+              attributes.getAccessTime());
         if (ACTIVITY_LOGGER.isInfoEnabled()) {
             List<String> allPools = list.getPools().stream()
-                    .map(PoolManagerPoolInformation::getName)
-                    .collect(Collectors.toList());
+                  .map(PoolManagerPoolInformation::getName)
+                  .collect(Collectors.toList());
             ACTIVITY_LOGGER.info("Initiating replication of {} from {} to"
-                    + " pools: {}, offline: {}", pnfsId, source, allPools,
-                    list.getOfflinePools());
+                        + " pools: {}, offline: {}", pnfsId, source, allPools,
+                  list.getOfflinePools());
         }
         LOGGER.trace("Created migration task for {}: source {}, list {}.",
-                     pnfsId, source, list);
+              pnfsId, source, list);
 
         return task;
     }
 
     /**
-     * @param message returned by pool migration task, needs to be passed
-     *                to the migration task.
+     * @param message returned by pool migration task, needs to be passed to the migration task.
      */
     public void handleMigrationCopyFinished(
-                    PoolMigrationCopyFinishedMessage message) {
+          PoolMigrationCopyFinishedMessage message) {
         LOGGER.trace("Migration copy finished {}", message);
         try {
             fileOpMap.updateOperation(message);
@@ -512,7 +506,7 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Calls {@link #removeTarget(PnfsId, String)} and then reports
-     *    success or failure to the completion handler.</p>
+     * success or failure to the completion handler.</p>
      */
     public void handleRemoveOneCopy(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
@@ -521,7 +515,7 @@ public class FileOperationHandler implements CellMessageSender {
         try {
             String target = poolInfoMap.getPool(operation.getTarget());
             LOGGER.trace("handleRemoveOneCopy {}, removing {}.", pnfsId,
-                         target);
+                  target);
             removeTarget(pnfsId, target);
         } catch (CacheException e) {
             completionHandler.taskFailed(pnfsId, e);
@@ -532,48 +526,47 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Called when there are no available replicas, but the file
-     *    can be retrieved from an HSM.</p>
+     * can be retrieved from an HSM.</p>
      *
      * <p>Issues a fire and forget request.  Task is considered complete at
-     *    that point.</p>
+     * that point.</p>
      *
      * <p>When staging actually completes on the PoolManager end, the new
-     *    cache location message should be processed by Resilience as a
-     *    new FileOperation.</p>
+     * cache location message should be processed by Resilience as a new FileOperation.</p>
      *
      * <p>Should staging not complete before the pool is once again scanned,
-     *    PoolManager should collapse the repeated staging request.</p>
+     * PoolManager should collapse the repeated staging request.</p>
      */
     public void handleStaging(PnfsId pnfsId, ResilientFileTask task) {
         try {
             FileOperation operation = fileOpMap.getOperation(pnfsId);
             FileAttributes attributes
-                            = namespace.getRequiredAttributesForStaging(pnfsId);
+                  = namespace.getRequiredAttributesForStaging(pnfsId);
             String poolGroup = poolInfoMap.getGroup(operation.getPoolGroup());
             LOGGER.trace("handleStaging {}, pool group {}.", pnfsId, poolGroup);
             migrationTaskService.schedule(() -> {
                 try {
                     PoolMgrSelectReadPoolMsg msg =
-                                    new PoolMgrSelectReadPoolMsg(attributes,
-                                                                 getProtocolInfo(),
-                                                                 null);
+                          new PoolMgrSelectReadPoolMsg(attributes,
+                                getProtocolInfo(),
+                                null);
                     msg.setSubject(Subjects.ROOT);
                     msg.setPoolGroup(poolGroup);
                     CellMessage cellMessage
-                                    = new CellMessage(new CellPath(poolManagerAddress),
-                                                      msg);
+                          = new CellMessage(new CellPath(poolManagerAddress),
+                          msg);
                     ACTIVITY_LOGGER.info("Staging {}", pnfsId);
                     endpoint.sendMessage(cellMessage);
                     LOGGER.trace("handleStaging, sent select read pool message "
-                                                 + "for {} to poolManager.", pnfsId);
+                          + "for {} to poolManager.", pnfsId);
                     completionHandler.taskCompleted(pnfsId);
                 } catch (URISyntaxException e) {
                     completionHandler.taskFailed(pnfsId,
-                                       CacheExceptionUtils.getCacheException(
-                                       CacheException.INVALID_ARGS,
-                                       "could not construct HTTP protocol: %s.",
-                                       pnfsId, Type.WAIT_FOR_STAGE,
-                                       e.getMessage(), null));
+                          CacheExceptionUtils.getCacheException(
+                                CacheException.INVALID_ARGS,
+                                "could not construct HTTP protocol: %s.",
+                                pnfsId, Type.WAIT_FOR_STAGE,
+                                e.getMessage(), null));
                 }
             }, 0, TimeUnit.MILLISECONDS);
         } catch (CacheException ce) {
@@ -583,34 +576,33 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>If the reply from the Pool Manager indicates that the file has
-     *    been staged to a pool outside the pool group, resend the message
-     *    with refreshed attributes to trigger a p2p by the Pool Manager to
-     *    a readable resilient pool in the correct group.  Otherwise,
-     *    discard the message.</p>
+     * been staged to a pool outside the pool group, resend the message with refreshed attributes to
+     * trigger a p2p by the Pool Manager to a readable resilient pool in the correct group.
+     * Otherwise, discard the message.</p>
      */
     public void handleStagingReply(PoolMgrSelectReadPoolMsg reply) {
         PnfsId pnfsId = reply.getPnfsId();
         try {
             if (reply.getReturnCode() == CacheException.OUT_OF_DATE) {
                 FileAttributes attributes
-                                = namespace.getRequiredAttributesForStaging(pnfsId);
+                      = namespace.getRequiredAttributesForStaging(pnfsId);
                 /*
                  *  Check to see if one of the new locations is not resilient.
                  */
                 Collection<String> locations = attributes.getLocations();
                 List<String> valid
-                                = poolInfoMap.getReadableLocations(locations)
-                                             .stream()
-                                             .filter(poolInfoMap::isResilientPool)
-                                             .collect(Collectors.toList());
+                      = poolInfoMap.getReadableLocations(locations)
+                      .stream()
+                      .filter(poolInfoMap::isResilientPool)
+                      .collect(Collectors.toList());
                 LOGGER.trace("{}, handleStagingReply, readable resilience "
-                                             + "locations are now {}.", valid);
+                      + "locations are now {}.", valid);
                 if (valid.size() == 0) {
                     LOGGER.trace("{}, handleStagingReply, "
-                                                 + "PoolManager staged to"
-                                                 + " a non-resilient pool, "
-                                                 + "requesting p2p.",
-                                 pnfsId);
+                                + "PoolManager staged to"
+                                + " a non-resilient pool, "
+                                + "requesting p2p.",
+                          pnfsId);
 
                     /*
                      *  Figure out on which pool group this should be.
@@ -626,7 +618,7 @@ public class FileOperationHandler implements CellMessageSender {
                      */
                     Integer gIndex = null;
 
-                    for (String loc: locations) {
+                    for (String loc : locations) {
                         Integer pIndex = poolInfoMap.getPoolIndex(loc);
                         gIndex = poolInfoMap.getResilientPoolGroup(pIndex);
                         if (gIndex != null) {
@@ -636,38 +628,38 @@ public class FileOperationHandler implements CellMessageSender {
 
                     if (gIndex == null) {
                         LOGGER.warn("{}, handleStagingReply, file no longer"
-                                + " hosted on resilient pool group", pnfsId);
+                              + " hosted on resilient pool group", pnfsId);
                         return;
                     }
 
                     final String poolGroup = poolInfoMap.getGroup(gIndex);
                     LOGGER.trace("{}, handleStagingReply, resilient pool group "
-                                                 + "for p2p request: {}.",
-                                 pnfsId, poolGroup);
+                                + "for p2p request: {}.",
+                          pnfsId, poolGroup);
 
                     migrationTaskService.schedule(() -> {
                         PoolMgrSelectReadPoolMsg msg =
-                                        new PoolMgrSelectReadPoolMsg(attributes,
-                                                                     reply.getProtocolInfo(),
-                                                                     reply.getContext(),
-                                                                     reply.getAllowedStates());
+                              new PoolMgrSelectReadPoolMsg(attributes,
+                                    reply.getProtocolInfo(),
+                                    reply.getContext(),
+                                    reply.getAllowedStates());
                         msg.setSubject(reply.getSubject());
                         msg.setPoolGroup(poolGroup);
                         CellMessage cellMessage = new CellMessage(
-                                        new CellPath(poolManagerAddress),
-                                        msg);
+                              new CellPath(poolManagerAddress),
+                              msg);
                         ACTIVITY_LOGGER.info("Selecting read pool for file {}"
-                                + " staged to a non-resilient pool", pnfsId);
+                              + " staged to a non-resilient pool", pnfsId);
                         endpoint.sendMessage(cellMessage);
                         LOGGER.trace("handleStagingReply, resent select read pool "
-                                                     + "message for {} to poolManager.",
-                                     pnfsId);
+                                    + "message for {} to poolManager.",
+                              pnfsId);
                     }, 0, TimeUnit.MILLISECONDS);
                     return;
                 }
             }
             LOGGER.trace("{} handleStagingReply {}, nothing to do.",
-                         pnfsId, reply);
+                  pnfsId, reply);
         } catch (CacheException ce) {
             LOGGER.error("handleStagingReply failed: {}.", ce.toString());
         }
@@ -675,17 +667,16 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Called when a pnfsid has been selected from the operation map for
-     *    possible processing. Refreshes locations from namespace, and checks
-     *    which of those are currently readable.  Sends an alarm if
-     *    no operation can occur but should.</p>
+     * possible processing. Refreshes locations from namespace, and checks which of those are
+     * currently readable.  Sends an alarm if no operation can occur but should.</p>
      *
      * <p>Note:  because of the possibility of data loss due to a lag between
-     *    the pools and namespace, the namespace locations are now verified
-     *    by sending a message to the pool.</p>
+     * the pools and namespace, the namespace locations are now verified by sending a message to the
+     * pool.</p>
      *
      * <p>The following table illustrates the progress of this routine
-     *    by positing a file with one type of replica location each
-     *    reported initially by the namespace:</p>
+     * by positing a file with one type of replica location each reported initially by the
+     * namespace:</p>
      *
      * <table>
      *   <thead>
@@ -849,8 +840,7 @@ public class FileOperationHandler implements CellMessageSender {
      *   </tbody>
      * </table>
      *
-     * @return COPY, REMOVE, SET_STICKY, WAIT_FOR_STAGE,
-     *         or VOID if no operation is necessary.
+     * @return COPY, REMOVE, SET_STICKY, WAIT_FOR_STAGE, or VOID if no operation is necessary.
      */
     public Type handleVerification(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
@@ -867,20 +857,20 @@ public class FileOperationHandler implements CellMessageSender {
             namespace.refreshAttributes(attributes);
         } catch (CacheException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(e.getRc(),
-                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                            pnfsId, Type.VOID, null, e.getCause());
+                  FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                  pnfsId, Type.VOID, null, e.getCause());
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
 
         Collection<String> locations = attributes.getLocations();
         LOGGER.trace("handleVerification {}, refreshed access latency {}, "
-                                     + "retention policy {}; "
-                                     + "locations from namespace {}",
-                     pnfsId,
-                     attributes.getAccessLatency(),
-                     attributes.getRetentionPolicy(),
-                     locations);
+                    + "retention policy {}; "
+                    + "locations from namespace {}",
+              pnfsId,
+              attributes.getAccessLatency(),
+              attributes.getRetentionPolicy(),
+              locations);
 
         /*
          * Somehow, all the cache locations for this file have been removed
@@ -888,8 +878,8 @@ public class FileOperationHandler implements CellMessageSender {
          */
         if (locations.isEmpty()) {
             LOGGER.trace("handleVerification {}, no namespace locations found, "
-                          + "checking to see if file can be staged.",
-                         pnfsId);
+                        + "checking to see if file can be staged.",
+                  pnfsId);
             if (shouldTryToStage(attributes, operation)) {
                 return Type.WAIT_FOR_STAGE;
             }
@@ -898,7 +888,7 @@ public class FileOperationHandler implements CellMessageSender {
 
         Set<String> members = poolInfoMap.getMemberLocations(gindex, locations);
         LOGGER.trace("handleVerification {}, valid group member locations {}",
-                     pnfsId, members);
+              pnfsId, members);
 
         /*
          * If all the locations are pools no longer belonging to the group,
@@ -920,14 +910,14 @@ public class FileOperationHandler implements CellMessageSender {
             responsesFromPools = verifier.verifyLocations(pnfsId, members, pools);
         } catch (InterruptedException e) {
             LOGGER.warn("handleVerification, replica verification "
-                                        + "for {} was interrupted; "
-                                        + "cancelling operation.", pnfsId);
+                  + "for {} was interrupted; "
+                  + "cancelling operation.", pnfsId);
             completionHandler.taskCancelled(pnfsId);
             return Type.VOID;
         }
 
         LOGGER.trace("handleVerification {}, verified replicas: {}",
-                     pnfsId, responsesFromPools);
+              pnfsId, responsesFromPools);
 
         /*
          *  First, if there are broken replicas, remove the first one
@@ -943,7 +933,7 @@ public class FileOperationHandler implements CellMessageSender {
         if (!broken.isEmpty()) {
             String target = broken.iterator().next();
             if (verifier.isSticky(target, responsesFromPools)
-                            && verifier.getSticky(responsesFromPools).size() > 1) {
+                  && verifier.getSticky(responsesFromPools).size() > 1) {
                 fileOpMap.updateOperation(pnfsId, null, target);
                 operation.incrementCount();
                 return Type.REMOVE;
@@ -955,13 +945,13 @@ public class FileOperationHandler implements CellMessageSender {
          *  This is crucial for the counts.
          */
         Set<String> namespaceReadable
-                        = poolInfoMap.getReadableLocations(members);
+              = poolInfoMap.getReadableLocations(members);
 
         Set<String> exist = verifier.exist(namespaceReadable, responsesFromPools);
 
         LOGGER.trace("handleVerification, {}, namespace readable locations {},"
-                                     + "verified locations {}",
-                     pnfsId, namespaceReadable, exist);
+                    + "verified locations {}",
+              pnfsId, namespaceReadable, exist);
 
         /*
          * This should now happen very rarely, since resilience itself
@@ -970,11 +960,11 @@ public class FileOperationHandler implements CellMessageSender {
          */
         if (namespaceReadable.size() != exist.size()) {
             ACTIVITY_LOGGER.info("The namespace is not in sync with the pool "
-                                                 + "repositories for {}: "
-                                                 + "namespace locations "
-                                                 + "that are readable: {}; "
-                                                 + "actually found: {}.",
-                                 pnfsId, namespaceReadable, exist);
+                        + "repositories for {}: "
+                        + "namespace locations "
+                        + "that are readable: {}; "
+                        + "actually found: {}.",
+                  pnfsId, namespaceReadable, exist);
             sendOutOfSyncAlarm();
         }
 
@@ -984,9 +974,9 @@ public class FileOperationHandler implements CellMessageSender {
          */
         if (inaccessibleFileHandler.isInaccessible(exist, operation)) {
             LOGGER.trace("handleVerification {}, "
-                                         + "no valid readable locations found, "
-                                         + "checking to see if "
-                                         + "file can be staged.", pnfsId);
+                  + "no valid readable locations found, "
+                  + "checking to see if "
+                  + "file can be staged.", pnfsId);
             if (shouldTryToStage(attributes, operation)) {
                 return Type.WAIT_FOR_STAGE;
             }
@@ -1007,16 +997,16 @@ public class FileOperationHandler implements CellMessageSender {
             if (sticky.size() > 0) {
                 String target = sticky.iterator().next();
                 LOGGER.trace("handleVerification, {}, access latency is NEARLINE, "
-                                             + "updating operation with first "
-                                             + "sticky target to cache: {}",
-                             pnfsId, target);
+                            + "updating operation with first "
+                            + "sticky target to cache: {}",
+                      pnfsId, target);
                 fileOpMap.updateOperation(pnfsId, null, target);
                 return Type.REMOVE;
             }
 
             LOGGER.trace("handleVerification, {}, access latency is NEARLINE, "
-                                         + "but no sticky replicas:  responses {}",
-                         pnfsId, responsesFromPools);
+                        + "but no sticky replicas:  responses {}",
+                  pnfsId, responsesFromPools);
             completionHandler.taskCompleted(pnfsId);
             return Type.VOID;
         }
@@ -1031,13 +1021,13 @@ public class FileOperationHandler implements CellMessageSender {
          */
         if (shouldEvictALocation(operation, sticky, responsesFromPools)) {
             LOGGER.trace("handleVerification, a replica should be evicted from {}",
-                         sticky);
+                  sticky);
             return Type.REMOVE;
         }
 
         LOGGER.trace("handleVerification after eviction check, {}, "
-                                     + "valid replicas {}",
-                        pnfsId, sticky);
+                    + "valid replicas {}",
+              pnfsId, sticky);
 
         /*
          *  Find the locations in the namespace that are actually occupied.
@@ -1049,28 +1039,28 @@ public class FileOperationHandler implements CellMessageSender {
          *  locations the offline replica locations.
          */
         Set<String> occupied = Sets.union(exist,
-                                          Sets.difference(members,
-                                                          namespaceReadable));
+              Sets.difference(members,
+                    namespaceReadable));
         /*
          *  Find the non-sticky locations (broken files are cached; exclude those too).
          *  Partition the sticky locations between usable and excluded.
          */
         Set<String> nonSticky = Sets.difference(Sets.difference(exist, sticky), broken);
         Set<String> excluded
-                        = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
-                                             responsesFromPools);
+              = verifier.areSticky(poolInfoMap.getExcludedLocationNames(members),
+              responsesFromPools);
         sticky = Sets.difference(sticky, excluded);
 
         LOGGER.trace("handleVerification {}: member pools with a sticky replica  "
-                                     + " but which have been manually excluded: {}.",
-                     pnfsId, excluded);
+                    + " but which have been manually excluded: {}.",
+              pnfsId, excluded);
 
         return determineTypeFromConstraints(operation,
-                                            excluded.size(),
-                                            occupied,
-                                            sticky,
-                                            nonSticky,
-                                            responsesFromPools);
+              excluded.size(),
+              occupied,
+              sticky,
+              nonSticky,
+              responsesFromPools);
     }
 
     @Override
@@ -1079,7 +1069,7 @@ public class FileOperationHandler implements CellMessageSender {
     }
 
     public void setCompletionHandler(
-                    FileTaskCompletionHandler completionHandler) {
+          FileTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
@@ -1088,7 +1078,7 @@ public class FileOperationHandler implements CellMessageSender {
     }
 
     public void setInaccessibleFileHandler(
-                    InaccessibleFileHandler inaccessibleFileHandler) {
+          InaccessibleFileHandler inaccessibleFileHandler) {
         this.inaccessibleFileHandler = inaccessibleFileHandler;
     }
 
@@ -1134,32 +1124,32 @@ public class FileOperationHandler implements CellMessageSender {
 
     /**
      * <p>Checks the readable locations against the requirements.
-     *    If previous operations on this pnfsId have already satisfied them,
-     *    the operation should be voided.</p>
+     * If previous operations on this pnfsId have already satisfied them, the operation should be
+     * voided.</p>
      *
      * @param operation -- on the given pnfsid
-     * @param excluded -- number of member pools manually excluded by admins
-     * @param occupied -- group member pools with a replica in any state
-     * @param sticky -- group member replicas that are sticky
+     * @param excluded  -- number of member pools manually excluded by admins
+     * @param occupied  -- group member pools with a replica in any state
+     * @param sticky    -- group member replicas that are sticky
      * @param nonSticky -- group member replicas that are not sticky
-     * @param verified -- the messages returned by the pools
+     * @param verified  -- the messages returned by the pools
      * @return the type of operation which should take place, if any.
      */
     private Type determineTypeFromConstraints(FileOperation operation,
-                                              int excluded,
-                                              Set<String> occupied,
-                                              Set<String> sticky,
-                                              Set<String> nonSticky,
-                                              Collection verified) {
+          int excluded,
+          Set<String> occupied,
+          Set<String> sticky,
+          Set<String> nonSticky,
+          Collection verified) {
         PnfsId pnfsId = operation.getPnfsId();
         Integer gindex = operation.getPoolGroup();
         Integer sindex = operation.getStorageUnit();
 
         LOGGER.trace("determineTypeFromConstraints {}, group {}, unit {}.",
-                     pnfsId, gindex, sindex);
+              pnfsId, gindex, sindex);
 
         StorageUnitConstraints constraints
-                        = poolInfoMap.getStorageUnitConstraints(sindex);
+              = poolInfoMap.getStorageUnitConstraints(sindex);
 
         int required = constraints.getRequired();
         int missing = required - sticky.size();
@@ -1181,7 +1171,7 @@ public class FileOperationHandler implements CellMessageSender {
         Collection<String> tags = constraints.getOneCopyPer();
 
         LOGGER.trace("{}, required {}, excluded {}, missing {}.",
-                     pnfsId, required, excluded, missing);
+              pnfsId, required, excluded, missing);
 
         Type type;
         String source = null;
@@ -1195,14 +1185,14 @@ public class FileOperationHandler implements CellMessageSender {
             if (missing < 0) {
                 Integer index = operation.getTarget();
                 if (index == null || !poolInfoMap.isPoolViable(index, true)
-                                || !verifier.isRemovable(poolInfoMap.getPool(index),
-                                                         verified)) {
+                      || !verifier.isRemovable(poolInfoMap.getPool(index),
+                      verified)) {
                     Set<String> removable = verifier.areRemovable(sticky,
-                                                                  verified);
+                          verified);
                     target = locationSelector.selectRemoveTarget(operation,
-                                                                 sticky,
-                                                                 removable,
-                                                                 tags);
+                          sticky,
+                          removable,
+                          tags);
                 }
 
                 LOGGER.trace("target to remove: {}", target);
@@ -1211,8 +1201,8 @@ public class FileOperationHandler implements CellMessageSender {
                 Integer viableSource = operation.getSource();
 
                 if (viableSource != null &&
-                                !poolInfoMap.isPoolViable(viableSource,
-                                                          false)) {
+                      !poolInfoMap.isPoolViable(viableSource,
+                            false)) {
                     viableSource = null;
                 }
 
@@ -1235,9 +1225,9 @@ public class FileOperationHandler implements CellMessageSender {
                     }
 
                     target = locationSelector.selectPromotionTarget(operation,
-                                                                    sticky,
-                                                                    nonSticky,
-                                                                    tags);
+                          sticky,
+                          nonSticky,
+                          tags);
 
                     if (target != null) {
                         fileOpMap.updateOperation(pnfsId, null, target);
@@ -1246,14 +1236,14 @@ public class FileOperationHandler implements CellMessageSender {
                     }
 
                     target = locationSelector.selectCopyTarget(operation,
-                                                               gindex,
-                                                               occupied,
-                                                               tags);
+                          gindex,
+                          occupied,
+                          tags);
                 } else if (!poolInfoMap.isPoolViable(targetIndex, true)) {
                     target = locationSelector.selectCopyTarget(operation,
-                                                               gindex,
-                                                               occupied,
-                                                               tags);
+                          gindex,
+                          occupied,
+                          tags);
                 }
 
                 LOGGER.trace("target to copy: {}", target);
@@ -1265,13 +1255,13 @@ public class FileOperationHandler implements CellMessageSender {
                  *  an incomplete source, then use it tentatively.
                  */
                 Set<String> strictlyReadable =
-                                verifier.areReadable(sticky, verified);
+                      verifier.areReadable(sticky, verified);
 
                 if (viableSource == null) {
                     source = locationSelector.selectCopySource(operation,
-                                                               strictlyReadable.isEmpty()
-                                                                               ? sticky
-                                                                               : strictlyReadable);
+                          strictlyReadable.isEmpty()
+                                ? sticky
+                                : strictlyReadable);
                 }
 
                 LOGGER.trace("source: {}", source);
@@ -1283,9 +1273,9 @@ public class FileOperationHandler implements CellMessageSender {
             }
         } catch (LocationSelectionException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(
-                            CacheException.DEFAULT_ERROR_CODE,
-                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                            pnfsId, Type.VOID, null, e);
+                  CacheException.DEFAULT_ERROR_CODE,
+                  FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                  pnfsId, Type.VOID, null, e);
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
@@ -1297,56 +1287,56 @@ public class FileOperationHandler implements CellMessageSender {
 
     private ProtocolInfo getProtocolInfo() throws URISyntaxException {
         return new HttpProtocolInfo("Http", 1, 1,
-                                    new InetSocketAddress("localhost", 0),
-                                    null,
-                                    null, null,
-                                    new URI("http", "localhost",
-                                            null, null));
+              new InetSocketAddress("localhost", 0),
+              null,
+              null, null,
+              new URI("http", "localhost",
+                    null, null));
     }
 
     /**
      * <p>Synchronously sends message to turn a non-sticky replica into
-     *    a sticky replica.</p>
+     * a sticky replica.</p>
      */
     private void promoteToSticky(PnfsId pnfsId, String target)
-                    throws CacheException {
+          throws CacheException {
         ForceSystemStickyBitMessage msg
-                        = new ForceSystemStickyBitMessage(target, pnfsId);
+              = new ForceSystemStickyBitMessage(target, pnfsId);
 
         LOGGER.trace("Sending message to promote to sticky {}.", msg);
         Future<ForceSystemStickyBitMessage> future
-                        = pools.send(new CellPath(target), msg);
+              = pools.send(new CellPath(target), msg);
 
         try {
             msg = future.get();
             LOGGER.trace("Returned ForceSystemStickyBitMessage {}.", msg);
         } catch (InterruptedException | ExecutionException e) {
             throw CacheExceptionUtils.getCacheException(
-                            CacheException.SELECTED_POOL_FAILED,
-                            FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
-                            pnfsId, Type.SET_STICKY, target, e);
+                  CacheException.SELECTED_POOL_FAILED,
+                  FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
+                  pnfsId, Type.SET_STICKY, target, e);
         }
 
         CacheException exception = msg.getErrorObject() == null ? null :
-                        CacheExceptionFactory.exceptionOf(msg);
+              CacheExceptionFactory.exceptionOf(msg);
 
         if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
-                            CacheException.SELECTED_POOL_FAILED,
-                            FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
-                            pnfsId, Type.SET_STICKY, target, exception);
+                  CacheException.SELECTED_POOL_FAILED,
+                  FileTaskCompletionHandler.FAILED_COPY_MESSAGE,
+                  pnfsId, Type.SET_STICKY, target, exception);
         }
     }
 
     /**
      * <p>Synchronously removes from the target location the cache entry of the
-     *      pnfsid associated with this task.  This is done via a message
-     *      sent to a handler for this purpose on the pool itself.</p>
+     * pnfsid associated with this task.  This is done via a message sent to a handler for this
+     * purpose on the pool itself.</p>
      */
     private void removeTarget(PnfsId pnfsId, String target)
-                    throws CacheException {
+          throws CacheException {
         RemoveReplicaMessage msg = new RemoveReplicaMessage(target,
-                                                            pnfsId);
+              pnfsId);
 
         LOGGER.trace("Sending RemoveReplicasMessage {}.", msg);
         ACTIVITY_LOGGER.info("Removing {} from {}", pnfsId, target);
@@ -1357,36 +1347,35 @@ public class FileOperationHandler implements CellMessageSender {
             LOGGER.trace("Returned ReplicationRepRmMessage {}.", msg);
         } catch (InterruptedException | ExecutionException e) {
             throw CacheExceptionUtils.getCacheException(
-                            CacheException.SELECTED_POOL_FAILED,
-                            FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
-                            pnfsId, Type.REMOVE, target, e);
+                  CacheException.SELECTED_POOL_FAILED,
+                  FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
+                  pnfsId, Type.REMOVE, target, e);
         }
 
         CacheException exception = msg.getErrorObject() == null ? null :
-                        CacheExceptionFactory.exceptionOf(msg);
+              CacheExceptionFactory.exceptionOf(msg);
 
         if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
-                            CacheException.SELECTED_POOL_FAILED,
-                            FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
-                            pnfsId, Type.REMOVE, target, exception);
+                  CacheException.SELECTED_POOL_FAILED,
+                  FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
+                  pnfsId, Type.REMOVE, target, exception);
         }
     }
 
     /**
      * <p>Checks for necessary eviction due to pool tag changes or
-     *    constraint change.  This call will automatically set
-     *    the offending location as the target for a remove operation,
-     *    and will increment the operation count so that there will
-     *    be a chance to repeat the operation in order to make a new copy.</p>
+     * constraint change.  This call will automatically set the offending location as the target for
+     * a remove operation, and will increment the operation count so that there will be a chance to
+     * repeat the operation in order to make a new copy.</p>
      *
      * <p> Note that the extractor algorithm will never remove the last replica,
-     *     because a singleton will always satisfy any equivalence relation.
-     *     But we short-circuit this check anyway (for location size < 2).</p>
+     * because a singleton will always satisfy any equivalence relation. But we short-circuit this
+     * check anyway (for location size < 2).</p>
      */
     private boolean shouldEvictALocation(FileOperation operation,
-                                         Collection<String> readableLocations,
-                                         Collection verified) {
+          Collection<String> readableLocations,
+          Collection verified) {
         if (readableLocations.size() < 2) {
             return false;
         }
@@ -1397,13 +1386,13 @@ public class FileOperationHandler implements CellMessageSender {
         }
 
         StorageUnitConstraints constraints
-                        = poolInfoMap.getStorageUnitConstraints(sunit);
+              = poolInfoMap.getStorageUnitConstraints(sunit);
         RemoveLocationExtractor extractor
-                        = new RemoveLocationExtractor(constraints.getOneCopyPer(),
-                                                      poolInfoMap);
+              = new RemoveLocationExtractor(constraints.getOneCopyPer(),
+              poolInfoMap);
         String toEvict = extractor.findALocationToEvict(readableLocations,
-                                                        verified,
-                                                        verifier);
+              verified,
+              verifier);
 
         if (toEvict != null) {
             operation.setTarget(poolInfoMap.getPoolIndex(toEvict));
@@ -1419,22 +1408,21 @@ public class FileOperationHandler implements CellMessageSender {
      * <p>Called when there are no accessible replicas for the file.</p>
      *
      * <p>If the file's RetentionPolicy is CUSTODIAL, set the count to 1,
-     *    to make sure the task completes after this.  Staging is fire-and-forget,
-     *    and depends on a new add cache location message being processed
-     *    after staging.</p>
+     * to make sure the task completes after this.  Staging is fire-and-forget, and depends on a new
+     * add cache location message being processed after staging.</p>
      *
      * @return true if file is CUSTODIAL, false otherwise.
      */
     private boolean shouldTryToStage(FileAttributes attributes,
-                                     FileOperation operation) {
+          FileOperation operation) {
         if (attributes.getRetentionPolicy() == RetentionPolicy.CUSTODIAL) {
             LOGGER.trace("shouldTryToStage {}, retention policy is CUSTODIAL.",
-                         operation.getPnfsId());
+                  operation.getPnfsId());
             operation.setOpCount(1);
             return true;
         }
         LOGGER.trace("shouldTryToStage {}, retention policy is not CUSTODIAL",
-                     operation.getPnfsId());
+              operation.getPnfsId());
         return false;
     }
 }

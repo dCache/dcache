@@ -20,7 +20,9 @@ public class IOHimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 1067885211056251863L;
 
-    /** Creates a new instance of IOHimeraFsException */
+    /**
+     * Creates a new instance of IOHimeraFsException
+     */
     public IOHimeraFsException() {
         super();
     }
@@ -29,8 +31,7 @@ public class IOHimeraFsException extends ChimeraFsException {
         super(msg);
     }
 
-    public IOHimeraFsException(String message, Throwable cause)
-    {
+    public IOHimeraFsException(String message, Throwable cause) {
         super(message, cause);
     }
 }

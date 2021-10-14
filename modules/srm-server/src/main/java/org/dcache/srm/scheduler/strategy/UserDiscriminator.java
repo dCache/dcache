@@ -18,7 +18,6 @@
 package org.dcache.srm.scheduler.strategy;
 
 import javax.annotation.Nonnull;
-
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.FileRequest;
@@ -26,18 +25,16 @@ import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.scheduler.spi.JobDiscriminator;
 
-public abstract class UserDiscriminator implements JobDiscriminator
-{
+public abstract class UserDiscriminator implements JobDiscriminator {
+
     @Nonnull
     @Override
-    public String getDiscriminatingValue(Job job)
-    {
+    public String getDiscriminatingValue(Job job) {
         SRMUser user = getUser(job);
         return (user == null) ? "" : getDiscriminatingValue(user);
     }
 
-    private SRMUser getUser(Job job)
-    {
+    private SRMUser getUser(Job job) {
         if (job instanceof Request) {
             return ((Request) job).getUser();
         } else if (job instanceof FileRequest) {

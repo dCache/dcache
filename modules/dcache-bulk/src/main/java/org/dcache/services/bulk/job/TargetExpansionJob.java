@@ -60,10 +60,8 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import com.google.common.collect.Range;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
-
 import org.dcache.services.bulk.BulkJobExecutionException;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
@@ -73,43 +71,40 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- *  For expanding the contents of directories.
- *
- *  Provides both breadth-first and depth-first algorithms.
- *
- *  These, along with what kinds of targets the expansion should submit as
- *  single target jobs, are determined by the specific activity.
+ * For expanding the contents of directories.
+ * <p>
+ * Provides both breadth-first and depth-first algorithms.
+ * <p>
+ * These, along with what kinds of targets the expansion should submit as single target jobs, are
+ * determined by the specific activity.
  */
-public final class TargetExpansionJob extends MultipleTargetJob
-{
-    public enum ExpansionType
-    {
+public final class TargetExpansionJob extends MultipleTargetJob {
+
+    public enum ExpansionType {
         BREADTH_FIRST, DEPTH_FIRST
     }
 
     /**
-     *  Set on the basis of the specific request.
+     * Set on the basis of the specific request.
      */
-    private final ExpansionType   expansionType;
+    private final ExpansionType expansionType;
 
     /**
-     *  Streaming pnfs list handler for scalability.
+     * Streaming pnfs list handler for scalability.
      */
     private ListDirectoryHandler listHandler;
 
     public TargetExpansionJob(BulkJobKey key,
-                              BulkJobKey parentKey,
-                              BulkRequest request,
-                              TargetType targetType,
-                              ExpansionType expansionType)
-    {
+          BulkJobKey parentKey,
+          BulkRequest request,
+          TargetType targetType,
+          ExpansionType expansionType) {
         super(key, parentKey, request, targetType);
         this.expansionType = expansionType;
     }
 
     @Override
-    public boolean cancel()
-    {
+    public boolean cancel() {
         if (super.cancel()) {
             completionHandler.clear();
             return true;
@@ -118,37 +113,32 @@ public final class TargetExpansionJob extends MultipleTargetJob
         return false;
     }
 
-    public void setListHandler(ListDirectoryHandler listHandler)
-    {
+    public void setListHandler(ListDirectoryHandler listHandler) {
         this.listHandler = listHandler;
     }
 
     /**
-     *  Entry point for the job.
-     *
-     *  In breadth-first expansion, each directory encountered "forks"
-     *  a new job.
-     *
-     *  In depth-first expansion, the "root" expansion job is responsible
-     *  for all expansion of subdirectories (via recursion).  This
-     *  avoids a memory-unfriendly chain of job dependencies (breadth-first
-     *  expansions have no such chained dependencies).
+     * Entry point for the job.
+     * <p>
+     * In breadth-first expansion, each directory encountered "forks" a new job.
+     * <p>
+     * In depth-first expansion, the "root" expansion job is responsible for all expansion of
+     * subdirectories (via recursion).  This avoids a memory-unfriendly chain of job dependencies
+     * (breadth-first expansions have no such chained dependencies).
      */
     @Override
-    protected void doRun()
-    {
+    protected void doRun() {
         LOGGER.trace("{}, doRun() called ...", loggingPrefix());
 
-        switch (expansionType)
-        {
+        switch (expansionType) {
             case BREADTH_FIRST:
             case DEPTH_FIRST:
                 break;
             default:
                 String error = String.format("Expansion of %s failed; unknown "
-                                                             + "expansion "
-                                                             + "algorithm: %s.",
-                                             key, expansionType.name());
+                            + "expansion "
+                            + "algorithm: %s.",
+                      key, expansionType.name());
                 errorObject = new BulkJobExecutionException(error);
                 completionHandler.jobFailed(this);
                 return;
@@ -163,34 +153,32 @@ public final class TargetExpansionJob extends MultipleTargetJob
         }
 
         LOGGER.trace("{}, doRun(), key {}, target {} exiting ...",
-                     loggingPrefix(), key, target);
+              loggingPrefix(), key, target);
     }
 
-    protected void postCompletion()
-    {
+    protected void postCompletion() {
         completionHandler.jobCompleted(this);
     }
 
     private void expand(String target,
-                        BulkJobKey key,
-                        BulkJobKey parentKey,
-                        FileAttributes attributes)
-                    throws CacheException, BulkServiceException
-    {
+          BulkJobKey key,
+          BulkJobKey parentKey,
+          FileAttributes attributes)
+          throws CacheException, BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
         if (isTerminated()) {
             LOGGER.debug("{}, expansion job for {} {}; returning ...",
-                         loggingPrefix(), target, state.name());
+                  loggingPrefix(), target, state.name());
             return;
         }
 
         LOGGER.debug("{}, expand() called for {}: key {}, parent {}.",
-                     loggingPrefix(),
-                     target,
-                     key.getJobId(),
-                     parentKey.getJobId());
+              loggingPrefix(),
+              target,
+              key.getJobId(),
+              parentKey.getJobId());
 
         if (expansionType == ExpansionType.BREADTH_FIRST) {
             /*
@@ -208,7 +196,7 @@ public final class TargetExpansionJob extends MultipleTargetJob
                 handleChildTarget(target, key, entry);
                 if (isTerminated()) {
                     LOGGER.debug("{}, expansion job for {} {}; returning ...",
-                                 loggingPrefix(), target, state.name());
+                          loggingPrefix(), target, state.name());
                     return;
                 }
             }
@@ -226,17 +214,17 @@ public final class TargetExpansionJob extends MultipleTargetJob
                  *  deletion).
                  */
                 LOGGER.debug("{}, {}, waiting for children of "
-                                             + "{} to terminate.",
-                             loggingPrefix(),
-                             expansionType.name(),
-                             key.getJobId());
+                            + "{} to terminate.",
+                      loggingPrefix(),
+                      expansionType.name(),
+                      key.getJobId());
 
                 completionHandler.waitForChildren(key.getJobId());
 
                 LOGGER.debug("{}, {}, children of " + "{} have terminated.",
-                            loggingPrefix(),
-                            expansionType.name(),
-                            key.getJobId());
+                      loggingPrefix(),
+                      expansionType.name(),
+                      key.getJobId());
 
                 /*
                  *  In depth-first it may indeed be necessary to process
@@ -271,37 +259,34 @@ public final class TargetExpansionJob extends MultipleTargetJob
      *  Depth-first does not submit a new job, but calls expand recursively.
      */
     private void handleChildTarget(String target,
-                                   BulkJobKey key,
-                                   DirectoryEntry entry)
-                    throws CacheException, BulkServiceException
-    {
+          BulkJobKey key,
+          DirectoryEntry entry)
+          throws CacheException, BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
         if (isTerminated()) {
             LOGGER.debug("{}, expansion job for {} {}; returning ...",
-                         loggingPrefix(), target, state.name());
+                  loggingPrefix(), target, state.name());
             return;
         }
 
         LOGGER.trace("{}, handleChildTarget() called for {}, entry {}, parent {}.",
-                     loggingPrefix(), target, entry.getName(), key.getKey());
+              loggingPrefix(), target, entry.getName(), key.getKey());
 
         String childTarget = target + "/" + entry.getName();
         FileAttributes attributes = entry.getFileAttributes();
 
-        switch (attributes.getFileType())
-        {
+        switch (attributes.getFileType()) {
             case DIR:
                 switch (request.getExpandDirectories()) {
                     case ALL:
                         LOGGER.debug("{}, {}, found directory {}, expand ALL.",
-                                     loggingPrefix(),
-                                     expansionType.name(),
-                                     childTarget);
+                              loggingPrefix(),
+                              expansionType.name(),
+                              childTarget);
 
-                        switch (expansionType)
-                        {
+                        switch (expansionType) {
                             case BREADTH_FIRST:
                                 submitTargetExpansionJob(childTarget, attributes);
                                 break;
@@ -319,9 +304,9 @@ public final class TargetExpansionJob extends MultipleTargetJob
                                  *  children complete.
                                  */
                                 expand(childTarget,
-                                       BulkJobKey.newKey(request.getId()),
-                                       key,
-                                       attributes);
+                                      BulkJobKey.newKey(request.getId()),
+                                      key,
+                                      attributes);
                                 break;
                         }
                         break;
@@ -333,13 +318,13 @@ public final class TargetExpansionJob extends MultipleTargetJob
                          *  expand method.
                          */
                         checkForDirectoryTarget(childTarget,
-                                                key,
-                                                attributes);
+                              key,
+                              attributes);
                         break;
-                        /*
-                         *  If expandDirectories == NONE, we wouldn't
-                         *  be here.
-                         */
+                    /*
+                     *  If expandDirectories == NONE, we wouldn't
+                     *  be here.
+                     */
 
                     default:
                 }
@@ -351,89 +336,83 @@ public final class TargetExpansionJob extends MultipleTargetJob
             case SPECIAL:
             default:
                 LOGGER.trace("{}, handleChildTarget(), "
-                                             + "cannot handle special file {}.",
-                             loggingPrefix(), childTarget);
+                            + "cannot handle special file {}.",
+                      loggingPrefix(), childTarget);
                 break;
         }
     }
 
     private DirectoryStream getDirectoryListing(String target)
-                    throws CacheException, InterruptedException
-    {
+          throws CacheException, InterruptedException {
         LOGGER.trace("{}, getDirectoryListing() called ...", loggingPrefix());
 
         FsPath path = computeFsPath(request.getTargetPrefix(), target);
 
         LOGGER.trace("{}, getDirectoryListing(), path {}, calling list ...",
-                     loggingPrefix(), path);
+              loggingPrefix(), path);
         return listHandler.list(subject,
-                                restriction,
-                                path,
-                                null,
-                                Range.closedOpen(0, Integer.MAX_VALUE),
-                                REQUIRED_ATTRIBUTES);
+              restriction,
+              path,
+              null,
+              Range.closedOpen(0, Integer.MAX_VALUE),
+              REQUIRED_ATTRIBUTES);
     }
 
     private void checkForDirectoryTarget(String target,
-                                         BulkJobKey parentKey,
-                                         FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          BulkJobKey parentKey,
+          FileAttributes attributes)
+          throws BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
         if (isTerminated()) {
             LOGGER.debug("{}, expansion job for {} {}; returning ...",
-                         loggingPrefix(), target, state.name());
+                  loggingPrefix(), target, state.name());
             return;
         }
 
-        switch (targetType)
-        {
+        switch (targetType) {
             case BOTH:
             case DIR:
                 LOGGER.debug("{} {}, directory {} included as target.",
-                             loggingPrefix(), expansionType.name(), target);
+                      loggingPrefix(), expansionType.name(), target);
                 submitSingleTargetJob(target, parentKey, attributes);
                 break;
             default:
                 LOGGER.debug("{} {}, directory {} not included as target, "
-                                             + "skipping.",
-                             loggingPrefix(), expansionType.name(), target);
+                            + "skipping.",
+                      loggingPrefix(), expansionType.name(), target);
         }
     }
 
     private void checkForFileTarget(String target,
-                                    BulkJobKey parentKey,
-                                    FileAttributes attributes)
-                    throws BulkServiceException
-    {
+          BulkJobKey parentKey,
+          FileAttributes attributes)
+          throws BulkServiceException {
         /*
          *  Fail-fast in case the job has been cancelled.
          */
         if (isTerminated()) {
             LOGGER.debug("{}, expansion job for {} {}; returning ...",
-                         loggingPrefix(), target, state.name());
+                  loggingPrefix(), target, state.name());
             return;
         }
 
-        switch (targetType)
-        {
+        switch (targetType) {
             case BOTH:
             case FILE:
                 LOGGER.debug("{} {}, file {} included as target.",
-                             loggingPrefix(), expansionType.name(), target);
+                      loggingPrefix(), expansionType.name(), target);
                 submitSingleTargetJob(target, parentKey, attributes);
                 break;
             default:
                 LOGGER.debug("{} {}, file {} not included as target, "
-                                             + "skipping.",
-                             loggingPrefix(), expansionType.name(), target);
+                            + "skipping.",
+                      loggingPrefix(), expansionType.name(), target);
         }
     }
 
-    private String loggingPrefix()
-    {
+    private String loggingPrefix() {
         return this.target + " TargetExpansionJob";
     }
 }

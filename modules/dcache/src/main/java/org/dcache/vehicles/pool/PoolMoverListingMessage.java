@@ -61,7 +61,6 @@ package org.dcache.vehicles.pool;
 
 import com.google.common.base.Strings;
 import java.util.function.Predicate;
-
 import org.dcache.pool.movers.json.MoverData;
 
 /**
@@ -69,7 +68,8 @@ import org.dcache.pool.movers.json.MoverData;
  * p2p client queue.</p>
  */
 public class PoolMoverListingMessage extends
-                PoolActivityListingMessage<MoverData> {
+      PoolActivityListingMessage<MoverData> {
+
     private static final long serialVersionUID = -3586502361789998143L;
 
     protected final String queue;
@@ -77,14 +77,14 @@ public class PoolMoverListingMessage extends
     private final String door;
 
     public PoolMoverListingMessage(int offset,
-                                   int limit,
-                                   String pnfsid,
-                                   String queue,
-                                   String state,
-                                   String mode,
-                                   String door,
-                                   String storageClass,
-                                   String sort) {
+          int limit,
+          String pnfsid,
+          String queue,
+          String state,
+          String mode,
+          String door,
+          String storageClass,
+          String sort) {
         super(offset, limit, pnfsid, state, storageClass, sort);
         this.queue = queue;
         this.mode = mode;
@@ -94,32 +94,32 @@ public class PoolMoverListingMessage extends
     @Override
     public Predicate<MoverData> filter() {
         Predicate<MoverData> matchesPnfsid =
-                        (data) -> pnfsid == null
-                                        || Strings.nullToEmpty(data.getPnfsId())
-                                                  .contains(pnfsid);
+              (data) -> pnfsid == null
+                    || Strings.nullToEmpty(data.getPnfsId())
+                    .contains(pnfsid);
         Predicate<MoverData> matchesQueue =
-                        (data) -> queue == null
-                                        || Strings.nullToEmpty(data.getQueue())
-                                                  .contains(queue);
+              (data) -> queue == null
+                    || Strings.nullToEmpty(data.getQueue())
+                    .contains(queue);
         Predicate<MoverData> matchesState =
-                        (data) -> state == null
-                                        || Strings.nullToEmpty(data.getState())
-                                                  .contains(state);
+              (data) -> state == null
+                    || Strings.nullToEmpty(data.getState())
+                    .contains(state);
         Predicate<MoverData> matchesMode =
-                        (data) -> mode == null
-                                        || Strings.nullToEmpty(data.getMode())
-                                                  .contains(mode);
+              (data) -> mode == null
+                    || Strings.nullToEmpty(data.getMode())
+                    .contains(mode);
         Predicate<MoverData> matchesDoor =
-                        (data) -> door == null
-                                        || Strings.nullToEmpty(data.getDoor())
-                                                  .contains(door);
+              (data) -> door == null
+                    || Strings.nullToEmpty(data.getDoor())
+                    .contains(door);
         Predicate<MoverData> matchesClass =
-                        (data) -> storageClass == null
-                                        || Strings.nullToEmpty(
-                                        data.getStorageClass())
-                                                  .contains(storageClass);
+              (data) -> storageClass == null
+                    || Strings.nullToEmpty(
+                          data.getStorageClass())
+                    .contains(storageClass);
         return matchesPnfsid.and(matchesQueue).and(matchesState)
-                            .and(matchesMode).and(matchesDoor)
-                            .and(matchesClass);
+              .and(matchesMode).and(matchesDoor)
+              .and(matchesClass);
     }
 }

@@ -67,223 +67,221 @@ documents or software obtained from this server.
 package org.dcache.srm;
 
 import com.google.common.util.concurrent.CheckedFuture;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
 /**
- * This interface has to be implemented for each Storage Element the user wants
- * to work with. The Storage Element can support a different set of protocols for
- * put and get operations. Before any get/put operations user has to get the list of
- * supported get/put protocols.
- * THe sequence of actions to process get request:
- *
+ * This interface has to be implemented for each Storage Element the user wants to work with. The
+ * Storage Element can support a different set of protocols for put and get operations. Before any
+ * get/put operations user has to get the list of supported get/put protocols. THe sequence of
+ * actions to process get request:
+ * <p>
  * 1) call supportedGetProtocols() to get the list of supported protocols
- *
- * 2) call getFileInfo(SRMUser user, String filePath, GetFileInfoCallbacks callbacks)
- * The result will be returned thru callbacks
- * GetFileInfoCallbacks is one of the interfaces to be implemented for Storage Element
- * The most important method is:
- *      public void StorageInfoArrived(String fileId, FileMetaData fileMetaData);
- *      FileId is unique ID for the file inside Storage Element
- *      fileId is persistent in SRM
- *      fileMetaData -- is not guaranteed to be persistent
- *
- *  To be continued...
+ * <p>
+ * 2) call getFileInfo(SRMUser user, String filePath, GetFileInfoCallbacks callbacks) The result
+ * will be returned thru callbacks GetFileInfoCallbacks is one of the interfaces to be implemented
+ * for Storage Element The most important method is: public void StorageInfoArrived(String fileId,
+ * FileMetaData fileMetaData); FileId is unique ID for the file inside Storage Element fileId is
+ * persistent in SRM fileMetaData -- is not guaranteed to be persistent
+ * <p>
+ * To be continued...
  *
  * @author timur
  */
 public interface AbstractStorageElement {
 
     /**
-     * Method must be called before any "get" operations. It gives the list of all
-     * protocols implemented in the Storage Element for "get" operations
+     * Method must be called before any "get" operations. It gives the list of all protocols
+     * implemented in the Storage Element for "get" operations
+     *
      * @return Array of strings with protocol names.
      * @throws SRMInternalErrorException in case of error
      */
     String[] supportedGetProtocols() throws SRMInternalErrorException;
 
-    /** Method must be called before any "put" operations. It gives the list of all
-     * protocols implemented in the Storage Element for "put" operations
-     * @throws SRMInternalErrorException
+    /**
+     * Method must be called before any "put" operations. It gives the list of all protocols
+     * implemented in the Storage Element for "put" operations
+     *
      * @return Array of strings with protocol names.
+     * @throws SRMInternalErrorException
      */
-    String[] supportedPutProtocols()throws SRMInternalErrorException;
+    String[] supportedPutProtocols() throws SRMInternalErrorException;
 
-    /** This method has to be called to get the transport URL for file operation.
-     * The returned value is passed to the user and user does actual data transfer
-     * @param user User ID
-     * @param fileId File ID as provided by prepareToPut
-     * @param protocols List of SE supported protocols
+    /**
+     * This method has to be called to get the transport URL for file operation. The returned value
+     * is passed to the user and user does actual data transfer
+     *
+     * @param user         User ID
+     * @param fileId       File ID as provided by prepareToPut
+     * @param protocols    List of SE supported protocols
      * @param previousTurl The transport URL received from the previous call of getPutTurl
-     * @throws SRMException
      * @return Transport URL for file operation
+     * @throws SRMException
      */
     URI getPutTurl(SRMUser user, String fileId, String[] protocols, URI previousTurl)
-        throws SRMException;
+          throws SRMException;
 
-    /** This method has to be called to get the transport URL for file operation.
-     * The returned value is passed to the user and user does actual data transfer
-     * @param user User ID
-     * @param surl Site url
+    /**
+     * This method has to be called to get the transport URL for file operation. The returned value
+     * is passed to the user and user does actual data transfer
+     *
+     * @param user         User ID
+     * @param surl         Site url
      * @param protocols
      * @param previousTurl The transport URL received from the previous call of getGetTurl
-     * @throws SRMException
      * @return Transport URL for file operation
+     * @throws SRMException
      */
     URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
-        throws SRMException;
+          throws SRMException;
 
     /**
      * Prepares the storage element for uploading a file.
      *
-     * @param user User ID
-     * @param surl Site URL
-     * @param size Optional file size
-     * @param accessLatency Optional access latency
+     * @param user            User ID
+     * @param surl            Site URL
+     * @param size            Optional file size
+     * @param accessLatency   Optional access latency
      * @param retentionPolicy Optional retention policy
-     * @param spaceToken Optional space token
-     * @param overwrite allow overwrite if true
+     * @param spaceToken      Optional space token
+     * @param overwrite       allow overwrite if true
      * @return Opaque file identifier expected as a argument to several other methods
      */
     CheckedFuture<String, ? extends SRMException> prepareToPut(SRMUser user,
-                                                               URI surl,
-                                                               @Nullable Long size,
-                                                               @Nullable String accessLatency,
-                                                               @Nullable String retentionPolicy,
-                                                               @Nullable String spaceToken,
-                                                               boolean overwrite);
+          URI surl,
+          @Nullable Long size,
+          @Nullable String accessLatency,
+          @Nullable String retentionPolicy,
+          @Nullable String spaceToken,
+          boolean overwrite);
 
     /**
-     * Commits an upload to the storage element. After this call the file is accessible
-     * for download.
+     * Commits an upload to the storage element. After this call the file is accessible for
+     * download.
      *
-     * @param user User ID
-     * @param fileId File ID as provided by prepareToPut
-     * @param surl Site URL
+     * @param user      User ID
+     * @param fileId    File ID as provided by prepareToPut
+     * @param surl      Site URL
      * @param overwrite If true the new file may overwrite an existing SURL
      */
     void putDone(SRMUser user, String fileId, URI surl, boolean overwrite) throws SRMException;
 
     /**
      * Abort an upload.
-     *
+     * <p>
      * Any uploads to the TURL are discarded.
      *
-     * @param user User ID, or null for super user.
+     * @param user   User ID, or null for super user.
      * @param fileId File ID as provided by prepareToPut
-     * @param surl Site URL
+     * @param surl   Site URL
      * @param reason explanation why the request was aborted
      * @throws SRMException
      */
     void abortPut(SRMUser user, String fileId, URI surl, String reason) throws SRMException;
 
 
-    /** This method allows to pin file in the Storage Element,
-     * i.e. put the file in "fast access state"
-     * @param user user ID
-     * @param surl site URL
-     * @param clientHost network address from which file will be read
-     *        null, if unknown
-     * @param pinLifetime requested pin operation lifetime in milliseconds
-     * @param requestToken pin will save request token
-     *        so that unpinning by file name and request token can take place
+    /**
+     * This method allows to pin file in the Storage Element, i.e. put the file in "fast access
+     * state"
+     *
+     * @param user         user ID
+     * @param surl         site URL
+     * @param clientHost   network address from which file will be read null, if unknown
+     * @param pinLifetime  requested pin operation lifetime in milliseconds
+     * @param requestToken pin will save request token so that unpinning by file name and request
+     *                     token can take place
      * @param allowStaging whether the request should be allowed to stage from tape.
      */
     CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
-                                                       URI surl,
-                                                       String clientHost,
-                                                       long pinLifetime,
-                                                       String requestToken,
-                                                       boolean allowStaging);
+          URI surl,
+          String clientHost,
+          long pinLifetime,
+          String requestToken,
+          boolean allowStaging);
 
     /**
      * Contains the result of a pin operation.
      */
-    class Pin
-    {
+    class Pin {
+
         public final FileMetaData fileMetaData;
         public final String pinId;
 
-        public Pin(FileMetaData fileMetaData, String pinId)
-        {
+        public Pin(FileMetaData fileMetaData, String pinId) {
             this.fileMetaData = fileMetaData;
             this.pinId = pinId;
         }
     }
 
     /**
-     * @param user User ID
-     * @param pinId Id of a valid pin
+     * @param user           User ID
+     * @param pinId          Id of a valid pin
      * @param newPinLifetime new lifetime in millis to assign to pin
      * @return long lifetime left for pin in millis
      */
 
     long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime)
-    throws SRMException ;
+          throws SRMException;
 
     /**
-     *this method perform a transfer from the remote transfer url to the local file, specified by actualFilePath
-     * this method can return the string identifier of the pending transfer, and then notify about the
-     * completeon of the transfer asynchronously, though the callbacks interface
+     * this method perform a transfer from the remote transfer url to the local file, specified by
+     * actualFilePath this method can return the string identifier of the pending transfer, and then
+     * notify about the completeon of the transfer asynchronously, though the callbacks interface
      *
-     *
-     *
-     * @param user User ID
+     * @param user       User ID
      * @param remoteTURL Transfer URL
-     * @param fileId File ID as provided by prepareToPut
+     * @param fileId     File ID as provided by prepareToPut
      * @param remoteUser
-     * @param extraInfo user-supplied additional information
+     * @param extraInfo  user-supplied additional information
      * @param callbacks
+     * @return transfer id an id to the pending tranfer that can be used to cancel the transfer via
+     * killRemoteTransfer
      * @throws SRMException
-     * @return transfer id
-     *  an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
     String getFromRemoteTURL(
-            SRMUser user,
-            URI remoteTURL,
-            String fileId,
-            SRMUser remoteUser,
-            Long requestCredentialId,
-            Map<String, String> extraInfo,
-            CopyCallbacks callbacks)
-            throws SRMException;
+          SRMUser user,
+          URI remoteTURL,
+          String fileId,
+          SRMUser remoteUser,
+          Long requestCredentialId,
+          Map<String, String> extraInfo,
+          CopyCallbacks callbacks)
+          throws SRMException;
 
     /**
-     *this method perform a transfer from the local file to the remote transfer url, specified by actualFilePath
-     * this method can return the string identifier of the pending transfer, and then notify about the
-     * completeon of the transfer asynchronously, though the callbacks interface
+     * this method perform a transfer from the local file to the remote transfer url, specified by
+     * actualFilePath this method can return the string identifier of the pending transfer, and then
+     * notify about the completeon of the transfer asynchronously, though the callbacks interface
      *
-     * @param user User ID
+     * @param user            User ID
      * @param surl
      * @param remoteTURL
      * @param remoteUser
      * @param extraInfo
      * @param callbacks
      * @param remoteCredetial
+     * @return transfer id an id to the pending tranfer that can be used to cancel the transfer via
+     * killRemoteTransfer
      * @throws SRMException
-     * @return transfer id
-     *    an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
     String putToRemoteTURL(SRMUser user,
-                           URI surl,
-                           URI remoteTURL,
-                           SRMUser remoteUser,
-                           Long requestCredentialId,
-                           Map<String, String> extraInfo,
-                           CopyCallbacks callbacks)
-            throws SRMException;
+          URI surl,
+          URI remoteTURL,
+          SRMUser remoteUser,
+          Long requestCredentialId,
+          Map<String, String> extraInfo,
+          CopyCallbacks callbacks)
+          throws SRMException;
 
     /**
-     * while the copy is in progress, this method would call the transfer to be canceled
-     * this should lead to the invocation of the copyFailed method CopyCallbacks interfaced
+     * while the copy is in progress, this method would call the transfer to be canceled this should
+     * lead to the invocation of the copyFailed method CopyCallbacks interfaced
      */
     void killRemoteTransfer(String transferId);
 
@@ -291,141 +289,140 @@ public interface AbstractStorageElement {
     /**
      * Initiates an internal copy of a file in the storage element.
      *
-     * @param user User ID
+     * @param user     User ID
      * @param fromSurl Local site URL
-     * @param fileId File ID as provided by prepareToPut
+     * @param fileId   File ID as provided by prepareToPut
      * @throws SRMException
      */
     void localCopy(SRMUser user, URI fromSurl, String fileId)
-    throws SRMException;
+          throws SRMException;
 
     /**
      * @param url
-     * @throws SRMException
      * @return
+     * @throws SRMException
      */
     boolean isLocalTransferUrl(URI url) throws SRMException;
 
     /**
-     * Query whether the supplied SURL is local to the system.
-     * Throws SRMInvalidPathException if the supplied surl is not a valid SURL.
+     * Query whether the supplied SURL is local to the system. Throws SRMInvalidPathException if the
+     * supplied surl is not a valid SURL.
      */
     boolean isLocalSurl(URI surl) throws SRMInvalidPathException;
 
     /**
      * Retrieves the FileMetaData of a file.
+     * <p>
+     * An implementation may check whether the user sufficient privileges. If the read parameter is
+     * true, an implementation is requested to check whether the user is allowed to read the file in
+     * addition to retrieving the FileMetaData. If the read parameter is false, then only permission
+     * to retrieve the FileMetaData is checked.
      *
-     * An implementation may check whether the user sufficient
-     * privileges. If the read parameter is true, an implementation is
-     * requested to check whether the user is allowed to read the file
-     * in addition to retrieving the FileMetaData. If the read
-     * parameter is false, then only permission to retrieve the
-     * FileMetaData is checked.
-     *
-     * @param user User ID
+     * @param user     User ID
      * @param filePath File path
-     * @param read True if read permission are required, false otherwise
+     * @param read     True if read permission are required, false otherwise
      * @return FileMetaData of the file
-     * @throws SRMAuthorizationException if the user lacks sufficient
-     *         privileges
-     * @throws SRMInvalidPathException if the file does not exist
+     * @throws SRMAuthorizationException if the user lacks sufficient privileges
+     * @throws SRMInvalidPathException   if the file does not exist
      * @throws SRMInternalErrorException in case of transient errors
-     * @throws SRMException for any other error
+     * @throws SRMException              for any other error
      */
     @Nonnull
     FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
-        throws SRMException;
+          throws SRMException;
 
     /**
      * Retrieves the FileMetaData of a file being uploaded.
      *
-     * @param user User ID
-     * @param surl Site URL
+     * @param user   User ID
+     * @param surl   Site URL
      * @param fileId File ID as provided by prepareToPut
      * @return FileMetaData of the file
-     * @throws SRMAuthorizationException if the user lacks sufficient
-     *         privileges
-     * @throws SRMInvalidPathException if the file does not exist
+     * @throws SRMAuthorizationException if the user lacks sufficient privileges
+     * @throws SRMInvalidPathException   if the file does not exist
      * @throws SRMInternalErrorException in case of transient errors
-     * @throws SRMException for any other error
+     * @throws SRMException              for any other error
      */
     @Nonnull
     FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId)
-            throws SRMException;
+          throws SRMException;
 
     /**
      * @param user User ID
      * @param surl The requested SURL to modify
-     * @param fmd The modified file attributes.
+     * @param fmd  The modified file attributes.
      * @throws SRMInternalErrorException if PnfsManager is unavailable.
-     * @throws SRMInvalidPathException if SURL is unknown.
+     * @throws SRMInvalidPathException   if SURL is unknown.
      * @throws SRMAuthorizationException if user is not allowed to modify file.
-     * @throws SRMException for any other error.
+     * @throws SRMException              for any other error.
      */
     void setFileMetaData(SRMUser user, URI surl, FileMetaData fmd) throws SRMException;
 
-    /** This method allows to unpin file in the Storage Element,
-     * i.e. cancel the request to have the file in "fast access state"
-     * @param user User ID or null for super user
+    /**
+     * This method allows to unpin file in the Storage Element, i.e. cancel the request to have the
+     * file in "fast access state"
+     *
+     * @param user   User ID or null for super user
      * @param fileId Storage Element internal file ID
-     * @param pinId Unique id received during pinFile operation (?)
+     * @param pinId  Unique id received during pinFile operation (?)
      * @return A promise of an ID of the pin that was released
      */
     CheckedFuture<String, ? extends SRMException> unPinFile(
-            SRMUser user, String fileId, String pinId);
+          SRMUser user, String fileId, String pinId);
 
-    /** This method allows to unpin file in the Storage Element,
-     * i.e. cancel the request to have the file in "fast access state"
-     * @param user User ID
-     * @param fileId Storage Element internal file ID
+    /**
+     * This method allows to unpin file in the Storage Element, i.e. cancel the request to have the
+     * file in "fast access state"
+     *
+     * @param user         User ID
+     * @param fileId       Storage Element internal file ID
      * @param requestToken id given to the storage  during pinFile operation
      * @return A promise of an ID of the pin that was released
      */
     CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
-            SRMUser user, String fileId, String requestToken);
+          SRMUser user, String fileId, String requestToken);
 
-    /** Unpin all pins on this file that user has permission to unpin
-     * @param user Authorization Record of the user
+    /**
+     * Unpin all pins on this file that user has permission to unpin
+     *
+     * @param user   Authorization Record of the user
      * @param fileId Storage Element internal file ID
      * @return A promise of an ID of the pin that was released
      */
     CheckedFuture<String, ? extends SRMException> unPinFile(
-            SRMUser user, String fileId);
+          SRMUser user, String fileId);
 
     /**
-     *
-     * @param user User ID
+     * @param user      User ID
      * @param surl
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to remove file from the storage
+     * @param callbacks This interface is used for asyncronous notification of SRM of the various
+     *                  actions performed to remove file from the storage
      */
     void removeFile(SRMUser user, URI surl, RemoveFileCallback callbacks);
 
     /**
-     * @param user User ID
-     * @param surl SURL
+     * @param user      User ID
+     * @param surl      SURL
      * @param recursive Whether to delete directories recursively
-     * @throws SRMAuthorizationException if {@code subject} is not authorized to delete {@code dir} 
-     *                                   or one of its subdirectories.
+     * @throws SRMAuthorizationException     if {@code subject} is not authorized to delete {@code
+     *                                       dir}  or one of its subdirectories.
      * @throws SRMNonEmptyDirectoryException if {@code dir} is not empty.
-     * @throws SRMInternalErrorException in case of transient errors.
-     * @throws SRMInvalidPathException if {@code dir} is not a directory or does not exist
-     * @throws SRMException in case of other errors.
+     * @throws SRMInternalErrorException     in case of transient errors.
+     * @throws SRMInvalidPathException       if {@code dir} is not a directory or does not exist
+     * @throws SRMException                  in case of other errors.
      */
     void removeDirectory(SRMUser user, URI surl, boolean recursive)
-        throws SRMException;
+          throws SRMException;
 
     /**
-     *
      * @param user
      * @param surl
      * @throws SRMException
      */
     void createDirectory(SRMUser user,
-                         URI surl) throws SRMException;
+          URI surl) throws SRMException;
 
     /**
-     *
      * @param user
      * @param from
      * @param to
@@ -436,8 +433,8 @@ public interface AbstractStorageElement {
      * @throws SRMException
      */
     void moveEntry(SRMUser user,
-                   URI from,
-                   URI to) throws SRMException;
+          URI from,
+          URI to) throws SRMException;
 
     /** This method tells if the specified file can be written
      * @param user User ID
@@ -466,51 +463,46 @@ public interface AbstractStorageElement {
      */
 
     /**
-     *
      * @param user
      * @param surl
      * @param fileMetaData
-     * @throws SRMException
      * @return
+     * @throws SRMException
      */
     List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
 
     /**
-     * Lists directory contents. The contents is provided as a list of
-     * FileMetaData objects, with one FileMetaDataObject per directory
-     * entry.
-     *
-     * The path of each file is provided in the SURL field of the
-     * FileMetaDataObject. The path of the <code>surl</code> parameter
-     * is a prefix of all paths and hence the SURL field is not a
+     * Lists directory contents. The contents is provided as a list of FileMetaData objects, with
+     * one FileMetaDataObject per directory entry.
+     * <p>
+     * The path of each file is provided in the SURL field of the FileMetaDataObject. The path of
+     * the <code>surl</code> parameter is a prefix of all paths and hence the SURL field is not a
      * complete SURL.
+     * <p>
+     * If verbose listing is requested, additional fields such as the spaceTokens and isCached
+     * fields of the FileMetaData object will be filled. Those fields may be more expensive to
+     * retrieve.
      *
-     * If verbose listing is requested, additional fields such as the
-     * spaceTokens and isCached fields of the FileMetaData object will
-     * be filled. Those fields may be more expensive to retrieve.
-     *
-     * @param user The user requesting the list operation
-     * @param surl The path of the directory to list
-     * @param verbose Whether to include fields that are expensive to
-     *                retrieve
-     * @param offset The first entry in the directory to retrieve
-     * @param count The maximum number of entries to retrieve
+     * @param user    The user requesting the list operation
+     * @param surl    The path of the directory to list
+     * @param verbose Whether to include fields that are expensive to retrieve
+     * @param offset  The first entry in the directory to retrieve
+     * @param count   The maximum number of entries to retrieve
      * @return The directory contents as a list of FileMetaData objects.
-     * @throws SRMInternalErrorException if the operation timed out or
-     *         was aborted for other internal reasons.
-     * @throws SRMInvalidPathException if <code>directory</code> does
-     *         not exist or is not a directory.
-     * @throws SRMAuthorizationException if <code>user</code> does not have
-     *         permission to list <code>directory</code>.
-     * @throws SRMException for other failures.
+     * @throws SRMInternalErrorException if the operation timed out or was aborted for other
+     *                                   internal reasons.
+     * @throws SRMInvalidPathException   if <code>directory</code> does not exist or is not a
+     *                                   directory.
+     * @throws SRMAuthorizationException if <code>user</code> does not have permission to list
+     *                                   <code>directory</code>.
+     * @throws SRMException              for other failures.
      */
     List<FileMetaData>
-        listDirectory(SRMUser user, URI surl, boolean verbose,
-                      int offset, int count)
-        throws SRMException;
+    listDirectory(SRMUser user, URI surl, boolean verbose,
+          int offset, int count)
+          throws SRMException;
 
     /**
-     *
      * @param user
      * @param sizeInBytes
      * @param spaceReservationLifetime
@@ -520,65 +512,58 @@ public interface AbstractStorageElement {
      * @param callbacks
      */
     void srmReserveSpace(SRMUser user,
-                         long sizeInBytes,
-                         long spaceReservationLifetime,
-                         String retentionPolicy,
-                         String accessLatency,
-                         String description,
-                         Map<String,String> extraInfo,
-                         SrmReserveSpaceCallback callbacks);
+          long sizeInBytes,
+          long spaceReservationLifetime,
+          String retentionPolicy,
+          String accessLatency,
+          String description,
+          Map<String, String> extraInfo,
+          SrmReserveSpaceCallback callbacks);
 
     /**
-     *
      * @param user
      * @param spaceToken
      * @param sizeInBytes
      * @param callbacks
      */
     void srmReleaseSpace(SRMUser user,
-                         String spaceToken,
-                         Long sizeInBytes,
-                         SrmReleaseSpaceCallback callbacks);
+          String spaceToken,
+          Long sizeInBytes,
+          SrmReleaseSpaceCallback callbacks);
 
     /**
-     *
      * @param spaceTokens
-     * @throws SRMException
      * @return
+     * @throws SRMException
      */
     TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, String[] spaceTokens)
-        throws SRMException;
+          throws SRMException;
 
     /**
-     *
      * @param description
-     * @throws SRMException
      * @return
+     * @throws SRMException
      */
     @Nonnull
     String[] srmGetSpaceTokens(SRMUser user, String description)
-        throws SRMException;
-
-      /**
-     * @param user User ID
-     * @param spaceToken of a valid space reservation
-     * @param newReservationLifetime new lifetime in millis to assign to space reservation
-     * @return long lifetime of spacereservation left in milliseconds
-     *
-     */
-
-      long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
-    throws SRMException ;
+          throws SRMException;
 
     /**
-     *
-     * @param newLifetime SURL lifetime in milliseconds
-     *   -1 stands for infinite lifetime
-     * @return long lifetime left in milliseconds
-     *   -1 stands for infinite lifetime
+     * @param user                   User ID
+     * @param spaceToken             of a valid space reservation
+     * @param newReservationLifetime new lifetime in millis to assign to space reservation
+     * @return long lifetime of spacereservation left in milliseconds
+     */
+
+    long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
+          throws SRMException;
+
+    /**
+     * @param newLifetime SURL lifetime in milliseconds -1 stands for infinite lifetime
+     * @return long lifetime left in milliseconds -1 stands for infinite lifetime
      */
     long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
-    throws SRMException;
+          throws SRMException;
 
     String getStorageBackendVersion();
 }

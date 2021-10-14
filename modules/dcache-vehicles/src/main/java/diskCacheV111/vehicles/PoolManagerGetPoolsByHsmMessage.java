@@ -23,18 +23,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PoolManagerGetPoolsByHsmMessage
-        extends PoolManagerGetPoolsMessage
-{
+      extends PoolManagerGetPoolsMessage {
+
     private static final long serialVersionUID = -6880977465882664624L;
     private final Collection<String> _hsms;
 
-    public PoolManagerGetPoolsByHsmMessage(Collection<String> hsms)
-    {
+    public PoolManagerGetPoolsByHsmMessage(Collection<String> hsms) {
         _hsms = hsms;
     }
 
-    public Set<String> getHsms()
-    {
+    public Set<String> getHsms() {
         return new HashSet<>(_hsms);
     }
 }

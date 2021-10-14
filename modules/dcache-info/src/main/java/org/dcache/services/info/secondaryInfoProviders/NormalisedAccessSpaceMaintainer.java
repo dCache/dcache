@@ -7,9 +7,6 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.SetMultimap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -18,7 +15,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -26,15 +22,15 @@ import org.dcache.services.info.stateInfo.LinkInfo;
 import org.dcache.services.info.stateInfo.LinkInfoVisitor;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * The NormalisaedAccessSpace (NAS) maintainer updates the <code>nas</code>
- * branch of the dCache state based on changes to pool space usage or
- * pool-link membership.
- *
- * A NAS is a set of pools. They are somewhat similar to a poolgroup except
- * that dCache PSU has no knowledge of them. Each NAS has the following
- * properties:
+ * The NormalisaedAccessSpace (NAS) maintainer updates the <code>nas</code> branch of the dCache
+ * state based on changes to pool space usage or pool-link membership.
+ * <p>
+ * A NAS is a set of pools. They are somewhat similar to a poolgroup except that dCache PSU has no
+ * knowledge of them. Each NAS has the following properties:
  * <ol>
  * <li>all pools are a member of precisely one NAS,
  * <li>all NAS have at least one member pool,
@@ -44,49 +40,49 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * <li>two pools in two different NAS do not have the same access, meaning
  * that one of them is in a link the other is not in.
  * </ol>
- *
+ * <p>
  * NAS association with a link is not exclusive. Pools in a NAS that is
  * accessible from one link may be accessible from a different link. Those
  * pools accessible in a NAS accessible through a link may share that link
  * with other pools.
  */
-public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
-{
+public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
+
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(NormalisedAccessSpaceMaintainer.class);
+          LoggerFactory.getLogger(NormalisedAccessSpaceMaintainer.class);
 
     /**
-     * How we want to represent the different LinkInfo.UNIT_TYPE values as
-     * path elements in the resulting metrics
+     * How we want to represent the different LinkInfo.UNIT_TYPE values as path elements in the
+     * resulting metrics
      */
     @SuppressWarnings("serial")
     private static final Map<LinkInfo.UNIT_TYPE, String> UNIT_TYPE_STORAGE_NAME =
-            ImmutableMap.of(LinkInfo.UNIT_TYPE.DCACHE, "dcache",
-                            LinkInfo.UNIT_TYPE.STORE, "store");
+          ImmutableMap.of(LinkInfo.UNIT_TYPE.DCACHE, "dcache",
+                LinkInfo.UNIT_TYPE.STORE, "store");
 
     /**
-     * How we want to represent the different LinkInfo.OPERATION values as
-     * path elements in resulting metrics
+     * How we want to represent the different LinkInfo.OPERATION values as path elements in
+     * resulting metrics
      */
     @SuppressWarnings("serial")
     private static final Map<LinkInfo.OPERATION, String> OPERATION_STORAGE_NAME =
-            ImmutableMap.of(LinkInfo.OPERATION.READ, "read",
-                            LinkInfo.OPERATION.WRITE, "write",
-                            LinkInfo.OPERATION.CACHE, "stage");
+          ImmutableMap.of(LinkInfo.OPERATION.READ, "read",
+                LinkInfo.OPERATION.WRITE, "write",
+                LinkInfo.OPERATION.CACHE, "stage");
 
     private static final String PREDICATE_PATHS[] =
-            { "links.*.pools.*", "links.*.units.store.*",
-             "links.*.units.dcache.*", "pools.*.space.*" };
+          {"links.*.pools.*", "links.*.units.store.*",
+                "links.*.units.dcache.*", "pools.*.space.*"};
 
     private static final StatePath NAS_PATH = new StatePath("nas");
 
     /**
-     * A class describing the "paint" information for a pool. Each pool has a
-     * PaintInfo object that describes the different access methods for this
-     * pool. Pools with the same PaintInfo are members of the same NAS.
+     * A class describing the "paint" information for a pool. Each pool has a PaintInfo object that
+     * describes the different access methods for this pool. Pools with the same PaintInfo are
+     * members of the same NAS.
      */
-    protected static class PaintInfo
-    {
+    protected static class PaintInfo {
+
         public static final String NAS_NAME_INACCESSIBLE = "inaccessible";
         public static final String NAS_NAME_TOO_LONG_PREFIX = "complex-";
         public static final int NAS_NAME_MAX_LENGTH = 100;
@@ -95,32 +91,36 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
          * The Set of LinkInfo.OPERATIONS that we paint a pool on.
          */
         private static final Set<LinkInfo.OPERATION> CONSIDERED_OPERATIONS =
-                EnumSet.of(LinkInfo.OPERATION.READ, LinkInfo.OPERATION.WRITE, LinkInfo.OPERATION.CACHE);
+              EnumSet.of(LinkInfo.OPERATION.READ, LinkInfo.OPERATION.WRITE,
+                    LinkInfo.OPERATION.CACHE);
 
         /**
          * The Set of LinkInfo.UNIT_TYPES that we paint a pool on.
          */
         private static final Set<LinkInfo.UNIT_TYPE> CONSIDERED_UNIT_TYPES =
-                EnumSet.of(LinkInfo.UNIT_TYPE.DCACHE, LinkInfo.UNIT_TYPE.STORE);
+              EnumSet.of(LinkInfo.UNIT_TYPE.DCACHE, LinkInfo.UNIT_TYPE.STORE);
 
         private final String _poolId;
         private final Set<String> _links = new HashSet<>();
 
-        /** The cached copy of the NAS' */
+        /**
+         * The cached copy of the NAS'
+         */
         private String _nasName;
 
-        /** Store all units by unit-type and operation */
+        /**
+         * Store all units by unit-type and operation
+         */
         private final Map<LinkInfo.UNIT_TYPE, Multimap<LinkInfo.OPERATION, String>> _storedUnits;
 
-        public PaintInfo(String poolId)
-        {
+        public PaintInfo(String poolId) {
             _poolId = poolId;
 
             Map<LinkInfo.UNIT_TYPE, Multimap<LinkInfo.OPERATION, String>> storedUnits =
-                    new EnumMap<>(LinkInfo.UNIT_TYPE.class);
+                  new EnumMap<>(LinkInfo.UNIT_TYPE.class);
             for (LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
                 SetMultimap<LinkInfo.OPERATION, String> map =
-                        MultimapBuilder.enumKeys(LinkInfo.OPERATION.class).hashSetValues().build();
+                      MultimapBuilder.enumKeys(LinkInfo.OPERATION.class).hashSetValues().build();
                 storedUnits.put(unitType, map);
             }
 
@@ -128,13 +128,12 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
         }
 
         /**
-         * Add paint information for a link. Pools accessible through
-         * the same set of links are part of the same NAS.
+         * Add paint information for a link. Pools accessible through the same set of links are part
+         * of the same NAS.
          *
          * @param link The LinkInfo object that describes the link
          */
-        synchronized void addLink(LinkInfo link)
-        {
+        synchronized void addLink(LinkInfo link) {
             invalidateNasNameCache();
 
             _links.add(link.getId());
@@ -149,29 +148,25 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
         }
 
         /**
-         * Calculating the NAS name is a relatively heavy-weight
-         * operation, so we cache the result.  However, sometimes we
-         * need to invalidate this cache so calls to getNasName() will
+         * Calculating the NAS name is a relatively heavy-weight operation, so we cache the result.
+         * However, sometimes we need to invalidate this cache so calls to getNasName() will
          * generate the name afresh.
          */
-        private void invalidateNasNameCache()
-        {
+        private void invalidateNasNameCache() {
             _nasName = null;
         }
 
         /**
          * Check whether the nasName cache is currently valid.
          */
-        private boolean isNasNameCacheValid()
-        {
+        private boolean isNasNameCacheValid() {
             return _nasName != null;
         }
 
         /**
-         *  Rebuild the nasName cached value.
+         * Rebuild the nasName cached value.
          */
-        private void buildNasNameCache()
-        {
+        private void buildNasNameCache() {
             String name = Joiner.on(",").join(Ordering.natural().sortedCopy(_links));
 
             if (name.length() > NAS_NAME_MAX_LENGTH) {
@@ -185,14 +180,11 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
 
 
         /**
-         * Return the name of the NAS this painted pool should be
-         * within.
+         * Return the name of the NAS this painted pool should be within.
          *
-         * @return a unique name for the NAS this PaintInfo is
-         *         representative of.
+         * @return a unique name for the NAS this PaintInfo is representative of.
          */
-        synchronized String getNasName()
-        {
+        synchronized String getNasName() {
             if (!isNasNameCacheValid()) {
                 buildNasNameCache();
             }
@@ -200,27 +192,22 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
             return _nasName;
         }
 
-        protected Set<String> getLinks()
-        {
+        protected Set<String> getLinks() {
             return _links;
         }
 
-        String getPoolId()
-        {
+        String getPoolId() {
             return _poolId;
         }
 
         /**
-         * Obtain a Multimap between operations (such as read, write, ...) and the
-         * units that select those operations for a given unitType
-         * (such as dcache, store, ..)
+         * Obtain a Multimap between operations (such as read, write, ...) and the units that select
+         * those operations for a given unitType (such as dcache, store, ..)
          *
          * @param unitType a considered unit type.
-         * @return the corresponding mapping or null if unit type isn't
-         *         considered.
+         * @return the corresponding mapping or null if unit type isn't considered.
          */
-        public Multimap<LinkInfo.OPERATION, String> getUnits(LinkInfo.UNIT_TYPE unitType)
-        {
+        public Multimap<LinkInfo.OPERATION, String> getUnits(LinkInfo.UNIT_TYPE unitType) {
             if (!_storedUnits.containsKey(unitType)) {
                 return null;
             }
@@ -229,14 +216,12 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return _links.hashCode();
         }
 
         @Override
-        public boolean equals(Object otherObject)
-        {
+        public boolean equals(Object otherObject) {
             if (this == otherObject) {
                 return true;
             }
@@ -256,28 +241,25 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
     }
 
     /**
-     * Information about a particular NAS. A NAS is something like a
-     * poolgroup, but with the restriction that every pool is a member of
-     * precisely one NAS.
+     * Information about a particular NAS. A NAS is something like a poolgroup, but with the
+     * restriction that every pool is a member of precisely one NAS.
      */
-    private static class NasInfo
-    {
+    private static class NasInfo {
+
         private final SpaceInfo _spaceInfo = new SpaceInfo();
         private final Set<String> _pools = new HashSet<>();
         private PaintInfo _representativePaintInfo;
 
         /**
-         * Add a pool to this NAS. If this is the first pool then the set of
-         * links store unit and dCache units is set. It is anticipated that
-         * any subsequent pools added to this NAS will have the same set of
-         * links (so, same set of store and dCache units). This is checked.
+         * Add a pool to this NAS. If this is the first pool then the set of links store unit and
+         * dCache units is set. It is anticipated that any subsequent pools added to this NAS will
+         * have the same set of links (so, same set of store and dCache units). This is checked.
          *
          * @param poolId
          * @param spaceInfo
          * @param pInfo
          */
-        void addPool(String poolId, SpaceInfo spaceInfo, PaintInfo pInfo)
-        {
+        void addPool(String poolId, SpaceInfo spaceInfo, PaintInfo pInfo) {
             _pools.add(poolId);
             _spaceInfo.add(spaceInfo);
 
@@ -285,21 +267,19 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                 _representativePaintInfo = pInfo;
             } else if (!_representativePaintInfo.equals(pInfo)) {
                 throw new RuntimeException("Adding pool " + poolId +
-                        " with differeing paintInfo from first pool " +
-                        _representativePaintInfo.getPoolId());
+                      " with differeing paintInfo from first pool " +
+                      _representativePaintInfo.getPoolId());
             }
         }
 
         /**
-         * Discover whether any of the pools given in the Set of poolIDs has
-         * been registered as part of this NAS.
+         * Discover whether any of the pools given in the Set of poolIDs has been registered as part
+         * of this NAS.
          *
          * @param pools the Set of PoolIDs
-         * @return true if at least one member of the provided Set is a
-         *         member of this NAS.
+         * @return true if at least one member of the provided Set is a member of this NAS.
          */
-        boolean havePoolInSet(Set<String> pools)
-        {
+        boolean havePoolInSet(Set<String> pools) {
             return !Collections.disjoint(pools, _pools);
         }
 
@@ -308,8 +288,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
          *
          * @param update
          */
-        void addMetrics(StateUpdate update, String nasName)
-        {
+        void addMetrics(StateUpdate update, String nasName) {
             StatePath thisNasPath = NAS_PATH.newChild(nasName);
 
             // Add a list of pools in this NAS
@@ -322,18 +301,19 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
             // Add the list of links
             StatePath thisNasLinksPath = thisNasPath.newChild("links");
             update.appendUpdateCollection(thisNasLinksPath,
-                   _representativePaintInfo.getLinks(),
-                   true);
+                  _representativePaintInfo.getLinks(),
+                  true);
 
             // Add the units information
             StatePath thisNasUnitsPath = thisNasPath.newChild("units");
 
             for (LinkInfo.UNIT_TYPE type : PaintInfo.CONSIDERED_UNIT_TYPES) {
                 Multimap<LinkInfo.OPERATION, String> unitsMap =
-                        _representativePaintInfo.getUnits(type);
+                      _representativePaintInfo.getUnits(type);
 
                 if (unitsMap == null) {
-                    LOGGER.error("A considered unit-type query to getUnits() gave null reply.  This is unexpected.");
+                    LOGGER.error(
+                          "A considered unit-type query to getUnits() gave null reply.  This is unexpected.");
                     continue;
                 }
 
@@ -343,9 +323,10 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                 }
 
                 StatePath thisNasUnitTypePath =
-                        thisNasUnitsPath.newChild(UNIT_TYPE_STORAGE_NAME.get(type));
+                      thisNasUnitsPath.newChild(UNIT_TYPE_STORAGE_NAME.get(type));
 
-                for (Map.Entry<LinkInfo.OPERATION, Collection<String>> entry : unitsMap.asMap().entrySet()) {
+                for (Map.Entry<LinkInfo.OPERATION, Collection<String>> entry : unitsMap.asMap()
+                      .entrySet()) {
                     LinkInfo.OPERATION operation = entry.getKey();
                     Collection<String> units = entry.getValue();
 
@@ -355,34 +336,33 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                     }
 
                     update.appendUpdateCollection(
-                                                   thisNasUnitTypePath.newChild(OPERATION_STORAGE_NAME.get(operation)),
-                                                   units, true);
+                          thisNasUnitTypePath.newChild(OPERATION_STORAGE_NAME.get(operation)),
+                          units, true);
                 }
             }
         }
     }
 
     @Override
-    protected String[] getPredicates()
-    {
+    protected String[] getPredicates() {
         return PREDICATE_PATHS;
     }
 
     @Override
-    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState)
-    {
+    public void trigger(StateUpdate update, StateExhibitor currentState,
+          StateExhibitor futureState) {
         Map<String, LinkInfo> currentLinks =
-                LinkInfoVisitor.getDetails(currentState);
+              LinkInfoVisitor.getDetails(currentState);
         Map<String, LinkInfo> futureLinks =
-                LinkInfoVisitor.getDetails(futureState);
+              LinkInfoVisitor.getDetails(futureState);
 
         Map<String, SpaceInfo> currentPools =
-                PoolSpaceVisitor.getDetails(currentState);
+              PoolSpaceVisitor.getDetails(currentState);
         Map<String, SpaceInfo> futurePools =
-                PoolSpaceVisitor.getDetails(futureState);
+              PoolSpaceVisitor.getDetails(futureState);
 
         buildUpdate(update, currentPools, futurePools, currentLinks,
-                     futureLinks);
+              futureLinks);
     }
 
     /**
@@ -391,8 +371,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
      * @param links
      */
     private Map<String, NasInfo> buildNas(Map<String, SpaceInfo> poolSpaceInfo,
-            Map<String, LinkInfo> links)
-    {
+          Map<String, LinkInfo> links) {
         // Build initially "white" (unpainted) set of paint info.
         Map<String, PaintInfo> paintedPools = new HashMap<>();
         for (String poolId : poolSpaceInfo.keySet()) {
@@ -413,7 +392,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                  */
                 if (poolPaintInfo == null) {
                     LOGGER.debug("Inconsistency in information: pool {} accessible via link " +
-                                    "{} but not present as a pool", linkPool, linkInfo.getId());
+                          "{} but not present as a pool", linkPool, linkInfo.getId());
                     poolPaintInfo = new PaintInfo(linkPool);
                     paintedPools.put(linkPool, poolPaintInfo);
                 }
@@ -454,9 +433,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
      * @param futureLinks
      */
     private StateUpdate buildUpdate(StateUpdate update, Map<String, SpaceInfo> currentPools,
-            Map<String, SpaceInfo> futurePools, Map<String, LinkInfo> currentLinks,
-            Map<String, LinkInfo> futureLinks)
-    {
+          Map<String, SpaceInfo> futurePools, Map<String, LinkInfo> currentLinks,
+          Map<String, LinkInfo> futureLinks) {
         boolean buildAll = false;
         Set<String> alteredPools = null;
         Map<String, NasInfo> nas = buildNas(futurePools, futureLinks);
@@ -491,31 +469,27 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
     }
 
     /**
-     * Build up a Set of pools that have altered; either pools that have been
-     * added, that have been removed or have changed their details. More
-     * succinctly, this is:
+     * Build up a Set of pools that have altered; either pools that have been added, that have been
+     * removed or have changed their details. More succinctly, this is:
      *
      * <pre>
      * (currentPools \ futurePools) U (futurePools \ currentPools)
      * </pre>
-     *
+     * <p>
      * where the sets here are each Map's Map.EntrySet.
      *
-     * @param currentPools Map between poolID and corresponding SpaceInfo for
-     *            current pools
-     * @param futurePools Map between poolID and corresponding SpaceInfo for
-     *            future pools
+     * @param currentPools Map between poolID and corresponding SpaceInfo for current pools
+     * @param futurePools  Map between poolID and corresponding SpaceInfo for future pools
      * @return a Set of poolIDs for pools that have, in some way, changed.
      */
     private Set<String> identifyPoolsThatHaveChanged(Map<String, SpaceInfo> currentPools,
-            Map<String, SpaceInfo> futurePools)
-    {
+          Map<String, SpaceInfo> futurePools) {
         Set<String> alteredPools = new HashSet<>();
 
         Set<Map.Entry<String, SpaceInfo>> d1 =
-                new HashSet<>(currentPools.entrySet());
+              new HashSet<>(currentPools.entrySet());
         Set<Map.Entry<String, SpaceInfo>> d2 =
-                new HashSet<>(futurePools.entrySet());
+              new HashSet<>(futurePools.entrySet());
 
         d1.removeAll(futurePools.entrySet());
         d2.removeAll(currentPools.entrySet());

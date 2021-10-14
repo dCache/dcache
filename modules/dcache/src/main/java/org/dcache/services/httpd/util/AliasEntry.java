@@ -7,10 +7,9 @@ import org.eclipse.jetty.server.Handler;
  *
  * @author arossi
  */
-public class AliasEntry
-{
-    public enum AliasType
-    {
+public class AliasEntry {
+
+    public enum AliasType {
         FILE("file"),
         DIR("directory"),
         CONTEXT("context"),
@@ -20,23 +19,19 @@ public class AliasEntry
 
         private final String type;
 
-        AliasType(String type)
-        {
+        AliasType(String type) {
             this.type = type;
         }
 
-        public boolean isType(String type)
-        {
+        public boolean isType(String type) {
             return this.type.equalsIgnoreCase(type);
         }
 
-        public String getType()
-        {
+        public String getType() {
             return type;
         }
 
-        public static AliasType fromType(String type)
-        {
+        public static AliasType fromType(String type) {
             for (AliasType aliasType : AliasType.values()) {
                 if (aliasType.isType(type)) {
                     return aliasType;
@@ -63,8 +58,7 @@ public class AliasEntry
         this.spec = spec;
     }
 
-    public void setStatusMessage(String statusMessage)
-    {
+    public void setStatusMessage(String statusMessage) {
         this.statusMessage = statusMessage;
     }
 

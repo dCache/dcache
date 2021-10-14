@@ -21,45 +21,40 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Any principal that where the value is unique only within a specific OAuth2
- * provider.
+ * Any principal that where the value is unique only within a specific OAuth2 provider.
+ *
  * @since 5.1
  */
-public abstract class OpScopedPrincipal implements Principal, Serializable
-{
+public abstract class OpScopedPrincipal implements Principal, Serializable {
+
     private final String name;
 
-    public OpScopedPrincipal(String op, String sub)
-    {
+    public OpScopedPrincipal(String op, String sub) {
         name = op + ":" + sub;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + '[' + getName() + ']';
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
 
         return this.getClass().equals(other.getClass())
-                && ((Principal)other).getName().equals(name);
+              && ((Principal) other).getName().equals(name);
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return name.hashCode();
     }
 }

@@ -1,13 +1,14 @@
 package org.dcache.srm.handler;
 
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.collect.Iterables.any;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Optional;
-
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
@@ -30,16 +31,13 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.collect.Iterables.any;
-import static java.util.Arrays.asList;
+public class SrmPrepareToPut {
 
-public class SrmPrepareToPut
-{
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(SrmPrepareToPut.class);
+          LoggerFactory.getLogger(SrmPrepareToPut.class);
 
     private final AbstractStorageElement storage;
     private final SrmPrepareToPutRequest request;
@@ -50,11 +48,10 @@ public class SrmPrepareToPut
     private final SRM srm;
 
     public SrmPrepareToPut(SRMUser user,
-                           SrmPrepareToPutRequest request,
-                           AbstractStorageElement storage,
-                           SRM srm,
-                           String clientHost)
-    {
+          SrmPrepareToPutRequest request,
+          AbstractStorageElement storage,
+          SRM srm,
+          String clientHost) {
         this.request = requireNonNull(request);
         this.user = requireNonNull(user);
         this.storage = requireNonNull(storage);
@@ -63,17 +60,18 @@ public class SrmPrepareToPut
         this.srm = requireNonNull(srm);
     }
 
-    public SrmPrepareToPutResponse getResponse()
-    {
+    public SrmPrepareToPutResponse getResponse() {
         if (response == null) {
             try {
                 response = srmPrepareToPut();
             } catch (InterruptedException e) {
                 LOGGER.error(e.getMessage());
-                response = getFailedResponse("Operation interrupted.", TStatusCode.SRM_INTERNAL_ERROR);
+                response = getFailedResponse("Operation interrupted.",
+                      TStatusCode.SRM_INTERNAL_ERROR);
             } catch (IllegalStateTransition e) {
                 LOGGER.error(e.getMessage());
-                response = getFailedResponse("Failed to schedule operation.", TStatusCode.SRM_INTERNAL_ERROR);
+                response = getFailedResponse("Failed to schedule operation.",
+                      TStatusCode.SRM_INTERNAL_ERROR);
             } catch (SRMInvalidRequestException e) {
                 response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
             } catch (SRMInternalErrorException e) {
@@ -87,9 +85,8 @@ public class SrmPrepareToPut
     }
 
     private SrmPrepareToPutResponse srmPrepareToPut()
-            throws IllegalStateTransition, InterruptedException, SRMNotSupportedException, SRMInvalidRequestException,
-                   SRMInternalErrorException
-    {
+          throws IllegalStateTransition, InterruptedException, SRMNotSupportedException, SRMInvalidRequestException,
+          SRMInternalErrorException {
         checkFileStorageType(request, TFileStorageType.PERMANENT);
         String[] protocols = getProtocols();
         String clientHost = getClientHost(request).orElse(this.clientHost);
@@ -98,23 +95,24 @@ public class SrmPrepareToPut
         TAccessLatency accessLatency = null;
         if (request.getTargetFileRetentionPolicyInfo() != null) {
             retentionPolicy =
-                    request.getTargetFileRetentionPolicyInfo().getRetentionPolicy();
+                  request.getTargetFileRetentionPolicyInfo().getRetentionPolicy();
             accessLatency =
-                    request.getTargetFileRetentionPolicyInfo().getAccessLatency();
+                  request.getTargetFileRetentionPolicyInfo().getAccessLatency();
         }
         TPutFileRequest[] fileRequests = getFileRequests(request);
 
         // assume transfers will take place in parallel
         long effectiveSize = largestFileOf(fileRequests);
         long lifetime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(),
-                effectiveSize, configuration.getMaximumClientAssumedBandwidth(),
-                configuration.getPutLifetime());
+              effectiveSize, configuration.getMaximumClientAssumedBandwidth(),
+              configuration.getPutLifetime());
         TOverwriteMode overwriteMode = getOverwriteMode(request);
 
         String[] supportedProtocols = storage.supportedPutProtocols();
         boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
         if (!isAnyProtocolSupported) {
-            throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+            throw new SRMNotSupportedException(
+                  "Protocol(s) not supported: " + Arrays.toString(protocols));
         }
 
         URI[] surls = new URI[fileRequests.length];
@@ -126,7 +124,8 @@ public class SrmPrepareToPut
                 throw new SRMInvalidRequestException("file request #" + (i + 1) + " is null.");
             }
             if (fileRequest.getTargetSURL() == null) {
-                throw new SRMInvalidRequestException("surl of file request #" + (i + 1) + " is null.");
+                throw new SRMInvalidRequestException(
+                      "surl of file request #" + (i + 1) + " is null.");
             }
             URI surl = URI.create(fileRequest.getTargetSURL().toString());
             UnsignedLong knownSize = fileRequest.getExpectedFileSize();
@@ -143,20 +142,20 @@ public class SrmPrepareToPut
         }
 
         PutRequest r =
-                new PutRequest(
-                        srm.getSrmId(),
-                        user,
-                        surls,
-                        sizes,
-                        wantPermanent,
-                        protocols,
-                        lifetime,
-                        configuration.getPutMaxPollPeriod(),
-                        clientHost,
-                        spaceToken,
-                        retentionPolicy,
-                        accessLatency,
-                        request.getUserRequestDescription());
+              new PutRequest(
+                    srm.getSrmId(),
+                    user,
+                    surls,
+                    sizes,
+                    wantPermanent,
+                    protocols,
+                    lifetime,
+                    configuration.getPutMaxPollPeriod(),
+                    clientHost,
+                    spaceToken,
+                    retentionPolicy,
+                    accessLatency,
+                    request.getUserRequestDescription());
         try (JDC ignored = r.applyJdc()) {
             if (overwriteMode != null) {
                 r.setOverwriteMode(overwriteMode);
@@ -166,13 +165,13 @@ public class SrmPrepareToPut
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status
-            return r.getSrmPrepareToPutResponse(configuration.getPutSwitchToAsynchronousModeDelay());
+            return r.getSrmPrepareToPutResponse(
+                  configuration.getPutSwitchToAsynchronousModeDelay());
         }
     }
 
 
-    private long largestFileOf(TPutFileRequest[] requests)
-    {
+    private long largestFileOf(TPutFileRequest[] requests) {
         long effectiveSize = 0;
 
         for (TPutFileRequest request : requests) {
@@ -186,19 +185,18 @@ public class SrmPrepareToPut
     }
 
     private static TOverwriteMode getOverwriteMode(SrmPrepareToPutRequest request)
-            throws SRMNotSupportedException
-    {
+          throws SRMNotSupportedException {
         TOverwriteMode overwriteMode = request.getOverwriteOption();
-        if (overwriteMode != null && overwriteMode.equals(TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
+        if (overwriteMode != null && overwriteMode.equals(
+              TOverwriteMode.WHEN_FILES_ARE_DIFFERENT)) {
             throw new SRMNotSupportedException(
-                    "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported.");
+                  "Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported.");
         }
         return overwriteMode;
     }
 
     private static TPutFileRequest[] getFileRequests(SrmPrepareToPutRequest request)
-            throws SRMInvalidRequestException
-    {
+          throws SRMInvalidRequestException {
         TPutFileRequest[] fileRequests = null;
         if (request.getArrayOfFileRequests() != null) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
@@ -209,35 +207,35 @@ public class SrmPrepareToPut
         return fileRequests;
     }
 
-    private static Optional<String> getClientHost(SrmPrepareToPutRequest request)
-    {
+    private static Optional<String> getClientHost(SrmPrepareToPutRequest request) {
         if (request.getTransferParameters() != null &&
-                request.getTransferParameters().getArrayOfClientNetworks() != null) {
+              request.getTransferParameters().getArrayOfClientNetworks() != null) {
             String[] clientNetworks =
-                    request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
+                  request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
             if (clientNetworks != null &&
-                    clientNetworks.length > 0 &&
-                    clientNetworks[0] != null) {
+                  clientNetworks.length > 0 &&
+                  clientNetworks[0] != null) {
                 return Optional.of(clientNetworks[0]);
             }
         }
         return Optional.empty();
     }
 
-    private static void checkFileStorageType(SrmPrepareToPutRequest request, TFileStorageType expectedStorageType)
-            throws SRMNotSupportedException
-    {
+    private static void checkFileStorageType(SrmPrepareToPutRequest request,
+          TFileStorageType expectedStorageType)
+          throws SRMNotSupportedException {
         TFileStorageType storageType = request.getDesiredFileStorageType();
         if (storageType != null && !storageType.equals(expectedStorageType)) {
-            throw new SRMNotSupportedException("DesiredFileStorageType " + storageType + " is not supported.");
+            throw new SRMNotSupportedException(
+                  "DesiredFileStorageType " + storageType + " is not supported.");
         }
     }
 
-    private String[] getProtocols() throws SRMInvalidRequestException
-    {
+    private String[] getProtocols() throws SRMInvalidRequestException {
         String[] protocols = null;
         TTransferParameters transferParameters = request.getTransferParameters();
-        if (transferParameters != null && transferParameters.getArrayOfTransferProtocols() != null) {
+        if (transferParameters != null
+              && transferParameters.getArrayOfTransferProtocols() != null) {
             protocols = transferParameters.getArrayOfTransferProtocols().getStringArray();
         }
         protocols = Tools.trimStringArray(protocols);
@@ -247,13 +245,12 @@ public class SrmPrepareToPut
         return protocols;
     }
 
-    public static final SrmPrepareToPutResponse getFailedResponse(String error)
-    {
+    public static final SrmPrepareToPutResponse getFailedResponse(String error) {
         return getFailedResponse(error, TStatusCode.SRM_FAILURE);
     }
 
-    public static final SrmPrepareToPutResponse getFailedResponse(String error, TStatusCode statusCode)
-    {
+    public static final SrmPrepareToPutResponse getFailedResponse(String error,
+          TStatusCode statusCode) {
         SrmPrepareToPutResponse srmPrepareToPutResponse = new SrmPrepareToPutResponse();
         srmPrepareToPutResponse.setReturnStatus(new TReturnStatus(statusCode, error));
         return srmPrepareToPutResponse;

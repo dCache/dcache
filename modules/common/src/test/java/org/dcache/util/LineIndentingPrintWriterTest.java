@@ -17,38 +17,34 @@
  */
 package org.dcache.util;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.io.StringWriter;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.StringWriter;
+public class LineIndentingPrintWriterTest {
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-
-public class LineIndentingPrintWriterTest
-{
     LineIndentingPrintWriter pw;
     StringWriter sw;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         sw = new StringWriter();
         pw = new LineIndentingPrintWriter(sw, "    ");
     }
 
     @Test
-    public void shouldIndentWriteString()
-    {
+    public void shouldIndentWriteString() {
         pw.write("hello");
 
         assertThat(sw.toString(), is(equalTo("    hello")));
     }
 
     @Test
-    public void shouldIndentWriteWriteString()
-    {
+    public void shouldIndentWriteWriteString() {
         pw.write("hello");
         pw.write(", world");
 
@@ -56,24 +52,21 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentEmbeddedLine()
-    {
+    public void shouldIndentEmbeddedLine() {
         pw.write("hello\nworld");
 
         assertThat(sw.toString(), is(equalTo("    hello\n    world")));
     }
 
     @Test
-    public void shouldNotIndentEmptyLine()
-    {
+    public void shouldNotIndentEmptyLine() {
         pw.write("hello\nworld\n");
 
         assertThat(sw.toString(), is(equalTo("    hello\n    world\n")));
     }
 
     @Test
-    public void shouldIndentSubsequentLine()
-    {
+    public void shouldIndentSubsequentLine() {
         pw.write("hello\nworld\n");
         pw.write("There");
 
@@ -81,16 +74,14 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentCharacter()
-    {
+    public void shouldIndentCharacter() {
         pw.write('a');
 
         assertThat(sw.toString(), is(equalTo("    a")));
     }
 
     @Test
-    public void shouldAcceptNewlineCharacter()
-    {
+    public void shouldAcceptNewlineCharacter() {
         pw.write('a');
         pw.write('\n');
 
@@ -98,8 +89,7 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentLineAfterNewlineCharacter()
-    {
+    public void shouldIndentLineAfterNewlineCharacter() {
         pw.write('a');
         pw.write('\n');
         pw.write('b');
@@ -108,8 +98,7 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldSuppressEmptyLineIndent()
-    {
+    public void shouldSuppressEmptyLineIndent() {
         pw.write('\n');
         pw.write('b');
 
@@ -117,24 +106,21 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentPartialCharArray()
-    {
+    public void shouldIndentPartialCharArray() {
         pw.write("abcd".toCharArray(), 1, 2);
 
         assertThat(sw.toString(), is(equalTo("    bc")));
     }
 
     @Test
-    public void shouldNotIndentPartialCharArrayWithFinalNewline()
-    {
+    public void shouldNotIndentPartialCharArrayWithFinalNewline() {
         pw.write("abcd\nef".toCharArray(), 1, 4);
 
         assertThat(sw.toString(), is(equalTo("    bcd\n")));
     }
 
     @Test
-    public void shouldRememberEmbeddedNewlineWithinPartialCharArray()
-    {
+    public void shouldRememberEmbeddedNewlineWithinPartialCharArray() {
         pw.write("abcd\nef".toCharArray(), 1, 4);
         pw.write("test");
 
@@ -142,24 +128,21 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentEmbeddedNewlineWithinPartialCharArray()
-    {
+    public void shouldIndentEmbeddedNewlineWithinPartialCharArray() {
         pw.write("abcd\nef".toCharArray(), 1, 5);
 
         assertThat(sw.toString(), is(equalTo("    bcd\n    e")));
     }
 
     @Test
-    public void shouldIndentPartialString()
-    {
+    public void shouldIndentPartialString() {
         pw.write("world", 1, 2);
 
         assertThat(sw.toString(), is(equalTo("    or")));
     }
 
     @Test
-    public void shouldRememberEmbeddedNewlineWithinPartialString()
-    {
+    public void shouldRememberEmbeddedNewlineWithinPartialString() {
         pw.write("abcd\nef", 1, 4);
         pw.write("test");
 
@@ -167,8 +150,7 @@ public class LineIndentingPrintWriterTest
     }
 
     @Test
-    public void shouldIndentEmbeddedNewlineWithinPartialString()
-    {
+    public void shouldIndentEmbeddedNewlineWithinPartialString() {
         pw.write("abcd\nef", 1, 5);
 
         assertThat(sw.toString(), is(equalTo("    bcd\n    e")));

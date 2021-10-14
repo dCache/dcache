@@ -17,47 +17,39 @@
  */
 package org.dcache.macaroons;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * In-memory, non-persistent storage for multiple expiring IdentifiedSecret
- * objects.
+ * In-memory, non-persistent storage for multiple expiring IdentifiedSecret objects.
  */
-public class InMemorySecretStorage
-{
+public class InMemorySecretStorage {
+
     private static final Logger LOG = LoggerFactory.getLogger(InMemorySecretStorage.class);
 
-    private final SortedMap<Instant,IdentifiedSecret> _secrets = new TreeMap<>();
-    private final Map<String,IdentifiedSecret> _secretsByIdentifier = new HashMap<>();
+    private final SortedMap<Instant, IdentifiedSecret> _secrets = new TreeMap<>();
+    private final Map<String, IdentifiedSecret> _secretsByIdentifier = new HashMap<>();
 
     /**
-     * Find a secret with the earliest expiry that is strictly greater than the
-     * supplied Instant.
+     * Find a secret with the earliest expiry that is strictly greater than the supplied Instant.
      */
-    public synchronized Optional<IdentifiedSecret> firstExpiringAfter(Instant earliestExpiry)
-    {
+    public synchronized Optional<IdentifiedSecret> firstExpiringAfter(Instant earliestExpiry) {
         return _secrets.tailMap(earliestExpiry).values().stream().findFirst();
     }
 
     /**
      * Store a secret with associated expiry time.
      */
-    public synchronized IdentifiedSecret put(Instant expiry, IdentifiedSecret secret)
-    {
+    public synchronized IdentifiedSecret put(Instant expiry, IdentifiedSecret secret) {
         LOG.debug("Adding secret {} expiring at {}", secret.getIdentifier(), expiry);
         _secrets.put(expiry, secret);
         _secretsByIdentifier.put(secret.getIdentifier(), secret);
@@ -67,14 +59,15 @@ public class InMemorySecretStorage
     /**
      * Remove a secret that is to expire at the stated time.
      */
-    public synchronized void remove(Instant expiry)
-    {
+    public synchronized void remove(Instant expiry) {
         IdentifiedSecret secret = _secrets.remove(expiry);
         if (secret != null) {
             String id = secret.getIdentifier();
             secret = _secretsByIdentifier.remove(id);
             if (secret == null) {
-                LOG.warn("Removed secret {} expiring at {}, but failed to remove from identifier map", id, expiry);
+                LOG.warn(
+                      "Removed secret {} expiring at {}, but failed to remove from identifier map",
+                      id, expiry);
             } else {
                 LOG.debug("Removed secret {} expiring at {}", id, expiry);
             }
@@ -86,8 +79,7 @@ public class InMemorySecretStorage
     /**
      * Get a secret identified by the supplied identifier.
      */
-    public synchronized byte[] get(String identifier)
-    {
+    public synchronized byte[] get(String identifier) {
         IdentifiedSecret secret = _secretsByIdentifier.get(identifier);
         return secret != null ? secret.getSecret() : null;
     }
@@ -95,18 +87,17 @@ public class InMemorySecretStorage
     /**
      * Return the secret with the specified expiry.
      */
-    public synchronized Optional<IdentifiedSecret> get(Instant expiry)
-    {
+    public synchronized Optional<IdentifiedSecret> get(Instant expiry) {
         return Optional.ofNullable(_secrets.get(expiry));
     }
 
     /**
-     * Remove all secrets and identify those that have an expiry time before
-     * the supplied cutoff Instant.
+     * Remove all secrets and identify those that have an expiry time before the supplied cutoff
+     * Instant.
+     *
      * @return a non-null Set of Instant for secret expiries.
      */
-    public synchronized Set<Instant> expiringBefore(Instant cutoff)
-    {
+    public synchronized Set<Instant> expiringBefore(Instant cutoff) {
         LOG.debug("Checking for expired secrets");
 
         Set<Instant> expired = _secrets.headMap(cutoff).keySet();

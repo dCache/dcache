@@ -18,55 +18,47 @@
  */
 package org.dcache.util;
 
-import java.net.URI;
-
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import java.net.URI;
 
 /**
  * A fluent class to build a StorageInfo.
  */
-public class StorageInfoBuilder
-{
+public class StorageInfoBuilder {
+
     private final GenericStorageInfo info = new GenericStorageInfo();
 
-    public StorageInfoBuilder withLocation(String uri)
-    {
+    public StorageInfoBuilder withLocation(String uri) {
         info.addLocation(URI.create(uri));
         return this;
     }
 
-    public StorageInfoBuilder withHsm(String hsm)
-    {
+    public StorageInfoBuilder withHsm(String hsm) {
         info.setHsm(hsm);
         return this;
     }
 
-    public StorageInfoBuilder withKey(String key, String value)
-    {
+    public StorageInfoBuilder withKey(String key, String value) {
         info.setKey(key, value);
         return this;
     }
 
-    public StorageInfoBuilder withIsSetAddLocation()
-    {
+    public StorageInfoBuilder withIsSetAddLocation() {
         info.isSetAddLocation(true);
         return this;
     }
 
-    public StorageInfoBuilder withIsSetAddLocation(boolean value)
-    {
+    public StorageInfoBuilder withIsSetAddLocation(boolean value) {
         info.isSetAddLocation(value);
         return this;
     }
 
-    public StorageInfo build()
-    {
+    public StorageInfo build() {
         return info;
     }
 
-    public static StorageInfoBuilder aStorageInfo()
-    {
+    public static StorageInfoBuilder aStorageInfo() {
         return new StorageInfoBuilder();
     }
 }

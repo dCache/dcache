@@ -60,10 +60,8 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import java.util.Map;
-
 import diskCacheV111.pools.PoolV2Mode;
+import java.util.Map;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 
@@ -80,10 +78,11 @@ import org.dcache.resilience.handlers.ResilienceMessageHandler;
  * @see ResilienceMessageHandler#handleInternalMessage(PoolStateUpdate)
  */
 public final class PoolStateUpdate {
-    public final String          pool;
-    public final PoolV2Mode      mode;
-    public final Integer         group;
-    public final String          storageUnit;
+
+    public final String pool;
+    public final PoolV2Mode mode;
+    public final Integer group;
+    public final String storageUnit;
 
     public PoolStateUpdate(Map.Entry<String, PoolV2Mode> entry) {
         this(entry.getKey(), entry.getValue());
@@ -96,15 +95,15 @@ public final class PoolStateUpdate {
     @VisibleForTesting
     public PoolStateUpdate(String pool, String storageUnit) {
         this(pool,
-             new PoolV2Mode(PoolV2Mode.ENABLED),
-             null, null, storageUnit);
+              new PoolV2Mode(PoolV2Mode.ENABLED),
+              null, null, storageUnit);
     }
 
     public PoolStateUpdate(String pool,
-                           PoolV2Mode mode,
-                           Integer addedTo,
-                           Integer removedFrom,
-                           String storageUnit) {
+          PoolV2Mode mode,
+          Integer addedTo,
+          Integer removedFrom,
+          String storageUnit) {
         this.pool = pool;
         this.mode = mode;
         this.storageUnit = storageUnit;

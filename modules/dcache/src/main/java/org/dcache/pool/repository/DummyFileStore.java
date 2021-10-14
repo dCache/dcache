@@ -18,29 +18,27 @@
  */
 package org.dcache.pool.repository;
 
+import diskCacheV111.util.PnfsId;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.OpenOption;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.util.Collections;
 import java.util.Set;
 
-import diskCacheV111.util.PnfsId;
-
 /**
- * File store to be used with meta data utilities. Returns the same temporary file for
- * all PNFS IDs. Depending on constructor arguments, the file may or may not exist.
+ * File store to be used with meta data utilities. Returns the same temporary file for all PNFS IDs.
+ * Depending on constructor arguments, the file may or may not exist.
  */
-class DummyFileStore implements FileStore
-{
+class DummyFileStore implements FileStore {
+
     public final Path file;
 
-    public enum Mode { ALL_EXIST, NONE_EXIST }
+    public enum Mode {ALL_EXIST, NONE_EXIST}
 
-    DummyFileStore(Mode mode) throws IOException
-    {
+    DummyFileStore(Mode mode) throws IOException {
         file = Files.createTempFile("dcache-yaml-tool", null);
         file.toFile().deleteOnExit();
         if (mode == Mode.NONE_EXIST) {
@@ -60,13 +58,13 @@ class DummyFileStore implements FileStore
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode)
+          throws IOException {
         return new FileRepositoryChannel(file, mode);
     }
 
     @Override
-    public URI get(PnfsId id)
-    {
+    public URI get(PnfsId id) {
         return file.toUri();
     }
 
@@ -81,26 +79,22 @@ class DummyFileStore implements FileStore
     }
 
     @Override
-    public Set<PnfsId> index()
-    {
+    public Set<PnfsId> index() {
         return Collections.emptySet();
     }
 
     @Override
-    public long getFreeSpace()
-    {
+    public long getFreeSpace() {
         return 0;
     }
 
     @Override
-    public long getTotalSpace()
-    {
+    public long getTotalSpace() {
         return 0;
     }
 
     @Override
-    public boolean isOk()
-    {
+    public boolean isOk() {
         return false;
     }
 }

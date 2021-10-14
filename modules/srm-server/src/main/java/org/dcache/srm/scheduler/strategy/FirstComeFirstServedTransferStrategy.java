@@ -24,18 +24,16 @@ import org.dcache.srm.scheduler.spi.TransferStrategy;
 /**
  * Simplistic transfer strategy that allows requests to proceed until the maximum is reached.
  */
-public class FirstComeFirstServedTransferStrategy implements TransferStrategy
-{
+public class FirstComeFirstServedTransferStrategy implements TransferStrategy {
+
     private final Scheduler scheduler;
 
-    public FirstComeFirstServedTransferStrategy(Scheduler scheduler)
-    {
+    public FirstComeFirstServedTransferStrategy(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
 
     @Override
-    public boolean canTransfer(Job job)
-    {
+    public boolean canTransfer(Job job) {
         return scheduler.getTotalReady() < scheduler.getMaxReadyJobs();
     }
 }

@@ -17,27 +17,23 @@
  */
 package org.dcache.pool.classic;
 
-import eu.emi.security.authn.x509.CrlCheckingMode;
-import eu.emi.security.authn.x509.NamespaceCheckingMode;
-import eu.emi.security.authn.x509.OCSPCheckingMode;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.concurrent.TimeUnit;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-
 import dmg.cells.nucleus.CDC;
-
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+import java.util.concurrent.TimeUnit;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
+import org.springframework.beans.factory.annotation.Required;
 
-public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferService
-{
+public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferService {
+
     private String caPath;
     private OCSPCheckingMode ocspCheckingMode;
     private CrlCheckingMode crlCheckingMode;
@@ -48,119 +44,102 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
     private String[] bannedCiphers;
     private PortRange portRange;
 
-    public String[] getBannedCiphers()
-    {
+    public String[] getBannedCiphers() {
         return bannedCiphers;
     }
 
-    public void setBannedCiphers(String[] bannedCiphers)
-    {
+    public void setBannedCiphers(String[] bannedCiphers) {
         this.bannedCiphers = bannedCiphers;
     }
 
-    public PortRange getPortRange()
-    {
+    public PortRange getPortRange() {
         return portRange;
     }
 
-    public void setPortRange(PortRange portRange)
-    {
+    public void setPortRange(PortRange portRange) {
         this.portRange = portRange;
     }
 
-    public String getCertificateAuthorityPath()
-    {
+    public String getCertificateAuthorityPath() {
         return caPath;
     }
 
     @Required
-    public void setCertificateAuthorityPath(String certificateAuthorityPath)
-    {
+    public void setCertificateAuthorityPath(String certificateAuthorityPath) {
         this.caPath = certificateAuthorityPath;
     }
 
-    public OCSPCheckingMode getOcspCheckingMode()
-    {
+    public OCSPCheckingMode getOcspCheckingMode() {
         return ocspCheckingMode;
     }
 
     @Required
-    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
-    {
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode) {
         this.ocspCheckingMode = ocspCheckingMode;
     }
 
-    public CrlCheckingMode getCrlCheckingMode()
-    {
+    public CrlCheckingMode getCrlCheckingMode() {
         return crlCheckingMode;
     }
 
     @Required
-    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
-    {
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode) {
         this.crlCheckingMode = crlCheckingMode;
     }
 
-    public NamespaceCheckingMode getNamespaceMode()
-    {
+    public NamespaceCheckingMode getNamespaceMode() {
         return namespaceMode;
     }
 
     @Required
-    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
-    {
+    public void setNamespaceMode(NamespaceCheckingMode namespaceMode) {
         this.namespaceMode = namespaceMode;
     }
 
-    public long getCertificateAuthorityUpdateInterval()
-    {
+    public long getCertificateAuthorityUpdateInterval() {
         return certificateAuthorityUpdateInterval;
     }
 
     @Required
-    public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval)
-    {
+    public void setCertificateAuthorityUpdateInterval(long certificateAuthorityUpdateInterval) {
         this.certificateAuthorityUpdateInterval = certificateAuthorityUpdateInterval;
     }
 
-    public TimeUnit getCertificateAuthorityUpdateIntervalUnit()
-    {
+    public TimeUnit getCertificateAuthorityUpdateIntervalUnit() {
         return certificateAuthorityUpdateIntervalUnit;
     }
 
     @Required
-    public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit unit)
-    {
+    public void setCertificateAuthorityUpdateIntervalUnit(TimeUnit unit) {
         this.certificateAuthorityUpdateIntervalUnit = unit;
     }
 
     @Override
-    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception
-    {
+    protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception {
         MoverProtocol moverProtocol;
         if (info instanceof RemoteGsiftpTransferProtocolInfo) {
-            moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange, bannedCiphers, getContextFactory());
+            moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange,
+                  bannedCiphers, getContextFactory());
         } else {
             throw new CacheException(CacheException.CANNOT_CREATE_MOVER,
-                    "Could not create third-party GSIFTP mover for " + info);
+                  "Could not create third-party GSIFTP mover for " + info);
         }
         return moverProtocol;
     }
 
-    private synchronized SslContextFactory getContextFactory()
-    {
+    private synchronized SslContextFactory getContextFactory() {
         if (sslContextFactory == null) {
             sslContextFactory =
-                    CanlContextFactory.custom()
-                            .withCertificateAuthorityPath(caPath)
-                            .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval,
-                                                                    certificateAuthorityUpdateIntervalUnit)
-                            .withCrlCheckingMode(crlCheckingMode)
-                            .withOcspCheckingMode(ocspCheckingMode)
-                            .withNamespaceMode(namespaceMode)
-                            .withLazy(false)
-                            .withLoggingContext(new CDC()::restore)
-                            .build();
+                  CanlContextFactory.custom()
+                        .withCertificateAuthorityPath(caPath)
+                        .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval,
+                              certificateAuthorityUpdateIntervalUnit)
+                        .withCrlCheckingMode(crlCheckingMode)
+                        .withOcspCheckingMode(ocspCheckingMode)
+                        .withNamespaceMode(namespaceMode)
+                        .withLazy(false)
+                        .withLoggingContext(new CDC()::restore)
+                        .build();
         }
         return sslContextFactory;
     }

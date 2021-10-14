@@ -16,13 +16,12 @@
  */
 package org.dcache.chimera;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DirectoryStreamHelper {
 
@@ -30,18 +29,19 @@ public class DirectoryStreamHelper {
 
     /**
      * Returns a {@link Stream} of {@link HimeraDirectoryEntry} in the directory {@code inode}.
-     *
-     *  After this method returns, then any subsequent I/O exception that occurs while listing the directory is wrapped
-     *  in an UncheckedIOException.
-     *
-     * The returned stream keeps a db Connection. The try-with-resources construct should be used to ensure that the stream's
-     * close method is invoked after the stream operations are completed.
+     * <p>
+     * After this method returns, then any subsequent I/O exception that occurs while listing the
+     * directory is wrapped in an UncheckedIOException.
+     * <p>
+     * The returned stream keeps a db Connection. The try-with-resources construct should be used to
+     * ensure that the stream's close method is invoked after the stream operations are completed.
      *
      * @param inode of a directory to be listed
      * @return a stream of {@link HimeraDirectoryEntry}
      * @throws IOException
      */
-    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode) throws IOException, IOHimeraFsException {
+    public static Stream<HimeraDirectoryEntry> streamOf(FsInode inode)
+          throws IOException, IOHimeraFsException {
         DirectoryStreamB<HimeraDirectoryEntry> listStream = inode.newDirectoryStream();
         return listStream.stream().onClose(uncheckedRunnable(listStream));
     }

@@ -1,8 +1,20 @@
 package org.dcache.pool.movers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MiB;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DCapProrocolChallenge;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellArgsAware;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,26 +25,10 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DCapProrocolChallenge;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
-
-import dmg.cells.nucleus.CellArgsAware;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-
 import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -43,12 +39,11 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Exceptions;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.dcache.util.ByteUnit.KiB;
-import static org.dcache.util.ByteUnit.MiB;
+public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArgsAware {
 
-public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArgsAware
-{
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
 
@@ -57,25 +52,27 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
      */
     private static final long MAX_REQUEST_SIZE = MiB.toBytes(8);
 
-    private final Map<String,Object> _context;
-    private final CellEndpoint     _cell;
+    private final Map<String, Object> _context;
+    private final CellEndpoint _cell;
 
     private Args _args;
-    private long _bytesTransferred   = -1;
+    private long _bytesTransferred = -1;
     private long _transferStarted;
-    private long _transferTime       = -1;
-    private long _lastTransferred    = System.currentTimeMillis();
+    private long _transferTime = -1;
+    private long _lastTransferred = System.currentTimeMillis();
 
     private ByteBuffer _bigBuffer;
-    private String  _status          = "None";
-    private boolean _io_ok           = true;
-    private Exception ioException    = null;
-    private long    _ioError         = -1;
-    private PnfsId  _pnfsId;
-    private int     _sessionId       = -1;
+    private String _status = "None";
+    private boolean _io_ok = true;
+    private Exception ioException = null;
+    private long _ioError = -1;
+    private PnfsId _pnfsId;
+    private int _sessionId = -1;
 
-    private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
-    private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
+    private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256),
+          KiB.toBytes(256), KiB.toBytes(256));
+    private final MoverIoBuffer _maxBufferSize = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1),
+          MiB.toBytes(1));
 
     private Consumer<Checksum> _integrityChecker;
 
@@ -88,18 +85,18 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
         try {
             port = Integer.parseInt(System.getProperty("org.dcache.dcap.port"));
-        }catch(NumberFormatException e){ /* bad values are ignored */}
+        } catch (NumberFormatException e) { /* bad values are ignored */}
 
         factory =
-            new ProtocolConnectionPoolFactory(port, new DCapChallengeReader());
+              new ProtocolConnectionPoolFactory(port, new DCapChallengeReader());
 
     }
 
     private void initialiseBuffer(MoverIoBuffer bufferSize) {
         try {
             _bigBuffer = _bigBuffer
-                    == null ? ByteBuffer.allocate(bufferSize.getIoBufferSize()) :
-                        _bigBuffer;
+                  == null ? ByteBuffer.allocate(bufferSize.getIoBufferSize()) :
+                  _bigBuffer;
         } catch (OutOfMemoryError om) {
             _bigBuffer = ByteBuffer.allocate(KiB.toBytes(32));
         }
@@ -111,7 +108,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         try {
             tmp = storage.getKey("send");
             if (tmp != null) {
-                bufferSize.setSendBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getSendBufferSize()));
+                bufferSize.setSendBufferSize(
+                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getSendBufferSize()));
             }
         } catch (NumberFormatException e) { /* bad values are ignored */
 
@@ -119,7 +117,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         try {
             tmp = storage.getKey("receive");
             if (tmp != null) {
-                bufferSize.setRecvBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getRecvBufferSize()));
+                bufferSize.setRecvBufferSize(
+                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getRecvBufferSize()));
             }
         } catch (NumberFormatException e) { /* bad values are ignored */
 
@@ -127,7 +126,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         try {
             tmp = storage.getKey("bsize");
             if (tmp != null) {
-                bufferSize.setIoBufferSize(Math.min(Integer.parseInt(tmp), _maxBufferSize.getIoBufferSize()));
+                bufferSize.setIoBufferSize(
+                      Math.min(Integer.parseInt(tmp), _maxBufferSize.getIoBufferSize()));
             }
         } catch (NumberFormatException e) { /* bad values are ignored */
 
@@ -136,8 +136,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     }
 
     @Override
-    public void setCellArgs(Args args)
-    {
+    public void setCellArgs(Args args) {
         _args = args;
     }
 
@@ -150,9 +149,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         private int _commandSize;
         private int _commandCode;
 
-        private RequestBlock(){
+        private RequestBlock() {
             _buffer = ByteBuffer.allocate(64);
         }
+
         private void read(SocketChannel channel) throws Exception {
 
             _commandSize = _commandCode = 0;
@@ -173,17 +173,20 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                      * well, protocol tells nothing about command block size limit (my bad).
                      * but we will send "protocol violation" to indicate client that we cant handle it.
                      */
-                    _log.warn("Command size excided command block size : {}/{}", _commandSize, MAX_REQUEST_SIZE);
+                    _log.warn("Command size excided command block size : {}/{}", _commandSize,
+                          MAX_REQUEST_SIZE);
                     // eat the data to keep TCP send buffer on the client side happy
                     int n = 0;
                     while (n < _commandSize) {
                         _buffer.clear();
                         n += channel.read(_buffer);
                     }
-                    throw new CacheException(44, "Protocol Violation: request block too big (" + _commandSize + ")");
+                    throw new CacheException(44,
+                          "Protocol Violation: request block too big (" + _commandSize + ")");
                 }
 
-                _log.info("Growing command block size from: {} to: {}", _buffer.capacity(), _commandSize);
+                _log.info("Growing command block size from: {} to: {}", _buffer.capacity(),
+                      _commandSize);
 
                 // we don't need any cind of synchronization as mover single threaded.
                 _buffer = ByteBuffer.allocate(_commandSize);
@@ -195,75 +198,93 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _buffer.rewind();
             _commandCode = _buffer.getInt();
         }
-        private int remaining(){ return _buffer.remaining(); }
-        private int getCommandCode(){ return _commandCode; }
-        private int nextInt(){ return _buffer.getInt(); }
-        private long nextLong(){ return _buffer.getLong(); }
-        private void fillBuffer( SocketChannel channel) throws Exception{
-            while(_buffer.hasRemaining()){
-                if(channel.read(_buffer) < 0) {
+
+        private int remaining() {
+            return _buffer.remaining();
+        }
+
+        private int getCommandCode() {
+            return _commandCode;
+        }
+
+        private int nextInt() {
+            return _buffer.getInt();
+        }
+
+        private long nextLong() {
+            return _buffer.getLong();
+        }
+
+        private void fillBuffer(SocketChannel channel) throws Exception {
+            while (_buffer.hasRemaining()) {
+                if (channel.read(_buffer) < 0) {
                     throw new
-                            EOFException("EOF on input socket (fillBuffer)");
+                          EOFException("EOF on input socket (fillBuffer)");
                 }
             }
         }
-        private void skip(int skip){
-            _buffer.position(_buffer.position()+skip);
+
+        private void skip(int skip) {
+            _buffer.position(_buffer.position() + skip);
         }
-        private void get(byte [] array){ _buffer.get(array); }
+
+        private void get(byte[] array) {
+            _buffer.get(array);
+        }
 
         @Override
-        public String toString(){
-            return "RequestBlock [Size="+_commandSize+
-                " Code="+_commandCode+
-                " Buffer="+_buffer;
+        public String toString() {
+            return "RequestBlock [Size=" + _commandSize +
+                  " Code=" + _commandCode +
+                  " Buffer=" + _buffer;
         }
     }
-    public DCapProtocol_3_nio(CellEndpoint cell){
 
-        _cell    = cell;
+    public DCapProtocol_3_nio(CellEndpoint cell) {
+
+        _cell = cell;
         _context = _cell.getDomainContext();
         //
-        _log.info("DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
+        _log.info(
+              "DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
     }
 
-    private void configureBufferSizes()
-    {
+    private void configureBufferSizes() {
         //
         // we are created for each request. So our data
         // is not shared.
         //
         _defaultBufferSize.setBufferSize(
-                                         getParameterInt("defaultSendBufferSize", _defaultBufferSize.getSendBufferSize()),
-                                         getParameterInt("defaultRecvBufferSize", _defaultBufferSize.getRecvBufferSize()),
-                                         getParameterInt("defaultIoBufferSize"  , _defaultBufferSize.getIoBufferSize())
-                                        );
+              getParameterInt("defaultSendBufferSize", _defaultBufferSize.getSendBufferSize()),
+              getParameterInt("defaultRecvBufferSize", _defaultBufferSize.getRecvBufferSize()),
+              getParameterInt("defaultIoBufferSize", _defaultBufferSize.getIoBufferSize())
+        );
         _maxBufferSize.setBufferSize(
-                                     getParameterInt("maxSendBufferSize", _maxBufferSize.getSendBufferSize()),
-                                     getParameterInt("maxRecvBufferSize", _maxBufferSize.getRecvBufferSize()),
-                                     getParameterInt("maxIoBufferSize"  , _maxBufferSize.getIoBufferSize())
-                                    );
+              getParameterInt("maxSendBufferSize", _maxBufferSize.getSendBufferSize()),
+              getParameterInt("maxRecvBufferSize", _maxBufferSize.getRecvBufferSize()),
+              getParameterInt("maxIoBufferSize", _maxBufferSize.getIoBufferSize())
+        );
         _log.info("Setup : Defaults Buffer Sizes  : {}", _defaultBufferSize);
         _log.info("Setup : Max Buffer Sizes       : {}", _maxBufferSize);
 
     }
-    private synchronized int getParameterInt(String name, int defaultValue){
-        String stringValue = (String)_context.get("dCap3-"+name);
+
+    private synchronized int getParameterInt(String name, int defaultValue) {
+        String stringValue = (String) _context.get("dCap3-" + name);
         stringValue = stringValue == null ? _args.getOpt(name) : stringValue;
-        try{
+        try {
             return stringValue == null ? defaultValue : Integer.parseInt(stringValue);
-        }catch(NumberFormatException e){
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return _status;
     }
 
-    private void addDesiredChecksums(RepositoryChannel fileChannel, DCapProtocolInfo info)
-    {
+    private void addDesiredChecksums(RepositoryChannel fileChannel, DCapProtocolInfo info) {
         // The dcap protocol allows the client to supply a checksum value as
         // part of the IOCMD_CLOSE block.  However, by then we have already
         // received all the file's data.
@@ -276,13 +297,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         // generated, so avoiding re-reading the file's content should the
         // client supply an ADLER32 checksum as part of the IOCMD_CLOSE block.
         fileChannel.optionallyAs(ChecksumChannel.class).ifPresent(c -> {
-                    try {
-                        c.addType(ChecksumType.ADLER32);
-                    } catch (IOException e) {
-                        _log.warn("Unable to add ADLER32 checksum: {}",
-                                Exceptions.messageOrClassName(e));
-                    }
-                });
+            try {
+                c.addType(ChecksumType.ADLER32);
+            } catch (IOException e) {
+                _log.warn("Unable to add ADLER32 checksum: {}",
+                      Exceptions.messageOrClassName(e));
+            }
+        });
     }
 
     @Override
@@ -292,23 +313,22 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public void runIO(FileAttributes fileAttributes,
-                      RepositoryChannel  fileChannel,
-                      ProtocolInfo protocol,
-                      Set<? extends OpenOption> access)
-        throws Exception
-    {
+          RepositoryChannel fileChannel,
+          ProtocolInfo protocol,
+          Set<? extends OpenOption> access)
+          throws Exception {
         configureBufferSizes();
 
-        if(! (protocol instanceof DCapProtocolInfo)) {
+        if (!(protocol instanceof DCapProtocolInfo)) {
             throw new
-                    CacheException(44, "protocol info not DCapProtocolInfo");
+                  CacheException(44, "protocol info not DCapProtocolInfo");
         }
-        DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo)protocol;
+        DCapProtocolInfo dcapProtocolInfo = (DCapProtocolInfo) protocol;
 
         addDesiredChecksums(fileChannel, dcapProtocolInfo);
 
         StorageInfo storage = fileAttributes.getStorageInfo();
-        _pnfsId              = fileAttributes.getPnfsId();
+        _pnfsId = fileAttributes.getPnfsId();
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
@@ -316,12 +336,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         //    Prepare the tunable parameters                                  //
         //                                                                    //
 
-        try{
+        try {
             String io = storage.getKey("io-error");
-            if(io != null) {
+            if (io != null) {
                 _ioError = Long.parseLong(io);
             }
-        }catch(NumberFormatException e){ /* bad values are ignored */}
+        } catch (NumberFormatException e) { /* bad values are ignored */}
         _log.info("ioError = {}", _ioError);
 //        gets the buffervalues of the storageInfo keys
         MoverIoBuffer bufferSize = prepareBufferSize(storage);
@@ -332,9 +352,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         SocketChannel socketChannel = null;
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(KiB.toBytes(1));
 
-        _sessionId  = dcapProtocolInfo.getSessionId();
+        _sessionId = dcapProtocolInfo.getSessionId();
 
-        if(! dcapProtocolInfo.isPassive()) {
+        if (!dcapProtocolInfo.isPassive()) {
 
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(true);
@@ -344,21 +364,23 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             socket.setTcpNoDelay(true);
             if (bufferSize.getRecvBufferSize() > 0) {
                 socket.setReceiveBufferSize(bufferSize
-                        .getRecvBufferSize());
+                      .getRecvBufferSize());
             }
             if (bufferSize.getSendBufferSize() > 0) {
                 socket.setSendBufferSize(bufferSize
-                        .getSendBufferSize());
+                      .getSendBufferSize());
             }
 
             socketChannel.connect(dcapProtocolInfo.getSocketAddress());
 
             if (_logSocketIO.isDebugEnabled()) {
-                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}", socket.getInetAddress(), socket.getPort(),
-                                   socket.getLocalAddress(), socket.getLocalPort());
+                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}",
+                      socket.getInetAddress(), socket.getPort(),
+                      socket.getLocalAddress(), socket.getLocalPort());
             }
-            _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(), socket.getReceiveBufferSize(),
-                      _bigBuffer.capacity());
+            _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}", socket.getSendBufferSize(),
+                  socket.getReceiveBufferSize(),
+                  _bigBuffer.capacity());
             _log.info("Connected to {}", dcapProtocolInfo.getSocketAddress());
 
             //
@@ -368,23 +390,24 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _bigBuffer.putInt(_sessionId).putInt(0);
             _bigBuffer.flip();
             socketChannel.write(_bigBuffer);
-        }else{ // passive connection
+        } else { // passive connection
             try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
                 InetAddress localAddress = NetworkUtils.
-                        getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
+                      getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
                 InetSocketAddress socketAddress = new InetSocketAddress(localAddress,
-                        listen.getPort());
+                      listen.getPort());
 
                 byte[] challenge = UUID.randomUUID().toString().getBytes();
                 PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
-                        socketAddress, challenge);
+                      socketAddress, challenge);
                 msg.setId(dcapProtocolInfo.getSessionId());
                 _log.info("waiting for client to connect ({}:{})", localAddress,
-                        listen.getPort());
+                      listen.getPort());
 
                 CellPath cellpath = dcapProtocolInfo.door();
-                _cell.sendMessage (new CellMessage(cellpath, msg));
-                DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
+                _cell.sendMessage(new CellMessage(cellpath, msg));
+                DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId,
+                      challenge);
                 socketChannel = listen.getSocket(dcapChallenge);
             }
 
@@ -398,19 +421,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
         //
         //
-        _transferStarted  = System.currentTimeMillis();
+        _transferStarted = System.currentTimeMillis();
         _bytesTransferred = 0;
-        _lastTransferred  = _transferStarted;
+        _lastTransferred = _transferStarted;
 
-        boolean      notDone      = true;
+        boolean notDone = true;
         RequestBlock requestBlock = new RequestBlock();
 
-        try{
-            while(notDone && _io_ok){
+        try {
+            while (notDone && _io_ok) {
 
-                if(Thread.interrupted()) {
+                if (Thread.interrupted()) {
                     throw new
-                            InterruptedException("Interrupted By Operator");
+                          InterruptedException("Interrupted By Operator");
                 }
 
                 //
@@ -427,302 +450,316 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                 _log.debug("Request Block : {}", requestBlock);
 
-                _lastTransferred    = System.currentTimeMillis();
+                _lastTransferred = System.currentTimeMillis();
 
-                switch(requestBlock.getCommandCode()){
+                switch (requestBlock.getCommandCode()) {
                     //-------------------------------------------------------------
                     //
                     //                     The Write
                     //
-                case DCapConstants.IOCMD_WRITE :
-                    //
-                    // no further arguments (yet)
-                    //
-                    if(! _io_ok){
+                    case DCapConstants.IOCMD_WRITE:
+                        //
+                        // no further arguments (yet)
+                        //
+                        if (!_io_ok) {
 
-                        String errmsg = "WRITE denied (IO not ok)";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
-                        socketChannel.write(cntOut.buffer());
-
-                    }else if(isWrite){
-
-                        //
-                        //   The 'REQUEST ACK'
-                        //
-                        cntOut.writeACK(DCapConstants.IOCMD_WRITE);
-                        socketChannel.write(cntOut.buffer());
-                        //
-                        doTheWrite(fileChannel,
-                                    cntOut,
-                                    socketChannel);
-                        //
-                        //
-                        if(_io_ok){
-                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE);
+                            String errmsg = "WRITE denied (IO not ok)";
+                            _log.error(errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_WRITE, CacheException.ERROR_IO_DISK,
+                                  errmsg);
                             socketChannel.write(cntOut.buffer());
-                        }else{
-                            String errmsg = "WRITE failed : " + (ioException == null ? "IOError" : Exceptions.messageOrClassName(ioException));
-                            int rc;
-                            if (ioException instanceof OutOfDiskException) {
-                                _log.debug(errmsg);
-                                rc = CacheException.RESOURCE;
+
+                        } else if (isWrite) {
+
+                            //
+                            //   The 'REQUEST ACK'
+                            //
+                            cntOut.writeACK(DCapConstants.IOCMD_WRITE);
+                            socketChannel.write(cntOut.buffer());
+                            //
+                            doTheWrite(fileChannel,
+                                  cntOut,
+                                  socketChannel);
+                            //
+                            //
+                            if (_io_ok) {
+                                cntOut.writeFIN(DCapConstants.IOCMD_WRITE);
+                                socketChannel.write(cntOut.buffer());
                             } else {
-                                _log.error(errmsg);
-                                rc = CacheException.ERROR_IO_DISK;
+                                String errmsg = "WRITE failed : " + (ioException == null ? "IOError"
+                                      : Exceptions.messageOrClassName(ioException));
+                                int rc;
+                                if (ioException instanceof OutOfDiskException) {
+                                    _log.debug(errmsg);
+                                    rc = CacheException.RESOURCE;
+                                } else {
+                                    _log.error(errmsg);
+                                    rc = CacheException.ERROR_IO_DISK;
+                                }
+                                cntOut.writeFIN(DCapConstants.IOCMD_WRITE, rc, errmsg);
+                                socketChannel.write(cntOut.buffer());
                             }
-                            cntOut.writeFIN(DCapConstants.IOCMD_WRITE, rc, errmsg);
+
+                        } else {
+
+                            String errmsg = "WRITE denied (not allowed)";
+                            _log.error(errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_WRITE, CacheException.ERROR_IO_DISK,
+                                  errmsg);
                             socketChannel.write(cntOut.buffer());
+
                         }
-
-                    }else{
-
-                        String errmsg = "WRITE denied (not allowed)";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
-                        socketChannel.write(cntOut.buffer());
-
-                    }
-                    break;
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The Read
                     //
-                case DCapConstants.IOCMD_READ :
-                    //
-                    //
-                    long blockSize = requestBlock.nextLong();
+                    case DCapConstants.IOCMD_READ:
+                        //
+                        //
+                        long blockSize = requestBlock.nextLong();
 
-                    _log.debug("READ byte={}", blockSize);
+                        _log.debug("READ byte={}", blockSize);
 
-                    if(_io_ok){
+                        if (_io_ok) {
 
-                        cntOut.writeACK(DCapConstants.IOCMD_READ);
-                        socketChannel.write(cntOut.buffer());
-
-                        doTheRead(fileChannel, cntOut, socketChannel,  blockSize);
-
-                        if(_io_ok){
-                            cntOut.writeFIN(DCapConstants.IOCMD_READ);
+                            cntOut.writeACK(DCapConstants.IOCMD_READ);
                             socketChannel.write(cntOut.buffer());
-                        }else{
-                            String errmsg = "FIN : READ failed (IO not ok)";
+
+                            doTheRead(fileChannel, cntOut, socketChannel, blockSize);
+
+                            if (_io_ok) {
+                                cntOut.writeFIN(DCapConstants.IOCMD_READ);
+                                socketChannel.write(cntOut.buffer());
+                            } else {
+                                String errmsg = "FIN : READ failed (IO not ok)";
+                                _log.error(errmsg);
+                                cntOut.writeFIN(DCapConstants.IOCMD_READ,
+                                      CacheException.ERROR_IO_DISK, errmsg);
+                                socketChannel.write(cntOut.buffer());
+                            }
+                        } else {
+
+                            String errmsg = "ACK : READ denied (IO not ok)";
                             _log.error(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_READ, CacheException.ERROR_IO_DISK,
+                                  errmsg);
                             socketChannel.write(cntOut.buffer());
+
                         }
-                    }else{
 
-                        String errmsg = "ACK : READ denied (IO not ok)";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_READ,CacheException.ERROR_IO_DISK,errmsg);
-                        socketChannel.write(cntOut.buffer());
-
-                    }
-
-                    break;
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The Seek
                     //
-                case DCapConstants.IOCMD_SEEK :
+                    case DCapConstants.IOCMD_SEEK:
 
-                    long offset = requestBlock.nextLong();
-                    int  whence = requestBlock.nextInt();
+                        long offset = requestBlock.nextLong();
+                        int whence = requestBlock.nextInt();
 
-                    doTheSeek(fileChannel , whence, offset, isWrite);
+                        doTheSeek(fileChannel, whence, offset, isWrite);
 
-                    if(_io_ok){
+                        if (_io_ok) {
 
-                        cntOut.writeACK(fileChannel.position());
-                        socketChannel.write(cntOut.buffer());
+                            cntOut.writeACK(fileChannel.position());
+                            socketChannel.write(cntOut.buffer());
 
-                    }else{
+                        } else {
 
-                        String errmsg = "SEEK failed : IOError ";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK,6,errmsg);
-                        socketChannel.write(cntOut.buffer());
+                            String errmsg = "SEEK failed : IOError ";
+                            _log.error(errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK, 6, errmsg);
+                            socketChannel.write(cntOut.buffer());
 
-                    }
+                        }
 
-                    break;
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The IOCMD_SEEK_AND_READ
                     //
-                case DCapConstants.IOCMD_SEEK_AND_READ :
+                    case DCapConstants.IOCMD_SEEK_AND_READ:
 
-                    offset    = requestBlock.nextLong();
-                    whence    = requestBlock.nextInt();
-                    blockSize = requestBlock.nextLong();
+                        offset = requestBlock.nextLong();
+                        whence = requestBlock.nextInt();
+                        blockSize = requestBlock.nextLong();
 
-                    if(_io_ok){
+                        if (_io_ok) {
 
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ);
-                        socketChannel.write(cntOut.buffer());
-
-                        doTheSeek(fileChannel, whence, offset, isWrite);
-
-                        if(_io_ok) {
-                            doTheRead(fileChannel, cntOut, socketChannel, blockSize);
-                        }
-
-                        if(_io_ok){
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ);
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ);
                             socketChannel.write(cntOut.buffer());
-                        }else{
-                            String errmsg = "FIN : SEEK_READ failed (IO not ok)";
+
+                            doTheSeek(fileChannel, whence, offset, isWrite);
+
+                            if (_io_ok) {
+                                doTheRead(fileChannel, cntOut, socketChannel, blockSize);
+                            }
+
+                            if (_io_ok) {
+                                cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ);
+                                socketChannel.write(cntOut.buffer());
+                            } else {
+                                String errmsg = "FIN : SEEK_READ failed (IO not ok)";
+                                _log.error(errmsg);
+                                cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,
+                                      CacheException.ERROR_IO_DISK, errmsg);
+                                socketChannel.write(cntOut.buffer());
+                            }
+
+                        } else {
+                            String errmsg = "SEEK_AND_READ denied : IOError ";
                             _log.error(errmsg);
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ,
+                                  CacheException.ERROR_IO_DISK, errmsg);
                             socketChannel.write(cntOut.buffer());
                         }
-
-                    }else{
-                        String errmsg = "SEEK_AND_READ denied : IOError " ;
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ,CacheException.ERROR_IO_DISK,errmsg);
-                        socketChannel.write(cntOut.buffer());
-                    }
-                    break;
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The IOCMD_SEEK_AND_WRITE
                     //
-                case DCapConstants.IOCMD_SEEK_AND_WRITE :
+                    case DCapConstants.IOCMD_SEEK_AND_WRITE:
 
-                    offset    = requestBlock.nextLong();
-                    whence    = requestBlock.nextInt();
+                        offset = requestBlock.nextLong();
+                        whence = requestBlock.nextInt();
 
-                    if(!_io_ok) {
-                        String errmsg = "SEEK_AND_WRITE denied : IOError";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
-                        socketChannel.write(cntOut.buffer());
-                    } else if (!isWrite) {
-                        String errmsg = "SEEK_AND_WRITE denied (not allowed)";
-                        _log.error(errmsg);
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
-                        socketChannel.write(cntOut.buffer());
-                    } else {
-
-                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE);
-                        socketChannel.write(cntOut.buffer());
-
-                        doTheSeek(fileChannel, whence, offset, isWrite);
-
-                        if(_io_ok) {
-                            doTheWrite(fileChannel,
-                                    cntOut,
-                                    socketChannel);
-                        }
-
-                        if(_io_ok){
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE);
+                        if (!_io_ok) {
+                            String errmsg = "SEEK_AND_WRITE denied : IOError";
+                            _log.error(errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE,
+                                  CacheException.ERROR_IO_DISK, errmsg);
                             socketChannel.write(cntOut.buffer());
-                        }else{
-                            String errmsg = "SEEK_AND_WRITE failed : " + (ioException == null ? "IOError" : Exceptions.messageOrClassName(ioException));
-                            int rc;
-                            if (ioException instanceof OutOfDiskException) {
-                                _log.debug(errmsg);
-                                rc = CacheException.RESOURCE;
-                            } else {
-                                _log.error(errmsg);
-                                rc = CacheException.ERROR_IO_DISK;
-                            }
-                            cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE, rc, errmsg);
-                        }
+                        } else if (!isWrite) {
+                            String errmsg = "SEEK_AND_WRITE denied (not allowed)";
+                            _log.error(errmsg);
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE,
+                                  CacheException.ERROR_IO_DISK, errmsg);
+                            socketChannel.write(cntOut.buffer());
+                        } else {
 
-                    }
-                    break;
+                            cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE);
+                            socketChannel.write(cntOut.buffer());
+
+                            doTheSeek(fileChannel, whence, offset, isWrite);
+
+                            if (_io_ok) {
+                                doTheWrite(fileChannel,
+                                      cntOut,
+                                      socketChannel);
+                            }
+
+                            if (_io_ok) {
+                                cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE);
+                                socketChannel.write(cntOut.buffer());
+                            } else {
+                                String errmsg =
+                                      "SEEK_AND_WRITE failed : " + (ioException == null ? "IOError"
+                                            : Exceptions.messageOrClassName(ioException));
+                                int rc;
+                                if (ioException instanceof OutOfDiskException) {
+                                    _log.debug(errmsg);
+                                    rc = CacheException.RESOURCE;
+                                } else {
+                                    _log.error(errmsg);
+                                    rc = CacheException.ERROR_IO_DISK;
+                                }
+                                cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE, rc, errmsg);
+                            }
+
+                        }
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The IOCMD_CLOSE
                     //
-                case DCapConstants.IOCMD_CLOSE :
+                    case DCapConstants.IOCMD_CLOSE:
 
-                    if(_io_ok){
-                        cntOut.writeACK(DCapConstants.IOCMD_CLOSE);
-                        socketChannel.write(cntOut.buffer());
+                        if (_io_ok) {
+                            cntOut.writeACK(DCapConstants.IOCMD_CLOSE);
+                            socketChannel.write(cntOut.buffer());
 
-                        try{
-                            while(requestBlock.remaining() > 4){
-                                scanCloseBlock(requestBlock,storage);
+                            try {
+                                while (requestBlock.remaining() > 4) {
+                                    scanCloseBlock(requestBlock, storage);
+                                }
+                            } catch (Exception ee) {
+                                _log.error("Problem in close block {}", ee.toString());
                             }
-                        }catch(Exception ee){
-                            _log.error("Problem in close block {}", ee.toString());
+                        } else {
+                            cntOut.writeACK(DCapConstants.IOCMD_CLOSE, CacheException.ERROR_IO_DISK,
+                                  "IOError");
+                            socketChannel.write(cntOut.buffer());
                         }
-                    }else{
-                        cntOut.writeACK(DCapConstants.IOCMD_CLOSE,CacheException.ERROR_IO_DISK,"IOError");
-                        socketChannel.write(cntOut.buffer());
-                    }
-                    notDone = false;
-                    break;
+                        notDone = false;
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The IOCMD_LOCATE
                     //
-                case DCapConstants.IOCMD_LOCATE :
+                    case DCapConstants.IOCMD_LOCATE:
 
-                    try{
-                        long size     = fileChannel.position();
-                        long location = fileChannel.size();
-                        _log.debug("LOCATE : size={};position={}", size, location);
-                        cntOut.writeACK(location, size);
-                        socketChannel.write(cntOut.buffer());
-                    }catch(Exception e){
-                        cntOut.writeACK(DCapConstants.IOCMD_LOCATE,-1,e.toString());
-                        socketChannel.write(cntOut.buffer());
-                    }
-                    break;
+                        try {
+                            long size = fileChannel.position();
+                            long location = fileChannel.size();
+                            _log.debug("LOCATE : size={};position={}", size, location);
+                            cntOut.writeACK(location, size);
+                            socketChannel.write(cntOut.buffer());
+                        } catch (Exception e) {
+                            cntOut.writeACK(DCapConstants.IOCMD_LOCATE, -1, e.toString());
+                            socketChannel.write(cntOut.buffer());
+                        }
+                        break;
                     //-------------------------------------------------------------
                     //
                     //                     The IOCMD_READV (vector read)
                     //
-                case DCapConstants.IOCMD_READV :
+                    case DCapConstants.IOCMD_READV:
 
-                    try{
+                        try {
 
-                        if(_io_ok){
+                            if (_io_ok) {
 
-                            cntOut.writeACK(DCapConstants.IOCMD_READV);
-                            socketChannel.write(cntOut.buffer());
-
-                            doTheReadv(fileChannel, cntOut, socketChannel, requestBlock);
-
-                            if(_io_ok){
-                                cntOut.writeFIN(DCapConstants.IOCMD_READV);
+                                cntOut.writeACK(DCapConstants.IOCMD_READV);
                                 socketChannel.write(cntOut.buffer());
-                            }else{
-                                String errmsg = "FIN : READV failed (IO not ok)";
+
+                                doTheReadv(fileChannel, cntOut, socketChannel, requestBlock);
+
+                                if (_io_ok) {
+                                    cntOut.writeFIN(DCapConstants.IOCMD_READV);
+                                    socketChannel.write(cntOut.buffer());
+                                } else {
+                                    String errmsg = "FIN : READV failed (IO not ok)";
+                                    _log.error(errmsg);
+                                    cntOut.writeFIN(DCapConstants.IOCMD_READV,
+                                          CacheException.ERROR_IO_DISK, errmsg);
+                                    socketChannel.write(cntOut.buffer());
+                                }
+                            } else {
+
+                                String errmsg = "ACK : READV denied (IO not ok)";
                                 _log.error(errmsg);
-                                cntOut.writeFIN(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
+                                cntOut.writeACK(DCapConstants.IOCMD_READV,
+                                      CacheException.ERROR_IO_DISK, errmsg);
                                 socketChannel.write(cntOut.buffer());
+
                             }
-                        }else{
 
-                            String errmsg = "ACK : READV denied (IO not ok)";
-                            _log.error(errmsg);
-                            cntOut.writeACK(DCapConstants.IOCMD_READV,CacheException.ERROR_IO_DISK,errmsg);
+                        } catch (Exception e) {
+                            cntOut.writeACK(DCapConstants.IOCMD_READV, -1, e.toString());
                             socketChannel.write(cntOut.buffer());
-
                         }
-
-                    }catch(Exception e){
-                        cntOut.writeACK(DCapConstants.IOCMD_READV,-1,e.toString());
+                        break;
+                    default:
+                        cntOut.writeACK(666, 9, "Invalid mover command : " + requestBlock);
                         socketChannel.write(cntOut.buffer());
-                    }
-                    break;
-                default :
-                    cntOut.writeACK(666, 9,"Invalid mover command : "+requestBlock);
-                    socketChannel.write(cntOut.buffer());
 
 
                 }
 
             }
-        }catch(RuntimeException e){
-            _log.error("Problem in command block : "+requestBlock, e);
+        } catch (RuntimeException e) {
+            _log.error("Problem in command block : " + requestBlock, e);
             ioException = e;
         } catch (ClosedByInterruptException ee) {
             // clear interrupted state
@@ -731,24 +768,26 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         } catch (EOFException e) {
             _log.debug("Dataconnection closed by peer : {}", e.toString());
             ioException = e;
-        }catch(Exception e){
+        } catch (Exception e) {
             ioException = e;
-        }finally{
-            try{
+        } finally {
+            try {
                 _logSocketIO.debug("Socket CLOSE remote = {}:{} local {}:{}",
-                        socketChannel.socket().getInetAddress(), socketChannel.socket().getPort(),
-                        socketChannel.socket().getLocalAddress(), socketChannel.socket().getLocalPort());
+                      socketChannel.socket().getInetAddress(), socketChannel.socket().getPort(),
+                      socketChannel.socket().getLocalAddress(),
+                      socketChannel.socket().getLocalPort());
                 socketChannel.close();
-            }catch(Exception xe){}
+            } catch (Exception xe) {
+            }
 
             dcapProtocolInfo.setBytesTransferred(_bytesTransferred);
 
             _transferTime = System.currentTimeMillis() -
-                _transferStarted;
+                  _transferStarted;
             dcapProtocolInfo.setTransferTime(_transferTime);
 
             _log.info("(Transfer finished : {} bytes in {} seconds) ",
-                    _bytesTransferred, _transferTime/1000);
+                  _bytesTransferred, _transferTime / 1000);
 
             //
             // if we got an EOF from the inputstream
@@ -757,18 +796,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             // got an IO error report from pool.
             //
 
-            if(! _io_ok) {
+            if (!_io_ok) {
                 if (ioException instanceof OutOfDiskException) {
                     throw ioException;
                 } else {
                     throw new
-                            DiskErrorCacheException(
-                                       "Disk I/O Error " +
-                                       (ioException!=null?ioException.toString():""));
+                          DiskErrorCacheException(
+                          "Disk I/O Error " +
+                                (ioException != null ? ioException.toString() : ""));
                 }
-            }else{
+            } else {
                 if (ioException != null && !(ioException instanceof EOFException)) {
-                     _log.warn("Problem in command block : {} {}", requestBlock, ioException.toString());
+                    _log.warn("Problem in command block : {} {}", requestBlock,
+                          ioException.toString());
                     throw ioException;
                 }
             }
@@ -777,9 +817,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
 
     }
-    private void doTheReadv(RepositoryChannel fileChannel, DCapOutputByteBuffer cntOut,
-                            SocketChannel socketChannel, RequestBlock requestBLock) throws Exception {
 
+    private void doTheReadv(RepositoryChannel fileChannel, DCapOutputByteBuffer cntOut,
+          SocketChannel socketChannel, RequestBlock requestBLock) throws Exception {
 
         cntOut.writeDATA_HEADER();
         socketChannel.write(cntOut.buffer());
@@ -787,8 +827,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         int blocks = requestBLock.nextInt();
         _log.debug("READV: {} to read", blocks);
         final int maxBuffer = _bigBuffer.capacity() - 4;
-        for(int i = 0; i < blocks; i++) {
-
+        for (int i = 0; i < blocks; i++) {
 
             long offset = requestBLock.nextLong();
             int count = requestBLock.nextInt();
@@ -796,22 +835,22 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
             _log.debug("READV: offset/len: {}/{}", offset, count);
 
-            while(count > 0) {
+            while (count > 0) {
 
                 int bytesToRead = maxBuffer > count ? count : maxBuffer;
                 int rc;
-                try{
-                    _bigBuffer.clear().limit(bytesToRead+4);
+                try {
+                    _bigBuffer.clear().limit(bytesToRead + 4);
                     _bigBuffer.position(4);
                     rc = fileChannel.read(_bigBuffer, offset + (len - count));
-                    if(rc <= 0) {
+                    if (rc <= 0) {
                         break;
                     }
-                }catch (ClosedByInterruptException ee) {
+                } catch (ClosedByInterruptException ee) {
                     // clear interrupted state
                     Thread.interrupted();
                     throw new InterruptedException(ee.getMessage());
-                }catch(IOException ee){
+                } catch (IOException ee) {
                     _io_ok = false;
                     break;
                 }
@@ -828,6 +867,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
 
     }
+
     private void scanCloseBlock(RequestBlock requestBlock, StorageInfo storage) {
 
         //
@@ -841,21 +881,21 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         //          n        checksum
         //
         int blockSize = requestBlock.nextInt();
-        if(blockSize < 4){
+        if (blockSize < 4) {
             _log.error("Not a valid block size in close");
             throw new
-                IllegalArgumentException("Not a valid block size in close");
+                  IllegalArgumentException("Not a valid block size in close");
         }
 
         int blockMode = requestBlock.nextInt();
-        if(blockMode != 1){ // crc block
+        if (blockMode != 1) { // crc block
             _log.error("Unknown block mode ({}) in close", blockMode);
-            requestBlock.skip(blockSize-4);
-            return ;
+            requestBlock.skip(blockSize - 4);
+            return;
         }
         int crcType = requestBlock.nextInt();
 
-        byte [] array = new byte[blockSize-8];
+        byte[] array = new byte[blockSize - 8];
 
         requestBlock.get(array);
 
@@ -864,51 +904,51 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         storage.setKey("flag-c", checksum.toString());
 
     }
+
     private void doTheSeek(RepositoryChannel fileChannel, int whence, long offset,
-                            boolean writeAllowed)
-    {
+          boolean writeAllowed) {
 
-        try{
-            long eofSize   = fileChannel.size();
-            long position  = fileChannel.position();
+        try {
+            long eofSize = fileChannel.size();
+            long position = fileChannel.position();
             long newOffset;
-            switch(whence){
+            switch (whence) {
 
-            case DCapConstants.IOCMD_SEEK_SET :
+                case DCapConstants.IOCMD_SEEK_SET:
 
-                _log.debug("SEEK {} SEEK_SET", offset);
-                //
-                // this should reset the io state
-                //
-                if(offset == 0L) {
-                    _io_ok = true;
-                }
-                //
-                newOffset = offset;
+                    _log.debug("SEEK {} SEEK_SET", offset);
+                    //
+                    // this should reset the io state
+                    //
+                    if (offset == 0L) {
+                        _io_ok = true;
+                    }
+                    //
+                    newOffset = offset;
 
-                break;
+                    break;
 
-            case DCapConstants.IOCMD_SEEK_CURRENT :
+                case DCapConstants.IOCMD_SEEK_CURRENT:
 
-                _log.debug("SEEK {} SEEK_CURRENT", offset);
-                newOffset = position + offset;
+                    _log.debug("SEEK {} SEEK_CURRENT", offset);
+                    newOffset = position + offset;
 
-                break;
-            case DCapConstants.IOCMD_SEEK_END :
+                    break;
+                case DCapConstants.IOCMD_SEEK_END:
 
-                _log.debug("SEEK {} SEEK_END", offset);
-                newOffset = eofSize + offset;
+                    _log.debug("SEEK {} SEEK_END", offset);
+                    newOffset = eofSize + offset;
 
-                break;
-            default :
+                    break;
+                default:
 
-                throw new
-                    IllegalArgumentException("Invalid seek mode : "+whence);
+                    throw new
+                          IllegalArgumentException("Invalid seek mode : " + whence);
 
             }
-            if((newOffset > eofSize) && ! writeAllowed) {
+            if ((newOffset > eofSize) && !writeAllowed) {
                 throw new
-                        IOException("Seek beyond EOF not allowed (write not allowed)");
+                      IOException("Seek beyond EOF not allowed (write not allowed)");
             }
 
             //
@@ -922,7 +962,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             //
             // _spaceMonitorHandler.newFilePosition(newOffset);
             //
-        }catch(Exception ee){
+        } catch (Exception ee) {
             //
             //          don't disable pools because of this.
             //
@@ -932,31 +972,32 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
 
     }
-    private void doTheWrite(RepositoryChannel          fileChannel,
-                             DCapOutputByteBuffer cntOut,
-                             SocketChannel        socketChannel ) throws Exception{
 
-        int     rest;
-        int     size, rc;
+    private void doTheWrite(RepositoryChannel fileChannel,
+          DCapOutputByteBuffer cntOut,
+          SocketChannel socketChannel) throws Exception {
+
+        int rest;
+        int size, rc;
 
         RequestBlock requestBlock = new RequestBlock();
         requestBlock.read(socketChannel);
 
-        if(requestBlock.getCommandCode() != DCapConstants.IOCMD_DATA) {
+        if (requestBlock.getCommandCode() != DCapConstants.IOCMD_DATA) {
             throw new
-                    IOException("Expecting : " + DCapConstants.IOCMD_DATA + "; got : " + requestBlock
-                    .getCommandCode());
+                  IOException("Expecting : " + DCapConstants.IOCMD_DATA + "; got : " + requestBlock
+                  .getCommandCode());
         }
 
-        while(! Thread.currentThread().isInterrupted()){
+        while (!Thread.currentThread().isInterrupted()) {
 
             _status = "WaitingForSize";
 
             _bigBuffer.clear().limit(4);
-            while(_bigBuffer.hasRemaining()){
-                if(socketChannel.read(_bigBuffer) < 0) {
+            while (_bigBuffer.hasRemaining()) {
+                if (socketChannel.read(_bigBuffer) < 0) {
                     throw new
-                            EOFException("EOF on input socket");
+                          EOFException("EOF on input socket");
                 }
             }
             _bigBuffer.rewind();
@@ -969,17 +1010,17 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             // terribly wrong.
             //
             long bytesAdded = 0L;
-            if(rest == 0) {
+            if (rest == 0) {
                 continue;
             }
-            if(rest < 0) {
+            if (rest < 0) {
                 break;
             }
 
-            while(rest > 0 ){
+            while (rest > 0) {
 
                 size = _bigBuffer.capacity() > rest ?
-                    rest : _bigBuffer.capacity();
+                      rest : _bigBuffer.capacity();
 
                 _status = "WaitingForInput";
 
@@ -987,15 +1028,15 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                 rc = socketChannel.read(_bigBuffer);
 
-                if(rc <= 0) {
+                if (rc <= 0) {
                     break;
                 }
 
-                if(_io_ok){
+                if (_io_ok) {
 
                     _status = "WaitingForWrite";
 
-                    try{
+                    try {
 
                         _bigBuffer.flip();
                         bytesAdded += fileChannel.write(_bigBuffer);
@@ -1006,15 +1047,17 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     } catch (OutOfDiskException e) {
                         _io_ok = false;
                         ioException = e;
-                    }catch(IOException ioe){
+                    } catch (IOException ioe) {
                         _log.error("IOException in writing data to disk : {}", ioe.toString());
                         _io_ok = false;
                     }
                 }
                 rest -= rc;
                 _bytesTransferred += rc;
-                if((_ioError > 0L) &&
-                    (_bytesTransferred > _ioError)){ _io_ok = false; }
+                if ((_ioError > 0L) &&
+                      (_bytesTransferred > _ioError)) {
+                    _io_ok = false;
+                }
             }
 
             _log.debug("Block Done");
@@ -1023,10 +1066,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     }
 
-    private void doTheRead(RepositoryChannel           fileChannel,
-                            DCapOutputByteBuffer  cntOut,
-                            SocketChannel         socketChannel,
-                            long                  blockSize) throws Exception{
+    private void doTheRead(RepositoryChannel fileChannel,
+          DCapOutputByteBuffer cntOut,
+          SocketChannel socketChannel,
+          long blockSize) throws Exception {
 
         //
         // REQUEST WRITE
@@ -1035,32 +1078,32 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         socketChannel.write(cntOut.buffer());
         //
         //
-        if(blockSize == 0){
+        if (blockSize == 0) {
             cntOut.writeEND_OF_BLOCK();
             socketChannel.write(cntOut.buffer());
             return;
         }
-        long    rest = blockSize;
-        int     size, rc;
+        long rest = blockSize;
+        int size, rc;
 
         final int maxBuffer = _bigBuffer.capacity() - 4;
 
-        while(! Thread.currentThread().isInterrupted()){
+        while (!Thread.currentThread().isInterrupted()) {
 
-            size = maxBuffer > rest ? (int)rest : maxBuffer;
+            size = maxBuffer > rest ? (int) rest : maxBuffer;
 
-            try{
-                _bigBuffer.clear().limit(size+4);
+            try {
+                _bigBuffer.clear().limit(size + 4);
                 _bigBuffer.position(4);
                 rc = fileChannel.read(_bigBuffer);
-                if(rc <= 0) {
+                if (rc <= 0) {
                     break;
                 }
             } catch (ClosedByInterruptException ee) {
                 // clear interrupted state
                 Thread.interrupted();
                 throw new InterruptedException(ee.getMessage());
-            }catch(IOException ee){
+            } catch (IOException ee) {
                 _io_ok = false;
                 break;
             }
@@ -1069,11 +1112,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             socketChannel.write(_bigBuffer);
             rest -= rc;
             _bytesTransferred += rc;
-            if((_ioError > 0L) && (_bytesTransferred > _ioError)){
+            if ((_ioError > 0L) && (_bytesTransferred > _ioError)) {
                 _io_ok = false;
                 break;
             }
-            if(rest <= 0) {
+            if (rest <= 0) {
                 break;
             }
         }
@@ -1084,14 +1127,21 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         socketChannel.write(cntOut.buffer());
 
     }
+
     @Override
-    public long getLastTransferred() { return _lastTransferred; }
+    public long getLastTransferred() {
+        return _lastTransferred;
+    }
+
     @Override
-    public long getBytesTransferred(){ return _bytesTransferred ; }
+    public long getBytesTransferred() {
+        return _bytesTransferred;
+    }
+
     @Override
-    public long getTransferTime(){
+    public long getTransferTime() {
         return _transferTime < 0 ?
-            System.currentTimeMillis() - _transferStarted :
-            _transferTime ;
+              System.currentTimeMillis() - _transferStarted :
+              _transferTime;
     }
 }

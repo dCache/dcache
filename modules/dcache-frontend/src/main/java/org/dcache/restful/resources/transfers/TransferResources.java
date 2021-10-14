@@ -59,16 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.transfers;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TransferInfo;
+import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
+import java.util.UUID;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -77,17 +77,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import java.util.UUID;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TransferInfo;
-
-import dmg.util.Exceptions;
-
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.RequestUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * <p>RESTful API to the {@link TransferInfoService} service.</p>
@@ -95,9 +90,10 @@ import org.dcache.restful.util.RequestUser;
  * @version v1.0
  */
 @Component
-@Api(value = "transfers", authorizations = { @Authorization("basicAuth") })
+@Api(value = "transfers", authorizations = {@Authorization("basicAuth")})
 @Path("/transfers")
 public final class TransferResources {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferResources.class);
 
     @Inject
@@ -106,76 +102,76 @@ public final class TransferResources {
 
     @GET
     @ApiOperation("Provide a list of all client-initiated transfers that are "
-                    + "either queued or currently running.  Internal (pool-to-pool) "
-                    + "transfers are excluded.")
+          + "either queued or currently running.  Internal (pool-to-pool) "
+          + "transfers are excluded.")
     @ApiResponses({
-                    @ApiResponse(code = 403, message = "User subject must contain uid to access transfers."),
-                    @ApiResponse(code = 500, message = "Internal Server Error"),
+          @ApiResponse(code = 403, message = "User subject must contain uid to access transfers."),
+          @ApiResponse(code = 500, message = "Internal Server Error"),
     })
     @Produces(MediaType.APPLICATION_JSON)
     public SnapshotList<TransferInfo> getTransfers(@ApiParam("Use the snapshot "
-                                                    + "corresponding to this UUID.  The "
-                                                    + "contract with the service is that if the "
-                                                    + "parameter value is null, the current snapshot "
-                                                    + "will be used, regardless of whether offset and "
-                                                    + "limit are still valid.  Initial/refresh "
-                                                    + "calls should always be without a token.  "
-                                                    + "Subsequent calls should send back the "
-                                                    + "current token; in the case that it no "
-                                                    + "longer corresponds to the current list, "
-                                                    + "the service will return a null token "
-                                                    + "and an empty list, and the client will "
-                                                    + "need to recall the method without a "
-                                                    + "token (refresh).")
-                                                   @QueryParam("token") UUID token,
-                                                   @ApiParam("The number of items to skip.")
-                                                   @QueryParam("offset") Integer offset,
-                                                   @ApiParam("The maximum number items to return.")
-                                                   @QueryParam("limit") Integer limit,
-                                                   @ApiParam("Select transfers in this state (NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE)")
-                                                   @QueryParam("state") String state,
-                                                   @ApiParam("Select transfers initiated through this door.")
-                                                   @QueryParam("door") String door,
-                                                   @ApiParam("Select transfers initiated through a door in this domain.")
-                                                   @QueryParam("domain") String domain,
-                                                   @ApiParam("Select transfers using this protocol.")
-                                                   @QueryParam("prot") String protocol,
-                                                   @ApiParam("Select transfers initiated by this user.")
-                                                   @QueryParam("uid") String uid,
-                                                   @ApiParam("Select transfers initiated by a member of this group.")
-                                                   @QueryParam("gid") String gid,
-                                                   @ApiParam("Select transfers initiated by a member of this vomsgroup.")
-                                                   @QueryParam("vomsgroup") String vomsgroup,
-                                                   @ApiParam("Select transfers involving this path.")
-                                                   @QueryParam("path") String path,
-                                                   @ApiParam("Select transfers involving this pnfsid.")
-                                                   @QueryParam("pnfsid") String pnfsid,
-                                                   @ApiParam("Select transfers involving this pool.")
-                                                   @QueryParam("pool") String pool,
-                                                   @ApiParam("Select transfers involving this client.")
-                                                   @QueryParam("client") String client,
-                                                   @ApiParam("A comma-seperated list of fields to sort the responses.")
-                                                   @DefaultValue("door,waiting")
-                                                   @QueryParam("sort") String sort) {
+          + "corresponding to this UUID.  The "
+          + "contract with the service is that if the "
+          + "parameter value is null, the current snapshot "
+          + "will be used, regardless of whether offset and "
+          + "limit are still valid.  Initial/refresh "
+          + "calls should always be without a token.  "
+          + "Subsequent calls should send back the "
+          + "current token; in the case that it no "
+          + "longer corresponds to the current list, "
+          + "the service will return a null token "
+          + "and an empty list, and the client will "
+          + "need to recall the method without a "
+          + "token (refresh).")
+    @QueryParam("token") UUID token,
+          @ApiParam("The number of items to skip.")
+          @QueryParam("offset") Integer offset,
+          @ApiParam("The maximum number items to return.")
+          @QueryParam("limit") Integer limit,
+          @ApiParam("Select transfers in this state (NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE)")
+          @QueryParam("state") String state,
+          @ApiParam("Select transfers initiated through this door.")
+          @QueryParam("door") String door,
+          @ApiParam("Select transfers initiated through a door in this domain.")
+          @QueryParam("domain") String domain,
+          @ApiParam("Select transfers using this protocol.")
+          @QueryParam("prot") String protocol,
+          @ApiParam("Select transfers initiated by this user.")
+          @QueryParam("uid") String uid,
+          @ApiParam("Select transfers initiated by a member of this group.")
+          @QueryParam("gid") String gid,
+          @ApiParam("Select transfers initiated by a member of this vomsgroup.")
+          @QueryParam("vomsgroup") String vomsgroup,
+          @ApiParam("Select transfers involving this path.")
+          @QueryParam("path") String path,
+          @ApiParam("Select transfers involving this pnfsid.")
+          @QueryParam("pnfsid") String pnfsid,
+          @ApiParam("Select transfers involving this pool.")
+          @QueryParam("pool") String pool,
+          @ApiParam("Select transfers involving this client.")
+          @QueryParam("client") String client,
+          @ApiParam("A comma-seperated list of fields to sort the responses.")
+          @DefaultValue("door,waiting")
+          @QueryParam("sort") String sort) {
         try {
             Long suid = RequestUser.getSubjectUidForFileOperations(unlimitedOperationVisibility);
 
             return service.get(token,
-                               offset,
-                               limit,
-                               suid == null ? null : String.valueOf(suid),
-                               state,
-                               door,
-                               domain,
-                               protocol,
-                               uid,
-                               gid,
-                               vomsgroup,
-                               path,
-                               pnfsid,
-                               pool,
-                               client,
-                               sort);
+                  offset,
+                  limit,
+                  suid == null ? null : String.valueOf(suid),
+                  state,
+                  door,
+                  domain,
+                  protocol,
+                  uid,
+                  gid,
+                  vomsgroup,
+                  path,
+                  pnfsid,
+                  pool,
+                  client,
+                  sort);
         } catch (CacheException e) {
             LOGGER.warn(Exceptions.meaningfulMessage(e));
             throw new InternalServerErrorException(e);

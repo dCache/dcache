@@ -19,14 +19,21 @@
  */
 package org.dcache.gplazma.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.security.auth.UserPrincipal;
-import com.sun.security.auth.module.LdapLoginModule;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 import com.google.common.collect.ImmutableMap;
-
+import com.sun.security.auth.UserPrincipal;
+import com.sun.security.auth.module.LdapLoginModule;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -40,33 +47,21 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-
-import java.security.Principal;
-import java.util.function.Predicate;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.NoSuchElementException;
-import java.util.function.Function;
-
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-
-import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * gPlazma plug-in which uses LDAP server to provide requested information.
- *
+ * <p>
  * Can be combined with other map/auth plugins:
  * <pre>
  *   auth optional  x509
@@ -77,7 +72,7 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  *   identity requisite ldap
  *   session requisite ldap
  * </pre>
- *
+ * <p>
  * Corresponding configuration in <b>dcache.conf</b>
  * <pre>
  *    gplazma.ldap.url = ldap://ldap.example.com:389/
@@ -91,7 +86,8 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  *
  * @since 2.3
  */
-public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin, GPlazmaAuthenticationPlugin {
+public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazmaMappingPlugin,
+      GPlazmaAuthenticationPlugin {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Ldap.class);
 
@@ -140,7 +136,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     /**
      * Search control to retrieve uidNumber attribute.
      */
-    private static final SearchControls SC_UID_GID_NUMBER = buildSearchControls(USER_ID_ATTRIBUTE, UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE);
+    private static final SearchControls SC_UID_GID_NUMBER = buildSearchControls(USER_ID_ATTRIBUTE,
+          UID_NUMBER_ATTRIBUTE, GID_NUMBER_ATTRIBUTE);
 
     /**
      * Search control to retrieve all attribute.
@@ -158,18 +155,17 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         /**
          * Transform given template string with values from provided attributes.
          *
-         * @param s string to transform.
+         * @param s     string to transform.
          * @param attrs attributes that have to be used.
-         * @return a string which is constructed from the template and
-         * attributes.
+         * @return a string which is constructed from the template and attributes.
          * @throws NamingException if attributes extraction failed.
          */
         String transform(String s, Attributes attrs) throws NamingException;
     }
 
     /**
-     * String transformation function, which replaces %attr% in original string
-     * with corresponding attribute value.
+     * String transformation function, which replaces %attr% in original string with corresponding
+     * attribute value.
      */
     private static final ReplaceKeywords REPLACE_BY_ATTRIBUTES = (s, attrs) -> {
         NamingEnumeration<? extends Attribute> na = attrs.getAll();
@@ -188,7 +184,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     @FunctionalInterface
     private interface LdapGroupSearch {
 
-        Set<GidPrincipal> searchGroup(DirContext ctx, Principal p, String peopleOU, String groupOU) throws NamingException;
+        Set<GidPrincipal> searchGroup(DirContext ctx, Principal p, String peopleOU, String groupOU)
+              throws NamingException;
     }
 
     /**
@@ -197,28 +194,30 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private static final LdapGroupSearch GROUP_BY_MEMBER_UID = (c, p, pou, gou) -> {
 
         NamingEnumeration<SearchResult> groupResult = c.search(gou,
-                String.format("%s=%s", MEMBER_UID_ATTRIBUTE, p.getName()),
-                SC_GID_NUMBER);
+              String.format("%s=%s", MEMBER_UID_ATTRIBUTE, p.getName()),
+              SC_GID_NUMBER);
 
         try {
-            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE,
+                  s -> new GidPrincipal(s, false));
         } finally {
             groupResult.close();
         }
     };
 
     /**
-     * Use {@code uniqueMember} attribute to discover group membership as
-     * defined by RFC2307 and RFC2307bis.
+     * Use {@code uniqueMember} attribute to discover group membership as defined by RFC2307 and
+     * RFC2307bis.
      */
     private static final LdapGroupSearch GROUP_BY_UNIQUE_MEMBER = (c, p, pou, gou) -> {
 
         NamingEnumeration<SearchResult> groupResult = c.search(gou,
-                String.format("%s=uid=%s,%s", UNIQUE_MEMBER_ATTRIBUTE, p.getName(), pou),
-                SC_GID_NUMBER);
+              String.format("%s=uid=%s,%s", UNIQUE_MEMBER_ATTRIBUTE, p.getName(), pou),
+              SC_GID_NUMBER);
 
         try {
-            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE, s -> new GidPrincipal(s, false));
+            return extractAttributes(groupResult, GID_NUMBER_ATTRIBUTE,
+                  s -> new GidPrincipal(s, false));
         } finally {
             groupResult.close();
         }
@@ -300,8 +299,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     private final Map<String, Object> globalLoginOptions;
 
     /**
-     * If true, then map stage will try to use uidNUmber field if UidPrincipal is
-     * present.
+     * If true, then map stage will try to use uidNUmber field if UidPrincipal is present.
      */
     private final boolean tryUidMapping;
 
@@ -324,11 +322,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         userHome = properties.getProperty(LDAP_USER_HOME);
         userHomeTransformation = userHome.matches(".*%\\w+%.*")
-                ? REPLACE_BY_ATTRIBUTES : RETURN_ORIGINAL_STRING;
+              ? REPLACE_BY_ATTRIBUTES : RETURN_ORIGINAL_STRING;
 
         userRoot = properties.getProperty(LDAP_USER_ROOT);
         userRootTransformation = userRoot.matches(".*%\\w+%.*")
-                ? REPLACE_BY_ATTRIBUTES : RETURN_ORIGINAL_STRING;
+              ? REPLACE_BY_ATTRIBUTES : RETURN_ORIGINAL_STRING;
 
         switch (properties.getProperty(LDAP_GROUP_MEMBER)) {
             case "uniqueMember":
@@ -338,12 +336,13 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                 getGroupsByUid = GROUP_BY_MEMBER_UID;
                 break;
             default:
-                throw new IllegalArgumentException("Unsuported membership schema: " + properties.getProperty(LDAP_GROUP_MEMBER));
+                throw new IllegalArgumentException(
+                      "Unsuported membership schema: " + properties.getProperty(LDAP_GROUP_MEMBER));
         }
 
         ldapConnectionProperties = new Properties();
         ldapConnectionProperties.put(DirContext.INITIAL_CONTEXT_FACTORY,
-                "com.sun.jndi.ldap.LdapCtxFactory");
+              "com.sun.jndi.ldap.LdapCtxFactory");
         ldapConnectionProperties.put(DirContext.PROVIDER_URL, ldapUrl);
 
         boolean isSSL = ldapUrl.startsWith("ldaps");
@@ -364,22 +363,26 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         if ("simple".equals(properties.getProperty(LDAP_AUTH))) {
             ldapConnectionProperties.put(Context.SECURITY_AUTHENTICATION, "simple");
-            ldapConnectionProperties.put(Context.SECURITY_PRINCIPAL, properties.getProperty(LDAP_BINDDN));
-            ldapConnectionProperties.put(Context.SECURITY_CREDENTIALS, properties.getProperty(LDAP_BINDPW));
+            ldapConnectionProperties.put(Context.SECURITY_PRINCIPAL,
+                  properties.getProperty(LDAP_BINDDN));
+            ldapConnectionProperties.put(Context.SECURITY_CREDENTIALS,
+                  properties.getProperty(LDAP_BINDPW));
         }
 
         globalLoginOptions = ImmutableMap.of(
-                "userProvider", ldapUrl + "/" + peopleOU,
-                "useSSL", Boolean.toString(isSSL),
-                "userFilter", String.format(userFilter, "{USERNAME}"),
-                "useFirstPass", "true"
+              "userProvider", ldapUrl + "/" + peopleOU,
+              "useSSL", Boolean.toString(isSSL),
+              "userFilter", String.format(userFilter, "{USERNAME}"),
+              "useFirstPass", "true"
         );
     }
 
     @Override
-    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
+    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
+          Set<Principal> identifiedPrincipals) throws AuthenticationException {
 
-        Optional<PasswordCredential> password = findFirst(privateCredentials, PasswordCredential.class::isInstance).map(PasswordCredential.class::cast);
+        Optional<PasswordCredential> password = findFirst(privateCredentials,
+              PasswordCredential.class::isInstance).map(PasswordCredential.class::cast);
 
         checkAuthentication(password.isPresent(), "no login name");
 
@@ -387,9 +390,9 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         LdapLoginModule loginModule = new LdapLoginModule();
 
         Map<String, Object> loginOptions = ImmutableMap.<String, Object>builder()
-                .put(USERNAME_KEY, password.get().getUsername())
-                .put(PASSWORD_KEY, password.get().getPassword().toCharArray())
-                .build();
+              .put(USERNAME_KEY, password.get().getUsername())
+              .put(PASSWORD_KEY, password.get().getPassword().toCharArray())
+              .build();
 
         loginModule.initialize(subject, null, loginOptions, globalLoginOptions);
 
@@ -397,9 +400,9 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
             loginModule.login();
             loginModule.commit();
             subject.getPrincipals(UserPrincipal.class).stream()
-                    .map(Principal::getName)
-                    .map(UserNamePrincipal::new)
-                    .forEach(identifiedPrincipals::add);
+                  .map(Principal::getName)
+                  .map(UserNamePrincipal::new)
+                  .forEach(identifiedPrincipals::add);
 
             tryToLogout(loginModule);
         } catch (FailedLoginException e) {
@@ -436,32 +439,36 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
         //REVISIT: if we query LDAP server to user record, then we probably have to respect the provided primary GID
         boolean hasPrimaryGid = principals.stream()
-                .filter(GidPrincipal.class::isInstance)
-                .map(GidPrincipal.class::cast)
-                .anyMatch(GidPrincipal::isPrimaryGroup);
+              .filter(GidPrincipal.class::isInstance)
+              .map(GidPrincipal.class::cast)
+              .anyMatch(GidPrincipal::isPrimaryGroup);
 
         try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
             NamingEnumeration<SearchResult> sResult = ctx.search(peopleOU,
-                    String.format(filter, principal.get().getName()),
-                    SC_UID_GID_NUMBER);
+                  String.format(filter, principal.get().getName()),
+                  SC_UID_GID_NUMBER);
 
             try {
                 checkAuthentication(sResult.hasMore(), "unknown %s",
-                        isUsernameMissing ? "uid" : "username");
+                      isUsernameMissing ? "uid" : "username");
 
                 Attributes userAttr = sResult.next().getAttributes();
 
                 Principal usernamePrincipal;
                 if (isUsernameMissing) {
-                    usernamePrincipal = new UserNamePrincipal((String) userAttr.get(USER_ID_ATTRIBUTE).get());
+                    usernamePrincipal = new UserNamePrincipal(
+                          (String) userAttr.get(USER_ID_ATTRIBUTE).get());
                     principals.add(usernamePrincipal);
                 } else {
                     usernamePrincipal = principal.get();
-                    principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+                    principals.add(
+                          new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
                 }
 
-                principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), !hasPrimaryGid));
-                principals.addAll(getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
+                principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(),
+                      !hasPrimaryGid));
+                principals.addAll(
+                      getGroupsByUid.searchGroup(ctx, usernamePrincipal, peopleOU, groupOU));
             } finally {
                 sResult.close();
             }
@@ -479,8 +486,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         if (principal instanceof UserNamePrincipal) {
             mapper = (c, p) -> {
                 NamingEnumeration<SearchResult> sre = c.search(peopleOU,
-                        String.format("(%s=%s)", USER_ID_ATTRIBUTE, p.getName()),
-                        SC_UID_NUMBER);
+                      String.format("(%s=%s)", USER_ID_ATTRIBUTE, p.getName()),
+                      SC_UID_NUMBER);
 
                 try {
                     return new UidPrincipal(extractAttribute(sre, UID_NUMBER_ATTRIBUTE));
@@ -491,8 +498,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         } else if (principal instanceof GroupNamePrincipal) {
             mapper = (c, p) -> {
                 NamingEnumeration<SearchResult> sre = c.search(groupOU,
-                        String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, p.getName()),
-                        SC_GID_NUMBER);
+                      String.format("(%s=%s)", COMMON_NAME_ATTRIBUTE, p.getName()),
+                      SC_GID_NUMBER);
                 try {
                     return new GidPrincipal(extractAttribute(sre, GID_NUMBER_ATTRIBUTE), false);
                 } finally {
@@ -520,7 +527,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         if (principal instanceof GidPrincipal) {
             mapper = (c, p) -> {
                 NamingEnumeration<SearchResult> ne = c.search(groupOU,
-                        new BasicAttributes(GID_NUMBER_ATTRIBUTE, p.getName()));
+                      new BasicAttributes(GID_NUMBER_ATTRIBUTE, p.getName()));
 
                 return extractAttributes(ne, COMMON_NAME_ATTRIBUTE, GroupNamePrincipal::new);
 
@@ -528,7 +535,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         } else if (principal instanceof UidPrincipal) {
             mapper = (c, p) -> {
                 NamingEnumeration<SearchResult> ne = c.search(peopleOU,
-                        new BasicAttributes(UID_NUMBER_ATTRIBUTE, p.getName()));
+                      new BasicAttributes(UID_NUMBER_ATTRIBUTE, p.getName()));
 
                 return extractAttributes(ne, USER_ID_ATTRIBUTE, UserNamePrincipal::new);
             };
@@ -547,11 +554,14 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     }
 
     @Override
-    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
-        Optional<Principal> principal = findFirst(authorizedPrincipals, UserNamePrincipal.class::isInstance);
+    public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib)
+          throws AuthenticationException {
+        Optional<Principal> principal = findFirst(authorizedPrincipals,
+              UserNamePrincipal.class::isInstance);
         if (principal.isPresent()) {
             // shortcut: no path transitions are required. Use provided values.
-            if (userHomeTransformation == RETURN_ORIGINAL_STRING && userRootTransformation == RETURN_ORIGINAL_STRING) {
+            if (userHomeTransformation == RETURN_ORIGINAL_STRING
+                  && userRootTransformation == RETURN_ORIGINAL_STRING) {
                 attrib.add(new HomeDirectory(userHome));
                 attrib.add(new RootDirectory(userRoot));
                 return;
@@ -559,15 +569,17 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
 
             try (AutoCloseableLdapContext ctx = new AutoCloseableLdapContext()) {
                 NamingEnumeration<SearchResult> sResult = ctx.search(peopleOU,
-                        String.format(userFilter, principal.get().getName()),
-                        SC_ALL);
+                      String.format(userFilter, principal.get().getName()),
+                      SC_ALL);
 
                 try {
                     if (sResult.hasMore()) {
                         SearchResult rs = sResult.next();
                         Attributes attrs = rs.getAttributes();
-                        attrib.add(new HomeDirectory(userHomeTransformation.transform(userHome, attrs)));
-                        attrib.add(new RootDirectory(userRootTransformation.transform(userRoot, attrs)));
+                        attrib.add(
+                              new HomeDirectory(userHomeTransformation.transform(userHome, attrs)));
+                        attrib.add(
+                              new RootDirectory(userRootTransformation.transform(userRoot, attrs)));
                     } else {
                         throw new AuthenticationException("no mapping for " + principal.get());
                     }
@@ -576,7 +588,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                 }
             } catch (NamingException e) {
                 throw new AuthenticationException("no mapping: "
-                        + e.getMessage(), e);
+                      + e.getMessage(), e);
             }
         }
     }
@@ -589,8 +601,7 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     }
 
     /**
-     * A {@link InitialLdapContext} which can be used in try-with-resource
-     * block.
+     * A {@link InitialLdapContext} which can be used in try-with-resource block.
      */
     private class AutoCloseableLdapContext extends InitialLdapContext implements AutoCloseable {
 
@@ -608,7 +619,8 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
         }
     }
 
-    private static String extractAttribute(NamingEnumeration<SearchResult> sre, String attr) throws NamingException {
+    private static String extractAttribute(NamingEnumeration<SearchResult> sre, String attr)
+          throws NamingException {
         if (!sre.hasMore()) {
             throw new NoSuchElementException();
         }
@@ -620,14 +632,15 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
     /**
      * Get set of attributes extracted from the search result.
      *
-     * @param <T> type of extracted type.
-     * @param sre ldap search result.
-     * @param attr search result attribute.
+     * @param <T>    type of extracted type.
+     * @param sre    ldap search result.
+     * @param attr   search result attribute.
      * @param mapper mapping function to apply to each result element.
      * @return set of attributes.
      * @throws NamingException
      */
-    private static <T> Set<T> extractAttributes(NamingEnumeration<SearchResult> sre, String attr, Function<String, T> mapper) throws NamingException {
+    private static <T> Set<T> extractAttributes(NamingEnumeration<SearchResult> sre, String attr,
+          Function<String, T> mapper) throws NamingException {
 
         Set<T> attrs = new HashSet<>();
         while (sre.hasMore()) {

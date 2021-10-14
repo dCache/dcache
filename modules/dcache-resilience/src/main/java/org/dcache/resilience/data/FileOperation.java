@@ -61,9 +61,8 @@ package org.dcache.resilience.data;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -71,21 +70,19 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.ResilientFileTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Object stored in the {@link FileOperationMap}.</p>
  *
  * <p>Since this table may grow very large, two strategies have been
- *      adopted to try to reduce the memory footprint of each instance:</p>
+ * adopted to try to reduce the memory footprint of each instance:</p>
  *
  * <ol>
  *  <li>Enums are replaced by int values and conversion methods.</li>
@@ -122,34 +119,34 @@ import org.dcache.resilience.util.ResilientFileTask;
  *      to be unsynchronized.</p>
  */
 public final class FileOperation {
+
     private static final Logger ACTIVITY_LOGGER =
-            LoggerFactory.getLogger("org.dcache.resilience-log");
+          LoggerFactory.getLogger("org.dcache.resilience-log");
 
     /*
      * Stored state. Instead of using enum, to leave less of a memory footprint.
      * As above.
      */
-    public static final int REPLICA   = 0;
-    public static final int OUTPUT    = 1;
+    public static final int REPLICA = 0;
+    public static final int OUTPUT = 1;
     public static final int CUSTODIAL = 2;
 
     /**
-     * Stored state. Instead of using enum, to leave less of a memory footprint.
-     * The map storing operation markers is expected to be very large.
-     * Order is significant.
+     * Stored state. Instead of using enum, to leave less of a memory footprint. The map storing
+     * operation markers is expected to be very large. Order is significant.
      */
-    static final int WAITING  = 0;     // NEXT TASK READY TO RUN
-    static final int RUNNING  = 1;     // TASK SUBMITTED TO THE EXECUTOR
-    static final int DONE     = 2;     // CURRENT TASK COMPLETED WITHOUT ERROR
+    static final int WAITING = 0;     // NEXT TASK READY TO RUN
+    static final int RUNNING = 1;     // TASK SUBMITTED TO THE EXECUTOR
+    static final int DONE = 2;     // CURRENT TASK COMPLETED WITHOUT ERROR
     static final int CANCELED = 3;     // CURRENT TASK WAS TERMINATED BY USER
-    static final int FAILED   = 4;     // CURRENT TASK FAILED WITH EXCEPTION
-    static final int ABORTED  = 5;     // CANNOT DO ANYTHING FURTHER
+    static final int FAILED = 4;     // CURRENT TASK FAILED WITH EXCEPTION
+    static final int ABORTED = 5;     // CANNOT DO ANYTHING FURTHER
     static final int UNINITIALIZED = 6;
 
     private static final String TO_STRING =
-                    "%s (%s %s)(%s %s)(parent %s, count %s, retried %s)";
+          "%s (%s %s)(%s %s)(parent %s, count %s, retried %s)";
     private static final String TO_HISTORY_STRING =
-                    "%s (%s %s)(%s %s)(parent %s, retried %s) %s";
+          "%s (%s %s)(%s %s)(parent %s, retried %s) %s";
     private static final String FORMAT_STR = "yyyy/MM/dd HH:mm:ss";
 
     /*
@@ -158,8 +155,7 @@ public final class FileOperation {
     private static final int NIL = -19;
 
     /**
-     *  Seems formatting is not thread-safe, so we create a new format object
-     *  at each call.
+     * Seems formatting is not thread-safe, so we create a new format object at each call.
      */
     static String getFormattedDateFromMillis(long millis) {
         DateFormat format = new SimpleDateFormat(FORMAT_STR);
@@ -167,26 +163,26 @@ public final class FileOperation {
         return format.format(new Date(millis));
     }
 
-    private final PnfsId      pnfsId;
-    private final long        size;
-    private long              lastUpdate;
-    private int               retentionPolicy;
-    private int               poolGroup;
-    private int               storageUnit;
-    private int               parent;
-    private int               source;
-    private int               target;
-    private int               lastType;
-    private int               state;
-    private int               opCount;
-    private int               retried;
+    private final PnfsId pnfsId;
+    private final long size;
+    private long lastUpdate;
+    private int retentionPolicy;
+    private int poolGroup;
+    private int storageUnit;
+    private int parent;
+    private int source;
+    private int target;
+    private int lastType;
+    private int state;
+    private int opCount;
+    private int retried;
 
     private Collection<Integer> tried;
     private ResilientFileTask task;
-    private CacheException    exception;
+    private CacheException exception;
 
     FileOperation(PnfsId pnfsId, int pgroup, Integer sunit,
-                  int opCount, long size) {
+          int opCount, long size) {
         this(pnfsId, opCount, size);
         poolGroup = pgroup;
         storageUnit = setNilForNull(sunit);
@@ -210,7 +206,7 @@ public final class FileOperation {
     @VisibleForTesting
     public FileOperation(FileOperation operation) {
         this(operation.pnfsId, operation.poolGroup, operation.storageUnit,
-                        operation.opCount, operation.size);
+              operation.opCount, operation.size);
         lastUpdate = operation.lastUpdate;
         parent = operation.parent;
         exception = operation.exception;
@@ -269,7 +265,9 @@ public final class FileOperation {
         return retentionPolicy;
     }
 
-    public long getSize() { return size; }
+    public long getSize() {
+        return size;
+    }
 
     public Integer getSource() {
         return getNullForNil(source);
@@ -360,16 +358,16 @@ public final class FileOperation {
 
     public String toString() {
         return String.format(TO_STRING, getFormattedDateFromMillis(lastUpdate),
-                             pnfsId, getRetentionPolicyName(), lastTypeName(),
-                             getStateName(), parent == NIL ? "none" : parent,
-                             opCount, retried);
+              pnfsId, getRetentionPolicyName(), lastTypeName(),
+              getStateName(), parent == NIL ? "none" : parent,
+              opCount, retried);
     }
 
     public String toHistoryString() {
         return String.format(TO_HISTORY_STRING, getFormattedDateFromMillis(lastUpdate),
-                        pnfsId, getRetentionPolicyName(), lastTypeName(),
-                        getStateName(), parent == NIL ? "none" : parent,
-                        retried, exception == null ? "" : new ExceptionMessage(exception));
+              pnfsId, getRetentionPolicyName(), lastTypeName(),
+              getStateName(), parent == NIL ? "none" : parent,
+              retried, exception == null ? "" : new ExceptionMessage(exception));
     }
 
     @VisibleForTesting
@@ -502,15 +500,27 @@ public final class FileOperation {
     @VisibleForTesting
     synchronized void setState(String state) {
         switch (state) {
-            case "WAITING":     updateState(WAITING);   break;
-            case "RUNNING":     updateState(RUNNING);   break;
-            case "DONE":        updateState(DONE);      break;
-            case "CANCELED":    updateState(CANCELED);  break;
-            case "FAILED":      updateState(FAILED);    break;
-            case "ABORTED":     updateState(ABORTED);   break;
+            case "WAITING":
+                updateState(WAITING);
+                break;
+            case "RUNNING":
+                updateState(RUNNING);
+                break;
+            case "DONE":
+                updateState(DONE);
+                break;
+            case "CANCELED":
+                updateState(CANCELED);
+                break;
+            case "FAILED":
+                updateState(FAILED);
+                break;
+            case "ABORTED":
+                updateState(ABORTED);
+                break;
             case "UNINITIALIZED":
                 throw new IllegalArgumentException("Cannot set "
-                                + "operation to UNINITIALIZED.");
+                      + "operation to UNINITIALIZED.");
             default:
                 throw new IllegalArgumentException("No such state: " + state);
         }
@@ -518,8 +528,7 @@ public final class FileOperation {
 
     /**
      * <p>When another operation for this file/pnfsid is to be
-     *    queued, we simply overwrite the appropriate fields on
-     *    this one.</p>
+     * queued, we simply overwrite the appropriate fields on this one.</p>
      */
     synchronized void updateOperation(FileOperation operation) {
         if (operation.storageUnit != NIL) {

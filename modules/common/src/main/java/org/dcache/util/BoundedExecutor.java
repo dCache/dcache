@@ -2,7 +2,6 @@ package org.dcache.util;
 
 import com.google.common.util.concurrent.AbstractListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,20 +12,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * An executor that places a bound on the number of concurrent tasks.
- *
- * Differs from Executors#newFixedThreadPool by not holding on to idle
- * threads and by sourcing threads from another Executor rather than
- * creating them itself.
- *
- * Combined with Executors#newCachedThreadPool, the achieved semantics is
- * that of an unlimited task queue that scales the number of threads to
- * a certain limit, while also allowing those threads to time out. These
- * semantics cannot be achieved with ThreadPoolExecutor, as that class
- * will always create new threads up to the core size, even if allowing
- * core threads to time out.
+ * <p>
+ * Differs from Executors#newFixedThreadPool by not holding on to idle threads and by sourcing
+ * threads from another Executor rather than creating them itself.
+ * <p>
+ * Combined with Executors#newCachedThreadPool, the achieved semantics is that of an unlimited task
+ * queue that scales the number of threads to a certain limit, while also allowing those threads to
+ * time out. These semantics cannot be achieved with ThreadPoolExecutor, as that class will always
+ * create new threads up to the core size, even if allowing core threads to time out.
  */
-public class BoundedExecutor extends AbstractListeningExecutorService
-{
+public class BoundedExecutor extends AbstractListeningExecutorService {
+
     private final Queue<Runnable> workQueue = new ArrayDeque<>();
     private final Executor executor;
     private final List<Thread> workers;
@@ -37,8 +33,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     private final Monitor monitor = new Monitor();
     private final Monitor.Guard isTerminated = new Monitor.Guard(monitor) {
         @Override
-        public boolean isSatisfied()
-        {
+        public boolean isSatisfied() {
             return isShutdown && threads == 0;
         }
     };
@@ -46,13 +41,11 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     private final Worker worker = new Worker();
     private boolean isShutdown;
 
-    public BoundedExecutor(Executor executor, int maxThreads)
-    {
-        this(executor,  maxThreads,  Integer.MAX_VALUE);
+    public BoundedExecutor(Executor executor, int maxThreads) {
+        this(executor, maxThreads, Integer.MAX_VALUE);
     }
 
-    public BoundedExecutor(Executor executor, int maxThreads, int maxQueued)
-    {
+    public BoundedExecutor(Executor executor, int maxThreads, int maxQueued) {
         this.executor = executor;
         this.maxThreads = maxThreads;
         this.maxQueued = maxQueued;
@@ -60,8 +53,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         monitor.enter();
         try {
             isShutdown = true;
@@ -71,8 +63,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public List<Runnable> shutdownNow()
-    {
+    public List<Runnable> shutdownNow() {
         monitor.enter();
         try {
             isShutdown = true;
@@ -89,8 +80,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public boolean isShutdown()
-    {
+    public boolean isShutdown() {
         monitor.enter();
         try {
             return isShutdown;
@@ -100,8 +90,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public boolean isTerminated()
-    {
+    public boolean isTerminated() {
         monitor.enter();
         try {
             return isShutdown && threads == 0;
@@ -111,8 +100,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException
-    {
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         monitor.enter();
         try {
             return monitor.waitFor(isTerminated, timeout, unit);
@@ -121,8 +109,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public void awaitTermination() throws InterruptedException
-    {
+    public void awaitTermination() throws InterruptedException {
         monitor.enter();
         try {
             monitor.waitFor(isTerminated);
@@ -131,8 +118,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public void awaitTerminationUninterruptibly()
-    {
+    public void awaitTerminationUninterruptibly() {
         monitor.enter();
         try {
             monitor.waitForUninterruptibly(isTerminated);
@@ -142,8 +128,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
     }
 
     @Override
-    public void execute(Runnable task)
-    {
+    public void execute(Runnable task) {
         monitor.enter();
         try {
             if (isShutdown) {
@@ -162,8 +147,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public void setMaximumPoolSize(int size)
-    {
+    public void setMaximumPoolSize(int size) {
         monitor.enter();
         try {
             maxThreads = size;
@@ -178,8 +162,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public int getMaximumPoolSize()
-    {
+    public int getMaximumPoolSize() {
         monitor.enter();
         try {
             return maxThreads;
@@ -188,8 +171,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public void setMaximumQueueSize(int size)
-    {
+    public void setMaximumQueueSize(int size) {
         monitor.enter();
         try {
             maxQueued = size;
@@ -198,8 +180,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    public int getMaximumQueueSize()
-    {
+    public int getMaximumQueueSize() {
         monitor.enter();
         try {
             return maxQueued;
@@ -208,10 +189,9 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
-    private class Worker implements Runnable
-    {
-        private Runnable getFirstTask()
-        {
+    private class Worker implements Runnable {
+
+        private Runnable getFirstTask() {
             monitor.enter();
             try {
                 if (workQueue.isEmpty()) {
@@ -226,8 +206,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
             }
         }
 
-        private Runnable getNextTask()
-        {
+        private Runnable getNextTask() {
             monitor.enter();
             try {
                 if (workQueue.isEmpty() || threads > maxThreads) {
@@ -243,8 +222,7 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             Runnable task = getFirstTask();
             while (task != null) {
                 try {

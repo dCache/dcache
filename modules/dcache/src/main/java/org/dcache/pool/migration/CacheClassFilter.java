@@ -1,22 +1,18 @@
 package org.dcache.pool.migration;
 
-import javax.annotation.Nullable;
-
 import java.util.Objects;
 import java.util.function.Predicate;
-
+import javax.annotation.Nullable;
 import org.dcache.pool.repository.CacheEntry;
 
 /**
- * Repository entry filter accepting entries with a particular cache
- * class.
+ * Repository entry filter accepting entries with a particular cache class.
  */
-public class CacheClassFilter implements Predicate<CacheEntry>
-{
+public class CacheClassFilter implements Predicate<CacheEntry> {
+
     private final String _cc;
 
-    public CacheClassFilter(@Nullable String cc)
-    {
+    public CacheClassFilter(@Nullable String cc) {
         _cc = cc;
     }
 

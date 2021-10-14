@@ -21,25 +21,22 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * A principal that indicates the user wishes to adopt a specific role.
- * This principal in no way specifies whether the user is entitled to have
- * this role.
+ * A principal that indicates the user wishes to adopt a specific role. This principal in no way
+ * specifies whether the user is entitled to have this role.
  */
 @AuthenticationInput
-public class DesiredRole implements Principal, Serializable
-{
+public class DesiredRole implements Principal, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final String role;
 
-    public DesiredRole(String role)
-    {
+    public DesiredRole(String role) {
         this.role = role;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return role;
     }
 }

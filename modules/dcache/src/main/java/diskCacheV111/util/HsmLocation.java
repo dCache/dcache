@@ -5,15 +5,13 @@ import java.util.Map;
 
 public interface HsmLocation {
 
-	/**
-	 *
-	 * @return URI representation of location information
-	 */
-	URI location();
+    /**
+     * @return URI representation of location information
+     */
+    URI location();
 
-	/**
-	 *
-	 * @return pnfs level based representation of location information
-	 */
-	Map<Integer, String> toLevels();
+    /**
+     * @return pnfs level based representation of location information
+     */
+    Map<Integer, String> toLevels();
 }

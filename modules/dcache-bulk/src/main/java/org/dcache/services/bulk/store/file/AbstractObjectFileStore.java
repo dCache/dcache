@@ -59,8 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.store.file;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -72,54 +71,49 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Set;
-
 import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.BulkStorageException;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *  Handles writing and reading from disk.
- *
- *  The contract is that this class is to be used with an in-memory map
- *  which holds the entire store.
- *
- *  This internal map is populated from disk at startup.
- *
- *  New or updated data is written out singly when the child class deems
- *  appropriate.
- *
- *  If the cell shuts down peacefully, the entire contents are written out
- *  again just before.
+ * Handles writing and reading from disk.
+ * <p>
+ * The contract is that this class is to be used with an in-memory map which holds the entire
+ * store.
+ * <p>
+ * This internal map is populated from disk at startup.
+ * <p>
+ * New or updated data is written out singly when the child class deems appropriate.
+ * <p>
+ * If the cell shuts down peacefully, the entire contents are written out again just before.
  *
  * @param <T> the object type to be stored.
  */
-abstract class AbstractObjectFileStore<T extends Serializable>
-{
+abstract class AbstractObjectFileStore<T extends Serializable> {
+
     protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(AbstractObjectFileStore.class);
+          = LoggerFactory.getLogger(AbstractObjectFileStore.class);
 
     private static final String OBJ_SUFFIX = ".obj";
 
     private static final FilenameFilter OBJ_FILTER
-                    = (d, n) -> n.endsWith(OBJ_SUFFIX);
+          = (d, n) -> n.endsWith(OBJ_SUFFIX);
 
     protected final File storageDir;
     protected final Class<T> storageType;
 
-    protected AbstractObjectFileStore(File storageDir, Class<T> storageType)
-    {
+    protected AbstractObjectFileStore(File storageDir, Class<T> storageType) {
         requireNonNull(storageDir, "Object File Store "
-                        + "must be given an explicit base directory to write to.");
+              + "must be given an explicit base directory to write to.");
         requireNonNull(storageType, "Object File Store "
-                        + "must be given an explicit object class.");
+              + "must be given an explicit object class.");
         this.storageDir = storageDir;
         this.storageType = storageType;
     }
 
-    protected void deleteFromDisk(String id)
-    {
+    protected void deleteFromDisk(String id) {
         LOGGER.trace("deleteFromDisk {}.", id);
 
         File file = new File(storageDir, id + OBJ_SUFFIX);
@@ -129,12 +123,10 @@ abstract class AbstractObjectFileStore<T extends Serializable>
     }
 
     /**
-     * It is assumed the storage directory points to a shallow directory
-     * containing files which have the ".obj" extension and whose
-     * names correspond to the key values of the map.
+     * It is assumed the storage directory points to a shallow directory containing files which have
+     * the ".obj" extension and whose names correspond to the key values of the map.
      */
-    protected void readFromDisk()
-    {
+    protected void readFromDisk() {
         if (!storageDir.exists()) {
             storageDir.mkdirs();
         }
@@ -149,9 +141,9 @@ abstract class AbstractObjectFileStore<T extends Serializable>
                 wrapper = deserialize(file);
             } catch (BulkStorageException e) {
                 LOGGER.warn("Deserialization failed for {}: {}; file "
-                                            + "is corrupt or incomplete; "
-                                            + "removing ...",
-                            file, e.getMessage());
+                            + "is corrupt or incomplete; "
+                            + "removing ...",
+                      file, e.getMessage());
                 file.delete();
                 continue;
             }
@@ -163,19 +155,17 @@ abstract class AbstractObjectFileStore<T extends Serializable>
                 postProcessDeserialized(name, wrapper);
             } catch (BulkServiceException e) {
                 LOGGER.warn("There was a problem post-processing object from {}: "
-                                            + "{}.",
-                            file, e.getMessage());
+                            + "{}.",
+                      file, e.getMessage());
             }
         }
     }
 
-    protected void writeToDisk()
-    {
+    protected void writeToDisk() {
         ids().forEach(id -> writeToDisk(id));
     }
 
-    protected synchronized void writeToDisk(String id)
-    {
+    protected synchronized void writeToDisk(String id) {
         LOGGER.trace("writeToDisk {}.", id);
 
         T wrapper;
@@ -183,8 +173,8 @@ abstract class AbstractObjectFileStore<T extends Serializable>
             wrapper = newInstance(id);
         } catch (BulkServiceException e) {
             LOGGER.warn("There was a problem instantiating wrapper for {}: {}; "
-                                        + "cannot write to disk.",
-                        id, e.getMessage());
+                        + "cannot write to disk.",
+                  id, e.getMessage());
             return;
         }
 
@@ -192,47 +182,45 @@ abstract class AbstractObjectFileStore<T extends Serializable>
             serializeToDisk(id, wrapper);
         } catch (BulkStorageException e) {
             LOGGER.warn("Failed to save {} to disk: "
-                                        + "{}, {}.", id, e.getMessage(),
-                        e.getCause());
+                        + "{}, {}.", id, e.getMessage(),
+                  e.getCause());
         }
     }
 
     protected abstract void postProcessDeserialized(String id, T object)
-                    throws BulkServiceException;
+          throws BulkServiceException;
 
     protected abstract T newInstance(String id) throws BulkServiceException;
 
     protected abstract Set<String> ids();
 
-    private T deserialize(File file) throws BulkStorageException
-    {
+    private T deserialize(File file) throws BulkStorageException {
         try (ObjectInputStream ostream
-                             = new ObjectInputStream(new FileInputStream(file))) {
+              = new ObjectInputStream(new FileInputStream(file))) {
             return storageType.cast(ostream.readObject());
         } catch (FileNotFoundException e) {
             LOGGER.warn("File not found: {}; could not deserialize.", file);
             return null;
         } catch (ClassNotFoundException e) {
             throw new BulkRequestStorageException("Wrapper class seems not to "
-                                                                  + "have been "
-                                                                  + "loaded!.",
-                                                  e);
+                  + "have been "
+                  + "loaded!.",
+                  e);
         } catch (IOException e) {
             throw new BulkRequestStorageException("deserialize failed", e);
         }
     }
 
     private void serializeToDisk(String name,
-                                 T serializable) throws BulkStorageException
-    {
+          T serializable) throws BulkStorageException {
         File file = new File(storageDir, name + OBJ_SUFFIX);
         try (ObjectOutputStream ostream
-                             = new ObjectOutputStream(new FileOutputStream(file))) {
+              = new ObjectOutputStream(new FileOutputStream(file))) {
             ostream.writeObject(serializable);
         } catch (IOException e) {
             throw new BulkRequestStorageException("problem serializing to disk "
-                                                                  + "for "
-                                                                  + name, e);
+                  + "for "
+                  + name, e);
         }
     }
 }

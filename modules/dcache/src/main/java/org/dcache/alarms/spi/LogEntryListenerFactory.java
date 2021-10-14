@@ -63,26 +63,25 @@ import java.util.Collection;
 
 /**
  * <p>For each {@link LogEntryListener} there is a factory which
- *    is responsible for its configuration.</p>
+ * is responsible for its configuration.</p>
  *
  * <p>The implementations of this factory map the "extension points" inasmuch
- *    as their generic listener types must all be "exported" by the core
- *    alarms configuration.  In implementation-specific terms, this
- *    means that all such factories must appear in the alarms Spring
- *    application context. The listeners themselves can be defined in the
- *    META-INF directory of other modules, but their properties are injected
- *    from this context (via the protected configuration method).</p>
+ * as their generic listener types must all be "exported" by the core alarms configuration.  In
+ * implementation-specific terms, this means that all such factories must appear in the alarms
+ * Spring application context. The listeners themselves can be defined in the META-INF directory of
+ * other modules, but their properties are injected from this context (via the protected
+ * configuration method).</p>
  */
 public interface LogEntryListenerFactory<L extends LogEntryListener> {
+
     /**
-     * @return the configured listeners loaded by the {@link #load()}
-     *    method.
+     * @return the configured listeners loaded by the {@link #load()} method.
      */
     Collection<L> getConfiguredListeners();
 
     /**
-     *  <p>Responsible for the configuration of the {@LogEntryListener}
-     *     type(s) bound to this factory.</p>
+     * <p>Responsible for the configuration of the {@LogEntryListener}
+     * type(s) bound to this factory.</p>
      */
     void load();
 }

@@ -59,36 +59,32 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.impl.datanucleus;
 
-import org.datanucleus.FetchPlan;
-import org.springframework.beans.factory.annotation.Required;
-
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import javax.jdo.JDOCanRetryException;
 import javax.jdo.JDODataStoreException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-
+import org.datanucleus.FetchPlan;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.db.impl.AbstractBillingInfoAccess;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Implements {@link IBillingInfoAccess} using <href
- * a="http://www.datanucleus.org">DataNucleus</a>.
+ * Implements {@link IBillingInfoAccess} using <href a="http://www.datanucleus.org">DataNucleus</a>.
  *
  * @see AbstractBillingInfoAccess
  */
 public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
 
     private static Query createQuery(PersistenceManager pm, Class<?> type,
-                                     String filter, String parameters) {
+          String filter, String parameters) {
         Query query = pm.newQuery(type);
 
         if (filter != null) {
@@ -100,7 +96,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
         }
 
         query.addExtension("datanucleus.rdbms.query.resultSetType",
-                        "scroll-insensitive");
+              "scroll-insensitive");
         query.addExtension("datanucleus.query.resultCacheType", "none");
         query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
         return query;
@@ -118,7 +114,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
 
     @Override
     public void commit(Collection<IHistogramData> data)
-                    throws RetryException {
+          throws RetryException {
         PersistenceManager insertManager = pmf.getPersistenceManager();
         Transaction tx = insertManager.currentTransaction();
         try {
@@ -151,7 +147,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
 
     @Override
     public <T> Collection<T> get(Class<T> type, String filter,
-                    String parameters, Object... values) {
+          String parameters, Object... values) {
         PersistenceManager readManager = pmf.getPersistenceManager();
         Transaction tx = readManager.currentTransaction();
         try {
@@ -159,15 +155,15 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
             Query query = createQuery(readManager, type, filter, parameters);
             logger.trace("created query {}", query);
             Collection<T> c = (values == null ? ((Collection<T>) query.execute())
-                            : ((Collection<T>) query.executeWithArray(values)));
+                  : ((Collection<T>) query.executeWithArray(values)));
             logger.trace("collection size = {}", c.size());
             Collection<T> detached = readManager.detachCopyAll(c);
             logger.trace("got detatched collection {}", detached);
             tx.commit();
             logger.trace("successfully executed {}",
-                            "get: {}, {}. {}. {}",
-                            type, filter, parameters,
-                            values == null ? null : Arrays.asList(values) );
+                  "get: {}, {}. {}. {}",
+                  type, filter, parameters,
+                  values == null ? null : Arrays.asList(values));
             return detached;
         } finally {
             try {
@@ -195,7 +191,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
         try {
             tx.begin();
             Query query = deleteManager.newQuery("DELETE FROM "
-                            + type.getName());
+                  + type.getName());
             removed = (Long) query.execute();
             tx.commit();
             logger.trace("successfully removed {} entries of type {}", removed, type);
@@ -214,8 +210,8 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     }
 
     /**
-     * NB: This form of delete will only work if identity-type is NOT
-     * "nondurable". Currently unused. (non-Javadoc)
+     * NB: This form of delete will only work if identity-type is NOT "nondurable". Currently
+     * unused. (non-Javadoc)
      */
     @Override
     public <T> long remove(Class<T> type, String filter, Object... values) {
@@ -223,12 +219,12 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     }
 
     /**
-     * NB: This form of delete will only work if identity-type is NOT
-     * "nondurable". Currently unused. (non-Javadoc)
+     * NB: This form of delete will only work if identity-type is NOT "nondurable". Currently
+     * unused. (non-Javadoc)
      */
     @Override
     public <T> long remove(Class<T> type, String filter, String parameters,
-                    Object... values) {
+          Object... values) {
         PersistenceManager deleteManager = pmf.getPersistenceManager();
         Transaction tx = deleteManager.currentTransaction();
         long removed;
@@ -242,7 +238,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
             }
             tx.commit();
             logger.trace("successfully removed {} entries of type {}", removed,
-                            type);
+                  type);
             return removed;
         } finally {
             try {
@@ -258,8 +254,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     }
 
     @Required
-    public void setPersistenceManagerFactory(PersistenceManagerFactory pmf)
-    {
+    public void setPersistenceManagerFactory(PersistenceManagerFactory pmf) {
         this.pmf = pmf;
     }
 
@@ -274,27 +269,24 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     }
 
     @Override
-    public void aggregateDaily()
-    {
+    public void aggregateDaily() {
         logger.info("executing daily aggregation procedure.");
         executeStoredProcedure("f_billing_daily_summary()");
         logger.info("finished executing daily aggregation procedure.");
     }
 
     @Override
-    public void truncateFineGrained()
-    {
+    public void truncateFineGrained() {
         long before = System.currentTimeMillis()
-                        - truncationCutoffUnit.toMillis(truncationCutoff);
+              - truncationCutoffUnit.toMillis(truncationCutoff);
         logger.info("executing fine grained table trunction of rows before {}.",
-                    new Date(before));
+              new Date(before));
         Object result = executeStoredProcedure("f_truncate_fine_grained_info(" + before + ")");
         logger.info("finished executing fine grained table trunction of rows, "
-                                    + "removed a total of {} rows.", result);
+              + "removed a total of {} rows.", result);
     }
 
-    private Object executeStoredProcedure(String name)
-    {
+    private Object executeStoredProcedure(String name) {
         PersistenceManager pm = pmf.getPersistenceManager();
         Transaction tx = pm.currentTransaction();
         Object result;
@@ -323,12 +315,12 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
              *
              */
             Query query = pm.newQuery("javax.jdo.query.SQL",
-                                      "SELECT " + name);
+                  "SELECT " + name);
             try {
                 result = query.execute();
             } catch (JDODataStoreException ignore) {
                 query = pm.newQuery("javax.jdo.query.SQL",
-                                    "CALL " + name);
+                      "CALL " + name);
                 result = query.execute();
             }
 

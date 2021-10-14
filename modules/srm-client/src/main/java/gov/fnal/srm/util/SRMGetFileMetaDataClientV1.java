@@ -75,19 +75,24 @@ package gov.fnal.srm.util;
 import diskCacheV111.srm.FileMetaData;
 
 
-/**`
+/**
+ * `
  *
- * @author  timur
+ * @author timur
  */
 public class SRMGetFileMetaDataClientV1 extends SRMClient implements Runnable {
 
     private java.net.URI surls[];
     private String surl_strings[];
-    /** Creates a new instance of SRMGetClient */
-    public SRMGetFileMetaDataClientV1(Configuration configuration, java.net.URI[] surls, String[] surl_strings) {
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMGetFileMetaDataClientV1(Configuration configuration, java.net.URI[] surls,
+          String[] surl_strings) {
         super(configuration);
         this.surls = surls;
-        this.surl_strings=surl_strings;
+        this.surl_strings = surl_strings;
     }
 
     @Override
@@ -98,12 +103,12 @@ public class SRMGetFileMetaDataClientV1 extends SRMClient implements Runnable {
     @Override
     public void start() throws Exception {
         FileMetaData metaDatas[] = srm.getFileMetaData(surl_strings);
-        if(metaDatas == null || metaDatas.length == 0) {
+        if (metaDatas == null || metaDatas.length == 0) {
             throw new Exception("received empty set of FileMetaData");
         }
         for (FileMetaData metaData : metaDatas) {
             System.out.println("FileMetaData(" + metaData.SURL + ")=\n" + metaData
-                    .toString());
+                  .toString());
         }
     }
 

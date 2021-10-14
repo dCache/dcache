@@ -59,52 +59,51 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.providers.space;
 
+import diskCacheV111.services.space.LinkGroup;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import diskCacheV111.services.space.LinkGroup;
-
 @ApiModel(description = "Container for metadata pertaining to a link group.")
 public class LinkGroupInfo implements Serializable {
+
     private static final long serialVersionUID = -8947531878064847599L;
 
     @ApiModelProperty("The identifier of the group.")
-    private long         id;
+    private long id;
 
     @ApiModelProperty("The name of the group.")
-    private String       name;
+    private String name;
 
     @ApiModelProperty("Unreserved space in the group.")
-    private long         availableSpace;
+    private long availableSpace;
 
     @ApiModelProperty("Files with ONLINE access latency can be stored.")
-    private boolean      onlineAllowed;
+    private boolean onlineAllowed;
 
     @ApiModelProperty("Files with NEARLINE access latency can be stored.")
-    private boolean      nearlineAllowed;
+    private boolean nearlineAllowed;
 
     @ApiModelProperty("Files with REPLICA retention policy can be stored.")
-    private boolean      replicaAllowed;
+    private boolean replicaAllowed;
 
     @ApiModelProperty("Files with OUTPUT retention policy can be stored.")
-    private boolean      outputAllowed;
+    private boolean outputAllowed;
 
     @ApiModelProperty("Files with CUSTODIAL retention policy can be stored.")
-    private boolean      custodialAllowed;
+    private boolean custodialAllowed;
 
     @ApiModelProperty("List of VOs which can access this link group.")
     private List<VOInfo> vos;
 
     @ApiModelProperty("Last time the link group was updated.")
-    private long         updateTime;
+    private long updateTime;
 
     @ApiModelProperty("Reserved space in the group.")
-    private long         reservedSpace;
+    private long reservedSpace;
 
     public LinkGroupInfo() {
     }
@@ -125,8 +124,8 @@ public class LinkGroupInfo implements Serializable {
 
         if (voInfo != null) {
             vos = Stream.of(voInfo)
-                        .map(VOInfo::new)
-                        .collect(Collectors.toList());
+                  .map(VOInfo::new)
+                  .collect(Collectors.toList());
         }
     }
 

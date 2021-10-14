@@ -2,34 +2,31 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import org.dcache.chimera.FileState;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
-
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.EnstoreStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 
 
 public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor {
 
     public ChimeraEnstoreStorageInfoExtractor(AccessLatency defaultAL,
-                                              RetentionPolicy defaultRP) {
-        super(defaultAL,defaultRP);
+          RetentionPolicy defaultRP) {
+        super(defaultAL, defaultRP);
     }
 
     @Override
@@ -38,7 +35,9 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
 
         try {
             Stat stat = inode.stat();
-            boolean isNew = stat.getState() == FileState.CREATED || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(2).exists();
+            boolean isNew = stat.getState() == FileState.CREATED
+                  || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(
+                  2).exists();
 
             info = (EnstoreStorageInfo) getDirStorageInfo(inode);
             if (!isNew) {
@@ -75,8 +74,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 }
             }
             info.setIsNew(isNew);
-        }
-        catch (ChimeraFsException e) {
+        } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
         }
         return info;
@@ -90,16 +88,15 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             if (dirInode == null) {
                 throw new FileNotFoundCacheException("file unlinked");
             }
-        }
-        else {
+        } else {
             dirInode = inode;
         }
         Map<String, String> hash = new HashMap<>();
         ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
-        ImmutableList<String> group       = dirInode.getTag("storage_group");
-        ImmutableList<String> family      = dirInode.getTag("file_family");
+        ImmutableList<String> group = dirInode.getTag("storage_group");
+        ImmutableList<String> family = dirInode.getTag("file_family");
 
-        for (String line: OSMTemplate) {
+        for (String line : OSMTemplate) {
             StringTokenizer st = new StringTokenizer(line);
             if (st.countTokens() >= 2) {
                 hash.put(st.nextToken().intern(), st.nextToken());
@@ -107,7 +104,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         }
         String sg = getFirstLine(group).map(String::intern).orElse("none");
         String ff = getFirstLine(family).map(String::intern).orElse("none");
-        EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
+        EnstoreStorageInfo info = new EnstoreStorageInfo(sg, ff);
         info.addKeys(hash);
         return info;
     }
@@ -117,8 +114,7 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     }
 
     @Override
-    protected void checkFlushUpdate(StorageInfo info) throws CacheException
-    {
+    protected void checkFlushUpdate(StorageInfo info) throws CacheException {
         /* No checks needed: Enstore updates the namespace directly. */
     }
 }

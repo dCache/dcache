@@ -20,18 +20,15 @@ package org.dcache.gplazma.scitoken;
 import static org.dcache.util.Exceptions.genericCheck;
 
 /**
- * Indicates that the scope is not valid.
- * REVISIT: should this be a checked exception?
+ * Indicates that the scope is not valid. REVISIT: should this be a checked exception?
  */
-public class InvalidScopeException extends RuntimeException
-{
-    public static void checkScopeValid(boolean isOK, String format, Object... arguments)
-    {
+public class InvalidScopeException extends RuntimeException {
+
+    public static void checkScopeValid(boolean isOK, String format, Object... arguments) {
         genericCheck(isOK, InvalidScopeException::new, format, arguments);
     }
 
-    public InvalidScopeException(String message)
-    {
+    public InvalidScopeException(String message) {
         super(message);
     }
 }

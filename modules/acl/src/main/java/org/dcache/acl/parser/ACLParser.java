@@ -4,7 +4,6 @@ import com.google.common.base.Splitter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.enums.RsType;
@@ -16,6 +15,7 @@ public class ACLParser {
     private static final String SEPARATOR = ":";
 
     private static ACLParser _SINGLETON;
+
     static {
         _SINGLETON = new ACLParser();
     }
@@ -29,46 +29,41 @@ public class ACLParser {
     }
 
     /**
-     * format:
-     * 	rs_id:rs_type
-     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
-     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * format: rs_id:rs_type who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * <p>
+     * acl_spec example: USER:7:rlwfx:o:ALLOW:FFFF EVERYONE@:w:DENY
      *
-     * acl_spec example:
-     * 	USER:7:rlwfx:o:ALLOW:FFFF
-     * 	EVERYONE@:w:DENY
-     *
-     * @param acl_spec
-     *            String representation of ACL
+     * @param acl_spec String representation of ACL
      * @return List of ACEs
      */
     public static ACL parse(String acl_spec) throws IllegalArgumentException {
-        if ( acl_spec == null || acl_spec.length() == 0 ) {
+        if (acl_spec == null || acl_spec.length() == 0) {
             throw new IllegalArgumentException("Invalid acl_spec.");
         }
 
         String[] split = acl_spec.split(LINE_SEPARATOR);
-        if ( split == null ) {
+        if (split == null) {
             throw new IllegalArgumentException("acl_spec can't be splitted: " + acl_spec);
         }
 
         int len = split.length;
-        if ( len < 2 ) {
+        if (len < 2) {
             throw new IllegalArgumentException("Count tags invalid in acl_spec: " + acl_spec);
         }
 
         String rsInfo = split[0];
-        if ( rsInfo.length() == 0 ) {
+        if (rsInfo.length() == 0) {
             throw new IllegalArgumentException("Invalid acl_spec: " + acl_spec);
         }
 
         String[] splitRsInfo = rsInfo.split(SEPARATOR);
-        if ( splitRsInfo.length != 2 ) {
+        if (splitRsInfo.length != 2) {
             throw new IllegalArgumentException("Invalid acl_spec: " + acl_spec);
         }
 
         String rsID = splitRsInfo[0];
-        if ( rsID.length() == 0 ) {
+        if (rsID.length() == 0) {
             throw new IllegalArgumentException("Invalid acl_spec: " + acl_spec);
         }
 
@@ -83,18 +78,14 @@ public class ACLParser {
     }
 
     /**
-     * aces_spec format:
-     * 	who[:who_id]:+/-access_msk[:flags][:address_msk] who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * aces_spec format: who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * <p>
+     * aces_spec example: USER:3750:+rlx:o:FFFF EVERYONE@:-w
      *
-     * aces_spec example:
-     * 	USER:3750:+rlx:o:FFFF EVERYONE@:-w
-     *
-     * @param rsID
-     *            resource ID
-    * @param rsType
-     *            resource type
-     * @param aces_spec
-     *            String representation of ACEs
+     * @param rsID      resource ID
+     * @param rsType    resource type
+     * @param aces_spec String representation of ACEs
      * @return Access Control Entry object
      */
     public static ACL parseAdm(RsType rsType, String aces_spec) throws IllegalArgumentException {
@@ -103,12 +94,12 @@ public class ACLParser {
 
     public static ACL parseLinuxAcl(RsType rsType, String acl) {
         return new ACL(rsType,
-                Splitter.on(' ')
-                        .trimResults()
-                        .omitEmptyStrings()
-                        .splitToList(acl)
-                        .stream()
-                        .map(a -> ACEParser.parseLinuxAce(a))
-                        .collect(Collectors.toList()));
+              Splitter.on(' ')
+                    .trimResults()
+                    .omitEmptyStrings()
+                    .splitToList(acl)
+                    .stream()
+                    .map(a -> ACEParser.parseLinuxAce(a))
+                    .collect(Collectors.toList()));
     }
 }

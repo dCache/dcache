@@ -62,24 +62,23 @@ package org.dcache.resilience;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.vehicles.FileAttributes;
 
 public final class TestNamespaceAccess extends LocalNamespaceAccess {
+
     final Multimap<String, FileAttributes> locationsToFiles = ArrayListMultimap.create();
-    final Map<PnfsId, FileAttributes>      fileAttributes   = new HashMap<>();
+    final Map<PnfsId, FileAttributes> fileAttributes = new HashMap<>();
 
     public String getInfo() {
         StringBuilder builder = new StringBuilder();
@@ -90,19 +89,19 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
             builder.append(location).append("\n");
             locationsToFiles.get(location).stream().forEach((fa) -> {
                 builder.append("\tPnfsId:           ").append(
-                                fa.getPnfsId()).append("\n");
+                      fa.getPnfsId()).append("\n");
                 builder.append("\tAccessLatency:    ").append(
-                                fa.getAccessLatency()).append("\n");
+                      fa.getAccessLatency()).append("\n");
                 builder.append("\tRetentionPolicy:  ").append(
-                                fa.getRetentionPolicy()).append("\n");
+                      fa.getRetentionPolicy()).append("\n");
                 builder.append("\tStorageClass:     ").append(
-                                fa.getStorageClass()).append("\n");
+                      fa.getStorageClass()).append("\n");
                 builder.append("\tHsm:              ").append(
-                                fa.getHsm()).append("\n");
+                      fa.getHsm()).append("\n");
                 builder.append("\tLocations:\n");
                 fa.getLocations().stream().forEach(
-                                (l) -> builder.append("\t\t").append(l).append(
-                                                "\n"));
+                      (l) -> builder.append("\t\t").append(l).append(
+                            "\n"));
             });
         }
 
@@ -111,7 +110,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
 
     @Override
     public FileAttributes getRequiredAttributes(PnfsId pnfsId)
-                    throws CacheException {
+          throws CacheException {
         if (fileAttributes.containsKey(pnfsId)) {
             return fileAttributes.get(pnfsId);
         }
@@ -120,13 +119,13 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
 
     @Override
     public void handlePnfsidsForPool(ScanSummary scan)
-                    throws CacheException {
+          throws CacheException {
         for (FileAttributes attributes : locationsToFiles.get(scan.getPool())) {
             FileUpdate data = new FileUpdate(attributes.getPnfsId(),
-                                             scan.getPool(),
-                                             scan.getType(),
-                                             scan.getGroup(),
-                                             scan.isForced());
+                  scan.getPool(),
+                  scan.getType(),
+                  scan.getGroup(),
+                  scan.isForced());
             if (handler.handleScannedLocation(data, scan.getStorageUnit())) {
                 scan.incrementCount();
             }
@@ -135,7 +134,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
 
     @Override
     public void refreshAttributes(FileAttributes attributes)
-                    throws CacheException {
+          throws CacheException {
         FileAttributes stored = fileAttributes.get(attributes.getPnfsId());
         if (stored != null) {
             attributes.setAccessLatency(stored.getAccessLatency());
@@ -146,7 +145,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
             attributes.setLocations(stored.getLocations());
         } else {
             throw new FileNotFoundCacheException(attributes.getPnfsId().toString(),
-                                                 new Exception("test simulation"));
+                  new Exception("test simulation"));
         }
     }
 
@@ -157,92 +156,92 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
 
     void delete(PnfsId pnfsId, boolean locationsOnly) {
         FileAttributes attributes = locationsOnly ?
-                        fileAttributes.get(pnfsId) :
-                        fileAttributes.remove(pnfsId);
+              fileAttributes.get(pnfsId) :
+              fileAttributes.remove(pnfsId);
         attributes.getLocations().stream().forEach(
-                        (l) -> locationsToFiles.remove(l, attributes));
+              (l) -> locationsToFiles.remove(l, attributes));
         attributes.getLocations().clear();
     }
 
     void loadExcessResilient() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.EXCESS_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.EXCESS_RESILIENT_LOCATIONS[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.EXCESS_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.EXCESS_RESILIENT_LOCATIONS[i]);
         }
     }
 
     void loadNewResilient() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS[i]);
         }
     }
 
     void loadNewResilientOnHostAndRackTagsDefined() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS_HR[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS_HR[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS_HR[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS_HR[i]);
         }
     }
 
     void loadNewResilientWithUnmappedStorageUnit() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         "unmapped-storage",
-                         TestData.NEW_RESILIENT_LOCATIONS_H[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  "unmapped-storage",
+                  TestData.NEW_RESILIENT_LOCATIONS_H[i]);
         }
     }
 
-    void loadNewFilesWithStorageUnitMatchingPattern(){
+    void loadNewFilesWithStorageUnitMatchingPattern() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         "test-storage",
-                         TestData.NEW_RESILIENT_LOCATIONS_H[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  "test-storage",
+                  TestData.NEW_RESILIENT_LOCATIONS_H[i]);
         }
     }
 
     void loadNewResilientOnHostTagDefined() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS_H[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS_H[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NEW_RESILIENT_LOCATIONS_H[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NEW_RESILIENT_LOCATIONS_H[i]);
         }
     }
 
@@ -250,40 +249,40 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
         int k = TestData.REPLICA_ONLINE.length;
         for (int i = 0; i < TestData.CUSTODIAL_NEARLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_NEARLINE[i], AccessLatency.NEARLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[k++],
-                         TestData.NON_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[k++],
+                  TestData.NON_RESILIENT_LOCATIONS[i]);
         }
     }
 
     void loadNonTaggedExcessResilient() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.NON_TAGGED_EXCESS_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.NON_TAGGED_EXCESS_RESILIENT_LOCATIONS[i]);
         }
     }
 
     void loadMissingResilientLocations() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.MISSING_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.MISSING_RESILIENT_LOCATIONS[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.MISSING_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.MISSING_RESILIENT_LOCATIONS[i]);
         }
     }
 
     void loadRequired(PnfsId pnfsId, AccessLatency accessLatency,
-                      RetentionPolicy retentionPolicy, String hsm,
-                      String storageClass, String... locations) {
+          RetentionPolicy retentionPolicy, String hsm,
+          String storageClass, String... locations) {
         FileAttributes attr = new FileAttributes();
         attr.setAccessTime(System.currentTimeMillis());
         attr.setPnfsId(pnfsId);
@@ -302,16 +301,16 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
     void loadRequiredResilient() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.REPLICA, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.MIN_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.REPLICA, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.MIN_RESILIENT_LOCATIONS[i]);
         }
 
         for (int i = 0; i < TestData.CUSTODIAL_ONLINE.length; ++i) {
             loadRequired(TestData.CUSTODIAL_ONLINE[i], AccessLatency.ONLINE,
-                         RetentionPolicy.CUSTODIAL, TestData.HSM,
-                         TestData.STORAGE_CLASSES[i],
-                         TestData.MIN_RESILIENT_LOCATIONS[i]);
+                  RetentionPolicy.CUSTODIAL, TestData.HSM,
+                  TestData.STORAGE_CLASSES[i],
+                  TestData.MIN_RESILIENT_LOCATIONS[i]);
         }
     }
 }

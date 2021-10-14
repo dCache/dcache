@@ -1,19 +1,17 @@
 package org.dcache.util.cli;
 
-import java.io.Serializable;
-import java.lang.reflect.AnnotatedElement;
-
 import dmg.util.CommandException;
 import dmg.util.command.HelpFormat;
-
+import java.io.Serializable;
+import java.lang.reflect.AnnotatedElement;
 import org.dcache.util.Args;
 
 /**
- * Implementations of this interface provides means to execute shell commands
- * and provide help and ACL information for such commands.
+ * Implementations of this interface provides means to execute shell commands and provide help and
+ * ACL information for such commands.
  */
-public interface CommandExecutor
-{
+public interface CommandExecutor {
+
     /**
      * Returns true if and only if the command is marked as deprecated.
      */
@@ -25,14 +23,13 @@ public interface CommandExecutor
     boolean hasACLs();
 
     /**
-     * Returns the ACLs of the command. Returns the empty array
-     * if no ACLs are defined.
+     * Returns the ACLs of the command. Returns the empty array if no ACLs are defined.
      */
     String[] getACLs();
 
     /**
      * Returns the full help information of the command.
-     *
+     * <p>
      * If the format is not supported, the help is returned in some other format.
      *
      * @param format The format to return the help in.
@@ -41,7 +38,7 @@ public interface CommandExecutor
 
     /**
      * Returns a one-line signature and an optional description of the command.
-     *
+     * <p>
      * If the format is not supported, the help is returned in some other format.
      *
      * @param format The format to return the help in.

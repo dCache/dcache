@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.services.bulk.job;
 
 import java.util.Set;
-
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkServiceException;
 import org.dcache.services.bulk.job.MultipleTargetJob.TargetType;
@@ -68,87 +67,79 @@ import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
 
 /**
  * Service-provider base for loading implementations of SingleTargetJobs.
- *
+ * <p>
  * Provides the proper expansion job for this type of activity.
  *
  * @param <J> subclass of the single target job provided for this activity.
  */
-public abstract class BulkJobProvider<J extends SingleTargetJob>
-{
-    protected final String        activity;
-    protected final TargetType    targetType;
+public abstract class BulkJobProvider<J extends SingleTargetJob> {
+
+    protected final String activity;
+    protected final TargetType targetType;
     protected final ExpansionType expansionType;
 
     protected BulkJobProvider(String activity,
-                              TargetType targetType,
-                              ExpansionType expansionType)
-    {
+          TargetType targetType,
+          ExpansionType expansionType) {
         this.activity = activity;
         this.targetType = targetType;
         this.expansionType = expansionType;
     }
 
     /**
-     * Shared creation routine for all job types for creating the top-level
-     * request job.
+     * Shared creation routine for all job types for creating the top-level request job.
      *
      * @param request associated with this job.
      * @return correctly constructed BulkRequestJob.
      * @throws BulkServiceException
      */
     public BulkRequestJob createRequestJob(BulkRequest request)
-                    throws BulkServiceException
-    {
+          throws BulkServiceException {
         return new BulkRequestJob(BulkJobKey.newKey(request.getId()),
-                                  request,
-                                  targetType);
+              request,
+              targetType);
     }
 
     /**
-     * Shared creation routine for all job types for directory targets to
-     * be expanded.
+     * Shared creation routine for all job types for directory targets to be expanded.
      *
      * @param parentKey of the creating multiple target job.
-     * @param request associated with this job.
+     * @param request   associated with this job.
      * @return correctly constructed TargetExpansionJob.
      * @throws BulkServiceException
      */
     public TargetExpansionJob createExpansionJob(BulkJobKey parentKey,
-                                                 BulkRequest request)
-                    throws BulkServiceException
-    {
+          BulkRequest request)
+          throws BulkServiceException {
         return new TargetExpansionJob(BulkJobKey.newKey(request.getId()),
-                                                        parentKey,
-                                                        request,
-                                                        targetType,
-                                                        expansionType);
+              parentKey,
+              request,
+              targetType,
+              expansionType);
     }
 
-    public String getActivity()
-    {
+    public String getActivity() {
         return activity;
     }
 
-    public ExpansionType getExpansionAlgorithm()
-    {
+    public ExpansionType getExpansionAlgorithm() {
         return expansionType;
     }
 
-    public TargetType getTargetType()
-    {
+    public TargetType getTargetType() {
         return targetType;
     }
 
     /**
      * Creates an instance of the specific job type to be configured by handler.
      *
-     * @param key of the job.
+     * @param key       of the job.
      * @param parentKey of the job.
      * @return instance of job.
      * @throws BulkServiceException
      */
     public abstract J createJob(BulkJobKey key, BulkJobKey parentKey)
-                    throws BulkServiceException;
+          throws BulkServiceException;
 
     /**
      * For metadata purposes.

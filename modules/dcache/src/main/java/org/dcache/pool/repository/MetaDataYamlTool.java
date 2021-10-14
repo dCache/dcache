@@ -1,6 +1,8 @@
 package org.dcache.pool.repository;
 
-import java.io.File;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.StorageInfo;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -9,33 +11,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Map;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-public class MetaDataYamlTool
-{
+public class MetaDataYamlTool {
+
     static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
-                                    FileStore fileStore, String poolName, Path poolDir)
-        throws NoSuchMethodException, InstantiationException,
-               IllegalAccessException, InvocationTargetException
-    {
+          FileStore fileStore, String poolName, Path poolDir)
+          throws NoSuchMethodException, InstantiationException,
+          IllegalAccessException, InvocationTargetException {
         Constructor<? extends ReplicaStore> constructor =
-            clazz.getConstructor(FileStore.class, Path.class, String.class, Boolean.TYPE);
+              clazz.getConstructor(FileStore.class, Path.class, String.class, Boolean.TYPE);
         return constructor.newInstance(fileStore, poolDir, poolName, true);
     }
 
     public static void main(String[] args)
-        throws Exception
-    {
+          throws Exception {
         if (args.length != 3) {
             System.err.println("Synopsis: MetaDataCopyTool NAME DIR TYPE");
             System.err.println();
-            System.err.println("Where NAME is the pool name, DIR is the pool directory and TYPE is the meta");
+            System.err.println(
+                  "Where NAME is the pool name, DIR is the pool directory and TYPE is the meta");
             System.err.println("data store class.");
             System.exit(1);
         }
@@ -44,7 +40,8 @@ public class MetaDataYamlTool
         Path poolDir = Paths.get(args[1]);
         FileStore fileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
         try (ReplicaStore metaStore =
-                     createStore(Class.forName(args[2]).asSubclass(ReplicaStore.class), fileStore, poolName, poolDir)) {
+              createStore(Class.forName(args[2]).asSubclass(ReplicaStore.class), fileStore,
+                    poolName, poolDir)) {
             metaStore.init();
 
             PrintWriter out = new PrintWriter(System.out);
@@ -59,8 +56,10 @@ public class MetaDataYamlTool
 
                     out.format("%s:\n", id);
                     out.format("  state: %s\n", record.getState());
-                    out.format("  lastaccess: %s\n", Instant.ofEpochMilli(record.getLastAccessTime()));
-                    out.format("  creationtime: %s\n", Instant.ofEpochMilli(record.getCreationTime()));
+                    out.format("  lastaccess: %s\n",
+                          Instant.ofEpochMilli(record.getLastAccessTime()));
+                    out.format("  creationtime: %s\n",
+                          Instant.ofEpochMilli(record.getCreationTime()));
                     out.format("  sticky:\n");
                     for (StickyRecord sticky : record.stickyRecords()) {
                         out.format("    %s: %d\n", sticky.owner(), sticky.expire());

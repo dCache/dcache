@@ -1,30 +1,32 @@
 // $Id: PoolMgrGetPoolByLink.java,v 1.3 2006-08-22 00:11:11 timur Exp $
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 public class PoolMgrGetPoolByLink extends Message {
+
     private static final long serialVersionUID = 7012732987581691248L;
 
     //private static final long serialVersionUID = ;
 
     private String linkName;
-    private long   fileSize;
+    private long fileSize;
     private String poolName;
+
     public PoolMgrGetPoolByLink(
-                              String linkName){
+          String linkName) {
         this.linkName = linkName;
-	setReplyRequired(true);
+        setReplyRequired(true);
     }
 
 
-    public String toString(){
-       if( getReturnCode() == 0 ) {
-           return "LinkName=" +
-                   (linkName == null ? "<unknown>" :
-                           linkName);
-       } else {
-           return super.toString();
-       }
+    public String toString() {
+        if (getReturnCode() == 0) {
+            return "LinkName=" +
+                  (linkName == null ? "<unknown>" :
+                        linkName);
+        } else {
+            return super.toString();
+        }
     }
 
     public String getLinkName() {
@@ -35,16 +37,21 @@ public class PoolMgrGetPoolByLink extends Message {
         this.linkName = linkName;
     }
 
-    public void setFilesize( long filesize ){
-       this.fileSize = filesize ;
+    public void setFilesize(long filesize) {
+        this.fileSize = filesize;
     }
 
-    public long getFilesize(){ return this.fileSize ; }
-    public void setFileSize( long fileSize ){
-       this.fileSize = fileSize ;
+    public long getFilesize() {
+        return this.fileSize;
     }
 
-    public long getFileSize(){ return this.fileSize ; }
+    public void setFileSize(long fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public long getFileSize() {
+        return this.fileSize;
+    }
 
     public String getPoolName() {
         return poolName;

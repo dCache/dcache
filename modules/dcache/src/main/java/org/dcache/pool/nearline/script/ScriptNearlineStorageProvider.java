@@ -17,26 +17,23 @@
  */
 package org.dcache.pool.nearline.script;
 
-import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 import org.dcache.pool.nearline.spi.NearlineStorage;
+import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 
-public class ScriptNearlineStorageProvider implements NearlineStorageProvider
-{
+public class ScriptNearlineStorageProvider implements NearlineStorageProvider {
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return "script";
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Calls out to an HSM integration script.";
     }
 
     @Override
-    public NearlineStorage createNearlineStorage(String type, String name)
-    {
+    public NearlineStorage createNearlineStorage(String type, String name) {
         return new ScriptNearlineStorage(type, name);
     }
 }

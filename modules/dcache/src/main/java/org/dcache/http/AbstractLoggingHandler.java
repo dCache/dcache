@@ -17,7 +17,20 @@
  */
 package org.dcache.http;
 
+import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
+
 import com.google.common.net.InetAddresses;
+import dmg.cells.nucleus.CDC;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.security.cert.X509Certificate;
+import java.util.Optional;
+import javax.security.auth.Subject;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
@@ -25,47 +38,32 @@ import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.security.cert.X509Certificate;
-import java.util.Optional;
-
-import dmg.cells.nucleus.CDC;
-
-import org.dcache.util.NetLoggerBuilder;
-
-import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
-
 /**
- * This class act as a base logging class for logging servlet-based activity.
- * It is expected that this class is subclassed to add protocol-specific
- * logging.
+ * This class act as a base logging class for logging servlet-based activity. It is expected that
+ * this class is subclassed to add protocol-specific logging.
  */
-public abstract class AbstractLoggingHandler extends HandlerWrapper
-{
+public abstract class AbstractLoggingHandler extends HandlerWrapper {
+
     private static final String X509_CERTIFICATE_ATTRIBUTE =
-            "javax.servlet.request.X509Certificate";
+          "javax.servlet.request.X509Certificate";
     private static final String REMOTE_ADDRESS = "org.dcache.remote-address";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLoggingHandler.class);
 
-    /** The SLF4J Logger to which we send access log entries. */
+    /**
+     * The SLF4J Logger to which we send access log entries.
+     */
     protected abstract Logger accessLogger();
 
-    /** The name of the request events. */
+    /**
+     * The name of the request events.
+     */
     protected abstract String requestEventName();
 
     @Override
     public void handle(String target, Request baseRequest,
-            HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException
-    {
+          HttpServletRequest request, HttpServletResponse response)
+          throws IOException, ServletException {
         if (isStarted() && !baseRequest.isHandled()) {
             // Cache the remote client address because the client may disconnect
             // while dCache is processing the request, in which case Jetty
@@ -76,15 +74,14 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
 
             NetLoggerBuilder.Level logLevel = logLevel(request, response);
             NetLoggerBuilder log = new NetLoggerBuilder(logLevel, requestEventName())
-                    .omitNullValues();
+                  .omitNullValues();
             describeOperation(log, request, response);
             log.toLogger(accessLogger());
         }
     }
 
     protected void describeOperation(NetLoggerBuilder log,
-            HttpServletRequest request, HttpServletResponse response)
-    {
+          HttpServletRequest request, HttpServletResponse response) {
         log.add("session", CDC.getSession());
         log.add("request.method", request.getMethod());
         log.add("request.url", request.getRequestURL());
@@ -99,12 +96,10 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
     }
 
     /**
-     * Provide this connection's remote address; that is, the address of the
-     * client.  The method returns Optional.empty if this cannot be determined,
-     * for whatever reason.
+     * Provide this connection's remote address; that is, the address of the client.  The method
+     * returns Optional.empty if this cannot be determined, for whatever reason.
      */
-    private static Optional<InetSocketAddress> remoteAddress(HttpServletRequest request)
-    {
+    private static Optional<InetSocketAddress> remoteAddress(HttpServletRequest request) {
         String addrString = request.getRemoteAddr();
         int port = request.getRemotePort();
 
@@ -123,8 +118,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
         return Optional.of(new InetSocketAddress(addr, port));
     }
 
-    private static String getReason(HttpServletResponse response)
-    {
+    private static String getReason(HttpServletResponse response) {
         if (response instanceof Response) {
             return ((Response) response).getReason();
         } else {
@@ -133,8 +127,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
     }
 
     protected NetLoggerBuilder.Level logLevel(HttpServletRequest request,
-            HttpServletResponse response)
-    {
+          HttpServletResponse response) {
         int code = response.getStatus();
         if (code >= 500) {
             return NetLoggerBuilder.Level.ERROR;
@@ -145,8 +138,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
         }
     }
 
-    private static String getCertificateName(HttpServletRequest request)
-    {
+    private static String getCertificateName(HttpServletRequest request) {
         Object object = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
 
         if (object instanceof X509Certificate[]) {
@@ -160,8 +152,7 @@ public abstract class AbstractLoggingHandler extends HandlerWrapper
         return null;
     }
 
-    private static Subject getSubject(HttpServletRequest request)
-    {
+    private static Subject getSubject(HttpServletRequest request) {
         Object object = request.getAttribute(DCACHE_SUBJECT_ATTRIBUTE);
         return (object instanceof Subject) ? (Subject) object : null;
     }

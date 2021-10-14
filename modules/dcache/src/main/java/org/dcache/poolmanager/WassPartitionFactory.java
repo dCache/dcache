@@ -2,23 +2,20 @@ package org.dcache.poolmanager;
 
 import java.util.Map;
 
-public class WassPartitionFactory implements PartitionFactory
-{
+public class WassPartitionFactory implements PartitionFactory {
+
     @Override
-    public Partition createPartition(Map<String,String> properties)
-    {
+    public Partition createPartition(Map<String, String> properties) {
         return new WassPartition(properties);
     }
 
     @Override
-    public String getDescription()
-    {
+    public String getDescription() {
         return "Partition with weighted available space selection";
     }
 
     @Override
-    public String getType()
-    {
+    public String getType() {
         return WassPartition.TYPE;
     }
 }

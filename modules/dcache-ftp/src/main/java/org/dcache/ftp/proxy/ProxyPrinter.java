@@ -23,15 +23,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.EnumSet;
 import java.util.stream.Collectors;
-
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.TabulatedRow;
 
 /**
  * Provide an ASCII-art description of the current state of a proxy.
  */
-public class ProxyPrinter
-{
+public class ProxyPrinter {
+
     private enum ConnectionState {
         ESTABLISHED, HALF_CLOSED, CLOSED
     }
@@ -42,56 +41,52 @@ public class ProxyPrinter
     private Socket client;
     private Socket pool;
 
-    public ProxyPrinter()
-    {
+    public ProxyPrinter() {
         table = new ColumnWriter()
-                .right("client-remote")
-                .centre("client-net")
-                .left("client-local")
-                .centre("proxy")
-                .right("pool-local")
-                .centre("pool-net")
-                .left("pool-remote");
+              .right("client-remote")
+              .centre("client-net")
+              .left("client-local")
+              .centre("proxy")
+              .right("pool-local")
+              .centre("pool-net")
+              .left("pool-remote");
         table.row()
-                .value("client-remote", "Client")
-                .value("client-net", "        +-")
-                .fill("client-local", "-")
-                .value("proxy", "-Adapter-")
-                .fill("pool-local", "-")
-                .value("pool-net", "-+        ")
-                .value("pool-remote", "Pool");
+              .value("client-remote", "Client")
+              .value("client-net", "        +-")
+              .fill("client-local", "-")
+              .value("proxy", "-Adapter-")
+              .fill("pool-local", "-")
+              .value("pool-net", "-+        ")
+              .value("pool-remote", "Pool");
     }
 
-    public ProxyPrinter client(Socket connection)
-    {
+    public ProxyPrinter client(Socket connection) {
         client = connection;
         return this;
     }
 
-    public ProxyPrinter pool(Socket connection)
-    {
+    public ProxyPrinter pool(Socket connection) {
         pool = connection;
         return this;
     }
 
-    public ProxyPrinter add()
-    {
+    public ProxyPrinter add() {
         TabulatedRow row = table.row();
 
         if (client == null) {
             row.value("client-net", "        | ");
         } else {
             row.value("client-remote", format(client.getRemoteSocketAddress()))
-                    .value("client-net", networkConnection(client, true))
-                    .value("client-local", format(client.getLocalSocketAddress()));
+                  .value("client-net", networkConnection(client, true))
+                  .value("client-local", format(client.getLocalSocketAddress()));
         }
 
         if (pool == null) {
             row.value("pool-net", " |        ");
         } else {
             row.value("pool-local", format(pool.getLocalSocketAddress()))
-                .value("pool-net", networkConnection(pool, false))
-                .value("pool-remote", format(pool.getRemoteSocketAddress()));
+                  .value("pool-net", networkConnection(pool, false))
+                  .value("pool-remote", format(pool.getRemoteSocketAddress()));
         }
 
         client = null;
@@ -99,20 +94,18 @@ public class ProxyPrinter
         return this;
     }
 
-    private String format(SocketAddress sa)
-    {
+    private String format(SocketAddress sa) {
         if (sa instanceof InetSocketAddress) {
-            InetSocketAddress isa = (InetSocketAddress)sa;
+            InetSocketAddress isa = (InetSocketAddress) sa;
             return isa.getAddress().getHostAddress() + ":" + isa.getPort();
         } else if (sa == null) {
             return "[unknown]";
-        } else  {
+        } else {
             return sa.toString();
         }
     }
 
-    private String networkConnection(Socket s, boolean isRemoteLeft)
-    {
+    private String networkConnection(Socket s, boolean isRemoteLeft) {
         if (s.isInputShutdown() && s.isOutputShutdown()) {
             connectionStates.add(ConnectionState.CLOSED);
             return isRemoteLeft ? "........| " : " |........";
@@ -132,32 +125,30 @@ public class ProxyPrinter
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         table.row()
-                .value("client-net", "        +-")
-                .fill("client-local", "-")
-                .value("proxy", "---------")
-                .fill("pool-local", "-")
-                .value("pool-net", "-+        ");
+              .value("client-net", "        +-")
+              .fill("client-local", "-")
+              .value("proxy", "---------")
+              .fill("pool-local", "-")
+              .value("pool-net", "-+        ");
 
         return connectionStates.isEmpty()
-                ? table.toString()
-                : table + connectionStates.stream()
-                        .sorted()
-                        .map(ProxyPrinter::legend)
-                        .collect(Collectors.joining(", ", "\nTCP states: ", ""));
+              ? table.toString()
+              : table + connectionStates.stream()
+                    .sorted()
+                    .map(ProxyPrinter::legend)
+                    .collect(Collectors.joining(", ", "\nTCP states: ", ""));
     }
 
-    private static String legend(ConnectionState state)
-    {
+    private static String legend(ConnectionState state) {
         switch (state) {
-        case ESTABLISHED:
-            return "\"========\" means Established";
-        case HALF_CLOSED:
-            return "\"--------\" means Half-closed (arrows show open dirn)";
-        case CLOSED:
-            return "\"........\" means Closed";
+            case ESTABLISHED:
+                return "\"========\" means Established";
+            case HALF_CLOSED:
+                return "\"--------\" means Half-closed (arrows show open dirn)";
+            case CLOSED:
+                return "\"........\" means Closed";
         }
         throw new RuntimeException("Unknown state " + state);
     }

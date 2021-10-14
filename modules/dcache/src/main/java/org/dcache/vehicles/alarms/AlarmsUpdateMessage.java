@@ -59,18 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.vehicles.alarms;
 
-import java.util.List;
-
 import diskCacheV111.vehicles.Message;
+import java.util.List;
 import org.dcache.alarms.LogEntry;
 
 /**
  * <p>Request to update alarms.</p>
  *
  * <p>The alarms list contains the alarms with the appropriate fields
- *    already updated.</p>
+ * already updated.</p>
  */
 public class AlarmsUpdateMessage extends Message {
+
     private List<LogEntry> toUpdate;
 
     public List<LogEntry> getToUpdate() {

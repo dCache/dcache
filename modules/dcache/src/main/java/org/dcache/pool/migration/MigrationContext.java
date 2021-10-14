@@ -19,15 +19,13 @@
 
 package org.dcache.pool.migration;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import diskCacheV111.util.PnfsId;
-
+import java.util.concurrent.ScheduledExecutorService;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 
-public interface MigrationContext
-{
+public interface MigrationContext {
+
     String getPoolName();
 
     ScheduledExecutorService getExecutor();

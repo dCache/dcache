@@ -22,21 +22,19 @@ import java.util.UUID;
 
 /**
  * Service provider interface for nearline storage.
- *
+ * <p>
  * Files can be flushed to, staged from, and removed from nearline storage.
- *
- * The interface is designed for bulk operations. Whether a nearline storage
- * makes use of that or processes each request individually is an implementation
- * detail.
- *
+ * <p>
+ * The interface is designed for bulk operations. Whether a nearline storage makes use of that or
+ * processes each request individually is an implementation detail.
+ * <p>
  * Each request has a unique identifier that can be used to cancel the request.
- *
- * A file flushed to nearline storage is identified by an implementation
- * specific URI. This URI is used to stage or remove the file from nearline
- * storage.
+ * <p>
+ * A file flushed to nearline storage is identified by an implementation specific URI. This URI is
+ * used to stage or remove the file from nearline storage.
  */
-public interface NearlineStorage
-{
+public interface NearlineStorage {
+
     /**
      * Flush all files in {@code requests} to nearline storage.
      */
@@ -54,15 +52,14 @@ public interface NearlineStorage
 
     /**
      * Cancel any flush, stage or remove request with the given id.
-     *
-     * The failed method of any cancelled request should be called with a
-     * CancellationException. If the request completes before it can be
-     * cancelled, then the cancellation should be ignored and the completed
-     * or failed method should be called as appropriate.
-     *
+     * <p>
+     * The failed method of any cancelled request should be called with a CancellationException. If
+     * the request completes before it can be cancelled, then the cancellation should be ignored and
+     * the completed or failed method should be called as appropriate.
+     * <p>
      * A call to cancel must be non-blocking.
      *
-     * @param uuid  id of the request to cancel
+     * @param uuid id of the request to cancel
      */
     void cancel(UUID uuid);
 
@@ -72,14 +69,12 @@ public interface NearlineStorage
      * @throws IllegalArgumentException if the configuration is invalid
      */
     void configure(Map<String, String> properties)
-            throws IllegalArgumentException;
+          throws IllegalArgumentException;
 
     /**
-     * Cancels all requests and initiates a shutdown of the nearline storage
-     * interface.
-     *
-     * This method does not wait for actively executing requests to
-     * terminate.
+     * Cancels all requests and initiates a shutdown of the nearline storage interface.
+     * <p>
+     * This method does not wait for actively executing requests to terminate.
      */
     void shutdown();
 }

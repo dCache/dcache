@@ -27,14 +27,14 @@ import dmg.util.CommandExitException;
  * called sequentially.
  *
  * <p>Implementations may optionally implement {@link dmg.cells.nucleus.CellCommandListener},
- * {@link dmg.cells.nucleus.CellMessageReceiver} and {@link dmg.cells.nucleus.CellInfoProvider}
- * to participate in other operations of the door. The methods of those interface will be called
+ * {@link dmg.cells.nucleus.CellMessageReceiver} and {@link dmg.cells.nucleus.CellInfoProvider} to
+ * participate in other operations of the door. The methods of those interface will be called
  * concurrently with the methods of this interface.
  *
  * @see LineBasedInterpreterFactory
  */
-public interface LineBasedInterpreter
-{
+public interface LineBasedInterpreter {
+
     /**
      * Process an command line read from the client.
      *
@@ -44,19 +44,17 @@ public interface LineBasedInterpreter
     void execute(String cmd) throws CommandExitException;
 
     /**
-     * Signals that the connection with the client is being terminated.  The
-     * implementation is still able to send and receive cell messages.
+     * Signals that the connection with the client is being terminated.  The implementation is still
+     * able to send and receive cell messages.
      */
     void shutdown();
 
     /**
-     * Signals that this cell will receive no further cell messages.  Sending
-     * cell messages is also no longer supported.  The network connection to
-     * the client has not yet been closed, but the client might not accept any
-     * more data.
+     * Signals that this cell will receive no further cell messages.  Sending cell messages is also
+     * no longer supported.  The network connection to the client has not yet been closed, but the
+     * client might not accept any more data.
      */
-    default void messagingClosed()
-    {
+    default void messagingClosed() {
         // do nothing.
     }
 }

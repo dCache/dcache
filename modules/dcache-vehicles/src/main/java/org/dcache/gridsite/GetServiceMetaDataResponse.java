@@ -20,18 +20,16 @@ package org.dcache.gridsite;
 
 import java.io.Serializable;
 
-public class GetServiceMetaDataResponse implements Serializable
-{
+public class GetServiceMetaDataResponse implements Serializable {
+
     private static final long serialVersionUID = 3274689591636526302L;
     private final String metaData;
 
-    public GetServiceMetaDataResponse(String metaData)
-    {
+    public GetServiceMetaDataResponse(String metaData) {
         this.metaData = metaData;
     }
 
-    public String getMetaData()
-    {
+    public String getMetaData() {
         return metaData;
     }
 }

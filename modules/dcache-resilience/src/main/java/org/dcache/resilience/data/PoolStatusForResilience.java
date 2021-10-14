@@ -71,11 +71,11 @@ public enum PoolStatusForResilience {
     READ_ONLY;          // equivalent to disabled for writing by clients
 
     /**
-     *  <p>This status tells Resilience whether action (scanning) needs to
-     *  be taken with respect to the pool.  Hence this status is
-     *  slightly different from the pool's mode.</p>
+     * <p>This status tells Resilience whether action (scanning) needs to
+     * be taken with respect to the pool.  Hence this status is slightly different from the pool's
+     * mode.</p>
      *
-     *  @return the status equivalent to the mode.
+     * @return the status equivalent to the mode.
      */
     public static PoolStatusForResilience getStatusFor(PoolV2Mode poolMode) {
         if (poolMode == null) {
@@ -88,8 +88,8 @@ public enum PoolStatusForResilience {
          *  by the client, it should be treated as down.
          */
         if (poolMode.getMode() == PoolV2Mode.DISABLED ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
+              poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD) ||
+              poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
             return DOWN;
         }
 
@@ -103,7 +103,7 @@ public enum PoolStatusForResilience {
          *  does not constitute a reason to migrate existing replicas.
          */
         if (poolMode.isDisabled(PoolV2Mode.DISABLED_STORE) ||
-                        poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
+              poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             return READ_ONLY;
         }
 

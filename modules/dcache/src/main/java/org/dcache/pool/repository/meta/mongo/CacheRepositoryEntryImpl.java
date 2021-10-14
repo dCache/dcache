@@ -1,22 +1,13 @@
 package org.dcache.pool.repository.meta.mongo;
 
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
-
 import diskCacheV111.util.AccessLatency;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.util.Collection;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
@@ -24,29 +15,30 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.bson.Document;
-
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
-
 import org.dcache.vehicles.FileAttributes;
-
-import static org.dcache.pool.repository.ReplicaState.CACHED;
-import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
-import static org.dcache.util.Exceptions.messageOrClassName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord {
 
@@ -57,8 +49,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
      * Update options to do an upsert.
      */
     private static final UpdateOptions UPSERT = new UpdateOptions()
-            .upsert(true)
-            .bypassDocumentValidation(true); // update aka add new fields
+          .upsert(true)
+          .bypassDocumentValidation(true); // update aka add new fields
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
     private final CacheRepositoryEntryState state;
@@ -78,15 +70,16 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
     private final Document dbKey;
 
-    public CacheRepositoryEntryImpl(String pool, PnfsId pnfsId, MongoCollection<Document> collection, FileStore fileStore) throws IOException {
+    public CacheRepositoryEntryImpl(String pool, PnfsId pnfsId,
+          MongoCollection<Document> collection, FileStore fileStore) throws IOException {
 
         this.pnfsId = pnfsId;
         this.collection = collection;
         this.fileStore = fileStore;
 
         dbKey = new Document()
-                .append("pool", pool)
-                .append("pnfsid", pnfsId.toString());
+              .append("pool", pool)
+              .append("pnfsid", pnfsId.toString());
 
         state = new CacheRepositoryEntryState(dbKey, collection);
 
@@ -94,8 +87,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
         try {
             BasicFileAttributes attributes = fileStore
-                    .getFileAttributeView(pnfsId)
-                    .readAttributes();
+                  .getFileAttributeView(pnfsId)
+                  .readAttributes();
             lastAccess = attributes.lastModifiedTime().toMillis();
             size = attributes.size();
         } catch (FileNotFoundException | NoSuchFileException fnf) {
@@ -154,10 +147,12 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     public synchronized void setLastAccessTime(long time) throws CacheException {
         try {
             fileStore
-                    .getFileAttributeView(pnfsId)
-                    .setTimes(FileTime.fromMillis(time), null, null);
+                  .getFileAttributeView(pnfsId)
+                  .setTimes(FileTime.fromMillis(time), null, null);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time for " + pnfsId + ": " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to set modification time for " + pnfsId + ": " + messageOrClassName(e),
+                  e);
         }
         lastAccess = System.currentTimeMillis();
     }
@@ -174,10 +169,10 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             ReplicaState replicaState = state.getState();
 
             // use cached value only for file in 'trusted state'
-            return replicaState == CACHED || replicaState == PRECIOUS ? size: fileStore
-                    .getFileAttributeView(pnfsId)
-                    .readAttributes()
-                    .size();
+            return replicaState == CACHED || replicaState == PRECIOUS ? size : fileStore
+                  .getFileAttributeView(pnfsId)
+                  .readAttributes()
+                  .size();
         } catch (NoSuchFileException e) {
             return 0;
         } catch (IOException e) {
@@ -198,7 +193,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
     @Override
     public synchronized Void setState(ReplicaState newState)
-            throws CacheException {
+          throws CacheException {
         try {
             if (state.getState().isMutable() && !newState.isMutable()) {
                 try {
@@ -219,7 +214,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         try {
             return state.removeExpiredStickyFlags();
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to remove expired sticky flags: " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to remove expired sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -229,7 +225,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             return state.setSticky(owner, expire, overwrite);
 
         } catch (IllegalStateException | IOException e) {
-            throw new DiskErrorCacheException("Failed to set sticky flags: " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to set sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -252,7 +249,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
                 removeStorageInfo();
             }
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set file attributes for " + pnfsId + ": " + messageOrClassName(e), e);
+            throw new DiskErrorCacheException(
+                  "Failed to set file attributes for " + pnfsId + ": " + messageOrClassName(e), e);
         }
         return null;
     }
@@ -264,18 +262,19 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     private synchronized void setStorageInfo(StorageInfo si) throws IOException {
 
         Map<String, ? extends Object> m = si.getMap();
-        List<String> locations = si.locations().stream().map(Object::toString).collect(Collectors.toList());
+        List<String> locations = si.locations().stream().map(Object::toString)
+              .collect(Collectors.toList());
 
         Document siDoc = new Document(dbKey)
-                .append("version", FORMAT_VERSION)
-                .append("created", creationTime)
-                .append("hsm", si.getHsm())
-                .append("storageClass", si.getStorageClass())
-                .append("size", si.getLegacySize())
-                .append("accessLatency", si.getLegacyAccessLatency().toString())
-                .append("retentionPolicy", si.getLegacyRetentionPolicy().toString())
-                .append("locations", locations)
-                .append("map", new Document((Map<String, Object>) m));
+              .append("version", FORMAT_VERSION)
+              .append("created", creationTime)
+              .append("hsm", si.getHsm())
+              .append("storageClass", si.getStorageClass())
+              .append("size", si.getLegacySize())
+              .append("accessLatency", si.getLegacyAccessLatency().toString())
+              .append("retentionPolicy", si.getLegacyRetentionPolicy().toString())
+              .append("locations", locations)
+              .append("map", new Document((Map<String, Object>) m));
 
         collection.updateOne(dbKey, new Document("$set", siDoc), UPSERT);
 
@@ -309,7 +308,8 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         storageInfo = new GenericStorageInfo(d.getString("hsm"), d.getString("storageClass"));
 
         storageInfo.setLegacyAccessLatency(AccessLatency.valueOf(d.getString("accessLatency")));
-        storageInfo.setLegacyRetentionPolicy(RetentionPolicy.valueOf(d.getString("retentionPolicy")));
+        storageInfo.setLegacyRetentionPolicy(
+              RetentionPolicy.valueOf(d.getString("retentionPolicy")));
         storageInfo.setLegacySize(d.getLong("size"));
 
         @SuppressWarnings("unchecked")
@@ -324,9 +324,9 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
         Document keymap = d.get("map", Document.class);
         keymap.keySet()
-                .forEach((k) -> {
-                    storageInfo.setKey(k, keymap.getString(k));
-                });
+              .forEach((k) -> {
+                  storageInfo.setKey(k, keymap.getString(k));
+              });
         creationTime = d.getLong("created");
     }
 

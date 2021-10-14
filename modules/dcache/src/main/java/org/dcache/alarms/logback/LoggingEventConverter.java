@@ -59,33 +59,30 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import static java.util.Objects.requireNonNull;
+
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
-import org.slf4j.Marker;
-
+import dmg.cells.nucleus.CDC;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
-
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NDC;
 import org.dcache.util.NetworkUtils;
-
-import static java.util.Objects.requireNonNull;
+import org.slf4j.Marker;
 
 /**
- * This class provides the binding between the logback-specific
- * event structure, the alarm definition and the DAO storage class.
- * It is meant for package-only access.
+ * This class provides the binding between the logback-specific event structure, the alarm
+ * definition and the DAO storage class. It is meant for package-only access.
  *
  * @author arossi
  */
 final class LoggingEventConverter {
+
     private static String getKeyFromMarker(Marker marker) {
         Marker keyMarker = AlarmMarkerFactory.getKeySubmarker(marker);
         if (keyMarker == null) {
@@ -149,9 +146,9 @@ final class LoggingEventConverter {
 
         if (!AlarmMarkerFactory.containsAlarmMarker(marker)) {
             throw new IllegalArgumentException(
-                            String.format( "%s did not contain an alarm marker; "
-                                                           + "this is a bug.",
-                                           event.getFormattedMessage()));
+                  String.format("%s did not contain an alarm marker; "
+                              + "this is a bug.",
+                        event.getFormattedMessage()));
         }
 
         Map<String, String> mdc = event.getMDCPropertyMap();

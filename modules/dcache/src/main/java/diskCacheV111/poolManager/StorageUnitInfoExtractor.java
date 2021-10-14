@@ -59,41 +59,38 @@ documents or software obtained from this server.
  */
 package diskCacheV111.poolManager;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
-
 /**
  * <p>Utilities for finding storage unit info relevant to pool group
- *      operations.</p>
+ * operations.</p>
  */
-public final class StorageUnitInfoExtractor
-{
+public final class StorageUnitInfoExtractor {
+
     /**
      * @param resilientOnly return only resilient groups.
      * @return all the pool groups to which this storage unit is linked.
      */
     public static Collection<String> getPoolGroupsFor(String unitName,
-                                                      PoolSelectionUnit psu,
-                                                      boolean resilientOnly)
-    {
+          PoolSelectionUnit psu,
+          boolean resilientOnly) {
         return psu.getPoolGroups().values().stream()
-                  .filter((g) -> (resilientOnly ? g.isResilient() : true) &&
-                                  hasStorageUnit(g.getName(), unitName, psu))
-                  .map(SelectionPoolGroup::getName)
-                  .collect(Collectors.toList());
+              .filter((g) -> (resilientOnly ? g.isResilient() : true) &&
+                    hasStorageUnit(g.getName(), unitName, psu))
+              .map(SelectionPoolGroup::getName)
+              .collect(Collectors.toList());
     }
 
     /**
      * @return all the resilient pool groups to which this storage unit is linked.
      */
     public static Collection<String> getResilientGroupsFor(String unitName,
-                                                           PoolSelectionUnit psu)
-    {
+          PoolSelectionUnit psu) {
         return getPoolGroupsFor(unitName, psu, true);
     }
 
@@ -101,40 +98,37 @@ public final class StorageUnitInfoExtractor
      * @return all the storage units linked to this pool group.
      */
     public static Collection<StorageUnit> getStorageUnitsInGroup(String name,
-                                                                 PoolSelectionUnit psu)
-    {
+          PoolSelectionUnit psu) {
         Collection<StorageUnit> units = new ArrayList<>();
         psu.getLinksPointingToPoolGroup(name).stream()
-                        .map(SelectionLink::getUnitGroupsTargetedBy)
-                        .flatMap(Collection::stream)
-                        .map(SelectionUnitGroup::getMemberUnits)
-                        .flatMap(Collection::stream)
-                        .filter(StorageUnit.class::isInstance)
-                        .map(StorageUnit.class::cast)
-                        .forEach(units::add);
+              .map(SelectionLink::getUnitGroupsTargetedBy)
+              .flatMap(Collection::stream)
+              .map(SelectionUnitGroup::getMemberUnits)
+              .flatMap(Collection::stream)
+              .filter(StorageUnit.class::isInstance)
+              .map(StorageUnit.class::cast)
+              .forEach(units::add);
         return units;
     }
 
     /**
-     * @return true if the pool group has at least one storage group
-     * associated with it via a link, and the storage group is resilient.
+     * @return true if the pool group has at least one storage group associated with it via a link,
+     * and the storage group is resilient.
      */
     public static boolean hasResilientStorageUnit(String poolGroup,
-                                                  PoolSelectionUnit psu)
-    {
+          PoolSelectionUnit psu) {
         return getStorageUnitsInGroup(poolGroup, psu)
-                        .stream()
-                        .filter((u) -> u.getRequiredCopies() != null)
-                        .findAny().isPresent();
+              .stream()
+              .filter((u) -> u.getRequiredCopies() != null)
+              .findAny().isPresent();
     }
 
     private static boolean hasStorageUnit(String poolGroup,
-                                          String storageUnit,
-                                          PoolSelectionUnit psu)
-    {
+          String storageUnit,
+          PoolSelectionUnit psu) {
         return getStorageUnitsInGroup(poolGroup, psu).stream()
-                        .filter((sunit) -> sunit.getName().equals(storageUnit))
-                        .findAny().isPresent();
+              .filter((sunit) -> sunit.getName().equals(storageUnit))
+              .findAny().isPresent();
     }
 
     private StorageUnitInfoExtractor() {

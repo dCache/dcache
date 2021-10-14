@@ -19,32 +19,27 @@ package org.dcache.srm;
 
 import org.dcache.srm.v2_2.TStatusCode;
 
-public class SRMFileBusyException extends SRMException
-{
+public class SRMFileBusyException extends SRMException {
+
     private static final long serialVersionUID = -6901319772076440970L;
 
-    public SRMFileBusyException()
-    {
+    public SRMFileBusyException() {
     }
 
-    public SRMFileBusyException(String message)
-    {
+    public SRMFileBusyException(String message) {
         super(message);
     }
 
-    public SRMFileBusyException(String message, Throwable cause)
-    {
+    public SRMFileBusyException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SRMFileBusyException(Throwable cause)
-    {
+    public SRMFileBusyException(Throwable cause) {
         super(cause);
     }
 
     @Override
-    public TStatusCode getStatusCode()
-    {
+    public TStatusCode getStatusCode() {
         return TStatusCode.SRM_FILE_BUSY;
     }
 }

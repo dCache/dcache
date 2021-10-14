@@ -1,8 +1,7 @@
 package org.dcache.tests.util;
 
-import org.junit.Test;
-
 import diskCacheV111.util.CacheException;
+import org.junit.Test;
 
 public class CecheExceptionTest {
 

@@ -1,63 +1,49 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Function;
+import static java.util.concurrent.TimeUnit.DAYS;
 
+import com.google.common.base.Function;
+import diskCacheV111.pools.PoolCostInfo;
 import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.List;
 
-import diskCacheV111.pools.PoolCostInfo;
-
-import static java.util.concurrent.TimeUnit.DAYS;
-
 /**
  * Pool selection algorithm using Weighted Available Space Selection (WASS).
- *
+ * <p>
  * The weighted available space is defined as:
- *
- *                  scf
- *        available
- *     ----------------------
- *          (pcf writers)
- *        2
- *
- * where available is the unweighted available space, writers the
- * current number of write movers, pcf is the performance cost
- * factor, and scf is the space cost factor.
- *
- * The space cost factor adjusts the preference for using pools by
- * available space. A space cost factor of 0 means that the
- * selection is independent of available space. A value of 1 means
- * that the preference of a pool is proportional to the amount of
- * available space. The higher the value the more the selection is
- * skewed to pools with lots of free space (negative values mean
- * the selection is more skewed towards pools with little free
- * space; that's unlikely to be useful).
- *
- * A selection purely guided by space risks accumulating writers
- * on a pool, eventually causing pools to become overloaded.  To
- * add a feedback from write activity we reduce the available
- * space exponentially with the number of writers.
- *
- * Intuitively the reciprocal of pcf is the number of writers it
- * takes to half the weighted available space.
- *
- * Setting pcf to 0 means the available space will be unweighted, ie
- * load does not affect pool selection. A value of 1 would mean
- * that every write half the available space. The useful range of
+ * <p>
+ * scf available ---------------------- (pcf writers) 2
+ * <p>
+ * where available is the unweighted available space, writers the current number of write movers,
+ * pcf is the performance cost factor, and scf is the space cost factor.
+ * <p>
+ * The space cost factor adjusts the preference for using pools by available space. A space cost
+ * factor of 0 means that the selection is independent of available space. A value of 1 means that
+ * the preference of a pool is proportional to the amount of available space. The higher the value
+ * the more the selection is skewed to pools with lots of free space (negative values mean the
+ * selection is more skewed towards pools with little free space; that's unlikely to be useful).
+ * <p>
+ * A selection purely guided by space risks accumulating writers on a pool, eventually causing pools
+ * to become overloaded.  To add a feedback from write activity we reduce the available space
+ * exponentially with the number of writers.
+ * <p>
+ * Intuitively the reciprocal of pcf is the number of writers it takes to half the weighted
+ * available space.
+ * <p>
+ * Setting pcf to 0 means the available space will be unweighted, ie load does not affect pool
+ * selection. A value of 1 would mean that every write half the available space. The useful range of
  * pcg is probably 0 to 1.
- *
- * The performance cost factor used in the expression is the
- * product of a per pool value and the performance cost factor of
- * the partition. A per pool value makes it possible to specify
- * how quickly a pool degrades with load.
- *
- * Note that setting both factors to zero causes pool selection to
- * become random. This it the same behaviour as with the classic
- * partition.
+ * <p>
+ * The performance cost factor used in the expression is the product of a per pool value and the
+ * performance cost factor of the partition. A per pool value makes it possible to specify how
+ * quickly a pool degrades with load.
+ * <p>
+ * Note that setting both factors to zero causes pool selection to become random. This it the same
+ * behaviour as with the classic partition.
  */
-public class WeightedAvailableSpaceSelection implements Serializable
-{
+public class WeightedAvailableSpaceSelection implements Serializable {
+
     private static final long serialVersionUID = 6196398425106858164L;
 
     /* SecureRandom is a higher quality source for randomness than
@@ -71,14 +57,12 @@ public class WeightedAvailableSpaceSelection implements Serializable
     private final double performanceCostFactor;
     private final double spaceCostFactor;
 
-    public WeightedAvailableSpaceSelection(double performanceCostFactor, double spaceCostFactor)
-    {
+    public WeightedAvailableSpaceSelection(double performanceCostFactor, double spaceCostFactor) {
         this.performanceCostFactor = performanceCostFactor;
         this.spaceCostFactor = spaceCostFactor;
     }
 
-    protected double random()
-    {
+    protected double random() {
         return RANDOM.nextDouble();
     }
 
@@ -88,8 +72,7 @@ public class WeightedAvailableSpaceSelection implements Serializable
      * We treat removable space as decaying at an exponential rate. Ie the longer a removable file
      * has not been accessed, the less space we consider it to occupy.
      */
-    protected double getAvailableRemovable(PoolCostInfo.PoolSpaceInfo space)
-    {
+    protected double getAvailableRemovable(PoolCostInfo.PoolSpaceInfo space) {
         double removable = space.getRemovableSpace();
         double breakeven = space.getBreakEven();
         double lru = space.getLRUSeconds();
@@ -168,8 +151,8 @@ public class WeightedAvailableSpaceSelection implements Serializable
         double undecayed;
         if (lru > 0) {
             undecayed =
-                    removable * halflife * (1 - Math.pow(2.0, -lru / halflife)) /
-                            (lru * LOG2);
+                  removable * halflife * (1 - Math.pow(2.0, -lru / halflife)) /
+                        (lru * LOG2);
         } else {
             undecayed = removable;
         }
@@ -183,8 +166,7 @@ public class WeightedAvailableSpaceSelection implements Serializable
      * Available space includes free space and removable space deemed available for writes. The gap
      * parameter of the pool is respected.
      */
-    protected double getAvailable(PoolCostInfo.PoolSpaceInfo space, long filesize)
-    {
+    protected double getAvailable(PoolCostInfo.PoolSpaceInfo space, long filesize) {
         long free = space.getFreeSpace();
         long gap = space.getGap();
 
@@ -203,8 +185,7 @@ public class WeightedAvailableSpaceSelection implements Serializable
         return free + removable;
     }
 
-    protected int getWriters(PoolCostInfo info)
-    {
+    protected int getWriters(PoolCostInfo info) {
         int writers = 0;
         if (info.getStoreQueue() != null) {
             writers += info.getStoreQueue().getWriters();
@@ -224,13 +205,11 @@ public class WeightedAvailableSpaceSelection implements Serializable
         return writers;
     }
 
-    protected double getWeightedAvailable(PoolCostInfo info, double available, double load)
-    {
+    protected double getWeightedAvailable(PoolCostInfo info, double available, double load) {
         return (available == 0) ? 0 : (Math.pow(available, spaceCostFactor) / Math.pow(2.0, load));
     }
 
-    private double getLoad(PoolCostInfo info)
-    {
+    private double getLoad(PoolCostInfo info) {
         return performanceCostFactor * info.getMoverCostFactor() * getWriters(info);
     }
 
@@ -240,8 +219,7 @@ public class WeightedAvailableSpaceSelection implements Serializable
      * Returns null if all pools are full.
      */
     public <P> P selectByAvailableSpace(List<P> pools, long filesize,
-                                        Function<P, PoolCostInfo> getCost)
-    {
+          Function<P, PoolCostInfo> getCost) {
         int length = pools.size();
         double[] available = new double[length];
 
@@ -284,7 +262,9 @@ public class WeightedAvailableSpaceSelection implements Serializable
         }
 
         if (sum == Double.POSITIVE_INFINITY) {
-            throw new IllegalStateException("WASS overflow: Configured space cost factor (" + spaceCostFactor + ") is too large.");
+            throw new IllegalStateException(
+                  "WASS overflow: Configured space cost factor (" + spaceCostFactor
+                        + ") is too large.");
         }
 
         throw new RuntimeException("Unreachable statement.");

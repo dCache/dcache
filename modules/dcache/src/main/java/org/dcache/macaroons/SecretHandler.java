@@ -17,31 +17,30 @@
  */
 package org.dcache.macaroons;
 
-import javax.annotation.Nullable;
-
 import java.time.Instant;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 
 /**
- * A class that implements SecretHandler is responsible for managing the
- * secret(s) needed when building and verifying macaroon credentials.
- * Secrets have a corresponding identifier that is used to discover which
- * secret was used.  This allows the SecretHandler to expire secrets to minimise
+ * A class that implements SecretHandler is responsible for managing the secret(s) needed when
+ * building and verifying macaroon credentials. Secrets have a corresponding identifier that is used
+ * to discover which secret was used.  This allows the SecretHandler to expire secrets to minimise
  * the damage should there be a leak of secrets.
  */
-public interface SecretHandler
-{
+public interface SecretHandler {
+
     /**
-     * Find a secret that will be valid until the minimum expiry time.
-     * Implementation are free to return a secret that is still valid after
-     * the desired expiry time.
+     * Find a secret that will be valid until the minimum expiry time. Implementation are free to
+     * return a secret that is still valid after the desired expiry time.
      */
-    IdentifiedSecret secretExpiringAfter(Instant earliestExpiry, Supplier<IdentifiedSecret> newSecret) throws Exception;
+    IdentifiedSecret secretExpiringAfter(Instant earliestExpiry,
+          Supplier<IdentifiedSecret> newSecret) throws Exception;
 
     /**
      * Find the secret for the identifier.
-     * @return the byte array of the secret corresponding to the supplied
-     * identifier, or null if no such secret could be found.
+     *
+     * @return the byte array of the secret corresponding to the supplied identifier, or null if no
+     * such secret could be found.
      */
     @Nullable
     byte[] findSecret(String identifier);

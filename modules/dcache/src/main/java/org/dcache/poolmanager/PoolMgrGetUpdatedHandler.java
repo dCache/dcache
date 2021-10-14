@@ -22,22 +22,19 @@ package org.dcache.poolmanager;
  * Request to pool manager to provide an updated PoolManagerHandler.
  *
  * <p>Will not generate a reply until a handler with a modified version is
- * available. If the TTL expires before an updated handler is available, no
- * reply may be generated.
+ * available. If the TTL expires before an updated handler is available, no reply may be generated.
  */
-public class PoolMgrGetUpdatedHandler extends PoolMgrGetHandler
-{
+public class PoolMgrGetUpdatedHandler extends PoolMgrGetHandler {
+
     private static final long serialVersionUID = -6335302547973525551L;
 
     private final SerializablePoolManagerHandler.Version version;
 
-    public PoolMgrGetUpdatedHandler(SerializablePoolManagerHandler.Version version)
-    {
+    public PoolMgrGetUpdatedHandler(SerializablePoolManagerHandler.Version version) {
         this.version = version;
     }
 
-    public SerializablePoolManagerHandler.Version getVersion()
-    {
+    public SerializablePoolManagerHandler.Version getVersion() {
         return version;
     }
 }

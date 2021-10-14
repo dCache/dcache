@@ -1,8 +1,8 @@
 package diskCacheV111.vehicles;
 
-import org.dcache.auth.attributes.Restriction;
-
 import static java.util.Objects.requireNonNull;
+
+import org.dcache.auth.attributes.Restriction;
 
 /**
  * @author Patrick F.
@@ -10,110 +10,119 @@ import static java.util.Objects.requireNonNull;
  * @version 0.0, 28 Jun 2002
  */
 
-public class CopyManagerMessage extends Message
-{
-  private int numberOfRetries = 3;
-  private int numberOfPerformedRetries;
-  private final String srcPnfsPath;
-  private final String dstPnfsPath;
-  private int returnCode;
-  private String description;
-  private Restriction restriction;
+public class CopyManagerMessage extends Message {
 
-  private static final long serialVersionUID = -1490534904266183106L;
+    private int numberOfRetries = 3;
+    private int numberOfPerformedRetries;
+    private final String srcPnfsPath;
+    private final String dstPnfsPath;
+    private int returnCode;
+    private String description;
+    private Restriction restriction;
 
-  public CopyManagerMessage(String srcPnfsPath, String dstPnfsPath,  long id, int bufferSize, int tcpBufferSize)
-  {
-    super();
-    setId(id);
-    this.srcPnfsPath = srcPnfsPath;
-    this.dstPnfsPath = dstPnfsPath;
-  }
+    private static final long serialVersionUID = -1490534904266183106L;
 
-  public Restriction getRestriction()
-  {
-      return restriction;
-  }
+    public CopyManagerMessage(String srcPnfsPath, String dstPnfsPath, long id, int bufferSize,
+          int tcpBufferSize) {
+        super();
+        setId(id);
+        this.srcPnfsPath = srcPnfsPath;
+        this.dstPnfsPath = dstPnfsPath;
+    }
 
-  public void setRestriction(Restriction restriction)
-  {
-      this.restriction = requireNonNull(restriction);
-  }
+    public Restriction getRestriction() {
+        return restriction;
+    }
 
-  /** Getter for property gsiftpUrl.
-   * @return Value of property gsiftpUrl.
-   */
-  public String getSrcPnfsPath()
-  {
-      return srcPnfsPath;
-  }
+    public void setRestriction(Restriction restriction) {
+        this.restriction = requireNonNull(restriction);
+    }
 
-  /** Getter for property pnfsPath.
-   * @return Value of property pnfsPath.
-   */
-  public String getDstPnfsPath()
-  {
-      return dstPnfsPath;
-  }
+    /**
+     * Getter for property gsiftpUrl.
+     *
+     * @return Value of property gsiftpUrl.
+     */
+    public String getSrcPnfsPath() {
+        return srcPnfsPath;
+    }
 
-  /** Getter for property returnCode.
-   * @return Value of property returnCode.
-   */
-  @Override
-  public int getReturnCode()
-  {
-      return returnCode;
-  }
+    /**
+     * Getter for property pnfsPath.
+     *
+     * @return Value of property pnfsPath.
+     */
+    public String getDstPnfsPath() {
+        return dstPnfsPath;
+    }
 
-  /** Setter for property returnCode.
-   * @param returnCode New value of property returnCode.
-   */
-  public void setReturnCode(int returnCode)
-  {
-      this.returnCode = returnCode;
-  }
+    /**
+     * Getter for property returnCode.
+     *
+     * @return Value of property returnCode.
+     */
+    @Override
+    public int getReturnCode() {
+        return returnCode;
+    }
 
-  /** Getter for property description.
-   * @return Value of property description.
-   */
-  public String getDescription()
-  {
-      return description;
-  }
+    /**
+     * Setter for property returnCode.
+     *
+     * @param returnCode New value of property returnCode.
+     */
+    public void setReturnCode(int returnCode) {
+        this.returnCode = returnCode;
+    }
 
-  /** Setter for property description.
-   * @param description New value of property description.
-   */
-  public void setDescription(String description)
-  {
-      this.description = description;
-  }
+    /**
+     * Getter for property description.
+     *
+     * @return Value of property description.
+     */
+    public String getDescription() {
+        return description;
+    }
 
-  /** Getter for property numberOfRetries.
-   * @return Value of property numberOfRetries.
-   */
-  public int getNumberOfRetries() {
-      return numberOfRetries;
-  }
+    /**
+     * Setter for property description.
+     *
+     * @param description New value of property description.
+     */
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-  /** Setter for property numberOfRetries.
-   * @param numberOfRetries New value of property numberOfRetries.
-   */
-  public void setNumberOfRetries(int numberOfRetries) {
-      this.numberOfRetries = numberOfRetries;
-  }
+    /**
+     * Getter for property numberOfRetries.
+     *
+     * @return Value of property numberOfRetries.
+     */
+    public int getNumberOfRetries() {
+        return numberOfRetries;
+    }
 
-  /** Getter for property numberOfPerformedRetries.
-   * @return Value of property numberOfPerformedRetries.
-   */
-  public int getNumberOfPerformedRetries() {
-      return numberOfPerformedRetries;
-  }
+    /**
+     * Setter for property numberOfRetries.
+     *
+     * @param numberOfRetries New value of property numberOfRetries.
+     */
+    public void setNumberOfRetries(int numberOfRetries) {
+        this.numberOfRetries = numberOfRetries;
+    }
 
-  public void increaseNumberOfPerformedRetries() {
-      this.numberOfPerformedRetries++;
-  }
+    /**
+     * Getter for property numberOfPerformedRetries.
+     *
+     * @return Value of property numberOfPerformedRetries.
+     */
+    public int getNumberOfPerformedRetries() {
+        return numberOfPerformedRetries;
+    }
 
+    public void increaseNumberOfPerformedRetries() {
+        this.numberOfPerformedRetries++;
+    }
 
 
 }

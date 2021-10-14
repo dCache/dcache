@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,32 +16,27 @@
 package org.dcache.ftp.client.dc;
 
 import java.io.DataOutputStream;
-import java.io.OutputStream;
 import java.io.IOException;
-
+import java.io.OutputStream;
 import org.dcache.ftp.client.Buffer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EBlockImageDCWriter
-        extends EBlockAware
-        implements DataChannelWriter
-{
+      extends EBlockAware
+      implements DataChannelWriter {
 
     static final Logger logger = LoggerFactory.getLogger(EBlockImageDCWriter.class);
     protected DataOutputStream output;
 
     @Override
-    public void setDataStream(OutputStream out)
-    {
+    public void setDataStream(OutputStream out) {
         output = new DataOutputStream(out);
     }
 
     @Override
     public void write(Buffer buf)
-            throws IOException
-    {
+          throws IOException {
         long offset = buf.getOffset();
         if (offset < 0) {
             throw new IOException("Invalid offset: " + offset);
@@ -59,8 +54,7 @@ public class EBlockImageDCWriter
     }
 
     @Override
-    public void endOfData() throws IOException
-    {
+    public void endOfData() throws IOException {
         byte desc;
         //the first data channel to quit
         // will send EOF. There musn't be more than
@@ -72,7 +66,7 @@ public class EBlockImageDCWriter
                 output.writeLong(0);
                 output.writeLong(context.eodsTotal);
                 logger.debug("wrote EOF (expected EODS: {}) and EOD",
-                             context.eodsTotal);
+                      context.eodsTotal);
             } else {
                 desc = EOD;
                 output.writeByte(desc);
@@ -88,8 +82,7 @@ public class EBlockImageDCWriter
     }
 
     public static void close(DataOutputStream myOutput)
-            throws IOException
-    {
+          throws IOException {
         byte desc;
         // EOF and EOD have already been sent
         desc = WILL_CLOSE;
@@ -103,8 +96,7 @@ public class EBlockImageDCWriter
     }
 
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         close(output);
     }
 

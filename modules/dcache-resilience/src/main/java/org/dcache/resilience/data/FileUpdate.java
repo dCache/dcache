@@ -59,21 +59,23 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.dcache.resilience.data.MessageType.ADD_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CLEAR_CACHE_LOCATION;
+import static org.dcache.resilience.data.MessageType.CORRUPT_FILE;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_DOWN;
+import static org.dcache.resilience.data.MessageType.POOL_STATUS_UP;
+import static org.dcache.resilience.data.MessageType.QOS_MODIFIED;
 
+import com.google.common.annotations.VisibleForTesting;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.PnfsId;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsId;
-
 import org.dcache.cells.CellStub;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
@@ -84,15 +86,15 @@ import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.ReplicaVerifier;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.ReplicaStatusMessage;
-
-import static org.dcache.resilience.data.MessageType.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
- *      a file location.</p>
+ * a file location.</p>
  *
  * <p>Implements verification/validation methods to determine if the update
- *      should be registered in the operation map or not.</p>
+ * should be registered in the operation map or not.</p>
  *
  * @see FileOperationMap#register(FileUpdate)
  * @see FileOperationHandler#handleLocationUpdate(FileUpdate)
@@ -100,24 +102,24 @@ import static org.dcache.resilience.data.MessageType.*;
  * @see LocalNamespaceAccess#handleQuery(Connection, ScanSummary)
  */
 public final class FileUpdate {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    FileUpdate.class);
+          FileUpdate.class);
 
     /**
      * @return <code>null</code> if AccessLatency is not ONLINE, or if the file
-     * is not found or there are no locations for it and the
-     * message being processed is for a clear cache location; otherwise
-     * the file attribute set required to process resilience.
+     * is not found or there are no locations for it and the message being processed is for a clear
+     * cache location; otherwise the file attribute set required to process resilience.
      */
     public static FileAttributes getAttributes(PnfsId pnfsId, String pool,
-                                               MessageType messageType,
-                                               NamespaceAccess namespace)
-                    throws CacheException {
+          MessageType messageType,
+          NamespaceAccess namespace)
+          throws CacheException {
         try {
             FileAttributes attributes = namespace.getRequiredAttributes(pnfsId);
             if (attributes == null) {
                 throw new FileNotFoundCacheException(String.format("No attributes "
-                    + "returned for %s", pnfsId));
+                      + "returned for %s", pnfsId));
             }
 
             LOGGER.trace("Got required attributes for {}.", pnfsId);
@@ -125,10 +127,10 @@ public final class FileUpdate {
             if (attributes.getLocations().isEmpty()) {
                 if (messageType == CLEAR_CACHE_LOCATION) {
                     LOGGER.trace("ClearCacheLocationMessage for {}; "
-                                                 + "no current locations; "
-                                                 + "file probably deleted "
-                                                 + "from namespace.",
-                                 pnfsId);
+                                + "no current locations; "
+                                + "file probably deleted "
+                                + "from namespace.",
+                          pnfsId);
                     return null;
                 }
 
@@ -138,8 +140,8 @@ public final class FileUpdate {
                      * the file has been removed.
                      */
                     throw new FileNotFoundCacheException
-                                    (String.format("File no longer found: %s"
-                                                    , pnfsId));
+                          (String.format("File no longer found: %s"
+                                , pnfsId));
                 }
 
                 /*
@@ -157,16 +159,16 @@ public final class FileUpdate {
                  *  Pool can now be <code>null</code>
                  *  but only if message type is QOS_MODIFIED.
                  */
-                if (pool == null ) {
-                   if (messageType != QOS_MODIFIED) {
-                       throw new CacheException(
-                                       CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                       String.format("resilience File update for %s, "
-                                                                     + "messageType %s, "
-                                                                     + "has no pool location!",
-                                                     pnfsId, messageType));
-                   }
-                   return null;
+                if (pool == null) {
+                    if (messageType != QOS_MODIFIED) {
+                        throw new CacheException(
+                              CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                              String.format("resilience File update for %s, "
+                                          + "messageType %s, "
+                                          + "has no pool location!",
+                                    pnfsId, messageType));
+                    }
+                    return null;
                 }
 
                 singleLoc.add(pool);
@@ -174,39 +176,39 @@ public final class FileUpdate {
             }
 
             LOGGER.debug("After call to namespace, {} has locations {}.",
-                         pnfsId,
-                         attributes.getLocations());
+                  pnfsId,
+                  attributes.getLocations());
             return attributes;
         } catch (FileNotFoundCacheException e) {
             LOGGER.debug("{}; {} has likely been deleted from the namespace.",
-                         e.getMessage(),
-                         pnfsId);
+                  e.getMessage(),
+                  pnfsId);
             return null;
         }
     }
 
-    public final PnfsId  pnfsId;
-    public final MessageType     type;
+    public final PnfsId pnfsId;
+    public final MessageType type;
 
     private final boolean isFullScan;
 
-    public String          pool;
+    public String pool;
 
-    private Integer        group;
+    private Integer group;
     private FileAttributes attributes;
-    private int            poolIndex;
-    private Integer        unitIndex;
-    private Integer        count;
-    private boolean        fromReload;
+    private int poolIndex;
+    private Integer unitIndex;
+    private Integer count;
+    private boolean fromReload;
 
     @VisibleForTesting
     public FileUpdate(PnfsId pnfsId,
-                      String pool,
-                      MessageType type,
-                      Integer poolIndex,
-                      Integer groupIndex,
-                      Integer unitIndex,
-                      FileAttributes attributes) {
+          String pool,
+          MessageType type,
+          Integer poolIndex,
+          Integer groupIndex,
+          Integer unitIndex,
+          FileAttributes attributes) {
         this(pnfsId, pool, type, groupIndex, true);
         this.poolIndex = poolIndex;
         this.unitIndex = unitIndex;
@@ -220,16 +222,14 @@ public final class FileUpdate {
     /**
      * @param pnfsId of the file.
      * @param pool   either the source of the message, or the pool being scanned.
-     * @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION,
-     *               QOS_MODIFIED, POOL_STATUS_DOWN, or POOL_STATUS_UP.
-     * @param group  of the pool, if action is not NONE or MODIFY
-     *               (can be <code>null</code>).
-     * @param full   if true, set the op count to the computed difference
-     *               between required and readable; otherwise,
-     *               set the op count to 1.
+     * @param type   CORRUPT_FILE, CLEAR_CACHE_LOCATION, ADD_CACHE_LOCATION, QOS_MODIFIED,
+     *               POOL_STATUS_DOWN, or POOL_STATUS_UP.
+     * @param group  of the pool, if action is not NONE or MODIFY (can be <code>null</code>).
+     * @param full   if true, set the op count to the computed difference between required and
+     *               readable; otherwise, set the op count to 1.
      */
     public FileUpdate(PnfsId pnfsId, String pool, MessageType type,
-                      Integer group, boolean full) {
+          Integer group, boolean full) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.type = type;
@@ -254,7 +254,9 @@ public final class FileUpdate {
         return poolIndex;
     }
 
-    public long getSize() { return attributes.getSize(); }
+    public long getSize() {
+        return attributes.getSize();
+    }
 
     public Integer getUnitIndex() {
         return unitIndex;
@@ -262,7 +264,7 @@ public final class FileUpdate {
 
     public Integer getSourceIndex() {
         return type == CORRUPT_FILE ||
-               type == CLEAR_CACHE_LOCATION ? null : poolIndex;
+              type == CLEAR_CACHE_LOCATION ? null : poolIndex;
     }
 
     public boolean isParent() {
@@ -279,14 +281,14 @@ public final class FileUpdate {
 
     public String toString() {
         return String.format(
-                        "(%s)(%s)(%s)(parent %s)(source %s)"
-                                        + "(group %s)(count %s)",
-                        pnfsId, pool, type, isParent(), getSourceIndex(),
-                        group, count);
+              "(%s)(%s)(%s)(parent %s)(source %s)"
+                    + "(group %s)(count %s)",
+              pnfsId, pool, type, isParent(), getSourceIndex(),
+              group, count);
     }
 
     public boolean validateAttributes(NamespaceAccess access)
-                    throws CacheException {
+          throws CacheException {
         LOGGER.trace("validateAttributes for {}", this);
         attributes = getAttributes(pnfsId, pool, type, access);
         LOGGER.trace("validateAttributes, {}", attributes);
@@ -294,9 +296,9 @@ public final class FileUpdate {
     }
 
     public boolean validateForAction(Integer storageUnit,
-                                     PoolInfoMap poolInfoMap,
-                                     ReplicaVerifier verifier,
-                                     CellStub pools) {
+          PoolInfoMap poolInfoMap,
+          ReplicaVerifier verifier,
+          CellStub pools) {
         /*
          * Storage unit is not recorded in checkpoint, so it should
          * be set here.
@@ -305,12 +307,12 @@ public final class FileUpdate {
             unitIndex = poolInfoMap.getStorageUnitIndex(attributes);
         } catch (NoSuchElementException e) {
             LOGGER.error("validateForAction, cannot handle {}: {}.",
-                         pnfsId, new ExceptionMessage(e));
+                  pnfsId, new ExceptionMessage(e));
             return false;
         }
 
         LOGGER.trace("validateForAction {} got unit from attributes {}.",
-                     pnfsId, unitIndex);
+              pnfsId, unitIndex);
 
         /*
          *  Check to see if this is from a reload of the checkpoint record.
@@ -318,12 +320,12 @@ public final class FileUpdate {
          */
         if (fromReload) {
             LOGGER.trace("validateForAction, data was reloaded, restoredCount {}",
-                         count);
+                  count);
             return count > 0;
         }
 
         StorageUnitConstraints constraints
-                        = poolInfoMap.getStorageUnitConstraints(unitIndex);
+              = poolInfoMap.getStorageUnitConstraints(unitIndex);
 
         /*
          *  Ignore all files belonging to non-resilient groups.  This
@@ -332,14 +334,14 @@ public final class FileUpdate {
          */
         if (!constraints.isResilient()) {
             LOGGER.trace("validateForAction, storage unit was not resilient: "
-                                         + "required = {}",
-                         constraints.getRequired());
+                        + "required = {}",
+                  constraints.getRequired());
             return false;
         }
 
         Collection<String> locations
-                        = poolInfoMap.getMemberLocations(group,
-                                                         attributes.getLocations());
+              = poolInfoMap.getMemberLocations(group,
+              attributes.getLocations());
         /*
          * This indicates that all the locations for the file do not belong
          * to the given pool group.  This could happen if all locations
@@ -372,7 +374,7 @@ public final class FileUpdate {
          * that point and quit.
          */
         if (storageUnit == ScanSummary.ALL_UNITS
-                        || unitIndex.equals(storageUnit)) {
+              || unitIndex.equals(storageUnit)) {
             /*
              * The maximum number of steps required to redistribute all files
              * would be (N - 1) removes + (required - 1) copies, where N
@@ -392,12 +394,12 @@ public final class FileUpdate {
         try {
             verified = verifier.verifyLocations(pnfsId, locations, pools);
             LOGGER.trace("validateForAction, verified locations for {}: {}.",
-                         pnfsId,
-                         locations);
+                  pnfsId,
+                  locations);
         } catch (InterruptedException e) {
             LOGGER.warn("validateForAction: replica verification for "
-                                        + "{} was interrupted; "
-                                        + "cancelling operation.", pnfsId);
+                  + "{} was interrupted; "
+                  + "cancelling operation.", pnfsId);
             return false;
         }
 
@@ -424,20 +426,20 @@ public final class FileUpdate {
          */
         if (AccessLatency.NEARLINE.equals(attributes.getAccessLatency())) {
             LOGGER.trace("validateForAction, access latency is NEARLINE, "
-                                         + "setting required for {} to 0.",
-                         pnfsId);
+                        + "setting required for {} to 0.",
+                  pnfsId);
             required = 0;
         }
 
         count = required - valid.size();
 
         LOGGER.debug("validateForAction ({} needs {} replicas, locations {}, "
-                                     + "{} valid; difference = {}.",
-                     pnfsId, required,
-                     locations, valid, count);
+                    + "{} valid; difference = {}.",
+              pnfsId, required,
+              locations, valid, count);
 
         if (count == 0) {
-            Set<String> broken =  verifier.getBroken(verified);
+            Set<String> broken = verifier.getBroken(verified);
             if (broken.isEmpty()) {
                 LOGGER.debug("{}, requirements are already met.", pnfsId);
                 return false;

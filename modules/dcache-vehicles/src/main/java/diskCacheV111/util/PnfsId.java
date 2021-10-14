@@ -2,17 +2,16 @@
 
 package diskCacheV111.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Strings;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 import com.google.common.io.BaseEncoding;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Immutable representation of a pnfsId
@@ -21,21 +20,26 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
     private static final String PNFS_ID_REGEX = "\\p{XDigit}{1,24}";
     private static final String CHIMERA_ID_REGEX = "\\p{XDigit}{36}";
-    private static final String VALID_ID_REGEX = "^(" + PNFS_ID_REGEX + '|' + CHIMERA_ID_REGEX + ")$";
-    private static final Pattern VALID_ID_PATTERN = Pattern.compile( VALID_ID_REGEX);
+    private static final String VALID_ID_REGEX =
+          "^(" + PNFS_ID_REGEX + '|' + CHIMERA_ID_REGEX + ")$";
+    private static final Pattern VALID_ID_PATTERN = Pattern.compile(VALID_ID_REGEX);
 
-    /** Number of characters in a complete PNFS-style id String. */
+    /**
+     * Number of characters in a complete PNFS-style id String.
+     */
     private static final int PNFS_ID_SIZE = 24;
 
-    /** Number of characters in a Chimera-style id String. */
+    /**
+     * Number of characters in a Chimera-style id String.
+     */
     private static final int CHIMERA_ID_SIZE = 36;
 
     private final byte[] _a;
 
     private static final long serialVersionUID = -112220393521303857L;
 
-    public static boolean isValid( String id) {
-        Matcher m = VALID_ID_PATTERN.matcher( id);
+    public static boolean isValid(String id) {
+        Matcher m = VALID_ID_PATTERN.matcher(id);
         return m.matches();
     }
 
@@ -43,7 +47,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         checkArgument(!id.isEmpty(), "Empty PnfsId");
         String expandedId = Strings.padStart(id, PNFS_ID_SIZE, '0');
         checkArgument(expandedId.length() == PNFS_ID_SIZE || expandedId.length() == CHIMERA_ID_SIZE,
-                "Illegal pnfsid string length");
+              "Illegal pnfsid string length");
         _a = BaseEncoding.base16().decode(expandedId.toUpperCase());
     }
 
@@ -76,8 +80,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return BaseEncoding.base16().upperCase().encode(_a);
     }
 
-    public static Funnel<PnfsId> funnel()
-    {
+    public static Funnel<PnfsId> funnel() {
         return PnfsIdFunnel.INSTANCE;
     }
 

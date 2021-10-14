@@ -73,12 +73,10 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import java.beans.PropertyChangeEvent;
-
 import org.dcache.srm.request.Job;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class StateChangedEvent extends PropertyChangeEvent {
 

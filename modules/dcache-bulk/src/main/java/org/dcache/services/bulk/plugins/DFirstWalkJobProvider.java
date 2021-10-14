@@ -59,14 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk.plugins;
 
-import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
-
 import static org.dcache.services.bulk.job.MultipleTargetJob.TargetType.BOTH;
 
-public class DFirstWalkJobProvider extends TreeWalkJobProvider
-{
-    public DFirstWalkJobProvider()
-    {
+import org.dcache.services.bulk.job.TargetExpansionJob.ExpansionType;
+
+public class DFirstWalkJobProvider extends TreeWalkJobProvider {
+
+    public DFirstWalkJobProvider() {
         super("DEPTH-FIRST-WALK", BOTH, ExpansionType.DEPTH_FIRST);
     }
 }

@@ -17,14 +17,11 @@
  */
 package org.dcache.dss;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.security.auth.Subject;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static org.dcache.util.ByteUnit.KiB;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -35,15 +32,16 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Collections;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.auth.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static org.dcache.util.ByteUnit.KiB;
+public class SslEngineDssContext implements DssContext {
 
-public class SslEngineDssContext implements DssContext
-{
     private static final Logger LOGGER = LoggerFactory.getLogger(SslEngineDssContext.class);
     private static final ByteBuffer EMPTY = ByteBuffer.wrap(new byte[0]);
 
@@ -53,27 +51,31 @@ public class SslEngineDssContext implements DssContext
 
     private boolean isClientModeSet;
 
-    /** Token data received from the peer. */
+    /**
+     * Token data received from the peer.
+     */
     private ByteBuffer inToken;
 
-    /** Token data to be delivered to the peer. */
+    /**
+     * Token data to be delivered to the peer.
+     */
     private ByteBuffer outToken;
 
-    /** Application data received from the peer. */
+    /**
+     * Application data received from the peer.
+     */
     private ByteBuffer data;
 
     private Subject subject;
 
-    public SslEngineDssContext(SSLEngine engine, CertificateFactory cf)
-    {
+    public SslEngineDssContext(SSLEngine engine, CertificateFactory cf) {
         this.engine = engine;
         this.cf = cf;
         data = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
         outToken = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
     }
 
-    private void addInToken(byte[] token)
-    {
+    private void addInToken(byte[] token) {
         if (inToken == null || inToken.remaining() == 0) {
             inToken = ByteBuffer.wrap(token);
         } else if (inToken.capacity() - inToken.remaining() >= token.length) {
@@ -89,113 +91,107 @@ public class SslEngineDssContext implements DssContext
         }
     }
 
-    private byte[] getOutToken()
-    {
+    private byte[] getOutToken() {
         return getBytes(outToken);
     }
 
-    private void handshake() throws IOException
-    {
+    private void handshake() throws IOException {
         while (!isEstablished()) {
             switch (engine.getHandshakeStatus()) {
-            case NOT_HANDSHAKING:
-            case FINISHED:
-                throw new IllegalStateException("Not handshaking");
-            case NEED_TASK:
-                Runnable task = engine.getDelegatedTask();
-                if (task != null) {
-                    task.run();
-                }
-                break;
-            case NEED_WRAP:
-                wrap(EMPTY);
-                break;
-            case NEED_UNWRAP:
-                if (!unwrap()) {
-                    return;
-                }
-                break;
+                case NOT_HANDSHAKING:
+                case FINISHED:
+                    throw new IllegalStateException("Not handshaking");
+                case NEED_TASK:
+                    Runnable task = engine.getDelegatedTask();
+                    if (task != null) {
+                        task.run();
+                    }
+                    break;
+                case NEED_WRAP:
+                    wrap(EMPTY);
+                    break;
+                case NEED_UNWRAP:
+                    if (!unwrap()) {
+                        return;
+                    }
+                    break;
             }
         }
     }
 
-    private void wrap(ByteBuffer data) throws IOException
-    {
-        int count=0;
+    private void wrap(ByteBuffer data) throws IOException {
+        int count = 0;
         SSLEngineResult result;
         do {
             count++;
             LOGGER.debug("Wrapping: buffer posn={}, limit={}, capacity={}, remaining={}",
-                    data.position(), data.limit(), data.capacity(), data.remaining());
+                  data.position(), data.limit(), data.capacity(), data.remaining());
             result = engine.wrap(data, outToken);
             LOGGER.debug("Result: status={}, consumed={}, produced={}, remaining={}",
-                    result.getStatus(), result.bytesConsumed(),
-                    result.bytesProduced(), data.remaining());
+                  result.getStatus(), result.bytesConsumed(),
+                  result.bytesProduced(), data.remaining());
             switch (result.getStatus()) {
-            case BUFFER_UNDERFLOW:
-                throw new RuntimeException();
-            case BUFFER_OVERFLOW:
-                ByteBuffer buffer = ByteBuffer.allocate(outToken.capacity() + engine.getSession().getPacketBufferSize());
-                outToken.flip();
-                buffer.put(outToken);
-                outToken = buffer;
-                break;
-            case OK:
-                if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                    subject = createSubject();
-                }
-                break;
-            case CLOSED:
-                throw new EOFException();
+                case BUFFER_UNDERFLOW:
+                    throw new RuntimeException();
+                case BUFFER_OVERFLOW:
+                    ByteBuffer buffer = ByteBuffer.allocate(
+                          outToken.capacity() + engine.getSession().getPacketBufferSize());
+                    outToken.flip();
+                    buffer.put(outToken);
+                    outToken = buffer;
+                    break;
+                case OK:
+                    if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
+                        subject = createSubject();
+                    }
+                    break;
+                case CLOSED:
+                    throw new EOFException();
             }
         } while (result.getStatus() != SSLEngineResult.Status.OK);
 
         if (data.hasRemaining()) {
             throw new RuntimeException("SSLEngine did not wrap all data:"
-                    + " c=" + count + ", in=" + data.limit() + " r=" + data.remaining()
-                    + " out=" + outToken.position());
+                  + " c=" + count + ", in=" + data.limit() + " r=" + data.remaining()
+                  + " out=" + outToken.position());
         }
     }
 
     @Override
-    public long maxApplicationSize()
-    {
+    public long maxApplicationSize() {
         // Maximum TLS frame encodes 16 KiB application data.
         return KiB.toBytes(16);
     }
 
-    private boolean unwrap() throws IOException
-    {
+    private boolean unwrap() throws IOException {
         while (true) {
             SSLEngineResult result = engine.unwrap(inToken, data);
             switch (result.getStatus()) {
-            case BUFFER_UNDERFLOW:
-                return false;
-            case BUFFER_OVERFLOW:
-                ByteBuffer buffer = ByteBuffer.allocate(
-                        outToken.capacity() + engine.getSession().getApplicationBufferSize());
-                data.flip();
-                buffer.put(data);
-                data = buffer;
-                break;
-            case OK:
-                if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                    subject = createSubject();
-                }
-                return true;
-            case CLOSED:
-                throw new EOFException();
+                case BUFFER_UNDERFLOW:
+                    return false;
+                case BUFFER_OVERFLOW:
+                    ByteBuffer buffer = ByteBuffer.allocate(
+                          outToken.capacity() + engine.getSession().getApplicationBufferSize());
+                    data.flip();
+                    buffer.put(data);
+                    data = buffer;
+                    break;
+                case OK:
+                    if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
+                        subject = createSubject();
+                    }
+                    return true;
+                case CLOSED:
+                    throw new EOFException();
             }
         }
     }
 
-    private byte[] getData()
-    {
+    private byte[] getData() {
         return getBytes(data);
     }
 
-    private static byte[] getBytes(ByteBuffer buffer)
-    {
+    private static byte[] getBytes(ByteBuffer buffer) {
         byte[] bytes;
         buffer.flip();
         if (!buffer.hasRemaining()) {
@@ -209,8 +205,7 @@ public class SslEngineDssContext implements DssContext
     }
 
     @Override
-    public byte[] init(byte[] token) throws IOException
-    {
+    public byte[] init(byte[] token) throws IOException {
         checkState(!isEstablished());
 
         if (!isClientModeSet) {
@@ -224,8 +219,7 @@ public class SslEngineDssContext implements DssContext
     }
 
     @Override
-    public byte[] accept(byte[] token) throws IOException
-    {
+    public byte[] accept(byte[] token) throws IOException {
         checkState(!isEstablished());
 
         if (!isClientModeSet) {
@@ -239,16 +233,14 @@ public class SslEngineDssContext implements DssContext
     }
 
     @Override
-    public byte[] wrap(byte[] data, int offset, int len) throws IOException
-    {
+    public byte[] wrap(byte[] data, int offset, int len) throws IOException {
         checkState(isEstablished());
         wrap(ByteBuffer.wrap(data, offset, len));
         return getOutToken();
     }
 
     @Override
-    public byte[] unwrap(byte[] token) throws IOException
-    {
+    public byte[] unwrap(byte[] token) throws IOException {
         checkState(isEstablished());
         addInToken(token);
 
@@ -261,20 +253,17 @@ public class SslEngineDssContext implements DssContext
     }
 
     @Override
-    public boolean isEstablished()
-    {
+    public boolean isEstablished() {
         return subject != null;
     }
 
     @Override
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return subject;
     }
 
     @Override
-    public String getPeerName()
-    {
+    public String getPeerName() {
         try {
             return engine.getSession().getPeerPrincipal().getName();
         } catch (SSLPeerUnverifiedException e) {
@@ -282,21 +271,20 @@ public class SslEngineDssContext implements DssContext
         }
     }
 
-    public SSLSession getSSLSession()
-    {
+    public SSLSession getSSLSession() {
         return engine.getSession();
     }
 
-    private Subject createSubject() throws IOException
-    {
+    private Subject createSubject() throws IOException {
         try {
             Certificate[] chain = engine.getSession().getPeerCertificates();
             CertPath certPath = cf.generateCertPath(asList(chain));
-            return new Subject(false, Collections.<Principal>emptySet(), singleton(certPath), emptySet());
+            return new Subject(false, Collections.<Principal>emptySet(), singleton(certPath),
+                  emptySet());
         } catch (SSLPeerUnverifiedException e) {
             throw new IOException("Failed to establish identity of SSL peer: " + e.getMessage(), e);
         } catch (CertificateException e) {
-            throw new IOException("Certificate failure: " + e.getMessage(),  e);
+            throw new IOException("Certificate failure: " + e.getMessage(), e);
         }
     }
 }

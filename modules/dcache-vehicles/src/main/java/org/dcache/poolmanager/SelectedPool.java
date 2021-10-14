@@ -19,63 +19,53 @@
 
 package org.dcache.poolmanager;
 
-import java.io.Serializable;
+import static java.util.Objects.requireNonNull;
 
 import dmg.cells.nucleus.CellAddressCore;
-
+import java.io.Serializable;
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.assumption.Assumptions;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Result of a pool selection.
- *
- * Encapsulates information about the pool and the assumptions under which
- * the pool was selected.
+ * <p>
+ * Encapsulates information about the pool and the assumptions under which the pool was selected.
  */
-public class SelectedPool implements Serializable
-{
+public class SelectedPool implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final PoolInfo info;
 
     private final Assumption assumption;
 
-    public SelectedPool(PoolInfo info)
-    {
+    public SelectedPool(PoolInfo info) {
         this.info = requireNonNull(info);
         this.assumption = Assumptions.none();
     }
 
-    public SelectedPool(PoolInfo info, Assumption assumption)
-    {
+    public SelectedPool(PoolInfo info, Assumption assumption) {
         this.info = requireNonNull(info);
         this.assumption = requireNonNull(assumption);
     }
 
-    public PoolInfo info()
-    {
+    public PoolInfo info() {
         return info;
     }
 
-    public Assumption assumption()
-    {
+    public Assumption assumption() {
         return assumption;
     }
 
-    public String name()
-    {
+    public String name() {
         return info.getName();
     }
 
-    public String hostName()
-    {
+    public String hostName() {
         return info.getHostName();
     }
 
-    public CellAddressCore address()
-    {
+    public CellAddressCore address() {
         return info.getAddress();
     }
 

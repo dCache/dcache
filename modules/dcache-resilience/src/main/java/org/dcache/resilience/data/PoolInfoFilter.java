@@ -60,7 +60,6 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -68,11 +67,12 @@ import java.util.regex.Pattern;
  * <p>Used for matching pool information entries.</p>
  */
 public final class PoolInfoFilter {
-    private Set<String>                  status;
-    private Pattern                      pools;
-    private Set<Integer>                 keys;
-    private Long                         lastUpdateBefore;
-    private Long                         lastUpdateAfter;
+
+    private Set<String> status;
+    private Pattern pools;
+    private Set<Integer> keys;
+    private Long lastUpdateBefore;
+    private Long lastUpdateAfter;
 
     public boolean matches(PoolInformation poolInfo) {
         if (pools != null && !pools.matcher(poolInfo.getName()).find()) {
@@ -84,18 +84,18 @@ public final class PoolInfoFilter {
         }
 
         if (lastUpdateBefore != null
-                        && lastUpdateBefore <= poolInfo.getLastUpdate()) {
+              && lastUpdateBefore <= poolInfo.getLastUpdate()) {
             return false;
         }
 
         if (lastUpdateAfter != null
-                        && lastUpdateAfter >= poolInfo.getLastUpdate()) {
+              && lastUpdateAfter >= poolInfo.getLastUpdate()) {
             return false;
         }
 
         if (this.status != null) {
             if (!poolInfo.isInitialized()
-                            && this.status.contains(PoolInformation.UNINITIALIZED)) {
+                  && this.status.contains(PoolInformation.UNINITIALIZED)) {
                 return true;
             }
 

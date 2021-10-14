@@ -17,36 +17,34 @@
  */
 package org.dcache.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.Serializable;
 import java.security.Principal;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Identifies the Macaroon used to authorise the activity.
+ *
  * @since 3.2
  */
 @AuthenticationOutput
-public class MacaroonPrincipal implements Principal, Serializable
-{
+public class MacaroonPrincipal implements Principal, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private final String _identifier;
 
-    public MacaroonPrincipal(String id)
-    {
+    public MacaroonPrincipal(String id) {
         _identifier = requireNonNull(id);
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return _identifier;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + "[" + getName() + "]";
     }
 }

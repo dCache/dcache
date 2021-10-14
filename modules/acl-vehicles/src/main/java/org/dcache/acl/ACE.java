@@ -1,7 +1,6 @@
 package org.dcache.acl;
 
 import java.io.Serializable;
-
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
@@ -12,10 +11,9 @@ import org.dcache.acl.enums.Who;
  * An access control list (ACL) is an array of access control entries (ACE).
  *
  * @author David Melkumyan, DESY Zeuthen
- *
  */
-public class ACE implements Serializable
-{
+public class ACE implements Serializable {
+
     private static final long serialVersionUID = -7088617639500399472L;
 
     private static final String SPACE_SEPARATOR = " ";
@@ -47,20 +45,16 @@ public class ACE implements Serializable
     private final int _whoID;
 
     /**
-     * @param type
-     *            Type of ACE (ALLOW / DENY)
-     * @param flags
-     *            ACE flags
-     * @param accessMsk
-     *            Access mask
-     * @param who
-     *            Subject
-     * @param whoID
-     *            Virtual user or group ID
+     * @param type      Type of ACE (ALLOW / DENY)
+     * @param flags     ACE flags
+     * @param accessMsk Access mask
+     * @param who       Subject
+     * @param whoID     Virtual user or group ID
      */
     public ACE(AceType type, int flags, int accessMsk, Who who, int whoID) {
         _type = type;
-        _flags = (who == Who.GROUP || who == Who.OWNER_GROUP) ? flags | AceFlags.IDENTIFIER_GROUP.getValue() : flags;
+        _flags = (who == Who.GROUP || who == Who.OWNER_GROUP) ? flags
+              | AceFlags.IDENTIFIER_GROUP.getValue() : flags;
         _accessMsk = accessMsk;
         _who = who;
         _whoID = whoID;
@@ -116,7 +110,7 @@ public class ACE implements Serializable
 
     @Override
     public int hashCode() {
-        return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode() ^ _whoID ;
+        return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode() ^ _whoID;
     }
 
     public String toNFSv4String(RsType rsType) {
@@ -151,14 +145,14 @@ public class ACE implements Serializable
     public String toString(RsType rsType) {
         StringBuilder sb = new StringBuilder();
         sb.append("type = ")
-            .append(_type)
-            .append(", flags = ")
-            .append(AceFlags.asString(_flags))
-            .append(", accessMsk = ")
-            .append(AccessMask.asString(_accessMsk, rsType))
-            .append(", who = ")
-            .append(_who)
-            .append(", whoID = ").append(_whoID);
+              .append(_type)
+              .append(", flags = ")
+              .append(AceFlags.asString(_flags))
+              .append(", accessMsk = ")
+              .append(AccessMask.asString(_accessMsk, rsType))
+              .append(", who = ")
+              .append(_who)
+              .append(", whoID = ").append(_whoID);
 
         return sb.toString();
     }
@@ -168,11 +162,9 @@ public class ACE implements Serializable
      * <p>
      * Example: USER:12457:+lfsD
      *
-     * @param rsType -
-     *            resource type
+     * @param rsType - resource type
      * @return ACE in extra format
-     * @throws ACLException
-     *             if ACE cannot be represented in extra format
+     * @throws ACLException if ACE cannot be represented in extra format
      */
     public String toExtraFormat(RsType rsType) throws ACLException {
         StringBuilder sb = new StringBuilder();
@@ -184,16 +176,16 @@ public class ACE implements Serializable
         sb.append(SEPARATOR);
 
         switch (_type) {
-        case ACCESS_ALLOWED_ACE_TYPE:
-            sb.append("+");
-            break;
+            case ACCESS_ALLOWED_ACE_TYPE:
+                sb.append("+");
+                break;
 
-        case ACCESS_DENIED_ACE_TYPE:
-            sb.append("-");
-            break;
+            case ACCESS_DENIED_ACE_TYPE:
+                sb.append("-");
+                break;
 
-        default:
-            throw new ACLException("Unsupported access type: " + _type);
+            default:
+                throw new ACLException("Unsupported access type: " + _type);
         }
 
         sb.append(AccessMask.asString(_accessMsk, rsType));

@@ -17,25 +17,29 @@
  */
 package org.dcache.macaroons;
 
-import org.junit.Test;
-
-import java.util.EnumSet;
-
-import org.dcache.auth.attributes.Activity;
-
-import static org.dcache.macaroons.CaveatValues.*;
+import static org.dcache.macaroons.CaveatValues.asActivityCaveatValue;
+import static org.dcache.macaroons.CaveatValues.asIdentityCaveatValue;
+import static org.dcache.macaroons.CaveatValues.parseActivityCaveatValue;
+import static org.dcache.macaroons.CaveatValues.parseIdentityCaveatValue;
 import static org.dcache.macaroons.MacaroonContextBuilder.macaroonContext;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public class CaveatValuesTests
-{
+import java.util.EnumSet;
+import org.dcache.auth.attributes.Activity;
+import org.junit.Test;
+
+public class CaveatValuesTests {
+
     MacaroonContext _context;
 
     @Test
-    public void shouldEncode()
-    {
-        given(macaroonContext().withUid(2).withGid(3,4).withUsername("paul"));
+    public void shouldEncode() {
+        given(macaroonContext().withUid(2).withGid(3, 4).withUsername("paul"));
 
         String caveat = asIdentityCaveatValue(_context);
 
@@ -43,8 +47,7 @@ public class CaveatValuesTests
     }
 
     @Test
-    public void shouldDecodeValidString() throws Exception
-    {
+    public void shouldDecodeValidString() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "2;3,4;paul");
@@ -56,79 +59,69 @@ public class CaveatValuesTests
         assertThat(_context.getUsername(), is(equalTo("paul")));
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithMissingSemicolon() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithMissingSemicolon() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "2;3,paul");
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithMissingGid() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithMissingGid() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "2;;paul");
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithMissingUid() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithMissingUid() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, ";3;paul");
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithMissingUsername() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithMissingUsername() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "2;3;");
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithBadUid() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithBadUid() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "foo;3;paul");
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectStringWithBadGid() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectStringWithBadGid() throws Exception {
         given(macaroonContext());
 
         parseIdentityCaveatValue(_context, "2;foo;paul");
     }
 
     @Test
-    public void shouldEncodeActivity() throws Exception
-    {
+    public void shouldEncodeActivity() throws Exception {
         String encoded = asActivityCaveatValue(EnumSet.of(Activity.DELETE, Activity.DOWNLOAD));
 
         assertThat(encoded, anyOf(equalTo("DELETE,DOWNLOAD"), equalTo("DOWNLOAD,DELETE")));
     }
 
     @Test
-    public void shouldDecodeValidActivity() throws Exception
-    {
+    public void shouldDecodeValidActivity() throws Exception {
         EnumSet<Activity> activities = parseActivityCaveatValue("DELETE,DOWNLOAD");
 
         assertThat(activities, hasSize(2));
         assertThat(activities, containsInAnyOrder(Activity.DELETE, Activity.DOWNLOAD));
     }
 
-    @Test(expected=InvalidCaveatException.class)
-    public void shouldRejectInvalidActivity() throws Exception
-    {
+    @Test(expected = InvalidCaveatException.class)
+    public void shouldRejectInvalidActivity() throws Exception {
         parseActivityCaveatValue("FOO");
     }
 
-    void given(MacaroonContextBuilder builder)
-    {
+    void given(MacaroonContextBuilder builder) {
         _context = builder.build();
     }
 }

@@ -17,34 +17,31 @@
  */
 package org.dcache.zookeeper.service;
 
-import com.google.common.base.Strings;
-import org.apache.zookeeper.server.DatadirCleanupManager;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.PatchedZooKeeperServer;
-import org.apache.zookeeper.server.ServerCnxnFactory;
-import org.apache.zookeeper.server.ZKDatabase;
-import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
+import org.apache.zookeeper.server.DatadirCleanupManager;
+import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.PatchedZooKeeperServer;
+import org.apache.zookeeper.server.ServerCnxnFactory;
+import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.dcache.cells.AbstractCell;
 import org.dcache.util.Args;
 import org.dcache.util.Option;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Embedded standalone ZooKeeper as a dCache cell.
  */
-public class ZooKeeperCell extends AbstractCell
-{
+public class ZooKeeperCell extends AbstractCell {
+
     private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperCell.class);
 
     @Option(name = "data-log-dir", required = true)
@@ -94,20 +91,20 @@ public class ZooKeeperCell extends AbstractCell
     private FileTxnSnapLog txnLog;
     private PatchedZooKeeperServer zkServer;
 
-    public ZooKeeperCell(String cellName, String arguments)
-    {
+    public ZooKeeperCell(String cellName, String arguments) {
         super(cellName, "System", new Args(arguments));
     }
 
     @Override
-    protected void starting() throws Exception
-    {
+    protected void starting() throws Exception {
         super.starting();
 
         InetSocketAddress socketAddress =
-                Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
+              Strings.isNullOrEmpty(address) ? new InetSocketAddress(port)
+                    : new InetSocketAddress(address, port);
 
-        checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
+        checkArgument(autoPurgeInterval > 0,
+              "zookeeper.auto-purge.purge-interval must be non-negative.");
         zkServer = new PatchedZooKeeperServer();
 
         // Zookeeper 3.5.4+ now by default requires the existence of snapshot files. In order to keep the
@@ -117,8 +114,10 @@ public class ZooKeeperCell extends AbstractCell
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
         zkServer.setTickTime((int) tickTimeUnit.toMillis(tickTime));
-        zkServer.setMinSessionTimeout(minSessionTimeout == -1 ? -1 : (int) minSessionTimeoutUnit.toMillis(minSessionTimeout));
-        zkServer.setMaxSessionTimeout(maxSessionTimeout == -1 ? -1 : (int) maxSessionTimeoutUnit.toMillis(maxSessionTimeout));
+        zkServer.setMinSessionTimeout(minSessionTimeout == -1 ? -1
+              : (int) minSessionTimeoutUnit.toMillis(minSessionTimeout));
+        zkServer.setMaxSessionTimeout(maxSessionTimeout == -1 ? -1
+              : (int) maxSessionTimeoutUnit.toMillis(maxSessionTimeout));
 
         zkServer.startdata(); // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2810
         zkServer.createSessionTracker(); // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2812
@@ -126,8 +125,7 @@ public class ZooKeeperCell extends AbstractCell
         ServerCnxnFactory cnxnFactory;
         cnxnFactory = new NIOServerCnxnFactory() {
             @Override
-            protected void configureSaslLogin() throws IOException
-            {
+            protected void configureSaslLogin() throws IOException {
                 // ZooKeeper gets confused by dCache configuring a JAAS configuration without a section for ZooKeeper, so
                 // we disable the whole thing. Use a non-embedded ZooKeeper if you want security.
             }
@@ -143,16 +141,16 @@ public class ZooKeeperCell extends AbstractCell
         // can creating a race between the constructor above.  To avoid this,
         // we must call DatadirCleanupManager#start after the FileTxnSnapLog
         // object has been created.
-        int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval, autoPurgeIntervalUnit);
+        int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval,
+              autoPurgeIntervalUnit);
         DatadirCleanupManager purgeMgr =
-                new DatadirCleanupManager(dataDir, dataLogDir,
-                                          autoPurgeRetainCount, purgeIntervalHours);
+              new DatadirCleanupManager(dataDir, dataLogDir,
+                    autoPurgeRetainCount, purgeIntervalHours);
         purgeMgr.start();
     }
 
     @Override
-    public void stopped()
-    {
+    public void stopped() {
         if (zkServer != null) {
             zkServer.shutdown();
         }
@@ -181,8 +179,7 @@ public class ZooKeeperCell extends AbstractCell
     }
 
     @Override
-    public void getInfo(PrintWriter printWriter)
-    {
+    public void getInfo(PrintWriter printWriter) {
         printWriter.println("[ZooKeeper configuration]");
         zkServer.dumpConf(printWriter);
 

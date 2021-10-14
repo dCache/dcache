@@ -17,49 +17,43 @@
  */
 package org.dcache.pool.statistics;
 
-import java.nio.file.OpenOption;
-import java.util.Set;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import java.nio.file.OpenOption;
+import java.util.Set;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.ForwardingReplicaStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Wrap some existing ReplicaStore and add support for monitoring the inner
- * repository IO performance.
+ * Wrap some existing ReplicaStore and add support for monitoring the inner repository IO
+ * performance.
  */
-public class IoStatisticsReplicaStore extends ForwardingReplicaStore
-{
+public class IoStatisticsReplicaStore extends ForwardingReplicaStore {
+
     private final ReplicaStore inner;
 
-    public IoStatisticsReplicaStore(ReplicaStore inner)
-    {
+    public IoStatisticsReplicaStore(ReplicaStore inner) {
         this.inner = requireNonNull(inner);
     }
 
     @Override
-    protected ReplicaStore delegate()
-    {
+    protected ReplicaStore delegate() {
         return inner;
     }
 
     @Override
-    public ReplicaRecord get(PnfsId id) throws CacheException
-    {
+    public ReplicaRecord get(PnfsId id) throws CacheException {
         ReplicaRecord record = super.get(id);
         return record == null ? null : new IoStatisticsReplicaRecord(record);
     }
 
     @Override
     public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
-            throws DuplicateEntryException, CacheException
-    {
+          throws DuplicateEntryException, CacheException {
         return new IoStatisticsReplicaRecord(super.create(id, flags));
     }
 }

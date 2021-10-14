@@ -18,6 +18,7 @@ class LinkMap {
             _counter = link._uGroupList.size() - 1;
         }
     }
+
     private final Map<String, LinkMapEntry> _linkHash = new HashMap<>();
 
     Iterator<Link> iterator() {

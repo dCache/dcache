@@ -26,44 +26,43 @@ import io.swagger.annotations.License;
 import io.swagger.annotations.SecurityDefinition;
 import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.annotations.Tag;
-
 import javax.ws.rs.ext.Provider;
 
 /**
- * This interface exists only to give @SwaggerDefinition something to annotate
- * that swagger will subsequently find.  See:
- *
- *     https://github.com/swagger-api/swagger-core/issues/2600
+ * This interface exists only to give @SwaggerDefinition something to annotate that swagger will
+ * subsequently find.  See:
+ * <p>
+ * https://github.com/swagger-api/swagger-core/issues/2600
  */
 @SwaggerDefinition(
-        info = @Info(
+      info = @Info(
             title = "The dCache REST interface",
             description = "User and administration interaction with dCache",
             version = "v1.0.1",
             contact = @Contact(
-               name = "dCache support team",
-               email = "support@dCache.org"
+                  name = "dCache support team",
+                  email = "support@dCache.org"
             ),
             license = @License(
-                name = "Apache 2.0",
-                url = "http://www.apache.org/licenses/LICENSE-2.0"
+                  name = "Apache 2.0",
+                  url = "http://www.apache.org/licenses/LICENSE-2.0"
             )
-        ),
-        securityDefinition = @SecurityDefinition(
-                basicAuthDefinitions = {
-                    @BasicAuthDefinition(key = "basicAuth",
-                            description = "Username and password authentication "
-                                    + "with optional role assertion.  To assert "
-                                    + "roles, append '#' to the username followed "
-                                    + "by a comma-separated list of roles; e.g., "
-                                    + "a username of \"paul#admin\" is user "
-                                    + "\"paul\" asserting the \"admin\" role.")
-                }
-        ),
-        consumes = {"application/json"},
-        produces = {"application/json"},
-        externalDocs = @ExternalDocs(value = "Wiki", url = "https://github.com/dCache/dcache/wiki/Restful-API"),
-        tags = {
+      ),
+      securityDefinition = @SecurityDefinition(
+            basicAuthDefinitions = {
+                  @BasicAuthDefinition(key = "basicAuth",
+                        description = "Username and password authentication "
+                              + "with optional role assertion.  To assert "
+                              + "roles, append '#' to the username followed "
+                              + "by a comma-separated list of roles; e.g., "
+                              + "a username of \"paul#admin\" is user "
+                              + "\"paul\" asserting the \"admin\" role.")
+            }
+      ),
+      consumes = {"application/json"},
+      produces = {"application/json"},
+      externalDocs = @ExternalDocs(value = "Wiki", url = "https://github.com/dCache/dcache/wiki/Restful-API"),
+      tags = {
             @Tag(name = "alarms", description = "The log of internal problems"),
             @Tag(name = "billing", description = "The log of (significant) client activity"),
             @Tag(name = "cells", description = "The running components within dCache"),
@@ -76,10 +75,9 @@ import javax.ws.rs.ext.Provider;
             @Tag(name = "transfers", description = "The movement of data between dCache and clients"),
             @Tag(name = "events", description = "Support for SSE clients receiving dCache events"),
             @Tag(name = "doors", description = "Information about doors")
-        }
+      }
 )
 @Provider
-public interface ApiConfig
-{
+public interface ApiConfig {
 
 }

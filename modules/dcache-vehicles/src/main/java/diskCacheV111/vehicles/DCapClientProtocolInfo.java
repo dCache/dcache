@@ -8,133 +8,137 @@ import java.net.InetSocketAddress;
  * @version 0.0, 28 Jun 2002
  */
 
-public class DCapClientProtocolInfo implements IpProtocolInfo
-{
-  private String name  = "Unkown" ;
-  private final int    minor;
-  private final int    major;
-  private final InetSocketAddress addr;
-  private String gsiftpUrl;
-  private long   transferTime;
-  private long   bytesTransferred;
-  private int    sessionId;
-  private final String initiatorCellName;
-  private final String initiatorCellDomain;
-  private final long id;
-  private final int bufferSize;
-  private int tcpBufferSize;
+public class DCapClientProtocolInfo implements IpProtocolInfo {
 
-  private static final long serialVersionUID = -8861384829188018580L;
+    private String name = "Unkown";
+    private final int minor;
+    private final int major;
+    private final InetSocketAddress addr;
+    private String gsiftpUrl;
+    private long transferTime;
+    private long bytesTransferred;
+    private int sessionId;
+    private final String initiatorCellName;
+    private final String initiatorCellDomain;
+    private final long id;
+    private final int bufferSize;
+    private int tcpBufferSize;
 
-  public DCapClientProtocolInfo(String protocol,
-    int major,
-    int minor,
-    InetSocketAddress addr,
-    String initiatorCellName,
-    String initiatorCellDomain,
-    long id,
-    int bufferSize,
-    int tcpBufferSize)
-  {
-    this.name  = protocol ;
-    this.minor = minor ;
-    this.major = major ;
-    this.addr = addr ;
-    this.initiatorCellName = initiatorCellName;
-    this.initiatorCellDomain = initiatorCellDomain;
-    this.id = id;
-    this.bufferSize =bufferSize;
-    this.tcpBufferSize = tcpBufferSize;
+    private static final long serialVersionUID = -8861384829188018580L;
 
-  }
+    public DCapClientProtocolInfo(String protocol,
+          int major,
+          int minor,
+          InetSocketAddress addr,
+          String initiatorCellName,
+          String initiatorCellDomain,
+          long id,
+          int bufferSize,
+          int tcpBufferSize) {
+        this.name = protocol;
+        this.minor = minor;
+        this.major = major;
+        this.addr = addr;
+        this.initiatorCellName = initiatorCellName;
+        this.initiatorCellDomain = initiatorCellDomain;
+        this.id = id;
+        this.bufferSize = bufferSize;
+        this.tcpBufferSize = tcpBufferSize;
 
-  public String getGsiftpUrl()
-  {
-      return gsiftpUrl;
-  }
-  public int getBufferSize()
-  {
-      return bufferSize;
-  }
-   //
-  //  the ProtocolInfo interface
-  //
-  @Override
-  public String getProtocol()
-  {
-      return name ;
-  }
+    }
 
-  @Override
-  public int    getMinorVersion()
-  {
-    return minor ;
-  }
+    public String getGsiftpUrl() {
+        return gsiftpUrl;
+    }
 
-  @Override
-  public int    getMajorVersion()
-  {
-    return major ;
-  }
+    public int getBufferSize() {
+        return bufferSize;
+    }
 
-  @Override
-  public String getVersionString()
-  {
-    return name + '-' + major + '.' + minor ;
-  }
+    //
+    //  the ProtocolInfo interface
+    //
+    @Override
+    public String getProtocol() {
+        return name;
+    }
 
-  //
-  // and the private stuff
-  //
+    @Override
+    public int getMinorVersion() {
+        return minor;
+    }
 
-  public String toString()
-  {
-    String sb = getVersionString() +
-                addr.getAddress().getHostAddress() +
-                ':' + addr.getPort();
+    @Override
+    public int getMajorVersion() {
+        return major;
+    }
 
-    return sb;
-  }
+    @Override
+    public String getVersionString() {
+        return name + '-' + major + '.' + minor;
+    }
 
-  /** Getter for property gsiftpTranferManagerName.
-   * @return Value of property gsiftpTranferManagerName.
-   */
-  public String getInitiatorCellName() {
-      return initiatorCellName;
-  }
+    //
+    // and the private stuff
+    //
 
-  /** Getter for property gsiftpTranferManagerDomain.
-   * @return Value of property gsiftpTranferManagerDomain.
-   */
-  public String getInitiatorCellDomain() {
-      return initiatorCellDomain;
-  }
+    public String toString() {
+        String sb = getVersionString() +
+              addr.getAddress().getHostAddress() +
+              ':' + addr.getPort();
 
-  /** Getter for property id.
-   * @return Value of property id.
-   */
-  public long getId() {
-      return id;
-  }
+        return sb;
+    }
+
+    /**
+     * Getter for property gsiftpTranferManagerName.
+     *
+     * @return Value of property gsiftpTranferManagerName.
+     */
+    public String getInitiatorCellName() {
+        return initiatorCellName;
+    }
+
+    /**
+     * Getter for property gsiftpTranferManagerDomain.
+     *
+     * @return Value of property gsiftpTranferManagerDomain.
+     */
+    public String getInitiatorCellDomain() {
+        return initiatorCellDomain;
+    }
+
+    /**
+     * Getter for property id.
+     *
+     * @return Value of property id.
+     */
+    public long getId() {
+        return id;
+    }
 
 
-  /** Getter for property tcpBufferSize.
-   * @return Value of property tcpBufferSize.
-   */
-  public int getTcpBufferSize() {
-      return tcpBufferSize;
-  }
+    /**
+     * Getter for property tcpBufferSize.
+     *
+     * @return Value of property tcpBufferSize.
+     */
+    public int getTcpBufferSize() {
+        return tcpBufferSize;
+    }
 
-  /** Setter for property tcpBufferSize.
-   * @param tcpBufferSize New value of property tcpBufferSize.
-   */
-  public void setTcpBufferSize(int tcpBufferSize) {
-      this.tcpBufferSize = tcpBufferSize;
-  }
+    /**
+     * Setter for property tcpBufferSize.
+     *
+     * @param tcpBufferSize New value of property tcpBufferSize.
+     */
+    public void setTcpBufferSize(int tcpBufferSize) {
+        this.tcpBufferSize = tcpBufferSize;
+    }
 
-  public boolean isFileCheckRequired() {
-      return true;
-  }
+    public boolean isFileCheckRequired() {
+        return true;
+    }
 
     @Override
     public InetSocketAddress getSocketAddress() {

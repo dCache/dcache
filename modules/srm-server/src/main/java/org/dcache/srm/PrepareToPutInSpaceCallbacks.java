@@ -83,37 +83,32 @@ package org.dcache.srm;
 
 
 /**
- * This interface is used for asyncronous notification of SRM of the varios
- * states of actions performed  for "putting"file to the storage
+ * This interface is used for asyncronous notification of SRM of the varios states of actions
+ * performed  for "putting"file to the storage
+ * <p>
+ * Instance of this class is passed to implementation of AbstractStorageElement.prepareToGPut(...)
+ * method storage should call its methods in this order:
+ * <p>
+ * if error occured at any time, call GetStorageInfoFailed, Exception, Timeout or Error and do not
+ * make any further calls, nullify the reference to this PrepareToPutCallbacks instance to allow
+ * garbage collection
+ * <p>
+ * if everything works fine, do the following, discover the info about this file, (it is ok to
+ * create the fileId for the file that does not exist yet, for example if the dericory for this file
+ * exists) The Methods of created FileId canRead(user) and canWrite(user) should work correctly call
+ * StorageInfoArrived and pass created FileId as an argument
  *
- * Instance of this class is passed to implementation
- * of AbstractStorageElement.prepareToGPut(...) method
- * storage should call its methods in this order:
- *
- * if error occured at any time, call GetStorageInfoFailed,
- * Exception, Timeout or Error and do not make any further calls, nullify the
- * reference to this PrepareToPutCallbacks instance to allow garbage
- * collection
- *
- * if everything works fine, do the following,
- * discover the info about this file, (it is ok to create the fileId
- * for the file that does not exist yet, for example if the dericory for
- * this file exists)
- * The Methods of created FileId canRead(user) and canWrite(user)
- * should work correctly
- * call StorageInfoArrived and pass created FileId as an argument
- *
- * @author  timur
+ * @author timur
  */
 public interface PrepareToPutInSpaceCallbacks {
-    
+
     void GetStorageInfoFailed(String reason);
-    
+
     void StorageInfoArrived(String fileId);
-    
+
     void Exception(Exception e);
-    
+
     void Timeout();
-    
+
     void Error(String error);
 }

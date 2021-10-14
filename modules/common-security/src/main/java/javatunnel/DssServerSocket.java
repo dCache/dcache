@@ -17,45 +17,40 @@
  */
 package javatunnel;
 
-import org.dcache.dss.DssContextFactory;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import org.dcache.dss.DssContextFactory;
 
-class DssServerSocket extends ServerSocket
-{
+class DssServerSocket extends ServerSocket {
+
     private final DssContextFactory _factory;
 
-    public DssServerSocket(DssContextFactory factory) throws IOException
-    {
+    public DssServerSocket(DssContextFactory factory) throws IOException {
         super();
         _factory = factory;
     }
 
-    public DssServerSocket(int port, DssContextFactory factory) throws IOException
-    {
+    public DssServerSocket(int port, DssContextFactory factory) throws IOException {
         super(port);
         _factory = factory;
     }
 
-    public DssServerSocket(int port, int backlog, DssContextFactory factory) throws IOException
-    {
+    public DssServerSocket(int port, int backlog, DssContextFactory factory) throws IOException {
         super(port, backlog);
         _factory = factory;
     }
 
-    public DssServerSocket(int port, int backlog, InetAddress bindAddr, DssContextFactory factory) throws IOException
-    {
+    public DssServerSocket(int port, int backlog, InetAddress bindAddr, DssContextFactory factory)
+          throws IOException {
         super(port, backlog, bindAddr);
         _factory = factory;
     }
 
     @Override
-    public Socket accept() throws IOException
-    {
+    public Socket accept() throws IOException {
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }

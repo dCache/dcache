@@ -59,18 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import dmg.cells.nucleus.CellMessageReceiver;
 import java.util.Date;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import dmg.cells.nucleus.CellMessageReceiver;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.poolmanager.PoolMonitor;
@@ -84,27 +79,30 @@ import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.util.MapInitializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Constitutes the receiver inside the resilience service for
- *      the changes communicated by the PoolManager.</p>
+ * the changes communicated by the PoolManager.</p>
  *
  * <p>If resilience is waiting for initialization, the message contents
- *      (the pool monitor) are conveyed to the {@link MapInitializer}.</p>
+ * (the pool monitor) are conveyed to the {@link MapInitializer}.</p>
  */
 public final class PoolInfoChangeHandler implements CellMessageReceiver {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    PoolInfoChangeHandler.class);
+          PoolInfoChangeHandler.class);
     private static final Logger ACTIVITY_LOGGER =
-                    LoggerFactory.getLogger("org.dcache.resilience-log");
+          LoggerFactory.getLogger("org.dcache.resilience-log");
 
     private static final String SYNC_ALARM =
-                    "Last pool monitor refresh was at %s, elapsed time is "
-                                    + "greater than %s %s; resilience is "
-                                    + "out of sync with pool monitor.";
+          "Last pool monitor refresh was at %s, elapsed time is "
+                + "greater than %s %s; resilience is "
+                + "out of sync with pool monitor.";
 
-    private MapInitializer   initializer;
-    private PoolInfoMap      poolInfoMap;
+    private MapInitializer initializer;
+    private PoolInfoMap poolInfoMap;
     private PoolOperationMap poolOperationMap;
     private FileOperationMap fileOperationMap;
 
@@ -128,8 +126,8 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
 
     public void messageArrived(SerializablePoolMonitor monitor) {
         ACTIVITY_LOGGER.info("Received pool monitor update; enabled {}, "
-                                             + "initialized {}",
-                             enabled, initializer.isInitialized());
+                    + "initialized {}",
+              enabled, initializer.isInitialized());
 
         if (!enabled) {
             return;
@@ -144,13 +142,11 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
 
     /**
      * <p>Invoked in response to the reception of a
-     *      {@link SerializablePoolMonitor} message.</p>
+     * {@link SerializablePoolMonitor} message.</p>
      *
      * <p>Does essentially the same thing as the initialization load
-     *      of the pool data, with the exception that certain
-     *      kinds of changes are further processed for potential task
-     *      cancellation and pool (re)scans which the changes may
-     *      necessitate.</p>
+     * of the pool data, with the exception that certain kinds of changes are further processed for
+     * potential task cancellation and pool (re)scans which the changes may necessitate.</p>
      *
      * @param poolMonitor the updated PoolMonitor
      */
@@ -165,64 +161,64 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         }
 
         LOGGER.trace("Cancelling pool operations for removed pools {}.",
-                        diff.getOldPools());
+              diff.getOldPools());
         diff.getOldPools().stream().forEach(
-                        this::cancelAndRemoveCurrentPoolOperation);
+              this::cancelAndRemoveCurrentPoolOperation);
 
         LOGGER.trace("Cancelling pool operations for pools "
-                                        + "removed from groups {}.",
-                        diff.getPoolsRemovedFromPoolGroup());
+                    + "removed from groups {}.",
+              diff.getPoolsRemovedFromPoolGroup());
         diff.getPoolsRemovedFromPoolGroup().keySet().stream()
-            .forEach(this::cancelCurrentPoolOperation);
+              .forEach(this::cancelCurrentPoolOperation);
 
         LOGGER.trace("Applying diff to pool info map.");
         poolInfoMap.apply(diff);
 
         LOGGER.trace("Removing uninitialized from other sets.");
         diff.getUninitializedPools().stream()
-            .forEach((p) -> {
-                diff.getPoolsAddedToPoolGroup().removeAll(p);
-                diff.getPoolsRemovedFromPoolGroup().removeAll(p);
-                diff.getModeChanged().remove(p);
-                diff.getTagsChanged().remove(p);
-            });
+              .forEach((p) -> {
+                  diff.getPoolsAddedToPoolGroup().removeAll(p);
+                  diff.getPoolsRemovedFromPoolGroup().removeAll(p);
+                  diff.getModeChanged().remove(p);
+                  diff.getTagsChanged().remove(p);
+              });
 
         LOGGER.trace("Adding new pools to the pool operation map.");
         diff.getNewPools().stream().forEach(poolOperationMap::add);
 
         LOGGER.trace("Scanning pools added to pool groups.");
         diff.getPoolsAddedToPoolGroup().entries().stream()
-            .forEach(this::poolAddedToPoolGroup);
+              .forEach(this::poolAddedToPoolGroup);
 
         LOGGER.trace("Scanning pools removed from pool groups.");
         diff.getPoolsRemovedFromPoolGroup().entries().stream()
-            .forEach(this::poolRemovedFromPoolGroup);
+              .forEach(this::poolRemovedFromPoolGroup);
 
         LOGGER.trace("Scanning pool groups with units whose "
-                        + "constraints have changed; new constraints {}.",
-                     diff.getConstraints());
+                    + "constraints have changed; new constraints {}.",
+              diff.getConstraints());
         diff.getConstraints().keySet().stream()
-            .forEach(this::storageUnitModified);
+              .forEach(this::storageUnitModified);
 
         LOGGER.trace("Alerting change of pool status.");
         diff.getModeChanged().entrySet().stream()
-            .map(PoolStateUpdate::new)
-            .forEach(resilienceMessageHandler::handleInternalMessage);
+              .map(PoolStateUpdate::new)
+              .forEach(resilienceMessageHandler::handleInternalMessage);
 
         LOGGER.trace("Rescanning the pools with changed tags.");
         diff.getTagsChanged().keySet().stream()
-            .filter(poolInfoMap::isInitialized)
-            .filter(poolInfoMap::isResilientPool)
-            .map(poolInfoMap::getPoolState)
-            .forEach((u) -> poolOperationMap.scan(u, true));
+              .filter(poolInfoMap::isInitialized)
+              .filter(poolInfoMap::isResilientPool)
+              .map(poolInfoMap::getPoolState)
+              .forEach((u) -> poolOperationMap.scan(u, true));
 
         LOGGER.trace("Checking to see if previously uninitialized "
-                                     + "pools are now ready.");
+              + "pools are now ready.");
         diff.getUninitializedPools().stream()
-            .filter(poolInfoMap::isInitialized)
-            .filter(poolInfoMap::isResilientPool)
-            .map(poolInfoMap::getPoolState)
-            .forEach(resilienceMessageHandler::handleInternalMessage);
+              .filter(poolInfoMap::isInitialized)
+              .filter(poolInfoMap::isResilientPool)
+              .map(poolInfoMap::getPoolState)
+              .forEach(resilienceMessageHandler::handleInternalMessage);
 
         poolOperationMap.saveExcluded();
         lastRefresh = System.currentTimeMillis();
@@ -264,7 +260,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
     }
 
     public void setResilienceMessageHandler(
-                    ResilienceMessageHandler resilienceMessageHandler) {
+          ResilienceMessageHandler resilienceMessageHandler) {
         this.resilienceMessageHandler = resilienceMessageHandler;
     }
 
@@ -278,8 +274,8 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         }
 
         refreshFuture = refreshService.scheduleAtFixedRate(
-                        this::checkLastRefresh, refreshTimeout, refreshTimeout,
-                        refreshTimeoutUnit);
+              this::checkLastRefresh, refreshTimeout, refreshTimeout,
+              refreshTimeoutUnit);
         lastRefresh = System.currentTimeMillis();
     }
 
@@ -311,22 +307,24 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         fileOperationMap.cancel(fileFilter);
     }
 
-    /** Called under synchronization **/
+    /**
+     * Called under synchronization
+     **/
     private void checkLastRefresh() {
         if (System.currentTimeMillis() - lastRefresh
-                        > refreshTimeoutUnit.toMillis(refreshTimeout)) {
+              > refreshTimeoutUnit.toMillis(refreshTimeout)) {
             String initError = String.format(SYNC_ALARM, new Date(lastRefresh),
-                            refreshTimeout, refreshTimeoutUnit);
+                  refreshTimeout, refreshTimeoutUnit);
             LOGGER.error(AlarmMarkerFactory.getMarker(
-                            PredefinedAlarm.RESILIENCE_PM_SYNC_FAILURE,
-                            "resilience", String.valueOf(lastRefresh)),
-                         initError);
+                        PredefinedAlarm.RESILIENCE_PM_SYNC_FAILURE,
+                        "resilience", String.valueOf(lastRefresh)),
+                  initError);
         }
     }
 
     /**
      * <p>Scans the "new" pool if it is resilient,
-     *      also making sure all files have the sticky bit.</p>
+     * also making sure all files have the sticky bit.</p>
      */
     private void poolAddedToPoolGroup(Entry<String, String> entry) {
         Integer gindex = poolInfoMap.getGroupIndex(entry.getValue());
@@ -339,13 +337,12 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
     }
 
     /**
-     *  <p>Skips non-resilient pool.</p>
+     * <p>Skips non-resilient pool.</p>
      *
-     *  <p>NB:  if we try to scan the pool as DOWN, this means we need
-     *          to pass the old group id for the pool, because we cannot
-     *          synchronize the scan + copy tasks such as to create a barrier
-     *          so that we can remove the pool from the map after
-     *          everything completes.</p>
+     * <p>NB:  if we try to scan the pool as DOWN, this means we need
+     * to pass the old group id for the pool, because we cannot synchronize the scan + copy tasks
+     * such as to create a barrier so that we can remove the pool from the map after everything
+     * completes.</p>
      */
     private void poolRemovedFromPoolGroup(Entry<String, String> entry) {
         Integer gindex = poolInfoMap.getGroupIndex(entry.getValue());
@@ -355,13 +352,13 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
     }
 
     /**
-     *  <p>Will skip the grace period wait, but still take into
-     *     consideration whether the pool has already been scanned
-     *     because it went DOWN, or whether it is EXCLUDED.</p>
+     * <p>Will skip the grace period wait, but still take into
+     * consideration whether the pool has already been scanned because it went DOWN, or whether it
+     * is EXCLUDED.</p>
      */
     private void scanPool(String pool, Integer addedTo, Integer removedFrom) {
         PoolStateUpdate update = poolInfoMap.getPoolState(pool, addedTo,
-                        removedFrom);
+              removedFrom);
         poolInfoMap.updatePoolStatus(update);
         if (poolInfoMap.isInitialized(pool)) {
             poolOperationMap.scan(update, false);
@@ -369,7 +366,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
     }
 
     /**
-     *  <p>Will skip the grace period wait, as well as transition checks.</p>
+     * <p>Will skip the grace period wait, as well as transition checks.</p>
      */
     private void scanPool(String pool, String unit) {
         PoolStateUpdate update = poolInfoMap.getPoolState(pool, unit);
@@ -383,10 +380,10 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         }
 
         poolInfoMap.getPoolsOfGroup(poolInfoMap.getGroupIndex(poolGroupName))
-                   .stream()
-                   .map(poolInfoMap::getPool)
-                   .filter(poolInfoMap::isInitialized)
-                   .forEach((p) -> scanPool(p, unit));
+              .stream()
+              .map(poolInfoMap::getPool)
+              .filter(poolInfoMap::isInitialized)
+              .forEach((p) -> scanPool(p, unit));
     }
 
     /*
@@ -401,6 +398,6 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         }
 
         poolInfoMap.getResilientPoolGroupsFor(unit)
-                   .forEach((group) -> scanPoolsInGroup(group, unit));
+              .forEach((group) -> scanPoolsInGroup(group, unit));
     }
 }

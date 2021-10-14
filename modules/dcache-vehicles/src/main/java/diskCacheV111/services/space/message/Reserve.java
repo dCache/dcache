@@ -9,19 +9,18 @@
 
 package diskCacheV111.services.space.message;
 
-import javax.annotation.Nonnull;
+import static java.util.Objects.requireNonNull;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
-
-import static java.util.Objects.requireNonNull;
+import javax.annotation.Nonnull;
 
 /**
- *
  * @author timur
  */
-public class Reserve extends Message{
+public class Reserve extends Message {
+
     private static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
     private final long sizeInBytes;
@@ -33,12 +32,12 @@ public class Reserve extends Message{
     private final String linkgroupName;
 
     public Reserve(
-            String linkgroupName,
-            long sizeInBytes,
-            RetentionPolicy retentionPolicy,
-            AccessLatency accessLatency,
-            long lifetime,
-            String description){
+          String linkgroupName,
+          long sizeInBytes,
+          RetentionPolicy retentionPolicy,
+          AccessLatency accessLatency,
+          long lifetime,
+          String description) {
         this.sizeInBytes = sizeInBytes;
         this.lifetime = lifetime;
         this.accessLatency = accessLatency;

@@ -20,18 +20,17 @@ package org.dcache.srm.scheduler.strategy;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public abstract class DiscriminatingSchedulingStrategy extends ForwardingJobDiscriminator implements SchedulingStrategy
-{
-    public DiscriminatingSchedulingStrategy(String discriminator)
-    {
+public abstract class DiscriminatingSchedulingStrategy extends ForwardingJobDiscriminator implements
+      SchedulingStrategy {
+
+    public DiscriminatingSchedulingStrategy(String discriminator) {
         super(discriminator);
     }
 
     protected abstract void add(String key, Job job);
 
     @Override
-    public void add(Job job)
-    {
+    public void add(Job job) {
         add(getDiscriminatingValue(job), job);
     }
 }

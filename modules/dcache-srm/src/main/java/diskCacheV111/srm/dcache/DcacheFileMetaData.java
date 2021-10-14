@@ -88,17 +88,26 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.EnumSet;
-import java.util.Set;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.ACCESS_TIME;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.CREATION_TIME;
+import static org.dcache.namespace.FileAttribute.MODE;
+import static org.dcache.namespace.FileAttribute.MODIFICATION_TIME;
+import static org.dcache.namespace.FileAttribute.OWNER;
+import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.TYPE;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
-
+import java.util.EnumSet;
+import java.util.Set;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.srm.SRMUser;
@@ -109,34 +118,35 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
-
-import static org.dcache.namespace.FileAttribute.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
+
     private static final long serialVersionUID = 4486472517160693148L;
     private PnfsId pnfsId;
     private FileAttributes attributes;
-    private static final Logger logger =  LoggerFactory.getLogger(DcacheFileMetaData.class);
+    private static final Logger logger = LoggerFactory.getLogger(DcacheFileMetaData.class);
 
-    /** Creates a new instance of DcacheFileMetaData */
+    /**
+     * Creates a new instance of DcacheFileMetaData
+     */
     public DcacheFileMetaData(PnfsId pnfsId) {
         super();
         this.pnfsId = pnfsId;
         this.fileId = pnfsId.toString();
     }
 
-    public DcacheFileMetaData(PnfsId pnfsId,diskCacheV111.srm.FileMetaData fmd) {
+    public DcacheFileMetaData(PnfsId pnfsId, diskCacheV111.srm.FileMetaData fmd) {
         super(fmd);
         this.pnfsId = pnfsId;
         this.fileId = pnfsId.toString();
     }
 
-    public DcacheFileMetaData(FileAttributes attributes)
-    {
+    public DcacheFileMetaData(FileAttributes attributes) {
         super();
 
         this.attributes = attributes;
@@ -148,145 +158,145 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         isLink = false;
         locality = TFileLocality.NONE;
 
-        for (FileAttribute attribute: attributes.getDefinedAttributes()) {
+        for (FileAttribute attribute : attributes.getDefinedAttributes()) {
             switch (attribute) {
-            case PNFSID:
-                pnfsId = attributes.getPnfsId();
-                fileId = pnfsId.toString();
-                break;
+                case PNFSID:
+                    pnfsId = attributes.getPnfsId();
+                    fileId = pnfsId.toString();
+                    break;
 
-            case CHECKSUM:
-                /* Find the adler32 checksum. If not found, then take
-                 * some other checksum.
-                 */
-                Set<Checksum> checksums = attributes.getChecksums();
-                for (Checksum checksum: checksums) {
-                    checksumType = checksum.getType().getName().toLowerCase();
-                    checksumValue = checksum.getValue();
-                    if (checksum.getType() == ChecksumType.ADLER32 ) {
-                        break;
+                case CHECKSUM:
+                    /* Find the adler32 checksum. If not found, then take
+                     * some other checksum.
+                     */
+                    Set<Checksum> checksums = attributes.getChecksums();
+                    for (Checksum checksum : checksums) {
+                        checksumType = checksum.getType().getName().toLowerCase();
+                        checksumValue = checksum.getValue();
+                        if (checksum.getType() == ChecksumType.ADLER32) {
+                            break;
+                        }
                     }
-                }
-                break;
-
-            case OWNER:
-                owner = Integer.toString(attributes.getOwner());
-                break;
-
-            case OWNER_GROUP:
-                group = Integer.toString(attributes.getGroup());
-                break;
-
-            case MODE:
-                permMode = attributes.getMode();
-                break;
-
-            case TYPE:
-                switch (attributes.getFileType()) {
-                case REGULAR:
-                    isRegular = true;
                     break;
-                case DIR:
-                    isDirectory = true;
+
+                case OWNER:
+                    owner = Integer.toString(attributes.getOwner());
                     break;
-                case LINK:
-                    isLink = true;
+
+                case OWNER_GROUP:
+                    group = Integer.toString(attributes.getGroup());
                     break;
-                case SPECIAL:
+
+                case MODE:
+                    permMode = attributes.getMode();
                     break;
-                }
-                break;
 
-            case ACCESS_TIME:
-                lastAccessTime = attributes.getAccessTime();
-                break;
-
-            case MODIFICATION_TIME:
-                lastModificationTime = attributes.getModificationTime();
-                break;
-
-            case CREATION_TIME:
-                creationTime = attributes.getCreationTime();
-                break;
-
-            case SIZE:
-                size = attributes.getSize();
-                break;
-
-            case RETENTION_POLICY:
-                TAccessLatency latency = null;
-                if (attributes.isDefined(ACCESS_LATENCY)) {
-                    if (attributes.getAccessLatency().equals(AccessLatency.ONLINE)) {
-                        latency = TAccessLatency.ONLINE;
-                    } else if (attributes.getAccessLatency().equals(AccessLatency.NEARLINE)) {
-                        latency = TAccessLatency.NEARLINE;
+                case TYPE:
+                    switch (attributes.getFileType()) {
+                        case REGULAR:
+                            isRegular = true;
+                            break;
+                        case DIR:
+                            isDirectory = true;
+                            break;
+                        case LINK:
+                            isLink = true;
+                            break;
+                        case SPECIAL:
+                            break;
                     }
-                }
+                    break;
 
-                TRetentionPolicy retention = null;
-                if (attributes.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
-                    retention = TRetentionPolicy.CUSTODIAL;
-                } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
-                    retention = TRetentionPolicy.REPLICA;
-                } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
-                    retention = TRetentionPolicy.OUTPUT;
-                }
-                // RetentionPolicy is non-nillable element of the
-                // TRetentionPolicyInfo, if retetion is null, we shold leave
-                // the whole retentionPolicyInfo null
-                if (retention != null) {
-                    retentionPolicyInfo =
-                            new TRetentionPolicyInfo(retention, latency);
-                }
-                break;
+                case ACCESS_TIME:
+                    lastAccessTime = attributes.getAccessTime();
+                    break;
 
-            case STORAGEINFO:
-                StorageInfo storage_info =
-                        attributes.getStorageInfo();
-                isStored = storage_info.isStored();
-                if (storage_info.getMap() != null) {
-                    String writeToken = storage_info.getMap().get("writeToken");
-		    if (writeToken != null) {
-                        spaceTokens = new long[1];
-                        try {
-                            spaceTokens[0] = Long.parseLong(writeToken);
-                        } catch (NumberFormatException e) {}
-		    }
-                }
-                break;
+                case MODIFICATION_TIME:
+                    lastModificationTime = attributes.getModificationTime();
+                    break;
+
+                case CREATION_TIME:
+                    creationTime = attributes.getCreationTime();
+                    break;
+
+                case SIZE:
+                    size = attributes.getSize();
+                    break;
+
+                case RETENTION_POLICY:
+                    TAccessLatency latency = null;
+                    if (attributes.isDefined(ACCESS_LATENCY)) {
+                        if (attributes.getAccessLatency().equals(AccessLatency.ONLINE)) {
+                            latency = TAccessLatency.ONLINE;
+                        } else if (attributes.getAccessLatency().equals(AccessLatency.NEARLINE)) {
+                            latency = TAccessLatency.NEARLINE;
+                        }
+                    }
+
+                    TRetentionPolicy retention = null;
+                    if (attributes.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
+                        retention = TRetentionPolicy.CUSTODIAL;
+                    } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
+                        retention = TRetentionPolicy.REPLICA;
+                    } else if (attributes.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
+                        retention = TRetentionPolicy.OUTPUT;
+                    }
+                    // RetentionPolicy is non-nillable element of the
+                    // TRetentionPolicyInfo, if retetion is null, we shold leave
+                    // the whole retentionPolicyInfo null
+                    if (retention != null) {
+                        retentionPolicyInfo =
+                              new TRetentionPolicyInfo(retention, latency);
+                    }
+                    break;
+
+                case STORAGEINFO:
+                    StorageInfo storage_info =
+                          attributes.getStorageInfo();
+                    isStored = storage_info.isStored();
+                    if (storage_info.getMap() != null) {
+                        String writeToken = storage_info.getMap().get("writeToken");
+                        if (writeToken != null) {
+                            spaceTokens = new long[1];
+                            try {
+                                spaceTokens[0] = Long.parseLong(writeToken);
+                            } catch (NumberFormatException e) {
+                            }
+                        }
+                    }
+                    break;
             }
         }
     }
 
 
-    /** Getter for property pnfsId.
-     * @return Value of property pnfsId.
+    /**
+     * Getter for property pnfsId.
      *
+     * @return Value of property pnfsId.
      */
     public diskCacheV111.util.PnfsId getPnfsId() {
         return pnfsId;
     }
 
-    public void setFileAttributes(FileAttributes attributes)
-    {
+    public void setFileAttributes(FileAttributes attributes) {
         this.attributes = attributes;
     }
 
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return attributes;
     }
 
     @Override
-    public  boolean isOwner(SRMUser user) {
+    public boolean isOwner(SRMUser user) {
         try {
             long uid = Subjects.getUid(((DcacheUser) user).getSubject());
             return Long.parseLong(owner) == uid;
         } catch (NumberFormatException nfe) {
-            logger.error("owner is not a number: "+owner,nfe);
+            logger.error("owner is not a number: " + owner, nfe);
             throw nfe;
-        } catch (ClassCastException  cce) {
-            logger.error("user is not a dCacheUser: "+user,cce);
+        } catch (ClassCastException cce) {
+            logger.error("user is not a dCacheUser: " + user, cce);
             throw cce;
         }
     }
@@ -297,10 +307,10 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
             long gid = Subjects.getPrimaryGid(((DcacheUser) user).getSubject());
             return Long.parseLong(group) == gid;
         } catch (NumberFormatException nfe) {
-            logger.error("group is not a number: "+group,nfe);
+            logger.error("group is not a number: " + group, nfe);
             throw nfe;
-        } catch (ClassCastException  cce) {
-            logger.error("user is not a dCacheUser: "+user,cce);
+        } catch (ClassCastException cce) {
+            logger.error("user is not a dCacheUser: " + user, cce);
             throw cce;
         }
 
@@ -309,11 +319,10 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     /**
      * Returns the set of FileAttributes understood by this class.
      */
-    public static Set<FileAttribute> getKnownAttributes()
-    {
+    public static Set<FileAttribute> getKnownAttributes() {
         return EnumSet.of(PNFSID, STORAGEINFO, CHECKSUM,
-                OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
-                ACCESS_TIME, MODIFICATION_TIME, CREATION_TIME,
-                ACCESS_LATENCY, RETENTION_POLICY);
+              OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
+              ACCESS_TIME, MODIFICATION_TIME, CREATION_TIME,
+              ACCESS_LATENCY, RETENTION_POLICY);
     }
 }

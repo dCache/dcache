@@ -63,17 +63,17 @@ import org.dcache.alarms.LogEntry;
 
 /**
  * <p>The provider interface for actions to be taken upon the
- *    receipt of an alarm.</p>
+ * receipt of an alarm.</p>
  *
  * <p>Each listener is provided by a {@link LogEntryListenerFactory}.</p>
  */
 public interface LogEntryListener {
+
     /**
      * <p>Called when the event, converted into a log entry, is
-     *    discovered to be an alarm.</p>
+     * discovered to be an alarm.</p>
      *
-     * @param entry the result of converting an
-     *          {@link ch.qos.logback.classic.spi.ILoggingEvent}.
+     * @param entry the result of converting an {@link ch.qos.logback.classic.spi.ILoggingEvent}.
      */
     void handleLogEntry(LogEntry entry);
 }

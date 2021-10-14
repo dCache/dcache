@@ -1,23 +1,33 @@
 package org.dcache.chimera.nfsv41.door;
 
-import com.google.common.base.Throwables;
+import static diskCacheV111.util.CacheException.BROKEN_ON_TAPE;
+import static diskCacheV111.util.CacheException.ERROR_IO_DISK;
+import static diskCacheV111.util.CacheException.FILE_IN_CACHE;
+import static diskCacheV111.util.CacheException.FILE_NOT_FOUND;
+import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
+import static diskCacheV111.util.CacheException.NO_POOL_ONLINE;
+import static diskCacheV111.util.CacheException.PERMISSION_DENIED;
+import static diskCacheV111.util.CacheException.RESOURCE;
+import static diskCacheV111.util.CacheException.TIMEOUT;
 
+import com.google.common.base.Throwables;
+import diskCacheV111.util.CacheException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-
-import diskCacheV111.util.CacheException;
-
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.status.*;
-
-import static diskCacheV111.util.CacheException.*;
+import org.dcache.nfs.status.DelayException;
+import org.dcache.nfs.status.LayoutTryLaterException;
+import org.dcache.nfs.status.NfsIoException;
+import org.dcache.nfs.status.NoEntException;
+import org.dcache.nfs.status.NoSpcException;
+import org.dcache.nfs.status.PermException;
+import org.dcache.nfs.status.ServerFaultException;
 
 /**
- * Utility class to convert {@link CacheException} into corresponding
- * {@link ChimeraNFSException}.
+ * Utility class to convert {@link CacheException} into corresponding {@link ChimeraNFSException}.
  */
 public class ExceptionUtils {
 
@@ -25,25 +35,26 @@ public class ExceptionUtils {
     }
 
     /**
-     * Converts given {@link Throwable} into appropriate {@link ChimeraNFSException}
-     * if and only if it is not an instance of {@link RuntimeException} or {@link Error}.
-     * If appropriate exception is not found, then an instance of {@code defaultException} is returned.
+     * Converts given {@link Throwable} into appropriate {@link ChimeraNFSException} if and only if
+     * it is not an instance of {@link RuntimeException} or {@link Error}. If appropriate exception
+     * is not found, then an instance of {@code defaultException} is returned.
      *
-     * @param t the Throwable to convert
+     * @param t                the Throwable to convert
      * @param defaultException
      * @return appropriate nfs exception
      */
-    public static ChimeraNFSException asNfsException(Throwable t, Class< ? extends ChimeraNFSException> defaultException) {
+    public static ChimeraNFSException asNfsException(Throwable t,
+          Class<? extends ChimeraNFSException> defaultException) {
 
         Throwables.throwIfUnchecked(t);
 
         if (t instanceof ChimeraNFSException) {
-            return (ChimeraNFSException)t;
+            return (ChimeraNFSException) t;
         } else if (t instanceof CacheException) {
-            return asNfsException((CacheException)t, defaultException);
+            return asNfsException((CacheException) t, defaultException);
         } else if (t instanceof ChimeraFsException) {
-            return asNfsException((ChimeraFsException)t, defaultException);
-        } else if (t instanceof ExecutionException ) {
+            return asNfsException((ChimeraFsException) t, defaultException);
+        } else if (t instanceof ExecutionException) {
             return asNfsException(t.getCause(), defaultException);
         } else if (t instanceof TimeoutException) {
             return new DelayException(t.getMessage(), t);
@@ -54,7 +65,8 @@ public class ExceptionUtils {
         }
     }
 
-    public static ChimeraNFSException asNfsException(CacheException e, Class< ? extends ChimeraNFSException> defaultException) {
+    public static ChimeraNFSException asNfsException(CacheException e,
+          Class<? extends ChimeraNFSException> defaultException) {
 
         switch (e.getRc()) {
             case BROKEN_ON_TAPE:
@@ -78,20 +90,22 @@ public class ExceptionUtils {
         }
     }
 
-    public static ChimeraNFSException asNfsException(ChimeraFsException e, Class< ? extends ChimeraNFSException> defaultException) {
+    public static ChimeraNFSException asNfsException(ChimeraFsException e,
+          Class<? extends ChimeraNFSException> defaultException) {
 
         if (e instanceof FileNotFoundHimeraFsException) {
-            return new  NoEntException(e.getMessage(), e);
+            return new NoEntException(e.getMessage(), e);
         }
 
         return new NfsIoException(e.getMessage(), e);
     }
 
-    private static <T extends ChimeraNFSException> T buildNfsException(Class<T> type, Throwable cause) {
+    private static <T extends ChimeraNFSException> T buildNfsException(Class<T> type,
+          Throwable cause) {
         try {
             return type
-                    .getConstructor(String.class, Throwable.class)
-                    .newInstance(cause.getMessage(), cause);
+                  .getConstructor(String.class, Throwable.class)
+                  .newInstance(cause.getMessage(), cause);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ee) {
             // points to a bug
             throw new RuntimeException("Failed to invoke constructor", ee);

@@ -76,18 +76,21 @@ import diskCacheV111.srm.RequestStatus;
 
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class SRMGetRequestStatusClientV1 extends SRMClient implements Runnable {
 
     private java.net.URI surl;
     private int requestId;
-    /** Creates a new instance of SRMGetClient */
-    public SRMGetRequestStatusClientV1(Configuration configuration, java.net.URI surl, int requestId) {
+
+    /**
+     * Creates a new instance of SRMGetClient
+     */
+    public SRMGetRequestStatusClientV1(Configuration configuration, java.net.URI surl,
+          int requestId) {
         super(configuration);
         this.surl = surl;
-        this.requestId=requestId;
+        this.requestId = requestId;
     }
 
     @Override

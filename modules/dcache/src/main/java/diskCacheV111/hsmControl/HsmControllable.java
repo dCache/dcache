@@ -7,12 +7,12 @@
 package diskCacheV111.hsmControl;
 
 import diskCacheV111.vehicles.StorageInfo;
+
 /**
- *
- * @author  patrick
+ * @author patrick
  */
 public interface HsmControllable {
 
-    void getBfDetails(StorageInfo storageInfo) throws Exception ;
+    void getBfDetails(StorageInfo storageInfo) throws Exception;
 
 }

@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,8 +24,8 @@ package org.dcache.ftp.client.exception;
  * <li> exception nesting can be used to track the root of the exceptions that come from lower software layers. Use getRootCause().
  * </ul>
  */
-public class FTPException extends Exception
-{
+public class FTPException extends Exception {
+
     private static final long serialVersionUID = -7860725803672334029L;
 
     public static final int UNSPECIFIED = 0;
@@ -34,11 +34,12 @@ public class FTPException extends Exception
 
     private static final String[] codeExplained = {"Unspecified category."};
 
-    public String getCodeExplanation(int code)
-    {
-        if (codeExplained.length > code)
+    public String getCodeExplanation(int code) {
+        if (codeExplained.length > code) {
             return codeExplained[code];
-        else return "";
+        } else {
+            return "";
+        }
     }
 
 
@@ -50,56 +51,47 @@ public class FTPException extends Exception
     //conditions of the error.
     protected String customMessage;
 
-    public FTPException(int code, String message)
-    {
+    public FTPException(int code, String message) {
         super();
         this.code = code;
         customMessage = message;
     }
 
-    public FTPException(int code)
-    {
+    public FTPException(int code) {
         this.code = code;
     }
 
 
-    public void setRootCause(Exception c)
-    {
+    public void setRootCause(Exception c) {
         this.cause = c;
     }
 
     /**
      * Retrieve the nested lower layer exception.
      */
-    public Exception getRootCause()
-    {
+    public Exception getRootCause() {
         return cause;
     }
 
-    public void setCode(int c)
-    {
+    public void setCode(int c) {
         this.code = c;
     }
 
-    public int getCode()
-    {
+    public int getCode() {
         return code;
     }
 
-    public void setCustomMessage(String m)
-    {
+    public void setCustomMessage(String m) {
         customMessage = m;
     }
 
-    public String getCustomMessage()
-    {
+    public String getCustomMessage() {
         return customMessage;
     }
 
     //overwriting inherited
     @Override
-    public String getMessage()
-    {
+    public String getMessage() {
         StringBuilder buf = new StringBuilder();
         if (code != UNSPECIFIED) {
             buf.append(getCodeExplanation(code));
@@ -120,8 +112,7 @@ public class FTPException extends Exception
     }
 
 
-    public String toString()
-    {
+    public String toString() {
         String answer = super.toString();
         if (cause != null && cause != this) {
             answer += " [Nested exception is " + cause.toString() + "]";
@@ -130,20 +121,18 @@ public class FTPException extends Exception
     }
 
     @Override
-    public void printStackTrace()
-    {
+    public void printStackTrace() {
         printStackTrace(System.err);
     }
 
     @Override
-    public void printStackTrace(java.io.PrintStream ps)
-    {
+    public void printStackTrace(java.io.PrintStream ps) {
         if (cause != null) {
             String superString = super.toString();
             synchronized (ps) {
                 ps.print(superString
-                         + (superString.endsWith(".") ? "" : ".")
-                         + "  Nested exception is ");
+                      + (superString.endsWith(".") ? "" : ".")
+                      + "  Nested exception is ");
                 cause.printStackTrace(ps);
             }
         } else {
@@ -152,14 +141,13 @@ public class FTPException extends Exception
     }
 
     @Override
-    public void printStackTrace(java.io.PrintWriter pw)
-    {
+    public void printStackTrace(java.io.PrintWriter pw) {
         if (cause != null) {
             String superString = super.toString();
             synchronized (pw) {
                 pw.print(superString
-                         + (superString.endsWith(".") ? "" : ".")
-                         + "  Nested exception is ");
+                      + (superString.endsWith(".") ? "" : ".")
+                      + "  Nested exception is ");
                 cause.printStackTrace(pw);
             }
         } else {

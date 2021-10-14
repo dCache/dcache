@@ -18,20 +18,17 @@
  */
 package org.dcache.namespace.events;
 
-import javax.annotation.Nullable;
-
-import java.util.Objects;
-
 import diskCacheV111.util.PnfsId;
-
+import java.util.Objects;
+import javax.annotation.Nullable;
 import org.dcache.events.Event;
 import org.dcache.namespace.FileType;
 
 /**
  * A specific inotify(7)-like event.
  */
-public class InotifyEvent implements Event
-{
+public class InotifyEvent implements Event {
+
     private static final long serialVersionUID = 1L;
 
     private final EventType eventType;
@@ -41,8 +38,7 @@ public class InotifyEvent implements Event
     private final FileType type;
 
     public InotifyEvent(EventType eventType, PnfsId target, String name,
-            String cookie, FileType type)
-    {
+          String cookie, FileType type) {
         this.eventType = eventType;
         this.name = name;
         this.cookie = cookie;
@@ -50,75 +46,73 @@ public class InotifyEvent implements Event
         this.type = type;
     }
 
-    public String getCategory()
-    {
+    public String getCategory() {
         return "inotify";
     }
 
     /**
      * The kind of inotify event represented by this object.
+     *
      * @return which activity triggered the event.
      */
-    public EventType getEventType()
-    {
+    public EventType getEventType() {
         return eventType;
     }
 
     /**
-     * If the target is a directory and the event arises from some child of that
-     * directory then this field provides the name of that child.  Otherwise
-     * null is returned.
+     * If the target is a directory and the event arises from some child of that directory then this
+     * field provides the name of that child.  Otherwise null is returned.
+     *
      * @return the name of the child
      */
-    public @Nullable String getName()
-    {
+    public @Nullable
+    String getName() {
         return name;
     }
 
     /**
-     * The same non-null value is returned for the IN_MOVED_FROM and IN_MOVED_TO
-     * events triggered by a single move/rename operation.  Each move/rename
-     * operation has a unique cookie value.  This allows these two events to
-     * be correlated, provided the client sees them both.  For all other events
-     * null is returned.
+     * The same non-null value is returned for the IN_MOVED_FROM and IN_MOVED_TO events triggered by
+     * a single move/rename operation.  Each move/rename operation has a unique cookie value.  This
+     * allows these two events to be correlated, provided the client sees them both.  For all other
+     * events null is returned.
+     *
      * @return the unique identifier for matching move events.
      */
-    public @Nullable String getCookie()
-    {
+    public @Nullable
+    String getCookie() {
         return cookie;
     }
 
     /**
-     * The watched file or directory through which the client learns of this
-     * event.  For some eventType (OVERFLOW) there is no target and null is
-     * returned.
+     * The watched file or directory through which the client learns of this event.  For some
+     * eventType (OVERFLOW) there is no target and null is returned.
+     *
      * @return the watch identity
      */
-    public @Nullable PnfsId getTarget()
-    {
+    public @Nullable
+    PnfsId getTarget() {
         return target;
     }
 
     /**
-     * The kind of object that triggered the event.  Note that, in inotify(7),
-     * the only distinction is between directory and non-directory.  For some
-     * eventTypes (OVERFLOW) there is no target and null is returned.
+     * The kind of object that triggered the event.  Note that, in inotify(7), the only distinction
+     * is between directory and non-directory.  For some eventTypes (OVERFLOW) there is no target
+     * and null is returned.
+     *
      * @return the kind of object that triggered the event.
      */
-    public @Nullable FileType getFileType()
-    {
+    public @Nullable
+    FileType getFileType() {
         return type;
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hash(eventType, name, cookie, target, type);
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
@@ -127,17 +121,16 @@ public class InotifyEvent implements Event
             return false;
         }
 
-        InotifyEvent otherEvent = (InotifyEvent)other;
+        InotifyEvent otherEvent = (InotifyEvent) other;
         return otherEvent.eventType == eventType
-                && Objects.equals(otherEvent.name, name)
-                && Objects.equals(otherEvent.cookie, cookie)
-                && Objects.equals(otherEvent.target, target)
-                && Objects.equals(otherEvent.type, type);
+              && Objects.equals(otherEvent.name, name)
+              && Objects.equals(otherEvent.cookie, cookie)
+              && Objects.equals(otherEvent.target, target)
+              && Objects.equals(otherEvent.type, type);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
 
         sb.append(eventType);

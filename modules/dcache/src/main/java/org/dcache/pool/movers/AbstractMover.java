@@ -17,14 +17,17 @@
  */
 package org.dcache.pool.movers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 import com.google.common.base.Strings;
 import com.google.common.reflect.TypeToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.security.auth.Subject;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.AsynchronousCloseException;
@@ -35,15 +38,8 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
-
-import dmg.cells.nucleus.CellPath;
-
+import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.FileStore;
@@ -55,15 +51,15 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Exceptions;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.util.Exceptions.messageOrClassName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract base class for movers.
  */
-public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMover<P, M>> implements Mover<P>
-{
+public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMover<P, M>> implements
+      Mover<P> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMover.class);
 
     protected final long _id;
@@ -86,9 +82,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     private volatile Optional<RepositoryChannel> _channel = Optional.empty();
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                         TransferService<M> transferService)
-    {
-        TypeToken<M> type = new TypeToken<M>(getClass()) {};
+          TransferService<M> transferService) {
+        TypeToken<M> type = new TypeToken<M>(getClass()) {
+        };
         checkArgument(type.isSupertypeOf(getClass()));
 
         _queue = message.getIoQueueName();
@@ -106,8 +102,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public void addChecksumType(ChecksumType type)
-    {
+    public void addChecksumType(ChecksumType type) {
         synchronized (_checksumTypes) {
             if (_checksumChannel == null) {
                 _checksumTypes.add(type);
@@ -116,45 +111,39 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     _checksumChannel.addType(type);
                 } catch (IOException e) {
                     LOGGER.warn("Failed to add {} calculation: {}", type.getName(),
-                            messageOrClassName(e));
+                          messageOrClassName(e));
                 }
             }
         }
     }
 
-    public void addExpectedChecksum(Checksum checksum)
-    {
+    public void addExpectedChecksum(Checksum checksum) {
         addChecksumType(checksum.getType());
         _checksums.add(checksum);
     }
 
     @Override
-    public Set<Checksum> getExpectedChecksums()
-    {
+    public Set<Checksum> getExpectedChecksums() {
         return _checksums;
     }
 
     @Override
-    public FileAttributes getFileAttributes()
-    {
+    public FileAttributes getFileAttributes() {
         return _handle.getFileAttributes();
     }
 
     @Override
-    public P getProtocolInfo()
-    {
+    public P getProtocolInfo() {
         return _protocolInfo;
     }
 
     @Override
-    public long getClientId()
-    {
+    public long getClientId() {
         return _id;
     }
 
     @Override
-    public void setTransferStatus(int errorCode, String errorMessage)
-    {
+    public void setTransferStatus(int errorCode, String errorMessage) {
         if (_errorCode == 0) {
             _errorCode = errorCode;
             _errorMessage = Strings.nullToEmpty(errorMessage);
@@ -162,91 +151,78 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public String getQueueName()
-    {
+    public String getQueueName() {
         return _queue;
     }
 
     @Override
-    public int getErrorCode()
-    {
+    public int getErrorCode() {
         return _errorCode;
     }
 
     @Override
-    public String getErrorMessage()
-    {
+    public String getErrorMessage() {
         return _errorMessage;
     }
 
     @Override
-    public String getInitiator()
-    {
+    public String getInitiator() {
         return _initiator;
     }
 
     @Override
-    public boolean isPoolToPoolTransfer()
-    {
+    public boolean isPoolToPoolTransfer() {
         return _isPoolToPoolTransfer;
     }
 
     @Override
-    public ReplicaDescriptor getIoHandle()
-    {
+    public ReplicaDescriptor getIoHandle() {
         return _handle;
     }
 
     @Override
-    public Set<? extends OpenOption> getIoMode()
-    {
+    public Set<? extends OpenOption> getIoMode() {
         return _ioMode;
     }
 
     @Override
-    public CellPath getPathToDoor()
-    {
+    public CellPath getPathToDoor() {
         return _pathToDoor;
     }
 
     @Override
-    public String getBillingPath()
-    {
+    public String getBillingPath() {
         return _billingPath;
     }
 
     @Override
-    public String getTransferPath()
-    {
+    public String getTransferPath() {
         return _transferPath;
     }
 
     @Override
-    public Subject getSubject()
-    {
+    public Subject getSubject() {
         return _subject;
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public void close(CompletionHandler<Void, Void> completionHandler)
-    {
+    @Override
+    @SuppressWarnings("unchecked")
+    public void close(CompletionHandler<Void, Void> completionHandler) {
         _transferService.closeMover((M) this, completionHandler);
     }
 
     @Override
-    public Cancellable execute(CompletionHandler<Void, Void> completionHandler)
-    {
+    public Cancellable execute(CompletionHandler<Void, Void> completionHandler) {
         return new TryCatchTemplate<Void, Void>(completionHandler) {
-            @Override @SuppressWarnings("unchecked")
+            @Override
+            @SuppressWarnings("unchecked")
             public Cancellable executeWithCancellable()
-                    throws Exception
-            {
+                  throws Exception {
                 return _transferService.executeMover((M) AbstractMover.this, this);
             }
 
             @Override
-            public synchronized void onFailure(Throwable t, Void attachment)
-            {
+            public synchronized void onFailure(Throwable t, Void attachment) {
                 try {
                     throw t;
                 } catch (DiskErrorCacheException e) {
@@ -257,19 +233,23 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     setTransferStatus(e.getRc(), e.getMessage());
                 } catch (InterruptedIOException | InterruptedException e) {
                     String message = e.getMessage() != null
-                            ? ("Transfer forcefully killed: " + e.getMessage())
-                            : "Transfer was forcefully killed";
+                          ? ("Transfer forcefully killed: " + e.getMessage())
+                          : "Transfer was forcefully killed";
                     LOGGER.error(message);
                     setTransferStatus(CacheException.DEFAULT_ERROR_CODE, message);
                 } catch (RuntimeException e) {
                     LOGGER.error("Transfer failed due to a bug", e);
-                    setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Bug detected (please report): " + e.getMessage());
+                    setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          "Bug detected (please report): " + e.getMessage());
                 } catch (OutOfDiskException e) {
-                    LOGGER.debug("Transfer failed due to insufficient capacity: {}", e.getMessage());
-                    setTransferStatus(CacheException.RESOURCE, "Insufficient capacity: " + e.getMessage());
+                    LOGGER.debug("Transfer failed due to insufficient capacity: {}",
+                          e.getMessage());
+                    setTransferStatus(CacheException.RESOURCE,
+                          "Insufficient capacity: " + e.getMessage());
                 } catch (Exception e) {
                     LOGGER.error("Transfer failed: {}", e.toString());
-                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "General problem: " + Exceptions.messageOrClassName(e));
+                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
+                          "General problem: " + Exceptions.messageOrClassName(e));
                 } catch (Throwable e) {
                     LOGGER.error("Transfer failed:", e);
                     Thread thread = Thread.currentThread();
@@ -282,13 +262,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
 
     /**
      * Opens a RepositoryChannel for the replica being transferred by this mover.
-     *
+     * <p>
      * The caller is responsible for closing the stream at the end of the transfer.
-     *
+     * <p>
      * TODO: Consider moving this method to RepositoryChannel.
      *
      * @return An open RepositoryChannel to the replica of this mover
-     * @throws InterruptedIOException if the mover was cancelled
+     * @throws InterruptedIOException  if the mover was cancelled
      * @throws DiskErrorCacheException If the file could not be opened
      */
     public RepositoryChannel openChannel() throws DiskErrorCacheException, InterruptedIOException {
@@ -296,11 +276,12 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         try {
             channel = _handle.createChannel();
         } catch (AsynchronousCloseException e) {
-            throw new InterruptedIOException("mover interrupted while opening file: " + messageOrClassName(e));
+            throw new InterruptedIOException(
+                  "mover interrupted while opening file: " + messageOrClassName(e));
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "File could not be opened; please check the file system: "
-                    + messageOrClassName(e), e);
+                  "File could not be opened; please check the file system: "
+                        + messageOrClassName(e), e);
         }
 
         synchronized (_checksumTypes) {
@@ -311,7 +292,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                         try {
                             _checksumChannel.addType(c.getType());
                         } catch (IOException e) {
-                            LOGGER.error("On-the-fly {} calculation (for known checksum) not possible: {}", c.getType(), messageOrClassName(e));
+                            LOGGER.error(
+                                  "On-the-fly {} calculation (for known checksum) not possible: {}",
+                                  c.getType(), messageOrClassName(e));
                         }
                     }
                 } catch (CacheException e) {
@@ -322,7 +305,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     try {
                         _checksumChannel.addType(type);
                     } catch (IOException e) {
-                        LOGGER.error("On-the-fly {} calculation (for protocol-delivered checksum) not possible: {}", type, messageOrClassName(e));
+                        LOGGER.error(
+                              "On-the-fly {} calculation (for protocol-delivered checksum) not possible: {}",
+                              type, messageOrClassName(e));
                     }
                 }
             }
@@ -335,8 +320,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public Optional<RepositoryChannel> getChannel()
-    {
+    public Optional<RepositoryChannel> getChannel() {
         return _channel;
     }
 
@@ -344,18 +328,18 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     @Override
     public Set<Checksum> getActualChecksums() {
         return (_checksumChannel == null)
-                ? Collections.emptySet()
-                : _checksumChannel.getChecksums();
+              ? Collections.emptySet()
+              : _checksumChannel.getChecksums();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getFileAttributes().getPnfsId());
         sb.append(" IoMode=").append(getIoMode());
-        sb.append(" h={").append(getStatus()).append("} bytes=").append(getBytesTransferred()).append(
-                " time/sec=").append(getTransferTime() / 1000L).append(" LM=");
+        sb.append(" h={").append(getStatus()).append("} bytes=").append(getBytesTransferred())
+              .append(
+                    " time/sec=").append(getTransferTime() / 1000L).append(" LM=");
         long lastTransferTime = getLastTransferred();
         if (lastTransferTime == 0L) {
             sb.append(0);

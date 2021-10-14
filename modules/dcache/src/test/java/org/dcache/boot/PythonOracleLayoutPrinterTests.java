@@ -1,11 +1,9 @@
 package org.dcache.boot;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,19 +11,18 @@ import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.Properties;
-
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import org.dcache.util.configuration.ConfigurationProperties;
-
-import static org.dcache.boot.Properties.PROPERTY_CELL_NAME_SUFFIX;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- *  Tests for the Python Oracle
+ * Tests for the Python Oracle
  */
-public class PythonOracleLayoutPrinterTests
-{
+public class PythonOracleLayoutPrinterTests {
+
     private ConfigurationProperties _globalDefaults;
     private ConfigurationProperties _dCacheConf;
     private ConfigurationProperties _layoutDefaults;
@@ -35,10 +32,10 @@ public class PythonOracleLayoutPrinterTests
 
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         _globalDefaults = new ConfigurationProperties(new Properties());
-        _globalDefaults.setProperty(org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI, "classpath:/org/dcache/boot/empty.batch");
+        _globalDefaults.setProperty(org.dcache.boot.Properties.PROPERTY_DOMAIN_SERVICE_URI,
+              "classpath:/org/dcache/boot/empty.batch");
         _dCacheConf = new ConfigurationProperties(_globalDefaults);
 
         _layout = new Layout(_dCacheConf);
@@ -49,8 +46,7 @@ public class PythonOracleLayoutPrinterTests
     }
 
     @Test
-    public void shouldFindGlobalValueIfDefined()
-    {
+    public void shouldFindGlobalValueIfDefined() {
         givenDefaults().with("property.name", "default value");
 
         whenOracleIsLoadedAndExec();
@@ -59,56 +55,51 @@ public class PythonOracleLayoutPrinterTests
     }
 
     @Test
-    public void shouldFindAwkwardGlobalValueIfDefined()
-    {
+    public void shouldFindAwkwardGlobalValueIfDefined() {
         givenDefaults().with("property.name", "the\\value\nis\t'here'");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(globalScopedProperty("property.name"),
-                is("the\\value\nis\t'here'"));
+              is("the\\value\nis\t'here'"));
     }
 
     @Test
-    public void shouldNotFindGlobalValueIfNotDefined()
-    {
+    public void shouldNotFindGlobalValueIfNotDefined() {
         givenDefaults().with("property.name", "default value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(globalScopedProperty("a.different.property.name"),
-                is(nullValue()));
+              is(nullValue()));
     }
 
 
     @Test
-    public void shouldFindValueIfDefinedInDcacheConf()
-    {
+    public void shouldFindValueIfDefinedInDcacheConf() {
         givenDcacheConf().with("property.name", "dCache.conf value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(globalScopedProperty("property.name"),
-                is("dCache.conf value"));
+              is("dCache.conf value"));
     }
 
 
     @Test
-    public void shouldReturnValueIfDcacheConfOverridesDefault()
-    {
+    public void shouldReturnValueIfDcacheConfOverridesDefault() {
         givenDefaults().with("property.name", "default value");
         givenDcacheConf().with("property.name", "dCache.conf value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(globalScopedProperty("property.name"),
-                is("dCache.conf value"));
+              is("dCache.conf value"));
     }
 
 
     @Test
-    public void shouldNotFindValueDefinedInDomain()
-    {
+    public void shouldNotFindValueDefinedInDomain() {
         givenDomain("domain 1").with("property.name", "domain 1 value");
 
         whenOracleIsLoadedAndExec();
@@ -118,20 +109,18 @@ public class PythonOracleLayoutPrinterTests
 
 
     @Test
-    public void shouldFindValueDefinedInDomain()
-    {
+    public void shouldFindValueDefinedInDomain() {
         givenDomain("domain 1").with("property.name", "domain 1 value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(domainScopedProperty("domain 1", "property.name"),
-                is("domain 1 value"));
+              is("domain 1 value"));
     }
 
 
     @Test
-    public void shouldFindDomainValueIfGlobalDefined()
-    {
+    public void shouldFindDomainValueIfGlobalDefined() {
         givenDefaults().with("property.name", " defaultvalue");
         givenDcacheConf().with("property.name", "dCache.conf value");
         givenDomain("domain 1").with("property.name", "domain 1 value");
@@ -139,54 +128,51 @@ public class PythonOracleLayoutPrinterTests
         whenOracleIsLoadedAndExec();
 
         assertThat(domainScopedProperty("domain 1", "property.name"),
-                is("domain 1 value"));
+              is("domain 1 value"));
         assertThat(globalScopedProperty("property.name"),
-                is("dCache.conf value"));
+              is("dCache.conf value"));
     }
 
 
     @Test
-    public void shouldFindServiceValueIfDefined() throws IOException
-    {
+    public void shouldFindServiceValueIfDefined() throws IOException {
         givenDefaults().with("property.name", "default value");
         givenDcacheConf().with("property.name", "dCache.conf value");
         givenDomain("domain 1").
-                with("property.name", "domain 1 value").
-                withService("pool", "pool1").
-                with("property.name", "pool1-value");
+              with("property.name", "domain 1 value").
+              withService("pool", "pool1").
+              with("property.name", "pool1-value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(serviceScopedProperty("domain 1", "pool1", "property.name"),
-                is("pool1-value"));
+              is("pool1-value"));
         assertThat(domainScopedProperty("domain 1", "property.name"),
-                is("domain 1 value"));
+              is("domain 1 value"));
         assertThat(globalScopedProperty("property.name"),
-                is("dCache.conf value"));
+              is("dCache.conf value"));
     }
 
     @Test
-    public void shouldFindSpecificServiceValueIfDefined() throws IOException
-    {
+    public void shouldFindSpecificServiceValueIfDefined() throws IOException {
         givenDefaults().with("property.name", "default value");
         givenDcacheConf().with("property.name", "dCache.conf value");
         givenDomain("domain 1").
-                with("property.name", "domain 1 value").
-                withService("pool", "pool1").
-                with("property.name", "pool1 value").
-                withService("pool", "pool2").
-                with("property.name", "pool2 value");
+              with("property.name", "domain 1 value").
+              withService("pool", "pool1").
+              with("property.name", "pool1 value").
+              withService("pool", "pool2").
+              with("property.name", "pool2 value");
 
         whenOracleIsLoadedAndExec();
 
         assertThat(serviceScopedProperty("domain 1", "pool1", "property.name"),
-                is("pool1 value"));
+              is("pool1 value"));
         assertThat(serviceScopedProperty("domain 1", "pool2", "property.name"),
-                is("pool2 value"));
+              is("pool2 value"));
     }
 
-    private void whenOracleIsLoadedAndExec()
-    {
+    private void whenOracleIsLoadedAndExec() {
         ByteArrayOutputStream stored = new ByteArrayOutputStream();
         PrintStream s = new PrintStream(stored);
         _printer.print(s);
@@ -203,26 +189,22 @@ public class PythonOracleLayoutPrinterTests
         }
     }
 
-    private String globalScopedProperty(String key)
-    {
+    private String globalScopedProperty(String key) {
         String args = "'" + key + "'";
         return lookupArgs(args);
     }
 
-    private String domainScopedProperty(String domain, String key)
-    {
-        String args = "'" + key +"', '" + domain + "'";
+    private String domainScopedProperty(String domain, String key) {
+        String args = "'" + key + "', '" + domain + "'";
         return lookupArgs(args);
     }
 
-    private String serviceScopedProperty(String domain, String service, String key)
-    {
-        String args = "'" + key +"', '" + domain + "', '" + service + "'";
+    private String serviceScopedProperty(String domain, String service, String key) {
+        String args = "'" + key + "', '" + domain + "', '" + service + "'";
         return lookupArgs(args);
     }
 
-    private String lookupArgs(String args)
-    {
+    private String lookupArgs(String args) {
         try {
             _engine.eval("result = properties.get(" + args + ")");
         } catch (ScriptException e) {
@@ -233,73 +215,63 @@ public class PythonOracleLayoutPrinterTests
         return result == null ? null : result.toString();
     }
 
-    private PropertyBuilder givenDefaults()
-    {
+    private PropertyBuilder givenDefaults() {
         return new PropertyBuilder(_globalDefaults);
     }
 
-    private PropertyBuilder givenDcacheConf()
-    {
+    private PropertyBuilder givenDcacheConf() {
         return new PropertyBuilder(_dCacheConf);
     }
 
-    private PropertyBuilder givenLayoutDefaults()
-    {
+    private PropertyBuilder givenLayoutDefaults() {
         return new PropertyBuilder(_layoutDefaults);
     }
 
     /**
-     * Class with fluent interface that allows initialising a
-     * ConfigurationProperties.
+     * Class with fluent interface that allows initialising a ConfigurationProperties.
      */
-    private class PropertyBuilder
-    {
+    private class PropertyBuilder {
+
         private final ConfigurationProperties _inner;
 
-        public PropertyBuilder(ConfigurationProperties properties)
-        {
+        public PropertyBuilder(ConfigurationProperties properties) {
             _inner = properties;
         }
 
-        public PropertyBuilder with(String key, String value)
-        {
+        public PropertyBuilder with(String key, String value) {
             _inner.put(key, value);
             return this;
         }
     }
 
-    private DomainBuilder givenDomain(String name)
-    {
+    private DomainBuilder givenDomain(String name) {
         return new DomainBuilder(name);
     }
 
 
     /**
-     * Class with fluent interface that allows building of a domain
-     * with domain-scoped default values and services with service-scoped
-     * property values.
+     * Class with fluent interface that allows building of a domain with domain-scoped default
+     * values and services with service-scoped property values.
      */
-    private class DomainBuilder
-    {
+    private class DomainBuilder {
+
         private final Domain _domain;
         private ConfigurationProperties _properties;
 
-        public DomainBuilder(String name)
-        {
+        public DomainBuilder(String name) {
             _layout.createDomain(name);
             _domain = _layout.getDomain(name);
             _properties = _domain.properties();
         }
 
-        public DomainBuilder with(String key, String value)
-        {
+        public DomainBuilder with(String key, String value) {
             _properties.put(key, value);
             return this;
         }
 
-        public DomainBuilder withService(String type, String cellName) throws IOException
-        {
-            _properties = _domain.createService("source", new LineNumberReader(new StringReader("")), type);
+        public DomainBuilder withService(String type, String cellName) throws IOException {
+            _properties = _domain.createService("source",
+                  new LineNumberReader(new StringReader("")), type);
             _properties.put(type + "." + PROPERTY_CELL_NAME_SUFFIX, cellName);
             return this;
         }

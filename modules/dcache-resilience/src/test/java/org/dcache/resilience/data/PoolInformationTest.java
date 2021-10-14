@@ -59,11 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import diskCacheV111.pools.PoolV2Mode;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  * <p>Tests the mode changes for correct readable and writable classification.</p>

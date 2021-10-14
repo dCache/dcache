@@ -59,27 +59,25 @@ documents or software obtained from this server.
  */
 package org.dcache.qos;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pool.migration.PoolMigrationMessage;
-
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Handles synchronous behavior for QoS.  When the caller wishes to
- * wait for completion of either staging or migration, it must add
- * an implementation of this class to the QoSTransitionEngine.
+ * Handles synchronous behavior for QoS.  When the caller wishes to wait for completion of either
+ * staging or migration, it must add an implementation of this class to the QoSTransitionEngine.
  */
 public abstract class QoSReplyHandler {
+
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(QoSReplyHandler.class);
+          = LoggerFactory.getLogger(QoSReplyHandler.class);
 
     private final Executor executor;
 
@@ -89,13 +87,11 @@ public abstract class QoSReplyHandler {
     private ListenableFuture<PoolMigrationMessage> migrationFuture;
     private ListenableFuture<PinManagerPinMessage> pinFuture;
 
-    protected QoSReplyHandler(Executor executor)
-    {
+    protected QoSReplyHandler(Executor executor) {
         this.executor = executor;
     }
 
-    public synchronized void cancel()
-    {
+    public synchronized void cancel() {
         if (migrationFuture != null && migrationReply == null) {
             migrationFuture.cancel(true);
             LOGGER.debug("Cancelled migrationFuture.");
@@ -109,22 +105,19 @@ public abstract class QoSReplyHandler {
         }
     }
 
-    public String toString()
-    {
+    public String toString() {
         return "(migration " + migrationFuture + ", "
-                        + migrationReply + ")(pin "
-                        + pinFuture + ", " + pinReply + ")";
+              + migrationReply + ")(pin "
+              + pinFuture + ", " + pinReply + ")";
     }
 
-    public synchronized boolean done()
-    {
+    public synchronized boolean done() {
         LOGGER.trace("done called: {}.", this);
         return (migrationFuture == null || migrationReply != null) &&
-                        (pinFuture == null || pinReply != null);
+              (pinFuture == null || pinReply != null);
     }
 
-    public void listen()
-    {
+    public void listen() {
         if (migrationFuture != null) {
             migrationFuture.addListener(() -> handleMigrationReply(), executor);
         }
@@ -136,13 +129,11 @@ public abstract class QoSReplyHandler {
         LOGGER.trace("listen called: {}.", this);
     }
 
-    public synchronized void setMigrationFuture(ListenableFuture<PoolMigrationMessage> future)
-    {
+    public synchronized void setMigrationFuture(ListenableFuture<PoolMigrationMessage> future) {
         this.migrationFuture = future;
     }
 
-    public synchronized void setPinFuture(ListenableFuture<PinManagerPinMessage> future)
-    {
+    public synchronized void setPinFuture(ListenableFuture<PinManagerPinMessage> future) {
         this.pinFuture = future;
     }
 
@@ -154,8 +145,7 @@ public abstract class QoSReplyHandler {
 
     protected abstract void pinSuccess();
 
-    private synchronized void handleMigrationReply()
-    {
+    private synchronized void handleMigrationReply() {
         if (migrationFuture == null) {
             LOGGER.debug("No migration future set, no reply expected.");
             return;
@@ -182,8 +172,7 @@ public abstract class QoSReplyHandler {
         }
     }
 
-    private synchronized void handlePinReply()
-    {
+    private synchronized void handlePinReply() {
         if (pinFuture == null) {
             LOGGER.debug("No pin future set, no reply expected.");
             return;

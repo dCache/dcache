@@ -5,12 +5,14 @@ public interface RequestExecutionTimeGauge {
 
     /**
      * return average over the last period, and start new period
+     *
      * @return
      */
     double resetAndGetAverageExecutionTime();
 
     /**
      * return average over the lifetime of the gauge
+     *
      * @return
      */
     double getAverageExecutionTime();
@@ -38,7 +40,6 @@ public interface RequestExecutionTimeGauge {
     double getStandardDeviation();
 
     /**
-     *
      * @return standard error of the mean
      */
     double getStandardError();
@@ -54,7 +55,6 @@ public interface RequestExecutionTimeGauge {
     long getUpdateNum();
 
     /**
-     *
      * @param nextExecTime
      */
     void update(long nextExecTime);

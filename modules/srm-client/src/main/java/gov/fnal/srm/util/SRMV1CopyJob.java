@@ -75,14 +75,14 @@ package gov.fnal.srm.util;
 
 import diskCacheV111.srm.ISRM;
 import diskCacheV111.srm.RequestStatus;
-
 import org.dcache.srm.Logger;
+
 /**
- *
- * @author  timur
+ * @author timur
  */
 
 public class SRMV1CopyJob implements CopyJob {
+
     private java.net.URI from;
     private java.net.URI to;
     private ISRM srm;
@@ -97,10 +97,11 @@ public class SRMV1CopyJob implements CopyJob {
     private SRMClient client;
 
 
-    public SRMV1CopyJob(java.net.URI from, java.net.URI to, ISRM srm, int requestID, int fileID, Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
-        if(from == null || to == null) {
-            throw new IllegalArgumentException("both source and destination"+
-            "must be non-null");
+    public SRMV1CopyJob(java.net.URI from, java.net.URI to, ISRM srm, int requestID, int fileID,
+          Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("both source and destination" +
+                  "must be non-null");
         }
         this.from = from;
         this.to = to;
@@ -113,8 +114,9 @@ public class SRMV1CopyJob implements CopyJob {
         this.client = client;
     }
 
-    public SRMV1CopyJob(java.net.URI from, java.net.URI to, Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
-        this(from,to, null,0,0,logger,surl,isSrmPrepareToGet,client);
+    public SRMV1CopyJob(java.net.URI from, java.net.URI to, Logger logger, java.net.URI surl,
+          boolean isSrmPrepareToGet, SRMClient client) {
+        this(from, to, null, 0, 0, logger, surl, isSrmPrepareToGet, client);
 
     }
 
@@ -147,53 +149,48 @@ public class SRMV1CopyJob implements CopyJob {
 
     @Override
     public String toString() {
-        return "CopyJob, source = "+from+" destination = "+to;
+        return "CopyJob, source = " + from + " destination = " + to;
     }
 
     @Override
     public void done(boolean success, String error) {
-        synchronized(this) {
-            if(isDone) {
+        synchronized (this) {
+            if (isDone) {
                 return;
             }
         }
 
-        if(srm != null) {
+        if (srm != null) {
             if (success) {
-                logger.log("setting file request "+fileID +" status to Done");
+                logger.log("setting file request " + fileID + " status to Done");
                 RequestStatus status = srm.setFileStatus(requestID, fileID, "Done");
                 if (!status.state.equalsIgnoreCase("Done")) {
                     success = false;
                     error = status.errorMessage;
                     logger.elog(error);
                 }
-            }
-            else
-            {
-                logger.log("setting file request "+fileID +" status to Failed");
-                srm.setFileStatus(requestID,fileID, "Failed");
-            }
-        }
-
-        if(success) {
-            if(isSrmPrepareToGet) {
-                client.setReportSucceeded(surl,null);
-            }
-            else {
-                client.setReportSucceeded(null,surl);
-            }
-        }
-        else
-        {
-            error = "received TURL but failed to copy: "+error;
-            if(isSrmPrepareToGet) {
-                client.setReportFailed(surl,null,error);
             } else {
-                client.setReportFailed(null,surl,error);
+                logger.log("setting file request " + fileID + " status to Failed");
+                srm.setFileStatus(requestID, fileID, "Failed");
+            }
+        }
+
+        if (success) {
+            if (isSrmPrepareToGet) {
+                client.setReportSucceeded(surl, null);
+            } else {
+                client.setReportSucceeded(null, surl);
+            }
+        } else {
+            error = "received TURL but failed to copy: " + error;
+            if (isSrmPrepareToGet) {
+                client.setReportFailed(surl, null, error);
+            } else {
+                client.setReportFailed(null, surl, error);
             }
 
         }
-        synchronized(this) {
+        synchronized (this) {
             isDone = true;
         }
     }

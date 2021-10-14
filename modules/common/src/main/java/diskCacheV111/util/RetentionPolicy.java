@@ -74,48 +74,47 @@ import java.io.Serializable;
  */
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public final class RetentionPolicy implements Serializable {
+
     private static final long serialVersionUID = -2206085171393244383L;
     private final String _name;
     private final int _id;
 
     /**
-     * A {@code RetentionPolicy} with highest probability of loss, but is appropriate
-     * for data that can be replaced because other copies can be accessed in a
-     * timely fashion.
+     * A {@code RetentionPolicy} with highest probability of loss, but is appropriate for data that
+     * can be replaced because other copies can be accessed in a timely fashion.
      */
-    public static final RetentionPolicy REPLICA    = new RetentionPolicy("REPLICA", 2);
+    public static final RetentionPolicy REPLICA = new RetentionPolicy("REPLICA", 2);
 
     /**
-     * A {@code RetentionPolicy} for an intermediate level and refers to the data which can
-     * be replaced by lengthy or effort-full processes.
+     * A {@code RetentionPolicy} for an intermediate level and refers to the data which can be
+     * replaced by lengthy or effort-full processes.
      */
-    public static final RetentionPolicy OUTPUT     = new RetentionPolicy("OUTPUT", 1);
+    public static final RetentionPolicy OUTPUT = new RetentionPolicy("OUTPUT", 1);
 
     /**
      * A {@code RetentionPolicy} with  low probability of loss.
      */
-    public static final RetentionPolicy CUSTODIAL  = new RetentionPolicy("CUSTODIAL", 0);
+    public static final RetentionPolicy CUSTODIAL = new RetentionPolicy("CUSTODIAL", 0);
 
     private final static RetentionPolicy[] ALL_POLICIES = {
-        REPLICA,
-        OUTPUT,
-        CUSTODIAL
+          REPLICA,
+          OUTPUT,
+          CUSTODIAL
     };
 
     /**
      * Creates a new instance of FileState
      */
-    private RetentionPolicy(String name,int id) {
+    private RetentionPolicy(String name, int id) {
         _name = name;
         _id = id;
     }
 
     public static RetentionPolicy[] getAllPolicies() {
-            return ALL_POLICIES;
+        return ALL_POLICIES;
     }
 
     @Override
@@ -126,16 +125,17 @@ public final class RetentionPolicy implements Serializable {
     public int getId() {
         return _id;
     }
+
     /**
-     * this package visible method is used to restore the FileState from
-     * the database
+     * this package visible method is used to restore the FileState from the database
      */
-    public static RetentionPolicy getRetentionPolicy(String policy) throws IllegalArgumentException {
-        if(policy == null || policy.equalsIgnoreCase("null")) {
+    public static RetentionPolicy getRetentionPolicy(String policy)
+          throws IllegalArgumentException {
+        if (policy == null || policy.equalsIgnoreCase("null")) {
             throw new NullPointerException(" null state ");
         }
 
-        for(RetentionPolicy rp: getAllPolicies()) {
+        for (RetentionPolicy rp : getAllPolicies()) {
             if (rp._name.equalsIgnoreCase(policy)) {
                 return rp;
             }
@@ -151,7 +151,7 @@ public final class RetentionPolicy implements Serializable {
 
     public static RetentionPolicy getRetentionPolicy(int id) throws IllegalArgumentException {
 
-        for(RetentionPolicy rp: getAllPolicies()) {
+        for (RetentionPolicy rp : getAllPolicies()) {
             if (rp._id == id) {
                 return rp;
             }
@@ -166,7 +166,8 @@ public final class RetentionPolicy implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        return ( obj instanceof RetentionPolicy) && ( ((RetentionPolicy)obj).getId() == this.getId() );
+        return (obj instanceof RetentionPolicy) && (((RetentionPolicy) obj).getId()
+              == this.getId());
     }
 
     @Override
@@ -175,6 +176,6 @@ public final class RetentionPolicy implements Serializable {
     }
 
     public Object readResolve() throws ObjectStreamException {
-       return RetentionPolicy.getRetentionPolicy(getId());
+        return RetentionPolicy.getRetentionPolicy(getId());
     }
 }

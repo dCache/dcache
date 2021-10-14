@@ -74,12 +74,8 @@ package org.dcache.srm.request;
 
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.axis.types.UnsignedLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
-
+import org.apache.axis.types.UnsignedLong;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
@@ -94,13 +90,14 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author  timur
- * @version
+ * @author timur
  */
 public final class GetFileRequest extends FileRequest<GetRequest> {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(GetFileRequest.class);
 
     private final URI surl;
@@ -109,44 +106,43 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     private String fileId;
 
     /**
-     * Transient, since we do not need to replicate the field,
-     * the field is needed only in jvm where the request is originally
-     * scheduled
+     * Transient, since we do not need to replicate the field, the field is needed only in jvm where
+     * the request is originally scheduled
      */
     private transient FileMetaData fileMetaData;
 
-    /** Creates new FileRequest */
+    /**
+     * Creates new FileRequest
+     */
     public GetFileRequest(long requestId,
-                          URI surl,
-                          long lifetime)
-    {
+          URI surl,
+          long lifetime) {
         super(requestId, lifetime);
         LOGGER.debug("GetFileRequest, requestId={} fileRequestId = {}", requestId, getId());
         this.surl = surl;
     }
 
     /**
-     * restore constructore, used for restoring the existing
-     * file request from the database
+     * restore constructore, used for restoring the existing file request from the database
      */
 
     public GetFileRequest(
-    long id,
-    Long nextJobId,
-    long creationTime,
-    long lifetime,
-    int stateId,
-    String scheduelerId,
-    long schedulerTimeStamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray,
-    long requestId,
-    String statusCodeString,
-    String SURL,
-    String TURL,
-    String fileId,
-    String pinId
+          long id,
+          Long nextJobId,
+          long creationTime,
+          long lifetime,
+          int stateId,
+          String scheduelerId,
+          long schedulerTimeStamp,
+          int numberOfRetries,
+          long lastStateTransitionTime,
+          JobHistory[] jobHistoryArray,
+          long requestId,
+          String statusCodeString,
+          String SURL,
+          String TURL,
+          String fileId,
+          String pinId
     ) {
         super(id,
               nextJobId,
@@ -162,15 +158,15 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
               statusCodeString);
 
         this.surl = URI.create(SURL);
-        if(TURL != null && !TURL.equalsIgnoreCase("null")) {
+        if (TURL != null && !TURL.equalsIgnoreCase("null")) {
             this.turl = URI.create(TURL);
         }
 
-        if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
+        if (fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
 
-        if(pinId != null && (!pinId.equalsIgnoreCase("null"))) {
+        if (pinId != null && (!pinId.equalsIgnoreCase("null"))) {
             this.pinId = pinId;
         }
     }
@@ -205,7 +201,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         return getSurl().toASCIIString();
     }
 
-    public String getTurlString()  {
+    public String getTurlString() {
         rlock();
         try {
             if (turl != null) {
@@ -221,21 +217,21 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     public String getFileId() {
         rlock();
         try {
-           return fileId;
+            return fileId;
         } finally {
             runlock();
         }
     }
 
     protected TGetRequestFileStatus getTGetRequestFileStatus()
-            throws SRMInvalidRequestException {
+          throws SRMInvalidRequestException {
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();
-        if(getFileMetaData() != null) {
+        if (getFileMetaData() != null) {
             fileStatus.setFileSize(new UnsignedLong(getFileMetaData().size));
         }
 
         try {
-             fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
+            fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (org.apache.axis.types.URI.MalformedURIException e) {
             LOGGER.error(e.toString());
             throw new SRMInvalidRequestException("wrong surl format");
@@ -243,18 +239,19 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
         TReturnStatus returnStatus = getReturnStatus();
         String turlstring = getTurlString();
-        if(turlstring != null && TStatusCode.SRM_FILE_PINNED.equals(returnStatus.getStatusCode())) {
+        if (turlstring != null && TStatusCode.SRM_FILE_PINNED.equals(
+              returnStatus.getStatusCode())) {
             try {
-            fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
+                fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
                 LOGGER.error("Generated broken TURL \"{}\": {}", turlstring, e);
                 throw new SRMInvalidRequestException("wrong turl format");
             }
 
         }
-        if(this.isPinned()) {
+        if (this.isPinned()) {
 
-            fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
+            fileStatus.setRemainingPinTime((int) (getRemainingLifetime() / 1000));
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         fileStatus.setStatus(returnStatus);
@@ -271,12 +268,12 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         sb.append("file id:").append(getId());
         State state = getState();
         sb.append(" state:").append(state);
-        if(longformat) {
+        if (longformat) {
             sb.append('\n');
             sb.append(padding).append("   SURL: ").append(getSurlString()).append('\n');
             sb.append(padding).append("   Pinned: ").append(isPinned()).append('\n');
             String thePinId = getPinId();
-            if(thePinId != null) {
+            if (thePinId != null) {
                 sb.append(padding).append("   Pin id: ").append(thePinId).append('\n');
             }
             sb.append(padding).append("   TURL: ").append(getTurlString()).append('\n');
@@ -291,8 +288,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     @Override
     public synchronized void run()
-            throws SRMException, IllegalStateTransition
-    {
+          throws SRMException, IllegalStateTransition {
         LOGGER.trace("run");
         if (!getState().isFinal()) {
             if (getPinId() == null) {
@@ -324,82 +320,82 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    protected void pinFile(GetRequest request)
-    {
+    protected void pinFile(GetRequest request) {
         URI surl = getSurl();
         LOGGER.info("Pinning {}", surl);
-        CheckedFuture<AbstractStorageElement.Pin,? extends SRMException> future =
-                getStorage().pinFile(
-                        request.getUser(),
-                        surl,
-                        request.getClient_host(),
-                        getLifetime(),
-                        String.valueOf(getRequestId()),
-                        request.isStagingAllowed());
+        CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future =
+              getStorage().pinFile(
+                    request.getUser(),
+                    surl,
+                    request.getClient_host(),
+                    getLifetime(),
+                    String.valueOf(getRequestId()),
+                    request.isStagingAllowed());
         LOGGER.trace("GetFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }
 
     @Override
-    protected void processStateChange(State newState, String description)
-    {
+    protected void processStateChange(State newState, String description) {
         State oldState = getState();
         LOGGER.debug("State changed from {} to {}", oldState, newState);
         switch (newState) {
-        case READY:
-            try {
-                getContainerRequest().resetRetryDeltaTime();
-            } catch (SRMInvalidRequestException ire) {
-                LOGGER.error(ire.toString());
-            }
-            break;
-
-        case DONE:
-        case FAILED:
-        case CANCELED:
-            AbstractStorageElement storage = getStorage();
-            try {
-                SRMUser user = getUser();
-                String fileId = getFileId();
-                String pinId = getPinId();
-                if (fileId != null && pinId != null) {
-                    LOGGER.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
-                    CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(null, fileId, pinId);
-                    future.addListener(() -> {
-                        try {
-                            LOGGER.debug("Unpinned (pinId={}).", future.checkedGet());
-                        } catch (SRMException e) {
-                            LOGGER.error("Unpinning failed: {}", e.getMessage());
-                        }
-                    }, MoreExecutors.directExecutor());
-                } else {
-                    BringOnlineFileRequest.unpinBySURLandRequestToken(storage, user, String.valueOf(getRequestId()), getSurl());
+            case READY:
+                try {
+                    getContainerRequest().resetRetryDeltaTime();
+                } catch (SRMInvalidRequestException ire) {
+                    LOGGER.error(ire.toString());
                 }
-            } catch (SRMInternalErrorException | SRMInvalidRequestException e) {
-                LOGGER.error(e.toString()) ;
-            }
+                break;
+
+            case DONE:
+            case FAILED:
+            case CANCELED:
+                AbstractStorageElement storage = getStorage();
+                try {
+                    SRMUser user = getUser();
+                    String fileId = getFileId();
+                    String pinId = getPinId();
+                    if (fileId != null && pinId != null) {
+                        LOGGER.info(
+                              "State changed to final state, unpinning fileId = {} pinId = {}.",
+                              fileId, pinId);
+                        CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(
+                              null, fileId, pinId);
+                        future.addListener(() -> {
+                            try {
+                                LOGGER.debug("Unpinned (pinId={}).", future.checkedGet());
+                            } catch (SRMException e) {
+                                LOGGER.error("Unpinning failed: {}", e.getMessage());
+                            }
+                        }, MoreExecutors.directExecutor());
+                    } else {
+                        BringOnlineFileRequest.unpinBySURLandRequestToken(storage, user,
+                              String.valueOf(getRequestId()), getSurl());
+                    }
+                } catch (SRMInternalErrorException | SRMInvalidRequestException e) {
+                    LOGGER.error(e.toString());
+                }
         }
 
         super.processStateChange(newState, description);
     }
 
-    private void computeTurl() throws SRMException
-    {
+    private void computeTurl() throws SRMException {
         GetRequest request = getContainerRequest();
-        URI turl = getStorage().getGetTurl(request.getUser(), getSurl(), request.getProtocols(), request.getPreviousTurl());
+        URI turl = getStorage().getGetTurl(request.getUser(), getSurl(), request.getProtocols(),
+              request.getPreviousTurl());
         request.setPreviousTurl(turl);
         setTurl(turl);
     }
 
     @Override
-    public boolean isTouchingSurl(URI surl)
-    {
+    public boolean isTouchingSurl(URI surl) {
         return surl.equals(getSurl());
     }
 
     @Override
-    protected TReturnStatus getReturnStatus()
-    {
+    protected TReturnStatus getReturnStatus() {
         String description = latestHistoryEvent();
 
         TStatusCode statusCode = getStatusCode();
@@ -411,54 +407,51 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
 
         switch (getState()) {
-        case UNSCHEDULED:
-        case QUEUED:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
-        case READY:
-        case TRANSFERRING:
-            return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, null);
-        case DONE:
-            return new TReturnStatus(TStatusCode.SRM_RELEASED, null);
-        case CANCELED:
-            return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
-        case FAILED:
-            return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
-        default:
-            return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
+            case UNSCHEDULED:
+            case QUEUED:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
+            case READY:
+            case TRANSFERRING:
+                return new TReturnStatus(TStatusCode.SRM_FILE_PINNED, null);
+            case DONE:
+                return new TReturnStatus(TStatusCode.SRM_RELEASED, null);
+            case CANCELED:
+                return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
+            case FAILED:
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
+            default:
+                return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         }
     }
 
 
     /**
-     *
-     * @param newLifetime  new lifetime in millis
-     *  -1 stands for infinite lifetime
-     * @return int lifetime left in millis
-     *    -1 stands for infinite lifetime
+     * @param newLifetime new lifetime in millis -1 stands for infinite lifetime
+     * @return int lifetime left in millis -1 stands for infinite lifetime
      */
     @Override
     public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
-        if(requestLifetime <newLifetime) {
+        if (requestLifetime < newLifetime) {
             newLifetime = requestLifetime;
         }
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
 
         newLifetime = extendLifetimeMillis(newLifetime);
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
-        if(getPinId() == null) {
+        if (getPinId() == null) {
             return newLifetime;
         }
         SRMUser user = getUser();
-        return getStorage().extendPinLifetime(user,getFileId(), getPinId(),newLifetime);
+        return getStorage().extendPinLifetime(user, getFileId(), getPinId(), newLifetime);
     }
 
     /**
@@ -491,7 +484,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     private FileMetaData getFileMetaData() {
         rlock();
         try {
-             return fileMetaData;
+            return fileMetaData;
         } finally {
             runlock();
         }
@@ -511,24 +504,25 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         reassessLifetime(fileMetaData.size);
     }
 
-    public TReturnStatus release()
-    {
+    public TReturnStatus release() {
         wlock();
         try {
             State state = getState();
             switch (state) {
-            case READY:
-                setState(State.DONE, "TURL released.");
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-            case DONE:
-                return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
-            case CANCELED:
-                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL has been aborted and cannot be released");
-            case FAILED:
-                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
-            default:
-                setState(State.CANCELED, "Aborted by srmReleaseFile request.");
-                return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
+                case READY:
+                    setState(State.DONE, "TURL released.");
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                case DONE:
+                    return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
+                case CANCELED:
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED,
+                          "SURL has been aborted and cannot be released");
+                case FAILED:
+                    return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
+                default:
+                    setState(State.CANCELED, "Aborted by srmReleaseFile request.");
+                    return new TReturnStatus(TStatusCode.SRM_ABORTED,
+                          "SURL is not yet pinned, pinning aborted");
             }
         } catch (IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, e.getMessage());
@@ -537,27 +531,24 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    private  static class ThePinCallbacks implements Runnable
-    {
+    private static class ThePinCallbacks implements Runnable {
+
         private final long fileRequestJobId;
         private final CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future;
 
         public ThePinCallbacks(long fileRequestJobId,
-                               CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future)
-        {
+              CheckedFuture<AbstractStorageElement.Pin, ? extends SRMException> future) {
             this.fileRequestJobId = fileRequestJobId;
             this.future = future;
         }
 
         public GetFileRequest getGetFileRequest()
-            throws SRMInvalidRequestException
-        {
+              throws SRMInvalidRequestException {
             return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try {
                 GetFileRequest fr = getGetFileRequest();
                 fr.wlock();
@@ -573,8 +564,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(State.FAILED,
-                                             e.getMessage(),
-                                             e.getStatusCode());
+                          e.getMessage(),
+                          e.getStatusCode());
                 } finally {
                     fr.wunlock();
                 }
@@ -585,7 +576,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     LOGGER.error(e.getMessage());
                 }
             } catch (RuntimeException e) {
-                LOGGER.error("Criticial failure in pinning (please report to support@dcache.org).", e);
+                LOGGER.error("Criticial failure in pinning (please report to support@dcache.org).",
+                      e);
             }
         }
     }

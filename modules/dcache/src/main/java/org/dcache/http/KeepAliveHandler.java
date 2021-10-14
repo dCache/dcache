@@ -27,20 +27,19 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 /**
- * Add the HTTP KeepAlive related response header when appropriate and
- * ensure the connection is terminated once advertised.
+ * Add the HTTP KeepAlive related response header when appropriate and ensure the connection is
+ * terminated once advertised.
  * <p>
  * See Section 8 of RFC-2616 for more details.
  */
-public class KeepAliveHandler extends ChannelDuplexHandler
-{
+public class KeepAliveHandler extends ChannelDuplexHandler {
+
     private static final Logger LOG = LoggerFactory.getLogger(KeepAliveHandler.class);
 
     private boolean _hasPreviousRequest;
@@ -48,8 +47,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler
     private final Deque<Boolean> _inflightKeepAlive = new ArrayDeque();
 
     @Override
-    public void channelRead(ChannelHandlerContext context, Object message) throws Exception
-    {
+    public void channelRead(ChannelHandlerContext context, Object message) throws Exception {
         if (message instanceof HttpRequest) {
             if (_hasPreviousRequest && !_isLastRequestKeepAlive) {
                 /*
@@ -74,7 +72,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler
                  * client side of the TCP connection.
                  */
                 LOG.debug("Broken client sent request after previously asking " +
-                        "the connection be closed.");
+                      "the connection be closed.");
                 return;
             }
 
@@ -88,8 +86,7 @@ public class KeepAliveHandler extends ChannelDuplexHandler
 
     @Override
     public void write(ChannelHandlerContext context, Object message, ChannelPromise promise)
-            throws Exception
-    {
+          throws Exception {
         boolean is100Continue = false;
 
         if (message instanceof HttpResponse) {

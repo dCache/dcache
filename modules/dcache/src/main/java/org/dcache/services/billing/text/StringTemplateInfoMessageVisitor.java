@@ -18,14 +18,6 @@
  */
 package org.dcache.services.billing.text;
 
-import org.stringtemplate.v4.ST;
-
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.time.Duration;
-import java.util.Date;
-
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.InfoMessageVisitor;
@@ -35,14 +27,17 @@ import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfoMessage;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
-
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Date;
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.util.ByteUnit;
+import org.stringtemplate.v4.ST;
 
-public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
-{
+public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor {
+
     private static final DecimalFormat BANDWIDTH_FORMAT =
-            new DecimalFormat("0.##E0");
+          new DecimalFormat("0.##E0");
 
     static {
         DecimalFormatSymbols symbols = BANDWIDTH_FORMAT.getDecimalFormatSymbols();
@@ -52,13 +47,11 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
 
     private final ST template;
 
-    public StringTemplateInfoMessageVisitor(ST template)
-    {
+    public StringTemplateInfoMessageVisitor(ST template) {
         this.template = template;
     }
 
-    protected void acceptInfoMessage(InfoMessage message)
-    {
+    protected void acceptInfoMessage(InfoMessage message) {
         template.add("date", new Date(message.getTimestamp()));
         template.add("queuingTime", message.getTimeQueued());
         template.add("message", message.getMessage());
@@ -70,8 +63,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("session", message.getTransaction());
     }
 
-    protected void acceptFileInfoMessage(PnfsFileInfoMessage message)
-    {
+    protected void acceptFileInfoMessage(PnfsFileInfoMessage message) {
         acceptInfoMessage(message);
         template.add("pnfsid", message.getPnfsId());
         template.add("path", message.getBillingPath());
@@ -80,8 +72,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     }
 
     @Override
-    public void visit(DoorRequestInfoMessage message)
-    {
+    public void visit(DoorRequestInfoMessage message) {
         acceptFileInfoMessage(message);
         template.add("transactionTime", message.getTransactionDuration());
         template.add("uid", message.getUid());
@@ -93,8 +84,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     }
 
     @Override
-    public void visit(MoverInfoMessage message)
-    {
+    public void visit(MoverInfoMessage message) {
         acceptFileInfoMessage(message);
         template.add("transferred", message.getDataTransferred());
         template.add("connectionTime", message.getConnectionTime());
@@ -104,26 +94,25 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("p2p", message.isP2P());
         template.add("transferPath", message.getTransferPath());
         template.add("meanReadBandwidth",
-                format(ByteUnit.BYTES.toMiB(message.getMeanReadBandwidth())));
+              format(ByteUnit.BYTES.toMiB(message.getMeanReadBandwidth())));
         template.add("meanWriteBandwidth",
-                format(ByteUnit.BYTES.toMiB(message.getMeanWriteBandwidth())));
+              format(ByteUnit.BYTES.toMiB(message.getMeanWriteBandwidth())));
         template.add("readIdle", message.getReadIdle()
-                .map(d -> Long.toString(d.toMillis()))
-                .orElse("-"));
+              .map(d -> Long.toString(d.toMillis()))
+              .orElse("-"));
         template.add("readActive", message.getReadActive()
-                .map(d -> Long.toString(d.toMillis()))
-                .orElse("-"));
+              .map(d -> Long.toString(d.toMillis()))
+              .orElse("-"));
         template.add("writeIdle", message.getWriteIdle()
-                .map(d -> Long.toString(d.toMillis()))
-                .orElse("-"));
+              .map(d -> Long.toString(d.toMillis()))
+              .orElse("-"));
         template.add("writeActive", message.getWriteActive()
-                .map(d -> Long.toString(d.toMillis()))
-                .orElse("-"));
+              .map(d -> Long.toString(d.toMillis()))
+              .orElse("-"));
     }
 
     // Format value in scientific notation to three significant figures.
-    private String format(double value)
-    {
+    private String format(double value) {
         if (value >= 1) {
             if (value < 10) {
                 return String.format("%.2f", value);
@@ -137,8 +126,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     }
 
     @Override
-    public void visit(PoolHitInfoMessage message)
-    {
+    public void visit(PoolHitInfoMessage message) {
         acceptFileInfoMessage(message);
         template.add("protocol", message.getProtocolInfo());
         template.add("cached", message.getFileCached());
@@ -146,21 +134,18 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     }
 
     @Override
-    public void visit(RemoveFileInfoMessage message)
-    {
+    public void visit(RemoveFileInfoMessage message) {
         acceptFileInfoMessage(message);
     }
 
     @Override
-    public void visit(StorageInfoMessage message)
-    {
+    public void visit(StorageInfoMessage message) {
         acceptFileInfoMessage(message);
         template.add("transferTime", message.getTransferTime());
     }
 
     @Override
-    public void visit(WarningPnfsFileInfoMessage message)
-    {
+    public void visit(WarningPnfsFileInfoMessage message) {
         acceptFileInfoMessage(message);
         template.add("transferPath", message.getTransferPath());
     }

@@ -59,17 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.services.bulk;
 
-public class BulkPermissionDeniedException extends BulkServiceException
-{
+public class BulkPermissionDeniedException extends BulkServiceException {
+
     private static final long serialVersionUID = -2776212873761086957L;
 
-    public BulkPermissionDeniedException(String message)
-    {
+    public BulkPermissionDeniedException(String message) {
         super(message);
     }
 
-    public BulkPermissionDeniedException(String message, Throwable cause)
-    {
+    public BulkPermissionDeniedException(String message, Throwable cause) {
         super(message, cause);
     }
 }

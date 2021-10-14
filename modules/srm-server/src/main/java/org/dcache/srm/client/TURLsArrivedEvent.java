@@ -96,42 +96,45 @@ package org.dcache.srm.client;
 import java.beans.PropertyChangeEvent;
 
 /**
- *
- * @author  timur
+ * @author timur
  */
 public class TURLsArrivedEvent extends PropertyChangeEvent {
+
     final String requestId;
     final String fileRequestId;
     final Long size;
 
     private static final long serialVersionUID = -7303218445433906174L;
 
-    public TURLsArrivedEvent(TurlGetterPutter getterPutter,String SURL,String TURL,String requestId,String fileRequestId,Long size) {
-        super(getterPutter, "TURL",SURL, TURL);
+    public TURLsArrivedEvent(TurlGetterPutter getterPutter, String SURL, String TURL,
+          String requestId, String fileRequestId, Long size) {
+        super(getterPutter, "TURL", SURL, TURL);
         this.requestId = requestId;
         this.fileRequestId = fileRequestId;
         this.size = size;
     }
 
     public String getSURL() {
-        return (String)getOldValue();
+        return (String) getOldValue();
     }
 
     public String getTURL() {
         return (String) getNewValue();
     }
 
-    /** Getter for property fileRequestId.
-     * @return Value of property fileRequestId.
+    /**
+     * Getter for property fileRequestId.
      *
+     * @return Value of property fileRequestId.
      */
     public String getFileRequestId() {
         return fileRequestId;
     }
 
-    /** Getter for property requestId.
-     * @return Value of property requestId.
+    /**
+     * Getter for property requestId.
      *
+     * @return Value of property requestId.
      */
     public String getRequestId() {
         return requestId;
@@ -139,6 +142,7 @@ public class TURLsArrivedEvent extends PropertyChangeEvent {
 
     /**
      * Getter for property size.
+     *
      * @return Value of property size.
      */
     public Long getSize() {

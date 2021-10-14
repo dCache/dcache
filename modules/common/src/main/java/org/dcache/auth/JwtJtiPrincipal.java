@@ -18,17 +18,17 @@
 package org.dcache.auth;
 
 /**
- * A principal that represents the JWT 'jti' claim.  The claim value is unique
- * only within the OAuth Provider, so this principal's value is a combination of
- * a unique nickname for the OP and the subject.
+ * A principal that represents the JWT 'jti' claim.  The claim value is unique only within the OAuth
+ * Provider, so this principal's value is a combination of a unique nickname for the OP and the
+ * subject.
+ *
  * @since 5.1
  */
-public class JwtJtiPrincipal extends OpScopedPrincipal
-{
+public class JwtJtiPrincipal extends OpScopedPrincipal {
+
     private static final long serialVersionUID = 1L;
 
-    public JwtJtiPrincipal(String op, String id)
-    {
+    public JwtJtiPrincipal(String op, String id) {
         super(op, id);
     }
 }
