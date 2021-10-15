@@ -120,7 +120,7 @@
          -->
         <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
         <bouncycastle.bcpkix>bcpkix-jdk15on</bouncycastle.bcpkix>
-        <bouncycastle.version>1.54</bouncycastle.version>
+        <bouncycastle.version>1.67</bouncycastle.version>
         <datanucleus-core.version>5.2.2</datanucleus-core.version>
         <datanucleus.plugin.version>5.2.1</datanucleus.plugin.version>
     </properties>
