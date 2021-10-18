@@ -267,6 +267,8 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Collections.synchronizedList;
+
 @Inherited
 @Retention(RUNTIME)
 @Target(METHOD)
@@ -372,6 +374,7 @@ public abstract class AbstractFtpDoorV1
     private EnumSet<WorkAround> _activeWorkarounds = EnumSet.noneOf(WorkAround.class);
     private String _clientInfo;
     private boolean _logAbortedTransfers;
+    private final List<TimerTask> _activeTimerTasks = synchronizedList(new ArrayList<>());
 
     private enum WorkAround {
         /* If globus-url-copy is organising a third-party copy then it will
@@ -1260,6 +1263,7 @@ public abstract class AbstractFtpDoorV1
                 _perfMarkerTask = new PerfMarkerTask(_request, getPool().getAddress(),
                       getMoverId(), _performanceMarkerPeriod / 2);
                 TIMER.schedule(_perfMarkerTask, _performanceMarkerPeriod, _performanceMarkerPeriod);
+                _activeTimerTasks.add(_perfMarkerTask);
             }
         }
 
@@ -1766,6 +1770,14 @@ public abstract class AbstractFtpDoorV1
         } finally {
             _clientConnectionHandler.close();
             _sessionAllPassive = false; // REVISIT see RFC 2428 Section 4.
+
+            // This should not be necessary; however, we have had reports of bugs that leave
+            // a TimerTask still active (e.g., https://github.com/dCache/dcache/issues/6064).
+            if (!_activeTimerTasks.isEmpty()) {
+                List<TimerTask> toBeCancelled = new ArrayList<>(_activeTimerTasks);
+                LOGGER.warn("TimerTasks still active on shutdown: {}", toBeCancelled);
+                toBeCancelled.forEach(TimerTask::cancel);
+            }
 
             if (ACCESS_LOGGER.isInfoEnabled()) {
                 NetLoggerBuilder log = new NetLoggerBuilder(INFO,
@@ -2913,9 +2925,17 @@ public abstract class AbstractFtpDoorV1
                             public void run() {
                                 reply(cct.getReply());
                             }
+
+                            @Override
+                            public boolean cancel() {
+                                boolean result = super.cancel();
+                                _activeTimerTasks.remove(this);
+                                return result;
+                            }
                         };
                         long period = TimeUnit.SECONDS.toMillis(_checksumProgressPeriod);
                         TIMER.schedule(sendProgress, period, period);
+                        _activeTimerTasks.add(sendProgress);
                     }
                     checksum = cct.calculateChecksum();
                 } finally {
@@ -4161,6 +4181,13 @@ public abstract class AbstractFtpDoorV1
         public synchronized void stop() {
             cancel();
             _stopped = true;
+        }
+
+        @Override
+        public boolean cancel() {
+            boolean result = super.cancel();
+            _activeTimerTasks.remove(this);
+            return result;
         }
 
         /**
