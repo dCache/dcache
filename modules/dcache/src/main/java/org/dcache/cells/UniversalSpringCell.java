@@ -47,6 +47,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,11 +55,13 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -312,12 +315,39 @@ public class UniversalSpringCell
         }
     }
 
-    private void testSetup(String source, byte[] data)
-          throws CommandException {
+    private void testSetup(String source, byte[] data) throws CommandException {
         CommandInterpreter mockInterpreter = new CommandInterpreter();
-        _setupProviders.values().stream().map(CellSetupProvider::mock)
-              .forEach(mockInterpreter::addCommandListener);
-        executeSetup(mockInterpreter, source, data);
+        var mocks = _setupProviders.values().stream().map(CellSetupProvider::mock)
+                .collect(Collectors.toList());
+        mocks.forEach(mockInterpreter::addCommandListener);
+        var awareMocks = mocks.stream().filter(CellLifeCycleAware.class::isInstance)
+                .map(CellLifeCycleAware.class::cast).collect(Collectors.toList());
+        var notifiedMocks = new ArrayList<CellLifeCycleAware>();
+        try {
+            for (CellLifeCycleAware awareMock : awareMocks) {
+                awareMock.beforeSetup();
+                notifiedMocks.add(awareMock);
+            }
+            executeSetup(mockInterpreter, source, data);
+        } finally {
+            List<String> errors = notifiedMocks.stream()
+                    .map(m -> {
+                            RuntimeException exception = null;
+                            try {
+                                m.afterSetup();
+                            } catch (RuntimeException e) {
+                                exception = e;
+                            }
+                            return exception;
+                        })
+                    .filter(Objects::nonNull)
+                    .map(Exception::getMessage)
+                    .collect(Collectors.toList());
+            if (!errors.isEmpty()) {
+                throw new CommandException("Error processing " + source + ": "
+                        + errors.stream().collect(Collectors.joining(", ")));
+            }
+        }
     }
 
     private void executeSetup(String source, byte[] data)
