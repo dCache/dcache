@@ -76,6 +76,7 @@ public class HsmSet
     private final ConcurrentMap<NearlineStorage, HsmDescription> _descriptions
           = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
+    private boolean _isStarted;
 
     private NearlineStorageProvider findProvider(String name) {
         for (NearlineStorageProvider provider : PROVIDERS) {
@@ -248,6 +249,10 @@ public class HsmSet
             return _nearlineStorage;
         }
 
+        public void start() {
+            _nearlineStorage.start();
+        }
+
         public void shutdown() {
             _nearlineStorage.shutdown();
         }
@@ -371,6 +376,7 @@ public class HsmSet
                 }
                 HsmInfo info = new HsmInfo(instance, type, provider);
                 info.scanOptions(options);
+                info.start();
                 _hsm.put(instance, info);
             }
             return "";
@@ -548,8 +554,21 @@ public class HsmSet
             }
         }
 
+        if (_isStarted) {
+            _newConfig.entrySet().stream()
+                    .filter(e -> !_hsm.containsKey(e.getKey()))
+                    .map(Map.Entry::getValue)
+                    .forEach(HsmInfo::start);
+        }
+
         _hsm.putAll(_newConfig);
         _newConfig.clear();
+    }
+
+    @Override
+    public void afterStart() {
+        _isStarted = true;
+        _hsm.values().forEach(HsmInfo::start);
     }
 
     @PreDestroy

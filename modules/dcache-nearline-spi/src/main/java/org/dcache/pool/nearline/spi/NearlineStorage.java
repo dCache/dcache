@@ -32,6 +32,17 @@ import java.util.UUID;
  * <p>
  * A file flushed to nearline storage is identified by an implementation specific URI. This URI is
  * used to stage or remove the file from nearline storage.
+ * <p>
+ * Object life-cycle: under normal operation, the {@link #configure} method is called first,
+ * followed by the {@link #start} method.  After this any of the methods other than
+ * {@literal start} may be called.  It is guaranteed that {@link shutdown} is called.  After
+ * {@literal shutdown} returns, no further methods are called and the object will then be garbage
+ * collected at some point.
+ * <p>
+ * A configuration-testing life-cycle is used to verify the NearlineStorage configuration is
+ * correct without affecting the "live" system.  Under this mode, an object is created and the
+ * {@link #configure} method is called once and will then be garbage collected.  No other methods
+ * are called.
  */
 public interface NearlineStorage {
 
@@ -64,7 +75,8 @@ public interface NearlineStorage {
     void cancel(UUID uuid);
 
     /**
-     * Applies a new configuration.
+     * Applies a new configuration.  This method is called once before {@link #start}, but may be
+     * called subsequently.
      *
      * @throws IllegalArgumentException if the configuration is invalid
      */
@@ -72,9 +84,19 @@ public interface NearlineStorage {
           throws IllegalArgumentException;
 
     /**
+     * Inform the NearlineStorageProvider to start any background activity or open external
+     * resources.  This method is only called once.  If called, it is guaranteed that
+     * {@link #shutdown} is called.
+     */
+    default void start(){}
+
+    /**
      * Cancels all requests and initiates a shutdown of the nearline storage interface.
      * <p>
      * This method does not wait for actively executing requests to terminate.
+     * <p>
+     * This method should also halt any background activity and close any external resources,
+     * typically established via the {@link #start} method.
      */
     void shutdown();
 }
