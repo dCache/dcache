@@ -536,7 +536,11 @@ public class HsmSet
         /* Apply configuration changes
          */
         for (HsmInfo hsm : _newConfig.values()) {
-            hsm.refresh();
+            try {
+                hsm.refresh();
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Error configuring hsm \"" + hsm.getInstance() + "\": " + e.getMessage());
+            }
         }
 
         _hsm.putAll(_newConfig);
