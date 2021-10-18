@@ -75,13 +75,25 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     }
 
     public int getGid() {
-        long[] gids = Subjects.getGids(getSubject());
-        return (gids.length > 0) ? (int) gids[0] : -1;
+        Subject subject = getSubject();
+        if (subject != null) {
+            long[] gids = Subjects.getGids(subject);
+            if (gids.length > 0) {
+                return (int) gids[0];
+            }
+        }
+        return -1;
     }
 
     public int getUid() {
-        long[] uids = Subjects.getUids(getSubject());
-        return (uids.length > 0) ? (int) uids[0] : -1;
+        Subject subject = getSubject();
+        if (subject != null) {
+            long[] uids = Subjects.getUids(getSubject());
+            if (uids.length > 0) {
+                return (int) uids[0];
+            }
+        }
+        return -1;
     }
 
     @Override
