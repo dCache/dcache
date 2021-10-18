@@ -251,7 +251,11 @@ public class NettyLineBasedDoor
             commandExecutor.shutdownNow();
             commandExecutor.awaitTerminationUninterruptibly();
             if (interpreter != null) {
-                interpreter.shutdown();
+                try {
+                    interpreter.shutdown();
+                } catch (RuntimeException e) {
+                    LOGGER.warn("Bug detected please report to <support@dcache.org>: ", e);
+                }
             }
         }
         kill();
