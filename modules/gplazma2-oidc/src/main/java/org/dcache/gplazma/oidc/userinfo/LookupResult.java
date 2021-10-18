@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,33 +16,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.gplazma.oidc;
+package org.dcache.gplazma.oidc.userinfo;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Collections;
+import java.util.Map;
+import org.dcache.gplazma.oidc.IdentityProvider;
 
 import static java.util.Objects.requireNonNull;
-
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * This class represents the result of a user-info request.
  */
 public class LookupResult {
 
-    private final Set<Principal> principals;
+    private final Map<String,JsonNode> claims;
     private final String error;
     private final IdentityProvider ip;
 
     public static LookupResult error(IdentityProvider ip, String message) {
-        return new LookupResult(ip, Collections.emptySet(), requireNonNull(message));
+        return new LookupResult(ip, Collections.emptyMap(), requireNonNull(message));
     }
 
-    public static LookupResult success(IdentityProvider ip, Set<Principal> principals) {
-        return new LookupResult(ip, principals, null);
+    public static LookupResult success(IdentityProvider ip, Map<String,JsonNode> claims) {
+        return new LookupResult(ip, claims, null);
     }
 
-    private LookupResult(IdentityProvider ip, Set<Principal> principals, String error) {
-        this.principals = requireNonNull(principals);
+    private LookupResult(IdentityProvider ip, Map<String,JsonNode> claims, String error) {
+        this.claims = requireNonNull(claims);
         this.ip = requireNonNull(ip);
         this.error = error;
     }
@@ -59,7 +60,7 @@ public class LookupResult {
         return error;
     }
 
-    public Set<Principal> getPrincipals() {
-        return principals;
+    public Map<String,JsonNode> getClaims() {
+        return claims;
     }
 }

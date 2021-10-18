@@ -24,6 +24,8 @@ import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNull;
+
 public class JsonHttpClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonHttpClient.class);
@@ -32,6 +34,14 @@ public class JsonHttpClient {
     private final HttpClient httpclient;
 
     public JsonHttpClient(int maxConnTotal, int maxConnPerRoute, int soTimeout) {
+        this(buildClient(maxConnTotal, maxConnPerRoute, soTimeout));
+    }
+
+    public JsonHttpClient(HttpClient client) {
+        httpclient = requireNonNull(client);
+    }
+
+    private static HttpClient buildClient(int maxConnTotal, int maxConnPerRoute, int soTimeout) {
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setDefaultMaxPerRoute(maxConnPerRoute);
         connManager.setMaxTotal(maxConnTotal);
@@ -41,7 +51,7 @@ public class JsonHttpClient {
         socketOptions.setSoTimeout(soTimeout);
         connManager.setDefaultSocketConfig(socketOptions.build());
 
-        httpclient = HttpClients.custom()
+        return HttpClients.custom()
               .setConnectionManager(connManager)
               .setUserAgent("dCache/" + VERSION.getVersion())
               .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())

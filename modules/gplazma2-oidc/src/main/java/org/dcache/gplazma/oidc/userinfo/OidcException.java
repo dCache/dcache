@@ -1,4 +1,4 @@
-package org.dcache.gplazma.oidc.exceptions;
+package org.dcache.gplazma.oidc.userinfo;
 
 public class OidcException extends Exception {
 
