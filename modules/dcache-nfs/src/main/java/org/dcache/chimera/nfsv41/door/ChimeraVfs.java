@@ -496,7 +496,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     @VisibleForTesting
     static boolean shouldRejectUpdates(FsInode fsInode, FileSystemProvider fs)
           throws ChimeraFsException {
-        if (!isRoot() && fsInode.type() == FsInodeType.SURI) {
+        if (fsInode.type() == FsInodeType.SURI && !isRoot()) {
             return !fs.getInodeLocations(fsInode, StorageGenericLocation.TAPE).isEmpty();
         }
         return false;
