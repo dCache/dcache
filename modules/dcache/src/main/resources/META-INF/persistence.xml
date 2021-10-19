@@ -83,7 +83,7 @@
             <property name="datanucleus.validateConstraints" value="false"/>
             <property name="datanucleus.autoCreateColumns" value="true"/>
             <property name="datanucleus.connectionPoolingType" value="None"/>
+	    <property name="datanucleus.schema.autoCreateTables" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>
-
