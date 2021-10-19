@@ -7,6 +7,8 @@ BuildArch: noarch
 Prefix: /usr
 AutoReqProv: no
 
+Requires: java-11
+
 License: Free
 Group: Applications/System
 
