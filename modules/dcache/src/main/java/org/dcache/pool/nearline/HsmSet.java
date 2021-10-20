@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -32,6 +32,7 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -44,11 +45,18 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.PreDestroy;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet also acts as a cell command
@@ -67,6 +75,7 @@ import org.dcache.vehicles.FileAttributes;
 public class HsmSet
       implements CellCommandListener, CellSetupProvider, CellLifeCycleAware {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HsmSet.class);
     private static final ServiceLoader<NearlineStorageProvider> PROVIDERS =
           ServiceLoader.load(NearlineStorageProvider.class);
     private static final String DEFAULT_PROVIDER = "script";
@@ -77,6 +86,9 @@ public class HsmSet
           = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
     private boolean _isStarted;
+
+    @Value("${pool.name}")
+    private String _poolName;
 
     private NearlineStorageProvider findProvider(String name) {
         for (NearlineStorageProvider provider : PROVIDERS) {
@@ -249,7 +261,12 @@ public class HsmSet
             return _nearlineStorage;
         }
 
-        public void start() {
+        /**
+         * Call the NearlineStorage start method.  This method may only be called once and must be
+         * called before calling any other method, other than {@literal configure}.
+         * @throws IOException if the underlying NearlinePlugin threw an exception.
+         */
+        public void start() throws IOException {
             _nearlineStorage.start();
         }
 
@@ -376,7 +393,12 @@ public class HsmSet
                 }
                 HsmInfo info = new HsmInfo(instance, type, provider);
                 info.scanOptions(options);
-                info.start();
+                try {
+                    info.start();
+                } catch (IOException e) {
+                    throw new CommandException(1, "Nearline plugin failed on start: "
+                            + messageOrClassName(e));
+                }
                 _hsm.put(instance, info);
             }
             return "";
@@ -555,10 +577,27 @@ public class HsmSet
         }
 
         if (_isStarted) {
-            _newConfig.entrySet().stream()
-                    .filter(e -> !_hsm.containsKey(e.getKey()))
-                    .map(Map.Entry::getValue)
-                    .forEach(HsmInfo::start);
+            var itr = _newConfig.entrySet().iterator();
+            while (itr.hasNext()) {
+                var entry = itr.next();
+                String instance = entry.getKey();
+
+                if (!_hsm.containsKey(instance)) {
+                    try {
+                        entry.getValue().start();
+                    } catch (IOException e) {
+                        LOGGER.warn(
+                                AlarmMarkerFactory.getMarker(
+                                        PredefinedAlarm.HSM_STARTUP_FAILED,
+                                        _poolName,
+                                        instance),
+                                "Removing HSM \"{}\" as it failed to start: {}",
+                                instance,
+                                messageOrClassName(e));
+                        itr.remove();
+                    }
+                }
+            }
         }
 
         _hsm.putAll(_newConfig);
@@ -568,7 +607,26 @@ public class HsmSet
     @Override
     public void afterStart() {
         _isStarted = true;
-        _hsm.values().forEach(HsmInfo::start);
+
+        var itr = _hsm.entrySet().iterator();
+        while (itr.hasNext()) {
+            var entry = itr.next();
+
+            try {
+                entry.getValue().start();
+            } catch (IOException e) {
+                String instance = entry.getKey();
+                LOGGER.warn(
+                        AlarmMarkerFactory.getMarker(
+                                PredefinedAlarm.HSM_STARTUP_FAILED,
+                                _poolName,
+                                instance),
+                        "Removing HSM \"{}\" as it failed to start: {}",
+                        instance,
+                        messageOrClassName(e));
+                itr.remove();
+            }
+        }
     }
 
     @PreDestroy
