@@ -230,17 +230,17 @@ public class TransferInfo implements Comparable<TransferInfo>, InvalidatableItem
         return subject;
     }
 
-    public Long getTransferRate() {
+    public Double getTransferRate() {
         if (bytesTransferred == null) {
-            return 0L;
+            return 0.0;
         }
 
         if (transferTime == null) {
-            return 0L;
+            return 0.0;
         }
 
-        long secs = transferTime / 1000;
-        return secs > 0.0 ? BYTES.toMiB(bytesTransferred) / secs : 0L;
+        double secs = transferTime / 1000.0;
+        return secs > 0.0 ? BYTES.toMiB((double) bytesTransferred) / secs : 0.0;
     }
 
     public Long getTransferTime() {
