@@ -606,19 +606,19 @@ public class TransferObserverV1
         page.endRow();
     }
 
-    private Long getTransferRate(TransferInfo info) {
+    private Double getTransferRate(TransferInfo info) {
         Long bytes = info.getBytesTransferred();
         if (bytes == null) {
-            return 0L;
+            return 0.0;
         }
 
         Long time = info.getTransferTime();
         if (time == null) {
-            return 0L;
+            return 0.0;
         }
 
-        long secs = time / 1000;
-        return secs > 0.0 ? BYTES.toKiB(bytes) / secs : 0L;
+        double secs = time / 1000.0;
+        return secs > 0.0 ? BYTES.toKiB((double) bytes) / secs : 0.0;
     }
 
     private String createHtmlTable(List<TransferBean> transfers) {
