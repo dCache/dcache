@@ -524,10 +524,15 @@ public class HsmSet
 
         /* Remove the stores that are not in the new configuration.
          */
-        Iterator<HsmInfo> iterator =
-              Maps.filterKeys(_hsm, not(in(_newConfig.keySet()))).values().iterator();
+        Iterator<Map.Entry<String,HsmInfo>> iterator = _hsm.entrySet().iterator();
         while (iterator.hasNext()) {
-            HsmInfo removed = iterator.next();
+            Map.Entry<String,HsmInfo> entry = iterator.next();
+
+            if (_newConfig.containsKey(entry.getKey())) {
+                continue;
+            }
+
+            HsmInfo removed = entry.getValue();
             removed.shutdown();
             _descriptions.remove(removed.getNearlineStorage());
             iterator.remove();
