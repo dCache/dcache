@@ -1374,8 +1374,9 @@ public class CellShell extends CommandInterpreter
                 Throwables.throwIfUnchecked(e.getCause());
                 throw new RuntimeException(e.getCause());
             } catch (ExecutionException e) {
-                Throwables.throwIfInstanceOf(e.getCause(), CommandException.class);
-                throw new CommandThrowableException(e.getCause().getMessage(), e.getCause());
+                Throwable cause = e.getCause();
+                Throwables.propagateIfPossible(cause, CommandException.class);
+                throw new CommandThrowableException(cause.getMessage(), cause);
             }
         }
     }
