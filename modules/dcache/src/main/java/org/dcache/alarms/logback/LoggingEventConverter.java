@@ -63,10 +63,12 @@ import static java.util.Objects.requireNonNull;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
+import com.google.common.collect.Streams;
 import dmg.cells.nucleus.CDC;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
@@ -93,12 +95,9 @@ final class LoggingEventConverter {
             return UUID.randomUUID().toString();
         }
 
-        StringBuilder builder = new StringBuilder();
-        for (Iterator<Marker> it = keyMarker.iterator(); it.hasNext(); ) {
-            builder.append(it.next().getName());
-        }
-
-        return builder.toString();
+        return Streams.stream(keyMarker.iterator())
+                .map(Marker::getName)
+                .collect(Collectors.joining(":"));
     }
 
     private static String getTypeFromMarker(Marker marker) {
