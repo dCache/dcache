@@ -4618,7 +4618,7 @@ public abstract class AbstractFtpDoorV1
               .space().right("ncount")
               .space().left("owner")
               .space().left("group")
-              .space().bytes("size", ByteUnit.Type.DECIMAL)
+              .space().bytes("size", ByteUnit.BYTES)
               .space().date("time", DateStyle.LS)
               .space().left("name");
 
