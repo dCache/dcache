@@ -2043,13 +2043,14 @@ public class CellShell extends CommandInterpreter
                 } else {
                     Throwable error = (Throwable) answer;
 
-                    if (error instanceof CommandPanicException) {
-                        _log.error("Bug detected in dCache; please report this " +
-                              "to <support@dcache.org> with the following " +
-                              "information.", error);
-                    }
-
                     if (_doOnError != ErrorAction.CONTINUE) {
+                        if (error instanceof CommandPanicException) {
+                            Throwable cause = error.getCause();
+                            _log.error("Bug detected in dCache; please report this " +
+                                  "to <support@dcache.org> with the following " +
+                                  "information.", cause != null ? cause : error);
+                        }
+
                         String msg =
                               String.format("%s: line %d: %s", source, no,
                                     error.getMessage());
