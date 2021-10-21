@@ -27,6 +27,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.primitives.Ints;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellShell;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -148,7 +150,13 @@ public class Domain {
               _properties.getValue(PROPERTY_MSG_PAYLOAD_SERIALIZER));
         SystemCell systemCell = SystemCell.create(domainName,
               createCuratorFramework(), zone, cellSerializer);
-        systemCell.start().get();
+        try {
+            systemCell.start().get();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause(), Exception.class);
+            throw new AssertionError("Throwable should be either unchecked or subclass of Exception",
+                    e);
+        }
         LOGGER.info("Starting {}", domainName);
 
         executePreload(systemCell);
