@@ -24,6 +24,7 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
 
 public class PropertiesUtilsTest {
 
@@ -64,6 +65,31 @@ public class PropertiesUtilsTest {
         var properties = given(properties().with("foo", "1234"));
 
         PropertiesUtils.asInt(properties, "bar");
+    }
+
+    @Test
+    public void shouldAcceptAsPresentOptionalIntProperty() {
+        var properties = given(properties().with("foo", "42"));
+
+        var value = PropertiesUtils.asIntOrDefault(properties, "foo", 1);
+
+        assertThat(value, is(equalTo(42)));
+    }
+
+    @Test
+    public void shouldAcceptAsEmptyOptionalIntProperty() {
+        var properties = given(properties());
+
+        var value = PropertiesUtils.asIntOrDefault(properties, "foo", 42);
+
+        assertThat(value, is(equalTo(42)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectOptionalIntPropertyWithNonParsableValue() {
+        var properties = given(properties().with("foo", "bar"));
+
+        PropertiesUtils.asIntOrDefault(properties, "foo", 42);
     }
 
     private Properties given(PropertiesBuilder builder) {

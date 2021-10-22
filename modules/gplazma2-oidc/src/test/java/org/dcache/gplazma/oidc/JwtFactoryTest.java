@@ -55,6 +55,7 @@ public class JwtFactoryTest {
         assertTrue(JsonWebToken.isCompatibleFormat(jwt));
         JsonWebToken token = new JsonWebToken(jwt);
         assertThat(token.getKeyIdentifier(), is(nullValue()));
+        assertThat(token.getPayloadMap(), is(anEmptyMap()));
         assertTrue(token.isSignedBy(factory.publicKey()));
     }
 
@@ -68,6 +69,8 @@ public class JwtFactoryTest {
         JsonWebToken token = new JsonWebToken(jwt);
         assertThat(token.getKeyIdentifier(), is(nullValue()));
         assertThat(token.getPayloadString("sub"), isPresentAnd(equalTo("my-identity")));
+        assertThat(token.getPayloadMap(), aMapWithSize(1));
+        assertThat(token.getPayloadMap(), hasEntry("sub", jsonString("my-identity")));
         assertTrue(token.isSignedBy(factory.publicKey()));
     }
 
@@ -86,6 +89,8 @@ public class JwtFactoryTest {
         assertThat(token.getKeyIdentifier(), is(nullValue()));
         assertThat(token.getPayloadString("sub"), isPresentAnd(equalTo("my-identity")));
         assertThat(token.getPayloadInstant("exp"), isPresentAnd(equalTo(expiry)));
+        assertThat(token.getPayloadMap(), aMapWithSize(2));
+        assertThat(token.getPayloadMap(), hasEntry("sub", jsonString("my-identity")));
         assertTrue(token.isSignedBy(factory.publicKey()));
     }
 
@@ -103,6 +108,9 @@ public class JwtFactoryTest {
         assertThat(token.getKeyIdentifier(), is(nullValue()));
         assertThat(token.getPayloadString("sub"), isPresentAnd(equalTo("my-identity")));
         assertThat(token.getPayloadStringOrArray("groups"), contains("group-1", "group-2"));
+        assertThat(token.getPayloadMap(), aMapWithSize(2));
+        assertThat(token.getPayloadMap(), hasEntry("sub", jsonString("my-identity")));
+        assertThat(token.getPayloadMap(), hasEntry("groups", jsonArray("group-1", "group-2")));
         assertTrue(token.isSignedBy(factory.publicKey()));
     }
 
@@ -119,6 +127,8 @@ public class JwtFactoryTest {
         JsonWebToken token = new JsonWebToken(jwt);
         assertThat(token.getKeyIdentifier(), is(equalTo("KEY-1")));
         assertThat(token.getPayloadString("sub"), isPresentAnd(equalTo("my-identity")));
+        assertThat(token.getPayloadMap(), aMapWithSize(1));
+        assertThat(token.getPayloadMap(), hasEntry("sub", jsonString("my-identity")));
         assertTrue(token.isSignedBy(factory.publicKey()));
     }
 

@@ -39,6 +39,7 @@ import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
+import org.dcache.gplazma.oidc.jwt.OfflineJwtVerification;
 import org.dcache.gplazma.oidc.userinfo.QueryUserInfoEndpoint;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
@@ -129,7 +130,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         providers.addAll(buildProviders(properties));
         checkArgument(!providers.isEmpty(), "No OIDC providers configured");
 
-        return new QueryUserInfoEndpoint(properties, client, providers);
+        var queryUserInfo = new QueryUserInfoEndpoint(properties, client, providers);
+        var offlineVerification = new OfflineJwtVerification(properties, client.getClient(), providers);
+
+        return ChainedTokenProcessor
+                .tryWith(offlineVerification)
+                .andThenTryWith(queryUserInfo);
     }
 
     @VisibleForTesting

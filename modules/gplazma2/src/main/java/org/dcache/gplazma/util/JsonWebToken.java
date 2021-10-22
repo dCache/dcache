@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019 - 2022 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Streams;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -32,6 +33,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -142,6 +144,11 @@ public class JsonWebToken {
         return Optional.ofNullable(payload.get(key))
               .filter(JsonNode::isTextual)
               .map(JsonNode::textValue);
+    }
+
+    public Map<String,JsonNode> getPayloadMap() {
+        return Streams.stream(payload.fields())
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     /**
