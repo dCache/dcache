@@ -44,5 +44,5 @@ public interface TokenProcessor {
      * Signal that the TokenProcessor will not receive any further requests.   Any resources that
      * the processor has reserved should now be released.
      */
-    void shutdown();
+    default void shutdown() {}
 }
