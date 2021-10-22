@@ -72,6 +72,10 @@ public class JsonHttpClient {
         return this.doGet(url.toASCIIString(), null);
     }
 
+    public HttpClient getClient() {
+        return httpclient;
+    }
+
     private JsonNode doGet(String url, Header header) throws IOException {
         HttpGet httpGet = new HttpGet(url);
         if (header != null) {

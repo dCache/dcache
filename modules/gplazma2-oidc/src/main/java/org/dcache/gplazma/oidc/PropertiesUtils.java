@@ -18,6 +18,7 @@
  */
 package org.dcache.gplazma.oidc;
 
+import java.util.OptionalInt;
 import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -34,6 +35,18 @@ public class PropertiesUtils {
             String value = properties.getProperty(key);
             checkArgument(value != null, "Missing " + key + " property");
             return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Bad " + key + "value: " + e.getMessage());
+        }
+    }
+
+    public static OptionalInt asOptionalInt(Properties properties, String key) {
+        try {
+            String value = properties.getProperty(key);
+            if (value == null) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(Integer.parseInt(value));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Bad " + key + "value: " + e.getMessage());
         }
