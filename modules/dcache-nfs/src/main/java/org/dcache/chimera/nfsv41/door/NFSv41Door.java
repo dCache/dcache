@@ -417,14 +417,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _vfsCache = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         _vfs = _eventNotifier == null ? _vfsCache : wrapWithMonitoring(_vfsCache);
 
-        MountServer ms = new MountServer(_exportFile, _vfs);
-
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
               .withPort(_port)
               .withTCP()
               .withAutoPublish()
-              .withWorkerThreadIoStrategy()
-              .withRpcService(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+              .withWorkerThreadIoStrategy();
 
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
@@ -433,9 +430,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         for (String version : _versions) {
             switch (version) {
                 case V3:
+                    MountServer ms = new MountServer(_exportFile, _vfs);
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
-                    oncRpcSvcBuilder.withRpcService(
-                          new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    oncRpcSvcBuilder
+                          .withRpcService(
+                                new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3)
+                          .withRpcService(
+                                new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3),
+                                ms);
+                    ;
                     _loginBrokerPublisher.setTags(Collections.emptyList());
                     break;
                 case V41:
