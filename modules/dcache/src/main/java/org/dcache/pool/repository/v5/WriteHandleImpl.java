@@ -119,6 +119,7 @@ class WriteHandleImpl implements ReplicaDescriptor {
     private Long _atime;
 
     private boolean hasChannelBeenCreated;
+    private Exception _closedBy;
 
     WriteHandleImpl(ReplicaRepository repository,
           Allocator allocator,
@@ -363,7 +364,7 @@ class WriteHandleImpl implements ReplicaDescriptor {
           throws IllegalStateException {
         switch (_state) {
             case CLOSED:
-                throw new IllegalStateException("Handle is closed");
+                throw new IllegalStateException("Handle is closed", _closedBy);
 
             case OPEN:
                 fail();
@@ -374,6 +375,7 @@ class WriteHandleImpl implements ReplicaDescriptor {
                 setState(HandleState.CLOSED);
                 break;
         }
+        _closedBy = new Exception("Previous, successful close.");
     }
 
     /**
