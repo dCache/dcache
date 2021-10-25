@@ -162,13 +162,14 @@ A restart of the `xrootd` door is required to make the changes take effect. As s
 ### TLS
 
 As of 6.2, dCache supports TLS according to the protocol requirements
-specified by the XrootD Protocol 5.0.
+specified by the xroot Protocol 5.0.
 
-XrootD allows a negotiation between the client and server as to when to initiate
-the TLS handshake.  The server-side options are explained in the _xrootd.properties_
-file.  Currently supported is the ability to require TLS on all connections to
-the door and pool, or to make TLS optional, depending on the client.  One
-can also specify whether to begin TLS before login or after.  The latter option
+The xroot protocol allows a negotiation between the client and server as to when to
+initiate the TLS handshake.  The server-side options are explained in
+the _xrootd.properties_ file.  Currently supported is the ability to
+require TLS on all connections to the door and pool, or to make TLS
+optional, depending on the client.  For the former, one can also
+specify whether to begin TLS before login or after.  The "after" option
 is useful in the case of TLS being used with a strong authentication protocol
 such as GSI, in which case it would make sense not to protect the login as GSI
 already requires a Diffie-Hellman handshake to protect the passing of
@@ -182,6 +183,12 @@ does not support TLS, but the triggering client has expressed 'tls.tpc=1'
 
 As of 6.2, dCache has not yet implemented the GP file or data channel options;
 stay tuned for further developments in those areas.
+
+#### A note on TLS configuration for the pools
+
+Given that pools may need to service clients that do not support TLS (they
+may, for instance, be using a non-xroot protocol), it is probably not
+practical to make the pools require TLS by setting ``pool.mover.xrootd.security.tls.mode=STRICT``.
 
 
 ### Token-based authorization
@@ -204,7 +211,7 @@ The token for xrootd is passed as an 'authz' query element on paths.
 For example,
 
 ```
-xrdcp500 -f xroots://dmsdca15.fnal.gov:1095//pnfs/fs/usr/test/arossi/volatile/tls-1/testdata?authz=eyJ0eXAiOiJKV1QiLCJhb... /dev/null
+xrdcp -f xroots:///my-xroot-door.example.org:1095///pnfs/fs/usr/scratch/testdata?authz=eyJ0eXAiOiJKV1QiLCJhb... /dev/null
 ```
 
 dCache will support different tokens during the same client session, as well as
@@ -254,6 +261,22 @@ We thus make provision here for failing over to "standard" behavior
 via ``xrootd.plugin!scitokens.strict``.   If it is ``true``, then
 the presence of a scitoken is required.  If ``false``, and the token is missing,
 whatever restrictions that are already in force from the login apply.
+
+##### A Note on Pool configuration with Scitokens
+
+What this means, however, is that unless the client requests TLS,
+it will not be turned on.
+
+> **SECURITY CONSIDERATION**
+>
+> In order to protect the bearer token, the client should _always_ require
+> TLS by using 'xroots' as the URL schema.  This is because the xrootd clients
+> continue to pass the token in the open request's path query regardless
+> of whether the server supports TLS or has indicated that it should
+> be turned on.
+>
+> By using 'xroots', the client guarantees TLS will be on at login or
+> the connection will fail.
 
 #### Token-based authorization as suggested in [http://people.web.psi.ch/feichtinger/doc/authz.pdf](https://www.psi.ch/search/phonebook-and-e-mail-directory?q=feichtinger).
 
