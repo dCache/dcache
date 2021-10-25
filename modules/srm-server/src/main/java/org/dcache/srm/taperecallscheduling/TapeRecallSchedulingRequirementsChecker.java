@@ -252,13 +252,13 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
         if (first == null || second == null) {
             return 0;
         }
-        long oldestArrival = first.getOldestJobArrival();
-        long otherArrival = second.getOldestJobArrival();
-        if (oldestArrival == NO_VALUE && otherArrival == NO_VALUE) {
+        Long oldestArrival = first.getOldestJobArrival();
+        Long otherArrival = second.getOldestJobArrival();
+        if (oldestArrival == null && otherArrival == null) {
             return 0;
-        } else if (oldestArrival == NO_VALUE && otherArrival != NO_VALUE) {
+        } else if (oldestArrival == null && otherArrival != null) {
             return -1;
-        } else if (oldestArrival != NO_VALUE && otherArrival == NO_VALUE) {
+        } else if (oldestArrival != null && otherArrival == null) {
             return 1;
         }
         return Long.compare(oldestArrival, otherArrival);

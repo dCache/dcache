@@ -412,4 +412,27 @@ public class TapeRecallSchedulingStrategyTests {
         assertFalse(requirementsChecker.isJobExpired(jobTapeinfoless));
     }
 
+    @Test
+    public void shouldCompareOldestTapeRequestAgeIfOneIsNotSet() {
+        SchedulingInfoTape tapeInfo1 = new SchedulingInfoTape();
+        tapeInfo1.addTapeInfo(100, 100);
+        tapeInfo1.setOldestJobArrival(getNewCtime());
+
+        SchedulingInfoTape tapeInfo2 = new SchedulingInfoTape();
+        tapeInfo2.addTapeInfo(100, 100);
+
+        assertEquals(1, requirementsChecker.compareOldestTapeRequestAge(tapeInfo1, tapeInfo2));
+    }
+
+    @Test
+    public void shouldCompareOldestTapeRequestAgeIfBothAreNotSet() {
+        SchedulingInfoTape tapeInfo1 = new SchedulingInfoTape();
+        tapeInfo1.addTapeInfo(100, 100);
+
+        SchedulingInfoTape tapeInfo2 = new SchedulingInfoTape();
+        tapeInfo2.addTapeInfo(100, 100);
+
+        assertEquals(0, requirementsChecker.compareOldestTapeRequestAge(tapeInfo1, tapeInfo2));
+    }
+
 }
