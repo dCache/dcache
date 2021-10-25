@@ -44,6 +44,7 @@ class ReadHandleImpl implements ReplicaDescriptor {
     private final Set<? extends OpenOption> _openOptions;
     private FileAttributes _fileAttributes;
     private boolean _open;
+    private Exception _closedBy;
 
     ReadHandleImpl(PnfsHandler pnfs, ReplicaRecord entry, FileAttributes fileAttributes,
           boolean isInternalActivity) {
@@ -63,10 +64,11 @@ class ReadHandleImpl implements ReplicaDescriptor {
     @Override
     public synchronized void close() throws IllegalStateException {
         if (!_open) {
-            throw new IllegalStateException("Handle is closed");
+            throw new IllegalStateException("Handle is closed", _closedBy);
         }
         _entry.decrementLinkCount();
         _open = false;
+        _closedBy = new Exception("Previous, successful close.");
     }
 
     @Override
