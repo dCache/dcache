@@ -346,7 +346,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             // OperationSETATTR have already checked for a valid open stateid
             if (stat.isDefined(Stat.StatAttribute.SIZE)) {
 
-                var chimeraStat = _fs.stat(fsInode);
+                var chimeraStat = fsInode.stat();
 
                 int type = chimeraStat.getMode() & UnixPermission.F_TYPE;
                 switch (type) {
@@ -360,7 +360,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 }
 
                 // allow set size only for newly created files
-                if (chimeraStat.getState() != FileState.CREATED) {
+                if (fsInode.type() == FsInodeType.INODE && chimeraStat.getState() != FileState.CREATED) {
                     throw new PermException("Can't change size of existing file");
                 }
             }
