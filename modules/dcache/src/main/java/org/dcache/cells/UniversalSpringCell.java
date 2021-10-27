@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readAllBytes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
@@ -54,6 +55,7 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
@@ -777,7 +779,7 @@ public class UniversalSpringCell
      * Returns true if {@code clazz} is assignable to any of the classes in {@code classes}, false
      * otherwise.
      */
-    private boolean isAssignableTo(Class<?> clazz, Class<?>... classes) {
+    private static boolean isAssignableTo(Class<?> clazz, Class<?>... classes) {
         for (Class<?> aClass : classes) {
             if (aClass.isAssignableFrom(clazz)) {
                 return true;
@@ -786,7 +788,7 @@ public class UniversalSpringCell
         return false;
     }
 
-    private Object serialize(Set<Object> prune, Queue<Map.Entry<String, Object>> queue, Object o) {
+    private static Object serialize(Set<Object> prune, Queue<Map.Entry<String, Object>> queue, Object o) {
         if (o == null || PRIMITIVE_TYPES.contains(o.getClass())) {
             return o;
         } else if (isAssignableTo(o.getClass(), TERMINAL_TYPES)) {
@@ -829,6 +831,8 @@ public class UniversalSpringCell
                 values.add(serialize(prune, queue, entry));
             }
             return values;
+        } else if (o instanceof Optional) {
+            return serialize(prune, queue, ((Optional)o).orElse(null));
         } else if (prune.contains(o)) {
             return o.toString();
         } else {
@@ -861,7 +865,8 @@ public class UniversalSpringCell
      * Prunes the object tree to produce a tree even if o is a DAG or contains cycles. Using a
      * breadth-first search tends to produce friendlier results when the object graph is pruned.
      */
-    private Object serialize(Object o) {
+    @VisibleForTesting
+    public static Object serialize(Object o) {
         Set<Object> prune = Sets.newHashSet();
         Queue<Map.Entry<String, Object>> queue = new ArrayDeque<>();
         Object result = serialize(prune, queue, o);
@@ -1045,7 +1050,7 @@ public class UniversalSpringCell
     /**
      * BeanWrapper that restricts access to certain private properties that should not be exposed.
      */
-    private class RestrictedBeanWrapper extends BeanWrapperImpl {
+    private static class RestrictedBeanWrapper extends BeanWrapperImpl {
 
         private RestrictedBeanWrapper(Object object) {
             super(object);
