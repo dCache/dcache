@@ -3,6 +3,7 @@ package org.dcache.tests.poolmanager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.gson.GsonBuilder;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.dcache.cells.UniversalSpringCell;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolSelector;
@@ -139,6 +141,14 @@ public class PoolMonitorTest {
     public void testHostFilterForWrite() throws Exception {
         prepareCostModule(false);
         prepareHostExclusion().selectWritePool(0);
+    }
+
+    @Test
+    public void testGsonDeserialization() throws Exception {
+        prepareCostModule(false);
+        Object obj = UniversalSpringCell.serialize(_poolMonitor);
+        new GsonBuilder().serializeSpecialFloatingPointValues().setPrettyPrinting()
+              .disableHtmlEscaping().create().toJson(obj);
     }
 
     private void prepareCostModule(boolean linkPerPool) throws Exception {
