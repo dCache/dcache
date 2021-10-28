@@ -5,6 +5,7 @@ import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static dmg.util.CommandException.checkCommand;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.cells.HAServiceLeadershipManager.HA_NOT_LEADER_MSG;
 
@@ -64,6 +65,7 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
     private static final Logger LOGGER = LoggerFactory.getLogger(DiskCleaner.class);
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> _poolsBeingCleaned = new ConcurrentHashMap<>();
 
     private ScheduledFuture<?> _cleanerTask;
 
@@ -165,8 +167,10 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
             if (runAsync) {
                 CompletableFuture<Void> cf = CompletableFuture.runAsync(
                       () -> {
+                          _poolsBeingCleaned.put(pool, System.currentTimeMillis());
                           runDelete(pool);
                           runNotification();
+                          _poolsBeingCleaned.remove(pool);
                           LOGGER.info("Finished deleting from pool {}", pool);
                       }, _executor);
                 futures.add(cf);
@@ -517,6 +521,8 @@ public class DiskCleaner extends AbstractCleaner implements CellCommandListener,
         int threadPoolSize = _executor.getCorePoolSize();
         pw.printf("Cleaning up to %d pools in parallel\n",
               threadPoolSize == 1 ? 1 : threadPoolSize - 1);
+        pw.printf("Pools currently being cleaned: [%s]\n",
+              _poolsBeingCleaned.entrySet().stream().map(e -> e.getKey()).collect(joining(", ")));
     }
 
 }
