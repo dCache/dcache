@@ -10,7 +10,10 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NoAttributeCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.PnfsWriteExtendedAttributesMessage.Mode;
+import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Exceptions;
 import io.swagger.annotations.Api;
@@ -21,6 +24,8 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
@@ -54,6 +60,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.qos.QoSTransitionEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
@@ -274,6 +282,10 @@ public class FileResources {
                 + "of the JSON object 'target' item "
                 + "describes the desired QoS."
                 + "\n"
+                + "If action is 'pin' then the default "
+                + "value of lifetime is 0 and liftime-unit "
+                + "SECONDS."
+                + "\n"
                 + "If action is 'rm-xattr' then "
                 + "extended attributes of a file "
                 + "or directory are removed as "
@@ -331,6 +343,16 @@ public class FileResources {
                                   + "    \"action\" : \"qos\",\n"
                                   + "    \"target\" : \"DISK+TAPE\"\n"
                                   + "}"),
+                      @ExampleProperty(mediaType = "PIN",
+                            value = "{\n"
+                                  + "    \"action\" : \"pin\",\n"
+                                  + "    \"lifetime\" : \"number\"\n"
+                                  + "    \"lifetime-unit\" : \"SECONDS|MINUTES|HOURS|DAYS\"\n"
+                                  + "}"),
+                      @ExampleProperty(mediaType = "UNPIN",
+                            value = "{\n"
+                                  + "    \"action\" : \"unpin\",\n"
+                                  + "}"),
                       @ExampleProperty(mediaType = "SET-XATTR",
                             value = "{\n"
                                   + "    \"action\" : \"set-xattr\",\n"
@@ -364,6 +386,7 @@ public class FileResources {
             String action = (String) reqPayload.get("action");
             PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+            PnfsId pnfsId;
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
@@ -385,6 +408,26 @@ public class FileResources {
                           pinmanager)
                           .adjustQoS(path,
                                 targetQos, request.getRemoteHost());
+                    break;
+                case "pin":
+                    Integer lifetime = reqPayload.optInt("lifetime");
+                    if (lifetime == null) {
+                        lifetime = 0;
+                    }
+                    String lifetimeUnitVal = reqPayload.optString("lifetime-unit");
+                    TimeUnit lifetimeUnit = lifetimeUnitVal == null ?
+                          TimeUnit.SECONDS : TimeUnit.valueOf(lifetimeUnitVal);
+                    pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
+                    /*
+                     *  Fire-and-forget, as it was in 5.2
+                     */
+                    pinmanager.notify(new PinManagerPinMessage(FileAttributes.ofPnfsId(pnfsId),
+                          getProtocolInfo(), null,
+                          lifetimeUnit.toMillis(lifetime)));
+                    break;
+                case "unpin":
+                    pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
+                    pinmanager.notify(new PinManagerUnpinMessage(pnfsId));
                     break;
                 case "rm-xattr":
                     Object namesArgument = reqPayload.get("names");
@@ -445,6 +488,13 @@ public class FileResources {
             throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
+    }
+
+    private ProtocolInfo getProtocolInfo() throws URISyntaxException {
+        return new HttpProtocolInfo("Http", 1, 1,
+              new InetSocketAddress("localhost", 0),
+              null, null, null,
+              new URI("http", "localhost", null, null));
     }
 
     private Mode modeOf(String value) throws JSONException {
