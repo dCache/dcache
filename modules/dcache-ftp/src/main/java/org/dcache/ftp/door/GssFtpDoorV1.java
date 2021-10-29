@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import javax.security.auth.Subject;
 import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.Subjects;
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
 import org.slf4j.Logger;
@@ -182,7 +183,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         } else {
             if (context.isEstablished()) {
                 LOGGER.info("GssFtpDoorV1::ftp_adat: security context established with {}",
-                      subject);
+                      Subjects.toString(subject));
                 reply("235 OK");
             } else {
                 reply("335 ADAT=");
