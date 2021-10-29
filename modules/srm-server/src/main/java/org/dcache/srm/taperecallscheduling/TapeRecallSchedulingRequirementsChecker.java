@@ -237,7 +237,7 @@ public class TapeRecallSchedulingRequirementsChecker implements CellCommandListe
      * @param recallVolume Recall volume in kB
      * @return Whether the recall volume is sufficient
      */
-    public boolean isTapeRecallVolumeSufficient(SchedulingInfoTape tape, Long recallVolume) {
+    public boolean isTapeRecallVolumeSufficient(SchedulingInfoTape tape, long recallVolume) {
         int percentage = minTapeRecallPercentage();
         if (tape == null || !tape.hasTapeInfo()) {
             return percentage == 0;
