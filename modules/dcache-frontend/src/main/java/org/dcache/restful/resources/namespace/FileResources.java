@@ -56,6 +56,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
@@ -410,6 +411,7 @@ public class FileResources {
             PnfsHandler pnfsHandler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
             PnfsId pnfsId;
+            Long uid;
             switch (action) {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
@@ -441,16 +443,19 @@ public class FileResources {
                     TimeUnit lifetimeUnit = lifetimeUnitVal == null ?
                           TimeUnit.SECONDS : TimeUnit.valueOf(lifetimeUnitVal);
                     pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
+
                     /*
                      *  Fire-and-forget, as it was in 5.2
                      */
                     pinmanager.notify(new PinManagerPinMessage(FileAttributes.ofPnfsId(pnfsId),
-                          getProtocolInfo(), null,
+                          getProtocolInfo(), getRequestId(),
                           lifetimeUnit.toMillis(lifetime)));
                     break;
                 case "unpin":
                     pnfsId = pnfsHandler.getPnfsIdByPath(path.toString());
-                    pinmanager.notify(new PinManagerUnpinMessage(pnfsId));
+                    PinManagerUnpinMessage message = new PinManagerUnpinMessage(pnfsId);
+                    message.setRequestId(getRequestId());
+                    pinmanager.notify(message);
                     break;
                 case "rm-xattr":
                     Object namesArgument = reqPayload.get("names");
@@ -528,6 +533,14 @@ public class FileResources {
               new InetSocketAddress("localhost", 0),
               null, null, null,
               new URI("http", "localhost", null, null));
+    }
+
+    private String getRequestId() throws PermissionDeniedCacheException {
+        if (RequestUser.isAnonymous()) {
+            throw new PermissionDeniedCacheException("cannot get request id for user.");
+        }
+
+        return String.valueOf(Subjects.getUid(RequestUser.getSubject()));
     }
 
     private Mode modeOf(String value) throws JSONException {
