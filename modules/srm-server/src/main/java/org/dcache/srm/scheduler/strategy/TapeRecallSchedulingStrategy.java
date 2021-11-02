@@ -97,11 +97,19 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             fetchTapeInfo();
         }
 
+        boolean activatedTapes = false;
         if (!tapesWithJobs.isEmpty()
               && requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size()) > 0) {
-            LOGGER.info("Pending tapes: {}", describeTapesWithJobsMap(tapesWithJobs));
-            LOGGER.info("Active tapes: {}", describeTapesWithJobsMap(activeTapesWithJobs));
-            refillActiveTapeSlots();
+            activatedTapes = refillActiveTapeSlots();
+        }
+
+        if (activatedTapes) {
+            if (!tapesWithJobs.isEmpty()) {
+                LOGGER.info("Pending tapes: {}", describeTapesWithJobsMap(tapesWithJobs));
+            }
+            if (!activeTapesWithJobs.isEmpty()) {
+                LOGGER.info("Active tapes: {}", describeTapesWithJobsMap(activeTapesWithJobs));
+            }
         }
 
         if (immediateJobQueue.isEmpty()) {
@@ -109,7 +117,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             moveNextTapeJobsToImmediateJobQueue();
         }
 
-        LOGGER.info(getQueueStateInfo());
+        LOGGER.info(describeQueueState());
 
         Long job = immediateJobQueue.poll();
         return job;
@@ -161,10 +169,10 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * Will check if there are free active tape slots and attempt to fill them by requesting
      * to receive the next tapes to activate.
      */
-    private void refillActiveTapeSlots() {
+    private boolean refillActiveTapeSlots() {
+        boolean activatedTapes = false;
         int freeTapeSlots = requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size());
 
-        LOGGER.info("Tape slots available for activation: {}", freeTapeSlots);
         while (freeTapeSlots > 0) {
             String tape = selectNextTapeToActivate();
             if (Strings.isNullOrEmpty(tape)) {
@@ -172,14 +180,19 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             }
             LinkedList<SchedulingItemJob> jobs = tapesWithJobs.remove(tape);
             tapes.get(tape).resetJobArrivalTimes();
+            String actionTaken;
             if (activeTapesWithJobs.containsKey(tape) && activeTapesWithJobs.get(tape) != null) {
                 activeTapesWithJobs.get(tape).addAll(jobs);
+                actionTaken = "Added jobs to active tape";
             } else {
                 activeTapesWithJobs.put(tape, jobs);
+                actionTaken = "ACTIVATED TAPE";
             }
-            LOGGER.info("ACTIVATED TAPE {} with {} jobs", tape, jobs.size());
+            LOGGER.info("{} {} with {} jobs", actionTaken, tape, jobs.size());
             freeTapeSlots--;
+            activatedTapes = true;
         }
+        return activatedTapes;
     }
 
     /**
@@ -462,7 +475,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
               e.getValue().getUsedSpace()));
     }
 
-    public String getQueueStateInfo() {
+    public String describeQueueState() {
         StringBuilder sb = new StringBuilder();
         int newJobsCount = newJobs.size();
         int jobsByTapeCount = tapesWithJobs.entrySet().stream().mapToInt(e -> e.getValue().size())
