@@ -234,14 +234,14 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         InetAddress client = Subjects.getOrigin(subject).getAddress();
         ProtocolInfo protocolInfo
               = new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(client, 0));
-        PinManagerPinMessage message
-              = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
-              protocolInfo, null, lifetime);
-        message.setSubject(subject);
-
-        message.setReplyWhenStarted(true);
-
         try {
+            PinManagerPinMessage message
+                  = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
+                  protocolInfo, getRequestId(subject), lifetime);
+            message.setSubject(subject);
+
+            message.setReplyWhenStarted(true);
+
             pinManagerStub.sendAndWait(message);
         } catch (NoRouteToCellException | InterruptedException | CacheException e) {
             /* We "notify" the client that there was a problem pinning the
@@ -266,6 +266,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         message.setSubject(subject);
 
         try {
+            message.setRequestId(getRequestId(subject));
             pinManagerStub.sendAndWait(message);
         } catch (PermissionDeniedCacheException e) {
             /* Trigger returning NFSERR_PERM back to client.  The Linux kernel
@@ -402,5 +403,13 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
 
         subject.setReadOnly();
         return subject;
+    }
+
+    private String getRequestId(Subject subject) throws PermissionDeniedCacheException {
+        if (Subjects.isNobody(subject)) {
+            throw new PermissionDeniedCacheException("cannot get request id for user.");
+        }
+
+        return String.valueOf(Subjects.getUid(subject));
     }
 }
