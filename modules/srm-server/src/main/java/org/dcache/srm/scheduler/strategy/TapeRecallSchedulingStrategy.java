@@ -99,7 +99,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
         if (!tapesWithJobs.isEmpty()
               && requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size()) > 0) {
-            LOGGER.info(getTapeJobsInfo());
+            LOGGER.info("Pending tapes: {}", describeTapesWithJobsMap(tapesWithJobs));
+            LOGGER.info("Active tapes: {}", describeTapesWithJobsMap(activeTapesWithJobs));
             refillActiveTapeSlots();
         }
 
@@ -163,6 +164,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
     private void refillActiveTapeSlots() {
         int freeTapeSlots = requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size());
 
+        LOGGER.info("Tape slots available for activation: {}", freeTapeSlots);
         while (freeTapeSlots > 0) {
             String tape = selectNextTapeToActivate();
             if (Strings.isNullOrEmpty(tape)) {
@@ -480,13 +482,12 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         return sb.toString();
     }
 
-    public String getTapeJobsInfo() {
-        if (tapesWithJobs.isEmpty()) {
-            return "";
-        }
+    public String describeTapesWithJobsMap(Map<String, LinkedList<SchedulingItemJob>> tapesJobMap) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tapes with jobs: ");
-        tapesWithJobs.entrySet().stream().forEach(
+        if (tapesJobMap.isEmpty()) {
+            return sb.append(" []").toString();
+        }
+        tapesJobMap.entrySet().stream().forEach(
               e -> sb.append("(").append(e.getKey()).append(", ").append(e.getValue().size())
                     .append(") "));
         return sb.toString();
