@@ -60,6 +60,8 @@ documents or software obtained from this server.
 package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -76,8 +78,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
+import java.security.Principal;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +92,9 @@ import javax.security.auth.Subject;
 import javax.sql.DataSource;
 import org.apache.curator.shaded.com.google.common.collect.ImmutableMap;
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UidPrincipal;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerListPinsMessage;
@@ -222,7 +228,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
      */
     @Override
     public void pin(FsInode inode, long lifetime) throws ChimeraFsException {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = getSubjectFromContext();
         InetAddress client = Subjects.getOrigin(subject).getAddress();
         ProtocolInfo protocolInfo
               = new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress(client, 0));
@@ -254,7 +260,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     public void unpin(FsInode inode) throws ChimeraFsException {
         PinManagerUnpinMessage message
               = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = getSubjectFromContext();
         message.setSubject(subject);
 
         try {
@@ -277,7 +283,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     public List<PinInfo> listPins(FsInode inode) throws ChimeraFsException {
         PnfsId pnfsid = new PnfsId(inode.getId());
         PinManagerListPinsMessage request = new PinManagerListPinsMessage(pnfsid);
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = getSubjectFromContext();
         request.setSubject(subject);
         try {
             return pinManagerStub.sendAndWait(request).getInfo().stream()
@@ -290,9 +296,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
 
     @Override
     public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
-
         super.remove(directory, name, inode);
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = getSubjectFromContext();
         DoorRequestInfoMessage infoRemove
               = new DoorRequestInfoMessage(myAddress, "remove");
 
@@ -359,5 +364,41 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
             throw new ChimeraFsException(e.getMessage(), e);
         }
         return rc;
+    }
+
+    /*
+     * Also turns Unix principals into Uid and Gid principals.
+     */
+    private static Subject getSubjectFromContext() {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+
+        UnixNumericUserPrincipal userPrincipal = null;
+        List<UnixNumericGroupPrincipal> groupPrincipals = new ArrayList<>();
+
+        for (Principal principal : subject.getPrincipals()) {
+            if (principal instanceof UnixNumericUserPrincipal) {
+                userPrincipal = (UnixNumericUserPrincipal) principal;
+            } else if (principal instanceof UnixNumericGroupPrincipal) {
+                groupPrincipals.add((UnixNumericGroupPrincipal) principal);
+            }
+        }
+
+        if (userPrincipal == null) {
+            return subject;
+        }
+
+        Principal origin = Subjects.getOrigin(subject);
+
+        subject = new Subject();
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UidPrincipal(userPrincipal.longValue()));
+        groupPrincipals.forEach(
+              p -> principals.add(new GidPrincipal(p.longValue(), p.isPrimaryGroup())));
+        if (origin != null) {
+            principals.add(origin);
+        }
+
+        subject.setReadOnly();
+        return subject;
     }
 }
