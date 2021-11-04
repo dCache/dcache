@@ -62,7 +62,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
     private TapeRecallSchedulingRequirementsChecker requirementsChecker;
     private TapeInformant tapeInformant;
-    private long lastTapeInfoFetch = 0;
+    private long lastTapeInfoRefreshAttempt = 0;
 
     // cached tape info and scheduling queues
 
@@ -93,9 +93,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
     @Override
     public synchronized Long remove() {
-        if (System.currentTimeMillis() > lastTapeInfoFetch + MIN_TIME_BETWEEN_TAPEINFO_FETCHING) {
-            fetchTapeInfo();
-        }
+        attemptToRefreshTapeInfo();
 
         boolean activatedTapes = false;
         if (!tapesWithJobs.isEmpty()
@@ -358,14 +356,15 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
     }
 
     /**
-     * Fetches tape location information for requests and associated tapes from the
-     * 'tapeInfoProvider'.
+     * Attempts to refresh tape location information for requests and tapes if enough time has
+     * passed since the last attempt and new jobs exists.
      */
-    private void fetchTapeInfo() {
-        if (!newJobs.isEmpty()) {
+    private void attemptToRefreshTapeInfo() {
+        long current = System.currentTimeMillis();
+        if (current > lastTapeInfoRefreshAttempt + MIN_TIME_BETWEEN_TAPEINFO_FETCHING) {
             fetchAndAddTapeInfoForJobs();
             fetchAndAddInfosForTapes();
-            lastTapeInfoFetch = System.currentTimeMillis();
+            lastTapeInfoRefreshAttempt = System.currentTimeMillis();
         }
     }
 
@@ -386,7 +385,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * from 'newJobs' and added to the 'tapesWithJobs' map.
      */
     private void fetchAndAddTapeInfoForJobs() {
-        if (newJobs.size() == 0) {
+        if (newJobs.isEmpty()) {
             return;
         }
         Set<String> changedTapeQueues = new HashSet();
@@ -465,7 +464,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
               .filter(e -> !e.getValue().hasTapeInfo()).map(e -> e.getKey())
               .collect(Collectors.toList());
 
-        if (tapesWithoutInfo.size() == 0) {
+        if (tapesWithoutInfo.isEmpty()) {
             return;
         }
         Map<String, TapeInfo> newInfo = tapeInformant.getTapeInfos(tapesWithoutInfo);
