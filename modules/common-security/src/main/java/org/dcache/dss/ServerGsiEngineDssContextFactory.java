@@ -28,8 +28,6 @@ import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.SslContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -37,6 +35,7 @@ import java.security.cert.CertificateFactory;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import org.dcache.gsi.KeyPairCache;
@@ -61,7 +60,7 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory {
     private final CertificateFactory cf;
     private final Set<String> bannedCiphers;
     private final Set<String> bannedProtocols;
-    private final Callable<SslContext> factory;
+    private final Callable<SSLContext> factory;
     private final KeyPairCache keyPairCache;
 
     public ServerGsiEngineDssContextFactory(String args) throws Exception {
@@ -99,7 +98,7 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory {
               .withLazy(false)
               .withKeyPath(serverKeyPath.toPath())
               .withCertificatePath(serverCertificatePath.toPath())
-              .buildWithCaching(SslContext.class);
+              .buildWithCaching(SSLContext.class);
         factory.call(); // Fail fast in case of config errors
     }
 
@@ -108,8 +107,7 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory {
           InetSocketAddress localSocketAddress)
           throws IOException {
         try {
-            SSLEngine delegate = factory.call().newEngine(ByteBufAllocator.DEFAULT,
-                  remoteSocketAddress.getHostString(),
+            SSLEngine delegate = factory.call().createSSLEngine(remoteSocketAddress.getHostString(),
                   remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
             String[] cipherSuites = toArray(
