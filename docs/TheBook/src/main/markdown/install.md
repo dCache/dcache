@@ -849,7 +849,15 @@ systemctl daemon-reload
 > - dcache.home
 > - dcache.java.library.path
 
-To inspect all generated units of dcache.target the `systemd list-dependencies` command can be used. For example:
+To inspect all generated units of dcache.target the `systemd list-dependencies` command can be used. In our simple installation with just one domain hosting several services this would look like
+
+```console-root
+systemctl list-dependencies dcache.target
+dcache.target
+● └─dcache@dCacheDomain.service
+```
+
+Typically, a separate domain is used for each service. Such a setup could be, for example:
 
 ```console-root
 systemctl list-dependencies dcache.target
