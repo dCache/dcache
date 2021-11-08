@@ -325,7 +325,8 @@ public final class TpcWriteDescriptor extends WriteDescriptor
         write((ByteBuffersProvider) inboundReadResponse);
     }
 
-    public void shutDown() {
+    @Override
+    public void close() {
         if (client == null) {
             return;
         }
@@ -351,5 +352,7 @@ public final class TpcWriteDescriptor extends WriteDescriptor
         }
 
         client.shutDown(ctx);
+
+        super.close();
     }
 }

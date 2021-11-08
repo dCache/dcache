@@ -14,6 +14,8 @@ import org.dcache.xrootd.util.ByteBuffersProvider;
  */
 public interface FileDescriptor {
 
+    default void close() {}
+
     /**
      * Reads data from the file. Reads until the buffer is full or the end of file has been
      * reached.
