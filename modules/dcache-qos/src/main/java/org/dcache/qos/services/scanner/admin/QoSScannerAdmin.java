@@ -419,123 +419,76 @@ public final class QoSScannerAdmin implements CellCommandListener {
         }
     }
 
-    @Command(name = "pool ctrl",
-          hint = "control the periodic check of active pools or processing of pool state changes",
-          description = "Activates, deactivates, or resets the periodic checking of active pools; "
-                + "turns all pool operation handling on or off (start/shutdown).")
+    @Command(name = "pool reset",
+          hint = "control the processing of pool state changes",
+          description = "resets the properties for the handling of pool state changes.")
     class PoolControlCommand extends InitializerAwareCommand {
 
-        @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
-              required = false,
-              usage =
-                    "off = turn scanning off; on = turn scanning on; shutdown = turn off all handling; "
-                          + "start = turn on all handling; info = show status of watchdog and scan window (default); "
-                          + "reset = reset properties; run = interrupt current wait and do a sweep.")
-        String arg = "INFO";
-
-        @Option(name = "window",
-              usage =
-                    "With reset mode (one of window|sweep|down|restart). Amount of time which must "
-                          + "pass since the last scan of a pool for it to be scanned again.")
-        Integer window;
+        @Option(name = "max-operations",
+              usage = "Maximum number of concurrent pool operations permitted.")
+        Integer maxOperations;
 
         @Option(name = "sweep",
-              usage =
-                    "With reset mode (one of window|sweep|down|restart). How often a sweep of the pool "
-                          + "operations is made.")
+              usage = "(one of sweep|down|restart|idle). "
+                    + "How often a sweep of operations is made.")
         Integer sweep;
 
         @Option(name = "down",
-              usage =
-                    "With reset mode (one of window|sweep|down|restart). Minimum grace period between "
-                          + "reception of a pool down update and scan of  the given pool.")
+              usage = "(one of sweep|down|restart|idle). "
+                    + "Minimum grace period between reception of a pool down update and scan of the given "
+                    + "pool.")
         Integer down;
 
         @Option(name = "restart",
-              usage =
-                    "With reset mode (one of window|sweep|down|restart). Minimum grace period between "
-                          + "reception of a pool restart update and scan of the given pool.")
+              usage = "(one of sweep|down|restart|idle). "
+                    + "Minimum grace period between reception of a pool restart update and scan of "
+                    + "the given pool.")
         Integer restart;
+
+        @Option(name = "idle",
+              usage = "(one of sweep|down|restart|idle). "
+                    + "Maximum time a running pool scan can wait before timing out and being preempted.")
+        Integer idle;
 
         @Option(name = "unit",
               valueSpec = "SECONDS|MINUTES|HOURS|DAYS",
-              usage = "For the sweep/window/down/restart options.")
+              usage = "For the sweep/down/restart/idle options.")
         TimeUnit unit;
 
         PoolControlCommand() {
             super(initializer);
         }
 
-        private ControlMode mode;
-
-        @Override
-        public String call() {
-            mode = ControlMode.valueOf(arg.toUpperCase());
-            if (mode == ControlMode.START) {
-                new Thread(() -> startAll()).start();
-                return "Consumer initialization started.";
-            }
-            return super.call();
-        }
-
         @Override
         protected String doCall() {
-            switch (mode) {
-                case SHUTDOWN:
-                    shutdownAll();
-                    return "Consumer has been shutdown.";
-                case OFF:
-                    if (poolOperationMap.isWatchdogOn()) {
-                        poolOperationMap.setWatchdog(false);
-                        return "Shut down watchdog.";
-                    }
-                    return "Watchdog already off.";
-                case ON:
-                    if (!poolOperationMap.isWatchdogOn()) {
-                        poolOperationMap.setWatchdog(true);
-                        return poolOperationMap.configSettings();
-                    }
-                    return "Watchdog already on.";
-                case RUN:
-                    if (!poolOperationMap.isWatchdogOn()) {
-                        return "Watchdog is off; please turn it on first.";
-                    }
-                    poolOperationMap.runNow();
-                    return "Forced watchdog scan.";
-                case RESET:
-                    if (!poolOperationMap.isWatchdogOn()) {
-                        return "Watchdog is off; please turn it on first.";
-                    }
-
-                    if (window != null) {
-                        poolOperationMap.setRescanWindow(window);
-                        if (unit != null) {
-                            poolOperationMap.setRescanWindowUnit(unit);
-                        }
-                    } else if (sweep != null) {
-                        poolOperationMap.setTimeout(sweep);
-                        if (unit != null) {
-                            poolOperationMap.setTimeoutUnit(unit);
-                        }
-                    } else if (down != null) {
-                        poolOperationMap.setDownGracePeriod(down);
-                        if (unit != null) {
-                            poolOperationMap.setDownGracePeriodUnit(unit);
-                        }
-                    } else if (restart != null) {
-                        poolOperationMap.setRestartGracePeriod(restart);
-                        if (unit != null) {
-                            poolOperationMap.setRestartGracePeriodUnit(unit);
-                        }
-                    }
-
-                    poolOperationMap.reset();
-
-                    // fall through to return info message
-                case INFO:
-                default:
-                    return poolOperationMap.configSettings();
+            if (maxOperations != null) {
+                poolOperationMap.setMaxConcurrentRunning(maxOperations);
             }
+
+            if (sweep != null) {
+                poolOperationMap.setTimeout(sweep);
+                if (unit != null) {
+                    poolOperationMap.setTimeoutUnit(unit);
+                }
+            } else if (down != null) {
+                poolOperationMap.setDownGracePeriod(down);
+                if (unit != null) {
+                    poolOperationMap.setDownGracePeriodUnit(unit);
+                }
+            } else if (restart != null) {
+                poolOperationMap.setRestartGracePeriod(restart);
+                if (unit != null) {
+                    poolOperationMap.setRestartGracePeriodUnit(unit);
+                }
+            } else if (idle != null) {
+                poolOperationMap.setMaxRunningIdleTime(idle);
+                if (unit != null) {
+                    poolOperationMap.setMaxRunningIdleTimeUnit(unit);
+                }
+            }
+
+            poolOperationMap.reset();
+            return poolOperationMap.configSettings();
         }
     }
 

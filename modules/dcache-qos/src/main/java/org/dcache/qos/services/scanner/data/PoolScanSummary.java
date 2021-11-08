@@ -59,49 +59,34 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.data;
 
-import java.io.Serializable;
 import org.dcache.qos.data.QoSMessageType;
 
 /**
  * Simple struct to use during pool scan; shared between handlers, task and namespace access.
  */
-public final class PoolScanSummary implements Serializable {
+public final class PoolScanSummary extends ScanSummary {
 
     private static final long serialVersionUID = 7907827079755395974L;
 
-    private final String pool;
     private final QoSMessageType type;
     private final String group;
     private final String storageUnit;
     private final boolean forced;
-
-    private int files;
-    private boolean cancelled;
 
     public PoolScanSummary(String pool,
           QoSMessageType type,
           String group,
           String storageUnit,
           boolean forced) {
-        this.pool = pool;
+        super(pool);
         this.type = type;
         this.group = group;
         this.storageUnit = storageUnit;
         this.forced = forced;
-        files = 0;
-        cancelled = false;
-    }
-
-    public synchronized int getCount() {
-        return files;
     }
 
     public String getGroup() {
         return group;
-    }
-
-    public String getPool() {
-        return pool;
     }
 
     public String getStorageUnit() {
@@ -112,19 +97,7 @@ public final class PoolScanSummary implements Serializable {
         return type;
     }
 
-    public synchronized void incrementCount() {
-        ++files;
-    }
-
-    public synchronized boolean isCancelled() {
-        return cancelled;
-    }
-
     public boolean isForced() {
         return forced;
-    }
-
-    public synchronized void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
     }
 }

@@ -184,7 +184,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.RESOURCE,
                   String.format("Could not handle pnfsids for %s",
-                        scan.getPool()), e);
+                        scan.getId()), e);
         }
     }
 
@@ -227,7 +227,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
           throws SQLException, QoSException {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        String pool = scan.getPool();
+        String pool = scan.getId();
         String group = scan.getGroup();
         String storageUnit = scan.getStorageUnit();
         QoSMessageType type = scan.getType();

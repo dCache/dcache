@@ -57,36 +57,88 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.scanner.handlers;
+package org.dcache.qos.services.scanner.data;
 
-import diskCacheV111.util.CacheException;
-import org.dcache.qos.services.scanner.data.PoolOperationMap;
-import org.dcache.qos.services.scanner.data.PoolScanSummary;
+import dmg.cells.nucleus.CellInfoProvider;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import org.dcache.util.RunnableModule;
 
 /**
- * Implements the handling of pool scan task termination via pass-through to the operation map.
+ * Provides common run method for the maps and several other common methods and fields.
  */
-public final class PoolTaskCompletionHandler {
+abstract class ScanOperationMap extends RunnableModule implements CellInfoProvider {
 
-    private PoolOperationMap map;
+    protected final Lock lock = new ReentrantLock();
+    protected final Condition condition = lock.newCondition();
 
-    public void childTerminated(String pool) {
-        map.update(pool, false);
+    protected volatile boolean resetInterrupt = false;
+    protected volatile boolean runInterrupt = false;
+    protected volatile int maxConcurrentRunning = 4;
+
+    public void reset() {
+        resetInterrupt = true;
+        threadInterrupt();
     }
 
-    public void childTerminatedWithFailure(String pool) {
-        map.update(pool, true);
+    @Override
+    public void run() {
+        while (!Thread.interrupted()) {
+            long start = System.currentTimeMillis();
+            lock.lock();
+            try {
+                condition.await(timeout, timeoutUnit);
+            } catch (InterruptedException e) {
+                if (resetInterrupt) {
+                    LOGGER.trace("reset, returning to wait: timeout {} {}.", timeout, timeoutUnit);
+                    resetInterrupt = false;
+                    continue;
+                }
+                if (!runInterrupt) {
+                    LOGGER.trace("wait was interrupted; exiting.");
+                    break;
+                }
+                runInterrupt = false;
+            } finally {
+                lock.unlock();
+            }
+
+            if (Thread.interrupted()) {
+                break;
+            }
+
+            LOGGER.trace("Pool watchdog initiating scan.");
+            runScans();
+            LOGGER.trace("Pool watchdog scan completed.");
+
+            recordSweep(start, System.currentTimeMillis());
+        }
+
+        LOGGER.info("Exiting pool operation consumer.");
+        clear();
+
+        LOGGER.info("Pool operation queues cleared.");
     }
 
-    public void setMap(PoolOperationMap map) {
-        this.map = map;
+    public void runNow() {
+        runInterrupt = true;
+        threadInterrupt();
     }
 
-    public void taskCompleted(PoolScanSummary scan) {
-        map.update(scan.getId(), scan.getCount());
+    public int getMaxConcurrentRunning() {
+        return maxConcurrentRunning;
     }
 
-    public void taskFailed(PoolScanSummary scan, CacheException e) {
-        map.update(scan.getId(), scan.getCount(), e);
+    public void setMaxConcurrentRunning(int maxConcurrentRunning) {
+        this.maxConcurrentRunning = maxConcurrentRunning;
     }
+
+    public abstract String configSettings();
+
+    public abstract void runScans();
+
+    protected abstract void clear();
+
+    protected abstract void recordSweep(long start, long end);
 }

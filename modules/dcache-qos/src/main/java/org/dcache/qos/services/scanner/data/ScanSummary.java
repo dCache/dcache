@@ -57,36 +57,41 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.qos.services.scanner.handlers;
+package org.dcache.qos.services.scanner.data;
 
-import diskCacheV111.util.CacheException;
-import org.dcache.qos.services.scanner.data.PoolOperationMap;
-import org.dcache.qos.services.scanner.data.PoolScanSummary;
+import java.io.Serializable;
 
-/**
- * Implements the handling of pool scan task termination via pass-through to the operation map.
- */
-public final class PoolTaskCompletionHandler {
+abstract class ScanSummary implements Serializable {
 
-    private PoolOperationMap map;
+    private static final long serialVersionUID = -2876513775592080147L;
 
-    public void childTerminated(String pool) {
-        map.update(pool, false);
+    private final String id;
+    private long count;
+    private boolean canceled;
+
+    protected ScanSummary(String id) {
+        this.id = id;
+        count = 0L;
+        canceled = false;
     }
 
-    public void childTerminatedWithFailure(String pool) {
-        map.update(pool, true);
+    public synchronized long getCount() {
+        return count;
     }
 
-    public void setMap(PoolOperationMap map) {
-        this.map = map;
+    public synchronized void incrementCount() {
+        ++count;
     }
 
-    public void taskCompleted(PoolScanSummary scan) {
-        map.update(scan.getId(), scan.getCount());
+    public synchronized boolean isCancelled() {
+        return canceled;
     }
 
-    public void taskFailed(PoolScanSummary scan, CacheException e) {
-        map.update(scan.getId(), scan.getCount(), e);
+    public synchronized void setCancelled(boolean canceled) {
+        this.canceled = canceled;
+    }
+
+    public String getId() {
+        return id;
     }
 }
