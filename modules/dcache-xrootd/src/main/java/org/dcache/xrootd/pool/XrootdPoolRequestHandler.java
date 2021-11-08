@@ -48,12 +48,15 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.OutOfDiskException;
@@ -130,8 +133,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
     /**
      * Store file descriptors of open files.
      */
-    private final List<FileDescriptor> _descriptors =
-          Collections.synchronizedList(new ArrayList<>());
+    private final List<FileDescriptor> _descriptors = new ArrayList<>();
 
     /**
      * Use for timeout handling - a handler is always newly instantiated in the Netty
@@ -160,6 +162,15 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
      */
     private final Map<String, String> _queryConfig;
 
+    /**
+     * The switch from synchronized collection to read-write lock is to facilitate removing write
+     * descriptors on inactive channel events. This is to avoid allowing a subsequent write call to
+     * attempt to write to a closed checksum channel.
+     */
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
+    private final Lock writeLock = readWriteLock.writeLock();
+    private final Lock readLock = readWriteLock.readLock();
+
     public XrootdPoolRequestHandler(XrootdTransferService server,
           int maxFrameSize,
           Map<String, String> queryConfig) {
@@ -183,35 +194,41 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        /* close leftover descriptors */
-        for (FileDescriptor descriptor : _descriptors) {
-            if (descriptor != null) {
-                if (descriptor instanceof TpcWriteDescriptor) {
-                    ((TpcWriteDescriptor) descriptor).shutDown();
-                }
-
-                if (descriptor.isPersistOnSuccessfulClose()) {
-                    descriptor.getChannel().release(new FileCorruptedCacheException(
-                          "File was opened with Persist On Successful Close and not closed."));
-                } else if (descriptor.getChannel().getIoMode().contains(StandardOpenOption.WRITE)) {
-                    descriptor.getChannel().release(new CacheException(
-                          "Client disconnected without closing file."));
-                } else if (!descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)) {
-                    descriptor.getChannel().release();
-                } else {
-                    /*
-                     *  Because IO stall during a read may trigger the xrootd client
-                     *  to attempt, after a timeout, to reconnect by opening another socket,
-                     *  we would like not to reject it on the basis of a missing mover.  Thus in the
-                     *  case that the file descriptor maps to a READ mover channel, we leave the
-                     *  mover in the map held by the transfer service.  We start a timer
-                     *  in case there is no reconnect, in which case the channel is then released.
-                     */
-                    _server.scheduleReconnectTimerForMover(descriptor);
-                    _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
-                          ctx.channel(), descriptor.getChannel().getMoverUuid());
+        writeLock.lock();
+        try {
+            /* close leftover descriptors */
+            for (FileDescriptor descriptor : _descriptors) {
+                if (descriptor != null) {
+                    if (descriptor.isPersistOnSuccessfulClose()) {
+                        removeDescriptorAtomically(descriptor);
+                        descriptor.getChannel().release(new FileCorruptedCacheException(
+                              "File was opened with Persist On Successful Close and not closed."));
+                    } else if (descriptor.getChannel().getIoMode()
+                          .contains(StandardOpenOption.WRITE)) {
+                        removeDescriptorAtomically(descriptor);
+                        descriptor.getChannel().release(new CacheException(
+                              "Client disconnected without closing file."));
+                    } else if (!descriptor.getChannel().getIoMode()
+                          .contains(StandardOpenOption.READ)) {
+                        descriptor.getChannel().release();
+                    } else {
+                        /*
+                         *  Because IO stall during a read may trigger the xrootd client
+                         *  to attempt, after a timeout, to reconnect by opening another socket,
+                         *  we would like not to reject it on the basis of a missing mover.  Thus in the
+                         *  case that the file descriptor maps to a READ mover channel, we leave the
+                         *  mover in the map held by the transfer service.  We start a timer
+                         *  in case there is no reconnect, in which case the channel is then released.
+                         */
+                        _server.scheduleReconnectTimerForMover(descriptor);
+                        _log.debug("{} channeInactive, starting timer for reconnect with mover {}.",
+                              ctx.channel(), descriptor.getChannel().getMoverUuid());
+                    }
                 }
             }
+        } finally {
+            writeLock.unlock();
+            ;
         }
     }
 
@@ -220,38 +237,44 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
         if (t instanceof ClosedChannelException) {
             _log.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
-            for (FileDescriptor descriptor : _descriptors) {
-                if (descriptor != null) {
-                    if (descriptor.isPersistOnSuccessfulClose()) {
-                        descriptor.getChannel().release(new FileCorruptedCacheException(
-                              "File was opened with Persist On Successful Close and client was "
-                                    + "disconnected due to an error: " +
-                                    t.getMessage(), t));
-                    } else if (!(
-                          descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)
-                                && t instanceof IOException)) {
-                        descriptor.getChannel().release(t);
-                    } else {
-                        /*
-                         *  Analogously to the exclusion of READ channels in the
-                         *  channelInactive method (see explanation above).
-                         *
-                         *  Here we limit the exclusion to an actual instance of IOException on READ
-                         *  (the stall could present itself eventually as a broken pipe exception).
-                         */
-                        _server.scheduleReconnectTimerForMover(descriptor);
-                        _log.debug(
-                              "{} exceptionCaught ({}), starting timer for reconnect with mover {}.",
-                              ctx.channel(), t.toString(), descriptor.getChannel().getMoverUuid());
-                    }
+            writeLock.lock();
+            try {
+                for (FileDescriptor descriptor : _descriptors) {
+                    if (descriptor != null) {
+                        if (descriptor.isPersistOnSuccessfulClose()) {
+                            descriptor.getChannel().release(new FileCorruptedCacheException(
+                                  "File was opened with Persist On Successful Close and client was "
+                                        + "disconnected due to an error: " +
+                                        t.getMessage(), t));
+                        } else if (!(
+                              descriptor.getChannel().getIoMode().contains(StandardOpenOption.READ)
+                                    && t instanceof IOException)) {
+                            descriptor.getChannel().release(t);
+                        } else {
+                            /*
+                             *  Analogously to the exclusion of READ channels in the
+                             *  channelInactive method (see explanation above).
+                             *
+                             *  Here we limit the exclusion to an actual instance of IOException on READ
+                             *  (the stall could present itself eventually as a broken pipe exception).
+                             */
+                            _server.scheduleReconnectTimerForMover(descriptor);
+                            _log.debug(
+                                  "{} exceptionCaught ({}), starting timer for reconnect with mover {}.",
+                                  ctx.channel(), t.toString(),
+                                  descriptor.getChannel().getMoverUuid());
+                        }
 
-                    if (descriptor instanceof TpcWriteDescriptor) {
-                        ((TpcWriteDescriptor) descriptor).fireDelayedSync(kXR_error,
-                              t.getMessage());
+                        if (descriptor instanceof TpcWriteDescriptor) {
+                            ((TpcWriteDescriptor) descriptor).fireDelayedSync(kXR_error,
+                                  t.getMessage());
+                        }
                     }
                 }
+                removeAllDescriptorsAtomically();
+            } finally {
+                writeLock.unlock();
             }
-            _descriptors.clear();
             ctx.close();
         } else {
             Thread me = Thread.currentThread();
@@ -400,8 +423,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
                 FileStatus stat = msg.isRetStat() ? stat(file) : null;
 
-                int fd = getUnusedFileDescriptor();
-                _descriptors.set(fd, descriptor);
+                int fd = addDescriptor(descriptor);
 
                 _redirectingDoor = file.getProtocolInfo().getDoorAddress();
                 file = null;
@@ -470,15 +492,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
 
             case FHANDLE:
                 int fd = msg.getFhandle();
-
-                if (!isValidFileDescriptor(fd)) {
-                    _log.warn("Could not find a file descriptor for handle {}", fd);
-                    throw new XrootdException(kXR_FileNotOpen,
-                          "The file handle does not refer to an open " +
-                                "file.");
-                }
-
-                FileDescriptor descriptor = _descriptors.get(fd);
+                FileDescriptor descriptor = getDescriptor(fd);
                 if (descriptor instanceof TpcWriteDescriptor) {
                     _log.debug("Request to stat {} is for third-party transfer.", msg);
                     return ((TpcWriteDescriptor) descriptor).handleStat(msg);
@@ -490,7 +504,6 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                         throw new XrootdException(kXR_IOError, e.getMessage());
                     }
                 }
-
             default:
                 throw new XrootdException(kXR_NotFile, "Unexpected stat target");
         }
@@ -571,17 +584,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
           throws XrootdException {
         int fd = msg.getFileHandle();
 
-        if (!isValidFileDescriptor(fd)) {
-            _log.warn("Could not find a file descriptor for handle {}", fd);
-            throw new XrootdException(kXR_FileNotOpen,
-                  "The file handle does not refer to an open " +
-                        "file.");
-        }
-
         if (msg.bytesToRead() == 0) {
             return withOk(msg);
         } else {
-            return new ChunkedFileDescriptorReadResponse(msg, _maxFrameSize, _descriptors.get(fd));
+            return new ChunkedFileDescriptorReadResponse(msg, _maxFrameSize, getDescriptor(fd));
         }
     }
 
@@ -605,12 +611,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
         for (EmbeddedReadRequest req : list) {
             int fd = req.getFileHandle();
 
-            if (!isValidFileDescriptor(fd)) {
-                _log.warn("Could not find file descriptor for handle {}", fd);
-                throw new XrootdException(kXR_FileNotOpen,
-                      "Descriptor for the embedded read request "
-                            + "does not refer to an open file.");
-            }
+            /*
+             * checks for validity.
+             */
+            getDescriptor(fd);
 
             int totalBytesToRead = req.BytesToRead() +
                   ReadVResponse.READ_LIST_HEADER_SIZE;
@@ -623,8 +627,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
             }
         }
 
-        return new ChunkedFileDescriptorReadvResponse(msg, _maxFrameSize,
-              new ArrayList<>(_descriptors));
+        return new ChunkedFileDescriptorReadvResponse(msg, _maxFrameSize, copyDescriptors());
     }
 
     /**
@@ -638,23 +641,23 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
           throws XrootdException {
         int fd = msg.getFileHandle();
 
-        if ((!isValidFileDescriptor(fd))) {
-            _log.warn("No file descriptor for file handle {}", fd);
-            throw new XrootdException(kXR_FileNotOpen,
-                  "The file descriptor does not refer to " +
-                        "an open file.");
-        }
-
-        FileDescriptor descriptor = _descriptors.get(fd);
-        if (!(descriptor instanceof WriteDescriptor)) {
-            _log.warn("File descriptor for handle {} is read-only, user " +
-                  "tried to write.", fd);
-            throw new XrootdException(kXR_FileNotOpen,
-                  "Tried to write on read only file.");
-        }
-
+        writeLock.lock();
         try {
+            FileDescriptor descriptor = getDescriptorAtomically(fd);
+            if (descriptor == null) {
+                _log.warn("Descriptor was removed while this call was in flight: {}.", msg);
+                throw new XrootdException(kXR_FileNotOpen, "File unexpectedly closed.");
+            }
+
+            if (!(descriptor instanceof WriteDescriptor)) {
+                _log.warn("File descriptor for handle {} is read-only, user " +
+                      "tried to write.", fd);
+                throw new XrootdException(kXR_FileNotOpen,
+                      "Tried to write on read only file.");
+            }
+
             descriptor.write(msg);
+            return withOk(msg);
         } catch (OutOfDiskException e) {
             throw new XrootdException(kXR_NoSpace, e.getMessage());
         } catch (ClosedChannelException e) {
@@ -662,8 +665,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                   "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
+        } finally {
+            writeLock.unlock();
         }
-        return withOk(msg);
     }
 
     /**
@@ -676,17 +680,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
     protected XrootdResponse<SyncRequest> doOnSync(ChannelHandlerContext ctx, SyncRequest msg)
           throws XrootdException {
         int fd = msg.getFileHandle();
-
-        if (!isValidFileDescriptor(fd)) {
-            _log.warn("Could not find file descriptor for handle {}", fd);
-            throw new XrootdException(kXR_FileNotOpen,
-                  "The file descriptor does not refer to an " +
-                        "open file.");
-        }
-
-        FileDescriptor descriptor = _descriptors.get(fd);
-
+        writeLock.lock();
         try {
+            FileDescriptor descriptor = getDescriptorAtomically(fd);
+            if (descriptor == null) {
+                _log.warn("Descriptor was removed while this call was in flight: {}.", msg);
+                throw new XrootdException(kXR_FileNotOpen, "File unexpectedly closed.");
+            }
             return descriptor.sync(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
@@ -697,6 +697,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
             throw new XrootdException(kXR_ServerError,
                   "The server was interrupted; sync "
                         + "could not complete.");
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -710,13 +712,6 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
     protected XrootdResponse<CloseRequest> doOnClose(ChannelHandlerContext ctx, CloseRequest msg)
           throws XrootdException {
         int fd = msg.getFileHandle();
-
-        if (!isValidFileDescriptor(fd)) {
-            _log.warn("Could not find file descriptor for handle {}", fd);
-            throw new XrootdException(kXR_FileNotOpen,
-                  "The file descriptor does not refer to an " +
-                        "open file.");
-        }
 
         /*
          *  While there is currently no provision in the dCache xroot implementation
@@ -748,8 +743,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
          *  The alternative adopted here is to implement a forcible close by releasing
          *  all references to the mover.
          */
-        NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel
-              = _descriptors.get(fd).getChannel();
+        FileDescriptor descriptor = getDescriptor(fd);
+        NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel = descriptor.getChannel();
 
         /*
          *  Stop any timer in case this is a reconnect.
@@ -775,7 +770,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                     respond(ctx, withError(msg, kXR_ServerError, cause.toString()));
                 }
             } finally {
-                _descriptors.set(fd, null);
+                removeDescriptor(fd);
             }
         }, MoreExecutors.directExecutor());
 
@@ -871,16 +866,84 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
         return _descriptors.size() - 1;
     }
 
+    private int addDescriptor(FileDescriptor descriptor) {
+        writeLock.lock();
+        try {
+            int fd = getUnusedFileDescriptor();
+            _descriptors.set(fd, descriptor);
+            return fd;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private List<FileDescriptor> copyDescriptors() {
+        readLock.lock();
+        try {
+            return new ArrayList<>(_descriptors);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    private FileDescriptor getDescriptor(int fd) throws XrootdException {
+        readLock.lock();
+        try {
+            boolean valid =
+                  fd >= 0 && fd < _descriptors.size() && _descriptors.get(fd) != null;
+            if (!valid) {
+                _log.warn("Could not find a file descriptor for handle {}", fd);
+                throw new XrootdException(kXR_FileNotOpen,
+                      "The file handle does not refer to an open file.");
+            }
+            return _descriptors.get(fd);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     /**
-     * Test if the file descriptor actually refers to a file descriptor that is contained in the
-     * descriptor list
-     *
-     * @param fd file descriptor number
-     * @return true, if the descriptor number refers to a descriptor in the list, false otherwise
+     * Specialized verion for getting descriptor under atomic write lock block.
      */
-    private boolean isValidFileDescriptor(int fd) {
-        return fd >= 0 && fd < _descriptors.size() &&
-              _descriptors.get(fd) != null;
+    @GuardedBy("writeLock")
+    private FileDescriptor getDescriptorAtomically(int fd) throws XrootdException {
+        if (fd < 0 || fd >= _descriptors.size()) {
+            _log.warn("Could not find file descriptor for handle {}", fd);
+            throw new XrootdException(kXR_FileNotOpen,
+                  "The file descriptor does not refer to an open file.");
+        }
+        return _descriptors.get(fd);
+    }
+
+    @GuardedBy("writeLock")
+    private void removeAllDescriptorsAtomically() {
+        _descriptors.forEach(FileDescriptor::close);
+        _descriptors.clear();
+    }
+
+    private void removeDescriptor(int fd) {
+        writeLock.lock();
+        try {
+            FileDescriptor descriptor = _descriptors.get(fd);
+            if (descriptor != null) {
+                descriptor.close();
+            }
+            _descriptors.set(fd, null);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Specialized verion for removing descriptor under atomic write lock block.
+     */
+    @GuardedBy("writeLock")
+    private void removeDescriptorAtomically(FileDescriptor descriptor) {
+        descriptor.close();
+        int index = _descriptors.indexOf(descriptor);
+        if (index >= 0 && index < _descriptors.size()) {
+            _descriptors.set(index, null);
+        }
     }
 
     private FileStatus stat(RepositoryChannel file)
