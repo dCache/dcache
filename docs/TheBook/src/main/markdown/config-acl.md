@@ -334,3 +334,4 @@ Obtain ACL information by absolute path
         USER:87552:+lfd:f
 
 The information is provided twice. The first part gives detailed information about the ACL. The second part, after the `In extra format:` heading, provides a list of ACEs that may be used when updating the ACL using the `setfacl` command.
+

@@ -5,7 +5,7 @@ This part contains guides for specific tasks a system administrator might want t
 
 ## Table of Contents
 
-1. [dCache Clients.](cookbook-clients.md)
+2. [dCache Clients](cookbook-clients.md)
     - [GSI-FTP](cookbook-clients.md#gsi-ftp)
     - [Listing a directory](cookbook-clients.md#listing-a-directory)
     - [Checking a file exists](cookbook-clients.md#checking-a-file-exists)
@@ -25,7 +25,17 @@ This part contains guides for specific tasks a system administrator might want t
       - [The lcg-gt Application](cookbook-clients.md#the-lcg-gt-application)
       - [The lcg-sd Application](cookbook-clients.md#the-lcg-sd-application)
 
-1. [Pool Operations](cookbook-pool.md)
+3. [Using dcap](cookbook-dCap.md)
+
+4. [High Availability with Replicable Services](cookbook-ha-with-replicable-services.md)
+    - [Pools](cookbook-ha-with-replicable-services.md#pools)
+    - [Doors](cookbook-ha-with-replicable-services.md#doors)
+    - [Critical Central Services](cookbook-ha-with-replicable-services.md#critical-central-services)
+    - [Non-critical Central Services](cookbook-ha-with-replicable-services.md#non-critical-central-services)
+
+5. [Migration of classic SE (nfs, disk) to dCache](cookbook-classic-se-to-dcache.md)
+
+6. [Pool Operations](cookbook-pool.md)
     - [Checksums](cookbook-pool.md#checksums)
     - [How to configure checksum calculation](cookbook-pool.md#how-to-configure-checksum-calculation)
     - [Migration Module](cookbook-pool.md#migration-module)
@@ -34,30 +44,45 @@ This part contains guides for specific tasks a system administrator might want t
     - [Examples](cookbook-pool.md#examples)
     - [Renaming a Pool](cookbook-pool.md#renaming-a-pool)
     - [Pinning Files to a Pool](cookbook-pool.md#pinning-files-to-a-pool)
-    - [Running pool with CEPH backend](cookbook-pool.md#running-pool-with-ceph-backend)
+    - [Running pool with CEPH backend](cookbook-pool.md#running-pools-with-ceph-backends)
+    - [Keeping metadata on MongoDB](cookbook-pool.md#keeping-metadata-on-mongodb)
+    - [Handling orphan movers](cookbook-pool.md#handling-orphan-movers)
 
-1. [PostgreSQL and dCache](cookbook-postgres.md)
-    - [Installing a PostgreSQL Server](cookbook-postgres.md)
-    - [Configuring Access to PostgreSQL](cookbook-postgres.md)
-    - [Performance of the PostgreSQL Server](cookbook-postgres.md)
+7. [PostgreSQL and dCache](cookbook-postgres.md)
+    - [Installing a PostgreSQL Server](cookbook-postgres.md#installing-a-psql-server)
+    - [Configuring Access to PostgreSQL](cookbook-postgres.md#configuring-access-to-psql)
+    - [Performance of the PostgreSQL Server](cookbook-postgres.md#performance-of-the-postgresql-server)
 
-1. [Complex Network Configuration](cookbook-net.md)
+8. [Transport Security](cookbook-transport-security.md)
+    - [Configuring a secure WebDAV door](cookbook-transport-security.md#configuring-a-secure-webdav-door)
+    - [Configuring Java](cookbook-transport-security.md#configuring-java)
+    - [Testing protocols and cipher suites](cookbook-transport-security.md#testing-protocols-and-cipher-suites)
+    - [HTTP header hardening](cookbook-transport-security.md#http-header-hardening)
+    - [DNS CAA records](cookbook-transport-security.md#dns-caa-records)
+
+9. [Writing HSM Plugins](cookbook-writing-hsm-plugins.md)
+    - [Nearline Requests](cookbook-writing-hsm-plugins.md#nearline-requests)
+    - [Identifying Replicas](cookbook-writing-hsm-plugins.md#identifying-replicas)
+    - [Request Lifecycle](cookbook-writing-hsm-plugins.md#request-lifecycle)
+    - [The Nearline Storage SPI](cookbook-writing-hsm-plugins.md#the-nearline-storage-spi)
+    - [AbstractBlockingNearlineStorage](cookbook-writing-hsm-plugins.md#abstractblockingnearlinestorage)
+    - [Maven Archetype](cookbook-writing-hsm-plugins.md#maven-archetype)
+    - [Examples](cookbook-writing-hsm-plugins.md#examples)
+
+10. [Advanced Tuning](cookbook-advanced.md)
+    - [Multiple Queues for Movers in each Pool](cookbook-advanced.md#multiple-queues-for-movers-in-each-pool)
+       - [Description](cookbook-advanced.md#description)
+       - [Solution](cookbook-advanced.md#solution)
+       - [Configuration](cookbook-advanced.md#configuration)
+       - [Tunable Properties for Multiple Queues](cookbook-advanced.md#tunable-properties-for-multiple-queues)
+    - [Tunable Properties](cookbook-advanced.md#tunable-properties)
+       - [dCap](cookbook-advanced.md#dcap)
+       - [GridFTP](cookbook-advanced.md#gridftp)
+       - [SRM](cookbook-advanced.md#srm)
+
+11. [Complex Network Configuration](cookbook-net.md)
     - [Firewall Configuration](cookbook-net.md#firewall-configuration)
     - [Basic Installation](cookbook-net.md#basic-installation)
     - [Multi-Node with Firewalls](cookbook-net.md#multi-node-with-firewalls)
     - [GridFTP Connections via two or more Network Interfaces](cookbook-net.md#gridftp-connections-via-two-or-more-network-interfaces)
     - [GridFTP with Pools in a Private Subnet](cookbook-net.md#gridftp-with-pools-in-a-private-subnet)
-
-1. [Advanced Tuning](cookbook-advanced.md)
-    - [Multiple Queues for Movers in each Pool](cookbook-advanced.md#multiple-queues-for-movers-in-each-pool)
-      - [Description](cookbook-advanced.md#description)
-      - [Solution](cookbook-advanced.md#solution)
-      - [Configuration](cookbook-advanced.md#configuration)
-      - [Tunable Properties for Multiple Queues](cookbook-advanced.md#tunable-properties-for-multiple-queues)
-
-    - [Tunable Properties](cookbook-advanced.md#tunable-properties)
-      - [dCap](cookbook-advanced.md#dcap)
-      - [GridFTP](cookbook-advanced.md#gridftp)
-      - [SRM](cookbook-advanced.md#srm)
-
-    - [Writing HSM Plugins](cookbook-writing-hsm-plugins.md)

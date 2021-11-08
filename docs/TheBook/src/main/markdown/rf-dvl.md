@@ -1,8 +1,0 @@
-Developer Reference
-===================
-
-Cells
-=====
-
-Modules
-=======

@@ -40,16 +40,18 @@ Get the valid / recognized checksum types for dCache.
 
     cat ".(checksums)()"
 
-##### RETURNS:
+### RETURNS:
 
 A new-line delimited list of checksum type names.
 
-##### EXAMPLE:
+### EXAMPLE:
 
     $ cat ".(checksums)()"
     ADLER32
     MD5
     MD4
+
+***
 
 ## GET CHECKSUM(S)
 
@@ -59,14 +61,16 @@ Get checksum types and checksums for a given file.
 
     cat ".(get)(<filename>)(checksum[s])"
 
-##### RETURNS:
+### RETURNS:
 
 A comma-delimited list of `type:value` pairs for all checksums stored in the database.
 
-##### EXAMPLE:
+### EXAMPLE:
 
     $ cat ".(get)(test_file-Thu_Oct_23_10:39:37_CDT_2014-109)(checksums)"
     $ ADLER32:66300001
+
+***
 
 ## SET CHECKSUM
 
@@ -79,7 +83,7 @@ values for any type.
 
     touch ".(fset)(<filename>)(checksum)(<type>)(<value>)"
 
-##### EXAMPLES:
+### EXAMPLES:
 
     [arossi@otfrid volatile]$ touch testfile
 
@@ -108,6 +112,7 @@ values for any type.
     [root@otfrid volatile]# cat ".(get)(testfile)(checksum)"
     ADLER32:fffffff0, MD5:12341234123412345678567856785678
 
+***
 
 ## GET PIN(S)
 
@@ -117,7 +122,7 @@ Get pins on a given file.
 
     cat ".(get)(<filename>)(pins)"
 
-##### RETURNS:
+### RETURNS:
 
 A simple table of information about pins.  Each pin is represented by
 a row in the table.  Each row has the following information, separated
@@ -142,7 +147,7 @@ processing is ongoing. The UNPINNING state indicates that the pin removal
 is ongoing, while state FAILED_TO_UNPIN denotes that the last unpinning
 attempt failed. It will be retried later on.
 
-##### EXAMPLES:
+### EXAMPLES:
 
 Response when a file has no pins:
 
@@ -160,15 +165,15 @@ cat ".(get)(my-file.dat)(pins)"
 
 ***
 
-#### PIN/STAGE
+## PIN/STAGE
 
 Allows users to pin or stage files.
 
-##### USAGE:
+### USAGE:
 
     touch ".(fset)(<filename>)(<operation>)(<duration>)(<unit>)"
 
-##### OPTIONS:
+### OPTIONS:
 
 ``operation`` can be replaced by:
 
@@ -197,7 +202,7 @@ and defaults to 300 (seconds), or 5 minutes.
 
 This argument is optional and defaults to ``SECONDS``.
 
-##### USAGE:
+### USAGE DETAILS:
 
 A pin is a promise from dCache to store the file on a low-latency
 device, such as a disk.  This is useful if the file would otherwise be
@@ -242,7 +247,7 @@ Immediately after removing a pin, it has state READY_TO_UNPIN. When the
 processing has completed, the pin will disappear from the pin list. If
 the pin removal fails, the pin ends up in state FAILED_TO_UNPIN; it will be retried later on.
 
-##### EXAMPLES:
+### EXAMPLES:
 
 Pin file for 30 seconds:
 
@@ -267,21 +272,21 @@ Pool](https://www.dcache.org/manuals/Book-2.16/Book-fhs.shtml#cb-pool-pin).
 
 ***
 
-#### GET/SET TAPE LOCATION URI
+## GET/SET TAPE LOCATION URI
 
 Stores, retrieves and modifies the URI string(s) which define an HSM/tape location.  A normal user can read and write once to this file.  Root can overwrite and append as well.
 
-##### USAGE:
+### USAGE:
 
     cat ".(suri)(<file name>)"
     echo [...] > ".(suri)(<file name>)"
     echo [...] >> ".(suri)(<file name>)"
 
-##### RETURNS:
+### RETURNS:
 
     cat will return a list of locations (there may be multiple ones).
 
-##### EXAMPLE:
+### EXAMPLE:
 
     $ cat ".(suri)(data001)"
     $ enstore://enstore/?volume=VOL001&location_cookie=0000_000000000_0000001&size=234653&file_family=standard&map_file=&
@@ -322,7 +327,7 @@ Stores, retrieves and modifies the URI string(s) which define an HSM/tape locati
     $ cat ".(suri)(data001)"
     $
 
-##### NOTES:
+### NOTES:
 
 We record here a peculiar problem concerning permission error reporting using bash built-in 'echo'.
 

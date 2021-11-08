@@ -1,15 +1,9 @@
 Chapter 27. dCache Clients
 ===========================
 
-## Table of Contents
-
-+ [The SRM Client Suite](#the-srm-client-suite)
-
-  [srmcp](#srmcp) — Copy a file from or to an SRM or between two SRMs.
-
-+ [dccp](#dccp)
-  [dccp](#dccp) — Copy a file from or to a dCache server.
-
+-----
+[TOC bullet hierarchy]
+-----
 
 ## The SRM Client Suite
 
@@ -74,6 +68,8 @@ Example:
 ```console-user
 srmcp --streams_num=1 --server_mode=active sourceUrl destinationUrl
 ```
+
+## The DCCP Utility
 
 ### dccp
 

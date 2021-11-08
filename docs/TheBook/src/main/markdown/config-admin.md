@@ -166,7 +166,7 @@ Just adding a user in the `dcache.kpwd` file is not sufficient. The generated us
 See [the section called “Creating a new user”](#creating-a-new-user) to learn how to create the user in the admin interface and set the rights.
 
 
-## Hot to use the Admin Interface
+## How to use the Admin Interface
 
 Admin interface allows you to execute shell commands, connect to other cells and execute their supported commands or
 send supported cell commands to other cells. Once logged in you are prompted to use help `Type "\?" for help`.

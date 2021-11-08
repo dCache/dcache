@@ -15,127 +15,122 @@ dCache Book
 
 -   [Chapter II. Configuration of dCache](config.md)
 
-    -   Individual services
+    - Individual services
 
-        -   [admin service](config-admin.md)
+        - [admin service](config-admin.md)
 
-        -   [alarms service](config-alarms.md)
+        - [alarms service](config-alarms.md)
 
-        -   [billing service](config-billing.md)
+        - [billing service](config-billing.md)
 
-        -   [bulk service](config-bulk.md)
+        - [bulk service](config-bulk.md)
 
-        -   [cleaner service](config-cleaner.md)
+        - [cleaner service](config-cleaner.md)
 
-        -   dcap service
+        - dcap service
 
-        -   [frontend service](config-frontend.md)
+        - [frontend service](config-frontend.md)
 
-        -   [ftp service](config-ftp.md)
+        - [ftp service](config-ftp.md)
 
-        -   [gplazma service](config-gplazma.md)
+        - [history service](config-history.md)
 
-        -   [history service](config-history.md)
+        - httpd service
 
-        -   [hoppingmanager service](config-hopping.md)
+        - [info service](config-info-provider.md)
 
-        -   httpd service
+        - [missing-files service](config-missing-files.md)
 
-        -   [info service](config-info-provider.md)
+        - [nfs service](config-nfs.md)
 
-        -   [missing-files service](config-missing-files.md)
+        - [pinmanager service](config-pinmanager.md)
 
-        -   [nfs service](config-nfs.md)
+        - pnfsmanager service
 
-        -   [pinmanager service](config-pinmanager.md)
+        - pool service
 
-        -   pnfsmanager service
+        - [poolmanager service](config-PoolManager.md)
 
-        -   pool service
+        - [resilience service](config-resilience.md)
 
-        -   [poolmanager service](config-PoolManager.md)
+        - spacemanager service
 
-        -   [resilience service](config-resilience.md)
+        - [srm service](config-SRM.md)
 
-        -   spacemanager service
+        - srmmanager service
 
-        -   [srm service](config-SRM.md)
+        - [statistics service](config-statistics.md)
 
-        -   srmmanager service
+        - topo service
 
-        -   [statistics service](config-statistics.md)
+        - transfermanagers service
 
-        -   topo service
+        - webdav service
 
-        -   transfermanagers service
+        - [xroot service](config-xrootd.md)
 
-        -   webdav service
+    - Overarching concepts
 
-        -   [xrootd service](config-xrootd.md)
+        - [ACLs in dCache](config-acl.md)
 
-        -   [zookeeper service](config-zookeeper.md)
+        - [Chimera](config-chimera.md)
 
-    -   Overarching concepts
+        - [Cell Message passing](config-message-passing.md)
 
-        -   [Chimera](config-chimera.md)
+        - [dCache Tertiary Storage System Interface](config-hsm.md)
 
-        -   [Cell Message passing](config-message-passing.md)
+        - [File Hopping](config-hopping.md)
 
-        -   [dCache Tertiary Storage System Interface](config-hsm.md)
+        - [gPlazma: Authorization in dCache](config-gplazma.md)
 
-        -   [File Hopping](config-hopping.md)
+        - [Kafka](kafkaproducer.md)
 
-        -   [Authorization in dCache](config-gplazma.md)
+        - [User and Group Quota](quota.md)
 
-        -   [dCache as an xroot Server](config-xrootd.md)
+        - [Stage Protection](config-stage-protection.md)
 
-        -   [dCache as an NFS 4.1 Server](config-nfs.md)
+        - [Using Space Reservations without SRM](config-write-token.md)
 
-        -   [dCache Storage Resource Manager (SRM)](config-SRM.md)
+        - [Storage Descriptor / SRR](srr.md)
 
-        -   [dCache Frontend Service](config-frontend.md)
-
-        -   [ACLs in dCache](config-acl.md)
-
-        -   [GLUE Info Provider](config-info-provider.md)
-
-        -   [Stage Protection](config-stage-protection.md)
-
-        -   [Using Space Reservations without SRM](config-write-token.md)
-
-        -   [Zookeeper and dCache](config-zookeeper.md)
-
-        -   [Storage Descriptor / SRR](srr.md)
-
-        -   [Using Kafka](kafkaproducer.md)
-
-	-   [User and Group Quota](quota.md)
+        - [Zookeeper](config-zookeeper.md)
 
 -   [Chapter III. Cookbook](cookbook.md)
 
-    -   [High Availability with Replicable
-        Services](cookbook-ha-with-replicable-services.md)
+    - [dCache Clients](cookbook-clients.md)
 
-    -   [dCache Clients](cookbook-clients.md)
+    - [Using dcap](cookbook-dCap.md)
 
-    -   [Pool Operations](cookbook-pool.md)
+    - [High Availability with Replicable Services](cookbook-ha-with-replicable-services.md)
 
-    -   [PostgreSQL and dCache](cookbook-postgres.md)
+    - [Migration of classic SE (nfs, disk) to dCache](cookbook-classic-se-to-dcache.md)
 
-    -   [Complex Network Configuration](cookbook-net.md)
+    - [Pool Operations](cookbook-pool.md)
 
-    -   [Advanced Tuning](cookbook-advanced.md)
+    - [PostgreSQL and dCache](cookbook-postgres.md)
 
-    -   [Transport Security](cookbook-transport-security.md)
+    - [Transport Security](cookbook-transport-security.md)
+
+    - [Writing HSM Plugins](cookbook-writing-hsm-plugins.md)
+
+    - [Advanced Tuning](cookbook-advanced.md)
+
+    - [Complex Network Configuration](cookbook-net.md)
 
 -   [Chapter IV. Reference](reference.md)
 
-    -   [dCache Clients](rf-clients-srm.md)
+    - [dCache Clients](rf-clients.md)
 
-    -   [dCache Cell Commands](rf-cc-common.md)
+    - [Common Cell Commands](rf-cc-common.md)
 
-    -   [dCache Default Port Values](rf-ports.md)
+    - [dCache NFS Dot Commands](rf-dot-commands.md)
 
-    -   [dCache NFS Dot Commands](rf-dot-commands.md)
+    - [PnfsManager Commands](rf-cc-pnfsm.md)
 
-    -   [Glossary](rf-glossary.md)
+    - [Pool Commands](rf-cc-pool.md)
+
+    - [PoolManager Commands](rf-cc-pm.md)
+
+    - [dCache Default Port Values](rf-ports.md)
+
+    - [Glossary](rf-glossary.md)

@@ -2,7 +2,7 @@ Migration of classic SE ( nfs, disk ) to dCache
 ===============================================
 
 This chapter contains a guide how-to migrate a classic SE to dCache without
-coping the data.
+copying the data.
 
 -----
 [TOC bullet hierarchy]

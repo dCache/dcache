@@ -1,4 +1,4 @@
-Protocols
+DCAP
 =========
 
 -----
@@ -183,7 +183,7 @@ in csh/tcsh you invoke:
 
 here min and max are again the lower and upper bounds of the port range
 
-## Disableing unauthenticated DCAP via SRM
+## Disabling unauthenticated DCAP via SRM
 
 In some cases SRM transfers fail because they are tried via the plain DCAP protocol (URL starts with `dcap://`). Since plain DCAP is unauthenticated, the dCache server will have no information about the user trying to access the system. While the transfer will succeed if the UNIX file permissions allow access to anybody (e.g. mode 777), it will fail otherwise.
 

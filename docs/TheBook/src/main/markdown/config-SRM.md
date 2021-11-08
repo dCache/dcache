@@ -588,7 +588,7 @@ Possible values are `true` or `false` and the default value is false.
 
 This is analogous to implicit space reservations performed by the srm, except that these reservations are created by the `spacemanager` itself. Since an `SRM` client uses a non-`SRM` protocol for the actual upload, setting the above option to true while disabling implicit space reservations in the `srm`, will still allow files to be uploaded to a link group even when no space token is provided. Such a configuration should however be avoided: If the srm does not create the reservation itself, it has no way of communicating access latency, retention policy, file size, nor lifetime to `spacemanager`.
 
-### SRM configuration for experts
+## SRM configuration for experts
 
 There are a few parameters in
 `/usr/share/dcache/defaults/*.properties` that you might find useful

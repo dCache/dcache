@@ -94,6 +94,6 @@ This makes it fairly straightforward to add new plugins in the future.
 ## Admin commands
 
 The bulk service comes with a full set of admin shell commands which allow one
-to list the running jobs and stored requests, to launch and cancel requests, 
+to list the running jobs and stored requests, to launch and cancel requests,
 to list the available plugin types and to inspect the arguments used when
-submitting a request of a particular type. 
+submitting a request of a particular type.

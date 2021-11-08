@@ -3,25 +3,31 @@ Part IV. Reference
 
 ## Table of Contents
 
-+ [27. dCache Clients](rf-clients-srm.md)
-    - [The SRM Client Suite](rf-clients-srm.md#the-srm-client-suite)
-    - [srmcp](rf-clients-srm.md#srmcp) — Copy a file from or to an SRM or between two SRMs.
-    - [dccp](rf-clients-srm.md#dccp)
-    - [dccp](rf-clients-srm.md#dccp) — Copy a file from or to a dCache server.
++ [dCache Clients](rf-clients.md)
+    - [The SRM Client Suite](rf-clients.md#the-srm-client-suite)
+    - [The DCCP Utility](rf-clients.md#the-dccp-utility) — Copy a file from or to a dCache server.
 
-+ [28. dCache Cell Commands](rf-cc-common.md)
 + [Common Cell Commands](rf-cc-common.md)
     - [pin](rf-cc-common.md#pin) — Adds a comment to the pinboard.
     - [info](rf-cc-common.md#info) — Print info about the cell.
-    - [dump pinboard](rf-cc-common.md#dump-inboard) — Dump the full pinboard of the cell to a file.
+    - [dump pinboard](rf-cc-common.md#dump-pinboard) — Dump the full pinboard of the cell to a file.
     - [show pinboard](rf-cc-common.md#show-pinboard) — Print a part of the pinboard of the cell to STDOUT.
+
++ [dCache NFS Dot Commands](rf-dot-commands.md)
+    - [get locality](rf-dot-commands.md#get-locality) — Returns the media types on which the file is currently stored.
+    - [get checksum types](rf-dot-commands.md#get-checksum-types) — Get the recognized checksum types for dCache
+    - [get checksum(s)](rf-dot-commands.md#get-checksums) — Get checksum types and checksums for a given file.
+    - [set checksum](rf-dot-commands.md#set-checksum) — Set a checksum value for a file.
+    - [get pin(s)](rf-dot-commands.md#get-pins) — Get pins on a given file.
+    - [pin/stage](rf-dot-commands.md#pinstage) — Allows users to pin or stage files.
+    - [get/set tape location uri](rf-dot-commands.md#getset-tape-location-uri) — Stores, retrieves and modifies the URI string(s) which define an HSM/tape location.
 
 + [PnfsManager Commands](rf-cc-pnfsm.md)
     - [pnfsidof](rf-cc-pnfsm.md#pnfsidof)  — Print the pnfs id of a file given by its global path.
     - [flags remove](rf-cc-pnfsm.md#flags-remove)  — Remove a flag from a file.
     - [flags ls](rf-cc-pnfsm.md#flags-ls)  — List the flags of a file.
     - [flags set](rf-cc-pnfsm.md#flags-set) — Set a flag for a file.
-    - [metadataof](rf-cc-pnfsm.md#metadata-of)  — Print the meta-data of a file.
+    - [metadataof](rf-cc-pnfsm.md#metadataof)  — Print the meta-data of a file.
     - [pathfinder](rf-cc-pnfsm.md#pathfinder)  — Print the global or local path of a file from its PNFS id.
     - [set meta](rf-cc-pnfsm.md#set-meta)  — Set the meta-data of a file.
     - [storageinfoof](rf-cc-pnfsm.md#storageinfoof)  — Print the storage info of a file.
@@ -32,7 +38,7 @@ Part IV. Reference
     - [st set max active](rf-cc-pool.md#st-set-max-active) — Set the maximum number of active store transfers.
     - [rh set max active](rf-cc-pool.md#rh-set-max-active) — Set the maximum number of active restore transfers.
     - [mover set max active](rf-cc-pool.md#mover-set-max-active) — Set the maximum number of active client transfers.
-    - [mover set max active -queue=p2p](rf-cc-pool.md#mover-set-max-active-queuep2p) — Set the maximum number of active pool-to-pool server transfers.
+    - [mover set max active -queue=p2p](rf-cc-pool.md#mover-set-max-active--queuep2p) — Set the maximum number of active pool-to-pool server transfers.
     - [pp set max active](rf-cc-pool.md#pp-set-max-active) — Set the value used for scaling the performance cost of pool-to-pool client transfers analogous to the other
     - [set gap](rf-cc-pool.md#set-gap)    — Set the gap parameter - the size of free space below which it will be assumed that the pool is full within the cost calculations.
     - [set breakeven](rf-cc-pool.md#set-breakeven)   — Set the breakeven parameter - used within the cost calculations.
