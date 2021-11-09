@@ -124,6 +124,13 @@ public class UpdateQoSJob extends SingleTargetJob implements NamespaceHandlerAwa
     }
 
     @Override
+    public void pollWaiting() {
+        if (replyHandler != null) {
+            replyHandler.handlePinReply();
+        }
+    }
+
+    @Override
     protected void doRun() {
         if (arguments == null) {
             setError(new IllegalArgumentException("no target qos given."));

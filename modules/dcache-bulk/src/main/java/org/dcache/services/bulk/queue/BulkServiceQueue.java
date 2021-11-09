@@ -83,6 +83,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.dcache.pinmanager.PinManagerAware;
 import org.dcache.services.bulk.BulkRequest;
 import org.dcache.services.bulk.BulkRequestStorageException;
 import org.dcache.services.bulk.BulkServiceException;
@@ -523,8 +524,7 @@ public class BulkServiceQueue implements SignalAware {
      * there and passing them to post-processing.
      *
      * <p>Finally, it checks the size of the running queue for available slots, and fills these
-     * from
-     * the ready queue.
+     * from the ready queue.
      *
      * <p>The sweeper is signalled/awakened and statistics are updated.
      */
@@ -574,8 +574,7 @@ public class BulkServiceQueue implements SignalAware {
          * the ready queue.
          *
          * <p>This method runs before the processNextReady() method, so that the ready queue is
-         * already
-         * filled with all jobs currently available to run.
+         * already filled with all jobs currently available to run.
          */
         private void appendSubmitted() {
             synchronized (submitted) {
@@ -756,8 +755,7 @@ public class BulkServiceQueue implements SignalAware {
          * submitted queue.
          *
          * <p>This method runs before the appendSubmitted() method, so that the append queue also
-         * has
-         * the requests which have become available at this pass.
+         * has the requests which have become available at this pass.
          */
         private void processNextRequests() {
             LOGGER.trace("processNextRequests()");
@@ -791,8 +789,7 @@ public class BulkServiceQueue implements SignalAware {
          * so, it removes it and places it on the waiting queue.
          *
          * <p>Synchronized on the running queue only to avoid ConcurrentModificationExceptions, as
-         * that
-         * queue is only accessed on this thread.
+         * that queue is only accessed on this thread.
          */
         private void removeFromRunning() {
             synchronized (runningQueue) {
@@ -884,6 +881,9 @@ public class BulkServiceQueue implements SignalAware {
                 if (waitingQueue.isEmpty()) {
                     return Collections.EMPTY_LIST;
                 }
+
+                waitingQueue.stream().filter(PinManagerAware.class::isInstance)
+                      .map(PinManagerAware.class::cast).forEach(PinManagerAware::pollWaiting);
 
                 return findJobsToRemove(waitingQueue);
             }
