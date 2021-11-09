@@ -64,4 +64,6 @@ import org.dcache.cells.CellStub;
 public interface PinManagerAware {
 
     void setPinManager(CellStub pinManager);
+
+    default void pollWaiting() {}
 }
