@@ -7,7 +7,7 @@ This part contains descriptions of the components of dCache, their role, functio
 
 - Individual services:
 
-  1. [The Admin Service](config-admin.md)
+  - [The Admin Service](config-admin.md)
       - [First Steps](config-admin.md#first-steps)
       - [Access With SSH](config-admin.md#access-with-ssh)
       - [How to use the Admin Interface](config-admin.md#how-to-use-the-admin-interface)
@@ -15,7 +15,7 @@ This part contains descriptions of the components of dCache, their role, functio
       - [Direct command execution](config-admin.md#direct-command-execution)
       - [Use of the SSH Admin Interface by scripts](config-admin.md#use-of-the-ssh-admin-interface-by-scripts)
 
-  2. [The Alarms Service](config-alarms.md)
+  - [The Alarms Service](config-alarms.md)
      - [The Basic Setup](config-alarms.md#the-basic-setup)
      - [Configure where the alarms service is Running](config-alarms.md#configure-where-the-alarms-service-is-running)
      - [Types of Alarms](config-alarms.md#types-of-alarms)
@@ -28,40 +28,40 @@ This part contains descriptions of the components of dCache, their role, functio
      - [Alarms SPI](config-alarms.md#alarms-spi-service-provider-interface)
      - [Alarms and Kakfa](config-alarms.md#alarms-and-kakfa)
 
-  3. [The Billing Service](config-billing.md)
+  - [The Billing Service](config-billing.md)
      - [The billing log files](config-billing.md#the-billing-log-files)
      - [The billing database](config-billing.md#the-billing-database)
      - [Billing Histogram Data](config-billing.md#billing-histogram-data)
      - [Billing Records](config-billing.md#billing-records)
      - [Upgrading a Previous Installation](config-billing.md#upgrading-a-previous-installation)
 
-  4. [The Bulk Service](config-bulk.md)
+  - [The Bulk Service](config-bulk.md)
      - [Configuring](config-bulk.md#configuring)
      - [Requests, Jobs, and Fairness](config-bulk.md#requests-jobs-and-fairness)
      - [Storage and Recovery](config-bulk.md#storage-and-recovery)
      - [Job plugins](config-bulk.md#job-plugins)
      - [Admin commands](config-bulk.md#admin-commands)
 
-  5. [The Cleaner Service](config-cleaner.md)
+  - [The Cleaner Service](config-cleaner.md)
       - [Configuration](config-cleaner.md#configuration)
       - [Disk Cleaner](config-cleaner.md#disk-cleaner)
       - [HSM Cleaner](config-cleaner.md#hsm-cleaner)
 
-  6. [The Frontend Service](config-frontend.md)
+  - [The Frontend Service](config-frontend.md)
       - [Configuring the Frontend service](config-frontend.md#configuring-the-frontend-service)
       - [Properties controlling monitoring data collection](config-frontend.md#properties-controlling-monitoring-data-collection)
       - [Properties controlling monitoring data access](config-frontend.md#properties-controlling-monitoring-data-access)
       - [Configuring and using the _admin_ role](config-frontend.md#configuring-and-using-the-_admin_-role)
 
-  7. [The FTP Service](config-ftp.md)
+  - [The FTP Service](config-ftp.md)
       - [Introduction](config-ftp.md#introduction)
       - [The Control channel](config-ftp.md#the-control-channel)
       - [Data transfers](config-ftp.md#data-transfers)
       - [Configuration examples](config-ftp.md#configuration-examples)
 
-  8. [dCache History Service](config-history.md)
+  - [dCache History Service](config-history.md)
 
-  9. [The Info Provider Service](config-info-provider.md)
+  - [The Info Provider Service](config-info-provider.md)
       - [Internal collection of information](config-info-provider.md#internal-collection-of-information)
       - [Configuring](config-info-provider.md#configuring-the-info-provider)
       - [Testing](config-info-provider.md#testing-the-info-provider)
@@ -69,23 +69,23 @@ This part contains descriptions of the components of dCache, their role, functio
       - [Troubleshooting BDII problems](config-info-provider.md#troubleshooting-bdii-problems)
       - [Updating information](config-info-provider.md#updating-information)
 
-  10. [The Missing Files Service](config-missing-files.md)
+  - [The Missing Files Service](config-missing-files.md)
        - [Introduction](config-missing-files.md#introduction)
        - [Setting up](config-missing-files.md#setting-up)
 
-  11. [dCache as NFSv4.1 Server](config-nfs.md)
+  - [dCache as NFSv4.1 Server](config-nfs.md)
        - [Setting up](config-nfs.md#setting-up)
        - [Configuring NFSv4.1 door with GSS-API support](config-nfs.md#configuring-nfsv41-door-with-gss-api-support)
        - [Configuring principal-id mapping for NFS access](config-nfs.md#configuring-principal-id-mapping-for-nfs-access)
        - [Managing group ids](config-nfs.md#managing-group-ids)
        - [Accessing directory tags](config-nfs.md#accessing-directory-tags)
 
-  12. [The PinManager Service](config-pinmanager.md)
-      -  [The (Un-)Pinning Concept](config-pinmanager.md#un-pinning-concept)
-      -  [The pin life cycle](config-pinmanager.md#the-pin-life-cycle)
-      -  [Configuring](config-pinmanager.md#configuring)
+  - [The PinManager Service](config-pinmanager.md)
+      - [The (Un-)Pinning Concept](config-pinmanager.md#un-pinning-concept)
+      - [The pin life cycle](config-pinmanager.md#the-pin-life-cycle)
+      - [Configuring](config-pinmanager.md#configuring)
 
-  13. [The PoolManager Service](config-PoolManager.md)
+  - [The PoolManager Service](config-PoolManager.md)
        - [The Pool Selection Mechanism](config-PoolManager.md#the-pool-selection-mechanism)
        - [Links](config-PoolManager.md#links)
        - [Examples](config-PoolManager.md#examples)
@@ -96,7 +96,7 @@ This part contains descriptions of the components of dCache, their role, functio
        - [Classic Partitions](config-PoolManager.md#classic-partitions)
        - [Link Groups](config-PoolManager.md#link-groups)
 
-  14. [The Resilience Service](config-resilience.md)
+  - [The Resilience Service](config-resilience.md)
        - [Configuring the Resilience Service](config-resilience.md#configuring-the-resilience-service)
        - [Resilience Home](config-resilience.md#resilience-home)
        - [Admin Commands](config-resilience.md#admin-commands)
@@ -104,10 +104,10 @@ This part contains descriptions of the components of dCache, their role, functio
        - [Resilience's View of Pool Status](config-resilience.md#resilience-s-view-of-pool-status)
        - [Automatic Staging of Missing CUSTODIAL Replicas](config-resilience.md#automatic-staging-of-missing-custodial-replicas)
        - [Handling of QoS Transitions for Resilient Files](config-resilience.md#handling-of-qos-transitions-for-resilient-files)
-       - [Some typical scenarios part 1: what happens when ...?](config-resilience.md#some-typical-scenarios-part-1-what-happens-when-)
-       - [Some typical scenarios part 2: how do I ...?](config-resilience.md#some-typical-scenarios-part-2-how-do-i-)
+       - [Some typical scenarios part - what happens when ...?](config-resilience.md#some-typical-scenarios-part-1-what-happens-when-)
+       - [Some typical scenarios part - how do I ...?](config-resilience.md#some-typical-scenarios-part-2-how-do-i-)
 
-  15. [dCache Storage Resource Manager](config-SRM.md)
+  - [dCache Storage Resource Manager](config-SRM.md)
         - [Configuring the srm service](config-SRM.md#configuring-the-srm-service)
         - [Utilization of Space Reservations for Data Storage](config-SRM.md#utilization-of-space-reservations-for-data-storage)
         - [dCache specific concepts](config-SRM.md#dcache-specific-concepts)
@@ -117,12 +117,12 @@ This part contains descriptions of the components of dCache, their role, functio
         - [Tape Recall Scheduling](config-SRM.md#tape-recall-scheduling)
         - [General SRM Concepts (for developers)](config-SRM.md#general-srm-concepts-for-developers)
 
-  16. [The Statistics Service](config-statistics.md)
+  - [The Statistics Service](config-statistics.md)
        - [The Basic Setup](config-statistics.md#the-basic-setup)
        - [The Statistics Web Page](config-statistics.md#the-statistics-web-page)
        - [Explanation of the File Format of the xxx.raw Files](config-statistics.md#explanation-of-the-file-format-of-the-xxxraw-files)
 
-  17. [dCache as XRoot-Server](config-xrootd.md)
+  - [dCache as XRoot-Server](config-xrootd.md)
        - [Setting up](config-xrootd.md#setting-up)
        - [Quick tests](config-xrootd.md#quick-tests)
        - [Xroot security](config-xrootd.md#xroot-security)
@@ -131,13 +131,13 @@ This part contains descriptions of the components of dCache, their role, functio
 
 - Overarching concepts:
 
-  1. [ACLs in dCache](config-acl.md)
+  - [ACLs in dCache](config-acl.md)
       - [Introduction](config-acl.md#introduction)
       - [Configuring ACL support](config-acl.md#configuring-acl-support)
       - [Setting and getting ACLs](config-acl.md#setting-and-getting-acls)
       - [Accessing ACL over NFS mount](config-acl.md#accessing-acl-over-nfs-mount)
 
-  2. [Chimera](config-chimera.md)
+  - [Chimera](config-chimera.md)
      - [Mounting Chimera through NFS](config-chimera.md#mounting-chimera-through-nfs)
      - [Using dCap with a mounted file system](config-chimera.md#using-dcap-with-a-mounted-file-system)
      - [Communicating with Chimera](config-chimera.md#communicating-with-chimera)
@@ -149,12 +149,12 @@ This part contains descriptions of the components of dCache, their role, functio
      - [Directory Tags for dCache](config-chimera.md#directory-tags-for-dcache)
      - [Storage Class and Directory Tags](config-chimera.md#storage-class-and-directory-tags)
 
-  3. [Cell Message Passing](config-message-passing.md)
+  - [Cell Message Passing](config-message-passing.md)
      - [Naming and addressing](config-message-passing.md#naming-and-addressing)
      - [Routing](config-message-passing.md#routing)
      - [Configuration](config-message-passing.md#configuration)
 
-  4. [The dCache Tertiary Storage System Interface](config-hsm.md)
+  - [The dCache Tertiary Storage System Interface](config-hsm.md)
      - [Scope of this chapter](config-hsm.md#scope-of-this-chapter)
      - [Requirements for a tertiary storage system](config-hsm.md#requirements-for-a-tertiary-storage-system)
      - [How dCache interacts with a Tertiary Storage System](config-hsm.md#how-dcache-interacts-with-a-tertiary-storage-system)
@@ -163,13 +163,13 @@ This part contains descriptions of the components of dCache, their role, functio
      - [How to Store-/Restore files via the Admin Interface](config-hsm.md#how-to-store-restore-files-via-the-admin-interface)
      - [How to monitor what's going on](config-hsm.md#how-to-monitor-whats-going-on)
 
-  5. [File Hopping](config-hopping.md)
+  - [File Hopping](config-hopping.md)
      - [File Hopping on arrival from outside dCache](config-hopping.md#file-hopping-on-arrival-from-outside-dcache)
      - [File mode of replicated files](config-hopping.md#file-mode-of-replicated-files)
      - [File Hopping managed by the PoolManager](config-hopping.md#file-hopping-managed-by-the-poolmanager)
      - [File Hopping managed by the HoppingManager](config-hopping.md#file-hopping-managed-by-the-hoppingmanager)
 
-  6. [gPlazma: Authorization in dCache](config-gplazma.md)
+  - [gPlazma: Authorization in dCache](config-gplazma.md)
      - [Basics](config-gplazma.md#basics)
      - [Configuration](config-gplazma.md#configuration)
      - [Plug-ins](config-gplazma.md#plug-ins)
@@ -188,27 +188,27 @@ This part contains descriptions of the components of dCache, their role, functio
      - [Enabling Username/Password Access for WebDAV](config-gplazma.md#enabling-usernamepassword-access-for-webdav)
      - [Roles](config-gplazma.md#roles)
 
-  7. [Kafka](kafkaproducer.md)
+  - [Kafka](kafkaproducer.md)
      - [What do you need to download to enable Kafka in dCache?](kafkaproducer.md#what-do-you-need-to-download-to-enable-kafka-in-dcache)
      - [Apache Kafka Installation.](kafkaproducer.md#apache-kafka-installation)
 
-  8. [User and Group Quota](quota.md)
+  - [User and Group Quota](quota.md)
 
-  9. [Stage Protection](config-stage-protection.md)
+  - [Stage Protection](config-stage-protection.md)
      - [Configuration of Stage Protection](config-stage-protection.md#configuration-of-stage-protection)
      - [Definition of the White List](config-stage-protection.md#definition-of-the-white-list)
 
-  10. [Using Space Reservations without SRM](config-write-token.md)
+  - [Using Space Reservations without SRM](config-write-token.md)
       - [The Space Reservation](config-write-token.md#the-space-reservation)
       - [The WriteToken tag](config-write-token.md#the-writetoken-tag)
       - [Copy a File into the WriteToken](config-write-token.md#copy-a-file-into-the-writetoken)
 
-  11. [Storage Descriptor / SRR](srr.md)
+  - [Storage Descriptor / SRR](srr.md)
       - [How the file is generated](srr.md#how-the-file-is-generated)
       - [Setting up dCache for Storage Descriptor](srr.md#setting-up-dcache-for-storage-descriptor)
       - [Configurable properties of dCache Storage Descriptor](srr.md#configurable-properties-of-dcache-storage-descriptor)
 
-  12. [ZooKeeper](config-zookeeper.md)
+  - [ZooKeeper](config-zookeeper.md)
       - [Deployment scenarios](config-zookeeper.md#deployment-scenarios)
       - [Configuration](config-zookeeper.md#configuration)
       - [Inspecting ZooKeeper through dCache](config-zookeeper.md#inspecting-zooKeeper-through-dcache)

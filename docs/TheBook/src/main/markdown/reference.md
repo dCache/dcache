@@ -3,17 +3,17 @@ Part IV. Reference
 
 ## Table of Contents
 
-+ [dCache Clients](rf-clients.md)
+- [dCache Clients](rf-clients.md)
     - [The SRM Client Suite](rf-clients.md#the-srm-client-suite)
     - [The DCCP Utility](rf-clients.md#the-dccp-utility) — Copy a file from or to a dCache server.
 
-+ [Common Cell Commands](rf-cc-common.md)
+- [Common Cell Commands](rf-cc-common.md)
     - [pin](rf-cc-common.md#pin) — Adds a comment to the pinboard.
     - [info](rf-cc-common.md#info) — Print info about the cell.
     - [dump pinboard](rf-cc-common.md#dump-pinboard) — Dump the full pinboard of the cell to a file.
     - [show pinboard](rf-cc-common.md#show-pinboard) — Print a part of the pinboard of the cell to STDOUT.
 
-+ [dCache NFS Dot Commands](rf-dot-commands.md)
+- [dCache NFS Dot Commands](rf-dot-commands.md)
     - [get locality](rf-dot-commands.md#get-locality) — Returns the media types on which the file is currently stored.
     - [get checksum types](rf-dot-commands.md#get-checksum-types) — Get the recognized checksum types for dCache
     - [get checksum(s)](rf-dot-commands.md#get-checksums) — Get checksum types and checksums for a given file.
@@ -22,7 +22,7 @@ Part IV. Reference
     - [pin/stage](rf-dot-commands.md#pinstage) — Allows users to pin or stage files.
     - [get/set tape location uri](rf-dot-commands.md#getset-tape-location-uri) — Stores, retrieves and modifies the URI string(s) which define an HSM/tape location.
 
-+ [PnfsManager Commands](rf-cc-pnfsm.md)
+- [PnfsManager Commands](rf-cc-pnfsm.md)
     - [pnfsidof](rf-cc-pnfsm.md#pnfsidof)  — Print the pnfs id of a file given by its global path.
     - [flags remove](rf-cc-pnfsm.md#flags-remove)  — Remove a flag from a file.
     - [flags ls](rf-cc-pnfsm.md#flags-ls)  — List the flags of a file.
@@ -33,7 +33,7 @@ Part IV. Reference
     - [storageinfoof](rf-cc-pnfsm.md#storageinfoof)  — Print the storage info of a file.
     - [cacheinfoof](rf-cc-pnfsm.md#cacheinfoof)  — Print the cache info of a file.
 
-+ [Pool Commands](rf-cc-pool.md)
+- [Pool Commands](rf-cc-pool.md)
     - [rep ls](rf-cc-pool.md#rep-ls) — List the files currently in the repository of the pool.
     - [st set max active](rf-cc-pool.md#st-set-max-active) — Set the maximum number of active store transfers.
     - [rh set max active](rf-cc-pool.md#rh-set-max-active) — Set the maximum number of active restore transfers.
@@ -54,11 +54,11 @@ Part IV. Reference
     - [migration suspend](rf-cc-pool.md#migration-suspend)   — Suspends a migration job.
     - [migration resume](rf-cc-pool.md#migration-resume)   — Resumes a suspended migration job.
 
-+ [PoolManager Commands](rf-cc-pm.md)
+- [PoolManager Commands](rf-cc-pm.md)
     - [rc ls](rf-cc-pm.md#rc-ls) — List the requests currently handled by the PoolManager.
     - [cm ls](rf-cc-pm.md#cm-ls) — List information about the pools in the cost module cache.
     - [set pool decision](rf-cc-pm.md#set-pool-decision) — Set the factors for the calculation of the total costs of the pools.
 
-+ [29. dCache Default Port Values](rf-ports.md)
+- [dCache Default Port Values](rf-ports.md)
 
-+ [30. Glossary](rf-glossary.md)
+- [Glossary](rf-glossary.md)
