@@ -292,9 +292,9 @@ public class ChimeraNameSpaceProvider
           throws CacheException {
         checkArgument(assignAttributes.isUndefined(INVALID_CREATE_FILE_ATTRIBUTES),
               "Illegal assign attributes: %s", assignAttributes.getDefinedAttributes());
+        File newEntryFile = new File(path);
+        String parentPath = newEntryFile.getParent();
         try {
-            File newEntryFile = new File(path);
-            String parentPath = newEntryFile.getParent();
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
@@ -339,9 +339,9 @@ public class ChimeraNameSpaceProvider
             }
             return fileAttributes;
         } catch (NotDirChimeraException e) {
-            throw new NotDirCacheException("Not a directory: " + path);
+            throw new NotDirCacheException("Not a directory: " + parentPath);
         } catch (FileNotFoundChimeraFsException e) {
-            throw new FileNotFoundCacheException("No such file or directory: " + path);
+            throw new FileNotFoundCacheException("No such directory: " + parentPath);
         } catch (FileExistsChimeraFsException e) {
             throw new FileExistsCacheException("File exists: " + path);
         } catch (IOException e) {
