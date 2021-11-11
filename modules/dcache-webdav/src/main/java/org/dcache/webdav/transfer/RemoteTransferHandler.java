@@ -44,6 +44,7 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.MissingResourceCacheException;
+import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -730,6 +731,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                         try {
                             msg = _pnfs.createPnfsEntry(_path.toString(),
                                   FileAttributes.ofFileType(FileType.REGULAR));
+                        } catch (FileNotFoundCacheException | NotDirCacheException e) {
+                            // Parent directory missing or parent is a file.
+                            throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST, e.getMessage());
                         } catch (FileExistsCacheException e) {
                             /* REVISIT: This should be moved to PnfsManager with a
                              * flag in the PnfsCreateEntryMessage.
