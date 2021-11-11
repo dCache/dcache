@@ -59,9 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.bulk;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -70,9 +71,9 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.Example;
 import io.swagger.annotations.ExampleProperty;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.security.auth.Subject;
@@ -97,6 +98,7 @@ import org.dcache.auth.attributes.Restrictions;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.bulk.BulkServiceCommunicator;
 import org.dcache.services.bulk.BulkRequest;
+import org.dcache.services.bulk.BulkRequest.Depth;
 import org.dcache.services.bulk.BulkRequestCancelMessage;
 import org.dcache.services.bulk.BulkRequestClearMessage;
 import org.dcache.services.bulk.BulkRequestListMessage;
@@ -188,21 +190,15 @@ public final class BulkResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response submit(
           @ApiParam(value = "Description of the request, which defines the following: "
-                + "target, targetPrefix, activity, cancelOnFailure, "
-                + "clearOnSuccess, clearOnFailure, delayClear, expandDirectories "
+                + "target, target_prefix, activity, cancel_on_failure, "
+                + "clear_on_success, clear_on_failure, delay_clear, expand-directories "
                 + "(NONE, TARGETS, ALL), and arguments (map of name:value "
                 + "pairs) if required.", required = true)
                 String requestPayload) {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
 
-        BulkRequest request;
-
-        try {
-            request = new ObjectMapper().readValue(requestPayload, BulkRequest.class);
-        } catch (IOException e) {
-            throw new BadRequestException(e);
-        }
+        BulkRequest request = toBulkRequest(requestPayload);
 
         /*
          *  Frontend sets the URL.  The backend service provides the UUID.
@@ -357,5 +353,66 @@ public final class BulkResources {
         }
 
         return RequestUser.getRestriction();
+    }
+
+    /**
+     * Because of an inconsistency between initial documentation of the API and what is actually
+     * exposed through the API, we need to support camelCase, snake_case and kebab-case for all the
+     * top-level attributes. Hence we must convert to a generic map and fetch the values by hand.
+     * <p/>
+     * NB:  the argument attributes are all expressed in the document in kebab-case and that is how
+     * they are defined in the Bulk service as well.
+     */
+     @VisibleForTesting
+     static BulkRequest toBulkRequest(String requestPayload) {
+        Map map = new Gson().fromJson(requestPayload, Map.class);
+        BulkRequest request = new BulkRequest();
+
+        request.setArguments((Map<String, String>) map.remove("arguments"));
+
+        String value = removeEntry(map, "activity");
+        request.setActivity(value);
+
+        value = removeEntry(map, "target");
+        request.setTarget(value);
+
+        value = removeEntry(map, "target_prefix", "target-prefix", "targetPrefix");
+        request.setTargetPrefix(value);
+
+        value = removeEntry(map, "expand_directories", "expand-directories",
+              "expandDirectories");
+        request.setExpandDirectories(
+              value == null ? Depth.NONE : Depth.valueOf(value.toUpperCase()));
+
+        value = removeEntry(map, "delay_clear", "delay-clear", "delayClear");
+        request.setDelayClear(value == null ? 0 : Integer.parseInt(value));
+
+        value = removeEntry(map, "clear_on_success", "clear-on-success", "clearOnSuccess");
+        request.setClearOnSuccess(Boolean.valueOf(value));
+
+        value = removeEntry(map, "clear_on_failure", "clear-on-failure", "clearOnFailure");
+        request.setClearOnFailure(Boolean.valueOf(value));
+
+        value = removeEntry(map, "cancel_on_failure", "cancel-on-failure", "cancelOnFailure");
+        request.setCancelOnFailure(Boolean.valueOf(value));
+
+        if (!map.isEmpty()) {
+            throw new BadRequestException("unsupported arguments: " + map.keySet());
+        }
+
+        return request;
+    }
+
+    private static String removeEntry(Map map, String... names) {
+        String value = null;
+        for (String name : names) {
+            String v = (String) map.remove(name);
+            if (value == null) {
+                value = v;
+            } else if (v != null) {
+                throw new BadRequestException("value for " + name + " defined more than once.");
+            }
+        }
+        return value;
     }
 }

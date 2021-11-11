@@ -1078,26 +1078,26 @@ public class BulkServiceCommands implements CellCommandListener {
                           + "are 'BREADTH-FIRST-WALK' and 'DEPTH-FIRST-WALK')")
         String activity;
 
-        @Option(name = "expand",
+        @Option(name = "expand-directories",
               valueSpec = "NONE|TARGETS|ALL",
               usage = "NONE = do not expand directories; TARGETS = shallow expansion of "
                     + "directories (only take action on its targets with no further expansion); "
                     + "ALL = full recursion")
         String expand = "NONE";
 
-        @Option(name = "cancelOnFailure",
+        @Option(name = "cancel_on_failure",
               usage = "cancel request preemptively on first failure; default is false")
         Boolean cancelOnFailure = false;
 
-        @Option(name = "clearOnFailure",
+        @Option(name = "clear_on_failure",
               usage = "remove request from storage if any jobs failed; default is false")
         Boolean clearOnFailure = false;
 
-        @Option(name = "clearOnSuccess",
+        @Option(name = "clear_on_success",
               usage = "remove request from storage if all jobs succeeded; default is false)")
         Boolean clearOnSuccess = false;
 
-        @Option(name = "delayClear",
+        @Option(name = "delay_clear",
               usage = "wait in seconds before clearing (one of the clear options must be "
                     + "true for this to have effect); default = 0.")
         Integer delayClear = 0;
