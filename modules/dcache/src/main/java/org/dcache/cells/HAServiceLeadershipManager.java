@@ -125,6 +125,10 @@ public class HAServiceLeadershipManager implements CellIdentityAware, CellComman
         @Override
         public String call() throws Exception {
             checkCommand(hasLeadership(), HA_NOT_LEADER_MSG);
+            int haParticipantCount = zkLeaderLatch.getParticipants().size();
+            if (haParticipantCount == 1) {
+                return "Single instance HA service. Not dropping leadership.";
+            }
             releaseLeadership();
             return "Releasing leadership, starting election. New leader: "
                   + zkLeaderLatch.getLeader().getId();
