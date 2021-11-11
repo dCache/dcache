@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.nearline.spi;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,10 +35,11 @@ import java.util.UUID;
  * used to stage or remove the file from nearline storage.
  * <p>
  * Object life-cycle: under normal operation, the {@link #configure} method is called first,
- * followed by the {@link #start} method.  After this any of the methods other than
- * {@literal start} may be called.  It is guaranteed that {@link shutdown} is called.  After
- * {@literal shutdown} returns, no further methods are called and the object will then be garbage
- * collected at some point.
+ * followed by the {@link #start} method.  After the start method returns normally, any of the
+ * methods other than {@literal start} may be called.  It is guaranteed that {@link shutdown} is
+ * called before the object is garbage collected.  After {@literal shutdown} returns, no further
+ * methods are called.  If {@literal start} throws an exception then no further methods are called
+ * and the object will be subject to garbage collection.
  * <p>
  * A configuration-testing life-cycle is used to verify the NearlineStorage configuration is
  * correct without affecting the "live" system.  Under this mode, an object is created and the
@@ -85,10 +87,11 @@ public interface NearlineStorage {
 
     /**
      * Inform the NearlineStorageProvider to start any background activity or open external
-     * resources.  This method is only called once.  If called, it is guaranteed that
+     * resources.This method is only called once.  If called, it is guaranteed that
      * {@link #shutdown} is called.
+     * @throws java.io.IOException if the NearlineStorage is unable to start.
      */
-    default void start(){}
+    default void start() throws IOException {}
 
     /**
      * Cancels all requests and initiates a shutdown of the nearline storage interface.
