@@ -61,7 +61,6 @@ package org.dcache.services.bulk.plugins.pinmanager;
 
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import diskCacheV111.vehicles.Message;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -86,6 +85,11 @@ abstract class PinManagerJob extends SingleTargetJob implements PinManagerAware,
 
     @Override
     public Void call() {
+        LOGGER.debug("poll, checking pin request waitable.isDone() for {}.", path);
+        if (!waitable.isDone()) {
+            return null;
+        }
+
         Message reply;
 
         try {
@@ -106,10 +110,15 @@ abstract class PinManagerJob extends SingleTargetJob implements PinManagerAware,
         return null;
     }
 
+    @Override
+    public void pollWaiting() {
+        if (waitable != null) {
+            call();
+        }
+    }
+
     protected <M extends Message> void sendToPinManager(M message) {
         setState(State.WAITING);
-        ListenableFuture<M> future = pinManager.send(message);
-        this.waitable = future;
-        future.addListener(() -> call(), executorService);
+        this.waitable = pinManager.send(message, Long.MAX_VALUE);
     }
 }

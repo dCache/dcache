@@ -122,10 +122,6 @@ public abstract class QoSReplyHandler {
             migrationFuture.addListener(() -> handleMigrationReply(), executor);
         }
 
-        if (pinFuture != null) {
-            pinFuture.addListener(() -> handlePinReply(), executor);
-        }
-
         LOGGER.trace("listen called: {}.", this);
     }
 
@@ -172,9 +168,18 @@ public abstract class QoSReplyHandler {
         }
     }
 
-    private synchronized void handlePinReply() {
+    /**
+     *  Unlike handleMigrationReply, this method supports polling semantics:
+     *  it should be called from inside a loop.
+     */
+    public synchronized void handlePinReply() {
         if (pinFuture == null) {
             LOGGER.debug("No pin future set, no reply expected.");
+            return;
+        }
+
+        LOGGER.debug("poll, checking pin request future.isDone().");
+        if (!pinFuture.isDone()) {
             return;
         }
 
