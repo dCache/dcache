@@ -1353,7 +1353,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId,
               Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
-            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject, null);
+            super(pnfs, Subjects.ROOT, Restrictions.none(), Subjects.fromUnixNumericSubject(ioSubject), null);
 
             _nfsInode = nfsInode;
 
