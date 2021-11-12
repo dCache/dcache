@@ -3,7 +3,9 @@ package org.dcache.auth;
 import static java.util.Arrays.asList;
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -11,6 +13,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
@@ -292,5 +296,31 @@ public class SubjectsTest {
               .withExemptFromNamespaceChecks());
 
         assertTrue(Subjects.isExemptFromNamespaceChecks(root));
+    }
+
+    @Test
+    public void shouldConvertUnixNumericPrincipals() {
+
+        var nfsSubject = Subjects.ofPrincipals(
+              Set.of(
+                    new UnixNumericUserPrincipal(UID1),
+                    new UnixNumericGroupPrincipal(GID1, true),
+                    new UnixNumericGroupPrincipal(GID2, false),
+                    new LoginNamePrincipal(USERNAME1)
+              )
+        );
+
+        var dcacheSubject = Subjects.fromUnixNumericSubject(nfsSubject);
+
+        assertEquals(Subjects.getUid(dcacheSubject), UID1);
+        assertEquals(Subjects.getPrimaryGid(dcacheSubject), GID1);
+        assertTrue(Subjects.hasGid(dcacheSubject, GID2));
+        assertEquals(Subjects.getLoginName(dcacheSubject), USERNAME1);
+
+        assertThat("UidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(UidPrincipal.class)));
+        assertThat("GidPrincipal not injected", dcacheSubject.getPrincipals(), hasItem(any(GidPrincipal.class)));
+
+        assertThat("UnixNumericUserPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericUserPrincipal.class))));
+        assertThat("UnixNumericGroupPrincipal not removed", dcacheSubject.getPrincipals(), not(hasItem(any(UnixNumericGroupPrincipal.class))));
     }
 }

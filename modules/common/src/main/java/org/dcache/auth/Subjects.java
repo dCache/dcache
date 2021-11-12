@@ -3,6 +3,8 @@ package org.dcache.auth;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.net.InetAddresses;
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
 import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import java.lang.reflect.Constructor;
@@ -750,5 +752,32 @@ public class Subjects {
             add(new UserNamePrincipal(name));
             return this;
         }
+    }
+
+    /**
+     * Convert UnixNumericUserPrincipal and UnixNumericGroupPrincipal to the dCache corresponding
+     * alternatives.
+     */
+    public static Subject fromUnixNumericSubject(Subject s) {
+
+        var principals = s.getPrincipals();
+        var outPrincipals = new HashSet<Principal>();
+
+        principals.forEach( p -> {
+
+            // REVISIT: java-17 switch with match
+            if (p instanceof UnixNumericUserPrincipal) {
+                var up = (UnixNumericUserPrincipal)p;
+                p = new UidPrincipal(up.longValue());
+            } else if (p instanceof UnixNumericGroupPrincipal) {
+                var up = (UnixNumericGroupPrincipal)p;
+                p = new GidPrincipal(up.longValue(), up.isPrimaryGroup());
+            }
+            outPrincipals.add(p);
+        });
+
+
+        return new Subject(s.isReadOnly(), outPrincipals, s.getPublicCredentials(),
+              s.getPrivateCredentials());
     }
 }
