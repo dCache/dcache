@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -21,13 +22,16 @@ import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.singletonMap;
 
 public class OidcAuthPluginTest {
 
@@ -140,7 +144,7 @@ public class OidcAuthPluginTest {
 
     @Test
     public void successWhenValidToken() throws Exception {
-        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
+        givenHostnameConfig("accounts.google.com");
 
         Set<Principal> principals =
               whenOidcPluginCalledWith(
@@ -159,6 +163,49 @@ public class OidcAuthPluginTest {
                           .append("\"email\": \"kermit.the.frog@email.com\",  ")
                           .append("\"email_verified\": true } ")
                           .toString()),
+                    withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371", "accounts.google.com"));
+        assertThat(principals, hasFullName("Kermit The", "Frog", "Kermit The Frog"));
+        assertThat(principals, hasEmail("kermit.the.frog@email.com"));
+        assertThat(principals, hasGroup("Users"));
+        assertThat(principals, hasGroup("Developers"));
+        assertThat(principals, hasLoA(LoA.REFEDS_IAP_MEDIUM));
+        assertThat(principals, hasLoA(LoA.REFEDS_ID_UNIQUE));
+
+        // No '-local' so, no local-enterprise LoA
+        assertThat(principals, not(hasLoA(LoA.REFEDS_IAP_LOCAL_ENTERPRISE)));
+    }
+
+    @Test
+    public void successWhenValidTokenWithMultipleOPs() throws Exception {
+        givenHostnameConfig("accounts.google.com  idc-iam.example.org");
+
+        Set<Principal> principals =
+              whenOidcPluginCalledWith(
+                      Map.of(Matchers.equalTo(URI.create("https://accounts.google.com/.well-known/openid-configuration")),
+                          withDiscoveryDoc(
+                          "{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo\"}"),
+                              Matchers.equalTo(URI.create("https://idc-iam.example.org/.well-known/openid-configuration")),
+                          withDiscoveryDoc(
+                          "{ \"userinfo_endpoint\":\"https://www.idc-iam.example.org/oauth2\"}")),
+                      Map.of(Matchers.equalTo("https://www.googleapis.com/oauth2/v3/userinfo"),
+                              withUserInfo(new StringBuilder()
+                          .append("{\"sub\":\"214234823942934792371\",")
+                          .append("\"name\":\"Kermit The Frog\",  ")
+                          .append("\"given_name\": \"Kermit The\",  ")
+                          .append("\"family_name\": \"Frog\",  ")
+                          .append("\"groups\": [ \"Users\", \"Developers\" ], ")
+                          .append(
+                                "\"eduperson_assurance\": [ \"https://refeds.org/assurance/IAP/medium\", \"https://refeds.org/assurance/ID/unique\", \"https://refeds.org/assurance/IAP/local-enterprise\" ], ")
+                          .append(
+                                "\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
+                          .append("\"email\": \"kermit.the.frog@email.com\",  ")
+                          .append("\"email_verified\": true } ")
+                          .toString()),
+                              Matchers.equalTo("https://www.idc-iam.example.org/oauth2"),
+                              withUserInfo("{\"error\": \"Unknown token\","
+                                      + "\"error_description\": \"The supplied token is not known.\"}")),
                     withBearerToken("validtoken"));
 
         assertThat(principals, hasSubject("214234823942934792371", "accounts.google.com"));
@@ -248,11 +295,27 @@ public class OidcAuthPluginTest {
           JsonNode userInfo,
           BearerTokenCredential token)
           throws ExecutionException, IOException, AuthenticationException {
+        var anyURI = Matchers.any(URI.class);
+        var anyString = Matchers.any(String.class);
+        return whenOidcPluginCalledWith(singletonMap(anyURI, discoveryDoc),
+                singletonMap(anyString, userInfo),
+                token);
+    }
+
+    private Set<Principal> whenOidcPluginCalledWith(Map<Matcher<URI>,JsonNode> discoveryDocs,
+          Map<Matcher<String>,JsonNode> userInfos,
+          BearerTokenCredential token)
+          throws ExecutionException, IOException, AuthenticationException {
         OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient);
 
-        Mockito.doReturn(discoveryDoc).when(httpClient).doGet(Mockito.any(URI.class));
-        Mockito.doReturn(userInfo).when(httpClient)
-              .doGetWithToken(Mockito.anyString(), Mockito.anyString());
+        Mockito.when(httpClient.doGet(Mockito.any(URI.class)))
+                .thenAnswer(i -> {
+                    return findMatching(discoveryDocs, i.getArgument(0, URI.class));
+                });
+        Mockito.when(httpClient.doGetWithToken(Mockito.anyString(), Mockito.anyString()))
+                .thenAnswer(i -> {
+                    return findMatching(userInfos, i.getArgument(0, String.class));
+                });
 
         Set<Object> priv = new HashSet<>();
         Set<Principal> principals = new HashSet<>();
@@ -264,6 +327,18 @@ public class OidcAuthPluginTest {
 
         plugin.stop();
         return principals;
+    }
+
+    private <T> JsonNode findMatching(Map<Matcher<T>,JsonNode> matchers, T item) {
+        JsonNode document = null;
+        for (Map.Entry<Matcher<T>,JsonNode> e : matchers.entrySet()) {
+            if (e.getKey().matches(item)) {
+                checkState(document == null);
+                document = e.getValue();
+            }
+        }
+        checkState(document != null);
+        return document;
     }
 
     private void whenOidcPluginCreated() {
@@ -290,7 +365,7 @@ public class OidcAuthPluginTest {
     private Set<Principal> whenOidcPluginCalledWith(IOException e,
           JsonNode userInfo,
           BearerTokenCredential token)
-          throws ExecutionException, IOException, AuthenticationException, OidcException {
+          throws ExecutionException, IOException, AuthenticationException {
         Mockito.doThrow(e).when(httpClient).doGet(Mockito.any(URI.class));
         Mockito.doReturn(userInfo).when(httpClient)
               .doGetWithToken(Mockito.anyString(), Mockito.anyString());
