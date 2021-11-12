@@ -3,12 +3,12 @@ Chapter 27. Transport Security
 
 Some users, specifically those with medical data, may have data channel encryption as a requirement. dCache does not (yet) support encryption of the GridFTP data channel. At the moment, `globus-url-copy -dcpriv` *appears* to encrypt the data when talking to dCache, but in fact it decides to send the data in plain text, and it does *NOT* warn the user.
 
-To make sure data is safely encrypted during transfer, one should:
+To make sure data is safely encrypted during transfer, one should do all of the following:
 
 1. Use the WebDAV protocol
-2. Configure dCache WebDAV doors not to redirect transfers (because currently it redirects to HTTP and not HTTPS)
-3. Have a well configured certificate or chain in each WebDAV door
-4. Use Java 8 or better, with a well configured java.security
+2. Configure dCache WebDAV doors not to redirect transfers, or if they do, only to HTTPS and not to HTTP
+3. Have a well configured certificate or chain in each WebDAV door (and if the doors redirect to the pools through HTTPS, the pools should have host certificates too)
+4. Use Java 11 or better, with a well configured java.security
 
 There is the option `webdav.redirect.allow-https` which is `false` by default. If set to true, WebDAV doors should redirect clients to HTTPS movers on the pools. Your pools must have host certificates and have `pool.enable.encrypted-transfers = true` for this to work. This new feature should be considered experimental; test it before using it.
 
@@ -28,7 +28,7 @@ Here is an example of a secure WebDAV door definition:
 webdav.cell.name = webdav443-${host.name}
 webdav.authn.protocol = https
 webdav.net.port = 443
-# Disable redirects because they send client to HTTP, not HTTPS!
+# Disable redirects because by default they send client to HTTP, not HTTPS.
 webdav.redirect.on-read = false
 webdav.redirect.on-write = false
 # Support username/password auth
@@ -37,32 +37,23 @@ webdav.authn.basic = true
 webdav.authn.accept-client-cert = true
 ```
 
-Apart from that, there is an additional setting that is needed to improve security:
-
-```ini
-dcache.authn.ciphers = DISABLE_RC4
-```
-
-This disables RC4, which is considered unsafe. If the value contains `DISABLE_EC`, it's best to remove that, because the EC ciphers support Perfect Forward Secrecy, which is considered best practice. But if you plan on removing `DISABLE_EC`, make sure to test it first, especially if you still use Java 7 (which you shouldn't).
-
 
 
 ## Configuring Java
 
-dCache relies on Java for its transport security. Hardening Java is necessary to get the maximum security. If not configured properly, Java may support ciphers and protocols that are considered weak.
+dCache relies on Java for its transport security. Hardening Java is advised to get the maximum security. If not configured properly, Java may support ciphers and protocols that are considered weak.
 
-To begin with, make sure you run Java 8 or newer. It's impossible to get an A rating in the Qualys SSL test without Java 8 or newer. Using Java 11 will add support for TLSv1.3
+From dCache 6.2 and newer, Java 11 is required. Java 11 adds support for TLSv1.3.
 
 Java security setting can be configured in a file called java.security. On a Centos 7 system, this can be found with `find / -name java.security`. The most important setting in this file is:
 
-    jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
-        EC keySize < 224, DES40_CBC, RC4_40, 3DES_EDE_CBC
+    jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
+        DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+        include jdk.disabled.namedCurves
 
-This value is from a default Java 10 java.security file.
+This value is from a default Java 11 java.security file.
 
-Make sure that `3DES_EDE_CBC` (or `DESede` which should be the same) is listed there: this will disable 3DES, which is considered unsafe. On Java 8, it is not disabled by default.
-
-Optionally, you can disable the TLS 1.0 and TLS 1.1 protocols (`TLSv1, TLSv1.1`) - but be sure to test it first, because it may break older clients!
+In recent Java 11 versions, TLS version 1.0 and 1.1 protocols have been disabled. In older versions, you can disable TLS 1.0 and TLS 1.1 by adding them to jdk.tls.disabledAlgorithms (`TLSv1, TLSv1.1`) - but be sure to test it first, because it may break older clients!
 
 Specific cipher suites can be disabled here as well. A good method is, to run your WebDAV door through the Qualys SSLtest, look at the cipher suites that the SSLtest lists as `weak`, and list those in the `jdk.tls.disabledAlgorithms`.
 
@@ -77,6 +68,43 @@ Here is an example of a resulting configuration:
         TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA
 
 As of October 2018, this should be sufficient to get an A rating in the Qualys SSLtest. But the Qualys test is updated regularly to match the latest security developments: you'll have to repeat the test on a regular basis to remain safe.
+
+
+
+### The EL8 crypto-policies framework
+
+Centos 8 and similar operating systems have the crypto-policies framework. This framework silently overrides settings in your java.security file, which can be very confusing. The currently active settings can be found in:
+
+    /etc/crypto-policies/back-ends/java.config
+
+To permanently override these settings, for instance to allow 1024 bit proxy authentication, you can make a file like this:
+
+
+```
+[root@penguin14 ~]# cat /etc/crypto-policies/local.d/java-proxy1024.config
+# Imported from /etc/crypto-policies/local.d/java-proxy1024.config
+jdk.certpath.disabledAlgorithms=MD2, MD5, DSA, RSA keySize < 1024
+```
+
+Then run:
+
+```
+update-crypto-policies
+```
+
+This should result in a file like this:
+
+```
+[root@penguin14 ~]# cat /etc/crypto-policies/back-ends/java.config 
+jdk.tls.ephemeralDHKeySize=2048
+jdk.certpath.disabledAlgorithms=MD2, MD5, DSA, RSA keySize < 2048
+jdk.tls.disabledAlgorithms=DH keySize < 2048, SSLv2, SSLv3, TLSv1, TLSv1.1, DHE_DSS, RSA_EXPORT, DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_DSS_EXPORT, DH_RSA_EXPORT, DH_anon, ECDH_anon, DH_RSA, DH_DSS, ECDH, 3DES_EDE_CBC, DES_CBC, RC4_40, RC4_128, DES40_CBC, RC2, HmacMD5
+jdk.tls.legacyAlgorithms=
+# Imported from /etc/crypto-policies/local.d/java-proxy1024.config
+jdk.certpath.disabledAlgorithms=MD2, MD5, DSA, RSA keySize < 1024
+```
+
+Then you can restart the dCache domains that needed the new setting.
 
 
 
@@ -113,7 +141,7 @@ A famous test is the Qualys SSL test at https://www.ssllabs.com/ssltest/. This t
 
 ### nmap
 
-`nmap --script ssl-enum-ciphers` is a good alternative. It has the advantage that it's very fast, and it can scan internal networks. It does not test as much as the Qualys test though. You may need to download the latest version to have a reliable result. Here is an example of a test with nmap:
+`nmap --script ssl-enum-ciphers` is a good alternative. It has the advantage that it's very fast, it can scan internal networks, and it can scan SRM doors as well as WebDAV doors. It does not test as much as the Qualys test though. You may need to download the latest version to have a reliable result. Here is an example of a test with nmap:
 
 ```console-root
 nmap --script ssl-enum-ciphers -p 443 -P0 example.org
@@ -198,7 +226,7 @@ With https://securityheaders.com/, you can test how secure the HTTP headers of y
 
 ### About Strict Transport Security
 
-The Security Headers test suggests to use HTTP Strict Transport Security (HSTS). This is a header that tells clients that next time they connect they should do so over HTTPS and not HTTP. However, this may break dCache WebDAV doors that *do* redirect, as dCache redirects to HTTP and not HTTPS. Also, it is not certain how redirection works with non-default TCP ports. A better and safer solution to avoid people from using unencrypted WebDAV doors, is to simply not have them at all: don't configure WebDAV doors on port 80, and don't have WebDAV doors that redirect (unless you have a good reason).
+The Security Headers test suggests to use HTTP Strict Transport Security (HSTS). This is a header that tells clients that next time they connect they should do so over HTTPS and not HTTP. However, this may break dCache WebDAV doors that *do* redirect, as dCache may redirect to HTTP and not HTTPS. Also, from the HSTS specifications it is not entirely clear how redirection should work with non-default TCP ports. A better and safer solution to avoid people from using unencrypted WebDAV doors, is to simply not have them at all: don't configure WebDAV doors on port 80, and don't have WebDAV doors that redirect to HTTP (unless you have a good reason).
 
 
 
