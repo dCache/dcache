@@ -1,0 +1,159 @@
+#
+# dCache in kubernetes
+#
+
+
+#
+# dCache exposed ports
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcache-svc
+  labels:
+    app: dcache
+spec:
+  selector:
+    app: dcache
+  ports:
+    # doors
+    - name: nfs-door
+      port: 2049
+      targetPort: 2049
+    - name: xroot-door
+      port: 1094
+      targetPort: 1094
+    - name: webdav-door
+      port: 8080
+      targetPort: 8080
+    # movers
+    - name: nfs-mover
+      port: 32049
+      targetPort: 32049
+    - name: xroot-mover
+      port: 31094
+      targetPort: 31094
+    - name: http-mover
+      port: 38080
+      targetPort: 38080
+---
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dcache-k8s-config
+data:
+  dcache-k8s: |-
+    dcache.broker.scheme = none
+    dcache.enable.space-reservation = false
+
+    cleaner.destination.remove-notification = 
+
+    pool.tags=hostname=${host.name}
+
+    chimera.db.user=postgres
+    chimera.db.password=let-me-in
+    chimera.db.host=postgresql-service
+    chimera.db.name=chimera
+
+    chimerashell.db.host = ${chimera.db.host}
+    chimerashell.db.user = ${chimera.db.user}
+    chimerashell.db.password = ${chimera.db.password}
+    chimerashell.db.name = ${chimera.db.name}
+
+    dcache.zookeeper.connection=zk-cs:2181
+
+    [core]
+
+    [core/poolmanager]
+
+    [core/pnfsmanager]
+    chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?ApplicationName=${pnfsmanager.cell.name}
+
+    [core/cleaner]
+    chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?ApplicationName=${cleaner.cell.name}
+
+    [core/nfs]
+    chimera.db.url=jdbc:postgresql://${chimera.db.host}/${chimera.db.name}?ApplicationName=${nfs.cell.name}
+    nfs.version=4.1
+    nfs.domain=dcache.org
+    nfs.enable.portmap=false
+    nfs.namespace-cache.size=8192
+    nfs.export.file=${dcache.home}/etc/exports
+
+    [core/gplazma]
+
+    [core/xrootd]
+    xrootd.authz.write-paths = /
+
+    [core/httpd]
+
+    [core/pool]
+    pool.name=pool-A
+    pool.path=/pool
+    pool.mover.nfs.port.min=32049
+    pool.mover.nfs.port.max=32049
+    pool.mover.xrootd.port.min=31094
+    pool.mover.xrootd.port.max=31094
+    pool.mover.http.port.min=38080
+    pool.mover.http.port.max=38080
+
+    [core/webdav]
+    webdav.net.port=8080
+    webdav.authz.anonymous-operations=FULL
+    webdav.redirect.on-write=false
+    webdav.redirect.on-read=true
+
+    [core/frontend]
+    frontend.authn.protocol=http
+    frontend.authz.anonymous-operations=FULL
+
+  dcache.conf: |-
+    dcache.layout=dcache-k8s
+---
+
+#
+# dCache containers
+#
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dcache
+spec:
+  selector:
+    matchLabels:
+      app: dcache
+  replicas: 1
+  serviceName: dcache-service
+  template:
+    metadata:
+      labels:
+        app: dcache
+    spec:
+      containers:
+      - name: dcache
+        image: dcache/dcache:7.0
+        command: ["/run.sh", "core"]
+        volumeMounts:
+        - name: dcache-config
+          mountPath: /opt/dcache/etc/dcache.conf
+          subPath: dcache.conf
+          readOnly: true
+        - name: dcache-layout
+          mountPath: /opt/dcache/etc/layouts/dcache-k8s.conf
+          subPath: dcache-k8s.conf
+          readOnly: true
+      volumes:
+      - name: dcache-config
+        configMap:
+          name: dcache-k8s-config
+          items:
+          - key: "dcache.conf"
+            path: "dcache.conf"
+      - name: dcache-layout
+        configMap:
+          name: dcache-k8s-config
+          items:
+          - key: "dcache-k8s"
+            path: "dcache-k8s.conf"
