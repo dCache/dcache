@@ -101,7 +101,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final TokenProcessor tokenProcessor;
 
     public OidcAuthPlugin(Properties properties) {
-        this(properties, buildClientFromProperties(properties));
+        this(buildProcessor(properties));
+    }
+
+    @VisibleForTesting
+    OidcAuthPlugin(TokenProcessor processor) {
+        tokenProcessor = processor;
     }
 
     @Override
@@ -109,12 +114,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         tokenProcessor.shutdown();
     }
 
-    @VisibleForTesting
-    OidcAuthPlugin(Properties properties, JsonHttpClient client) {
-        tokenProcessor = buildProcessor(properties, client);
-    }
-
-    private static TokenProcessor buildProcessor(Properties properties, JsonHttpClient client) {
+    private static TokenProcessor buildProcessor(Properties properties) {
+        JsonHttpClient client = buildClientFromProperties(properties);
         Set<IdentityProvider> providers = new HashSet<>();
         providers.addAll(buildHosts(properties));
         providers.addAll(buildProviders(properties));
@@ -123,7 +124,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
         return new QueryUserInfoEndpoint(properties, client, providers);
     }
 
-    private static JsonHttpClient buildClientFromProperties(Properties properties) {
+    @VisibleForTesting
+    static JsonHttpClient buildClientFromProperties(Properties properties) {
         int soTimeout = (int) TimeUnit.valueOf(properties.getProperty(HTTP_TIMEOUT_UNIT))
               .toMillis(asInt(properties, HTTP_TIMEOUT));
 
@@ -132,7 +134,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
               soTimeout);
     }
 
-    private static Set<IdentityProvider> buildHosts(Properties properties) {
+    @VisibleForTesting
+    static Set<IdentityProvider> buildHosts(Properties properties) {
         String oidcHostnamesProperty = properties.getProperty(OIDC_HOSTNAMES);
         checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
 
@@ -155,7 +158,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
                     .collect(Collectors.toSet());
     }
 
-    private static Set<IdentityProvider> buildProviders(Properties properties) {
+    @VisibleForTesting
+    static Set<IdentityProvider> buildProviders(Properties properties) {
         return properties.stringPropertyNames().stream()
               .filter(n -> n.startsWith(OIDC_PROVIDER_PREFIX))
               .map(n -> {
