@@ -1237,12 +1237,19 @@ path caveat `/foo/bar`.</dd>
 
 <dd>The value is a comma-separated list of enumerated values.  An
 activity caveat limits what operations are allowed.  The following
-activities are defined: <tt>LIST</tt> obtain directory lists,
-<tt>UPLOAD</tt> create new files, <tt>DOWNLOAD</tt> obtain files'
-data, <tt>DELETE</tt> delete a file or overwrite an existing file,
-<tt>MANAGE</tt> rename and move files, <tt>READ_METADATA</tt> obtain
-file metadata, <tt>UPDATE_METADATA</tt> modify file metadata.  The
-<tt>READ_METADATA</tt> is implied if any other activity is specified.
+activities are defined: 
+
+| Activity        | Description
+| :-------------- | :----------------------
+| LIST            | Obtain directory lists
+| UPLOAD          | Create new files
+| DOWNLOAD        | Obtain files' data
+| DELETE          | Delete a file or directory or overwrite an existing file
+| MANAGE          | Rename and move files or directories
+| READ_METADATA   | Obtain file metadata
+| UPDATE_METADATA | Modify file metadata, stage a file or change its QoS
+
+The <tt>READ_METADATA</tt> is implied if any other activity is specified.
 For example, the caveat <tt>activity:LIST,DOWNLOAD</tt> restricts the
 macaroon to read-only operations.  Multiple activity caveats are
 supported.  A request must satisfy all activity caveats to be
