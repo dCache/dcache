@@ -209,17 +209,18 @@ public class PinRequestProcessor
         return RequestContainerV5.allStatesExceptStage;
     }
 
-    private void retry(final PinTask task, long delay) {
+    private void retry(final PinTask task, long delay, String reason) {
         if (!task.isValidIn(delay)) {
-            fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded");
+            fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded: " + reason);
         } else {
             _scheduledExecutor.schedule(() -> {
                 try {
                     rereadNameSpaceEntry(task);
                 } catch (CacheException e) {
-                    fail(task, e.getRc(), e.getMessage());
+                    fail(task, e.getRc(), "Retry (because " + reason + ") failed: " + e.getMessage());
                 } catch (RuntimeException e) {
-                    fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+                    fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                            "Retry (because " + reason + ") failed: " + e);
                 }
             }, delay, MILLISECONDS);
         }
@@ -280,7 +281,7 @@ public class PinRequestProcessor
                        * expect this to be a transient
                        * problem and retry in a moment.
                        */
-                      retry(task, RETRY_DELAY);
+                      retry(task, RETRY_DELAY, "no route to PnfsManager at " + path);
                   }
 
                   @Override
@@ -289,7 +290,7 @@ public class PinRequestProcessor
                        * expect this to be a transient
                        * problem and retry in a moment.
                        */
-                      retry(task, SMALL_DELAY);
+                      retry(task, SMALL_DELAY, "timeout with PnfsManager: " + error);
                   }
               }, _executor);
     }
@@ -359,7 +360,7 @@ public class PinRequestProcessor
                                * refresh of the request.
                                * Retry right away.
                                */
-                              retry(task, 0);
+                              retry(task, 0, "PoolManager requested a retry");
                               break;
                           case CacheException.FILE_NOT_IN_REPOSITORY:
                           case CacheException.PERMISSION_DENIED:
@@ -370,7 +371,7 @@ public class PinRequestProcessor
                                * but for the time being the retry is dealed with
                                * by pin manager.
                                */
-                              retry(task, RETRY_DELAY);
+                              retry(task, RETRY_DELAY, "PoolManager request failed: " + error);
                               break;
                       }
                   }
@@ -382,7 +383,7 @@ public class PinRequestProcessor
                        * to be transient and retry in
                        * a moment.
                        */
-                      retry(task, RETRY_DELAY);
+                      retry(task, RETRY_DELAY, "no route to PoolManager at " + path);
                   }
 
                   @Override
@@ -392,7 +393,7 @@ public class PinRequestProcessor
                        * transient and retry in a
                        * moment.
                        */
-                      retry(task, SMALL_DELAY);
+                      retry(task, SMALL_DELAY, "timeout with PoolManager: " + message);
                   }
               }, _executor);
     }
@@ -440,7 +441,7 @@ public class PinRequestProcessor
                                * it a chance to be updated and
                                * then retry.
                                */
-                              retry(task, RETRY_DELAY);
+                              retry(task, RETRY_DELAY, "pool " + poolName + " declared itself disabled");
                               break;
                           case CacheException.FILE_NOT_IN_REPOSITORY:
                               /* Pnfs manager had stale location
@@ -449,7 +450,7 @@ public class PinRequestProcessor
                                * this error, so we retry in a
                                * moment.
                                */
-                              retry(task, SMALL_DELAY);
+                              retry(task, SMALL_DELAY, "file not on pool " + poolName);
                               break;
                           default:
                               fail(task, rc, error.toString());
@@ -463,7 +464,7 @@ public class PinRequestProcessor
                        * pool manager a moment to notice this
                        * and then retry.
                        */
-                      retry(task, RETRY_DELAY);
+                      retry(task, RETRY_DELAY, "no route to pool at " + poolAddress);
                   }
 
                   @Override
