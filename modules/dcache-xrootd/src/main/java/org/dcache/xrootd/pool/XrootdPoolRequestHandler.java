@@ -415,7 +415,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler {
                     throw new XrootdException(kXR_FileNotOpen, "File exists.");
                 } else if (msg.isDelete() && !isWrite) {
                     throw new XrootdException(kXR_Unsupported, "File exists.");
-                } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
+                    /*
+                     *  Some clients express only kXR_delete when then intend to write
+                     *  so we need to consider delete as a write request here.
+                     */
+                } else if ((msg.isNew() || msg.isReadWrite() || msg.isDelete()) && isWrite) {
                     boolean posc = (msg.getOptions() & kXR_posc) == kXR_posc ||
                           protocolInfo.getFlags().contains(XrootdProtocolInfo.Flags.POSC);
                     if (opaqueMap.containsKey("tpc.src")) {
