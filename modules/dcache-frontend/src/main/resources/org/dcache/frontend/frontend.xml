@@ -597,6 +597,7 @@
         <property name="architecture" value="${info-provider.dcache-architecture}" />
         <property name="quality" value="${info-provider.dcache-quality-level}" />
         <property name="doorTag" value="${storage-descriptor.door.tag}" />
+        <property name="isPublic" value="${frontend.srr.public}" />
     </bean>
 
     <beans profile="macaroons-true">
