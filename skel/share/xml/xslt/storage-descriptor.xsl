@@ -7,7 +7,7 @@
 
 
 <!--+
-    | Copyright (c) 2018, Deutsches Elektronen-Synchrotron (DESY)
+    | Copyright (c) 2018-2021, Deutsches Elektronen-Synchrotron (DESY)
     | All rights reserved.
     |
     | Redistribution and use in source and binary forms, with
@@ -46,7 +46,13 @@
 
 <!--+
     | This XSLT template converts dCache info format into WLCG
-    | Storage Descriptor format.
+    | Storage Descriptor format.  This template targets SRR v6:
+    |
+    |    https://twiki.cern.ch/twiki/pub/LCG/StorageSpaceAccounting/SRR.v6.pdf
+    |
+    | For further details, see:
+    |
+    |     https://twiki.cern.ch/twiki/bin/view/LCG/StorageSpaceAccounting
     +-->
 
 <xsl:stylesheet version="1.0"
@@ -101,7 +107,7 @@
   <xsl:apply-templates select="*" mode="online-capacity"/>
   <xsl:apply-templates select="document('&storage-descriptor.paths.tape-info;')" mode="nearline-capacity"/>
   <xsl:text>    },&#x0a;</xsl:text>
-  <xsl:value-of select="concat('    &quot;lastupdated&quot;: ',date:seconds(),',&#x0a;')"/>
+  <xsl:value-of select="concat('    &quot;latestupdate&quot;: ',date:seconds(),',&#x0a;')"/>
   <xsl:text>    "storageendpoints": [&#x0a;</xsl:text>
   <xsl:apply-templates select="/d:dCache/d:doors/d:door[d:tags/d:tag[@id='&storage-descriptor.door.tag;']][d:interfaces/d:interface/d:metric[@name='scope'] = 'global']" mode="publish-door"/>
   <xsl:text>    ],&#x0a;</xsl:text>
