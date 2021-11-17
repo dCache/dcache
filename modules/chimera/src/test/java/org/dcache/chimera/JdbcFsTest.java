@@ -52,9 +52,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-public class BasicTest extends ChimeraTestCaseHelper {
+public class JdbcFsTest extends ChimeraTestCaseHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasicTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcFsTest.class);
 
     @Test
     public void testLevelRemoveOnDelete() throws Exception {
