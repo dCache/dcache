@@ -415,13 +415,12 @@ frontend.authz.anonymous-operations=READONLY
 frontend.srr.shares=user:/cms,store:/cms
 ```
 
-> NOTE: the access to SRR information is restricted to localhost only. Thus you have to put it
-somewhere, where from WLCG ops can access it, for example with a simple copy it into dcache with cron:
+> NOTE: By default, the access to SRR information is restricted to localhost only.
+
+If desired, the access to the srr information can be made public as with corresponding configuration:
 
 ```
-*/30 * * * * root rm -f /pnfs/desy.de/cms/SRR/SRR_CMS.json && \
-                    curl  http://localhost:3880/api/v1/srr > /pnfs/cms/SRR/SRR_CMS.json && \
-                    chown 40751:4075 /pnfs/cms/SRR/SRR_CMS.json
+frontend.srr.public=true
 ```
 
 The service produces desired json output which contains `storageshares` that represented by space reservations
