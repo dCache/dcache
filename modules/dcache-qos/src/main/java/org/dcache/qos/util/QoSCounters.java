@@ -90,12 +90,13 @@ public abstract class QoSCounters {
           .ofPattern("yyyy/MM/dd-HH:mm:ss")
           .withZone(ZoneId.systemDefault());
     protected static final DateTimeFormatter SUFFIX_FORMATTER = DateTimeFormatter
-          .ofPattern("yyyy_MM_dd_HH");
+          .ofPattern("yyyy_MM_dd_HH")
+          .withZone(ZoneId.systemDefault());
 
-    private static final String LASTSTART = "Running since: %s\n";
-    private static final String UPTIME = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
-    private static final String LASTSWP = "Last sweep at %s\n";
-    private static final String LASTSWPD = "Last sweep took %s seconds\n\n";
+    protected static final String LASTSTART = "Running since: %s\n";
+    protected static final String UPTIME = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
+    protected static final String LASTSWP = "Last sweep at %s\n";
+    protected static final String LASTSWPD = "Last sweep took %s seconds\n\n";
 
     protected static String formatWithPrefix(long count) {
         ByteUnit units = ByteUnit.Type.BINARY.unitsOf(count);
@@ -184,16 +185,20 @@ public abstract class QoSCounters {
     }
 
     public void appendRunning(StringBuilder builder) {
-        long elapsed = (System.currentTimeMillis() - started.getTime()) / 1000;
+        long elapsed
+              = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - started.getTime());
+        builder.append(String.format(LASTSTART, started));
+        appendDHMSElapsedTime(elapsed, UPTIME, builder);
+    }
+
+    public void appendDHMSElapsedTime(long elapsed, String format, StringBuilder builder) {
         long seconds = elapsed % 60;
         elapsed = elapsed / 60;
         long minutes = elapsed % 60;
         elapsed = elapsed / 60;
         long hours = elapsed % 24;
         long days = elapsed / 24;
-
-        builder.append(String.format(LASTSTART, started));
-        builder.append(String.format(UPTIME, days, hours, minutes, seconds));
+        builder.append(String.format(format, days, hours, minutes, seconds));
     }
 
     public void appendSweep(StringBuilder builder) {
@@ -246,7 +251,7 @@ public abstract class QoSCounters {
 
     protected abstract String[] getStatisticsHeader();
 
-    private String getPath() {
+    protected String getPath() {
         return statisticsPath.getAbsolutePath()
               + "_" + SUFFIX_FORMATTER.format(Instant.ofEpochMilli(System.currentTimeMillis()));
     }
