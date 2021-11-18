@@ -25,10 +25,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.IdentityProvider;
+import org.dcache.gplazma.oidc.JwtFactory;
 import org.dcache.gplazma.oidc.MockHttpClientBuilder;
 import org.dcache.gplazma.oidc.TokenProcessor;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
@@ -36,6 +36,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.dcache.gplazma.oidc.MockHttpClientBuilder.aClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -81,15 +83,18 @@ public class QueryUserInfoEndpointTest {
         }
     }
 
+    private final JwtFactory jwtFactory = new JwtFactory();
     private final ObjectMapper mapper = new ObjectMapper();
 
     private TokenProcessor processor;
     private HttpClient client;
+    private String jwt;
 
     @Before
     public void setup() {
         processor = null;
         client = null;
+        jwt = null;
     }
 
     @After
@@ -120,11 +125,147 @@ public class QueryUserInfoEndpointTest {
         assertThat(result.claims(), hasEntry("array_claim", jsonStringArray("first", "second")));
     }
 
+    @Test
+    public void shouldTargetSingleIpForJwt() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{\"sub\": \"ae7fb9688e0683999d864ab5618b92b9\","
+                        + "\"another_claim\": \"another value\","
+                        + "\"null_claim\": null,"
+                        + "\"number_claim\": 42,"
+                        + "\"array_claim\": [ \"first\", \"second\"]}")
+            .onGet("https://other-oidc.example.com/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://other-oidc.example.com/userinfo\"}")
+            .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(404).withoutEntity());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/"))
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-2", "https://other-oidc.example.com/")));
+        given(aJwt().withPayloadClaim("iss", "https://oidc.example.org/"));
+
+        var result = processor.extract(jwt);
+
+        assertThat(result.claims(), hasEntry("sub", jsonString("ae7fb9688e0683999d864ab5618b92b9")));
+        assertThat(result.claims(), hasEntry("another_claim", jsonString("another value")));
+        assertThat(result.claims(), hasEntry("null_claim", jsonNull()));
+        assertThat(result.claims(), hasEntry("number_claim", jsonNumber(42)));
+        assertThat(result.claims(), hasEntry("array_claim", jsonStringArray("first", "second")));
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectJwtWithUnknownIss() throws Exception {
+        given(aClient());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/")));
+        given(aJwt().withPayloadClaim("iss", "https://another-oidc.example.coms/"));
+
+        processor.extract(jwt);
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectJwtWithBadIssValue() throws Exception {
+        given(aClient());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/")));
+        given(aJwt().withPayloadClaim("iss", "0:0"));
+
+        processor.extract(jwt);
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectMalformedJwt() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{\"sub\": \"ae7fb9688e0683999d864ab5618b92b9\","
+                        + "\"another_claim\": \"another value\","
+                        + "\"null_claim\": null,"
+                        + "\"number_claim\": 42,"
+                        + "\"array_claim\": [ \"first\", \"second\"]}")
+            .onGet("https://other-oidc.example.com/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://other-oidc.example.com/userinfo\"}")
+            .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/"))
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-2", "https://other-oidc.example.com/")));
+        given(aJwt().withPayload("jwt payload that is not a valid json object"));
+
+        processor.extract(jwt);
+    }
+
+    @Test
+    public void shouldAcceptJwtWithoutIss() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{\"sub\": \"ae7fb9688e0683999d864ab5618b92b9\","
+                        + "\"another_claim\": \"another value\","
+                        + "\"null_claim\": null,"
+                        + "\"number_claim\": 42,"
+                        + "\"array_claim\": [ \"first\", \"second\"]}")
+            .onGet("https://other-oidc.example.com/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://other-oidc.example.com/userinfo\"}")
+            .onGet("https://other-oidc.example.com/userinfo").responds().withStatusCode(SC_NOT_FOUND).withoutEntity());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/"))
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-2", "https://other-oidc.example.com/")));
+        given(aJwt());
+
+        var result = processor.extract(jwt);
+
+        assertThat(result.claims(), hasEntry("sub", jsonString("ae7fb9688e0683999d864ab5618b92b9")));
+        assertThat(result.claims(), hasEntry("another_claim", jsonString("another value")));
+        assertThat(result.claims(), hasEntry("null_claim", jsonNull()));
+        assertThat(result.claims(), hasEntry("number_claim", jsonNumber(42)));
+        assertThat(result.claims(), hasEntry("array_claim", jsonStringArray("first", "second")));
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectTokenIfMultipleIpsReturnNotFound() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{\"error\": \"unknown\","
+                        + "\"error_description\": \"the token is unknown\"}")
+            .onGet("https://other-oidc.example.com/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://other-oidc.example.com/userinfo\"}")
+            .onGet("https://other-oidc.example.com/userinfo").responds()
+                .withEntity("{\"error\": \"unknown\","
+                        + "\"error_description\": \"the token is unknown\"}"));
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/"))
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-2", "https://other-oidc.example.com/")));
+
+        processor.extract("an-access-token");
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectTokenIfMultipleIpsReturnInformation() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{\"sub\": \"ae7fb9688e0683999d864ab5618b92b9\"}")
+            .onGet("https://other-oidc.example.com/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://other-oidc.example.com/userinfo\"}")
+            .onGet("https://other-oidc.example.com/userinfo").responds()
+                .withEntity("{\"sub\": \"another-identity\"}"));
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-1", "https://oidc.example.org/"))
+                .withIdentityProvider(new IdentityProvider("EXAMPLE-2", "https://other-oidc.example.com/")));
+
+        processor.extract("an-access-token");
+    }
+
     @Test(expected=AuthenticationException.class)
     public void shouldThrowExceptionIfConfigEndpointHasError() throws Exception {
         given(aClient()
             .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
-            .withStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR).withoutEntity());
+            .withStatusCode(SC_INTERNAL_SERVER_ERROR).withoutEntity());
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
 
@@ -137,7 +278,57 @@ public class QueryUserInfoEndpointTest {
             .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
                 .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
             .onGet("https://oidc.example.org/oauth").responds()
-                .withStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR).withoutEntity());
+                .withStatusCode(SC_INTERNAL_SERVER_ERROR).withoutEntity());
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
+
+        processor.extract("an-access-token");
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectIfUserInfoEndpointReturnsNonObject() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("\"a valid json string\""));
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
+
+        processor.extract("an-access-token");
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectIfUserInfoEndpointResponseMissingSubClaim() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("{}"));
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
+
+        processor.extract("an-access-token");
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectIfUserInfoEndpointResponseMalformed() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{\"userinfo_endpoint\": \"https://oidc.example.org/oauth\"}")
+            .onGet("https://oidc.example.org/oauth").responds()
+                .withEntity("Not valid JSON"));
+        given(aQueryUserInfoEndpoint()
+                .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
+
+        processor.extract("an-access-token");
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectIfDiscoveryDocMissingUserInfoEndpoint() throws Exception {
+        given(aClient()
+            .onGet("https://oidc.example.org/.well-known/openid-configuration").responds()
+                .withEntity("{}"));
         given(aQueryUserInfoEndpoint()
                 .withIdentityProvider(new IdentityProvider("EXAMPLE", "https://oidc.example.org/")));
 
@@ -154,6 +345,14 @@ public class QueryUserInfoEndpointTest {
 
     private void given(MockHttpClientBuilder builder) {
         client = builder.build();
+    }
+
+    private void given(JwtFactory.Builder builder) {
+        jwt = builder.build();
+    }
+
+    private JwtFactory.Builder aJwt() {
+        return jwtFactory.aJwt();
     }
 
     private JsonNode jsonOf(String json) throws JsonProcessingException {
