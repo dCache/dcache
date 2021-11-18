@@ -62,6 +62,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -94,6 +95,8 @@ import org.dcache.util.PrincipalSetMaker;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class SciTokenPluginTest {
 
@@ -321,6 +324,27 @@ public class SciTokenPluginTest {
               .withClaim("scope", "read:/")
               .withClaim("exp", Instant.now().plus(10, MINUTES))
               .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
+              new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
+              new JwtJtiPrincipal("EXAMPLE", jti)));
+    }
+
+    @Test
+    public void shouldAcceptNonExpiredJwtWithoutKid() throws Exception {
+        given(aSciTokenPlugin().withProperty("gplazma.scitoken.issuer!EXAMPLE",
+              "https://example.org/ /prefix/path uid:1000 gid:1000"));
+        givenThat("OP1",
+              isAnIssuer().withURL("https://example.org/").withKey(rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+              .withClaim("jti", jti)
+              .withClaim("sub", sub)
+              .withClaim("scope", "read:/")
+              .withClaim("exp", Instant.now().plus(10, MINUTES))
+              .issuedBy("OP1"));
 
         assertThat(identifiedPrincipals, hasItems(new UidPrincipal(1000),
               new GidPrincipal(1000, true), new JwtSubPrincipal("EXAMPLE", sub),
@@ -1443,6 +1467,7 @@ public class SciTokenPluginTest {
     private class IssuerInfoBuilder {
 
         private final Map<String, KeyMaterial> keys = new HashMap<>();
+        private List<KeyMaterial> keysWithoutKid = new ArrayList<>();
         private String url;
         private String jwkPath = "/jwk";
         private Optional<String> jwtContents = Optional.empty();
@@ -1456,6 +1481,11 @@ public class SciTokenPluginTest {
 
         public IssuerInfoBuilder withKey(String id, KeyMaterial material) {
             keys.put(id, material);
+            return this;
+        }
+
+        public IssuerInfoBuilder withKey(KeyMaterial material) {
+            keysWithoutKid.add(material);
             return this;
         }
 
@@ -1481,7 +1511,7 @@ public class SciTokenPluginTest {
 
         public IssuerInfo build() {
             return new IssuerInfo(url, keys, configurationPath, configurationContents,
-                  jwkPath, jwtContents);
+                  jwkPath, jwtContents, keysWithoutKid);
         }
     }
 
@@ -1594,6 +1624,7 @@ public class SciTokenPluginTest {
 
         private final URI base;
         private final Map<String, KeyMaterial> keys;
+        private final List<KeyMaterial> keysWithoutKid;
         private final String keyPath;
         private final String configurationPath;
         private final Optional<String> openidConfig;
@@ -1601,17 +1632,26 @@ public class SciTokenPluginTest {
 
         public IssuerInfo(String base, Map<String, KeyMaterial> keys,
               String configurationPath, Optional<String> openidConfig,
-              String jwkPath, Optional<String> jwtContents) {
+              String jwkPath, Optional<String> jwtContents, List<KeyMaterial> keysWithoutKid) {
             this.base = URI.create(base);
             this.keys = keys;
             this.keyPath = jwkPath;
             this.configurationPath = configurationPath;
             this.openidConfig = openidConfig;
             this.jwtContents = jwtContents;
+            this.keysWithoutKid = keysWithoutKid;
         }
 
         public KeyMaterial getKey(String kid) {
             return keys.get(kid);
+        }
+
+        /**
+         * Return the single key without kid.
+         */
+        public KeyMaterial getKey() {
+            checkState(keys.isEmpty() && keysWithoutKid.size() == 1);
+            return keysWithoutKid.get(0);
         }
 
         private String buildOpenidConfiguration() {
@@ -1628,6 +1668,10 @@ public class SciTokenPluginTest {
                 ObjectNode keyInfo = keysArray.addObject();
                 keyInfo.put("kid", key.getKey());
                 key.getValue().addToJwt(keyInfo);
+            }
+            for (KeyMaterial key : keysWithoutKid) {
+                ObjectNode keyInfo = keysArray.addObject();
+                key.addToJwt(keyInfo);
             }
 
             return json.toString();
@@ -1709,10 +1753,15 @@ public class SciTokenPluginTest {
 
         private String header() {
             ObjectNode json = MAPPER.createObjectNode();
-            json.put("kid", kid);
-            KeyMaterial keys = requireNonNull(issuer.getKey(kid), "Unknown kid");
-            json.put("alg", keys.alg);
+            if (kid != null) {
+                json.put("kid", kid);
+            }
+            json.put("alg", getKey().alg);
             return json.toString();
+        }
+
+        private KeyMaterial getKey() {
+            return kid == null? issuer.getKey() : issuer.getKey(kid);
         }
 
         private String payload() {
@@ -1737,12 +1786,11 @@ public class SciTokenPluginTest {
 
         public String build() {
             requireNonNull(issuer, "Missing issuedBy() call");
-            requireNonNull(kid, "Missing usingKey() call");
             String encodedHeader = base64Encoded(header());
             String encodedPayload = base64Encoded(payload());
 
             String valueToBeSigned = encodedHeader + "." + encodedPayload;
-            String signature = issuer.getKey(kid).sign(valueToBeSigned);
+            String signature = getKey().sign(valueToBeSigned);
             return valueToBeSigned + "." + signature;
         }
     }
