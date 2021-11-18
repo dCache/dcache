@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 import org.apache.http.client.HttpClient;
 import org.dcache.gplazma.AuthenticationException;
@@ -141,6 +142,14 @@ public class Issuer {
         return Optional.of(url);
     }
 
+    private Optional<String> getOptionalString(JsonNode details, String key) throws BadKeyDescriptionException {
+        JsonNode value = details.get(key);
+        if (value != null && !value.isTextual()) {
+            throw new BadKeyDescriptionException("Attribute not textual " + key);
+        }
+        return Optional.ofNullable(value).map(JsonNode::asText);
+    }
+
     private Map<String, PublicKey> parseJwks() {
         JsonNode keys = jwks.get("keys");
         if (keys == null) {
@@ -155,7 +164,7 @@ public class Issuer {
         Map<String, PublicKey> publicKeys = new HashMap<>();
         for (JsonNode key : keys) {
             try {
-                String kid = getString(key, "kid");
+                String kid = getOptionalString(key, "kid").orElseGet(() -> UUID.randomUUID().toString());
                 publicKeys.put(kid, buildPublicKey(key));
             } catch (BadKeyDescriptionException e) {
                 LOGGER.warn("Bad public key: {}", e.getMessage());
