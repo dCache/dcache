@@ -125,7 +125,7 @@ public class JsonWebToken {
     private Signature getSignature() throws GeneralSecurityException {
         switch (alg) {
             case "RS256":
-                return Signature.getInstance("SHA256withRSA", "BC");
+                return Signature.getInstance("SHA256withRSA");
             default:
                 throw new NoSuchAlgorithmException("Unknown JWT alg " + alg);
         }
