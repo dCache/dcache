@@ -17,6 +17,11 @@
         <outputDirectory>etc/logrotate.d</outputDirectory>
         <destName>dcache</destName>
       </file>
+      <file>
+          <source>src/main/scripts/dcache.rsyslog</source>
+          <outputDirectory>etc/rsyslog.d</outputDirectory>
+          <destName>30-dcache.conf</destName>
+      </file>
     </files>
     <fileSets>
         <fileSet>
