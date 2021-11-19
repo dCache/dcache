@@ -328,9 +328,7 @@ public final class FileUpdate {
          *  having no requirement set.
          */
         if (!constraints.isResilient()) {
-            LOGGER.trace("validateForAction, storage unit was not resilient: "
-                        + "required = {}",
-                  constraints.getRequired());
+            LOGGER.trace("validateForAction, storage unit was not resilient ... ignoring");
             return false;
         }
 
