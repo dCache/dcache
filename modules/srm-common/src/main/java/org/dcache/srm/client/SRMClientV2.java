@@ -247,7 +247,7 @@ public class SRMClientV2 implements ISRM {
         axis_isrm = buildStub(nextServiceURL());
     }
 
-    private static SRMServiceLocator buildServiceLocator(String caPath) {
+    private static SRMServiceLocator buildServiceLocator(String caPath) throws IOException {
         SimpleProvider provider = new SimpleProvider();
         GsiHttpClientSender sender = new GsiHttpClientSender();
         sender.setSslContextFactory(
