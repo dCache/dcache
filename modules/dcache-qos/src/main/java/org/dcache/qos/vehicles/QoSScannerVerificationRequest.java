@@ -67,15 +67,20 @@ import org.dcache.qos.data.QoSMessageType;
 /**
  * This is a batched PnfsId request from the scanner.
  * <p/>
- * When the scanner looks at all the files in a given disk location (pool), it groups them in
- * batches of a predetermined size and sends them off to the verifier. The verifier will keep track
- * of which pnfsids it is checking for which location.
+ * When the scanner looks at all the files of either a location/pool or segment of the namespace
+ * inodes (system scan), it groups them in batches of a predetermined size and sends them off to the
+ * verifier. The verifier will keep track of which pnfsids it is checking for which id.
  */
 public class QoSScannerVerificationRequest implements Serializable {
 
     private static final long serialVersionUID = 5803464448479347602L;
     private final List<PnfsId> replicas;
-    private final String pool;
+
+    /**
+     * Can be the pool name or a UUID string for a system scan representing a segment of the inode
+     * space.
+     */
+    private final String id;
 
     /**
      * For this message, only the values POOL_STATUS_DOWN or POOL_STATUS_UP pertain.
@@ -95,13 +100,13 @@ public class QoSScannerVerificationRequest implements Serializable {
      */
     private final boolean forced;
 
-    public QoSScannerVerificationRequest(String pool,
+    public QoSScannerVerificationRequest(String id,
           List<PnfsId> replicas,
           QoSMessageType type,
           String group,
           String storageUnit,
           boolean forced) {
-        this.pool = pool;
+        this.id = id;
         this.type = type;
         this.replicas = replicas;
         this.group = group;
@@ -113,8 +118,8 @@ public class QoSScannerVerificationRequest implements Serializable {
         return replicas;
     }
 
-    public String getPool() {
-        return pool;
+    public String getId() {
+        return id;
     }
 
     public String getGroup() {

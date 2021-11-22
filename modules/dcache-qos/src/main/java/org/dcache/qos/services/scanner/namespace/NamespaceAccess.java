@@ -59,12 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.namespace;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import java.io.PrintWriter;
 import java.util.List;
 import javax.sql.DataSource;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
+import org.dcache.qos.services.scanner.data.SystemScanSummary;
 
 /**
  * Specialized namespace API for scan handling.
@@ -72,12 +72,27 @@ import org.dcache.qos.services.scanner.data.PoolScanSummary;
 public interface NamespaceAccess {
 
     /**
+     * Determine the min and max inumbers.
+     *
+     * @return array of length 2 with [min, max]
+     */
+    long[] getMinMaxInumbers() throws CacheException;
+
+    /**
      * The main query.
      *
      * @param scan for initializing scan and tracking progress.
      * @throws CacheException
      */
-    void handlePnfsidsForPool(PoolScanSummary scan) throws CacheException;
+    void handlePoolScan(PoolScanSummary scan) throws CacheException;
+
+    /**
+     * Query over file inodes of the namespace.
+     *
+     * @param scan for initializing scan and tracking progress.
+     * @throws CacheException
+     */
+    void handleSystemScan(SystemScanSummary scan) throws CacheException;
 
     /**
      * Used by the admin command to create a file of all the pnfsids on a pool which currently have
@@ -93,6 +108,4 @@ public interface NamespaceAccess {
     void setConnectionPool(DataSource connectionPool);
 
     void setFetchSize(int fetchSize);
-
-    void setNamespace(NameSpaceProvider namespace);
 }

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.listeners;
 
+import org.dcache.qos.data.QoSMessageType;
+
 public interface QoSPoolScanResponseListener {
 
     /**
@@ -67,9 +69,9 @@ public interface QoSPoolScanResponseListener {
      * work). The idea is to give the receiver an indication of how much work has been done up to
      * this point.
      *
-     * @param pool      on which the scan is being done.
+     * @param id        pool on which the scan is being done for pool scan; id for system scan
      * @param succeeded number of requests that were successful; can be a partial count.
      * @param failed    number of requests that failed; can be a partial count.
      */
-    void scanRequestUpdated(String pool, int succeeded, int failed);
+    void scanRequestUpdated(QoSMessageType type, String id, int succeeded, int failed);
 }

@@ -60,22 +60,22 @@ documents or software obtained from this server.
 package org.dcache.qos.data;
 
 /**
- * Used to identify messages dealt with by the qos system.  The first five are received from
- * external sources, the next three are internal notifications based on pool monitor updates; the
- * last one is used by the qos system to indicate it is rerequesting validation of the file's
- * requirements.
- * <p/>
- * <table>
- *    <tr><td>CORRUPT_FILE</td><td>REPORT BROKEN FILE DISCOVERED IN REPOSITORY</td></tr>
- *    <tr><td>CLEAR_CACHE_LOCATION</td><td>ENTRY REMOVED FROM REPOSITORY AND LOCATION CLEARED IN NAMESPACE</td></tr>
- *    <tr><td>ADD_CACHE_LOCATION</td><td>ENTRY ADDED TO REPOSITORY AND LOCATION ADDED TO NAMESPACE</td></tr>
- *    <tr><td>QOS_MODIFIED</td><td>REQUEST TO CHANGE FILE QOS</td></tr>
- *    <tr><td>QOS_MODIFIED_CANCELED</td><td>REQUEST TO CANCEL FILE QOS CHANGE (IF POSSIBLE)</td></tr>
- *    <tr><td>POOL_STATUS_DOWN</td><td>POOL DISABLED OR OFFLINE</td></tr>
- *    <tr><td>POOL_STATUS_UP</td><td>POOL ENABLED OR BACK ONLINE; ALSO USED FOR PERIODIC OR FORCED SCAN</td></tr>
- *    <tr><td>CHECK_CUSTODIAL_ONLINE</td><td>CHECK NAMESPACE FOR CUSTODIAL ONLINE FILES MISSING FROM DISK</td></tr>
- *    <tr><td>VALIDATE_ONLY</td><td>REQUEST TO FIND REQUIREMENTS AND LOCATIONS OF A FILE</td></tr>
- * </table>
+ *  Used to identify messages dealt with by the qos system.  The first five are received from
+ *  external sources, the next three are internal notifications based on pool monitor updates;
+ *  the last one is used by the qos system to indicate it is rerequesting validation of
+ *  the file's requirements.
+ *  <p/>
+ *  <table>
+ *     <tr><td>CORRUPT_FILE</td><td>REPORT BROKEN FILE DISCOVERED IN REPOSITORY</td></tr>
+ *     <tr><td>CLEAR_CACHE_LOCATION</td><td>ENTRY REMOVED FROM REPOSITORY AND LOCATION CLEARED IN NAMESPACE</td></tr>
+ *     <tr><td>ADD_CACHE_LOCATION</td><td>ENTRY ADDED TO REPOSITORY AND LOCATION ADDED TO NAMESPACE</td></tr>
+ *     <tr><td>QOS_MODIFIED</td><td>REQUEST TO CHANGE FILE QOS</td></tr>
+ *     <tr><td>QOS_MODIFIED_CANCELED</td><td>REQUEST TO CANCEL FILE QOS CHANGE (IF POSSIBLE)</td></tr>
+ *     <tr><td>POOL_STATUS_DOWN</td><td>POOL DISABLED OR OFFLINE</td></tr>
+ *     <tr><td>POOL_STATUS_UP</td><td>POOL ENABLED OR BACK ONLINE; ALSO USED FOR PERIODIC OR FORCED SCAN</td></tr>
+ *     <tr><td>SYSTEM_SCAN</td><td>CHECK NAMESPACE INODE-BY-INODE (PERIODIC)</td></tr>
+ *     <tr><td>VALIDATE_ONLY</td><td>REQUEST TO FIND REQUIREMENTS AND LOCATIONS OF A FILE</td></tr>
+ *  </table>
  */
 public enum QoSMessageType {
     CORRUPT_FILE,           // REPORT BROKEN FILE DISCOVERED IN REPOSITORY
@@ -85,6 +85,6 @@ public enum QoSMessageType {
     QOS_MODIFIED_CANCELED,  // REQUEST TO CANCEL FILE QOS CHANGE (IF POSSIBLE)
     POOL_STATUS_DOWN,       // POOL DISABLED OR OFFLINE
     POOL_STATUS_UP,         // POOL ENABLED OR BACK ONLINE; ALSO USED FOR PERIODIC OR FORCED SCAN
-    CHECK_CUSTODIAL_ONLINE, // CHECK NAMESPACE FOR CUSTODIAL ONLINE FILES MISSING FROM DISK
+    SYSTEM_SCAN,            // CHECK NAMESPACE INODE-BY-INODE (PERIODIC)
     VALIDATE_ONLY           // REQUEST TO FIND REQUIREMENTS AND LOCATIONS OF A FILE
 }

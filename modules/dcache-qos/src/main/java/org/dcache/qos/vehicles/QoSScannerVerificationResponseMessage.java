@@ -60,15 +60,19 @@ documents or software obtained from this server.
 package org.dcache.qos.vehicles;
 
 import diskCacheV111.vehicles.Message;
+import org.dcache.qos.data.QoSMessageType;
 
 public class QoSScannerVerificationResponseMessage extends Message {
 
-    private final String location;
+    private final QoSMessageType type;
+    private final String id;
     private final int succeeded;
     private final int failed;
 
-    public QoSScannerVerificationResponseMessage(String location, int succeeded, int failed) {
-        this.location = location;
+    public QoSScannerVerificationResponseMessage(QoSMessageType type, String id, int succeeded,
+          int failed) {
+        this.type = type;
+        this.id = id;
         this.succeeded = succeeded;
         this.failed = failed;
     }
@@ -81,7 +85,11 @@ public class QoSScannerVerificationResponseMessage extends Message {
         return failed;
     }
 
-    public String getLocation() {
-        return location;
+    public String getOpId() {
+        return id;
+    }
+
+    public QoSMessageType getType() {
+        return type;
     }
 }

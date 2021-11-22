@@ -63,9 +63,9 @@ import static diskCacheV111.util.AccessLatency.NEARLINE;
 import static diskCacheV111.util.AccessLatency.ONLINE;
 import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
 import static diskCacheV111.util.RetentionPolicy.REPLICA;
-import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
 import static org.dcache.qos.data.QoSMessageType.CLEAR_CACHE_LOCATION;
 import static org.dcache.qos.data.QoSMessageType.QOS_MODIFIED;
+import static org.dcache.qos.data.QoSMessageType.SYSTEM_SCAN;
 import static org.dcache.qos.data.QoSMessageType.VALIDATE_ONLY;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -273,7 +273,17 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
             return new FileQoSRequirements(pnfsId, fetchAttributes(pnfsId));
         }
 
-        FileAttributes attributes = validateAttributes(update);
+        FileAttributes attributes;
+        try {
+            attributes = validateAttributes(update);
+        } catch (QoSException e) {
+            if (update.getMessageType() == CLEAR_CACHE_LOCATION) {
+                attributes = null;
+            } else {
+                throw e;
+            }
+        }
+
         if (attributes == null) {
             return null;
         }
@@ -304,7 +314,7 @@ public class ALRPStorageUnitQoSProvider implements QoSRequirementsProvider, Cell
 
         LOGGER.debug("validateAttributes, got required attributes for {}.", pnfsId);
 
-        if (messageType == CHECK_CUSTODIAL_ONLINE || messageType == QOS_MODIFIED) {
+        if (messageType == SYSTEM_SCAN || messageType == QOS_MODIFIED) {
             /*
              *  The pool location will be undefined here.
              *  The namespace locations may be empty for QOS_MODIFIED if

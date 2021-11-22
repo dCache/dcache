@@ -63,13 +63,13 @@ import diskCacheV111.vehicles.Message;
 
 public class QoSScannerVerificationCancelledMessage extends Message {
 
-    private final String pool;
+    private final String id;
 
-    public QoSScannerVerificationCancelledMessage(String pool) {
-        this.pool = pool;
+    public QoSScannerVerificationCancelledMessage(String id) {
+        this.id = id;
     }
 
     public String getPool() {
-        return pool;
+        return id;
     }
 }

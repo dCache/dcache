@@ -63,47 +63,72 @@ import diskCacheV111.util.CacheException;
 import java.util.concurrent.ExecutorService;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.PoolQoSStatus;
+import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.listeners.QoSPoolScanResponseListener;
 import org.dcache.qos.listeners.QoSVerificationListener;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
+import org.dcache.qos.services.scanner.data.SystemScanSummary;
 import org.dcache.qos.services.scanner.namespace.NamespaceAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles both pool scans and system scans.
+ * <p/>
  * Dispatches to the namespace the scan summary request and calls complete when if terminates.
  * Updates the scan counts on the basis of verification response.  Updates the operation map when a
  * pool's status has changed.
  */
-public final class NamespaceOpHandler implements PoolOpHandler {
+public final class NamespaceOpHandler implements PoolOpHandler, SysOpHandler {
 
-    private static final Logger LOGGER
-          = LoggerFactory.getLogger(NamespaceOpHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NamespaceOpHandler.class);
 
     private NamespaceAccess namespace;
     private QoSPoolScanResponseListener listener;
     private QoSVerificationListener verificationListener;
 
-    private ExecutorService taskService;
+    private ExecutorService poolTaskService;
+    private ExecutorService systemTaskService;
     private ExecutorService updateService;
 
-    private PoolTaskCompletionHandler completionHandler;
+    private PoolTaskCompletionHandler poolTaskCompletionHandler;
+    private SysTaskCompletionHandler sysTaskCompletionHandler;
 
     public ExecutorService getPoolTaskService() {
-        return taskService;
+        return poolTaskService;
+    }
+
+    public ExecutorService getSystemTaskService() {
+        return systemTaskService;
+    }
+
+    @Override
+    public long[] getMinMaxIndices() throws CacheException {
+        return namespace.getMinMaxInumbers();
     }
 
     public void handlePoolScan(PoolScanSummary scan) {
         try {
-            namespace.handlePnfsidsForPool(scan);
-            completionHandler.taskCompleted(scan);
+            namespace.handlePoolScan(scan);
+            poolTaskCompletionHandler.taskCompleted(scan);
         } catch (CacheException e) {
-            completionHandler.taskFailed(scan, e);
+            poolTaskCompletionHandler.taskFailed(scan, e);
         }
     }
 
-    public void handleBatchedVerificationResponse(String location, int succeeded, int failed) {
-        updateService.submit(() -> listener.scanRequestUpdated(location, succeeded, failed));
+    @Override
+    public void handleSystemScan(SystemScanSummary scan) {
+        try {
+            namespace.handleSystemScan(scan);
+            sysTaskCompletionHandler.taskCompleted(scan);
+        } catch (CacheException e) {
+            sysTaskCompletionHandler.taskCompleted(scan, e);
+        }
+    }
+
+    public void handleBatchedVerificationResponse(QoSMessageType type, String id, int succeeded,
+          int failed) {
+        updateService.submit(() -> listener.scanRequestUpdated(type, id, succeeded, failed));
     }
 
     public void handlePoolScanCancelled(String pool, PoolQoSStatus status) {
@@ -114,6 +139,17 @@ public final class NamespaceOpHandler implements PoolOpHandler {
         } catch (QoSException e) {
             LOGGER.error("Could not send batch cancellation notification for {}: {}.",
                   pool, e.toString());
+        }
+    }
+
+    @Override
+    public void handleScanCancelled(String id) {
+        try {
+            LOGGER.trace("handleScanCancelled for {}: notifying cancellation.", id);
+            verificationListener.fileQoSBatchedVerificationCancelled(id);
+        } catch (QoSException e) {
+            LOGGER.error("Could not send batch cancellation notification for {}: {}.",
+                  id, e.toString());
         }
     }
 
@@ -135,27 +171,35 @@ public final class NamespaceOpHandler implements PoolOpHandler {
         }
     }
 
-    public void setCompletionHandler(PoolTaskCompletionHandler completionHandler) {
-        this.completionHandler = completionHandler;
+    public void setPoolTaskCompletionHandler(PoolTaskCompletionHandler poolTaskCompletionHandler) {
+        this.poolTaskCompletionHandler = poolTaskCompletionHandler;
     }
 
-    public void setScanResponseListener(QoSPoolScanResponseListener listener) {
-        this.listener = listener;
-    }
-
-    public void setVerificationListener(QoSVerificationListener verificationListener) {
-        this.verificationListener = verificationListener;
+    public void setSysTaskCompletionHandler(SysTaskCompletionHandler sysTaskCompletionHandler) {
+        this.sysTaskCompletionHandler = sysTaskCompletionHandler;
     }
 
     public void setNamespace(NamespaceAccess namespace) {
         this.namespace = namespace;
     }
 
-    public void setTaskService(ExecutorService taskService) {
-        this.taskService = taskService;
+    public void setPoolTaskService(ExecutorService poolTaskService) {
+        this.poolTaskService = poolTaskService;
+    }
+
+    public void setScanResponseListener(QoSPoolScanResponseListener listener) {
+        this.listener = listener;
+    }
+
+    public void setSystemTaskService(ExecutorService systemTaskService) {
+        this.systemTaskService = systemTaskService;
     }
 
     public void setUpdateService(ExecutorService updateService) {
         this.updateService = updateService;
+    }
+
+    public void setVerificationListener(QoSVerificationListener verificationListener) {
+        this.verificationListener = verificationListener;
     }
 }

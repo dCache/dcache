@@ -59,8 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.local.clients;
 
+import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.listeners.QoSPoolScanResponseListener;
 import org.dcache.qos.services.scanner.handlers.PoolTaskCompletionHandler;
+import org.dcache.qos.services.scanner.handlers.SysTaskCompletionHandler;
 
 /**
  * A pass-through to the pool task completion handler. Use this listener when plugging in directly
@@ -68,20 +70,37 @@ import org.dcache.qos.services.scanner.handlers.PoolTaskCompletionHandler;
  */
 public final class LocalQoSScannerClient implements QoSPoolScanResponseListener {
 
-    private PoolTaskCompletionHandler completionHandler;
+    private PoolTaskCompletionHandler poolTaskCompletionHandler;
+    private SysTaskCompletionHandler sysTaskCompletionHandler;
 
     @Override
-    public void scanRequestUpdated(String pool, int succeeded, int failed) {
+    public void scanRequestUpdated(QoSMessageType type, String id, int succeeded, int failed) {
         for (int p = 0; p < succeeded; ++p) {
-            completionHandler.childTerminated(pool);
+            switch (type) {
+                case SYSTEM_SCAN:
+                    sysTaskCompletionHandler.childTerminated(id);
+                    break;
+                default:
+                    poolTaskCompletionHandler.childTerminated(id);
+            }
         }
 
         for (int p = 0; p < failed; ++p) {
-            completionHandler.childTerminatedWithFailure(pool);
+            switch (type) {
+                case SYSTEM_SCAN:
+                    sysTaskCompletionHandler.childTerminatedWithFailure(id);
+                    break;
+                default:
+                    poolTaskCompletionHandler.childTerminatedWithFailure(id);
+            }
         }
     }
 
-    public void setCompletionHandler(PoolTaskCompletionHandler completionHandler) {
-        this.completionHandler = completionHandler;
+    public void setPoolCompletionHandler(PoolTaskCompletionHandler poolTaskCompletionHandler) {
+        this.poolTaskCompletionHandler = poolTaskCompletionHandler;
+    }
+
+    public void setSysCompletionHandler(SysTaskCompletionHandler sysTaskCompletionHandler) {
+        this.sysTaskCompletionHandler = sysTaskCompletionHandler;
     }
 }

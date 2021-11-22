@@ -60,19 +60,23 @@ documents or software obtained from this server.
 package org.dcache.qos.remote.clients;
 
 import org.dcache.cells.CellStub;
+import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.listeners.QoSPoolScanResponseListener;
 import org.dcache.qos.vehicles.QoSScannerVerificationResponseMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Use this client when communicating with a remote scanner service.
  */
 public final class RemoteQoSScannerClient implements QoSPoolScanResponseListener {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteQoSScannerClient.class);
     private CellStub scannerService;
 
     @Override
-    public void scanRequestUpdated(String pool, int succeeded, int failed) {
-        scannerService.send(new QoSScannerVerificationResponseMessage(pool, succeeded, failed));
+    public void scanRequestUpdated(QoSMessageType type, String id, int succeeded, int failed) {
+        scannerService.send(new QoSScannerVerificationResponseMessage(type, id, succeeded, failed));
     }
 
     public void setScannerService(CellStub scannerService) {

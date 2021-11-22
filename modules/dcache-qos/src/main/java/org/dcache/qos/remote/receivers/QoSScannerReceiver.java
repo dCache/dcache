@@ -80,14 +80,15 @@ public final class QoSScannerReceiver implements CellMessageReceiver {
     private NamespaceOpHandler handler;
 
     public void messageArrived(QoSScannerVerificationResponseMessage message) {
-        ACTIVITY_LOGGER.info("Received QoSBatchedVerificationResponseMessage for {}",
-              message.getLocation());
+        ACTIVITY_LOGGER.info("Received QoSBatchedVerificationResponseMessage for {} {}",
+              message.getType(), message.getOpId());
         if (messageGuard.getStatus("QoSBatchedVerificationResponseMessage", message)
               == Status.DISABLED) {
             return;
         }
 
-        handler.handleBatchedVerificationResponse(message.getLocation(),
+        handler.handleBatchedVerificationResponse(message.getType(),
+              message.getOpId(),
               message.getSucceeded(),
               message.getFailed());
     }

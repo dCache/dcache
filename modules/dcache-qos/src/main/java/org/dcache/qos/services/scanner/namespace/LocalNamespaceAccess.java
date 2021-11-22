@@ -59,10 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.qos.services.scanner.namespace;
 
-import static org.dcache.qos.data.QoSMessageType.CHECK_CUSTODIAL_ONLINE;
+import static org.dcache.qos.data.QoSMessageType.SYSTEM_SCAN;
 import static org.dcache.util.SqlHelper.tryToClose;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import java.io.PrintWriter;
@@ -74,13 +73,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
-import org.dcache.cells.CellStub;
 import org.dcache.chimera.BackEndErrorChimeraFsException;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.qos.QoSException;
 import org.dcache.qos.data.QoSMessageType;
 import org.dcache.qos.listeners.QoSVerificationListener;
 import org.dcache.qos.services.scanner.data.PoolScanSummary;
+import org.dcache.qos.services.scanner.data.SystemScanSummary;
 import org.dcache.qos.util.CacheExceptionUtils;
 import org.dcache.qos.vehicles.QoSScannerVerificationRequest;
 import org.slf4j.Logger;
@@ -94,11 +93,57 @@ import org.slf4j.LoggerFactory;
  */
 public class LocalNamespaceAccess implements NamespaceAccess {
 
-    static final String SQL_GET_ALL_FOR_LOCATION
+    static final int FILE_TYPE = 32768;
+
+    /**
+     * Checks all NEARLINE CUSTODIAL files that have cached disk locations.  As this kind of file
+     * predominates on most installations, this scan could run for days. It is here mainly for the
+     * following reasons:
+     * <p/>
+     * <ol>
+     *   <li>failed disk+tape to tape transitions which updated the AL, but did not remove
+     *         the sticky bits on the pools;</li><br/>
+     *   <li>failed disk to tape which flushed the file but did not remove the sticky bit
+     *         on the source.</li><br/>
+     * </ol>
+     */
+    static final String SQL_GET_NEARLINE_PNFSIDS
+          = "SELECT inumber, ipnfsid FROM t_inodes n WHERE n.itype = " + FILE_TYPE
+          + " AND n.iaccess_latency = 0"
+          + " AND n.iretention_policy = 0"
+          + " AND n.inumber >= ?"
+          + " AND n.inumber < ?"
+          + " AND EXISTS (SELECT * FROM t_locationinfo l"
+          + " WHERE l.inumber = n.inumber"
+          + " AND l.itype = 1)"
+          + " ORDER BY n.inumber ASC";
+
+    /**
+     * The regular system scan checks consistency for all ONLINE files, whether REPLICA or
+     * CUSTODIAL.
+     */
+    static final String SQL_GET_ONLINE_PNFSIDS
+          = "SELECT inumber, ipnfsid FROM t_inodes WHERE itype = " + FILE_TYPE
+          + " AND iaccess_latency = 1"
+          + " AND inumber >= ?"
+          + " AND inumber < ?"
+          + " ORDER BY inumber ASC";
+
+    /**
+     * Pool status or config changes should be concerned only with the disk status of the file, so
+     * we check only ONLINE files again.
+     */
+    static final String SQL_GET_ONLINE_FOR_LOCATION
           = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
           + "WHERE l.inumber = n.inumber "
           + "AND l.itype = 1 "
+          + "AND n.iaccess_latency = 1 "
           + "AND l.ilocation = ?";
+
+    /**
+     * Get the current range of the entire scan.
+     */
+    static final String SQL_GET_MIN_MAX_INUMBER = "SELECT min(inumber), max(inumber) FROM t_inodes";
 
     static final String SQL_GET_CONTAINED_IN
           = "SELECT n.ipnfsid FROM t_locationinfo l, t_inodes n "
@@ -110,18 +155,12 @@ public class LocalNamespaceAccess implements NamespaceAccess {
           + "AND n.inumber = n1.inumber "
           + "AND l1.ilocation NOT IN (%s))";
 
-    static final String SQL_MISSING_ONLINE_CUSTODIAL
-          = "SELECT n.ipnfsid FROM t_inodes n, t_locationinfo l0 "
-          + "WHERE n.inumber=l0.inumber "
-          + "AND l0.itype=0 "
-          + "AND n.iaccess_latency=1 "
-          + "AND n.iretention_policy=0 "
-          + "AND NOT EXISTS "
-          + "(SELECT * FROM t_locationinfo l1 "
-          + "WHERE n.inumber=l1.inumber "
-          + "AND l1.itype=1)";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
+
+    interface QueryHandler<S> {
+
+        void handle(Connection connection, S scan) throws SQLException, QoSException;
+    }
 
     /**
      * Callback to service for sending notifications.
@@ -134,20 +173,40 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     private DataSource connectionPool;
 
     /**
-     * Delegate service used to extract file attributes; this is used when printing the results of
-     * the inaccessible or contained-in queries.
-     */
-    private NameSpaceProvider namespace;
-
-    /**
      * Round-trip buffer used when running pool-based queries.
      */
     private int fetchSize;
 
-    /**
-     * Endpoint used for verifying replicas.
-     */
-    private CellStub pools;
+    public long[] getMinMaxInumbers() throws CacheException {
+        try {
+            Connection connection = getConnection();
+            try {
+                PreparedStatement statement = connection.prepareStatement(SQL_GET_MIN_MAX_INUMBER);
+                ResultSet resultSet = statement.executeQuery();
+                resultSet.next();
+                long[] results = new long[2];
+                results[0] = resultSet.getLong(1);
+                results[1] = resultSet.getLong(2);
+                return results;
+            } catch (SQLException e) {
+                throw new ChimeraFsException(e.getMessage());
+            } finally {
+                tryToClose(connection);
+            }
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE, "Could not get min/max inumbers", e);
+        }
+    }
+
+    @Override
+    public void handlePoolScan(PoolScanSummary poolScan) throws CacheException {
+        handleQuery((connection, scan) -> handleQuery(connection, scan), poolScan);
+    }
+
+    @Override
+    public void handleSystemScan(SystemScanSummary systemScan) throws CacheException {
+        handleQuery((connection, scan) -> handleQuery(connection, scan), systemScan);
+    }
 
     @Override
     public void printContainedInFiles(List<String> locations, PrintWriter printWriter)
@@ -169,26 +228,6 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     }
 
     @Override
-    public void handlePnfsidsForPool(PoolScanSummary scan) throws CacheException {
-        try {
-            Connection connection = getConnection();
-            try {
-                handleQuery(connection, scan);
-            } catch (SQLException e) {
-                throw new ChimeraFsException(e.getMessage());
-            } catch (QoSException e) {
-                throw CacheExceptionUtils.getCacheExceptionFrom(e);
-            } finally {
-                tryToClose(connection);
-            }
-        } catch (ChimeraFsException e) {
-            throw new CacheException(CacheException.RESOURCE,
-                  String.format("Could not handle pnfsids for %s",
-                        scan.getId()), e);
-        }
-    }
-
-    @Override
     public void setConnectionPool(DataSource connectionPool) {
         this.connectionPool = connectionPool;
     }
@@ -196,15 +235,6 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     @Override
     public void setFetchSize(int fetchSize) {
         this.fetchSize = fetchSize;
-    }
-
-    @Override
-    public void setNamespace(NameSpaceProvider namespace) {
-        this.namespace = namespace;
-    }
-
-    public void setPools(CellStub pools) {
-        this.pools = pools;
     }
 
     public void setVerificationListener(QoSVerificationListener verificationListener) {
@@ -219,9 +249,27 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         }
     }
 
+    private <S> void handleQuery(QueryHandler<S> handler, S scan) throws CacheException {
+        try {
+            Connection connection = getConnection();
+            try {
+                handler.handle(connection, scan);
+            } catch (SQLException e) {
+                throw new ChimeraFsException(e.getMessage());
+            } catch (QoSException e) {
+                throw CacheExceptionUtils.getCacheExceptionFrom(e);
+            } finally {
+                tryToClose(connection);
+            }
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE,
+                  String.format("Could not handle query %s", scan), e);
+        }
+    }
+
     /**
-     * The query processes all replicas for the location by batching the returned pnfsids into lists
-     * to be dispatched to the verification service.
+     * The query processes all online replicas for the location by batching the returned pnfsids
+     * into lists to be dispatched to the verification service.
      */
     private void handleQuery(Connection connection, PoolScanSummary scan)
           throws SQLException, QoSException {
@@ -239,12 +287,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
               pool, group, storageUnit, type, forced);
 
         try {
-            if (CHECK_CUSTODIAL_ONLINE == type) {
-                statement = connection.prepareStatement(SQL_MISSING_ONLINE_CUSTODIAL);
-            } else {
-                statement = connection.prepareStatement(SQL_GET_ALL_FOR_LOCATION);
-                statement.setString(1, pool);
-            }
+            statement = connection.prepareStatement(SQL_GET_ONLINE_FOR_LOCATION);
+            statement.setString(1, pool);
             statement.setFetchSize(fetchSize);
             if (scan.isCancelled()) {
                 return;
@@ -266,6 +310,61 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             if (!replicas.isEmpty() && !scan.isCancelled()) {
                 request = new QoSScannerVerificationRequest(pool, replicas, type, group,
                       storageUnit, forced);
+                verificationListener.fileQoSVerificationRequested(request);
+            }
+        } finally {
+            tryToClose(resultSet);
+            tryToClose(statement);
+        }
+    }
+
+    /**
+     * The query processes file inodes by batching the returned pnfsids into lists to be dispatched
+     * to the verification service.
+     */
+    private void handleQuery(Connection connection, SystemScanSummary scan)
+          throws SQLException, QoSException {
+        long start = scan.getFrom();
+        long to = scan.getTo();
+
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        List<PnfsId> replicas = new ArrayList<>();
+        QoSScannerVerificationRequest request;
+
+        LOGGER.debug("handleQuery: for system scan,  inumber {} to inumber {}.", start);
+
+        try {
+            statement = connection.prepareStatement(scan.isNearlineScan() ?
+                  SQL_GET_NEARLINE_PNFSIDS : SQL_GET_ONLINE_PNFSIDS);
+            statement.setLong(1, start);
+            statement.setLong(2, to);
+            statement.setFetchSize(fetchSize);
+            if (scan.isCancelled()) {
+                return;
+            }
+
+            resultSet = statement.executeQuery();
+            long index = start;
+
+            while (resultSet.next() && !scan.isCancelled()) {
+                index = resultSet.getLong(1);
+                replicas.add(new PnfsId(resultSet.getString(2)));
+                scan.incrementCount();
+                if (replicas.size() == fetchSize) {
+                    request = new QoSScannerVerificationRequest(scan.getId().toString(), replicas,
+                          SYSTEM_SCAN, null, null, true);
+                    verificationListener.fileQoSVerificationRequested(request);
+                    replicas = new ArrayList<>();
+                }
+            }
+
+            scan.setLastIndex(index);
+
+            if (!replicas.isEmpty() && !scan.isCancelled()) {
+                request = new QoSScannerVerificationRequest(scan.getId().toString(), replicas,
+                      SYSTEM_SCAN, null, null, true);
                 verificationListener.fileQoSVerificationRequested(request);
             }
         } finally {
