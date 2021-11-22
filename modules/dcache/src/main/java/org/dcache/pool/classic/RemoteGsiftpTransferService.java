@@ -21,6 +21,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import dmg.cells.nucleus.CDC;
+import java.io.IOException;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
@@ -62,7 +63,7 @@ public class RemoteGsiftpTransferService extends SecureRemoteTransferService {
         return moverProtocol;
     }
 
-    private synchronized SslContextFactory getContextFactory() {
+    private synchronized SslContextFactory getContextFactory() throws IOException {
         if (sslContextFactory == null) {
             sslContextFactory =
                   CanlContextFactory.custom()

@@ -45,6 +45,9 @@ import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -91,7 +94,7 @@ public class CanlContextFactory implements SslContextFactory {
         this.trustManagers = trustManagers;
     }
 
-    public static CanlContextFactory createDefault() {
+    public static CanlContextFactory createDefault() throws IOException {
         return new Builder().build();
     }
 
@@ -239,7 +242,13 @@ public class CanlContextFactory implements SslContextFactory {
             return this;
         }
 
-        public CanlContextFactory build() {
+        public CanlContextFactory build() throws IOException {
+            File caPath = new File(certificateAuthorityPath.toString());
+            if (!caPath.isDirectory()) {
+                throw new FileNotFoundException(caPath +
+                      " is missing: HTTPS requires the certificate authority CRLs");
+            }
+
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
             ValidatorParams validatorParams =
                   new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
