@@ -1,6 +1,7 @@
 package org.dcache.srm.shell;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import org.apache.axis.types.URI;
@@ -14,7 +15,7 @@ public interface FileTransferAgent extends AutoCloseable {
     /**
      * Called precisely once, before download, upload or getSupportedProtocols.
      */
-    void start();
+    void start() throws IOException;
 
     /**
      * A name for this transport.  The value should be lower-case and unique in the set of
@@ -31,7 +32,7 @@ public interface FileTransferAgent extends AutoCloseable {
     /**
      * Alter an option.
      */
-    void setOption(String key, String value);
+    void setOption(String key, String value) throws IOException;
 
     /**
      * Download a file to a locally-attached storage medium (e.g., harddisk) from some remote
