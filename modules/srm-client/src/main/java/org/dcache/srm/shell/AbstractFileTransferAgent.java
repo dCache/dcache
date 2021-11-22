@@ -1,6 +1,7 @@
 package org.dcache.srm.shell;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.axis.types.URI;
@@ -11,7 +12,7 @@ import org.apache.axis.types.URI;
 public abstract class AbstractFileTransferAgent implements FileTransferAgent {
 
     @Override
-    public void start() {
+    public void start() throws IOException {
         // Nothing needed.
     }
 
@@ -27,7 +28,7 @@ public abstract class AbstractFileTransferAgent implements FileTransferAgent {
      * Alter an option.
      */
     @Override
-    public void setOption(String key, String value) {
+    public void setOption(String key, String value)  throws IOException {
         throw new IllegalArgumentException("No such option \"" + key + "\"");
     }
 
