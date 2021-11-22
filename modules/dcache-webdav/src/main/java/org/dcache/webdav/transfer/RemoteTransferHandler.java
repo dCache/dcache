@@ -992,7 +992,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             do {
                 generateMarker();
 
-                wait(_performanceMarkerPeriod);
+                if (!_finished) {
+                    wait(_performanceMarkerPeriod);
+                }
             } while (!_finished);
 
             if (_problem == null) {
