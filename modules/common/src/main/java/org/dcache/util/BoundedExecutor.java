@@ -189,6 +189,24 @@ public class BoundedExecutor extends AbstractListeningExecutorService {
         }
     }
 
+    public int getWorkQueueSize() {
+        monitor.enter();
+        try {
+            return workQueue.size();
+        } finally {
+            monitor.leave();
+        }
+    }
+
+    public int getThreadCount() {
+        monitor.enter();
+        try {
+            return threads;
+        } finally {
+            monitor.leave();
+        }
+    }
+
     private class Worker implements Runnable {
 
         private Runnable getFirstTask() {

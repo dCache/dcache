@@ -65,6 +65,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import eu.emi.security.authn.x509.X509Credential;
@@ -93,9 +94,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
@@ -106,6 +113,8 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.util.BoundedCachedExecutor;
+import org.dcache.util.BoundedExecutor;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.ColumnWriter;
@@ -122,6 +131,8 @@ import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+
+import static dmg.util.CommandException.checkCommand;
 
 /**
  * This class provides the basis for interactions with the remotetransfer service.  It is used by
@@ -143,6 +154,10 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class RemoteTransferHandler implements CellMessageReceiver, CellCommandListener {
 
+    private static int threadCount = 1;
+    private static synchronized int nextThreadCount() {
+        return threadCount++;
+    }
     /**
      * The different directions that the data will travel.
      */
@@ -223,6 +238,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private long _performanceMarkerPeriod;
     private CellStub _transferManager;
     private PnfsHandler _pnfs;
+    private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
+    private final BoundedExecutor _activity =
+            new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
 
     @Required
     public void setTransferManagerStub(CellStub stub) {
@@ -243,6 +261,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         return _performanceMarkerPeriod;
     }
 
+    public void setMaxConcurrentFinalisers(int count) {
+        _activity.setMaximumPoolSize(count);
+    }
+
     private enum IPFamilyMatcher {
         IPv4 {
             @Override
@@ -259,6 +281,33 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         };
 
         public abstract boolean matches(InetAddress addr);
+    }
+
+    @Command(name = "http-tpc finaliser info", hint="query finaliser status",
+            description = "Provides information about transfer finalisation.")
+    public class HttpTpcFinaliserInfoCommand implements Callable<String> {
+        @Override
+        public String call() throws Exception {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Max threads: ").append(_activity.getMaximumPoolSize()).append('\n');
+            sb.append("Current threads: ").append(_activity.getThreadCount()).append('\n');
+            sb.append("Queued tasks: ").append(_activity.getWorkQueueSize()).append('\n');
+            return sb.toString();
+        }
+    }
+
+    @Command(name = "http-tpc finaliser max threads", hint="update finaliser max threads",
+            description = "Updates the maximum number of threads that are satisfying transfer finalisation.")
+    public class HttpTpcFinaliserMaxThreadsCommand implements Callable<String> {
+        @Argument(usage="The new maximum number of threads", metaVar="threads")
+        int maxThreads;
+
+        @Override
+        public String call() throws Exception {
+            checkCommand(maxThreads >= 1, "Number of threads must be 1 or more");
+            _activity.setMaximumPoolSize(maxThreads);
+            return "";
+        }
     }
 
     @Command(name = "http-tpc ls", hint = "list current transfers",
@@ -539,6 +588,12 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
     }
 
+
+    @PreDestroy
+    public void stop() {
+        _activity.shutdown();
+    }
+
     /**
      * Start a transfer and block until that transfer is complete.
      *
@@ -601,7 +656,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         synchronized (_transfers) {
             RemoteTransfer transfer = _transfers.get(message.getId());
             if (transfer != null) {
-                transfer.success();
+                _activity.execute(() -> transfer.success());
             }
         }
     }
@@ -610,7 +665,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         synchronized (_transfers) {
             RemoteTransfer transfer = _transfers.get(message.getId());
             if (transfer != null) {
-                transfer.failure(String.valueOf(message.getErrorObject()));
+                String error = String.valueOf(message.getErrorObject());
+                _activity.execute(() -> transfer.failure(error));
             }
         }
     }
