@@ -43,6 +43,9 @@ import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -82,7 +85,7 @@ public class CanlContextFactory implements SslContextFactory {
         this.trustManagers = trustManagers;
     }
 
-    public static CanlContextFactory createDefault() {
+    public static CanlContextFactory createDefault() throws IOException {
         return new Builder().build();
     }
 
@@ -200,7 +203,13 @@ public class CanlContextFactory implements SslContextFactory {
             return this;
         }
 
-        public CanlContextFactory build() {
+        public CanlContextFactory build() throws IOException {
+            File caPath = new File(certificateAuthorityPath.toString());
+            if (!caPath.isDirectory()) {
+                throw new FileNotFoundException(caPath +
+                      " is missing: HTTPS requires the certificate authority CRLs");
+            }
+
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
             ValidatorParams validatorParams =
                   new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
@@ -258,7 +267,7 @@ public class CanlContextFactory implements SslContextFactory {
             return new CanlContextFactory(new SSLTrustManager(v));
         }
 
-        public Callable<SSLContext> buildWithCaching() {
+        public Callable<SSLContext> buildWithCaching() throws IOException {
             final CanlContextFactory factory = build();
             Callable<SSLContext> newContext =
                   () -> factory.getContext(
