@@ -19,6 +19,7 @@ package org.dcache.srm.shell;
 
 import eu.emi.security.authn.x509.X509Credential;
 import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Map;
 import javax.annotation.Nonnull;
@@ -40,7 +41,7 @@ import org.dcache.srm.v2_2.TSupportedTransferProtocol;
 @ParametersAreNonnullByDefault
 public interface SrmFileSystem extends AutoCloseable {
 
-    void start();
+    void start() throws IOException;
 
     void setCredential(X509Credential credential);
 
@@ -107,5 +108,5 @@ public interface SrmFileSystem extends AutoCloseable {
     @Nonnull
     Map<String, String> getTransportOptions();
 
-    void setTransportOption(String key, String value);
+    void setTransportOption(String key, String value) throws IOException;
 }

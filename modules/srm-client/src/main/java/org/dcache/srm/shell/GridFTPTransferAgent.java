@@ -80,7 +80,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         IF_AVAILABLE, REQUIRE, IGNORE;
     }
 
-    private void updateCanlContextFactory() {
+    private void updateCanlContextFactory() throws IOException {
         _sslContextFactory = CanlContextFactory.custom()
               .withCertificateAuthorityPath(_caPath)
               .withCrlCheckingMode(_crlChecking)
@@ -122,7 +122,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     }
 
     @Override
-    public void setOption(String key, String value) {
+    public void setOption(String key, String value) throws IOException {
         switch (key) {
             case "data.connection-initiator":
                 _dataInitiator = Entity.valueOf(value);
@@ -169,7 +169,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
     }
 
     @Override
-    public void start() {
+    public void start() throws IOException {
         updateCanlContextFactory();
     }
 
