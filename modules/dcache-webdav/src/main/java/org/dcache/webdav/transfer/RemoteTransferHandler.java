@@ -942,12 +942,18 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         }
 
         public synchronized void success() {
+            if (_finished) { // Transfer already registered as completed.
+                return;
+            }
             _problem = null;
             _finished = true;
             notifyAll();
         }
 
         public synchronized void failure(String explanation) {
+            if (_finished) { // Transfer already registered as completed.
+                return;
+            }
             _problem = explanation;
             _finished = true;
             notifyAll();
