@@ -12,6 +12,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -87,7 +88,7 @@ public class SrmTransferAgent extends AbstractFileTransferAgent {
      * Alter an option.
      */
     @Override
-    public void setOption(String key, String value) {
+    public void setOption(String key, String value) throws IOException {
         agent.setOption(key, value);
     }
 

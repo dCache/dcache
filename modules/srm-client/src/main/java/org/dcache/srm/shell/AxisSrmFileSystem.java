@@ -26,6 +26,7 @@ import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.X509Credential;
 import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Map;
@@ -110,7 +111,7 @@ public class AxisSrmFileSystem implements SrmFileSystem {
     }
 
     @Override
-    public void start() {
+    public void start() throws IOException {
         ExtendableFileTransferAgent transferAgent = new ExtendableFileTransferAgent();
         transferAgent.setCredential(credential);
         transferAgent.start();
@@ -518,7 +519,7 @@ public class AxisSrmFileSystem implements SrmFileSystem {
     }
 
     @Override
-    public void setTransportOption(String key, String value) {
+    public void setTransportOption(String key, String value) throws IOException {
         srmAgent.setOption(key, value);
     }
 

@@ -25,6 +25,7 @@ import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import java.util.concurrent.TimeUnit;
+import java.io.IOException;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
@@ -127,7 +128,7 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
         return moverProtocol;
     }
 
-    private synchronized SslContextFactory getContextFactory() {
+    private synchronized SslContextFactory getContextFactory() throws IOException {
         if (sslContextFactory == null) {
             sslContextFactory =
                   CanlContextFactory.custom()

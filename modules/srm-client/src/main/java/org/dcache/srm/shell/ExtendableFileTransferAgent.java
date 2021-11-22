@@ -3,6 +3,7 @@ package org.dcache.srm.shell;
 import com.google.common.collect.ImmutableMap;
 import eu.emi.security.authn.x509.X509Credential;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -51,7 +52,7 @@ public class ExtendableFileTransferAgent implements FileTransferAgent, Credentia
     }
 
     @Override
-    public void setOption(String key, String value) {
+    public void setOption(String key, String value) throws IOException {
         int index = key.indexOf('.');
         if (index == -1 || index == 0 || index == key.length() - 1) {
             throw new IllegalArgumentException("Unknown key: " + key);
@@ -70,7 +71,7 @@ public class ExtendableFileTransferAgent implements FileTransferAgent, Credentia
     }
 
     @Override
-    public void start() {
+    public void start() throws IOException {
         for (FileTransferAgent agent : agents) {
             if (agent instanceof CredentialAware) {
                 ((CredentialAware) agent).setCredential(_credential);

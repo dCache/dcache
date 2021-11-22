@@ -2557,7 +2557,7 @@ public class SrmShell extends ShellApplication {
         String value;
 
         @Override
-        public String call() {
+        public String call() throws IOException {
             fs.setTransportOption(key, value);
             return "";
         }
