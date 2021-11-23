@@ -61,6 +61,7 @@ package org.dcache.qos.services.scanner.util;
 
 import java.util.concurrent.TimeUnit;
 import org.dcache.qos.services.scanner.data.PoolOperationMap;
+import org.dcache.qos.services.scanner.data.SystemOperationMap;
 import org.dcache.qos.services.scanner.handlers.PoolOpChangeHandler;
 import org.dcache.qos.util.MapInitializer;
 
@@ -71,6 +72,7 @@ import org.dcache.qos.util.MapInitializer;
 public final class ScannerMapInitializer extends MapInitializer {
 
     private PoolOperationMap poolOperationMap;
+    private SystemOperationMap systemOperationMap;
     private PoolOpChangeHandler poolOpChangeHandler;
 
     public synchronized void shutDown() {
@@ -104,20 +106,23 @@ public final class ScannerMapInitializer extends MapInitializer {
          *  Synchronous sequence of initialization procedures;
          *  order must be maintained.
          */
-        LOGGER.info("Loading pool operations.");
+        LOGGER.info("Loading pool operation map.");
         poolOperationMap.setCurrentPsu(poolMonitor.getPoolSelectionUnit());
         poolOperationMap.loadPools();
 
-        LOGGER.info("Pool maps reloaded; initializing ...");
+        LOGGER.info("Pool map reloaded; initializing ...");
         poolOperationMap.initialize();
 
-        LOGGER.info("Pool maps initialized; delivering backlog.");
+        LOGGER.info("Pool map initialized; delivering backlog.");
         messageGuard.enable();
 
         setInitialized();
 
         LOGGER.info("Starting the periodic pool monitor refresh check.");
         poolOpChangeHandler.startWatchdog();
+
+        LOGGER.info("System map initializing ...");
+        systemOperationMap.initialize();
     }
 
     public void setChangeHandler(PoolOpChangeHandler changeHandler) {
@@ -126,6 +131,10 @@ public final class ScannerMapInitializer extends MapInitializer {
 
     public void setPoolOperationMap(PoolOperationMap poolOperationMap) {
         this.poolOperationMap = poolOperationMap;
+    }
+
+    public void setSystemOperationMap(SystemOperationMap systemOperationMap) {
+        this.systemOperationMap = systemOperationMap;
     }
 
     @Override
