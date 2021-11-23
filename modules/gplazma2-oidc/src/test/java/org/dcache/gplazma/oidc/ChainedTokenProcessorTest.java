@@ -20,6 +20,8 @@ package org.dcache.gplazma.oidc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
@@ -39,7 +41,8 @@ public class ChainedTokenProcessorTest {
         private IdentityProvider provider;
 
         public ResultBuilder withIP(String name) {
-            provider = new IdentityProvider(name, "https://" + name + ".example.org/");
+            provider = new IdentityProvider(name, URI.create("https://" + name + ".example.org/"),
+                    (idp,c) -> Collections.emptySet());
             return this;
         }
 

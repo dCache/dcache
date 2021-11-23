@@ -18,82 +18,87 @@
  */
 package org.dcache.gplazma.oidc;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import java.net.URI;
+import java.util.Collections;
+
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.Test;
 
+
 public class IdentityProviderTests {
+    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider(null, "");
+        IdentityProvider ignored = new IdentityProvider(null, URI.create("http://example.org/"), IGNORE_ALL);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithEmptyName() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("", "");
+        IdentityProvider ignored = new IdentityProvider("", URI.create("http://example.org/"), IGNORE_ALL);
     }
 
     @Test(expected = NullPointerException.class)
-    public void shouldFailWithNullDescription() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("null-provider", null);
+    public void shouldFailWithNullUri() throws Exception {
+        IdentityProvider ignored = new IdentityProvider("null-provider", null, IGNORE_ALL);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldFailWithEmptyDescription() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("empty-provider", "");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldFailWithInvalidUri() throws Exception {
-        IdentityProvider ignored = new IdentityProvider("bad-url", "0:0");
+    @Test(expected = NullPointerException.class)
+    public void shouldFailWithNullProfile() throws Exception {
+        IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"), null);
     }
 
     @Test
     public void shouldParseProviderWithTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("GOOGLE", "https://accounts.google.com/");
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"),
+                IGNORE_ALL);
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
               is(equalTo("https://accounts.google.com/")));
         assertThat(google.getConfigurationEndpoint().toString(),
               is(equalTo("https://accounts.google.com/.well-known/openid-configuration")));
+        assertThat(google.getProfile(), is(sameInstance(IGNORE_ALL)));
     }
 
     @Test
     public void shouldParseProviderWithoutTrailingSlash() throws Exception {
-        IdentityProvider google = new IdentityProvider("GOOGLE", "https://accounts.google.com");
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com"),
+                IGNORE_ALL);
 
         assertThat(google.getName(), is(equalTo("GOOGLE")));
         assertThat(google.getIssuerEndpoint().toString(),
               is(equalTo("https://accounts.google.com")));
         assertThat(google.getConfigurationEndpoint().toString(),
               is(equalTo("https://accounts.google.com/.well-known/openid-configuration")));
+        assertThat(google.getProfile(), is(sameInstance(IGNORE_ALL)));
     }
 
     @Test
     public void shouldParseProviderWithPathWithoutTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              "https://unity.helmholtz-data-federation.de/oauth2");
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2"), IGNORE_ALL);
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),
               is(equalTo("https://unity.helmholtz-data-federation.de/oauth2")));
         assertThat(unity.getConfigurationEndpoint().toString(), is(equalTo(
               "https://unity.helmholtz-data-federation.de/oauth2/.well-known/openid-configuration")));
+        assertThat(unity.getProfile(), is(sameInstance(IGNORE_ALL)));
     }
 
     @Test
     public void shouldParseProviderWithPathWithTrailingSlash() throws Exception {
         IdentityProvider unity = new IdentityProvider("UNITY",
-              "https://unity.helmholtz-data-federation.de/oauth2/");
+              URI.create("https://unity.helmholtz-data-federation.de/oauth2/"), IGNORE_ALL);
 
         assertThat(unity.getName(), is(equalTo("UNITY")));
         assertThat(unity.getIssuerEndpoint().toString(),
               is(equalTo("https://unity.helmholtz-data-federation.de/oauth2/")));
         assertThat(unity.getConfigurationEndpoint().toString(), is(equalTo(
               "https://unity.helmholtz-data-federation.de/oauth2/.well-known/openid-configuration")));
+        assertThat(unity.getProfile(), is(sameInstance(IGNORE_ALL)));
     }
 }

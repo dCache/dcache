@@ -40,6 +40,7 @@ import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.profiles.OidcProfile;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -106,8 +107,6 @@ public class OidcAuthPluginTest {
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("oidc.example.org")));
-        assertThat(provider.isUsernameAccepted(), is(equalTo(false)));
-        assertThat(provider.areGroupsAccepted(), is(equalTo(false)));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
     }
@@ -131,10 +130,39 @@ public class OidcAuthPluginTest {
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
-        assertThat(provider.isUsernameAccepted(), is(equalTo(false)));
-        assertThat(provider.areGroupsAccepted(), is(equalTo(false)));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldReturnSingleIdentityProviderFromBuildProvidersWithSinglePrefixEntriesWithOidcProfile() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE", "https://oidc.example.org/ -profile=oidc");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getName(), is(equalTo("EXAMPLE")));
+        assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
+        assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectIdentityProviderWithUnknownProfile() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=unknown-profile");
+
+        OidcAuthPlugin.buildProviders(properties);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -171,10 +199,12 @@ public class OidcAuthPluginTest {
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
-        assertThat(provider.isUsernameAccepted(), is(equalTo(true)));
-        assertThat(provider.areGroupsAccepted(), is(equalTo(false)));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(true)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(false)));
     }
 
     @Test
@@ -187,10 +217,12 @@ public class OidcAuthPluginTest {
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
-        assertThat(provider.isUsernameAccepted(), is(equalTo(false)));
-        assertThat(provider.areGroupsAccepted(), is(equalTo(true)));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(false)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(true)));
     }
 
     @Test
@@ -203,10 +235,12 @@ public class OidcAuthPluginTest {
         assertThat(identityProviders, hasSize(1));
         IdentityProvider provider = identityProviders.iterator().next();
         assertThat(provider.getName(), is(equalTo("EXAMPLE")));
-        assertThat(provider.isUsernameAccepted(), is(equalTo(true)));
-        assertThat(provider.areGroupsAccepted(), is(equalTo(true)));
         assertThat(provider.getIssuerEndpoint(), is(equalTo(URI.create("https://oidc.example.org/"))));
         assertThat(provider.getConfigurationEndpoint(), is(equalTo(URI.create("https://oidc.example.org/.well-known/openid-configuration"))));
+        assertThat(provider.getProfile(), is(instanceOf(OidcProfile.class)));
+        OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
+        assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(true)));
+        assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(true)));
     }
 
     @Test
@@ -1457,7 +1491,8 @@ public class OidcAuthPluginTest {
         private final ExtractResult result = mock(ExtractResult.class);
 
         public ExtractResultBuilder from(MockIdentityProviderBuilder builder) {
-            BDDMockito.given(result.idp()).willReturn(builder.build());
+            var idp = builder.build();
+            BDDMockito.given(result.idp()).willReturn(idp);
             return this;
         }
 

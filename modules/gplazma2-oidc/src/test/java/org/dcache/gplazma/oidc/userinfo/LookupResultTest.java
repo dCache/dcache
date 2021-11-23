@@ -20,9 +20,11 @@ package org.dcache.gplazma.oidc.userinfo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 import org.dcache.gplazma.oidc.IdentityProvider;
+import org.dcache.gplazma.oidc.Profile;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,7 +32,9 @@ import static org.hamcrest.Matchers.*;
 
 public class LookupResultTest {
 
-    private static final IdentityProvider EXAMPLE_IP = new IdentityProvider("example-op", "https://example.org/");
+    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final IdentityProvider EXAMPLE_IP = new IdentityProvider("example-op",
+            URI.create("https://example.org/"), IGNORE_ALL);
 
     @Test(expected=NullPointerException.class)
     public void shouldThrowNpeOnErrorWithNullIp() {
