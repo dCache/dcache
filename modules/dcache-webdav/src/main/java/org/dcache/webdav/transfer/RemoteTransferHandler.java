@@ -87,13 +87,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -228,7 +228,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
           "transferheader";
 
-    private final HashMap<Long, RemoteTransfer> _transfers = new HashMap<>();
+    private final Map<Long, RemoteTransfer> _transfers = new ConcurrentHashMap<>();
     private final BoundedExecutor _activity =
           new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
 
@@ -387,12 +387,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             buildHeaders();
 
-            synchronized (_transfers) {
-                _transfers.values().stream()
-                      .filter(buildFilter())
-                      .sorted(buildComparator())
-                      .forEachOrdered(this::printTransfer);
-            }
+            _transfers.values().stream()
+                  .filter(buildFilter())
+                  .sorted(buildComparator())
+                  .forEachOrdered(this::printTransfer);
 
             return output.toString();
         }
@@ -612,19 +610,15 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
         long id;
 
-        synchronized (_transfers) {
-            id = transfer.start();
-            response.setStatus(Status.SC_ACCEPTED);
-            response.setContentTypeHeader("text/perf-marker-stream");
-            _transfers.put(id, transfer);
-        }
+        response.setStatus(Status.SC_ACCEPTED);
+        response.setContentTypeHeader("text/perf-marker-stream");
+        id = transfer.start();
+        _transfers.put(id, transfer);
 
         try {
             transfer.awaitCompletion();
         } finally {
-            synchronized (_transfers) {
-                _transfers.remove(id);
-            }
+            _transfers.remove(id);
         }
 
         return Optional.ofNullable(transfer._problem);
@@ -646,21 +640,17 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
 
     public void messageArrived(TransferCompleteMessage message) {
-        synchronized (_transfers) {
-            RemoteTransfer transfer = _transfers.get(message.getId());
-            if (transfer != null) {
-                _activity.execute(() -> transfer.success());
-            }
+        RemoteTransfer transfer = _transfers.get(message.getId());
+        if (transfer != null) {
+            _activity.execute(() -> transfer.success());
         }
     }
 
     public void messageArrived(TransferFailedMessage message) {
-        synchronized (_transfers) {
-            RemoteTransfer transfer = _transfers.get(message.getId());
-            if (transfer != null) {
-                String error = String.valueOf(message.getErrorObject());
-                _activity.execute(() -> transfer.failure(error));
-            }
+        RemoteTransfer transfer = _transfers.get(message.getId());
+        if (transfer != null) {
+            String error = String.valueOf(message.getErrorObject());
+            _activity.execute(() -> transfer.failure(error));
         }
     }
 
