@@ -3,6 +3,7 @@ package org.dcache.pool.classic;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toCollection;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
@@ -96,7 +97,8 @@ public class StorageClassContainer
         return _pnfsIds.get(pnfsId);
     }
 
-    private synchronized StorageClassInfo defineStorageClass(String hsmName, String storageClass) {
+    @VisibleForTesting
+    synchronized StorageClassInfo defineStorageClass(String hsmName, String storageClass) {
         StorageClassInfo info =
               getStorageClassInfo(hsmName, storageClass);
         if (info == null) {
@@ -170,7 +172,7 @@ public class StorageClassContainer
             classInfo = new StorageClassInfo(_storageHandler, hsmName, storageClass);
             //
             // in case we find a template, we take the
-            // 'pending', 'expire' and 'total' parameter from it.
+            // 'pending', 'expire', 'total' and 'open' parameter from it.
             //
             StorageClassInfo tmpInfo =
                   _storageClasses.get("*@" + hsmName);
@@ -178,6 +180,7 @@ public class StorageClassContainer
                 classInfo.setExpiration(tmpInfo.getExpiration());
                 classInfo.setPending(tmpInfo.getPending());
                 classInfo.setMaxSize(tmpInfo.getMaxSize());
+                classInfo.setOpen(tmpInfo.isOpen());
             }
             _storageClasses.put(composedName, classInfo);
         }
