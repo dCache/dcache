@@ -20,7 +20,9 @@ package org.dcache.webdav.transfer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Comparators.emptiesFirst;
 import static diskCacheV111.services.TransferManagerHandler.INITIAL_STATE;
+import static java.time.Duration.ZERO;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.PNFSID;
@@ -35,6 +37,8 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.GRIDSITE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.NONE;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.OIDC;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -61,6 +65,7 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
@@ -91,6 +96,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -232,6 +238,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
           "transferheader";
 
+    // Number of message queuing durations to retain
+    private static final int MESSAGE_QUEUE_HISTORY = 100;
+
+    // Error-of-margin for delivery of the cell message from non-local domains.
+    private static final Duration CELL_MESSAGE_LATENCY = Duration.of(2, MINUTES);
+
+    private final Queue<Duration> _messageQueueTime = EvictingQueue.<Duration>create(MESSAGE_QUEUE_HISTORY);
     private final Map<Long, RemoteTransfer> _transfers = new ConcurrentHashMap<>();
 
     private long _performanceMarkerPeriod;
@@ -240,6 +253,12 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     private final ScheduledExecutorService _scheduler = Executors.newScheduledThreadPool(1);
     private final BoundedExecutor _activity =
             new BoundedCachedExecutor(r -> new Thread(r, "transfer-finaliser-" + nextThreadCount()), 1);
+
+    /** The time when the most recent message was processed. */
+    private volatile Instant _lastMessageProcessed = Instant.now();
+
+    /** The time when the most recent message was received. */
+    private volatile Instant _lastMessageArrived = Instant.now();
 
     @Required
     public void setTransferManagerStub(CellStub stub) {
@@ -644,19 +663,35 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         return builder.build();
     }
 
-
-    public void messageArrived(TransferCompleteMessage message) {
+    public void messageArrived(CellMessage envelope, TransferCompleteMessage message) {
+        messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
         RemoteTransfer transfer = _transfers.get(message.getId());
         if (transfer != null) {
             _activity.execute(() -> transfer.success());
         }
     }
 
-    public void messageArrived(TransferFailedMessage message) {
+    public void messageArrived(CellMessage envelope, TransferFailedMessage message) {
+        messageArrived(Duration.of(envelope.getLocalAge(), MILLIS));
         RemoteTransfer transfer = _transfers.get(message.getId());
         if (transfer != null) {
             String error = String.valueOf(message.getErrorObject());
             _activity.execute(() -> transfer.failure(error));
+        }
+    }
+
+    private void messageArrived(Duration timeQueued) {
+        Instant now = Instant.now();
+        _lastMessageProcessed = now;
+        _lastMessageArrived = now.minus(timeQueued);
+        synchronized (_messageQueueTime) {
+            _messageQueueTime.add(timeQueued);
+        }
+    }
+
+    private Duration maxMessageQueueDelay() {
+        synchronized (_messageQueueTime) {
+            return _messageQueueTime.stream().reduce((a,b) -> a.compareTo(b) >= 0 ? a : b).orElse(ZERO);
         }
     }
 
@@ -701,7 +736,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         private boolean _finished;
         private Optional<String> _digestValue;
         private Optional<String> _pool = Optional.empty();
-        private boolean _transferReportedAsUnknown;
+        private Optional<Instant> _discoveredTransferMissing = Optional.empty();
+        private Optional<Instant> _failTransferAfter = Optional.empty();
         private long _size;
 
         public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
@@ -1082,16 +1118,13 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                  *  restart; however, we now have no way to monitor the
                  *  progress or cancel it.  The best we can do is to tell the
                  *  client the transfer has failed.
+                 *
+                 *  Another possibility is "bad luck".  The message from RemoteTransferManager
+                 *  is still queued and will be processed "soon".
                  */
-
-                /* We wait for two failures as a work-around for the race
-                 * between WebDAV processing a TransferCompleteMessage and the
-                 * progress marker query.
-                 */
-                if (_transferReportedAsUnknown) {
+                if (shouldFailMissingTransfer()) {
                     failure("RemoteTransferManager restarted");
                 }
-                _transferReportedAsUnknown = true;
             } catch (NoRouteToCellException | CacheException e) {
                 LOGGER.warn("Failed to fetch information for progress marker: {}",
                       e.getMessage());
@@ -1112,6 +1145,48 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             sendMarker(state, info);
             checkClientConnected();
+        }
+
+        /**
+         * Whether or not to fail a transfer, given RemoteTransferManager says there is not such
+         * transfer.  There is (unfortunately) a race condition here, since RemoteTransferManager
+         * will reply (to the door) immediately after a transfer completes and then immediately
+         * forget about the transfer.  If the door queries before the transfer complete message
+         * is processed then the door will believe the RemoteTransferManager has lost the transfer
+         * (e.g., having been restarted).
+         * <p>
+         * We use heuristics as a work-around for this, with the assumption that messages on the
+         * message queue are processed in the order they are received.  Therefore, if the door
+         * processes a message delivered after the last message then there was no transfer complete
+         * message.
+         * <p>
+         * The average time a message spends on the message queue is used to create another
+         * deadline.  This is meant as a backup, should the door not receive any further messages.
+         * @return true if the transfer should be failed.
+         */
+        private boolean shouldFailMissingTransfer() {
+            Instant now = Instant.now();
+
+            // Is this the first time RemoteTransferManager says "no such transfer"?
+            if (_discoveredTransferMissing.isEmpty()) {
+                _discoveredTransferMissing = Optional.of(now);
+                Instant whenToFail = now.plus(maxMessageQueueDelay()).plus(CELL_MESSAGE_LATENCY);
+                _failTransferAfter = Optional.of(whenToFail);
+                return false;
+            }
+
+            Instant previousPerfMarker = now.minus(_performanceMarkerPeriod, MILLIS);
+
+            // Are we still receiving messages?
+            if (_lastMessageProcessed.isAfter(previousPerfMarker)) {
+                Instant whenMissing = _discoveredTransferMissing.get();
+                Instant lastMessageSent = _lastMessageArrived.minus(CELL_MESSAGE_LATENCY);
+                return lastMessageSent.isAfter(whenMissing);
+            }
+
+            // Apply timeout based on message queue latency.
+            Instant failAfter = _failTransferAfter.get();
+            return now.isAfter(failAfter);
         }
 
 
