@@ -10,6 +10,8 @@
 
 package diskCacheV111.services;
 
+import diskCacheV111.vehicles.Pool;
+import java.util.Optional;
 
 public class TransferManagerHandlerBackup {
 
@@ -37,7 +39,7 @@ public class TransferManagerHandlerBackup {
         id = handler.getId();
         pnfsPath = handler.getPnfsPath();
         pnfsIdString = handler.getPnfsIdString();
-        pool = handler.getPool().getName();
+        pool = Optional.ofNullable(handler.getPool()).map(Pool::getName).orElse(null);
         store = handler.getStore();
         created = handler.getCreated();
         locked = handler.getLocked();
