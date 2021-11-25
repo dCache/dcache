@@ -164,6 +164,7 @@
 
   <bean id="ha-service-leadership-manager" class="org.dcache.cells.HAServiceLeadershipManager"
         init-method="initZkLeaderListener" destroy-method="shutdown">
+      <description>Coordinates which pnfsmanager updates the filesystem stat cache</description>
       <constructor-arg value="pnfsmanager"/>
       <property name="leadershipListener">
           <ref bean="leaderlistener-group"/>
