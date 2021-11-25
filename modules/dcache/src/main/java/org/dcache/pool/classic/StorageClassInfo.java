@@ -347,6 +347,7 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
     public synchronized String toString() {
         return "SCI=" + _storageClass +
               "@" + _hsmName +
+              ";open=" + _isOpen +
               ";def=" + _isDefined +
               ";exp=" + TimeUnit.MILLISECONDS.toSeconds(_expiration) +
               ";pend=" + _pending +

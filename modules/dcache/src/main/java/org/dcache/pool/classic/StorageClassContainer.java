@@ -274,6 +274,7 @@ public class StorageClassContainer
     //
     private void dumpClassInfo(StringBuilder sb, StorageClassInfo classInfo) {
         sb.append("               Class@Hsm : ").append(classInfo.getFullName()).append("\n");
+        sb.append("                  isOpen : ").append(classInfo.isOpen()).append("\n");
         sb.append(" Expiration rest/defined : ").append(classInfo.expiresIn()).
               append(" / ").
               append(TimeUnit.MILLISECONDS.toSeconds(classInfo.getExpiration())).
@@ -368,6 +369,7 @@ public class StorageClassContainer
                     dumpClassInfo(sb, classInfo);
                 } else {
                     sb.append(classInfo.getStorageClass()).append("@").append(classInfo.getHsm());
+                    sb.append("  open=: ").append(classInfo.isOpen());
                     sb.append("  active=").append(classInfo.getActiveCount());
                     sb.append("\n");
                 }
