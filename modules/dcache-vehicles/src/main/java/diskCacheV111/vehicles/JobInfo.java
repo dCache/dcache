@@ -7,7 +7,11 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
+
+import static java.time.temporal.ChronoUnit.MILLIS;
 
 public class JobInfo implements Serializable {
 
@@ -52,12 +56,21 @@ public class JobInfo implements Serializable {
         return _submitTime;
     }
 
+    public Instant submitted() {
+        return Instant.ofEpochMilli(_submitTime);
+    }
+
     public String getStatus() {
         return _status;
     }
 
     public long getJobId() {
         return _jobId;
+    }
+
+    public Duration queued() {
+        long queueEnd = isStarted() ? getStartTime() : System.currentTimeMillis();
+        return Duration.of(queueEnd - _submitTime, MILLIS);
     }
 
     public String toString() {
