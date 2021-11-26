@@ -423,6 +423,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
 
             if (showTiming) {
                 output.space().header("Lifetime").left("lifetime")
+                      .space().header("Prep").left("preparation")
                       .space().header("Queued").left("queued")
                       .space().header("Running").left("running");
             }
@@ -568,19 +569,23 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             }
 
             if (showTiming) {
+                Instant now = Instant.now();
+
                 StringBuilder lifetime = appendDuration(new StringBuilder(),
-                      Duration.between(transfer._whenSubmitted, Instant.now()),
-                      SHORT);
+                      Duration.between(transfer._whenSubmitted, now), SHORT);
                 row.value("lifetime", lifetime);
 
-                Duration queued = Duration.between(transfer._whenSubmitted,
-                      transfer._transferStarted.orElseGet(() -> Instant.now()));
-                StringBuilder queueDescription = appendDuration(new StringBuilder(),
-                      queued, SHORT);
-                row.value("queued", queueDescription);
+                Instant moverCreatedOrNow = transfer._lastInfo.map(IoJobInfo::submitted).orElse(now);
+                Duration prep = Duration.between(transfer._whenSubmitted, moverCreatedOrNow);
+                StringBuilder prepDescription = appendDuration(new StringBuilder(), prep, SHORT);
+                row.value("preparation", prepDescription);
+
+                Optional<CharSequence> queueDescription = transfer._lastInfo.map(IoJobInfo::queued)
+                        .map(d -> appendDuration(new StringBuilder(), d, SHORT));
+                row.value("queued", queueDescription.orElse("-"));
 
                 Optional<String> running = transfer._transferStarted
-                      .map(i -> Duration.between(i, Instant.now()))
+                      .map(i -> Duration.between(i, now))
                       .map(d -> appendDuration(new StringBuilder(), d, SHORT))
                       .map(Object::toString);
                 row.value("running", running.orElse("-"));
