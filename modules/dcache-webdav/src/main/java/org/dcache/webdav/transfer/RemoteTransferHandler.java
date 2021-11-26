@@ -135,6 +135,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;
 
 /**
@@ -555,7 +556,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                   .value("pool", transfer._pool.orElse("-"));
 
             if (showState) {
-                row.value("state", TransferManagerHandler.describeState(transfer._lastState));
+                row.value("state", transfer.describeLastState());
             }
 
             if (showLocalPath) {
@@ -1132,7 +1133,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             _lastState = state;
             _lastInfo = Optional.ofNullable(info);
             if (info != null) {
-                if (!_transferStarted.isPresent() && info.getTransferTime() > 0) {
+                if (!_transferStarted.isPresent() && info.isStarted()) {
                     Instant started = Instant.now().minus(info.getTransferTime(), MILLIS);
                     _transferStarted = Optional.of(started);
                 }
@@ -1146,6 +1147,15 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             checkClientConnected();
         }
 
+        private String describeLastState() {
+            return describeState(_lastState, _lastInfo.orElse((IoJobInfo)null));
+        }
+
+        private String describeState(int state, @Nullable IoJobInfo info) {
+            return state == RECEIVED_FIRST_POOL_REPLY_STATE && info != null
+                    ? info.isStarted() ? "Running" : "Queued on pool"
+                    : TransferManagerHandler.describeState(state);
+        }
 
         /**
          * Print a performance marker on the reply channel that looks something like:
@@ -1153,14 +1163,14 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
          * Perf Marker Timestamp: 1360578938 Stripe Index: 0 Stripe Bytes Transferred: 49397760
          * Total Stripe Count: 2 End
          */
-        private void sendMarker(int state, IoJobInfo info) {
+        private void sendMarker(int state, @Nullable IoJobInfo info) {
             try {
                 var out = _async.getResponse().getWriter();
 
                 out.println("Perf Marker");
                 out.println("    Timestamp: " +
                       MILLISECONDS.toSeconds(System.currentTimeMillis()));
-                out.println("    State: " + state);
+                out.println("    State: " + describeState(state, info));
                 out.println(
                       "    State description: " + TransferManagerHandler.describeState(state));
                 out.println("    Stripe Index: 0");
