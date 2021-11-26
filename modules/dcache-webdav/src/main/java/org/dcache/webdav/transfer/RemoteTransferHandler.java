@@ -332,6 +332,9 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
               category = "Field options")
         boolean showNetwork;
 
+        @Option(name = "s", usage = "Show the current status.", category = "Field options")
+        boolean showState;
+
         @Option(name = "l", usage = "Show the local path of the transfer.",
               category = "Field options")
         boolean showLocalPath;
@@ -340,9 +343,8 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
               category = "Field options")
         boolean showRemotePath;
 
-        @Option(name = "a", usage = "Show all available information about"
-              + " transfers.  This is equivalent to specifying \"-t -n -l"
-              + " -r\"", category = "Field options")
+        @Option(name = "a", usage = "Show all available information about transfers.  This is"
+                + " equivalent to specifying \"-l -n -r -s -t\".", category = "Field options")
         boolean showAll;
 
         @Option(name = "pool", usage = "Select transfers involving a pool that"
@@ -398,6 +400,7 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
             if (showAll) {
                 showTiming = true;
                 showNetwork = true;
+                showState = true;
                 showLocalPath = true;
                 showRemotePath = true;
             }
@@ -421,6 +424,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                 output.space().header("Lifetime").left("lifetime")
                       .space().header("Queued").left("queued")
                       .space().header("Running").left("running");
+            }
+
+            if (showState) {
+                output.space().header("State").left("state");
             }
 
             output.space().header("Dirn").left("direction")
@@ -546,6 +553,10 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
                   .value("direction", transfer._direction)
                   .value("host", transfer._destination.getHost())
                   .value("pool", transfer._pool.orElse("-"));
+
+            if (showState) {
+                row.value("state", TransferManagerHandler.describeState(transfer._lastState));
+            }
 
             if (showLocalPath) {
                 row.value("local-path", transfer._path.toString());
