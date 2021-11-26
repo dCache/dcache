@@ -44,6 +44,10 @@ public class JobInfo implements Serializable {
         return _startTime;
     }
 
+    public boolean isStarted() {
+        return _startTime > 0;
+    }
+
     public long getSubmitTime() {
         return _submitTime;
     }
