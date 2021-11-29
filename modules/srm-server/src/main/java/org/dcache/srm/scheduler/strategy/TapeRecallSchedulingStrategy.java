@@ -34,6 +34,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.concurrent.GuardedBy;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
@@ -138,6 +139,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         return overallCount;
     }
 
+    @GuardedBy("this")
     private boolean addNewJob(SchedulingItemJob job) {
         return newJobs.add(job);
     }
@@ -151,6 +153,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * @param job  the job scheduling item that should be added to the tape list
      * @return if the job was added to the tape list
      */
+    @GuardedBy("this")
     private boolean addJobToTapeQueue(SchedulingItemJob job, String tape) {
         if (tape == null || job == null || "".equals(tape)) {
             return false;
@@ -167,6 +170,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * Will check if there are free active tape slots and attempt to fill them by requesting
      * to receive the next tapes to activate.
      */
+    @GuardedBy("this")
     private boolean refillActiveTapeSlots() {
         boolean activatedTapes = false;
         int freeTapeSlots = requirementsChecker.getRemainingTapeSlots(activeTapesWithJobs.size());
@@ -203,6 +207,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      *
      * @return the next best tape to activate; else null
      */
+    @GuardedBy("this")
     private String selectNextTapeToActivate() {
         Comparator<String> tapeComparatorOldestRequest = (String t1, String t2) -> requirementsChecker.compareOldestTapeRequestAge(
               tapes.get(t1), tapes.get(t2));
@@ -298,6 +303,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * Removes tapes without remaining jobs from 'activeTapesWithJobs' and if there are no remaining
      * requests targeting the tape in general, it will be removed from the 'tapes' map as well.
      */
+    @GuardedBy("this")
     private void moveNextTapeJobsToImmediateJobQueue() {
         if (activeTapesWithJobs.isEmpty()) {
             return;
@@ -335,6 +341,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * Retrieves all jobs without tape info that have exceeded the max queue waiting time and adds
      * them to the 'immediateJobQueue'.
      */
+    @GuardedBy("this")
     private void moveExpiredJobsToImmediateJobQueue() {
         List<Long> expiredJobs = new LinkedList<>();
         Iterator<SchedulingItemJob> iterator = newJobs.iterator();
@@ -359,6 +366,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * Attempts to refresh tape location information for requests and tapes if enough time has
      * passed since the last attempt and new jobs exists.
      */
+    @GuardedBy("this")
     private void attemptToRefreshTapeInfo() {
         long current = System.currentTimeMillis();
         if (current > lastTapeInfoRefreshAttempt + MIN_TIME_BETWEEN_TAPEINFO_FETCHING) {
@@ -384,6 +392,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * get the missing tape location infos, adds them to the job scheduling item. It is then removed
      * from 'newJobs' and added to the 'tapesWithJobs' map.
      */
+    @GuardedBy("this")
     private void fetchAndAddTapeInfoForJobs() {
         if (newJobs.isEmpty()) {
             return;
@@ -428,6 +437,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      *
      * @param tapes the names of tapes for which to sort the corresponding request queues
      */
+    @GuardedBy("this")
     private void sortTapeRequestQueues(Set<String> tapes) {
         tapes.forEach(t -> sortTapeQueue(t));
     }
@@ -439,6 +449,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      *
      * @param tapeName the name of the tape for which to sort the corresponding request queue
      */
+    @GuardedBy("this")
     private void sortTapeQueue(String tapeName) {
         if (!tapesWithJobs.containsKey(tapeName)) {
             return;
@@ -459,6 +470,7 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
      * sends that to the 'tapeInfoProvider' to get the missing infos and feeds it back into the
      * corresponding entries in 'tapes'.
      */
+    @GuardedBy("this")
     private void fetchAndAddInfosForTapes() {
         List<String> tapesWithoutInfo = tapes.entrySet().stream()
               .filter(e -> !e.getValue().hasTapeInfo()).map(e -> e.getKey())
@@ -474,7 +486,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
               e.getValue().getUsedSpace()));
     }
 
-    public String describeQueueState() {
+    @GuardedBy("this")
+    private String describeQueueState() {
         StringBuilder sb = new StringBuilder();
         int newJobsCount = newJobs.size();
         int jobsByTapeCount = tapesWithJobs.entrySet().stream().mapToInt(e -> e.getValue().size())
@@ -494,7 +507,8 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
         return sb.toString();
     }
 
-    public String describeTapesWithJobsMap(Map<String, LinkedList<SchedulingItemJob>> tapesJobMap) {
+    @GuardedBy("this")
+    private String describeTapesWithJobsMap(Map<String, LinkedList<SchedulingItemJob>> tapesJobMap) {
         StringBuilder sb = new StringBuilder();
         if (tapesJobMap.isEmpty()) {
             return sb.append(" []").toString();
