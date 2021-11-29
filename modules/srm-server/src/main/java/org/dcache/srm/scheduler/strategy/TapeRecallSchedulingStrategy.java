@@ -318,7 +318,12 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
             }
 
             if (currTapeWithJobs.getValue().isEmpty()) {
-                tapes.get(currTapeWithJobs.getKey()).resetJobArrivalTimes();
+                if (tapesWithJobs.containsKey(currTapeWithJobs.getKey())) {
+                    tapes.get(currTapeWithJobs.getKey()).resetJobArrivalTimes();
+                } else {
+                    // remove tape if there are no jobs targeting it
+                    tapes.remove(currTapeWithJobs.getKey());
+                }
                 activeTapesWithJobsIterator.remove();
             } else { // update oldest job arrival time
                 tapes.get(currTapeWithJobs.getKey())
