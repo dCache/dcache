@@ -311,29 +311,30 @@ public class TapeRecallSchedulingStrategy implements SchedulingStrategy {
 
         List<SchedulingItemJob> jobsToMove = new LinkedList<>();
 
-        Iterator<Map.Entry<String, LinkedList<SchedulingItemJob>>> activeTapesWithJobsIterator = this.activeTapesWithJobs.entrySet()
+        Iterator<Map.Entry<String, LinkedList<SchedulingItemJob>>> itr = activeTapesWithJobs.entrySet()
               .iterator();
-        Map.Entry<String, LinkedList<SchedulingItemJob>> currTapeWithJobs;
 
-        while (activeTapesWithJobsIterator.hasNext()) {
-            currTapeWithJobs = activeTapesWithJobsIterator.next();
+        while (itr.hasNext()) {
+            var currentTape = itr.next();
+            var tapeName = currentTape.getKey();
+            var jobs = currentTape.getValue();
 
-            if (!currTapeWithJobs.getValue().isEmpty()) { // jobs left for tape
-                SchedulingItemJob currJobInfo = currTapeWithJobs.getValue().remove();
-                jobsToMove.add(currJobInfo);
+            if (!jobs.isEmpty()) { // jobs left for tape
+                SchedulingItemJob job = jobs.remove();
+                jobsToMove.add(job);
             }
 
-            if (currTapeWithJobs.getValue().isEmpty()) {
-                if (tapesWithJobs.containsKey(currTapeWithJobs.getKey())) {
-                    tapes.get(currTapeWithJobs.getKey()).resetJobArrivalTimes();
+            if (jobs.isEmpty()) {
+                if (tapesWithJobs.containsKey(tapeName)) {
+                    tapes.get(tapeName).resetJobArrivalTimes();
                 } else {
                     // remove tape if there are no jobs targeting it
-                    tapes.remove(currTapeWithJobs.getKey());
+                    tapes.remove(tapeName);
                 }
-                activeTapesWithJobsIterator.remove();
+                itr.remove();
             } else { // update oldest job arrival time
-                tapes.get(currTapeWithJobs.getKey())
-                      .setOldestJobArrival(currTapeWithJobs.getValue().element().getCreationTime());
+                tapes.get(tapeName)
+                      .setOldestJobArrival(jobs.element().getCreationTime());
             }
         }
 
