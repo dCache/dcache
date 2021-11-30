@@ -5,7 +5,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import java.util.concurrent.TimeUnit;
+import org.dcache.chimera.InodeId;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.vehicles.FileAttributes;
@@ -70,14 +72,17 @@ public class StorageClassContainerTest {
 
     private CacheEntry givenCacheEntry(String hsm, String storageClass) {
 
+        PnfsId id = new PnfsId(InodeId.newID(0));
 
         var attr = FileAttributes.of()
               .storageClass(storageClass)
               .hsm(hsm)
+              .pnfsId(id)
               .build();
 
         var ce = mock(CacheEntry.class);
         when(ce.getFileAttributes()).thenReturn(attr);
+        when(ce.getPnfsId()).thenReturn(id);
 
         return ce;
     }
