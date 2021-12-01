@@ -397,7 +397,6 @@ or the package._
 | storage-descriptor.output.path | Output path. The location where the JSON output is written. | `/var/spool/dcache/storage-descriptor.json` or `${dcache.home}/var/spool/dcache/storage-descriptor.json` | |
 | storage-descriptor.xslt.path | XSLT path. The location of the XSLT stylesheet that transforms the info service's XML into the Storage Descriptor JSON format. | `${dcache.paths.share}`/xml/xslt/storage-descriptor.xsl | |
 
-
 ## WLCG Storage Resource Reporting
 
 The WLCG Storage Resource Reporting (SRR) is JSON based file that describes storage resources according
@@ -451,4 +450,14 @@ publishes pool groups user and store for VO cms and will produce output like:
       "assignedendpoints" : [ "all" ],
       "vos" : [ "/cms" ]
     } ]
+```
+
+The WLCG SRR uses the following info-provider properties to control the generated json output:
+
+```
+info-provider.se-unique-id=
+info-provider.se-name=
+info-provider.dcache-architecture=
+nfo-provider.dcache-quality-level=
+storage-descriptor.door.tag=
 ```
