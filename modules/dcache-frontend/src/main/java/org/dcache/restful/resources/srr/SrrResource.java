@@ -115,7 +115,7 @@ public class SrrResource {
     @Path("/")
     public Response getSrr() throws InterruptedException, CacheException, NoRouteToCellException {
 
-        InetAddress remoteAddress = InetAddresses.forUriString(request.getRemoteAddr());
+        InetAddress remoteAddress = InetAddresses.forString(request.getRemoteAddr());
         if (!remoteAddress.isLoopbackAddress()) {
             throw new ForbiddenException();
         }
