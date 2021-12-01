@@ -396,3 +396,59 @@ or the package._
 | storage-descriptor.door.tag | Login-provider tag. The tag that doors identify themselves with before they are published. | storage-descriptor | |
 | storage-descriptor.output.path | Output path. The location where the JSON output is written. | `/var/spool/dcache/storage-descriptor.json` or `${dcache.home}/var/spool/dcache/storage-descriptor.json` | |
 | storage-descriptor.xslt.path | XSLT path. The location of the XSLT stylesheet that transforms the info service's XML into the Storage Descriptor JSON format. | `${dcache.paths.share}`/xml/xslt/storage-descriptor.xsl | |
+
+
+## WLCG Storage Resource Reporting
+
+The WLCG Storage Resource Reporting (SRR) is JSON based file that describes storage resources according
+to WCLG operational team specified [format](https://raw.githubusercontent.com/sjones-hep-ph-liv-ac-uk/json_info_system/master/srr/v4.2/schema/srrschema_4.2.json).
+
+The dCache implementation is integrated into **frontend** service and exposed as REST-API. To access
+SRR reporting a frontend service must be defined, if not exist:
+
+```
+[srrDomain]
+
+[srrdDomain/frontend]
+frontend.authn.basic=true
+frontend.authn.protocol=http
+frontend.authz.anonymous-operations=READONLY
+frontend.srr.shares=user:/cms,store:/cms
+```
+
+> NOTE: the access to SRR information is restricted to localhost only. Thus you have to put it
+somewhere, where from WLCG ops can access it, for example with a simple copy it into dcache with cron:
+
+```
+*/30 * * * * root rm -f /pnfs/desy.de/cms/SRR/SRR_CMS.json && \
+                    curl  http://localhost:3880/api/v1/srr > /pnfs/cms/SRR/SRR_CMS.json && \
+                    chown 40751:4075 /pnfs/cms/SRR/SRR_CMS.json
+```
+
+The service produces desired json output which contains `storageshares` that represented by space reservations
+and pool groups, if configured. The `frontend.srr.shares` controls which pools groups should be published, for
+example:
+
+```
+frontend.srr.shares=user:/cms,store:/cms
+```
+
+publishes pool groups user and store for VO cms and will produce output like:
+
+```json
+    "storageshares" : [ {
+      "name" : "store",
+      "timestamp" : 1601977212,
+      "totalsize" : 5973622320626816,
+      "usedsize" : 4904609242438918,
+      "assignedendpoints" : [ "all" ],
+      "vos" : [ "/cms" ]
+    }, {
+      "name" : "user",
+      "timestamp" : 1601977212,
+      "totalsize" : 4078599175816242,
+      "usedsize" : 4025729976567280,
+      "assignedendpoints" : [ "all" ],
+      "vos" : [ "/cms" ]
+    } ]
+```
