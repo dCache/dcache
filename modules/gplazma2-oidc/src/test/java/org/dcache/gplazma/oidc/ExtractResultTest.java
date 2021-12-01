@@ -29,7 +29,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ExtractResultTest {
-    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
     private final ObjectMapper mapper = new ObjectMapper();
 
 

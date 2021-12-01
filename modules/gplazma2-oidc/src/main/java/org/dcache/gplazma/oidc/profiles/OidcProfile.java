@@ -40,6 +40,7 @@ import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.Profile;
+import org.dcache.gplazma.oidc.ProfileResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +113,7 @@ public class OidcProfile implements Profile {
     }
 
     @Override
-    public Set<Principal> processClaims(IdentityProvider ip, Map<String, JsonNode> claims) {
+    public ProfileResult processClaims(IdentityProvider ip, Map<String, JsonNode> claims) {
         var principals = new HashSet<Principal>();
         addSub(ip, claims, principals);
         addNames(claims, principals);
@@ -125,7 +126,7 @@ public class OidcProfile implements Profile {
             addUsername(claims, principals);
         }
 
-        return principals;
+        return new ProfileResult(principals);
     }
 
     private static GroupNamePrincipal toGroupName(String id) {

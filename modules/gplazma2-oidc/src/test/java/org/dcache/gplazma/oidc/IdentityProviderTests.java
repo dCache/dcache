@@ -23,12 +23,15 @@ import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 
 public class IdentityProviderTests {
-    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
 
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullName() throws Exception {
@@ -48,6 +51,55 @@ public class IdentityProviderTests {
     @Test(expected = NullPointerException.class)
     public void shouldFailWithNullProfile() throws Exception {
         IdentityProvider ignored = new IdentityProvider("null-profile", URI.create("http://example.org/"), null);
+    }
+
+    @Test
+    public void shouldEqualReflectively() throws Exception {
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+
+        assertTrue(google.equals(google));
+    }
+
+    @Test
+    public void shouldEqualAnotherWithSameNameAndUrl() throws Exception {
+        IdentityProvider google1 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google2 = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+
+        assertTrue(google1.hashCode() == google2.hashCode());
+        assertTrue(google1.equals(google2));
+    }
+
+    @Test
+    public void shouldNotEqualAnotherWithDifferentName() throws Exception {
+        IdentityProvider google1 = new IdentityProvider("GOOGLE-1", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider google2 = new IdentityProvider("GOOGLE-2", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+
+        assertFalse(google1.equals(google2));
+    }
+
+    @Test
+    public void shouldNotEqualAnotherWithDifferentUrl() throws Exception {
+        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+        IdentityProvider keycloak = new IdentityProvider("MYIP", URI.create("https://keycloak.desy.de/"), IGNORE_ALL);
+
+        assertFalse(google.equals(keycloak));
+    }
+
+    @Test
+    public void shouldNotEqualAnotherType() throws Exception {
+        IdentityProvider google = new IdentityProvider("MYIP", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+
+        assertFalse(google.equals("MYIP"));
+        assertFalse(google.equals("https://accounts.google.com/"));
+        assertFalse(google.equals(URI.create("https://accounts.google.com/")));
+    }
+
+    @Test
+    public void shouldReturnStringWithNameAndUrlWhenToStringCalled() throws Exception {
+        IdentityProvider google = new IdentityProvider("GOOGLE", URI.create("https://accounts.google.com/"), IGNORE_ALL);
+
+        assertThat(google.toString(), containsString("GOOGLE"));
+        assertThat(google.toString(), containsString("https://accounts.google.com/"));
     }
 
     @Test

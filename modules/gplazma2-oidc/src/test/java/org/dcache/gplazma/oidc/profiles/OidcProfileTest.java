@@ -19,6 +19,7 @@
 package org.dcache.gplazma.oidc.profiles;
 
 import java.security.Principal;
+import java.util.Optional;
 import java.util.Set;
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntitlementPrincipal;
@@ -31,9 +32,12 @@ import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.auth.attributes.Restriction;
 import org.junit.Before;
 import org.junit.Test;
+import org.dcache.gplazma.oidc.ProfileResult;
 
+import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIp;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -42,6 +46,7 @@ public class OidcProfileTest {
 
     private OidcProfile profile;
     private Set<Principal> principals;
+    private Optional<Restriction> restriction;
 
     @Before
     public void setup() {
@@ -100,6 +105,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -120,6 +126,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -139,6 +146,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test // REVISIT: should oidc profile react to 'wlcg.groups' ?
@@ -159,6 +167,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test // REVISIT: should oidc profile react to 'wlcg.groups' ?
@@ -178,6 +187,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test // REVISIT: should oidc profile react to 'wlcg.groups' ?
@@ -197,6 +207,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -216,6 +227,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -235,6 +247,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -254,6 +267,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -274,6 +288,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -293,6 +308,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -313,6 +329,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -332,6 +349,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -352,6 +370,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -371,6 +390,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -390,6 +410,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -409,6 +430,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
 
@@ -429,6 +451,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -448,6 +471,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -467,6 +491,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -486,6 +511,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -505,6 +531,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -524,6 +551,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -543,6 +571,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -562,6 +591,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -581,6 +611,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -600,6 +631,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -619,6 +651,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -638,6 +671,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -657,6 +691,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -676,6 +711,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -695,6 +731,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -714,6 +751,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -733,6 +771,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -752,6 +791,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -771,6 +811,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -800,6 +841,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -819,6 +861,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -838,6 +881,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -857,6 +901,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -876,6 +921,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -895,6 +941,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -915,6 +962,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -934,6 +982,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -953,6 +1002,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -971,6 +1021,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -991,6 +1042,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -1011,6 +1063,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -1030,6 +1083,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     @Test
@@ -1048,6 +1102,7 @@ public class OidcProfileTest {
         assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restriction, isEmpty());
     }
 
     private void given(OidcProfileBuilder builder) {
@@ -1055,7 +1110,9 @@ public class OidcProfileTest {
     }
 
     private void when(ProfileInvocationBuilder builder) throws AuthenticationException {
-        principals = builder.invoke();
+        ProfileResult result = builder.invoke();
+        principals = result.getPrincipals();
+        restriction = result.getRestriction();
     }
 
     private OidcProfileBuilder anOidcProfile() {

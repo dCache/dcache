@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.OAuthProviderPrincipal;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.oidc.jwt.OfflineJwtVerification;
@@ -173,9 +174,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     }
 
     @Override
-    public void authenticate(Set<Object> publicCredentials,
-          Set<Object> privateCredentials,
-          Set<Principal> identifiedPrincipals)
+    public void authenticate(Set<Object> publicCredentials, Set<Object> privateCredentials,
+          Set<Principal> identifiedPrincipals, Set<Restriction> restrictions)
           throws AuthenticationException {
 
         String token = null;
@@ -200,8 +200,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             identifiedPrincipals.add(new OAuthProviderPrincipal(idp.getName()));
 
             Profile profile = idp.getProfile();
-            var principals = profile.processClaims(idp, result.claims());
-            identifiedPrincipals.addAll(principals);
+            var profileResult = profile.processClaims(idp, result.claims());
+            identifiedPrincipals.addAll(profileResult.getPrincipals());
+            profileResult.getRestriction().ifPresent(restrictions::add);
         } catch (UnableToProcess e) {
             throw new AuthenticationException("Unable to process token: " + e.getMessage());
         }

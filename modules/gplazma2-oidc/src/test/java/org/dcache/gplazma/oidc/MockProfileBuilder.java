@@ -18,8 +18,6 @@
  */
 package org.dcache.gplazma.oidc;
 
-import java.security.Principal;
-import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
@@ -34,9 +32,10 @@ public class MockProfileBuilder {
         return new MockProfileBuilder();
     }
 
-    public MockProfileBuilder thatReturns(Set<Principal> principals) {
+    public MockProfileBuilder thatReturns(MockProfileResultBuilder builder) {
+        ProfileResult result = builder.build();
         try {
-            BDDMockito.given(profile.processClaims(ArgumentMatchers.any(), ArgumentMatchers.any())).willReturn(principals);
+            BDDMockito.given(profile.processClaims(ArgumentMatchers.any(), ArgumentMatchers.any())).willReturn(result);
         } catch (AuthenticationException e) {
             throw new RuntimeException(e);
         }

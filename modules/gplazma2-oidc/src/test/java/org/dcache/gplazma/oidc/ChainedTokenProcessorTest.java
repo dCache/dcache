@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.ProfileResult;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -42,7 +43,7 @@ public class ChainedTokenProcessorTest {
 
         public ResultBuilder withIP(String name) {
             provider = new IdentityProvider(name, URI.create("https://" + name + ".example.org/"),
-                    (idp,c) -> Collections.emptySet());
+                    (idp,c) -> new ProfileResult(Collections.emptySet()));
             return this;
         }
 

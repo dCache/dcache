@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.Profile;
+import org.dcache.gplazma.oidc.ProfileResult;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +33,7 @@ import static org.hamcrest.Matchers.*;
 
 public class LookupResultTest {
 
-    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
     private static final IdentityProvider EXAMPLE_IP = new IdentityProvider("example-op",
             URI.create("https://example.org/"), IGNORE_ALL);
 

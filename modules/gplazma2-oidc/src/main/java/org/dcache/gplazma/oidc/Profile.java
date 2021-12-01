@@ -18,9 +18,7 @@
 package org.dcache.gplazma.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.security.Principal;
 import java.util.Map;
-import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 
 /**
@@ -41,9 +39,9 @@ public interface Profile {
      * an empty set of principals.
      * @param idp The OP that supplied the claims
      * @param claims The claims coming from the OP
-     * @return The set of principals to add.
+     * @return The result of processing the claims
      * @throws AuthenticationException if the login should fail.
      */
-    Set<Principal> processClaims(IdentityProvider idp, Map<String,JsonNode> claims)
+    ProfileResult processClaims(IdentityProvider idp, Map<String,JsonNode> claims)
             throws AuthenticationException;
 }

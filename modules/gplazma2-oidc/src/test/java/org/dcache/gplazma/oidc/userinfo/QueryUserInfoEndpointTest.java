@@ -33,6 +33,7 @@ import org.dcache.gplazma.oidc.IdentityProvider;
 import org.dcache.gplazma.oidc.JwtFactory;
 import org.dcache.gplazma.oidc.MockHttpClientBuilder;
 import org.dcache.gplazma.oidc.Profile;
+import org.dcache.gplazma.oidc.ProfileResult;
 import org.dcache.gplazma.oidc.TokenProcessor;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.junit.After;
@@ -46,7 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 
 public class QueryUserInfoEndpointTest {
-    private static final Profile IGNORE_ALL = (i,c) -> Collections.emptySet();
+    private static final Profile IGNORE_ALL = (i,c) -> new ProfileResult(Collections.emptySet());
 
     /**
      * Fluent class for building QueryUserInfoEndpoint.

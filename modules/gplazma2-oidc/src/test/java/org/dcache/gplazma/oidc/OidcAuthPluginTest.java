@@ -40,6 +40,7 @@ import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.profiles.OidcProfile;
 import org.junit.Before;
@@ -51,6 +52,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static org.dcache.gplazma.oidc.MockIdentityProviderBuilder.anIp;
 import static org.dcache.gplazma.oidc.MockProfileBuilder.aProfile;
+import static org.dcache.gplazma.oidc.MockProfileResultBuilder.aProfileResult;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -64,6 +66,7 @@ public class OidcAuthPluginTest {
 
     private OidcAuthPlugin plugin;
     private Set<Principal> principals;
+    private Set<Restriction> restrictions;
     private TokenProcessor processor;
     private String jwt;
 
@@ -71,6 +74,7 @@ public class OidcAuthPluginTest {
     public void setup() {
         plugin = null;
         principals = null;
+        restrictions = null;
         processor = null;
         jwt = null;
     }
@@ -299,7 +303,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideSubPrincipalIfProfileReturnsSubPrincipal() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims().withStringClaim("sub", "sub-claim-value").build();
@@ -322,7 +327,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptSingleAudMatchesSingleAllowedValue() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims()
@@ -349,7 +355,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptWhenSingleAudMatchesOneFromMultipleAllowedValue() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims()
@@ -401,7 +408,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptArrayAuthClaimWithMatchingConfiguredAudience() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims()
@@ -425,6 +433,7 @@ public class OidcAuthPluginTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restrictions, is(empty()));
     }
 
     @Test(expected=AuthenticationException.class)
@@ -458,7 +467,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptNonExpiredJwtToken() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims().withStringClaim("sub", "sub-claim-value").build();
@@ -478,11 +488,13 @@ public class OidcAuthPluginTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restrictions, is(empty()));
     }
 
     @Test
     public void shouldAcceptNonEmbargoedJwtToken() throws Exception {
-        var profile = aProfile().thatReturns(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")))
+        var profile = aProfile().thatReturns(aProfileResult()
+                .withPrincipals(Collections.singleton(new OidcSubjectPrincipal("sub-claim-value", "MY-OP"))))
                 .build();
         var op = anIp("MY-OP").withProfile(profile).build();
         var claims = claims().withStringClaim("sub", "sub-claim-value").build();
@@ -502,6 +514,7 @@ public class OidcAuthPluginTest {
         assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
         assertThat(principals, not(hasItem(any(ExemptFromNamespaceChecks.class))));
+        assertThat(restrictions, is(empty()));
     }
 
     private void given(JwtFactory.Builder builder) {
@@ -513,7 +526,7 @@ public class OidcAuthPluginTest {
     }
 
     private void when(AuthenticateInvocationBuilder builder) throws AuthenticationException {
-        principals = builder.invokeOn(plugin);
+        builder.invokeOn(plugin);
     }
 
     private PluginBuilder aPlugin() {
@@ -569,7 +582,7 @@ public class OidcAuthPluginTest {
     /**
      * Fluent class to build an authentication plugin invocation.
      */
-    private static class AuthenticateInvocationBuilder {
+    private class AuthenticateInvocationBuilder {
         private final Set<Object> publicCredentials = new HashSet<>();
         private final Set<Object> privateCredentials = new HashSet<>();
 
@@ -588,10 +601,10 @@ public class OidcAuthPluginTest {
             return this;
         }
 
-        public Set<Principal> invokeOn(OidcAuthPlugin plugin) throws AuthenticationException {
-            Set<Principal> identifiedPrincipals = new HashSet<>();
-            plugin.authenticate(publicCredentials, privateCredentials, identifiedPrincipals);
-            return identifiedPrincipals;
+        public void invokeOn(OidcAuthPlugin plugin) throws AuthenticationException {
+            principals = new HashSet<>();
+            restrictions = new HashSet<>();
+            plugin.authenticate(publicCredentials, privateCredentials, principals, restrictions);
         }
     }
 
