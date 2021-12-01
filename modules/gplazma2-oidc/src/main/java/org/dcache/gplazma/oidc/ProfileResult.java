@@ -18,9 +18,13 @@
 package org.dcache.gplazma.oidc;
 
 import java.security.Principal;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,7 +39,7 @@ public class ProfileResult {
         this(principals, null);
     }
 
-    public ProfileResult(Set<Principal> principals, Restriction restriction) {
+    public ProfileResult(Set<Principal> principals, @Nullable Restriction restriction) {
         this.principals = requireNonNull(principals);
         this.restriction = Optional.ofNullable(restriction);
     }
@@ -46,5 +50,22 @@ public class ProfileResult {
 
     public Optional<Restriction> getRestriction() {
         return restriction;
+    }
+
+    public ProfileResult withPrincipals(Collection<Principal> additionalPrincipals) {
+        if (additionalPrincipals.isEmpty()) {
+            return this;
+        }
+
+        var newPrincipals = new HashSet<Principal>();
+        newPrincipals.addAll(principals);
+        newPrincipals.addAll(additionalPrincipals);
+        return new ProfileResult(newPrincipals, restriction.orElse(null));
+    }
+
+    public ProfileResult withRestriction(Restriction additionalRestriction) {
+        Restriction newRestriction = restriction.map(r -> Restrictions.concat(r, additionalRestriction))
+                .orElse(additionalRestriction);
+        return new ProfileResult(principals, newRestriction);
     }
 }

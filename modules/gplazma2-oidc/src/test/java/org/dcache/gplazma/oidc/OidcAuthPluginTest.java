@@ -20,6 +20,7 @@ package org.dcache.gplazma.oidc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import diskCacheV111.util.FsPath;
 import java.net.URI;
 import java.security.Principal;
 import java.time.Instant;
@@ -42,7 +43,9 @@ import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.profiles.WlcgProfile;
 import org.dcache.gplazma.oidc.profiles.OidcProfile;
+import org.dcache.gplazma.oidc.profiles.ScitokensProfile;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -248,6 +251,53 @@ public class OidcAuthPluginTest {
         OidcProfile oidcProfile = (OidcProfile)provider.getProfile();
         assertThat(oidcProfile.isPreferredUsernameClaimAccepted(), is(equalTo(true)));
         assertThat(oidcProfile.isGroupsClaimMappedToGroupName(), is(equalTo(true)));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectScitokensProfileWithoutPrefix() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=scitokens");
+
+        OidcAuthPlugin.buildProviders(properties);
+    }
+
+    @Test
+    public void shouldAcceptScitokensProfileWithPrefix() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=scitokens -prefix=/target");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getProfile(), is(instanceOf(ScitokensProfile.class)));
+        ScitokensProfile scitokensProfile = (ScitokensProfile)provider.getProfile();
+        assertThat(scitokensProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
+    }
+
+
+    @Test(expected=IllegalArgumentException.class)
+    public void shouldRejectWlcgProfileWithoutPrefix() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg");
+
+        OidcAuthPlugin.buildProviders(properties);
+    }
+
+    @Test
+    public void shouldAcceptWlcgProfileWithPrefix() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("gplazma.oidc.provider!EXAMPLE",
+                "https://oidc.example.org/ -profile=wlcg -prefix=/target");
+
+        var identityProviders = OidcAuthPlugin.buildProviders(properties);
+        assertThat(identityProviders, hasSize(1));
+        IdentityProvider provider = identityProviders.iterator().next();
+        assertThat(provider.getProfile(), is(instanceOf(WlcgProfile.class)));
+        WlcgProfile authzWGProfile = (WlcgProfile)provider.getProfile();
+        assertThat(authzWGProfile.getPrefix(), is(equalTo(FsPath.create("/target"))));
     }
 
     @Test

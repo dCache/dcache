@@ -30,6 +30,8 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import org.dcache.gplazma.oidc.jwt.OfflineJwtVerification;
 import org.dcache.gplazma.oidc.profiles.OidcProfileFactory;
+import org.dcache.gplazma.oidc.profiles.ScitokensProfileFactory;
+import org.dcache.gplazma.oidc.profiles.WlcgProfileFactory;
 import org.dcache.gplazma.oidc.userinfo.QueryUserInfoEndpoint;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.util.JsonWebToken;
@@ -54,7 +56,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
     private static final String DEFAULT_PROFILE_NAME = "oidc";
-    private static final Map<String,ProfileFactory> PROFILES = Map.of("oidc", new OidcProfileFactory());
+    private static final Map<String,ProfileFactory> PROFILES = Map.of("oidc", new OidcProfileFactory(),
+            "scitokens", new ScitokensProfileFactory(),
+            "wlcg", new WlcgProfileFactory());
 
     private final TokenProcessor tokenProcessor;
     private final Set<String> audienceTargets;

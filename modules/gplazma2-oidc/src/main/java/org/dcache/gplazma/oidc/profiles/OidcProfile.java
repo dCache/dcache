@@ -35,11 +35,10 @@ import org.dcache.auth.FullNamePrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoA;
 import org.dcache.auth.LoAPrincipal;
-import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.IdentityProvider;
-import org.dcache.gplazma.oidc.Profile;
 import org.dcache.gplazma.oidc.ProfileResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The OIDC profile handles claims that identify a person.
  */
-public class OidcProfile implements Profile {
+public class OidcProfile extends BaseProfile {
     private static final Logger LOGGER = LoggerFactory.getLogger(OidcProfile.class);
 
     /**
@@ -113,21 +112,27 @@ public class OidcProfile implements Profile {
     }
 
     @Override
-    public ProfileResult processClaims(IdentityProvider ip, Map<String, JsonNode> claims) {
-        var principals = new HashSet<Principal>();
-        addSub(ip, claims, principals);
-        addNames(claims, principals);
-        addEmail(claims, principals);
-        addGroups(claims, principals);
-        addWlcgGroups(claims, principals);
-        addLoAs(claims, principals);
-        addEntitlements(claims, principals);
-        if (acceptPreferredUsername) {
-            addUsername(claims, principals);
-        }
-
-        return new ProfileResult(principals);
+    public ProfileResult processClaims(IdentityProvider ip, Map<String, JsonNode> claims)
+            throws AuthenticationException {
+        ProfileResult result = super.processClaims(ip, claims);
+        var extraPrincipals = extraPrincipals(claims);
+        return result.withPrincipals(extraPrincipals);
     }
+
+    private Set<Principal> extraPrincipals(Map<String,JsonNode> claims) {
+        var extraPrincipals = new HashSet<Principal>();
+        addNames(claims, extraPrincipals);
+        addEmail(claims, extraPrincipals);
+        addGroups(claims, extraPrincipals);
+        addWlcgGroups(claims, extraPrincipals);
+        addLoAs(claims, extraPrincipals);
+        addEntitlements(claims, extraPrincipals);
+        if (acceptPreferredUsername) {
+            addUsername(claims, extraPrincipals);
+        }
+        return extraPrincipals;
+    }
+
 
     private static GroupNamePrincipal toGroupName(String id) {
         /**
@@ -154,6 +159,9 @@ public class OidcProfile implements Profile {
      *     "/dteam/itcms"
      * ],
      * </pre>
+     *
+     * REVISIT: should this be supported in the 'oidc' profile?  The semantics of this claim are
+     * defined in the WLCG AuthZ JWT profile document, which is supported by a different profile.
      *
      * @param userInfo   The JSON node describing the user.
      * @param principals The set of principals into which any group information is to be added.
@@ -231,12 +239,6 @@ public class OidcProfile implements Profile {
         }
     }
 
-
-    private boolean addSub(IdentityProvider ip, Map<String,JsonNode> claims,
-          Set<Principal> principals) {
-        String claimValue = claims.get("sub").asText();
-        return principals.add(new OidcSubjectPrincipal(claimValue, ip.getName()));
-    }
 
     private void addGroups(Map<String,JsonNode> claims, Set<Principal> principals) {
         if (claims.containsKey("groups") && claims.get("groups").isArray()) {
