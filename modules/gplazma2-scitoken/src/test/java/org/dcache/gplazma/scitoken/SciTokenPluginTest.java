@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2020 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2020 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -86,6 +86,8 @@ import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.Restriction;
@@ -1315,6 +1317,40 @@ public class SciTokenPluginTest {
               .issuedBy("OP1").usingKey("key1"));
 
         assertThat(identifiedPrincipals, not(hasItem(instanceOf(ExemptFromNamespaceChecks.class))));
+    }
+
+    @Test
+    public void shouldIncludeSubPrincipal() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("sub", sub)
+                .withRandomJti()
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItem(new OidcSubjectPrincipal(sub, "EXAMPLE")));
+    }
+
+    @Test
+    public void shouldIncludeWlcgGroups() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withArrayClaim("wlcg.groups", "/group-1", "/group-1/subgroup", "/group-2")
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new OpenIdGroupPrincipal("/group-1"),
+                new OpenIdGroupPrincipal("/group-1/subgroup"),
+                new OpenIdGroupPrincipal("/group-2")));
     }
 
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException {
