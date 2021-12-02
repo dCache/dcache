@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2019-2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2019-2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -41,6 +41,8 @@ import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.MultiTargetedRestriction;
 import org.dcache.auth.attributes.MultiTargetedRestriction.Authorisation;
@@ -136,10 +138,16 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
             Optional<String> sub = token.getPayloadString("sub");
             sub.map(s -> new JwtSubPrincipal(issuer.getId(), s))
                   .ifPresent(principals::add);
+            sub.map(s -> new OidcSubjectPrincipal(s, issuer.getId()))
+                  .ifPresent(principals::add);
 
             Optional<String> jti = token.getPayloadString("jti");
             jti.map(s -> new JwtJtiPrincipal(issuer.getId(), s))
                   .ifPresent(principals::add);
+
+            token.getPayloadStringOrArray("wlcg.groups").stream()
+                  .map(OpenIdGroupPrincipal::new)
+                  .forEach(principals::add);
 
             checkAuthentication(sub.isPresent() || jti.isPresent(), "missing sub and jti claims");
 
