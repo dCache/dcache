@@ -1401,7 +1401,8 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testGenerationVirtualdir() throws Exception {
-        FsInode dir = _rootInode.mkdir("cat");
+        FsInode dir = _rootInode.mkdir("parent");
+        String parentDirName = _fs.inode2path(dir);
 
         String labelname = "cat";
 
@@ -1425,7 +1426,7 @@ public class JdbcFsTest extends ChimeraTestCaseHelper {
                 fileNames.add(entry.getName());
             }
         }
-        assertTrue(fileNames.containsAll(Lists.newArrayList("bFile-" + dir, "bFile-" + dir)));
+        assertTrue(fileNames.containsAll(Lists.newArrayList(parentDirName+"/aFile", parentDirName+"/bFile")));
     }
 
     @Test
