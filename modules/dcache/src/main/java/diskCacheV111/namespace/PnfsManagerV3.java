@@ -2175,9 +2175,10 @@ public class PnfsManagerV3
 
             if (msg.getPathType() == PnfsListDirectoryMessage.PathType.LABEL) {
                 _nameSpaceProvider.listVirtualDirectory(msg.getSubject(), path.substring(1),
-                        msg.getRange(),
-                        msg.getRequestedAttributes(),
-                        handler);
+                      msg.getRange(),
+                      msg.getRequestedAttributes(),
+                      handler);
+
             } else {
                 _nameSpaceProvider.list(msg.getSubject(), path,
                       msg.getPattern(),

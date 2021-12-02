@@ -51,7 +51,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
      *  Path to directory to list
      *  or path to virtual directory to list (which is the label value of a streamed files)
      *  */
-    private static  PathType _pathType = PathType.PATH;
+    private PathType _pathType = PathType.PATH;
 
 
 
@@ -153,11 +153,11 @@ public class PnfsListDirectoryMessage extends PnfsMessage {
         _messageCount = messageCount;
     }
 
-    public static PathType getPathType() {
+    public PathType getPathType() {
         return _pathType;
     }
 
-    public static void setPathType(PathType pathType) {
+    public void setPathType(PathType pathType) {
         _pathType = pathType;
     }
 
