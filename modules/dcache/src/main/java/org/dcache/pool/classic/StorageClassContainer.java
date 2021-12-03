@@ -159,8 +159,7 @@ public class StorageClassContainer
      *
      * @param entry
      */
-    public synchronized void addCacheEntry(CacheEntry entry)
-          throws CacheException, InterruptedException {
+    public synchronized void addCacheEntry(CacheEntry entry) throws CacheException {
         FileAttributes fileAttributes = entry.getFileAttributes();
         String storageClass = fileAttributes.getStorageClass();
         String hsmName = fileAttributes.getHsm().toLowerCase();

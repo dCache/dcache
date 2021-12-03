@@ -577,7 +577,7 @@ public class PoolV4
                          * files so we ignore this.
                          */
                         LOGGER.info("Failed to flush {}: Replica is no longer in the pool", id);
-                    } catch (CacheException | InterruptedException e) {
+                    } catch (CacheException e) {
                         LOGGER.error("Error adding {} to flush queue: {}", id, e.getMessage());
                     }
                 }
