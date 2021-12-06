@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 #  This script creates a file containing zero or more StAR records.
 #  These records provide storage-usage accounting information.
@@ -9,12 +9,11 @@ import time
 import psycopg2
 import csv
 from subprocess import Popen, PIPE
-from string import maketrans
 from random import randint
 
 #  Load in dCache configuration
 d = Popen(["dcache", "loader", "-q", "compile", "-python"], stdout=PIPE)
-exec d.communicate()[0]
+exec( (d.communicate())[0] )
 
 
 PHYSICAL_USAGE_QUERY = """
@@ -41,8 +40,8 @@ LOGICAL_USAGE_QUERY = "SELECT igid AS gid, SUM(isize) AS size, COUNT(1) AS count
 def split_csv(values):
    if len(values) == 0:
       return dict()
-   values_no_nl = values.translate(maketrans("\n", " "))
-   items = csv.reader([values_no_nl], skipinitialspace=True).next()
+   values_no_nl = values.translate(str.maketrans("\n", " "))
+   items = csv.reader([values_no_nl], skipinitialspace=True).__next__()
    return dict([e.strip() for e in item.split("=", 1)] for item in items)
 
 
@@ -230,12 +229,12 @@ def open_records_file():
     now = time.time()
 
     time_dir_granularity = int(properties.get('star.spool.dir-granularity')) * 60
-    time_dir = os.path.join(record_dir, '%08x'%(now/time_dir_granularity))
+    time_dir = os.path.join(record_dir, '%08x'%( int(now//time_dir_granularity) ))
 
     if not os.path.exists(time_dir):
         os.makedirs(time_dir)
 
-    filename = '%08x'%now + '%05x'%((now - int(now))*1000000) + '%x'%randint(0,15)
+    filename = '%08x'%int(now) + '%05x'%int((now - int(now))*1000000) + '%x'%randint(0,15)
     file_path = os.path.join(time_dir, filename)
     return open(file_path, 'w')
 
