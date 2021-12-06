@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.NetworkUtils.InetAddressScope;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,6 +238,7 @@ public class SrrBuilder {
 
         return loginBrokerSubscriber.doors().stream()
               .filter(doorTagFilter)
+              .filter(i -> i.supports(InetAddressScope.GLOBAL))
               .map(d -> {
                         Storageendpoint endpoint = new Storageendpoint()
                               .withName(id + "#" + d.getProtocolFamily() + "@" + d.getAddresses().get(0)
