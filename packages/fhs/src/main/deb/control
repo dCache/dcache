@@ -9,7 +9,7 @@ Package: @PackageName@
 Depends: ssh-client, adduser, ssl-cert, rsyslog
 Conflicts: dcache-server
 Architecture: all
-Suggests: ruby, libxml2-utils | xsltproc, python-psycopg2
+Suggests: ruby, libxml2-utils | xsltproc, python3-psycopg2
 Description: distributed mass storage system
  dCache is an efficient, modular and configurable mass storage
  management system. It provides a system for storing and retrieving
@@ -18,5 +18,5 @@ Description: distributed mass storage system
  access methods.
  .
  The GLUE info provider requires either xsltproc or libxml2-utils. The StAR
- accounting record provider requires python-psycopg2. The example HSM integration
- script requires ruby.
+ accounting record provider requires python3-psycopg2. The example HSM
+ integration script requires ruby.
