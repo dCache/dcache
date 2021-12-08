@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 - 2020 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2021 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -258,7 +258,6 @@ public class PerformanceTest extends Thread {
 
     private void processOperation(Operation aOp, String path) {
         try {
-            FileAttributes fileAttributes;
             switch (aOp) {
                 case CREATE_ENTRY:
                     provider.createFile(Subjects.ROOT, path,
