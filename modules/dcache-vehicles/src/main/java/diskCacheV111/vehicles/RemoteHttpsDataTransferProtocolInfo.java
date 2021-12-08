@@ -2,12 +2,16 @@ package diskCacheV111.vehicles;
 
 import com.google.common.collect.ImmutableMap;
 import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import java.net.InetSocketAddress;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import org.dcache.auth.OpenIdCredential;
 import org.dcache.util.ChecksumType;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Provides information for HTTP transfer of a file using SSL/TLS encryption.
@@ -61,5 +65,9 @@ public class RemoteHttpsDataTransferProtocolInfo extends RemoteHttpDataTransferP
 
     public X509Certificate[] getCertificateChain() {
         return certChain;
+    }
+
+    public X509Credential getCredential() throws KeyStoreException {
+        return new KeyAndCertCredential(requireNonNull(key), requireNonNull(certChain));
     }
 }
