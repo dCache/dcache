@@ -1,7 +1,7 @@
 package org.dcache.pool.classic;
 
 import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
@@ -202,7 +202,7 @@ public class StorageClassContainer
                     .filter(i -> i.isActive()
                           || i.isTriggered() && now - i.getLastSubmitted() > retryDelayOnError)
                     .collect(
-                          partitioningBy(StorageClassInfo::isActive, toCollection(ArrayList::new)));
+                          partitioningBy(StorageClassInfo::isActive, toList()));
 
         List<StorageClassInfo> active = classes.get(true);
         List<StorageClassInfo> ready = classes.get(false);
