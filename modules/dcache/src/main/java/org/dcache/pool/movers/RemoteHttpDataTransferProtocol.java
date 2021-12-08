@@ -17,7 +17,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
-import dmg.cells.nucleus.CellEndpoint;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -27,8 +26,6 @@ import java.net.URI;
 import java.nio.channels.Channels;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -46,35 +43,29 @@ import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.ProtocolException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.HttpRequestExecutor;
 import org.dcache.auth.OpenIdCredentialRefreshable;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
-import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * This class implements transfers of data between a pool and some remote HTTP server.  Both writing
@@ -202,53 +193,18 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private static final String WANT_DIGEST_VALUE = Checksums.buildGenericWantDigest();
 
-    /**
-     * How long the client will wait for the "100 Continue" response when making a PUT request using
-     * expect-100.
-     */
-    private static final Duration EXPECT_100_TIMEOUT = Duration.of(5, ChronoUnit.MINUTES);
-
-    private static final RedirectStrategy DROP_AUTHORIZATION_HEADER = new DefaultRedirectStrategy() {
-
-        @Override
-        public HttpUriRequest getRedirect(final HttpRequest request,
-              final HttpResponse response, final HttpContext context)
-              throws ProtocolException {
-            HttpUriRequest redirect = super.getRedirect(request, response, context);
-
-            /* If this method returns an HttpUriRequest that has no
-             * HTTP headers then the RedirectExec code will copy all
-             * the headers from the original request into the
-             * HttpUriRequest.   DefaultRedirectStrategy returns such
-             * requests under several circumstances.  Therefore, in
-             * order to suppress the Authorization header we
-             * <em>must</em> ensure the returned request includes
-             * headers.
-             */
-            if (!redirect.headerIterator().hasNext()) {
-                redirect.setHeaders(request.getAllHeaders());
-            }
-
-            redirect.removeHeaders("Authorization");
-            return redirect;
-        }
-    };
-
-    protected static final String USER_AGENT = "dCache/" +
-          Version.of(RemoteHttpDataTransferProtocol.class).getVersion();
-
     private volatile MoverChannel<RemoteHttpDataTransferProtocolInfo> _channel;
     private Consumer<Checksum> _integrityChecker;
 
-    private CloseableHttpClient _client;
+    private final CloseableHttpClient _client;
 
     @GuardedBy("this")
     private HttpClientContext _context;
 
     private Long _expectedTransferSize;
 
-    public RemoteHttpDataTransferProtocol(CellEndpoint cell) {
-        // constructor needed by Pool mover contract.
+    public RemoteHttpDataTransferProtocol(CloseableHttpClient client) {
+        _client = requireNonNull(client);
     }
 
     private static void checkThat(boolean isOk, String message) throws CacheException {
@@ -281,7 +237,6 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             });
         });
 
-        _client = createHttpClient();
         try {
             if (access.contains(StandardOpenOption.WRITE)) {
                 receiveFile(info);
@@ -291,20 +246,15 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 sendAndCheckFile(info);
             }
         } finally {
-            _client.close();
+            afterTransfer();
         }
     }
 
-    protected CloseableHttpClient createHttpClient() throws CacheException {
-        return customise(HttpClients.custom()).build();
-    }
-
-    protected HttpClientBuilder customise(HttpClientBuilder builder) throws CacheException {
-        return builder
-              .setUserAgent(USER_AGENT)
-              .setRequestExecutor(new HttpRequestExecutor((int) EXPECT_100_TIMEOUT.toMillis()))
-              .setRedirectStrategy(DROP_AUTHORIZATION_HEADER);
-    }
+    /**
+     * This method is guaranteed to be called after all activity related to this transfer has
+     * completed.
+     */
+    protected void afterTransfer() {}
 
     private synchronized HttpClientContext storeContext(HttpClientContext context) {
         _context = context;
