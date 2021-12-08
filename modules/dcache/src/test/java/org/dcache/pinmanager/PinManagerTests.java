@@ -85,12 +85,7 @@ public class PinManagerTests {
     final static StorageInfo STORAGE_INFO =
           new GenericStorageInfo("osm", "default");
 
-    final static PnfsId PNFS_ID1 =
-          new PnfsId("0000D4CF1C3302B44095969C8216CE1E9175");
-    final static PnfsId PNFS_ID2 =
-          new PnfsId("00009C09780FEE044CC18940B335B2AE93E6");
-    final static PnfsId PNFS_ID3 =
-          new PnfsId("00003113FDF3F9284EE8992FC9F651082956");
+    final static PnfsId PNFS_ID1 = new PnfsId("0000D4CF1C3302B44095969C8216CE1E9175");
 
     final static String REQUEST_ID1 = "request1";
 
@@ -118,8 +113,7 @@ public class PinManagerTests {
     }
 
     @Test
-    public void testPinning()
-          throws CacheException, InterruptedException, ExecutionException {
+    public void testPinning() throws Exception {
         TestDao dao = new TestDao();
 
         PinRequestProcessor processor = new PinRequestProcessor();
@@ -181,8 +175,7 @@ public class PinManagerTests {
     }
 
     @Test
-    public void testExtendLifetime()
-          throws CacheException, InterruptedException, ExecutionException {
+    public void testExtendLifetime() throws Exception {
         TestDao dao = new TestDao();
         Pin pin = dao.create(dao.set()
               .subject(Subjects.ROOT)
@@ -232,8 +225,7 @@ public class PinManagerTests {
     }
 
     @Test
-    public void testUnpinningByPinId()
-          throws CacheException, InterruptedException, ExecutionException {
+    public void testUnpinningByPinId() throws Exception {
         TestDao dao = new TestDao();
         Pin pin = dao.create(dao.set()
               .subject(Subjects.ROOT)
@@ -265,8 +257,7 @@ public class PinManagerTests {
     }
 
     @Test
-    public void testUnpinningByRequestId()
-          throws CacheException, InterruptedException, ExecutionException {
+    public void testUnpinningByRequestId() throws Exception {
         TestDao dao = new TestDao();
         Pin pin = dao.create(dao.set()
               .subject(Subjects.ROOT)
@@ -583,8 +574,7 @@ class TestDao implements PinDao {
     }
 }
 
-class TestExecutor
-      extends AbstractExecutorService implements ScheduledExecutorService {
+class TestExecutor extends AbstractExecutorService implements ScheduledExecutorService {
 
     @Override
     public void execute(Runnable runnable) {
