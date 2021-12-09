@@ -110,16 +110,14 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
         return info;
     }
 
-    private synchronized Runnable internalCompleted() {
+    private synchronized void internalCompleted() {
         _activeCounter--;
         if (_activeCounter <= 0) {
             _activeCounter = 0;
         }
-        return () -> {
-        };
     }
 
-    private synchronized Runnable internalFailed(Throwable exc, PnfsId pnfsId) {
+    private synchronized void internalFailed(Throwable exc, PnfsId pnfsId) {
         _errorCounter++;
         if (exc instanceof CacheException) {
             CacheException ce = (CacheException) exc;
@@ -131,26 +129,26 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
                 _errorCounter--;
             }
         }
-        return internalCompleted();
+        internalCompleted();
     }
 
     @Override
     public void completed(Void nil, PnfsId attachment) {
-        internalCompleted().run();
+        internalCompleted();
     }
 
     @Override
     public void failed(Throwable exc, PnfsId pnfsId) {
-        internalFailed(exc, pnfsId).run();
+        internalFailed(exc, pnfsId);
     }
 
     public long flush(int maxCount) {
         long id = System.currentTimeMillis();
-        internalFlush(id, maxCount).run();
+        internalFlush(id, maxCount);
         return id;
     }
 
-    private synchronized Runnable internalFlush(long id, int maxCount) {
+    private synchronized void internalFlush(long id, int maxCount) {
         LOGGER.info("Flushing {}", this);
 
         if (_activeCounter > 0) {
@@ -182,8 +180,6 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
                         .collect(Collectors.toList()),
                   this);
         }
-        return () -> {
-        };
     }
 
     public synchronized long getLastSubmitted() {
