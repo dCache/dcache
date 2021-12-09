@@ -1265,7 +1265,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
 
                 CacheException ce = (CacheException) t;
-                if (ce.getRc() != CacheException.PERMISSION_DENIED) {
+                if (ce.getRc() != CacheException.PERMISSION_DENIED || !getOnlineFilesOnly()) {
                     throw e;
                 }
 
