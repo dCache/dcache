@@ -422,7 +422,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, 0, fileSize - 1))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-            return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+            ChannelFuture writeAndFlush = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+
+            // Release the file immediately after supplying all of the file's content.  We're
+            // assuming that the client will not make further requests against this URL.  This is
+            // done to send the DoorTransferFinishedMessage in a timely fashion.
+            writeAndFlush.addListener(f -> file.release());
+
+            return writeAndFlush;
         } else if (ranges.size() == 1) {
             /* RFC 2616: 14.16. A response to a request for a single range
              * MUST NOT be sent using the multipart/byteranges media type.
@@ -433,6 +440,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, range.getLower(), range.getUpper()))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+
+            // File is released when the client disconnects.  We're assuming that, after this, the
+            // client will not make further requests against this URL.
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
             /*
@@ -463,6 +473,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
                 context.write(read(file, range.getLower(), range.getUpper()))
                       .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
+
+            // File is released when the client disconnects.  We're assuming that, after this, the
+            // client will not make further requests against this URL.
             return context.writeAndFlush(new DefaultLastHttpContent(endMarker));
         }
     }
