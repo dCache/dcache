@@ -445,10 +445,18 @@ public class Copier implements Runnable {
         ) {
             X509Credential credential;
             if (configuration.isUseproxy()) {
-                credential = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+                /*
+                 * PEMCredential does not consistently support keyPasswd being null
+                 * https://github.com/eu-emi/canl-java/issues/114
+                 */
+                credential = new PEMCredential(configuration.getX509_user_proxy(), new char[]{});
             } else {
+                /*
+                 * PEMCredential does not consistently support keyPasswd being null
+                 * https://github.com/eu-emi/canl-java/issues/114
+                 */
                 credential = new PEMCredential(configuration.getX509_user_key(),
-                      configuration.getX509_user_cert(), null);
+                      configuration.getX509_user_cert(), new char[]{});
             }
             javaGridFtpCopy(from, to, credential, logger);
         } else {
