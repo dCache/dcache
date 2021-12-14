@@ -163,11 +163,19 @@ public abstract class SRMClient {
                 cred = configuration.getX509_user_proxy() == null
                       ? Optional.<X509Credential>empty()
                       : Optional.of(
+                            /*
+                             * PEMCredential does not consistently support keyPasswd being null
+                             * https://github.com/eu-emi/canl-java/issues/114
+                             */
                             new PEMCredential(configuration.getX509_user_proxy(), new char[]{}));
             } else {
                 cred = configuration.getX509_user_key() == null
                       || configuration.getX509_user_cert() == null
                       ? Optional.<X509Credential>empty()
+                      /*
+                       * PEMCredential does not consistently support keyPasswd being null
+                       * https://github.com/eu-emi/canl-java/issues/114
+                       */
                       : Optional.of(new PEMCredential(configuration.getX509_user_key(),
                             configuration.getX509_user_cert(), new char[]{}));
             }
