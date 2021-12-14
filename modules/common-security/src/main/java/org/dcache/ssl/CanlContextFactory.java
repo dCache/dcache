@@ -269,9 +269,14 @@ public class CanlContextFactory implements SslContextFactory {
 
         public Callable<SSLContext> buildWithCaching() throws IOException {
             final CanlContextFactory factory = build();
+            /*
+             * PEMCredential does not consistently support keyPasswd being null
+             * https://github.com/eu-emi/canl-java/issues/114
+             */
             Callable<SSLContext> newContext =
                   () -> factory.getContext(
-                        new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
+                        new PEMCredential(keyPath.toString(), certificatePath.toString(),
+                              new char[]{}));
             return memoizeWithExpiration(memoizeFromFiles(newContext, keyPath, certificatePath),
                   credentialUpdateInterval, credentialUpdateIntervalUnit);
         }
