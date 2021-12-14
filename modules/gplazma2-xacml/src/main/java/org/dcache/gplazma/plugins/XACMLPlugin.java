@@ -375,9 +375,13 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
               caDir).build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
 
+        /*
+         * PEMCredential does not consistently support keyPasswd being null
+         * https://github.com/eu-emi/canl-java/issues/114
+         */
         X509Credential credential = new PEMCredential(_properties.getProperty(SERVICE_KEY),
               _properties.getProperty(SERVICE_CERT),
-              null);
+              new char[]{});
         _targetServiceName = convertFromRfc2253(
               credential.getCertificate().getSubjectX500Principal().getName(), true);
         _targetServiceIssuer = convertFromRfc2253(

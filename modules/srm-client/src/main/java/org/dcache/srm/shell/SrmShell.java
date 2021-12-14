@@ -338,12 +338,20 @@ public class SrmShell extends ShellApplication {
         if (configuration.isUseproxy()) {
             credential = configuration.getX509_user_proxy() == null
                   ? null
-                  : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+                  /*
+                   * PEMCredential does not consistently support keyPasswd being null
+                   * https://github.com/eu-emi/canl-java/issues/114
+                   */
+                  : new PEMCredential(configuration.getX509_user_proxy(), new char[]{});
         } else {
             credential = configuration.getX509_user_key() == null
                   || configuration.getX509_user_cert() == null
                   ? null
-                  : new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+                  /*
+                   * PEMCredential does not consistently support keyPasswd being null
+                   * https://github.com/eu-emi/canl-java/issues/114
+                   */
+                  : new PEMCredential(configuration.getX509_user_proxy(), new char[]{});
         }
 
         fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class<?>[]{ISRM.class},

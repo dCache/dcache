@@ -133,7 +133,11 @@ public class DelegationShell extends ShellApplication {
 
     public DelegationShell(String proxyPath) throws Exception {
         _proxyPath = proxyPath;
-        _proxy = new PEMCredential(proxyPath, (char[]) null);
+        /*
+         * PEMCredential does not consistently support keyPasswd being null
+         * https://github.com/eu-emi/canl-java/issues/114
+         */
+        _proxy = new PEMCredential(proxyPath, new char[]{});
 
         HttpClientSender sender = new HttpClientSender();
         Builder contextBuilder = CanlContextFactory.custom();

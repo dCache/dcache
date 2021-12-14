@@ -274,7 +274,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     private X509Credential read(String fileName) {
         if (fileName != null) {
             try {
-                return new PEMCredential(fileName, (char[]) null);
+                /*
+                 * PEMCredential does not consistently support keyPasswd being null
+                 * https://github.com/eu-emi/canl-java/issues/114
+                 */
+                return new PEMCredential(fileName, new char[]{});
             } catch (IOException | KeyStoreException | CertificateException e) {
                 LOGGER.error("error reading the credentials from database: {}", e.toString());
             }
