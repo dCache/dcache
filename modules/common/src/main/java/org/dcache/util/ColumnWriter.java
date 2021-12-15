@@ -31,6 +31,7 @@ public class ColumnWriter {
     private final List<Row> rows = new ArrayList<>();
     private boolean headersAffectRowWidth;
     private String renderedHeader;
+    private boolean noheader; // switches off printing of header
 
     public enum DateStyle {
         /**
@@ -46,6 +47,11 @@ public class ColumnWriter {
 
     public ColumnWriter() {
         spaces.add(0);
+    }
+
+    public ColumnWriter suppressHeaders() {
+        noheader = true;
+        return this;
     }
 
     private void addColumn(Column column) {
@@ -226,7 +232,7 @@ public class ColumnWriter {
     private void printTo(PrintWriter out, String endOfLine) {
         List<Integer> widths = calculateWidths();
         List<Integer> spaces = new ArrayList<>(this.spaces);
-        renderedHeader = renderHeader(spaces, widths);
+        renderedHeader = noheader ? "" : renderHeader(spaces, widths);
 
         Row previousRow = null;
         for (Row row : rows) {
