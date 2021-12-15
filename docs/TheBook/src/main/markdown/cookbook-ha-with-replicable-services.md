@@ -143,6 +143,20 @@ as requests from doors will be load balanced over all physical instances. The
 configuration should be synchronized such that all instances are configured the
 same way.
 
+All pinmanager instances in an installation will receive and perform pinning
+operations. Nevertheless, all pinmanager instances will negotiate a leader by
+means of ZooKeeper for unpinning operations. Only this leader will perform
+these operations at any point in time. Another pinmanager instance will take
+over, should this leader disappear.
+
+This high availability (HA) role and the participants may be queried:
+```
+\c PinManager@domain
+ha get role
+ha show participants
+```
+
+
 ### `srmmanager`
 
 Srmmanager is fully replicable. Several instance must have separate databases.
@@ -202,6 +216,18 @@ without the bottleneck of a single dCache service.
 Cleaner is fully replicable. Several instances must share the same database. The
 configuration should be synchronized such that all instances are configured the
 same way.
+
+When there are several `cleaner` instances in an installation, they
+negotiate a leader by means of ZooKeeper. Only this leader is active for all
+cleaner operations at any point in time. Should the leader disappear, another
+cleaner instance will take over.
+
+This high availability (HA) role and the participants may be queried:
+```
+\c cleaner@domain
+ha get role
+ha show participants
+```
 
 ### `admin`
 
