@@ -16,7 +16,9 @@ import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import org.dcache.util.NetworkUtils.InetAddressScope;
@@ -38,7 +40,9 @@ public class LoginBrokerInfo implements Serializable {
 
     private final String _cellName;
     private final String _domainName;
-    private final String _protocolFamily;
+    @Deprecated()
+    private final String _protocolFamily;  // only for serialisation backwards-compatibility
+    private List<String> _protocolFamilies;
     private final String _protocolVersion;
     private final String _protocolEngine;
     private final String _root;
@@ -56,9 +60,10 @@ public class LoginBrokerInfo implements Serializable {
     private transient Collection<FsPath> _readFsPaths;
     private transient Collection<FsPath> _writeFsPaths;
 
+    // The first element of protocolFamilies is the preferred protocol
     public LoginBrokerInfo(String cellName,
           String domainName,
-          String protocolFamily,
+          List<String> protocolFamilies,
           String protocolVersion,
           String protocolEngine,
           String root,
@@ -72,7 +77,8 @@ public class LoginBrokerInfo implements Serializable {
         checkArgument(!addresses.isEmpty());
         _cellName = requireNonNull(cellName);
         _domainName = requireNonNull(domainName);
-        _protocolFamily = requireNonNull(protocolFamily);
+        _protocolFamilies = List.copyOf(protocolFamilies);
+        _protocolFamily = protocolFamilies.get(0);
         _protocolVersion = requireNonNull(protocolVersion);
         _protocolEngine = requireNonNull(protocolEngine);
         _root = root;
@@ -133,8 +139,23 @@ public class LoginBrokerInfo implements Serializable {
     }
 
     @Nonnull
-    public String getProtocolFamily() {
-        return _protocolFamily;
+    public String getPreferredProtocolFamily() {
+        return _protocolFamilies.get(0);
+    }
+
+    @Nonnull
+    public List<String> getProtocolFamilies() {
+        return _protocolFamilies;
+    }
+
+    public boolean supportsProtocol(String protocol) {
+        return _protocolFamilies.contains(protocol);
+    }
+
+    public boolean supportsAnyProtocol(Collection protocols) {
+        Set<String> supported = new HashSet<>(_protocolFamilies);
+        supported.retainAll(protocols);
+        return !supported.isEmpty();
     }
 
     @Nonnull
@@ -242,5 +263,9 @@ public class LoginBrokerInfo implements Serializable {
         }
         _readFsPaths = _readPaths.stream().map(FsPath::create).collect(toList());
         _writeFsPaths = _writePaths.stream().map(FsPath::create).collect(toList());
+
+        if (_protocolFamilies == null) { // backwards compatible with old doors.
+            _protocolFamilies = List.of(_protocolFamily);
+        }
     }
 }
