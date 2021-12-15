@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.dcache.util.FireAndForgetTask;
@@ -62,7 +63,7 @@ public class LoginBrokerPublisher
     }
 
     private CellAddressCore _topic;
-    private String _protocolFamily;
+    private List<String> _protocolFamilies;
     private String _protocolVersion;
     private String _protocolEngine;
     private long _brokerUpdateTime = MINUTES.toMillis(5);
@@ -192,7 +193,7 @@ public class LoginBrokerPublisher
             Collection<String> readPaths = _readEnabled ? _readPaths : Collections.emptyList();
             Collection<String> writePaths = _writeEnabled ? _writePaths : Collections.emptyList();
             return Optional.of(
-                  new LoginBrokerInfo(getCellName(), getCellDomainName(), _protocolFamily,
+                  new LoginBrokerInfo(getCellName(), getCellDomainName(), _protocolFamilies,
                         _protocolVersion,
                         _protocolEngine, _root, readPaths, writePaths, _tags, addresses, _port,
                         _load.getAsDouble(), _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
@@ -255,6 +256,10 @@ public class LoginBrokerPublisher
         }
     }
 
+    private String protocolFamilyCsv() {
+        return _protocolFamilies.stream().collect(Collectors.joining(","));
+    }
+
     @Override
     public synchronized void getInfo(PrintWriter pw) {
         if (_topic == null || _task == null) {
@@ -262,7 +267,7 @@ public class LoginBrokerPublisher
             return;
         }
         pw.println("    LoginBroker      : " + _topic);
-        pw.println("    Protocol Family  : " + _protocolFamily);
+        pw.println("    Protocol Family  : " + protocolFamilyCsv());
         pw.println("    Protocol Version : " + _protocolVersion);
         pw.println("    Port             : " + _port);
         pw.println("    Addresses        : " + _lastAddresses);
@@ -343,13 +348,13 @@ public class LoginBrokerPublisher
         return Objects.toString(_topic, null);
     }
 
-    public synchronized void setProtocolFamily(String protocolFamily) {
-        _protocolFamily = protocolFamily;
+    public synchronized void setProtocolFamilies(String protocolFamily) {
+        _protocolFamilies = Splitter.on(',').trimResults().splitToList(protocolFamily);
         rescheduleTask();
     }
 
-    public synchronized String getProtocolFamily() {
-        return _protocolFamily;
+    public synchronized String getProtocolFamilies() {
+        return protocolFamilyCsv();
     }
 
     public synchronized void setProtocolVersion(String protocolVersion) {
