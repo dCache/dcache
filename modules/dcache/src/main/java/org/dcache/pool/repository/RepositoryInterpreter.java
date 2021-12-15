@@ -244,6 +244,9 @@ public class RepositoryInterpreter
         @Option(name = "binary", usage = "Return statistics in binary format instead.")
         boolean binary;
 
+        @Option(name = "noheader", usage = "Do not print table header.")
+        boolean noheader;
+
         @Override
         public Serializable execute() throws CacheException, InterruptedException {
             if (pnfsIds != null) {
@@ -342,13 +345,17 @@ public class RepositoryInterpreter
                   .space().header("Total: size").bytes("totalSize", unitsArg, BINARY).header(",")
                   .fixed(" ").space().header("files").right("totalFiles").header(";").fixed(" ")
                   .space().space().header("Precious: size").bytes("preciousSize", unitsArg, BINARY)
-                  .header(",").fixed(" ").space().header("files").right("preciousFile").header(";")
+                  .header(",").fixed(" ").space().header("files").right("preciousFiles").header(";")
                   .fixed(" ")
                   .space().space().header("Sticky: size").bytes("stickySize", unitsArg, BINARY)
-                  .header(",").fixed(" ").space().header("files").right("stickyFile").header(";")
+                  .header(",").fixed(" ").space().header("files").right("stickyFiles").header(";")
                   .fixed(" ")
                   .space().space().header("others: size").bytes("otherSize", unitsArg, BINARY)
                   .header(",").fixed(" ").space().header("files").right("otherFiles");
+
+            if (noheader) {
+                table.suppressHeaders();
+            }
 
             stats.entrySet().stream()
                   .filter(e -> !e.getKey().equals("total"))
