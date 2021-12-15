@@ -20,8 +20,11 @@ public final class Door {
           "role assertion.")
     private String domainName;
 
-    @ApiModelProperty("The abbreviation of the protocol name.")
+    @ApiModelProperty("The preferred protocol name.")
     private String protocol;
+
+    @ApiModelProperty("All protocol names supported by this door.")
+    private List<String> protocols;
 
     @ApiModelProperty("The version number of the protocol.")
     private String version;
@@ -62,7 +65,8 @@ public final class Door {
         identifier = isAdmin ? info.getIdentifier() : null;
         updateTime = isAdmin ? info.getUpdateTime() : 0L;
 
-        protocol = info.getProtocolFamily();
+        protocol = info.getPreferredProtocolFamily();
+        protocols = info.getProtocolFamilies();
         version = info.getProtocolVersion();
         root = info.getRoot();
         addresses = info.getAddresses().stream()

@@ -233,7 +233,7 @@
     <property name="updateThreshold" value="${xrootd.loginbroker.update-threshold}"/>
     <property name="protocolEngine" value="org.dcache.xrootd.door.XrootdDoor"/>
     <property name="protocolVersion" value="${xrootd.loginbroker.version}"/>
-    <property name="protocolFamily" value="${xrootd.loginbroker.family}"/>
+    <property name="protocolFamilies" value="${xrootd.loginbroker.family}"/>
     <property name="port" value="${xrootd.loginbroker.port}"/>
     <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${xrootd.loginbroker.address}') }"/>
     <property name="topic" value="${xrootd.loginbroker.update-topic}"/>
