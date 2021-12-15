@@ -339,7 +339,7 @@ public class RepositoryInterpreter
                             + ", other: " + toString.apply(c[2]);
                   });
 
-            ColumnWriter table =  new ColumnWriter()
+            ColumnWriter table = new ColumnWriter()
                   .headersInColumns()
                   .header("Storage class").left("class")
                   .space().header("Total: size").bytes("totalSize", unitsArg, BINARY).header(",")
@@ -366,7 +366,7 @@ public class RepositoryInterpreter
                             .value("totalSize", counter[0]).value("totalFiles", counter[1])
                             .value("preciousSize", counter[2]).value("preciousFiles", counter[3])
                             .value("stickySize", counter[4]).value("stickyFiles", counter[5])
-                            .value("otherSize", counter[6]).value("otherFiles",  counter[7]);
+                            .value("otherSize", counter[6]).value("otherFiles", counter[7]);
                   });
 
             return sumLine.map(s -> table + "\n\n" + s).orElse(table.toString());
