@@ -61,6 +61,7 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
@@ -94,6 +95,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -115,6 +117,7 @@ import org.dcache.util.Checksums;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.ColumnWriter.TabulatedRow;
 import org.dcache.util.Glob;
+import org.dcache.util.LineIndentingPrintWriter;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Strings;
 import org.dcache.util.URIs;
@@ -129,6 +132,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import static diskCacheV111.services.TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE;
 import static dmg.util.CommandException.checkCommand;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 
 /**
  * This class provides the basis for interactions with the remotetransfer service.  It is used by
@@ -148,7 +153,8 @@ import static dmg.util.CommandException.checkCommand;
  * Although the third-party transfer protocol, described in CopyFilter is documented as supporting
  * 'https' URIs, this implementation supports different transports for the third-party transfer.
  */
-public class RemoteTransferHandler implements CellMessageReceiver, CellCommandListener {
+public class RemoteTransferHandler implements CellMessageReceiver, CellCommandListener,
+        CellInfoProvider {
 
     private static int threadCount = 1;
     private static synchronized int nextThreadCount() {
@@ -276,19 +282,6 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
         };
 
         public abstract boolean matches(InetAddress addr);
-    }
-
-    @Command(name = "http-tpc finaliser info", hint="query finaliser status",
-            description = "Provides information about transfer finalisation.")
-    public class HttpTpcFinaliserInfoCommand implements Callable<String> {
-        @Override
-        public String call() throws Exception {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Max threads: ").append(_activity.getMaximumPoolSize()).append('\n');
-            sb.append("Current threads: ").append(_activity.getThreadCount()).append('\n');
-            sb.append("Queued tasks: ").append(_activity.getWorkQueueSize()).append('\n');
-            return sb.toString();
-        }
     }
 
     @Command(name = "http-tpc finaliser max threads", hint="update finaliser max threads",
@@ -601,6 +594,28 @@ public class RemoteTransferHandler implements CellMessageReceiver, CellCommandLi
     public void stop() {
         _activity.shutdown();
     }
+
+    @Override
+    public void getInfo(PrintWriter pw) {
+        Map<String,Integer> stateCount = _transfers.values().stream()
+                .map(RemoteTransfer::describeLastState)
+                .collect(groupingBy(Function.identity(), summingInt(e -> 1)));
+        pw.println("Current transfers:");
+        ColumnWriter columns = new ColumnWriter().right("state").fixed(": ").left("count");
+        stateCount.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(e -> columns.row().value("state", e.getKey()).value("count", e.getValue()));
+        if (stateCount.size() > 1) {
+            int total = stateCount.values().stream().mapToInt(Integer::intValue).sum();
+            columns.row().value("state", "TOTAL").value("count", total);
+        }
+        columns.printTo(new LineIndentingPrintWriter(pw, "    "));
+        pw.println("Finaliser:");
+        pw.println("    Max threads: " + _activity.getMaximumPoolSize());
+        pw.println("    Current threads: " + _activity.getThreadCount());
+        pw.println("    Queued tasks: " + _activity.getWorkQueueSize());
+    }
+
 
     /**
      * Start a transfer and block until that transfer is complete.
