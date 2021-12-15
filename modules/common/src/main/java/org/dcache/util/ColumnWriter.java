@@ -212,19 +212,27 @@ public class ColumnWriter {
         if (rows.isEmpty()) {
             return "";
         }
+        StringWriter result = new StringWriter();
+        try (PrintWriter out = new NoTrailingWhitespacePrintWriter(result)) {
+            printTo(out, endOfLine);
+        }
+        return result.toString();
+    }
+
+    public void printTo(PrintWriter out) {
+        printTo(out, "\n");
+    }
+
+    private void printTo(PrintWriter out, String endOfLine) {
         List<Integer> widths = calculateWidths();
         List<Integer> spaces = new ArrayList<>(this.spaces);
         renderedHeader = renderHeader(spaces, widths);
 
-        StringWriter result = new StringWriter();
-        try (PrintWriter out = new NoTrailingWhitespacePrintWriter(result)) {
-            Row previousRow = null;
-            for (Row row : rows) {
-                row.render(previousRow, columns, spaces, widths, out, endOfLine);
-                previousRow = row;
-            }
+        Row previousRow = null;
+        for (Row row : rows) {
+            row.render(previousRow, columns, spaces, widths, out, endOfLine);
+            previousRow = row;
         }
-        return result.toString();
     }
 
     private void printHeader(PrintWriter out, String endOfLine) {
