@@ -9,8 +9,8 @@ This part is intended for people who are new to dCache. It gives an introduction
 
 1. [Introduction](intro.md)
 
-     [Cells and Domains](intro.md#cells-and-domains)
-     [Protocols Supported by dCache](intro.md#protocols-supported-by-dcache)
+    - [Cells and Domains](intro.md#cells-and-domains)
+    - [Protocols Supported by dCache](intro.md#protocols-supported-by-dcache)
 
 1. [Installing dCache](install.md)
 
