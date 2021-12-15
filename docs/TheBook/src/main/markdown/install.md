@@ -1,6 +1,10 @@
 Chapter 2. Installing dCache
 ============================
 
+-----
+[TOC bullet hierarchy]
+-----
+
 If you have never run dCache before then this chapter will get you
 started as quickly as possible, with some useful features available
 for you to explore.
@@ -834,7 +838,7 @@ some details, logged as dCache starts:
 19 Jul 2019 16:49:11 (PoolManager) [pool1 PoolManagerPoolUp] Pool pool1 changed from mode disabled(store,stage,p2p-client,loading)  to enabled.
 ```
 
-#### Using systemd service
+#### Using the systemd service
 
 dCache uses systemd's generator functionality to create a service for each defined domain in the layout file. That's why, before starting the service all dynamic systemd units should be generated:
 
@@ -848,6 +852,9 @@ systemctl daemon-reload
 > - dcache.restart.delay
 > - dcache.home
 > - dcache.java.library.path
+>
+> **Note**
+> This means that it is also always required after (re)installing a plugin in order for the class paths to be set correctly.
 
 To inspect all generated units of dcache.target the `systemd list-dependencies` command can be used. In our simple installation with just one domain hosting several services this would look like 
 
