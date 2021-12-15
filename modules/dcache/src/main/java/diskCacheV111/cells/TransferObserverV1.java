@@ -508,7 +508,7 @@ public class TransferObserverV1
             page.beginRow(null, "odd");
             page.td("cell", door.getCellName());
             page.td("domain", door.getDomainName());
-            page.td("protocol", door.getProtocolFamily());
+            page.td("protocol", door.getPreferredProtocolFamily());
             page.td("version", door.getProtocolVersion());
             page.td("host", address.getHostName());
             page.td("port", door.getPort());

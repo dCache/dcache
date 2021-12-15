@@ -186,7 +186,7 @@ public class LoginManager
             _loginBrokerPublisher.setCellAddress(_nucleus.getThisAddress());
             _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
             _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
-            _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", ""));
+            _loginBrokerPublisher.setProtocolFamilies(_args.getOption("protocolFamily", ""));
             _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
             _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
             _loginBrokerPublisher.setUpdateTimeUnit(
