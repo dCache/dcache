@@ -89,10 +89,6 @@ class Link implements SelectionLink, Serializable {
         return list;
     }
 
-    public boolean exec(Map<String, String> variableMap) {
-        return true;
-    }
-
     public void setLinkGroup(LinkGroup lg) {
         _linkGroup = lg;
     }

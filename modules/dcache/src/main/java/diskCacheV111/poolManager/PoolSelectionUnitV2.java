@@ -733,9 +733,7 @@ public class PoolSelectionUnitV2
             while (linkIterator.hasNext()) {
 
                 Link link = linkIterator.next();
-                if ((link._uGroupList.size() <= fitCount)
-                      && ((variableMap == null) || link.exec(variableMap))) {
-
+                if (link._uGroupList.size() <= fitCount) {
                     sortedSet.add(link);
                 }
             }
