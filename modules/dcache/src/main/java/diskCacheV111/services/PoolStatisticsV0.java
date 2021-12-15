@@ -991,7 +991,7 @@ public class PoolStatisticsV0 extends CellAdapter {
 
         try {
             // copy the raw file into the html directory
-            Files.copy(diffFile.toPath(), new File(dir, "total.drw").toPath());
+            Files.copy(diffFile.toPath(), new File(dir, "total.drw").toPath(), StandardCopyOption.REPLACE_EXISTING);
             // load the raw data file
             Map<String, Map<String, long[]>> map = new DataStore(diffFile).getMap();
             // create todays html files
