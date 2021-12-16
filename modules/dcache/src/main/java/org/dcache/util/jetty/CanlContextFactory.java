@@ -186,8 +186,12 @@ public class CanlContextFactory extends SslContextFactory.Server {
         // use instance of SslContextFactory.Server as it allows non 'https' protocol schemas.
         // See: https://github.com/eclipse/jetty.project/issues/3454
         SslContextFactory factory = new SslContextFactory.Server() {
+            /*
+             * PEMCredential does not consistently support keyPasswd being null
+             * https://github.com/eu-emi/canl-java/issues/114
+             */
             private final PEMCredential serverCredential =
-                  new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
+                  new PEMCredential(keyPath.toString(), certificatePath.toString(), new char[]{});
 
             @Override
             protected void doStart() throws Exception {
