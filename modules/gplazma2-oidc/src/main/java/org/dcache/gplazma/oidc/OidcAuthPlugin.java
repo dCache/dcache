@@ -7,12 +7,14 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InternetDomainName;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -85,6 +87,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final static String ACCESS_TOKEN_CACHE_REFRESH_UNIT = "gplazma.oidc.access-token-cache.refresh.unit";
     private final static String ACCESS_TOKEN_CACHE_EXPIRE = "gplazma.oidc.access-token-cache.expire";
     private final static String ACCESS_TOKEN_CACHE_EXPIRE_UNIT = "gplazma.oidc.access-token-cache.expire.unit";
+    private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
 
     /**
      * A mapping from "eduperson_assurance" claim to the corresponding LoA. The details are
@@ -134,6 +137,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final Random random = new Random();
     private final JsonHttpClient jsonHttpClient;
     private final Duration slowLookupThreshold;
+    private final Set<String> audienceTargets;
 
     public OidcAuthPlugin(Properties properties) {
         this(properties, buildClientFromProperties(properties));
@@ -186,6 +190,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
               TimeUnit.valueOf(properties.getProperty(ACCESS_TOKEN_CACHE_REFRESH_UNIT)),
               asInt(properties, ACCESS_TOKEN_CACHE_EXPIRE),
               TimeUnit.valueOf(properties.getProperty(ACCESS_TOKEN_CACHE_EXPIRE_UNIT)));
+        String targets = properties.getProperty(OIDC_ALLOWED_AUDIENCES);
+        audienceTargets = Set.copyOf(Splitter.on(' ').trimResults().splitToList(targets));
     }
 
     private static Set<IdentityProvider> buildHosts(Properties properties) {
@@ -477,6 +483,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             JsonNode userInfo = getUserInfo(infoUrl, token);
             if (userInfo != null && userInfo.has("sub")) {
                 LOG.debug("UserInfo from OpenId Provider: {}", userInfo);
+                validateAudience(userInfo);
                 Set<Principal> principals = new HashSet<>();
                 principals.add(new OAuthProviderPrincipal(ip.getName()));
                 addSub(ip, userInfo, principals);
@@ -502,6 +509,28 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             throw new OidcException(e.getMessage());
         } catch (IOException e) {
             throw new OidcException("Failed to fetch UserInfo: " + e.getMessage());
+        }
+    }
+
+    private void validateAudience(JsonNode userInfo) throws OidcException {
+        var audClaim = userInfo.get("aud");
+
+        if (audClaim == null) {
+            return;
+        }
+
+        if (audClaim.isArray()) {
+            List<String> audClaimAsList = new ArrayList<>(audClaim.size());
+            audClaim.elements().forEachRemaining(e -> audClaimAsList.add(e.textValue()));
+            if (!audClaimAsList.stream().anyMatch(audienceTargets::contains)) {
+                throw new OidcException("intended for " + audClaimAsList);
+            }
+        } else {
+            String aud = audClaim.textValue();
+
+            if (!audienceTargets.contains(aud)) {
+                throw new OidcException("intended for " + aud);
+            }
         }
     }
 

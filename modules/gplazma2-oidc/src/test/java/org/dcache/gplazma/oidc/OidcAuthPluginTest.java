@@ -59,6 +59,7 @@ public class OidcAuthPluginTest {
         givenConfiguration.put("gplazma.oidc.access-token-cache.refresh.unit", "SECONDS");
         givenConfiguration.put("gplazma.oidc.access-token-cache.expire", "120");
         givenConfiguration.put("gplazma.oidc.access-token-cache.expire.unit", "SECONDS");
+        givenConfiguration.put("gplazma.oidc.audience-targets", "");
 
         givenConfiguration.setProperty(OIDC_PROPERTY_NAME, "");
     }
@@ -281,6 +282,83 @@ public class OidcAuthPluginTest {
         assertThat(principals, hasGroup("\\cms\\uscms"));
     }
 
+    @Test
+    public void shouldAcceptWhenSingleAudMatchesSingleAllowedValue() throws Exception {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+        givenAllowedAudience("dcache.example.org");
+
+        Set<Principal> principals =
+              whenOidcPluginCalledWith(
+                    withDiscoveryDoc(
+                          "{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                    withUserInfo(new StringBuilder()
+                          .append("{")
+                          .append("\"aud\":\"dcache.example.org\",")
+                          .append("\"sub\":\"214234823942934792371\"")
+                          .append("}")
+                          .toString()),
+                    withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371", "IAM"));
+    }
+
+    @Test
+    public void shouldAcceptWhenSingleAudMatchesOneFromMultipleAllowedValue() throws Exception {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+        givenAllowedAudience("dcache.example.org wlcg-all-storage");
+
+        Set<Principal> principals =
+              whenOidcPluginCalledWith(
+                    withDiscoveryDoc(
+                          "{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                    withUserInfo(new StringBuilder()
+                          .append("{")
+                          .append("\"aud\":\"dcache.example.org\",")
+                          .append("\"sub\":\"214234823942934792371\"")
+                          .append("}")
+                          .toString()),
+                    withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371", "IAM"));
+    }
+
+    @Test
+    public void shouldAcceptWhenArrayAudMatchesAllowedValue() throws Exception {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+        givenAllowedAudience("dcache.example.org");
+
+        Set<Principal> principals =
+              whenOidcPluginCalledWith(
+                    withDiscoveryDoc(
+                          "{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                    withUserInfo(new StringBuilder()
+                          .append("{")
+                          .append("\"aud\": [\"another-service.example.com\", \"dcache.example.org\"],")
+                          .append("\"sub\":\"214234823942934792371\"")
+                          .append("}")
+                          .toString()),
+                    withBearerToken("validtoken"));
+
+        assertThat(principals, hasSubject("214234823942934792371", "IAM"));
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectWhenSingleAudDoesNotMatchAllowedValue() throws Exception {
+        givenPrefixConfig("IAM", "idc-iam.example.org");
+        givenAllowedAudience("dcache.example.org");
+
+        whenOidcPluginCalledWith(
+                withDiscoveryDoc(
+                      "{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                withUserInfo(new StringBuilder()
+                      .append("{")
+                      .append("\"aud\": \"another-service.example.com\",")
+                      .append("\"sub\":\"214234823942934792371\"")
+                      .append("}")
+                      .toString()),
+                withBearerToken("validtoken"));
+    }
     /*-------------------------------- Helpers --------------------------------------*/
 
     private void givenHostnameConfig(String config) {
@@ -289,6 +367,10 @@ public class OidcAuthPluginTest {
 
     private void givenPrefixConfig(String name, String config) {
         givenConfiguration.put(OIDC_PROPERTY_OP_PREFIX + name, config);
+    }
+
+    private void givenAllowedAudience(String value) {
+        givenConfiguration.put("gplazma.oidc.audience-targets", value);
     }
 
     private Set<Principal> whenOidcPluginCalledWith(JsonNode discoveryDoc,
