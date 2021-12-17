@@ -131,6 +131,8 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
             JsonWebToken token = checkValid(new JsonWebToken(tokens.get(0)));
             Issuer issuer = issuerOf(token);
 
+            validateWlcgVersionClaim(token);
+
             Collection<Principal> principals = new ArrayList<>();
 
             // REVISIT consider introducing an SPI to allow plugable support for handling claims.
@@ -167,6 +169,15 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
             }
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
+        }
+    }
+
+    private void validateWlcgVersionClaim(JsonWebToken token) throws AuthenticationException {
+        Optional<String> wlcgVer = token.getPayloadString("wlcg.ver");
+
+        if (wlcgVer.isPresent()) {
+            String ver = wlcgVer.get();
+            checkAuthentication(ver.equals("1.0"), "Unsupported wlcg profile version %s", ver);
         }
     }
 

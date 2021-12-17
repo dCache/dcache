@@ -1353,6 +1353,34 @@ public class SciTokenPluginTest {
                 new OpenIdGroupPrincipal("/group-2")));
     }
 
+    @Test
+    public void shouldAcceptTokenSupportedWlcgVer() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("wlcg.ver", "1.0")
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectTokenWithUnsupportedWlcgVer() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("wlcg.ver", "2.0")
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
+    }
+
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException {
         identifiedPrincipals.addAll(maker.build());
         plugin.authenticate(Collections.emptySet(), Collections.emptySet(),
