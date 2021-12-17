@@ -86,6 +86,7 @@ import org.dcache.auth.ExemptFromNamespaceChecks;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.JwtJtiPrincipal;
 import org.dcache.auth.JwtSubPrincipal;
+import org.dcache.auth.OAuthProviderPrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
 import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -1413,6 +1414,34 @@ public class SciTokenPluginTest {
         assertThat(identifiedPrincipals, hasItems(new OpenIdGroupPrincipal("/group-1"),
                 new OpenIdGroupPrincipal("/group-1/subgroup"),
                 new OpenIdGroupPrincipal("/group-2")));
+    }
+
+    @Test
+    public void shouldAcceptTokenSupportedWlcgVer() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("wlcg.ver", "1.0")
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectTokenWithUnsupportedWlcgVer() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        whenAuthenticatingWith(aJwtToken()
+                .withRandomSub()
+                .withRandomJti()
+                .withClaim("wlcg.ver", "2.0")
+                .withClaim("scope", "read:/")
+                .issuedBy("OP1").usingKey("key1"));
     }
 
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException {
