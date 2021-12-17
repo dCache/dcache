@@ -211,7 +211,7 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldCallShutdown() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
 
         plugin.stop();
 
@@ -220,50 +220,50 @@ public class OidcAuthPluginTest {
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailWithoutBearerToken() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
 
         when(invoked().withoutCredentials());
     }
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailWithTwoBearerTokens() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
 
         when(invoked().withBearerToken("FOO").withBearerToken("BAR"));
     }
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailWithUsernamePasswordCredential() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
 
         when(invoked().withUsernamePassword("fred", "password"));
     }
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailIfTokenProcessorFailsWithUnableToProcess() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatThrows(new UnableToProcess("I've no idea what to do")));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatThrows(new UnableToProcess("I've no idea what to do"))));
 
         when(invoked().withBearerToken("FOO"));
     }
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailIfTokenProcessorFailsWithAuthenticationException() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatThrows(new AuthenticationException("bad token: FOO")));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatThrows(new AuthenticationException("bad token: FOO"))));
 
         when(invoked().withBearerToken("FOO"));
     }
 
     @Test(expected=AuthenticationException.class)
     public void shouldFailIfTokenProcessorReturnsNoClaims() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().withNoClaims()));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().withNoClaims())));
 
         when(invoked().withBearerToken("FOO"));
     }
 
     @Test
     public void shouldProvideSubPrincipalIfTokenProcessorReturnsSubClaim() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
-                .withStringClaim("sub", "sub-claim-value"))));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+                .withStringClaim("sub", "sub-claim-value")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -279,9 +279,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideGroupsPrincipalIfTokenProcessorReturnsGroupsClaim() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("groups", "[\"group-A\", \"group-B\"]"))));
+                .with("groups", "[\"group-A\", \"group-B\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -298,9 +298,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGroupsIfGroupsClaimNotArray() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("groups", "group-A"))));
+                .withStringClaim("groups", "group-A")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -316,9 +316,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddGroupsIfWlcgGroupsClaimPresent() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("wlcg.groups", "[\"group-A\", \"group-B\"]"))));
+                .with("wlcg.groups", "[\"group-A\", \"group-B\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -335,9 +335,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGroupsIfWlcgGroupsClainsInvalidValues() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("wlcg.groups", "[\"group-A\", null, true, 42]"))));
+                .with("wlcg.groups", "[\"group-A\", null, true, 42]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -353,9 +353,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGroupsIfWlcgGroupsNotArray() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("wlcg.groups", "group-A"))));
+                .withStringClaim("wlcg.groups", "group-A")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -371,9 +371,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddNameIfNameClaim() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("name", "Paul Millar"))));
+                .withStringClaim("name", "Paul Millar")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -389,9 +389,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreNameIfNameClaimNotString() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("name", "[\"Paul\", \"Millar\"]"))));
+                .with("name", "[\"Paul\", \"Millar\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -407,9 +407,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreNameIfNameClaimEmpty() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("name", ""))));
+                .withStringClaim("name", "")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -425,10 +425,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddConstructedNameGivenNameAndFamilyNameClaimsPresent() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
                 .withStringClaim("given_name", "Paul")
-                .withStringClaim("family_name", "Millar"))));
+                .withStringClaim("family_name", "Millar")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -444,9 +444,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGivenNameIfFamilyNameMissing() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("given_name", "Paul"))));
+                .withStringClaim("given_name", "Paul")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -462,10 +462,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGivenNameIfFamilyNameEmpty() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
                 .withStringClaim("given_name", "Paul")
-                .withStringClaim("family_name", ""))));
+                .withStringClaim("family_name", "")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -481,9 +481,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreFamilyNameIfGivenNameMissing() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("family_name", "Millar"))));
+                .withStringClaim("family_name", "Millar")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -499,10 +499,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreFamilyNameIfGivenNameEmpty() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
                 .withStringClaim("given_name", "")
-                .withStringClaim("family_name", "Millar"))));
+                .withStringClaim("family_name", "Millar")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -518,9 +518,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideEmailIfEmailClaim() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("email", "paul.millar@desy.de"))));
+                .withStringClaim("email", "paul.millar@desy.de")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -536,9 +536,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddNoLoAPrincipalsIfAssuranceHasEmptyArray() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[]"))));
+                .with("eduperson_assurance", "[]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -554,9 +554,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddNoLoAPrincipalsIfAssuranceHasWrongType() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("eduperson_assurance", "https://refeds.org/assurance/ID/unique"))));
+                .withStringClaim("eduperson_assurance", "https://refeds.org/assurance/ID/unique")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -573,9 +573,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIdUniqueAssuranceClaims() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/unique\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/unique\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -591,9 +591,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIdUniqueNoReassignAssuranceClaims() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/eppn-unique-no-reassign\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/eppn-unique-no-reassign\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -609,9 +609,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIdUniqueReassignAfter1Y() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/eppn-unique-reassign-1y\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ID/eppn-unique-reassign-1y\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -627,9 +627,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIapLow() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/low\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/low\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -645,9 +645,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIapMedium() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/medium\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/medium\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -663,9 +663,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsIapHigh() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/high\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/high\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -681,9 +681,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreLoAPrincipalIfAssuranceHasRefedsIapLocalEnterprise() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/local-enterprise\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/IAP/local-enterprise\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -699,9 +699,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsAtp1M() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ATP/ePA-1m\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ATP/ePA-1m\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -717,9 +717,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsAtp1D() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ATP/ePA-1d\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/ATP/ePA-1d\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -735,9 +735,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsProfileCappuccino() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/profile/cappuccino\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/profile/cappuccino\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -753,9 +753,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasRefedsProfileEspresso() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://refeds.org/assurance/profile/espresso\"]"))));
+                .with("eduperson_assurance", "[\"https://refeds.org/assurance/profile/espresso\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -771,9 +771,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasIgtfAspen() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/aspen\"]"))));
+                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/aspen\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -789,9 +789,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasIgtfBirch() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/birch\"]"))));
+                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/birch\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -807,9 +807,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasIgtfCedar() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/cedar\"]"))));
+                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/cedar\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -825,9 +825,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasIgtfDogwood() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/dogwood\"]"))));
+                .with("eduperson_assurance", "[\"https://igtf.net/ap/authn-assurance/dogwood\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -843,9 +843,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasAarcAssam() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://aarc-project.eu/policy/authn-assurance/assam\"]"))));
+                .with("eduperson_assurance", "[\"https://aarc-project.eu/policy/authn-assurance/assam\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -861,9 +861,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasEgiLow() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#Low\"]"))));
+                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#Low\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -879,9 +879,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasEgiSubstantial() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#Substantial\"]"))));
+                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#Substantial\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -897,9 +897,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasEgiHigh() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#High\"]"))));
+                .with("eduperson_assurance", "[\"https://aai.egi.eu/LoA#High\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -915,7 +915,7 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideLoAPrincipalIfAssuranceHasSeveralValues() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
                 // The following set of assurance claims consitute the Refeds Cappuccino profile.
                 .with("eduperson_assurance", "[\"https://refeds.org/assurance\","
@@ -923,7 +923,7 @@ public class OidcAuthPluginTest {
                         + " \"https://refeds.org/assurance/IAP/low\","
                         + " \"https://refeds.org/assurance/IAP/medium\","
                         + " \"https://refeds.org/assurance/ATP/ePA-1m\", "
-                        + " \"https://refeds.org/assurance/profile/cappuccino\"]"))));
+                        + " \"https://refeds.org/assurance/profile/cappuccino\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -943,9 +943,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideEntitlementPrincipalIfAssuranceHasSingleEntitlement() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("eduperson_entitlement", "foo:bar:baz"))));
+                .withStringClaim("eduperson_entitlement", "foo:bar:baz")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -961,9 +961,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreEntitlementPrincipalIfAssuranceHasSingleInvalidString() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("eduperson_entitlement", ":not:a:valid:uri"))));
+                .withStringClaim("eduperson_entitlement", ":not:a:valid:uri")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -979,9 +979,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreEntitlementPrincipalIfSingleAssuranceNotStringType() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_entitlement", "42"))));
+                .with("eduperson_entitlement", "42")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -997,9 +997,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreEntitlementPrincipalIfAssuranceObject() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_entitlement", "{\"foo\": \"bar\"}"))));
+                .with("eduperson_entitlement", "{\"foo\": \"bar\"}")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1015,9 +1015,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideEntitlementPrincipalIfAssuranceHasSingleArrayEntitlement() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_entitlement", "[\"foo:bar:baz\"]"))));
+                .with("eduperson_entitlement", "[\"foo:bar:baz\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1033,9 +1033,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideEntitlementPrincipalIfAssuranceHasMultipleArrayEntitlement() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP")).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("eduperson_entitlement", "[\"foo:bar:baz\", \"a:b:c\"]"))));
+                .with("eduperson_entitlement", "[\"foo:bar:baz\", \"a:b:c\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1052,9 +1052,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldProvideUsernamePrincipalIfAcceptUsernameWithPreferredUsername() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .withStringClaim("preferred_username", "paul"))));
+                .withStringClaim("preferred_username", "paul")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1070,9 +1070,9 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreUsernameIfPreferredUsernameHasWrongType() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
                 .withStringClaim("sub", "sub-claim-value")
-                .with("preferred_username", "42"))));
+                .with("preferred_username", "42")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1088,8 +1088,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldNotHaveUsernameIfPreferredUsernameMissing() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
-                .withStringClaim("sub", "sub-claim-value"))));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedUsername()).containing(claims()
+                .withStringClaim("sub", "sub-claim-value")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1105,10 +1105,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddGroupIfAcceptGroups() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
                 .containing(claims()
                         .withStringClaim("sub", "sub-claim-value")
-                        .with("groups", "[\"group-A\", \"group-B\"]"))));
+                        .with("groups", "[\"group-A\", \"group-B\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1125,10 +1125,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAddGroupWithoutInitialSlashIfAcceptGroups() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
                 .containing(claims()
                         .withStringClaim("sub", "sub-claim-value")
-                        .with("groups", "[\"/group-A\", \"/group-B\"]"))));
+                        .with("groups", "[\"/group-A\", \"/group-B\"]")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1145,10 +1145,10 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGroupIfAcceptGroupsWithWrongType() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
             .containing(claims()
                     .withStringClaim("sub", "sub-claim-value")
-                    .with("groups", "42"))));
+                    .with("groups", "42")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1164,8 +1164,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldIgnoreGroupIfAcceptGroupsWithMissingGroupsClaim() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
-                .containing(claims().withStringClaim("sub", "sub-claim-value"))));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+                .containing(claims().withStringClaim("sub", "sub-claim-value")))));
 
         when(invoked().withBearerToken("FOO"));
 
@@ -1181,7 +1181,7 @@ public class OidcAuthPluginTest {
 
     @Test(expected=AuthenticationException.class)
     public void shouldRejectExpiredJwtToken() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
         given(aJwt().withPayloadClaim("exp", Instant.now().minus(5, MINUTES)));
 
         when(invoked().withBearerToken(jwt));
@@ -1189,8 +1189,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptNonExpiredJwtToken() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
-                .containing(claims().withStringClaim("sub", "sub-claim-value"))));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+                .containing(claims().withStringClaim("sub", "sub-claim-value")))));
         given(aJwt().withPayloadClaim("exp", Instant.now().plus(5, MINUTES)));
 
         when(invoked().withBearerToken(jwt));
@@ -1208,7 +1208,7 @@ public class OidcAuthPluginTest {
 
     @Test(expected=AuthenticationException.class)
     public void shouldRejectEmbargoedJwtToken() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatFailsTestIfCalled());
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatFailsTestIfCalled()));
         given(aJwt().withPayloadClaim("nbf", Instant.now().plus(5, MINUTES)));
 
         when(invoked().withBearerToken(jwt));
@@ -1216,8 +1216,8 @@ public class OidcAuthPluginTest {
 
     @Test
     public void shouldAcceptNonEmbargoedJwtToken() throws Exception {
-        givenAPluginWith(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
-                .containing(claims().withStringClaim("sub", "sub-claim-value"))));
+        given(aPlugin().withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP").withAcceptedGroups())
+                .containing(claims().withStringClaim("sub", "sub-claim-value")))));
         given(aJwt().withPayloadClaim("nbf", Instant.now().minus(5, MINUTES)));
 
         when(invoked().withBearerToken(jwt));
@@ -1232,17 +1232,89 @@ public class OidcAuthPluginTest {
         assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
     }
 
-    private void givenAPluginWith(TokenProcessorBuilder builder) {
-        processor = builder.build();
-        plugin = new OidcAuthPlugin(processor);
+    @Test
+    public void shouldAcceptWhenSingleAudMatchesSingleAllowedValue() throws Exception {
+        given(aPlugin().withProperty("gplazma.oidc.audience-targets", "dcache.example.org")
+                .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP"))
+                        .containing(claims().withStringClaim("sub", "sub-claim-value")
+                                .withStringClaim("aud", "dcache.example.org")))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
+        assertThat(principals, not(hasItem(any(FullNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(EmailAddressPrincipal.class))));
+        assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
+        assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
+        assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
+    }
+
+    @Test
+    public void shouldAcceptWhenSingleAudMatchesOneFromMultipleAllowedValue() throws Exception {
+        given(aPlugin().withProperty("gplazma.oidc.audience-targets", "dcache.example.org wlcg-all-storage")
+                .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP"))
+                        .containing(claims().withStringClaim("sub", "sub-claim-value")
+                                .withStringClaim("aud", "dcache.example.org")))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
+        assertThat(principals, not(hasItem(any(FullNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(EmailAddressPrincipal.class))));
+        assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
+        assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
+        assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
+    }
+
+    @Test
+    public void shouldAcceptWhenArrayAudMatchesAllowedValue() throws Exception {
+        given(aPlugin().withProperty("gplazma.oidc.audience-targets", "dcache.example.org")
+                .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP"))
+                        .containing(claims().withStringClaim("sub", "sub-claim-value")
+                                .with("aud", "[\"another-service.example.com\", \"dcache.example.org\"]")))));
+
+        when(invoked().withBearerToken("FOO"));
+
+        assertThat(principals, hasItem(new OidcSubjectPrincipal("sub-claim-value", "MY-OP")));
+        assertThat(principals, not(hasItem(any(OpenIdGroupPrincipal.class))));
+        assertThat(principals, not(hasItem(any(FullNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(EmailAddressPrincipal.class))));
+        assertThat(principals, not(hasItem(any(LoAPrincipal.class))));
+        assertThat(principals, not(hasItem(any(EntitlementPrincipal.class))));
+        assertThat(principals, not(hasItem(any(UserNamePrincipal.class))));
+        assertThat(principals, not(hasItem(any(GroupNamePrincipal.class))));
+    }
+
+
+    @Test(expected=AuthenticationException.class)
+    public void shouldRejectWhenSingleAudDoesNotMatchAllowedValue() throws Exception {
+        given(aPlugin().withProperty("gplazma.oidc.audience-targets", "dcache.example.org")
+                .withTokenProcessor(aTokenProcessor().thatReturns(aResult().from(anIp("MY-OP"))
+                        .containing(claims().withStringClaim("sub", "sub-claim-value")
+                                .withStringClaim("aud", "another-service.example.com")))));
+
+        when(invoked().withBearerToken("FOO"));
+
     }
 
     private void given(JwtFactory.Builder builder) {
         jwt = builder.build();
     }
 
+    private void given(PluginBuilder builder) {
+        plugin = builder.build();
+    }
+
     private void when(AuthenticateInvocationBuilder builder) throws AuthenticationException {
         principals = builder.invokeOn(plugin);
+    }
+
+    private PluginBuilder aPlugin() {
+        return new PluginBuilder();
     }
 
     private JwtFactory.Builder aJwt() {
@@ -1263,6 +1335,32 @@ public class OidcAuthPluginTest {
 
     private AuthenticateInvocationBuilder invoked() {
         return new AuthenticateInvocationBuilder();
+    }
+
+    /**
+     * A fluent class for building a (real) OidcAuthPlugin.
+     */
+    private class PluginBuilder {
+        private Properties properties = new Properties();
+
+        public PluginBuilder() {
+            // Use a reasonable default, just to keep tests a bit smaller.
+            properties.setProperty("gplazma.oidc.audience-targets", "");
+        }
+
+        public PluginBuilder withTokenProcessor(TokenProcessorBuilder builder) {
+            processor = builder.build();
+            return this;
+        }
+
+        public PluginBuilder withProperty(String key, String value) {
+            properties.setProperty(key, value);
+            return this;
+        }
+
+        public OidcAuthPlugin build() {
+            return new OidcAuthPlugin(properties, processor);
+        }
     }
 
     /**

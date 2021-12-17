@@ -3,16 +3,19 @@ package org.dcache.gplazma.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InternetDomainName;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,6 +57,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
     private final static String HTTP_PER_ROUTE_CONCURRENT_ACCESS = "gplazma.oidc.http.per-route-concurrent-requests";
     private final static String HTTP_TIMEOUT = "gplazma.oidc.http.timeout";
     private final static String HTTP_TIMEOUT_UNIT = "gplazma.oidc.http.timeout.unit";
+    private final static String OIDC_ALLOWED_AUDIENCES = "gplazma.oidc.audience-targets";
     private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
     private final static String OIDC_PROVIDER_PREFIX = "gplazma.oidc.provider!";
 
@@ -99,14 +103,18 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
           .build();
 
     private final TokenProcessor tokenProcessor;
+    private final Set<String> audienceTargets;
 
     public OidcAuthPlugin(Properties properties) {
-        this(buildProcessor(properties));
+        this(properties, buildProcessor(properties));
     }
 
     @VisibleForTesting
-    OidcAuthPlugin(TokenProcessor processor) {
+    OidcAuthPlugin(Properties properties, TokenProcessor processor) {
         tokenProcessor = processor;
+
+        String targets = properties.getProperty(OIDC_ALLOWED_AUDIENCES);
+        audienceTargets = Set.copyOf(Splitter.on(' ').trimResults().splitToList(targets));
     }
 
     @Override
@@ -201,6 +209,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             ExtractResult result = tokenProcessor.extract(token);
 
             checkAuthentication(!result.claims().isEmpty(), "processing token yielded no claims");
+            checkAudience(result.claims());
 
             var principalsFromToken = principalsFromClaims(result.idp(), result.claims());
             identifiedPrincipals.addAll(principalsFromToken);
@@ -247,6 +256,24 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin {
             addUsername(claims, principals);
         }
         return principals;
+    }
+
+    private void checkAudience(Map<String,JsonNode> claims) throws AuthenticationException {
+        var audClaim = claims.get("aud");
+
+        if (audClaim == null) {
+            return;
+        }
+
+        if (audClaim.isArray()) {
+            List<String> audClaimAsList = new ArrayList<>(audClaim.size());
+            audClaim.elements().forEachRemaining(e -> audClaimAsList.add(e.textValue()));
+            checkAuthentication(audClaimAsList.stream().anyMatch(audienceTargets::contains),
+                    "intended for %s", audClaimAsList);
+        } else {
+            String aud = audClaim.textValue();
+            checkAuthentication(audienceTargets.contains(aud), "intended for %s", aud);
+        }
     }
 
     private static GroupNamePrincipal toGroupName(String id) {
