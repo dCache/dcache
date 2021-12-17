@@ -157,20 +157,35 @@ public class SciTokenPlugin implements GPlazmaAuthenticationPlugin {
 
             checkAuthentication(sub.isPresent() || jti.isPresent(), "missing sub and jti claims");
 
-            principals.addAll(issuer.getPrincipals());
+            principals.add(issuer.getOpIdentity());
 
-            String scope = token.getPayloadString("scope")
-                  .orElseThrow(() -> new AuthenticationException("missing scope claim"));
-            List<AuthorisationSupplier> scopes = parseScope(scope);
-            checkAuthentication(!scopes.isEmpty(),
-                  "not a SciToken: found no SciToken scope terms.");
-            identifiedPrincipals.addAll(principals);
-            Restriction r = buildRestriction(issuer.getPrefix(), scopes);
-            LOGGER.debug("Authenticated user with restriction: {}", r);
-            restrictions.add(r);
-            if (exemptPrincipalSupported) {
-                identifiedPrincipals.add(new ExemptFromNamespaceChecks());
+            List<AuthorisationSupplier> scopes = token.getPayloadString("scope")
+                    .map(SciTokenPlugin::parseScope)
+                    .orElse(Collections.emptyList());
+
+            if (scopes.isEmpty()) {
+                // No scopes defined -> not explicit authorisation; however, perhaps the client
+                // is allowed to do something based on asserted group-membership or from their
+                // membership of the VO (implied by the OP issuing any token at all).
+
+                // This only makes sense if the token follows the WLCG AuthZ profile.  A SciToken
+                // is not valid (or useful) without at least one authorisation statements in the
+                // 'scope' claim
+                checkAuthentication(token.getPayloadString("wlcg.ver").isPresent(),
+                        "not a SciToken or WLCG profile.");
+
+                // allow login to proceed with whatever information we've gained so far.
+            } else {
+                principals.addAll(issuer.getUserIdentity());
+
+                Restriction r = buildRestriction(issuer.getPrefix(), scopes);
+                LOGGER.debug("Authenticated user with restriction: {}", r);
+                restrictions.add(r);
+                if (exemptPrincipalSupported) {
+                    principals.add(new ExemptFromNamespaceChecks());
+                }
             }
+            identifiedPrincipals.addAll(principals);
         } catch (IOException e) {
             throw new AuthenticationException(e.getMessage());
         }
