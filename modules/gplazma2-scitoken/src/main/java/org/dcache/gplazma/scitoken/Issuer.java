@@ -59,7 +59,8 @@ public class Issuer {
 
     private final String id;
     private final String endpoint;
-    private final Set<Principal> identity;
+    private final Set<Principal> userIdentity;
+    private final Principal opIdentity;
     private final FsPath prefix;
     private final Queue<String> previousJtis;
 
@@ -86,10 +87,8 @@ public class Issuer {
         sb.append(".well-known/openid-configuration");
         String configEndpoint = sb.toString();
 
-        this.identity = ImmutableSet.<Principal>builder()
-              .addAll(identity)
-              .add(new OAuthProviderPrincipal(id))
-              .build();
+        userIdentity = Set.copyOf(identity);
+        opIdentity = new OAuthProviderPrincipal(id);
 
         this.configuration = new HttpJsonNode(client, configEndpoint,
               Duration.ofHours(1), Duration.ofSeconds(10));
@@ -108,8 +107,12 @@ public class Issuer {
         return endpoint;
     }
 
-    public Set<Principal> getPrincipals() {
-        return identity;
+    public Set<Principal> getUserIdentity() {
+        return userIdentity;
+    }
+
+    public Principal getOpIdentity() {
+        return opIdentity;
     }
 
     public String getId() {

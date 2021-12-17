@@ -1444,6 +1444,26 @@ public class SciTokenPluginTest {
                 .issuedBy("OP1").usingKey("key1"));
     }
 
+    @Test
+    public void shouldAcceptWlcgProfileWithoutScope() throws Exception {
+        given(aSciTokenPlugin()
+                .withProperty("gplazma.scitoken.issuer!EXAMPLE", "https://example.org/ /prefix uid:1000 gid:1000"));
+        givenThat("OP1", isAnIssuer().withURL("https://example.org/").withKey("key1", rsa256Keys()));
+
+        String sub = UUID.randomUUID().toString();
+        String jti = UUID.randomUUID().toString();
+        whenAuthenticatingWith(aJwtToken()
+                .withClaim("wlcg.ver", "1.0")
+                .withClaim("jti", jti)
+                .withClaim("sub", sub)
+                .issuedBy("OP1").usingKey("key1"));
+
+        assertThat(identifiedPrincipals, hasItems(new JwtSubPrincipal("EXAMPLE", sub),
+                new OidcSubjectPrincipal(sub, "EXAMPLE"), new OAuthProviderPrincipal("EXAMPLE"),
+                new JwtJtiPrincipal("EXAMPLE", jti)));
+        assertThat(identifiedPrincipals, not(hasItems(new UidPrincipal(1000), new GidPrincipal(1000, true))));
+    }
+
     private void whenAuthenticatingWith(PrincipalSetMaker maker) throws AuthenticationException {
         identifiedPrincipals.addAll(maker.build());
         plugin.authenticate(Collections.emptySet(), Collections.emptySet(),
