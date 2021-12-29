@@ -1314,11 +1314,11 @@ public class PnfsManagerV3
     public void getCacheLocations(PnfsGetCacheLocationsMessage pnfsMessage) {
         Subject subject = pnfsMessage.getSubject();
         try {
+            checkRestriction(pnfsMessage, READ_METADATA);
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
             _log.info("get cache locations for {}", pnfsId);
 
             checkMask(pnfsMessage);
-            checkRestriction(pnfsMessage, READ_METADATA);
             pnfsMessage.setCacheLocations(_nameSpaceProvider.getCacheLocation(subject, pnfsId));
             pnfsMessage.setSucceeded();
         } catch (FileNotFoundCacheException fnf) {
@@ -2169,10 +2169,10 @@ public class PnfsManagerV3
 
     public void getFileAttributes(PnfsGetFileAttributes message) {
         try {
+            checkRestriction(message, READ_METADATA);
             Subject subject = message.getSubject();
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, READ_METADATA);
             Set<FileAttribute> requested = message.getRequestedAttributes();
             if (message.getUpdateAtime() && _atimeGap >= 0) {
                 requested.add(ACCESS_TIME);
@@ -2239,10 +2239,10 @@ public class PnfsManagerV3
 
     public void setFileAttributes(PnfsSetFileAttributes message) {
         try {
+            checkRestriction(message, UPDATE_METADATA);
             FileAttributes attr = message.getFileAttributes();
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, UPDATE_METADATA);
             if (attr.isDefined(FileAttribute.LOCATIONS)) {
                 /*
                  * Save for post-processing.
@@ -2282,9 +2282,9 @@ public class PnfsManagerV3
                 throw new CacheException("PNFS-ID based xattr listing is not supported");
             }
 
+            checkRestriction(message, READ_METADATA);
             populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, READ_METADATA);
 
             Set<String> names = _nameSpaceProvider.listExtendedAttributes(message.getSubject(),
                   message.getFsPath());
@@ -2302,9 +2302,9 @@ public class PnfsManagerV3
                 throw new CacheException("PNFS-ID based xattr reading is not supported");
             }
 
+            checkRestriction(message, READ_METADATA);
             populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, READ_METADATA);
 
             FsPath path = message.getFsPath();
             for (String name : message.getAllNames()) {
@@ -2327,9 +2327,9 @@ public class PnfsManagerV3
                 throw new CacheException("PNFS-ID based xattr writing is not supported");
             }
 
+            checkRestriction(message, UPDATE_METADATA);
             populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, UPDATE_METADATA);
 
             FsPath path = message.getFsPath();
 
@@ -2367,9 +2367,9 @@ public class PnfsManagerV3
                 throw new CacheException("PNFS-ID based xattr removal is not supported");
             }
 
+            checkRestriction(message, UPDATE_METADATA);
             populatePnfsId(message);
             checkMask(message);
-            checkRestriction(message, UPDATE_METADATA);
 
             FsPath path = message.getFsPath();
 
