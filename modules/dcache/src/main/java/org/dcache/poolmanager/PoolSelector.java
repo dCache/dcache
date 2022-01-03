@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A PoolSelector encapslutes pool selection logic for a particular file and a particular transfer.
+ * A PoolSelector encapsulates pool selection logic for a particular file and a particular transfer.
  * Thus pools selected by a PoolSelector are only suitable for the file and transfer for which the
  * selector was created.
  */
@@ -29,9 +29,9 @@ public interface PoolSelector {
      * getCurrentPartition().
      *
      * @throw FileNotInCacheException if the file is not on any pool that is online.
-     * @throw PermissionDeniedCacheException if the file is is not on a pool from which we are
+     * @throw PermissionDeniedCacheException if the file is not on a pool from which we are
      * allowed to read it
-     * @throw CostExceededException if a read pool is available, but it exceed cost limits; the
+     * @throw CostExceededException if a read pool is available, but it exceeds cost limits; the
      * exception contains information about how the caller may recover
      */
     SelectedPool selectReadPool() throws CacheException;
