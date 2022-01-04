@@ -47,6 +47,7 @@ import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
@@ -80,6 +81,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.dcache.http.HttpRequestHandler.createRedirectResponse;
+
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication.
  */
@@ -88,6 +91,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
     private static final Logger LOGGER =
           LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
+    public static final String REFERRER_QUERY_PARAM = "dcache-http-ref";
     private static final String DIGEST = "Digest";
 
     private static final String RANGE_SEPARATOR = "-";
@@ -399,6 +403,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
 
             fileSize = file.size();
             ranges = parseHttpRange(request, 0, fileSize - 1);
+        } catch (Redirect e) {
+            return context.writeAndFlush(e.createResponse());
         } catch (HttpException e) {
             return context.writeAndFlush(createErrorResponse(e.getErrorCode(), e.getMessage()));
         } catch (URISyntaxException e) {
@@ -519,6 +525,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             _writeChannel = file;
             file = null;
             return null;
+        } catch (Redirect e) {
+            exception = e;
+            return context.writeAndFlush(e.createResponse());
         } catch (HttpException e) {
             exception = e;
             return context.writeAndFlush(
@@ -644,6 +653,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             context.write(new HttpGetResponse(file.size(), file, digest))
                   .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        } catch (Redirect e) {
+            return context.writeAndFlush(e.createResponse());
         } catch (IOException | IllegalArgumentException e) {
             return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (URISyntaxException e) {
@@ -668,7 +679,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
      */
     private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel open(HttpRequest request,
           boolean exclusive)
-          throws IllegalArgumentException, URISyntaxException {
+          throws IllegalArgumentException, URISyntaxException, Redirect {
         QueryStringDecoder queryStringDecoder =
               new QueryStringDecoder(request.getUri());
 
@@ -691,6 +702,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid,
               exclusive);
         if (file == null) {
+            Optional<URI> referrer = buildReferrer(request, params);
+            if (referrer.isPresent()) {
+                throw new Redirect(referrer.get(), "Request is no longer valid");
+            }
+
             throw new IllegalArgumentException("Request is no longer valid. " +
                   "Please resubmit to door.");
         }
@@ -710,6 +726,48 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
         _files.add(file);
 
         return file;
+    }
+
+    /**
+     * Reconstruct the URL of the resource targeted by the client when it made the request to the
+     * WebDAV door.
+     * @param request The HTTP request made to the pool
+     * @param params The query parameters, taken from this request.
+     * @return Optionally the URL of the targeted resource.
+     */
+    private Optional<URI> buildReferrer(HttpRequest request, Map<String, List<String>> params) {
+        List<String> refList = params.get(REFERRER_QUERY_PARAM);
+        if (refList == null) {
+            LOGGER.debug("Missing {} param in request", REFERRER_QUERY_PARAM);
+            return Optional.empty();
+        }
+
+        if (refList.size() != 1) {
+            LOGGER.warn("Unexpected number of {} entries: {}", REFERRER_QUERY_PARAM, refList.size());
+            return Optional.empty();
+        }
+
+        String ref = refList.get(0);
+
+        URI base;
+        try {
+            base = new URI(ref);
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Ignoring bad referrer base \"{}\": {}", ref, e.getMessage());
+            return Optional.empty();
+        }
+
+
+        URI requestToPool;
+        try {
+            requestToPool = new URI(request.uri()); // This is (very likely) just the path.
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Ignoring bad request target \"{}\": {}", request.uri(), e.getMessage());
+            return Optional.empty();
+        }
+
+        URI requestToDoor = base.resolve(requestToPool.getRawPath());
+        return Optional.of(requestToDoor);
     }
 
     /**
@@ -814,6 +872,31 @@ public class HttpPoolRequestHandler extends HttpRequestHandler {
             }
 
             digest.ifPresent(v -> headers().add(DIGEST, v));
+        }
+    }
+
+    private static class Redirect extends Exception {
+        private final URI target;
+
+        public Redirect(URI target, String message) {
+            super(message);
+            this.target = requireNonNull(target);
+        }
+
+        public URI target() {
+            return target;
+        }
+
+        public FullHttpResponse createResponse() {
+            return createRedirectResponse(target.toASCIIString(), getMessage());
+        }
+
+        @Override
+        public String toString() {
+            String message = getMessage();
+            return message == null
+                    ? "Redirect to " + target
+                    : "Redirect to " + target + ": " + getMessage();
         }
     }
 }

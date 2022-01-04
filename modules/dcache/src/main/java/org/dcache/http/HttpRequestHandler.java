@@ -29,6 +29,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+
 public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
 
     protected static final String CRLF = "\r\n";
@@ -163,6 +166,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object> {
 
     public static FullHttpResponse createErrorResponse(HttpResponseStatus status, String message) {
         return createErrorResponse(status.code(), message);
+    }
+
+    public static FullHttpResponse createRedirectResponse(String location, String message) {
+        var response = createErrorResponse(TEMPORARY_REDIRECT.code(), message);
+        response.headers().set(LOCATION, location);
+        return response;
     }
 
     public static FullHttpResponse createErrorResponse(int code, String message) {

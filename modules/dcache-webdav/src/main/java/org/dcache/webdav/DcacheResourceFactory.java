@@ -78,6 +78,8 @@ import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -151,6 +153,8 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
+
+import static org.dcache.http.HttpPoolRequestHandler.REFERRER_QUERY_PARAM;
 
 /**
  * This ResourceFactory exposes the dCache name space through the Milton WebDAV framework.
@@ -842,7 +846,7 @@ public class DcacheResourceFactory
                 _transfers.remove((int) transfer.getId());
             }
         }
-        return uri;
+        return appendReferrer(uri);
     }
 
 
@@ -1127,6 +1131,41 @@ public class DcacheResourceFactory
         pnfs.renameEntry(pnfsId, sourcePath.toString(), newPath.toString(), true);
     }
 
+    private URI buildRequestUri() {
+        HttpServletRequest request = ServletRequest.getRequest();
+
+        try {
+            return new URI(request.getScheme(), null, request.getServerName(),
+                    request.getServerPort(), null, null, null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Unable to build request URI: " + e);
+        }
+    }
+
+    private String appendReferrer(String locationWithoutReferrer) {
+        URI target = buildRequestUri();
+
+        QueryStringDecoder decoder = new QueryStringDecoder(locationWithoutReferrer);
+        Map<String, List<String>> existingQuery = decoder.parameters();
+
+        QueryStringEncoder encoder = new QueryStringEncoder("");
+        for (Map.Entry<String,List<String>> e : existingQuery.entrySet()) {
+            e.getValue().forEach(v -> encoder.addParam(e.getKey(), v));
+        }
+        encoder.addParam(REFERRER_QUERY_PARAM, target.toASCIIString());
+
+        URI location = URI.create(locationWithoutReferrer);
+        URI updatedLocation;
+        try {
+            updatedLocation = new URI(location.getScheme(), null, location.getHost(),
+                    location.getPort(), location.getPath(), null, null);
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Bad URI when creating updated URL: {}", e.getMessage());
+            return locationWithoutReferrer;
+        }
+
+        return updatedLocation.toASCIIString() + encoder.toString();
+    }
 
     /**
      * Returns a read URL for a file.
@@ -1137,7 +1176,8 @@ public class DcacheResourceFactory
     public String getReadUrl(FsPath path, PnfsId pnfsid,
           HttpProtocolInfo.Disposition disposition)
           throws CacheException, InterruptedException, URISyntaxException {
-        return beginRead(path, pnfsid, false, disposition).getRedirect();
+        String uri = beginRead(path, pnfsid, false, disposition).getRedirect();
+        return appendReferrer(uri);
     }
 
     /**
