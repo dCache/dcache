@@ -12,6 +12,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import diskCacheV111.namespace.EventNotifier;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -160,7 +162,9 @@ import org.dcache.oncrpc4j.rpc.OncRpcSvc;
 import org.dcache.oncrpc4j.rpc.OncRpcSvcBuilder;
 import org.dcache.oncrpc4j.rpc.gss.GssSessionManager;
 import org.dcache.pool.assumption.Assumptions;
+import org.dcache.poolmanager.CostException;
 import org.dcache.poolmanager.PoolManagerStub;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
@@ -237,6 +241,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
     private PnfsHandler _pnfsHandler;
+
+    private PoolMonitor _poolMonitor;
 
     private String _ioQueue;
 
@@ -401,6 +407,11 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Required
     public void setClientStore(ClientRecoveryStore clientStore) {
         _clientStore = clientStore;
+    }
+
+    @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor) {
+        _poolMonitor = poolMonitor;
     }
 
     public VirtualFileSystem wrapWithMonitoring(VirtualFileSystem inner) {
@@ -1241,6 +1252,28 @@ public class NFSv41Door extends AbstractCellComponent implements
                     throw new NfsIoException("lost file " + getPnfsId());
                 }
 
+                if (expectedOnline) {
+                    try {
+
+                        /*
+                         * On a read we are OK to by-pass selection if file is available on a pool
+                         * from which client is allowed to read. The retry mechanism of
+                         * selectPoolAndStartMoverAsync will take care that stage or p2p takes
+                         * place in case of incorrect information.
+                         */
+                        var pool = _poolMonitor.getPoolSelector(attr, getProtocolInfo(), null,
+                                    null)
+                              .selectReadPool();
+                        setPool(new Pool(pool.name(), pool.address(), pool.assumption()));
+                        setFileAttributes(attr);
+                        _log.debug("by-passed selecting {} for read", pool);
+                    } catch (FileNotInCacheException | PermissionDeniedCacheException | CostException e) {
+                        // fallback to regular selection
+                        _log.info("selection by-pass failed: {}", e.getMessage());
+                        expectedOnline = false;
+                    }
+                }
+
                 /*
                  * We start new request with an assumption, that file is available
                  * and can be directly accessed by the client, e.q. no stage
@@ -1250,8 +1283,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 _log.debug("looking a read pool for {}", getPnfsId());
                 _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 if (!expectedOnline) {
-                    // no reason to block the client as we have to get file back from HSM
-                    throw new LayoutTryLaterException("File is offline.");
+                    // no reason to block the client as p2p or restore from HSM is required.
+                    throw new LayoutTryLaterException("File is offline or p2p is required.");
                 }
             }
 

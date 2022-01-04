@@ -939,6 +939,12 @@ public class Transfer implements Comparable<Transfer> {
      * Selects a pool suitable for the transfer.
      */
     public ListenableFuture<Void> selectPoolAsync(long timeout) {
+
+        if (getPool() != null) {
+            // we have a valid preselected pool. Let use it as long as clearPoolSelection is not called.
+            return immediateFuture(null);
+        }
+
         FileAttributes fileAttributes = getFileAttributes();
 
         ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
